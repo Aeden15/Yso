@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage />
+	<TimerPackage />
+	<AliasPackage>
+		<AliasGroup isActive="yes" isFolder="yes">
+			<name>Yso Offense Aliases</name>
+			<script></script>
+			<command></command>
+			<packageName></packageName>
+			<regex></regex>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Offense Control</name>
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
+				<Alias isActive="yes" isFolder="no">
+					<name>Offense toggle</name>
+					<script>-- ^occ$  ->  toggle Occultist offense on/off
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+if type(Yso.off.oc.toggle) == "function" then
+  Yso.off.oc.toggle()
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occ$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Offense on</name>
+					<script>-- ^occon$  ->  force offense ON
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+if type(Yso.off.oc.on) == "function" then
+  Yso.off.oc.on()
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occon$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Offense off</name>
+					<script>-- ^occoff$  ->  force offense OFF
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+if type(Yso.off.oc.off) == "function" then
+  Yso.off.oc.off()
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occoff$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Offense status</name>
+					<script>-- ^occstatus$  ->  print current offense state
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+local Off = Yso.off.oc
+local st  = Off.state or {}
+local tgt = ""
+if type(Yso.get_target) == "function" then
+  local ok, v = pcall(Yso.get_target)
+  if ok then tgt = tostring(v or "") end
+end
+if tgt == "" then tgt = tostring(Yso.target or rawget(_G, "target") or "") end
+
+local function yn(v) return v == true and "YES" or "no" end
+
+local lines = {
+  string.format("  enabled : %s", yn(st.enabled)),
+  string.format("  mode    : %s", tostring(st.mode or Off.cfg and Off.cfg.mode or "?")),
+  string.format("  ai      : %s", tostring(st.ai or "?")),
+  string.format("  tarot   : %s", tostring(st.tarot or "?")),
+  string.format("  target  : %s", tgt ~= "" and tgt or "(none)"),
+}
+
+cecho("&lt;orange&gt;[Yso:Occ] Offense status:\n")
+for _, l in ipairs(lines) do
+  cecho(string.format("&lt;white&gt;%s\n", l))
+end
+
+local GD = Off.group_damage or Off.dmg
+if GD and GD.state then
+  cecho(string.format("&lt;white&gt;  gd      : %s\n", yn(GD.state.enabled)))
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occstatus$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Set offense target</name>
+					<script>-- ^tt (\w+)$  ->  set offense target
+local tgt = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if tgt == "" then
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Usage: tt &lt;name&gt;\n")
+  return
+end
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+if type(Yso.off.oc.set_target) == "function" then
+  Yso.off.oc.set_target(tgt)
+elseif type(Yso.set_target) == "function" then
+  Yso.set_target(tgt)
+else
+  rawset(_G, "target", tgt)
+  Yso.target = tgt
+end
+cecho(string.format("&lt;orange&gt;[Yso:Occ]&lt;reset&gt; Target set: %s\n", tgt))</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^tt (\w+)$</regex>
+				</Alias>
+			</AliasGroup>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Offense Modes</name>
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
+				<Alias isActive="yes" isFolder="no">
+					<name>Set AI profile</name>
+					<script>-- ^occai(?:\s+(\w+))?$  ->  set or show AI profile (lock, etc.)
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+local arg = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if arg == "" then
+  local ai = "?"
+  if type(Yso.off.oc.get_ai) == "function" then ai = Yso.off.oc.get_ai() end
+  cecho(string.format("&lt;orange&gt;[Yso:Occ]&lt;reset&gt; AI: %s\n", tostring(ai)))
+  return
+end
+if type(Yso.off.oc.set_ai) == "function" then
+  Yso.off.oc.set_ai(arg)
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occai(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Set tarot focus</name>
+					<script>-- ^occtarot(?:\s+(\w+))?$  ->  set or show tarot focus (aeon, etc.)
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+local arg = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if arg == "" then
+  local t = "?"
+  if type(Yso.off.oc.get_tarot) == "function" then t = Yso.off.oc.get_tarot() end
+  cecho(string.format("&lt;orange&gt;[Yso:Occ]&lt;reset&gt; Tarot: %s\n", tostring(t)))
+  return
+end
+if type(Yso.off.oc.set_tarot) == "function" then
+  Yso.off.oc.set_tarot(arg)
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occtarot(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Set offense mode</name>
+					<script>-- ^occmode(?:\s+(\w+))?$  ->  set or show offense mode (duel, custom)
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+local arg = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if arg == "" then
+  local m = "?"
+  if type(Yso.off.oc.get_mode) == "function" then m = Yso.off.oc.get_mode() end
+  cecho(string.format("&lt;orange&gt;[Yso:Occ]&lt;reset&gt; Mode: %s\n", tostring(m)))
+  return
+end
+if type(Yso.off.oc.set_mode) == "function" then
+  Yso.off.oc.set_mode(arg)
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^occmode(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Combat route - lim</name>
+					<script>-- ^lim$  -> combat mode + Cleanseaura lim route
+Yso = Yso or {}
+Yso.occ = Yso.occ or {}
+Yso.occ.clock = Yso.occ.clock or {}
+
+if Yso.mode and type(Yso.mode.set) == "function" then
+  pcall(Yso.mode.set, "combat", "alias:lim")
+end
+
+if type(Yso.occ.clock.set_route) == "function" then
+  Yso.occ.clock.set_route("lim")
+else
+  Yso.occ.clock.cfg = Yso.occ.clock.cfg or {}
+  Yso.occ.clock.cfg.route = "lim"
+  if type(cecho) == "function" then
+    cecho("&lt;dark_orchid&gt;[Occultism] &lt;reset&gt;Cleanseaura route: &lt;yellow&gt;lim&lt;reset&gt;\n")
+  end
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^lim$</regex>
+				</Alias>
+			</AliasGroup>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Manual Attacks</name>
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
+				<Alias isActive="yes" isFolder="no">
+					<name>EQ-only attack</name>
+					<script>-- ^eqa$  ->  fire one EQ-lane attack using offense logic
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+if type(Yso.off.oc.attack_eqonly) == "function" then
+  Yso.off.oc.attack_eqonly()
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^eqa$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Instill affliction</name>
+					<script>-- ^ins (\w+)(?:\s+(\w+))?$  ->  instill &lt;aff&gt; [target]
+local aff = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if aff == "" then
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Usage: ins &lt;aff&gt; [target]\n")
+  return
+end
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[3], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("instill " .. tgt .. " with " .. aff)
+elseif type(send) == "function" then
+  send("instill " .. tgt .. " with " .. aff)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^ins (\w+)(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Regress</name>
+					<script>-- ^reg(?:\s+(\w+))?$  ->  REGRESS [target]
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("REGRESS " .. tgt)
+elseif type(send) == "function" then
+  send("REGRESS " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^reg(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Shrivel</name>
+					<script>-- ^shr (left|right|l|r) (arm|leg|a|l)(?:\s+(\w+))?$  ->  SHRIVEL limb
+local side = (matches[2] or ""):lower()
+local limb = (matches[3] or ""):lower()
+if side == "l" then side = "left" end
+if side == "r" then side = "right" end
+if limb == "a" then limb = "arm" end
+if limb == "l" then limb = "leg" end
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[4], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local cmd = string.format("SHRIVEL %s %s %s", side, limb, tgt)
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear(cmd)
+elseif type(send) == "function" then
+  send(cmd)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^shr (left|right|l|r) (arm|leg|a|l)(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Bodywarp limb</name>
+					<script>-- ^bw (left|right|l|r) (arm|leg|a|l)(?:\s+(\w+))?$  ->  BODYWARP limb [lesser work]
+local side = (matches[2] or ""):lower()
+local limb = (matches[3] or ""):lower()
+if side == "l" then side = "left" end
+if side == "r" then side = "right" end
+if limb == "a" then limb = "arm" end
+if limb == "l" then limb = "leg" end
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[4], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local cmd = string.format("BODYWARP %s %s %s", tgt, side, limb)
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear(cmd)
+elseif type(send) == "function" then
+  send(cmd)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^bw (left|right|l|r) (arm|leg|a|l)(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Utter Truename</name>
+					<script>-- ^utter(?:\s+(\w+))?$  ->  UTTER TRUENAME &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+
+local TB = Yso and Yso.occ and Yso.occ.truebook
+if TB and type(TB.can_utter) == "function" and not TB.can_utter(tgt) then
+  cecho(string.format("&lt;red&gt;[YSO]&lt;reset&gt; No truename memorised for %s.\n", tgt))
+  return
+end
+
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("UTTER TRUENAME " .. tgt)
+elseif type(send) == "function" then
+  send("UTTER TRUENAME " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^utter(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Enlighten</name>
+					<script>-- ^enl(?:\s+(\w+))?$  ->  ENLIGHTEN &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("ENLIGHTEN " .. tgt)
+elseif type(send) == "function" then
+  send("ENLIGHTEN " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^enl(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Unravel</name>
+					<script>-- ^unr(?:\s+(\w+))?$  ->  UNRAVEL MIND OF &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("UNRAVEL MIND OF " .. tgt)
+elseif type(send) == "function" then
+  send("UNRAVEL MIND OF " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^unr(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Whisperingmadness</name>
+					<script>-- ^wm(?:\s+(\w+))?$  ->  WHISPERINGMADNESS &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("WHISPERINGMADNESS " .. tgt)
+elseif type(send) == "function" then
+  send("WHISPERINGMADNESS " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^wm(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Devolve</name>
+					<script>-- ^dev(?:\s+(\w+))?$  ->  DEVOLVE &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("DEVOLVE " .. tgt)
+elseif type(send) == "function" then
+  send("DEVOLVE " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^dev(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Enervate</name>
+					<script>-- ^ener(?:\s+(\w+))?$  ->  ENERVATE &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("ENERVATE " .. tgt)
+elseif type(send) == "function" then
+  send("ENERVATE " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^ener(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Compel</name>
+					<script>-- ^comp (\w+)(?:\s+(\w+))?$  ->  COMPEL &lt;target&gt; &lt;compulsion&gt;
+local compulsion = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if compulsion == "" then
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Usage: comp &lt;compulsion&gt; [target]\n")
+  return
+end
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[3], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.eq_clear) == "function" then
+  Q.eq_clear("COMPEL " .. tgt .. " " .. compulsion)
+elseif type(send) == "function" then
+  send("COMPEL " .. tgt .. " " .. compulsion)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^comp (\w+)(?:\s+(\w+))?$</regex>
+				</Alias>
+			</AliasGroup>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Entity Commands</name>
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
+				<Alias isActive="yes" isFolder="no">
+					<name>Entity command</name>
+					<script>-- ^ent (\w+)(?:\s+(.+))?$  ->  COMMAND &lt;entity&gt; AT &lt;target&gt; [args]
+local ent  = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+local rest = (matches[3] or ""):gsub("^%s+",""):gsub("%s+$","")
+if ent == "" then
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Usage: ent &lt;entity&gt; [extra args]\n")
+  return
+end
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, nil, { set = false, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt or tgt == "" then
+  if type(Yso.get_target) == "function" then
+    local ok, v = pcall(Yso.get_target)
+    if ok then tgt = tostring(v or "") end
+  end
+end
+if not tgt or tgt == "" then tgt = tostring(rawget(_G, "target") or "") end
+tgt = tgt:gsub("^%s+",""):gsub("%s+$","")
+if tgt == "" then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local cmd
+if rest ~= "" then
+  cmd = string.format("COMMAND %s AT %s %s", ent, tgt, rest)
+else
+  cmd = string.format("COMMAND %s AT %s", ent, tgt)
+end
+local Q = Yso.queue
+if Q and type(Q.class_clear) == "function" then
+  Q.class_clear(cmd)
+elseif type(send) == "function" then
+  send(cmd)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^ent (\w+)(?:\s+(.+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Entourage attack</name>
+					<script>-- ^entattack$  ->  order entourage kill &lt;target&gt;
+local tgt = ""
+if Yso and type(Yso.get_target) == "function" then
+  local ok, v = pcall(Yso.get_target)
+  if ok then tgt = tostring(v or "") end
+end
+if tgt == "" then tgt = tostring(rawget(_G, "target") or "") end
+tgt = tgt:gsub("^%s+",""):gsub("%s+$","")
+if tgt == "" then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.free) == "function" then
+  Q.free("order entourage kill " .. tgt)
+elseif type(send) == "function" then
+  send("order entourage kill " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^entattack$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Entourage passive</name>
+					<script>-- ^entpass$  ->  order entourage passive
+local Q = Yso and Yso.queue
+if Q and type(Q.free) == "function" then
+  Q.free("order entourage passive")
+elseif type(send) == "function" then
+  send("order entourage passive")
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^entpass$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Cure predictor toggle</name>
+					<script>-- ^predict$  ->  toggle cure predictor on/off; with arg: dump for target
+local arg = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if arg and arg:lower() == "dump" then
+  local t = (Yso and Yso.get_target and Yso.get_target()) or (Yso and Yso.target) or rawget(_G, "target") or ""
+  if Yso.predict and Yso.predict.cure and type(Yso.predict.cure.dump) == "function" then
+    Yso.predict.cure.dump(t)
+  end
+else
+  if Yso.predict and type(Yso.predict.toggle) == "function" then
+    Yso.predict.toggle()
+  else
+    cecho("&lt;red&gt;[YSO]&lt;reset&gt; Predict module not loaded.\n")
+  end
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^predict(?:\s+(.+))?$</regex>
+				</Alias>
+			</AliasGroup>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Tarot Offense</name>
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
+				<Alias isActive="yes" isFolder="no">
+					<name>Fling aeon</name>
+					<script>-- ^faeon(?:\s+(\w+))?$  ->  fling aeon at &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("fling aeon at " .. tgt)
+elseif type(send) == "function" then
+  send("fling aeon at " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^faeon(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Fling moon</name>
+					<script>-- ^fmoon (\w+)(?:\s+(\w+))?$  ->  fling moon at &lt;target&gt; &lt;aff&gt;
+local aff = (matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
+if aff == "" then
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Usage: fmoon &lt;aff&gt; [target]\n")
+  return
+end
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[3], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("fling moon at " .. tgt .. " " .. aff)
+elseif type(send) == "function" then
+  send("fling moon at " .. tgt .. " " .. aff)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^fmoon (\w+)(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Fling lust</name>
+					<script>-- ^flust(?:\s+(\w+))?$  ->  fling lust at &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("fling lust at " .. tgt)
+elseif type(send) == "function" then
+  send("fling lust at " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^flust(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Fling empress</name>
+					<script>-- ^femp(?:\s+(\w+))?$  ->  outd empress &amp;&amp; fling empress &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.free) == "function" then
+  Q.free("outd empress")
+end
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("fling empress " .. tgt)
+elseif type(send) == "function" then
+  send("outd empress&amp;&amp;fling empress " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^femp(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Ruinate lovers (manaleech)</name>
+					<script>-- ^rlove(?:\s+(\w+))?$  ->  ruinate lovers &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("ruinate lovers at " .. tgt)
+elseif type(send) == "function" then
+  send("ruinate lovers at " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^rlove(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Ruinate justice (limb conversion)</name>
+					<script>-- ^rjust(?:\s+(\w+))?$  ->  ruinate justice &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("ruinate justice " .. tgt)
+elseif type(send) == "function" then
+  send("ruinate justice " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^rjust(?:\s+(\w+))?$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Fling death</name>
+					<script>-- ^fdeath(?:\s+(\w+))?$  ->  fling death at &lt;target&gt;
+local tgt = nil
+if Yso and type(Yso.resolve_target) == "function" then
+  local ok, res = pcall(Yso.resolve_target, matches[2], { set = true, source = "manual" })
+  if ok then tgt = res end
+end
+if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
+local Q = Yso.queue
+if Q and type(Q.bal_clear) == "function" then
+  Q.bal_clear("fling death at " .. tgt)
+elseif type(send) == "function" then
+  send("fling death at " .. tgt)
+end</script>
+					<command></command>
+					<packageName></packageName>
+					<regex>^fdeath(?:\s+(\w+))?$</regex>
+				</Alias>
+			</AliasGroup>
+		</AliasGroup>
+	</AliasPackage>
+	<ActionPackage />
+	<ScriptPackage />
+	<KeyPackage />
+	<HelpPackage />
+</MudletPackage>

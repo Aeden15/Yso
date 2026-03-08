@@ -1,0 +1,14 @@
+Cleanup notes
+============
+This bundle removes duplicate copies of the same modules that existed in multiple locations
+(Achaea/Yso/*, Achaea/Yso/Yso/*, Achaea/Yso/modules/*, Achaea/Yso/modules/Yso/*, etc.)
+Canonical code is now under:
+  Achaea/Yso/modules/Yso/...
+
+Compatibility wrappers are provided so old requires still work:
+  require("AffTracker"), require("LimbPressure"), require("Core.state"), require("Combat.offense_core"), etc.
+
+Integration remains:
+  require("Integration.mudlet")  -> Achaea/Yso/modules/Integration/mudlet.lua
+
+Keep only ONE copy of each module on disk to prevent Windows case/overwrite issues.
