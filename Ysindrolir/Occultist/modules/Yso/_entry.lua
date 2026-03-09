@@ -22,6 +22,63 @@ end
 
 local Yso = _G.Yso
 
+local function _set_root(root)
+  if type(root) ~= "string" then return false end
+  root = tostring(root or ""):gsub("\\", "/"):gsub("/+$", "")
+  if root == "" then return false end
+  _G.YSO_ROOT = root
+  _G.yso_root = root
+  return true
+end
+
+local function _collect_reload_modules()
+  local names = {}
+  for name, _ in pairs(package.loaded or {}) do
+    if name == "Yso"
+      or name == "Yso._entry"
+      or name == "Integration.mudlet"
+      or tostring(name):match("^Yso%.")
+    then
+      names[#names + 1] = name
+    end
+  end
+  table.sort(names)
+  return names
+end
+
+function Yso.reload(root)
+  _set_root(root)
+
+  if Yso.queue and type(Yso.queue.clear) == "function" then
+    pcall(Yso.queue.clear)
+  end
+  if Yso.pulse and type(Yso.pulse.stop) == "function" then
+    pcall(Yso.pulse.stop)
+  end
+
+  Yso._entry_loaded = nil
+  _G.yso_bootstrap_done = nil
+
+  local names = _collect_reload_modules()
+  for i = 1, #names do
+    package.loaded[names[i]] = nil
+  end
+
+  local ok, mod = pcall(require, "Yso")
+  if not ok then
+    if type(rawget(_G, "echo")) == "function" then
+      echo(("[YSO] reload failed: %s\n"):format(tostring(mod)))
+    end
+    return false, mod
+  end
+
+  if type(rawget(_G, "cecho")) == "function" then
+    cecho(("<dark_orchid>[Yso] <reset>reloaded from %s\n"):format(tostring(_G.YSO_ROOT or _G.yso_root or "active root")))
+  end
+
+  return true, mod
+end
+
 -- Guard: only run init once per session.
 if Yso._entry_loaded then
   return Yso
@@ -195,3 +252,4 @@ if type(rawget(_G, "oc_death_sniff")) ~= "function" then
 end
 
 return Yso
+
