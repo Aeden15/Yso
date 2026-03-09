@@ -515,24 +515,7 @@ function Q.commit(opts)
   local send_eq, send_bal, send_class = nil, nil, nil
   local paired = false
 
-  -- Selection:
-  --   • Wake hint present: respect it (and optionally piggyback ENT onto EQ/BAL)
-  --   • No hint: coalesce eq > class > bal
-  local function choose()
-    if wlane == "eq" then
-      if staged_eq ~= nil and eq_r then send_eq = staged_eq end
-      if piggyback and send_eq and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
-      return
-    elseif wlane == "bal" then
-      if staged_bal ~= nil and bal_r then send_bal = staged_bal end
-      if piggyback and send_bal and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
-      return
-    elseif wlane == "class" then
-      if staged_class ~= nil and class_r then send_class = staged_class end
-      return
-    end
-
-    -- No wake lane: coalesce eq > class > bal
+  local function choose_default()
     if staged_eq ~= nil and eq_r then
       send_eq = staged_eq
       if piggyback and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
@@ -547,6 +530,28 @@ function Q.commit(opts)
       if piggyback and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
       return
     end
+  end
+
+  -- Selection:
+  --   • Wake hint present: prefer that lane (and optionally piggyback ENT onto EQ/BAL)
+  --   • If the hinted lane is unavailable by commit time, fall back to normal coalescing
+  --   • No hint: coalesce eq > class > bal
+  local function choose()
+    if wlane == "eq" then
+      if staged_eq ~= nil and eq_r then send_eq = staged_eq end
+      if piggyback and send_eq and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
+    elseif wlane == "bal" then
+      if staged_bal ~= nil and bal_r then send_bal = staged_bal end
+      if piggyback and send_bal and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
+    elseif wlane == "class" then
+      if staged_class ~= nil and class_r then send_class = staged_class end
+    end
+
+    if send_eq ~= nil or send_bal ~= nil or send_class ~= nil then
+      return
+    end
+
+    choose_default()
   end
 
   choose()
@@ -641,3 +646,4 @@ function Q.clear(lane)
   end
   return true
 end
+
