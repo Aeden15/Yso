@@ -7492,8 +7492,8 @@ end</script>
 						<name>Attend</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
-   affstrack.score.blind = 100
-   affstrack.score.deaf = 100
+   affstrack.score.blind = 0
+   affstrack.score.deaf = 0
    ak.scoreup(matches[2])
 end</script>
 						<triggerType>0</triggerType>
@@ -7934,12 +7934,10 @@ ak.deleteFull()</script>
 								<colorTriggerFgColor>#000000</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>She is surrounded by a cloak of protection.</string>
-									<string>He is surrounded by a cloak of protection.</string>
+									<string>^(?:(?:He|She|Faen|Faes) is|They are) surrounded by a cloak of protection\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
-									<integer>3</integer>
-									<integer>3</integer>
+									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
 							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -7960,8 +7958,12 @@ ak.deleteFull()</script>
 								<regexCodeList>
 									<string>She is blind.</string>
 									<string>He is blind.</string>
+									<string>Fae is blind.</string>
+									<string>They are blind.</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>3</integer>
+									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 								</regexCodePropertyList>
@@ -7984,8 +7986,12 @@ ak.deleteFull()</script>
 								<regexCodeList>
 									<string>She is deaf.</string>
 									<string>He is deaf.</string>
+									<string>Fae is deaf.</string>
+									<string>They are deaf.</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>3</integer>
+									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 								</regexCodePropertyList>
@@ -8013,10 +8019,127 @@ ak.defs.speed = true
 								<colorTriggerFgColor>#000000</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>Her sense of time is heightened, and her reactions are speeded.</string>
-									<string>His sense of time is heightened, and his reactions are speeded.</string>
+									<string>^(?:His|Her|Their|Faen|Faes) sense of time is heightened, and (?:his|her|their|faen|faes) reactions are speeded\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Read Aura Kola</name>
+								<script>if Yso and Yso.ingest and Yso.ingest.aura_def then Yso.ingest.aura_def("kola", true) end
+ak.deleteFull()</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand/>
+								<packageName/>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile/>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>He is feeling extremely energetic.</string>
+									<string>She is feeling extremely energetic.</string>
+									<string>Fae is feeling extremely energetic.</string>
+									<string>They are feeling extremely energetic.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>3</integer>
+									<integer>3</integer>
+									<integer>3</integer>
+									<integer>3</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Read Aura Levitation</name>
+								<script>if Yso and Yso.ingest and Yso.ingest.aura_def then Yso.ingest.aura_def("levitation", true) end
+ak.deleteFull()</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand/>
+								<packageName/>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile/>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^(?:(?:He|She|Faen|Faes) is|They are) walking on a small cushion of air\.$</string>
+									<string>^(?:(?:He|She|Faen|Faes) has|They have) been granted the ability to levitate above the ground\.$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Read Aura Caloric</name>
+								<script>if Yso and Yso.ingest and Yso.ingest.aura_def then Yso.ingest.aura_def("caloric", true) end
+ak.deleteFull()</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand/>
+								<packageName/>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile/>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^(?:(?:He|She|Faen|Faes) is|They are) tempered against fire damage\.$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Read Aura Frost</name>
+								<script>if Yso and Yso.ingest and Yso.ingest.aura_def then Yso.ingest.aura_def("frost", true) end
+ak.deleteFull()</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand/>
+								<packageName/>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile/>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^(?:(?:He|She|Faen|Faes) is|They are) coated in an insulating unguent\.$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Read Aura Insomnia</name>
+								<script>if Yso and Yso.ingest and Yso.ingest.aura_def then Yso.ingest.aura_def("insomnia", true) end
+ak.deleteFull()</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand/>
+								<packageName/>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile/>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>He has insomnia, and cannot easily go to sleep.</string>
+									<string>She has insomnia, and cannot easily go to sleep.</string>
+									<string>Fae has insomnia, and cannot easily go to sleep.</string>
+									<string>They have insomnia, and cannot easily go to sleep.</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>3</integer>
+									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 								</regexCodePropertyList>
@@ -8670,10 +8793,18 @@ ak.deleteFull()</script>
 								<regexCodeList>
 									<string>He is surrounded by a nearly invisible magical shield.</string>
 									<string>She is surrounded by a nearly invisible magical shield.</string>
+									<string>Fae is surrounded by a nearly invisible magical shield.</string>
+									<string>They are surrounded by a nearly invisible magical shield.</string>
 									<string>The power of the shield logograph wards damage from him.</string>
 									<string>The power of the shield logograph wards damage from her.</string>
+									<string>The power of the shield logograph wards damage from them.</string>
+									<string>The power of the shield logograph wards damage from faen.</string>
 								</regexCodeList>
 								<regexCodePropertyList>
+									<integer>3</integer>
+									<integer>3</integer>
+									<integer>3</integer>
+									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
@@ -21019,17 +21150,18 @@ end</script>
 						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Slickness</name>
 					<script>if ak.ai() then return end
 ak.limbs.ParseonLine()
-if IsTargetted(multimatches[2][2]) and not table.contains(ak.slickfucks,multimatches[2][2]) then 
+local who = matches[2]
+if IsTargetted(who) and not table.contains(ak.slickfucks, who) then 
   ak.defs.sileris = false
+  OppGainedAff("slickness")
   if partyRelayed then partyRelayed("slickness") end
-  --OppGainedAff("slickness")
 end</script>
 					<triggerType>0</triggerType>
-					<conditonLineDelta>1</conditonLineDelta>
+					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
 					<mCommand/>
 					<packageName/>
@@ -21039,11 +21171,9 @@ end</script>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
-						<string>The protective coating covering the skin of</string>
 						<string>^The protective coating covering the skin of ([\w'\-]+) sloughs off\.$</string>
 					</regexCodeList>
 					<regexCodePropertyList>
-						<integer>2</integer>
 						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
@@ -21336,8 +21466,8 @@ end</script>
 					<name>Attended</name>
 					<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then 
-   affstrack.score.deaf = 100
-   affstrack.score.blind = 100
+   affstrack.score.deaf = 0
+   affstrack.score.blind = 0
    ak.scoreup(matches[2])
 end</script>
 					<triggerType>0</triggerType>
@@ -23646,7 +23776,7 @@ if not IsTargetted(matches[2]) then return end
 if matches[3] == "skin" and not ak.defs.mass then 
    ak.defs.mass = true
 	 ak.bals.salve = true
-   cecho("&lt;cyan&gt;Mass Consideration Removed") 
+   cecho("\n&lt;cyan&gt;Mass Consideration Removed") 
 elseif ak.bals.salve then
 	if affstrack.score.aeon == 100 and affstrack.score.slickness == 100 then
 	   return
@@ -23670,7 +23800,7 @@ elseif ak.bals.salve then
 else
 	if ak.timers.apply then 
 		ak.bals.salve = true
-		cecho("&lt;cyan&gt;Ignored Cures")
+		cecho("\n&lt;cyan&gt;Ignored Cures")
 	end
 end
 </script>
@@ -23697,7 +23827,7 @@ end
 
 local who = matches[2]
 if not IsTargetted(who) then return end
-if not oc_isCurrentTarget(who) then return end
+if type(oc_isCurrentTarget) == "function" and not oc_isCurrentTarget(who) then return end
 
 local ok, IM = pcall(require, "Integration.mudlet")
 if ok and IM and type(IM.onTargetFocusMind) == "function" then
@@ -23718,7 +23848,7 @@ affstrack.score.rixil = 0
 if not ak.timers.focus then
   if not ak.bals.focus then
     ak.bals.focus = true
-    cecho("&lt;cyan&gt;Ignored Cures")
+    cecho("\n&lt;cyan&gt;Ignored Cures")
     if ak.thoughtIhad then ak.thoughtIhad("impatience") else affstrack.score.impatience = 0 end
   end
 end
@@ -24018,7 +24148,7 @@ elseif affstrack.score.flushings == 100 and (ated == "ginseng root" or ated == "
 else
   if opponenteat == 1 then
     if timerherb == 1 then
-      cecho("&lt;cyan&gt;-Ignored Cures")
+      cecho("\n&lt;cyan&gt;-Ignored Cures")
     end
     if timerherb == 0 then
       cecho("&lt;cyan&gt;Something is Fucked")
@@ -24064,7 +24194,7 @@ end   </script>
 
 local who = multimatches[1][2]
 if not IsTargetted(who) then return end
-if not oc_isCurrentTarget(who) then return end
+if type(oc_isCurrentTarget) == "function" and not oc_isCurrentTarget(who) then return end
 
 -- Notify modular tracking immediately (so early returns still record TREE usage)
 local ok, IM = pcall(require, "Integration.mudlet")
@@ -24116,7 +24246,7 @@ else
   if timertree == 0 then
     if opponenttree == 1 then
       opponenttree = 0
-      cecho("&lt;cyan&gt;Ignored Cures")
+      cecho("\n&lt;cyan&gt;Ignored Cures")
     end
   end
 end
@@ -24176,7 +24306,7 @@ end
 					<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then 
 ak.defs.mass = false
-cecho("&lt;cyan&gt;Mass Consideration Set")
+cecho("\n&lt;cyan&gt;Mass Consideration Set")
 end
 </script>
 					<triggerType>0</triggerType>
@@ -24447,7 +24577,7 @@ ocured.kelp = ocured.kelp or {}
 ocured.treed = ocured.treed or {}
 ocured.cureall = ocured.cureall or {}
 if IsTargetted(matches[2]) then
-   cecho("&lt;cyan&gt;Processed Cures")
+   cecho("\n&lt;cyan&gt;Processed Cures")
    ocured.kelp.asthma = nil
    ocured.treed.asthma = nil
    ocured.cureall.asthma = nil
@@ -26919,6 +27049,17 @@ if ok and type(titled) == "string" and titled ~= "" then
   target = titled
 end
 
+local prev_target = ""
+if Yso and type(Yso.get_target) == "function" then
+  local ok_prev, prev_name = pcall(Yso.get_target)
+  if ok_prev and type(prev_name) == "string" then
+    prev_target = prev_name
+  end
+end
+if prev_target == "" then
+  prev_target = tostring(rawget(_G, "target") or "")
+end
+
 -- Canonical global target slot (AK/Legacy compatibility)
 _G.target = target
 
@@ -26938,15 +27079,9 @@ if ak.highlighttarget and type(tempTrigger) == "function" then
   HL.title = tempTrigger(target, "selectString("..q..", 1) fg('red') resetFormat()")
 end
 
--- YSO sync (preferred): keep Yso target in lockstep
+-- YSO hook: let the AK-backed bridge observe the target change
 if Yso and type(Yso.set_target) == "function" then
-  pcall(Yso.set_target, target, "ak")
-elseif Yso and Yso.targeting and type(Yso.targeting.set) == "function" then
-  pcall(Yso.targeting.set, target, "ak")
-else
-  -- last-resort canonical slots (string)
-  Yso = Yso or {}; Yso.state = Yso.state or {}; Yso.tgt = Yso.tgt or {}
-  Yso.target = target; Yso.state.target = target; Yso.tgt.name = target
+  pcall(Yso.set_target, target, "ak", { prev = prev_target, keep_class_queue = true, keep_rawsend = true })
 end
 
 -- Kick offense pipeline on target change
@@ -33293,3 +33428,5 @@ end</script>
 		</KeyGroup>
 	</KeyPackage>
 </MudletPackage>
+
+
