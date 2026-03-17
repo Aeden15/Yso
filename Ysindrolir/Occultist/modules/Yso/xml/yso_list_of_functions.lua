@@ -196,40 +196,23 @@ end
 --========================================================--
 -- Target clearing (auto on death / out-of-room)
 --========================================================--
-function Yso.clear_target(reason)
-  local prev = ""
-  -- Prefer canonical targeting service state if present.
-  if Yso.targeting and Yso.targeting.state and type(Yso.targeting.state.name) == "string" then
-    prev = tostring(Yso.targeting.state.name or "")
+function Yso.clear_target(reason, source, opts)
+  if type(Yso._clear_target_via_ak) == "function" then
+    return Yso._clear_target_via_ak(reason, source, opts)
   end
-  -- Fall back to public getter if needed.
-  if prev == "" and type(Yso.get_target) == "function" then
+
+  local prev = ""
+  if type(Yso.get_target) == "function" then
     prev = tostring(Yso.get_target() or "")
+  else
+    prev = tostring(rawget(_G, "target") or "")
   end
 
   prev = _trim2(prev)
   if prev == "" then return false end
 
+  rawset(_G, "target", "")
   Yso.last_target = prev
-  -- Canonical clear (Phase 1): clear targeting service + mirrors.
-  local tgs = Yso.targeting
-  if tgs and type(tgs.clear) == "function" then
-    tgs.clear("system", tostring(reason or "auto"), true)
-  else
-    -- Legacy fallback mirrors
-    rawset(_G, "target", "")
-    Yso.target = ""
-    if Yso.ingest and type(Yso.ingest.target_left) == "function" then
-      pcall(Yso.ingest.target_left, tostring(reason or "auto"), { nowake = true })
-    end
-  end
-
-  -- Clear module-local mirrors if present
-  if Yso and Yso.off and Yso.off.oc then
-    if Yso.off.oc.dmg and Yso.off.oc.dmg.state then
-      Yso.off.oc.dmg.state.target = ""
-    end
-  end
 
   if type(raiseEvent) == "function" then
     raiseEvent("yso.target.cleared", prev, tostring(reason or "auto"))
@@ -245,19 +228,24 @@ function Yso.clear_target(reason)
 end
 
 --========================================================--
--- READAURA snapshot (Occultist) — canonical target-defence intel
+-- READAURA snapshot (Occultist) - canonical target-defence intel
 --========================================================--
 
 Yso.occ = Yso.occ or {}
 Yso.occ.aura = Yso.occ.aura or {}
 Yso.occ.aura_cfg = Yso.occ.aura_cfg or { ttl = 20, debug = false }
+if tonumber(Yso.occ.aura_cfg.ttl) == nil then Yso.occ.aura_cfg.ttl = 20 end
+if Yso.occ.aura_cfg.debug == nil then Yso.occ.aura_cfg.debug = false end
+if tonumber(Yso.occ.aura_cfg.window_s) == nil then Yso.occ.aura_cfg.window_s = 4.5 end
+if tonumber(Yso.occ.aura_cfg.txn_log_size) == nil then Yso.occ.aura_cfg.txn_log_size = 12 end
 Yso.occ.readaura_ready = (Yso.occ.readaura_ready ~= false)
+Yso.occ.mana_pct = Yso.occ.mana_pct or {}
 
 --========================================================--
 -- Ingest shims (AK -> Yso)
---  • AK's READAURA triggers call Yso.ingest.aura_begin/aura_def/aura_end.
---  • Provide these as thin wrappers into Yso.occ snapshot builder.
---  • IMPORTANT: do NOT implement readaura_ready/begin/result here to avoid recursion.
+--  * AK's READAURA triggers call Yso.ingest.aura_begin/aura_def/aura_end.
+--  * Provide these as thin wrappers into Yso.occ snapshot builder.
+--  * IMPORTANT: do NOT implement readaura_ready/begin/result here to avoid recursion.
 --========================================================--
 Yso.ingest = Yso.ingest or {}
 if type(Yso.ingest.aura_begin) ~= "function" then
@@ -270,8 +258,24 @@ if type(Yso.ingest.aura_begin) ~= "function" then
 end
 if type(Yso.ingest.aura_def) ~= "function" then
   function Yso.ingest.aura_def(key, val)
-    if val == true and Yso.occ and type(Yso.occ.aura_seen) == "function" then
-      return Yso.occ.aura_seen(key)
+    if Yso.occ and type(Yso.occ.aura_def) == "function" then
+      return Yso.occ.aura_def(key, val)
+    end
+    return false
+  end
+end
+if type(Yso.ingest.aura_aff) ~= "function" then
+  function Yso.ingest.aura_aff(key)
+    if Yso.occ and type(Yso.occ.aura_aff) == "function" then
+      return Yso.occ.aura_aff(key)
+    end
+    return false
+  end
+end
+if type(Yso.ingest.aura_flag) ~= "function" then
+  function Yso.ingest.aura_flag(key, val)
+    if Yso.occ and type(Yso.occ.aura_flag) == "function" then
+      return Yso.occ.aura_flag(key, val)
     end
     return false
   end
@@ -285,7 +289,7 @@ end
 
 local function _yso_now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
-    local ok,v = pcall(Yso.util.now)
+    local ok, v = pcall(Yso.util.now)
     v = ok and tonumber(v) or nil
     if v then return v end
   end
@@ -297,52 +301,522 @@ end
 -- ===== READAURA global ready-state (single source of truth) =====
 Yso.occ._ra = Yso.occ._ra or { ready = (Yso.occ.readaura_ready ~= false), reason = "", mark = 0 }
 
-function Yso.occ.set_readaura_ready(val, reason)
-  local r = (val == true)
-  Yso.occ._ra.ready  = r
-  Yso.occ._ra.reason = tostring(reason or Yso.occ._ra.reason or "")
-  Yso.occ._ra.mark   = _yso_now()
-  Yso.occ.readaura_ready = r
-
-  -- Phase 1 plumbing: mirror into Yso.state (no extra wake; pulse wake below)
-  if Yso and Yso.ingest and type(Yso.ingest.readaura_ready) == "function" then
-    pcall(Yso.ingest.readaura_ready, r, Yso.occ._ra.reason, "occ:set_readaura_ready", { nowake = true })
-  end
-
-  if Yso.pulse and type(Yso.pulse.wake)=="function" then
-    Yso.pulse.wake("readaura:"..(r and "ready" or "down"))
-  end
-  return r
-end
-
--- Compatibility: some triggers call Yso.set_readaura_ready(...)
 if type(Yso.set_readaura_ready) ~= "function" then
   function Yso.set_readaura_ready(...)
-    if Yso.occ and type(Yso.occ.set_readaura_ready)=="function" then
+    if Yso.occ and type(Yso.occ.set_readaura_ready) == "function" then
       return Yso.occ.set_readaura_ready(...)
     end
   end
 end
 
-function Yso.occ.readaura_is_ready()
-  if Yso.occ._ra and Yso.occ._ra.ready ~= nil then return Yso.occ._ra.ready == true end
-  return Yso.occ.readaura_ready ~= false
+local _A_KEYS = {
+  blind = true, deaf = true,
+  cloak = true, speed = true, caloric = true, frost = true, levitation = true, insomnia = true, kola = true,
+  shield = true,
+}
+local _A_AFF_KEYS = { blind = true, deaf = true }
+local _A_BOOL_FLAG_KEYS = { shield = true }
+
+local function _copy_tbl(src)
+  local out = {}
+  if type(src) ~= "table" then return out end
+  for k, v in pairs(src) do out[k] = v end
+  return out
 end
 
-local _A_KEYS = {
-  blind=true, deaf=true,
-  cloak=true, speed=true, caloric=true, frost=true, levitation=true, insomnia=true, kola=true,
-}
+local function _copy_list(src)
+  local out = {}
+  if type(src) ~= "table" then return out end
+  for i = 1, #src do out[i] = src[i] end
+  return out
+end
 
-Yso.occ._aura_pending = Yso.occ._aura_pending or { t = "", seen = {} }
+local function _aura_cfg_num(key, default)
+  local cfg = Yso and Yso.occ and Yso.occ.aura_cfg or nil
+  local v = cfg and tonumber(cfg[key]) or nil
+  if v == nil or v <= 0 then return default end
+  return v
+end
 
-function Yso.occ.aura_begin(tgt)
-  tgt = tostring(tgt or ""):gsub("^%s+",""):gsub("%s+$","")
+local function _aura_clear_pending(tgt, read_id)
+  local now = _yso_now()
+  Yso.occ._aura_pending = {
+    active = false,
+    t = _trim2(tgt),
+    key = _lc2(tgt),
+    at = now,
+    last_at = now,
+    read_id = tonumber(read_id or 0) or 0,
+    defs = {},
+    affs = {},
+    flags = {},
+    raw = {},
+    mana_pct = nil,
+    mana_cur = nil,
+    mana_max = nil,
+    had_mana = false,
+  }
+  return Yso.occ._aura_pending
+end
+
+local function _aura_blank_txn()
+  return {
+    active = false,
+    status = "idle",
+    target = "",
+    key = "",
+    read_id = 0,
+    source = "",
+    started_at = 0,
+    confirmed_at = 0,
+    touched_at = 0,
+    window_until = 0,
+    ended_at = 0,
+    close_reason = "",
+    snapshot_state = "",
+  }
+end
+
+Yso.occ._aura_serial = tonumber(Yso.occ._aura_serial or 0) or 0
+Yso.occ._aura_pending = Yso.occ._aura_pending or _aura_clear_pending("", 0)
+Yso.occ._aura_txn = Yso.occ._aura_txn or _aura_blank_txn()
+Yso.occ._aura_txn_log = Yso.occ._aura_txn_log or {}
+Yso.occ._aura_window_timer = Yso.occ._aura_window_timer or nil
+
+local function _aura_set_window_triggers(enabled)
+  if type(enableTrigger) ~= "function" or type(disableTrigger) ~= "function" then return false end
+  local fn = (enabled == true) and enableTrigger or disableTrigger
+  pcall(fn, "Finale Read Aura")
+  pcall(fn, "Readaura Defs")
+  return true
+end
+
+local function _aura_cancel_window_timer()
+  local id = Yso.occ._aura_window_timer
+  if id and type(killTimer) == "function" then
+    pcall(killTimer, id)
+  end
+  Yso.occ._aura_window_timer = nil
+end
+
+local _aura_timeout_close
+
+local function _aura_schedule_window_timer(read_id)
+  _aura_cancel_window_timer()
+  if type(tempTimer) ~= "function" then return false end
+
+  local expected = tonumber(read_id or 0) or 0
+  local delay = _aura_cfg_num("window_s", 4.5)
+  local id = tempTimer(delay, function()
+    local txn = Yso and Yso.occ and Yso.occ._aura_txn or nil
+    if type(txn) == "table" and txn.active == true then
+      local current = tonumber(txn.read_id or 0) or 0
+      if expected <= 0 or current == expected then
+        _aura_timeout_close("window_timeout")
+      end
+    else
+      _aura_set_window_triggers(false)
+    end
+  end)
+  Yso.occ._aura_window_timer = id
+  return true
+end
+
+local function _aura_pending_for(tgt)
+  local p = Yso.occ._aura_pending or _aura_clear_pending("", 0)
+  local key = _lc2(tgt)
+  local matched = (p.active == true and key ~= "" and key == tostring(p.key or ""))
+  return p, matched
+end
+
+local function _aura_existing(tgt)
+  tgt = _trim2(tgt)
+  if tgt == "" then return nil end
+  return Yso.occ.aura[tgt] or Yso.occ.aura[_lc2(tgt)]
+end
+
+local function _aura_complete(snap)
+  if type(snap) ~= "table" then return false end
+  return (snap.read_complete == true and snap.had_counts == true and snap.had_mana == true)
+end
+
+local function _aura_has_partial_defs(P)
+  if type(P) ~= "table" then return false end
+  return (next(P.defs) ~= nil or next(P.affs) ~= nil or next(P.raw) ~= nil)
+end
+
+local function _aura_has_pending_data(P)
+  if type(P) ~= "table" then return false end
+  return (_aura_has_partial_defs(P) or P.had_mana == true)
+end
+
+local function _aura_missing_keys(snap)
+  local out = {}
+  if type(snap) ~= "table" then
+    return { "defs", "counts", "mana" }
+  end
+  if snap.defs_known ~= true then out[#out + 1] = "defs" end
+  if snap.had_counts ~= true then out[#out + 1] = "counts" end
+  if snap.had_mana ~= true then out[#out + 1] = "mana" end
+  return out
+end
+
+local function _aura_refresh_confidence(snap, state_override)
+  if type(snap) ~= "table" then return nil end
+
+  snap.complete = _aura_complete(snap)
+
+  local has_defs = (snap.defs_known == true) or (snap.had_defs_partial == true)
+  local categories = 0
+  if has_defs then categories = categories + 1 end
+  if snap.had_counts == true then categories = categories + 1 end
+  if snap.had_mana == true then categories = categories + 1 end
+
+  local score = 0
+  if snap.defs_known == true then
+    score = score + 0.45
+  elseif snap.had_defs_partial == true then
+    score = score + 0.20
+  end
+  if snap.had_counts == true then score = score + 0.35 end
+  if snap.had_mana == true then score = score + 0.20 end
+  if score > 1 then score = 1 end
+
+  local state = "missing"
+  if snap.complete == true then
+    state = "complete"
+  elseif categories <= 0 then
+    state = "missing"
+  elseif categories == 1 then
+    if snap.had_counts == true then
+      state = "counts_only"
+    elseif has_defs then
+      state = "defs_only"
+    else
+      state = "partial"
+    end
+  else
+    state = "partial"
+  end
+
+  if tostring(state_override or "") ~= "" then
+    state = tostring(state_override)
+  end
+
+  snap.confidence_state = state
+  snap.confidence_score = score
+  snap.missing_keys = _copy_list(_aura_missing_keys(snap))
+  return snap
+end
+
+local function _aura_store_snapshot(tgt, snap)
+  tgt = _trim2(tgt)
+  if tgt == "" or type(snap) ~= "table" then return false end
+  _aura_refresh_confidence(snap)
+  Yso.occ.aura[tgt] = snap
+  Yso.occ.aura[_lc2(tgt)] = snap
+  return true
+end
+
+local function _aura_push_txn_log(txn, snap)
+  local log = Yso.occ._aura_txn_log or {}
+  local row = _copy_tbl(txn)
+  row.active = false
+  if type(snap) == "table" then
+    row.confidence_state = tostring(snap.confidence_state or "")
+    row.confidence_score = tonumber(snap.confidence_score or 0) or 0
+    row.missing_keys = _copy_list(snap.missing_keys)
+  else
+    row.missing_keys = {}
+  end
+  log[#log + 1] = row
+  local limit = math.floor(_aura_cfg_num("txn_log_size", 12))
+  while #log > limit do
+    table.remove(log, 1)
+  end
+  Yso.occ._aura_txn_log = log
+end
+
+local function _aura_build_snapshot(tgt, prev, P, opts)
+  opts = opts or {}
+
+  local physical = tonumber(opts.physical)
+  local mental = tonumber(opts.mental)
+  local counts_present = (opts.force_counts == true) or physical ~= nil or mental ~= nil
+  local partial_defs = _aura_has_partial_defs(P)
+  local read_complete = (opts.read_complete == true)
+
+  local had_counts = false
+  local counts_source = ""
+  if counts_present then
+    had_counts = true
+    counts_source = "read"
+  elseif type(prev) == "table" and prev.had_counts == true and (prev.physical ~= nil or prev.mental ~= nil) then
+    had_counts = true
+    counts_source = "carry"
+    physical = tonumber(prev.physical)
+    mental = tonumber(prev.mental)
+  end
+
+  local had_mana = false
+  local mana_pct = nil
+  local mana_cur = nil
+  local mana_max = nil
+  local mana_source = ""
+  if type(P) == "table" and P.had_mana == true then
+    had_mana = true
+    mana_pct = P.mana_pct
+    mana_cur = P.mana_cur
+    mana_max = P.mana_max
+    mana_source = "read"
+  elseif type(prev) == "table" and prev.had_mana == true then
+    had_mana = true
+    mana_pct = prev.mana_pct
+    mana_cur = prev.mana_cur
+    mana_max = prev.mana_max
+    mana_source = "carry"
+  end
+
+  local total = nil
+  if physical ~= nil or mental ~= nil then total = (physical or 0) + (mental or 0) end
+
+  local raw = {}
+  if type(prev) == "table" and type(prev.raw) == "table" then
+    raw = _copy_tbl(prev.raw)
+  end
+  if type(P) == "table" and type(P.raw) == "table" then
+    for k, v in pairs(P.raw) do raw[k] = v end
+  end
+
+  local snap = {
+    ts = tonumber(opts.ts) or _yso_now(),
+    read_id = tonumber(opts.read_id or (P and P.read_id) or (prev and prev.read_id) or 0) or 0,
+    read_complete = read_complete,
+    defs_known = read_complete,
+    had_counts = had_counts,
+    had_mana = had_mana,
+    had_defs = (read_complete == true) or partial_defs,
+    had_defs_partial = (partial_defs == true and read_complete ~= true) or false,
+    defs_state = read_complete and "complete" or (partial_defs and "partial" or "missing"),
+    counts_source = counts_source,
+    mana_source = mana_source,
+    physical = physical,
+    mental = mental,
+    aff_total = total,
+    mana_pct = mana_pct,
+    mana_cur = mana_cur,
+    mana_max = mana_max,
+    raw = raw,
+    txn_status = tostring(opts.txn_status or ""),
+    txn_reason = tostring(opts.txn_reason or ""),
+    txn_started_at = tonumber(opts.txn_started_at or 0) or 0,
+    txn_ended_at = tonumber(opts.txn_ended_at or 0) or 0,
+  }
+
+  for k in pairs(_A_KEYS) do
+    if read_complete then
+      if _A_AFF_KEYS[k] then
+        snap[k] = (P and P.affs[k] == true)
+      elseif P and P.defs[k] ~= nil then
+        snap[k] = (P.defs[k] == true)
+      elseif _A_BOOL_FLAG_KEYS[k] and P and type(P.raw[k]) == "boolean" then
+        snap[k] = (P.raw[k] == true)
+      else
+        snap[k] = false
+      end
+    elseif partial_defs then
+      local assigned = false
+      if _A_AFF_KEYS[k] and P and P.affs[k] ~= nil then
+        snap[k] = (P.affs[k] == true)
+        assigned = true
+      elseif P and P.defs[k] ~= nil then
+        snap[k] = (P.defs[k] == true)
+        assigned = true
+      elseif _A_BOOL_FLAG_KEYS[k] and P and type(P.raw[k]) == "boolean" then
+        snap[k] = (P.raw[k] == true)
+        assigned = true
+      end
+      if not assigned then
+        snap[k] = (type(prev) == "table") and prev[k] or nil
+      end
+    elseif type(prev) == "table" then
+      snap[k] = prev[k]
+    else
+      snap[k] = nil
+    end
+  end
+
+  return _aura_refresh_confidence(snap)
+end
+
+local function _aura_commit_pending(tgt, opts)
+  tgt = _trim2(tgt)
+  if tgt == "" then return nil end
+
+  opts = opts or {}
+  local P, matched = _aura_pending_for(tgt)
+  local prev = _aura_existing(tgt)
+  local read_complete = (opts.read_complete == true and matched == true)
+  local snap = _aura_build_snapshot(tgt, prev, P, {
+    ts = opts.ts,
+    read_id = matched and (tonumber(P.read_id or 0) or 0) or tonumber(opts.read_id or (prev and prev.read_id) or 0) or 0,
+    read_complete = read_complete,
+    physical = opts.physical,
+    mental = opts.mental,
+    force_counts = opts.force_counts,
+    txn_status = opts.txn_status,
+    txn_reason = opts.txn_reason,
+    txn_started_at = opts.txn_started_at,
+    txn_ended_at = opts.txn_ended_at,
+  })
+  _aura_store_snapshot(tgt, snap)
+  return snap, matched
+end
+
+local function _aura_close_txn(status, reason, opts)
+  local txn = Yso.occ._aura_txn or _aura_blank_txn()
+  if txn.active ~= true then
+    _aura_cancel_window_timer()
+    _aura_set_window_triggers(false)
+    return nil
+  end
+
+  opts = opts or {}
+  local now = tonumber(opts.ts) or _yso_now()
+  local snap = nil
+  if opts.commit == true then
+    snap = _aura_commit_pending(opts.tgt or txn.target, {
+      ts = now,
+      read_id = tonumber(txn.read_id or 0) or 0,
+      read_complete = (opts.read_complete == true),
+      physical = opts.physical,
+      mental = opts.mental,
+      force_counts = opts.force_counts,
+      txn_status = status,
+      txn_reason = reason,
+      txn_started_at = tonumber(txn.started_at or 0) or 0,
+      txn_ended_at = now,
+    })
+  end
+
+  txn.active = false
+  txn.status = tostring(status or txn.status or "closed")
+  txn.close_reason = tostring(reason or "")
+  txn.ended_at = now
+  txn.touched_at = now
+  txn.window_until = 0
+  txn.snapshot_state = type(snap) == "table" and tostring(snap.confidence_state or "") or ""
+  Yso.occ._aura_txn = txn
+
+  _aura_push_txn_log(txn, snap)
+  _aura_clear_pending("", 0)
+  _aura_cancel_window_timer()
+  _aura_set_window_triggers(false)
+
+  return snap
+end
+
+_aura_timeout_close = function(reason)
+  local txn = Yso.occ._aura_txn or _aura_blank_txn()
+  if txn.active ~= true then
+    _aura_cancel_window_timer()
+    _aura_set_window_triggers(false)
+    return false
+  end
+
+  local P = Yso.occ._aura_pending or _aura_clear_pending("", 0)
+  local commit = _aura_has_pending_data(P)
+  _aura_close_txn(commit and "timed_out" or "aborted", reason or "window_timeout", {
+    commit = commit,
+    tgt = txn.target,
+  })
+  return true
+end
+
+local function _aura_sync_txn()
+  local txn = Yso.occ._aura_txn or _aura_blank_txn()
+  if txn.active ~= true then return txn end
+  local now = _yso_now()
+  if tonumber(txn.window_until or 0) > 0 and now > tonumber(txn.window_until or 0) then
+    _aura_timeout_close("window_expired")
+    txn = Yso.occ._aura_txn or _aura_blank_txn()
+  end
+  return txn
+end
+
+local function _aura_touch_pending()
+  local txn = _aura_sync_txn()
+  if type(txn) ~= "table" or txn.active ~= true then return nil, nil end
+
+  local now = _yso_now()
+  local P = Yso.occ._aura_pending or _aura_clear_pending(txn.target, txn.read_id)
+  P.active = true
+  P.t = _trim2(txn.target)
+  P.key = tostring(txn.key or "")
+  P.read_id = tonumber(txn.read_id or 0) or 0
+  P.last_at = now
+
+  txn.touched_at = now
+  txn.window_until = now + _aura_cfg_num("window_s", 4.5)
+  Yso.occ._aura_txn = txn
+  _aura_schedule_window_timer(txn.read_id)
+  return txn, P
+end
+
+function Yso.occ.aura_begin(tgt, source)
+  tgt = _trim2(tgt)
   if tgt == "" then return false end
-  Yso.occ._aura_pending.t = tgt
-  Yso.occ._aura_pending.seen = {}
 
-  -- Phase 1 plumbing: track pending in Yso.state
+  source = tostring(source or "")
+  local key = _lc2(tgt)
+  local txn = _aura_sync_txn()
+  if txn.active == true and tostring(txn.key or "") ~= key then
+    local P = Yso.occ._aura_pending or _aura_clear_pending("", 0)
+    _aura_close_txn(_aura_has_pending_data(P) and "superseded" or "aborted", "new_target", {
+      commit = _aura_has_pending_data(P),
+      tgt = txn.target,
+    })
+    txn = Yso.occ._aura_txn or _aura_blank_txn()
+  end
+
+  if txn.active == true and tostring(txn.key or "") == key then
+    txn.status = "capturing"
+    txn.source = (source ~= "" and source) or txn.source or "readaura"
+    txn.confirmed_at = (tonumber(txn.confirmed_at or 0) > 0) and txn.confirmed_at or _yso_now()
+  else
+    Yso.occ._aura_serial = tonumber(Yso.occ._aura_serial or 0) + 1
+    txn = _aura_blank_txn()
+    txn.active = true
+    txn.status = "capturing"
+    txn.target = tgt
+    txn.key = key
+    txn.read_id = tonumber(Yso.occ._aura_serial or 0) or 0
+    txn.source = (source ~= "" and source) or "readaura"
+    txn.started_at = _yso_now()
+    txn.confirmed_at = txn.started_at
+  end
+
+  local now = _yso_now()
+  txn.target = tgt
+  txn.key = key
+  txn.touched_at = now
+  txn.window_until = now + _aura_cfg_num("window_s", 4.5)
+  Yso.occ._aura_txn = txn
+
+  local P = Yso.occ._aura_pending or _aura_clear_pending(tgt, txn.read_id)
+  if tostring(P.key or "") ~= key or tonumber(P.read_id or 0) ~= tonumber(txn.read_id or 0) or P.active ~= true then
+    P = _aura_clear_pending(tgt, txn.read_id)
+  end
+  P.active = true
+  P.t = tgt
+  P.key = key
+  P.read_id = tonumber(txn.read_id or 0) or 0
+  P.last_at = now
+  Yso.occ._aura_pending = P
+
+  _aura_set_window_triggers(true)
+  _aura_schedule_window_timer(txn.read_id)
+
   if Yso and Yso.ingest and type(Yso.ingest.readaura_begin) == "function" then
     pcall(Yso.ingest.readaura_begin, tgt, "occ:aura_begin")
   end
@@ -350,46 +824,170 @@ function Yso.occ.aura_begin(tgt)
   return true
 end
 
-function Yso.occ.aura_seen(key)
+function Yso.occ.aura_def(key, val)
   key = tostring(key or ""):lower()
-  if not _A_KEYS[key] then return false end
-  Yso.occ._aura_pending.seen[key] = true
+  if key == "" then return false end
+  local _, P = _aura_touch_pending()
+  if type(P) ~= "table" then return false end
+  local b = (val ~= false)
+  P.defs[key] = b
+  if _A_KEYS[key] then P.flags[key] = b end
   return true
 end
 
-function Yso.occ.aura_finalize(tgt, phys, ment)
-  tgt = tostring(tgt or ""):gsub("^%s+",""):gsub("%s+$","")
-  if tgt == "" then return false end
+function Yso.occ.aura_aff(key)
+  key = tostring(key or ""):lower()
+  if key == "" then return false end
+  local _, P = _aura_touch_pending()
+  if type(P) ~= "table" then return false end
+  P.affs[key] = true
+  if _A_KEYS[key] then P.flags[key] = true end
+  return true
+end
 
-  local p = tostring(Yso.occ._aura_pending.t or "")
-  local seen = ((p ~= "" and p:lower() == tgt:lower()) and Yso.occ._aura_pending.seen) or {}
+function Yso.occ.aura_flag(key, val)
+  key = tostring(key or "")
+  if key == "" then return false end
+  local _, P = _aura_touch_pending()
+  if type(P) ~= "table" then return false end
+  P.raw[key] = val
+  local low = key:lower()
+  if _A_KEYS[low] and type(val) == "boolean" then
+    if _A_AFF_KEYS[low] then
+      if val == true then P.affs[low] = true else P.affs[low] = nil end
+    else
+      P.defs[low] = (val == true)
+    end
+    P.flags[low] = (val == true)
+  end
+  return true
+end
 
-  local snap = {
-    ts = _yso_now(),
-    physical = tonumber(phys) or 0,
-    mental   = tonumber(ment) or 0,
-  }
+function Yso.occ.aura_seen(key)
+  key = tostring(key or ""):lower()
+  if _A_AFF_KEYS[key] then return Yso.occ.aura_aff(key) end
+  if _A_KEYS[key] then return Yso.occ.aura_def(key, true) end
+  return false
+end
 
-  for k in pairs(_A_KEYS) do
-    snap[k] = (seen[k] == true) and true or false
+function Yso.occ.aura_note_mana(tgt, cur, maxm)
+  tgt = _trim2(tgt)
+  cur = tonumber(cur)
+  maxm = tonumber(maxm)
+  if tgt == "" or cur == nil or maxm == nil or maxm <= 0 then return false end
+
+  local pct = math.floor((cur / maxm) * 100 + 0.5)
+  if pct < 0 then pct = 0 end
+  if pct > 100 then pct = 100 end
+
+  Yso.occ.mana_pct[_lc2(tgt)] = cur / maxm
+
+  if type(Yso.occ.set_target_mana_pct) == "function" then
+    pcall(Yso.occ.set_target_mana_pct, tgt, pct)
+  elseif Yso and Yso.tgt and type(Yso.tgt.set_mana_pct) == "function" then
+    pcall(Yso.tgt.set_mana_pct, tgt, pct)
   end
 
-  Yso.occ.aura[tgt] = snap
-  Yso.occ.aura[tgt:lower()] = snap
-  Yso.occ._aura_pending.t = ""
-  Yso.occ._aura_pending.seen = {}
+  local txn = _aura_sync_txn()
+  if txn.active == true and _lc2(tgt) == tostring(txn.key or "") then
+    local _, P = _aura_touch_pending()
+    if type(P) == "table" then
+      P.mana_pct = pct
+      P.mana_cur = cur
+      P.mana_max = maxm
+      P.had_mana = true
+    end
+  end
 
-  -- Phase 1 plumbing: persist result in Yso.state.opp[*].aura
+  local snap = _aura_existing(tgt)
+  if type(snap) == "table" then
+    snap.mana_pct = pct
+    snap.mana_cur = cur
+    snap.mana_max = maxm
+    snap.had_mana = true
+    snap.mana_source = "read"
+    _aura_refresh_confidence(snap)
+  end
+
+  return true
+end
+
+function Yso.occ.aura_txn_status(tgt)
+  local txn = _aura_sync_txn()
+  local key = _lc2(tgt)
+  local out = _copy_tbl(txn)
+  out.active = (txn.active == true)
+  out.matched = (key ~= "" and key == tostring(txn.key or ""))
+  out.window_remaining = 0
+  if out.active == true then
+    local remaining = tonumber(out.window_until or 0) - _yso_now()
+    if remaining < 0 then remaining = 0 end
+    out.window_remaining = remaining
+  end
+  return out
+end
+
+function Yso.occ.aura_finalize(tgt, phys, ment)
+  tgt = _trim2(tgt)
+  if tgt == "" then return false end
+
+  local txn = _aura_sync_txn()
+  local key = _lc2(tgt)
+  local matched = (txn.active == true and key == tostring(txn.key or ""))
+  local now = _yso_now()
+  local snap = nil
+
+  if txn.active == true and matched ~= true then
+    local P = Yso.occ._aura_pending or _aura_clear_pending("", 0)
+    _aura_close_txn(_aura_has_pending_data(P) and "superseded" or "aborted", "finale_target_mismatch", {
+      commit = _aura_has_pending_data(P),
+      tgt = txn.target,
+    })
+    txn = Yso.occ._aura_txn or _aura_blank_txn()
+    matched = false
+  end
+
+  if txn.active == true and matched == true then
+    snap = _aura_close_txn("complete", "finale", {
+      commit = true,
+      read_complete = true,
+      physical = phys,
+      mental = ment,
+      force_counts = true,
+      tgt = tgt,
+      ts = now,
+    })
+  else
+    snap = _aura_commit_pending(tgt, {
+      ts = now,
+      read_complete = false,
+      physical = phys,
+      mental = ment,
+      force_counts = true,
+      txn_status = "counts_only",
+      txn_reason = "finale_without_begin",
+      txn_started_at = 0,
+      txn_ended_at = now,
+    })
+    _aura_cancel_window_timer()
+    _aura_set_window_triggers(false)
+  end
+
+  if type(snap) ~= "table" then return false end
+
   if Yso and Yso.ingest and type(Yso.ingest.readaura_result) == "function" then
     local flags = {}
-    for k in pairs(_A_KEYS) do flags[k] = (snap[k] == true) end
-    pcall(Yso.ingest.readaura_result, tgt, snap.physical, snap.mental, flags, "occ:aura_finalize")
+    for k in pairs(_A_KEYS) do
+      if snap[k] ~= nil then flags[k] = (snap[k] == true) end
+    end
+    pcall(Yso.ingest.readaura_result, tgt, snap.physical or 0, snap.mental or 0, flags, "occ:aura_finalize")
   end
 
   return true
 end
 
 function Yso.occ.aura_get(tgt, key)
+  _aura_sync_txn()
   tgt = tostring(tgt or "")
   key = tostring(key or ""):lower()
   local a = Yso.occ.aura[tgt] or Yso.occ.aura[tgt:lower()]
@@ -399,23 +997,15 @@ function Yso.occ.aura_get(tgt, key)
   return a[key]
 end
 
--- Convenience boolean wrappers (fresh-only)
-function Yso.blind(t)      return Yso.occ.aura_get(t,"blind")      == true end
-function Yso.deaf(t)       return Yso.occ.aura_get(t,"deaf")       == true end
-function Yso.cloak(t)      return Yso.occ.aura_get(t,"cloak")      == true end
-function Yso.speed(t)      return Yso.occ.aura_get(t,"speed")      == true end
-function Yso.caloric(t)    return Yso.occ.aura_get(t,"caloric")    == true end
-function Yso.frost(t)      return Yso.occ.aura_get(t,"frost")      == true end
-function Yso.levitation(t) return Yso.occ.aura_get(t,"levitation") == true end
-function Yso.insomnia(t)   return Yso.occ.aura_get(t,"insomnia")   == true end
-function Yso.kola(t)       return Yso.occ.aura_get(t,"kola")       == true end
+function Yso.occ.readaura_is_ready()
+  local txn = _aura_sync_txn()
+  if type(txn) == "table" and txn.active == true then return false end
+  if Yso.occ._ra and Yso.occ._ra.ready ~= nil then return Yso.occ._ra.ready == true end
+  return Yso.occ.readaura_ready ~= false
+end
 
--- Returns:
---   true  -> attend is recommended (blind/deaf detected on target)
---   false -> attend not needed (snapshot says no blind/deaf, or mindseye present)
---   nil   -> unknown (no fresh snapshot)
 function Yso.occ.aura_need_attend(tgt)
-  if Yso and Yso.tgt and type(Yso.tgt.has_mindseye)=="function" and Yso.tgt.has_mindseye(tgt) then
+  if Yso and Yso.tgt and type(Yso.tgt.has_mindseye) == "function" and Yso.tgt.has_mindseye(tgt) then
     return false
   end
   local _t = tostring(tgt or "")
@@ -423,12 +1013,40 @@ function Yso.occ.aura_need_attend(tgt)
   if not a then return nil end
   local ttl = (Yso.occ.aura_cfg and Yso.occ.aura_cfg.ttl) or 20
   if ttl and ttl > 0 and (_yso_now() - (a.ts or 0)) > ttl then return nil end
-  return (a.blind or a.deaf) and true or false
+  if a.read_complete ~= true then return nil end
+  if a.blind == nil and a.deaf == nil then return nil end
+  return (a.blind == true or a.deaf == true)
 end
 
--- Optional: offense helper (EQ-gated, cooldown message-gated)
+function Yso.occ.set_readaura_ready(val, reason)
+  local r = (val == true)
+  Yso.occ._ra.ready  = r
+  Yso.occ._ra.reason = tostring(reason or Yso.occ._ra.reason or "")
+  Yso.occ._ra.mark   = _yso_now()
+  Yso.occ.readaura_ready = r
+
+  if r ~= true and tostring(reason or "") == "refusal_line" then
+    local P = Yso.occ._aura_pending or _aura_clear_pending("", 0)
+    _aura_close_txn(_aura_has_pending_data(P) and "refused" or "aborted", "refusal_line", {
+      commit = _aura_has_pending_data(P),
+      tgt = (Yso.occ._aura_txn and Yso.occ._aura_txn.target) or "",
+    })
+  else
+    _aura_sync_txn()
+  end
+
+  if Yso and Yso.ingest and type(Yso.ingest.readaura_ready) == "function" then
+    pcall(Yso.ingest.readaura_ready, r, Yso.occ._ra.reason, "occ:set_readaura_ready", { nowake = true })
+  end
+
+  if Yso.pulse and type(Yso.pulse.wake) == "function" then
+    Yso.pulse.wake("readaura:" .. (r and "ready" or "down"))
+  end
+  return r
+end
+
 function Yso.occ.queue_readaura(tgt)
-  tgt = tostring(tgt or ""):gsub("^%s+",""):gsub("%s+$","")
+  tgt = tostring(tgt or ""):gsub("^%s+", ""):gsub("%s+$", "")
   if tgt == "" then return false end
   if type(send) ~= "function" then return false end
 
@@ -442,6 +1060,9 @@ function Yso.occ.queue_readaura(tgt)
     return false
   end
 
+  if type(Yso.occ.aura_begin) == "function" then
+    pcall(Yso.occ.aura_begin, tgt, "queue_readaura")
+  end
   if type(Yso.occ.set_readaura_ready) == "function" then
     Yso.occ.set_readaura_ready(false, "sent")
   else
@@ -451,7 +1072,15 @@ function Yso.occ.queue_readaura(tgt)
   send("readaura " .. tgt)
   return true
 end
-
+function Yso.blind(t)      return Yso.occ.aura_get(t, "blind")      == true end
+function Yso.deaf(t)       return Yso.occ.aura_get(t, "deaf")       == true end
+function Yso.cloak(t)      return Yso.occ.aura_get(t, "cloak")      == true end
+function Yso.speed(t)      return Yso.occ.aura_get(t, "speed")      == true end
+function Yso.caloric(t)    return Yso.occ.aura_get(t, "caloric")    == true end
+function Yso.frost(t)      return Yso.occ.aura_get(t, "frost")      == true end
+function Yso.levitation(t) return Yso.occ.aura_get(t, "levitation") == true end
+function Yso.insomnia(t)   return Yso.occ.aura_get(t, "insomnia")   == true end
+function Yso.kola(t)       return Yso.occ.aura_get(t, "kola")       == true end
 --========================================================--
 -- Magical shield tracking (Yso)
 --========================================================--
@@ -879,6 +1508,7 @@ do
     "Yso.caloric",
     "Yso.clear_target",
     "Yso.cloak",
+    "Yso.target_flush_send_state",
     "Yso.core._req.try",
     "Yso.core.boot",
     "Yso.core.ensure_aliases",
@@ -1027,13 +1657,6 @@ do
     "Yso.occ.aura_get",
     "Yso.occ.aura_need_attend",
     "Yso.occ.aura_seen",
-    "Yso.occ.clock.disable",
-    "Yso.occ.clock.firelord_ack",
-    "Yso.occ.clock.macro",
-    "Yso.occ.clock.plan_and_fire",
-    "Yso.occ.clock.tick",
-    "Yso.occ.clock.toggle",
-    "Yso.occ.clock_dry_test_limb",
     "Yso.occ.entities.get",
     "Yso.occ.entities.set",
     "Yso.occ.getDom",
@@ -1064,10 +1687,6 @@ do
     "Yso.occultist.isTarotOffense",
     "Yso.occultist.listOccultismByRole",
     "Yso.occultist.listTarotByRole",
-    "Yso.oclocks.echo",
-    "Yso.oclocks.print",
-    "Yso.oclocks.recommend_mode",
-    "Yso.oclocks.status",
     "Yso.off.coord.on_target_leap",
     "Yso.off.oc.attack_eqonly",
     "Yso.off.oc.clear_sight",
@@ -1111,8 +1730,6 @@ do
     "Yso.off.oc.toggle",
     "Yso.off.oc.toggle_ai",
     "Yso.off.oc.toggle_tarot",
-    "Yso.off.oc.try_kelp_bury",
-    "Yso.off.oc.try_softlock_setup",
     "Yso.pacts.begin_capture",
     "Yso.pacts.finish_capture",
     "Yso.pacts.get_low",
@@ -1177,6 +1794,7 @@ do
     "Yso.set_sycophant_ready",
     "Yso.set_target",
     "Yso.set_tree_ready",
+    "Yso.target_flush_send_state",
     "Yso.set_tree_touched",
     "Yso.shield.is_up",
     "Yso.shield.mark_block",
@@ -1209,12 +1827,6 @@ do
     "Yso.state.update_vitals",
     "Yso.sycophant_ready",
     "Yso.target_is_valid",
-    "Yso.targeting._maybe_import_global",
-    "Yso.targeting.clear",
-    "Yso.targeting.get",
-    "Yso.targeting.lock",
-    "Yso.targeting.set",
-    "Yso.targeting.unlock",
     "Yso.tarot.devil_active",
     "Yso.tarot.devil_down",
     "Yso.tarot.devil_up",
@@ -1406,8 +2018,6 @@ do
       "Yso.off.oc.toggle",
       "Yso.off.oc.toggle_ai",
       "Yso.off.oc.toggle_tarot",
-      "Yso.off.oc.try_kelp_bury",
-      "Yso.off.oc.try_softlock_setup",
     },
     occultist_intel = {
       "Yso.occ.aura_begin",
@@ -1415,13 +2025,6 @@ do
       "Yso.occ.aura_get",
       "Yso.occ.aura_need_attend",
       "Yso.occ.aura_seen",
-      "Yso.occ.clock.disable",
-      "Yso.occ.clock.firelord_ack",
-      "Yso.occ.clock.macro",
-      "Yso.occ.clock.plan_and_fire",
-      "Yso.occ.clock.tick",
-      "Yso.occ.clock.toggle",
-      "Yso.occ.clock_dry_test_limb",
       "Yso.occ.entities.get",
       "Yso.occ.entities.set",
       "Yso.occ.getDom",
@@ -1464,12 +2067,6 @@ do
     },
     targeting = {
       "Yso.target_is_valid",
-      "Yso.targeting._maybe_import_global",
-      "Yso.targeting.clear",
-      "Yso.targeting.get",
-      "Yso.targeting.lock",
-      "Yso.targeting.set",
-      "Yso.targeting.unlock",
       "Yso.tgt.aff_cure",
       "Yso.tgt.aff_gain",
       "Yso.tgt.can_hear",
@@ -1582,6 +2179,7 @@ do
     misc_clear_target = {
       "Yso.clear_target",
     },
+      "Yso.target_flush_send_state",
     misc_core = {
       "Yso.core._req.try",
       "Yso.core.boot",
@@ -1707,12 +2305,6 @@ do
       "Yso.oc.prone.try_hook",
       "Yso.oc.prone.want_anorexia",
     },
-    misc_oclocks = {
-      "Yso.oclocks.echo",
-      "Yso.oclocks.print",
-      "Yso.oclocks.recommend_mode",
-      "Yso.oclocks.status",
-    },
     misc_pacts = {
       "Yso.pacts.begin_capture",
       "Yso.pacts.finish_capture",
@@ -1773,6 +2365,7 @@ do
     },
     misc_set_target = {
       "Yso.set_target",
+      "Yso.target_flush_send_state",
     },
     misc_set_tree_ready = {
       "Yso.set_tree_ready",

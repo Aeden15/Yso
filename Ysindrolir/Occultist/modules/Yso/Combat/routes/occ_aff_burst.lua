@@ -496,7 +496,16 @@ end
 
 function CS.snapshot(tgt)
   local a = _snapshot(tgt)
+  local txn = { active = false, matched = false, window_remaining = 0, status = "", close_reason = "" }
+  if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function" then
+    local ok, row = pcall(Yso.occ.aura_txn_status, tgt)
+    if ok and type(row) == "table" then
+      txn = row
+    end
+  end
   local ttl = tonumber((Yso and Yso.occ and Yso.occ.aura_cfg and Yso.occ.aura_cfg.ttl) or AB.cfg.aura_ttl_s or 20) or 20
+  local parse_window_open = (txn.active == true and txn.matched == true)
+  local parse_window_remaining = parse_window_open and (tonumber(txn.window_remaining or 0) or 0) or 0
   if not a then
     return {
       fresh = false,
@@ -511,15 +520,36 @@ function CS.snapshot(tgt)
       deaf = nil,
       speed = nil,
       shield = nil,
-      rebounding = nil,
-      mounted = nil,
       mana_pct = nil,
       mana_cur = nil,
       mana_max = nil,
+      defs_state = "missing",
+      confidence_state = parse_window_open and "pending" or "missing",
+      confidence_score = 0,
+      missing_keys = { "defs", "counts", "mana" },
+      parse_window_open = parse_window_open,
+      parse_window_remaining = parse_window_remaining,
+      txn_status = tostring(txn.status or ""),
+      txn_reason = tostring(txn.close_reason or ""),
+      txn_started_at = tonumber(txn.started_at or 0) or 0,
+      txn_read_id = tonumber(txn.read_id or 0) or 0,
     }
   end
   local fresh = true
   if ttl > 0 then fresh = (_now() - tonumber(a.ts or 0)) <= ttl end
+  local missing_keys = {}
+  if fresh and type(a.missing_keys) == "table" then
+    for i = 1, #a.missing_keys do
+      missing_keys[#missing_keys + 1] = a.missing_keys[i]
+    end
+  end
+  local confidence_state = fresh and tostring(a.confidence_state or "") or "stale"
+  if confidence_state == "" then
+    confidence_state = fresh and ((a.complete == true and "complete") or "partial") or "stale"
+  end
+  if parse_window_open and confidence_state == "missing" then
+    confidence_state = "pending"
+  end
   local function bool_field(key)
     if not fresh then return nil end
     if a[key] == true then return true end
@@ -543,8 +573,6 @@ function CS.snapshot(tgt)
     deaf = bool_field("deaf"),
     speed = bool_field("speed"),
     shield = bool_field("shield"),
-    rebounding = bool_field("rebounding"),
-    mounted = bool_field("mounted"),
     caloric = bool_field("caloric"),
     frost = bool_field("frost"),
     levitation = bool_field("levitation"),
@@ -555,6 +583,16 @@ function CS.snapshot(tgt)
     mana_cur = fresh and tonumber(a.mana_cur) or nil,
     mana_max = fresh and tonumber(a.mana_max) or nil,
     raw = (fresh and type(a.raw) == "table") and a.raw or nil,
+    defs_state = fresh and tostring(a.defs_state or "missing") or "missing",
+    confidence_state = confidence_state,
+    confidence_score = fresh and (tonumber(a.confidence_score or 0) or 0) or 0,
+    missing_keys = missing_keys,
+    parse_window_open = parse_window_open,
+    parse_window_remaining = parse_window_remaining,
+    txn_status = tostring(txn.status or ""),
+    txn_reason = tostring(txn.close_reason or ""),
+    txn_started_at = tonumber(txn.started_at or 0) or 0,
+    txn_read_id = tonumber(txn.read_id or 0) or 0,
     ts = tonumber(a.ts or 0) or 0,
     read_id = tonumber(a.read_id or 0) or 0,
   }
@@ -563,6 +601,12 @@ end
 function CS.plan_aff(tgt)
   local snap = CS.snapshot(tgt)
   local fresh = (snap and snap.fresh == true)
+  local missing = {}
+  if snap and type(snap.missing_keys) == "table" then
+    for i = 1, #snap.missing_keys do
+      missing[tostring(snap.missing_keys[i] or "")] = true
+    end
+  end
 
   local mana = nil
   if Yso and Yso.tgt and type(Yso.tgt.get_mana_pct) == "function" then
@@ -611,12 +655,16 @@ function CS.plan_aff(tgt)
     local ok, hostile = pcall(AB.S.loyals_hostile, tgt)
     loyals_readaura = (ok and hostile == true) or false
   end
+  local needs_defs = fresh and ((snap.read_complete ~= true) or missing.defs == true)
+  local needs_counts = fresh and ((snap.had_counts ~= true) or missing.counts == true)
+  local needs_mana_snapshot = fresh and (mana == nil and ((snap.had_mana ~= true) or missing.mana == true))
   local needs_readaura = (not fresh)
-    or (fresh and snap.read_complete ~= true)
-    or (fresh and snap.had_counts ~= true)
-    or (mana == nil and ((not fresh) or snap.had_mana ~= true))
+    or (fresh and snap.parse_window_open ~= true and (needs_defs or needs_counts or needs_mana_snapshot))
   if loyals_readaura == true then
     needs_readaura = true
+  end
+  if fresh and snap.parse_window_open == true then
+    needs_readaura = false
   end
   local bm_entry = (bm.active == true and _has_aff(tgt, "asthma"))
   local bm_branch_active = bm_entry and bm.state == "complete_enough" and (_has_aff(tgt, "paralysis") or _has_aff(tgt, "weariness"))
@@ -638,6 +686,15 @@ function CS.plan_aff(tgt)
     snapshot_read_complete = fresh and snap.read_complete == true,
     snapshot_had_counts = fresh and snap.had_counts == true,
     snapshot_had_mana = fresh and snap.had_mana == true,
+    snapshot_defs_state = tostring(snap.defs_state or "missing"),
+    snapshot_confidence_state = tostring(snap.confidence_state or (fresh and "missing" or "stale")),
+    snapshot_confidence_score = tonumber(snap.confidence_score or 0) or 0,
+    snapshot_missing_keys = snap.missing_keys or {},
+    snapshot_parse_window_open = (snap.parse_window_open == true),
+    snapshot_parse_window_remaining = tonumber(snap.parse_window_remaining or 0) or 0,
+    snapshot_txn_status = tostring(snap.txn_status or ""),
+    snapshot_txn_reason = tostring(snap.txn_reason or ""),
+    snapshot_txn_read_id = tonumber(snap.txn_read_id or 0) or 0,
     snapshot_aff_total = aff_total,
     snapshot_ts = snap and tonumber(snap.ts or 0) or 0,
     snapshot_read_id = snap and tonumber(snap.read_id or 0) or 0,
@@ -2330,17 +2387,27 @@ local function _readaura_tag(tgt)
   return "ab:eq:readaura:" .. _lc(tgt)
 end
 
+local function _missing_key(list, key)
+  if type(list) ~= "table" then return false end
+  key = _lc(key)
+  for i = 1, #list do
+    if _lc(list[i]) == key then return true end
+  end
+  return false
+end
+
 local function _should_probe_readaura(tgt, plan, burst_ready)
   if _recent_sent(_readaura_tag(tgt), tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return false end
+  if plan and plan.snapshot_parse_window_open == true then return false end
 
-  if plan and plan.snapshot_complete ~= true then return true end
+  if plan and (plan.snapshot_confidence_state == "stale" or plan.snapshot_complete ~= true) then return true end
 
   -- Once loyals are committed to the target, refresh aura on the normal requery cadence.
   if plan and plan.readaura_via_loyals == true then return true end
 
-  local need_defs = plan and (plan.snapshot_read_complete ~= true)
-  local need_counts = plan and (plan.snapshot_had_counts ~= true)
-  local need_mana = plan and (plan.mana_pct == nil)
+  local need_defs = plan and ((plan.snapshot_read_complete ~= true) or _missing_key(plan.snapshot_missing_keys, "defs"))
+  local need_counts = plan and ((plan.snapshot_had_counts ~= true) or _missing_key(plan.snapshot_missing_keys, "counts"))
+  local need_mana = plan and (plan.mana_pct == nil) and ((plan.snapshot_had_mana ~= true) or _missing_key(plan.snapshot_missing_keys, "mana"))
 
   if need_defs or need_counts or need_mana then return true end
 
@@ -3208,7 +3275,7 @@ function AB.on_sent(payload, ctx)
     local readaura_cmd = ("readaura %s"):format(tgt)
     if _lane_contains_cmd(eq_lane, readaura_cmd) and Yso and Yso.occ then
       if type(Yso.occ.aura_begin) == "function" then
-        pcall(Yso.occ.aura_begin, tgt)
+        pcall(Yso.occ.aura_begin, tgt, "occ_aff_burst_send")
       end
       if type(Yso.occ.set_readaura_ready) == "function" then
         pcall(Yso.occ.set_readaura_ready, false, "sent")
