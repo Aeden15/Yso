@@ -17502,15 +17502,15 @@ end
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Shielded</name>
-						<script>if IsTargetted(matches[2]) then
-	 if ak.ai() then return end
-   ak.shieldwhore = true
-   tempTimer(5,[[ak.shieldwhore = false]])
-   ak.defs.shield = true
-   ak.scoreup(matches[2])
-end
+						<script>local shield_target = matches[2]
+if not IsTargetted(shield_target) then return end
+if ak.ai() then return end
 
-cecho("&lt;yellow&gt;[DEFENSIVE] &lt;aquamarine&gt;(COMMAND GREMLIN!).\n")</script>
+ak.shieldwhore = true
+tempTimer(5,[[ak.shieldwhore = false]])
+ak.defs.shield = true
+ak.scoreup(shield_target)
+cecho("\n&lt;yellow&gt;[DEFENSIVE] &lt;aquamarine&gt;(COMMAND GREMLIN!).&lt;reset&gt;\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
