@@ -13,8 +13,8 @@
 --    ENT = entity commands (bubonis, storm, worm, slime, sycophant, chimera)
 --    FREE= loyals open / doppleganger coordination
 --
---  Sunder-style: route owns a timer-driven loop (start_loop/stop_loop) and sends
---  via _safe_send; propose() returns empty when loop is active.
+--  Alias-controlled: the shared route-loop controller owns timer scheduling.
+--  This route provides payload planning, emit helpers, and lifecycle hooks.
 --========================================================--
 
 Yso = Yso or {}
@@ -23,6 +23,7 @@ Yso.off.oc = Yso.off.oc or {}
 
 Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
 local PA = Yso.off.oc.party_aff
+PA.alias_owned = true
 
 PA.route_contract = PA.route_contract or {
   id = "party_aff",
@@ -726,64 +727,27 @@ end
 PA._ensure_registered = _ensure_registered
 
 function PA.schedule_loop(delay)
-  PA.init()
-  _kill_loop_timer()
-  if PA.state.loop_enabled ~= true then return false end
-  delay = tonumber(delay)
-  if delay == nil then
-    delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
+  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
+    return Yso.mode.schedule_route_loop("party_aff", delay)
   end
-  if delay < 0 then delay = 0 end
-  if type(tempTimer) ~= "function" then return false end
-  PA.state.timer_id = tempTimer(delay, function()
-    if PA.state then PA.state.timer_id = nil end
-    if Yso and Yso.off and Yso.off.oc and Yso.off.oc.party_aff == PA and type(PA.loop_tick) == "function" then
-      PA.loop_tick()
-    end
-  end)
-  return PA.state.timer_id ~= nil
+  return false
 end
 
-function PA.start_loop()
+PA.alias_loop_stop_details = PA.alias_loop_stop_details or {
+  inactive = true,
+  disabled = true,
+  policy = true,
+}
+
+function PA.alias_loop_prepare_start(ctx)
   PA.init()
   _ensure_registered()
-  Yso = Yso or {}
-  Yso.off = Yso.off or {}
-  Yso.off.oc = Yso.off.oc or {}
-  Yso.off.driver = Yso.off.driver or { state = {} }
-  if Yso.mode and type(Yso.mode.set_party_route) == "function" then
-    pcall(Yso.mode.set_party_route, "aff", "party_aff_loop")
-  end
-  if Yso.mode and type(Yso.mode.set_route_owned) == "function" then
-    pcall(Yso.mode.set_route_owned, "aff", true)
-  end
-  if Yso.mode and type(Yso.mode.set) == "function" then
-    pcall(Yso.mode.set, "party", "party_aff_loop")
-  end
-  local D = Yso.off.driver
-  if type(D.toggle) == "function" then
-    pcall(D.toggle, true)
-  else
-    D.state = D.state or {}
-    D.state.enabled = true
-  end
-  if type(D.set_active) == "function" then
-    pcall(D.set_active, "party_aff")
-  else
-    D.state = D.state or {}
-    D.state.active = "party_aff"
-  end
-  if type(D.set_policy) == "function" then
-    pcall(D.set_policy, "auto")
-  else
-    D.state = D.state or {}
-    D.state.policy = "auto"
-  end
-  _set_loop_enabled(true)
+  return ctx or {}
+end
+
+function PA.alias_loop_on_started(ctx)
   PA.state.busy = false
   _clear_waiting()
-  PA.state.template.last_reason = "start_loop"
-  PA.schedule_loop(0)
   _echo("Party aff loop ON.")
   local tgt = _target()
   if tgt == "" then
@@ -791,95 +755,32 @@ function PA.start_loop()
   elseif not _tgt_valid(tgt) then
     _echo(string.format("%s is not in room; holding.", tgt))
   end
-  return true
 end
 
-function PA.stop_loop(silent, reason)
+function PA.alias_loop_on_stopped(ctx)
   PA.init()
-  reason = tostring(reason or "manual")
-  _kill_loop_timer()
-  _set_loop_enabled(false)
-  PA.state.busy = false
-  _clear_waiting()
-  PA.state.template.last_disable_reason = reason
-  if Yso.mode and type(Yso.mode.set_route_owned) == "function" then
-    pcall(Yso.mode.set_route_owned, "aff", false)
-  end
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  if D and D.state then
-    local cur_active = _lc(D.state.active or "")
-    if cur_active == "party_aff" then
-      if type(D.set_active) == "function" then
-        pcall(D.set_active, "none")
-      else
-        D.state.active = "none"
-      end
-    end
-    local still_owns = (cur_active == "party_aff" or cur_active == "none" or cur_active == "")
-    if still_owns and _lc(D.state.policy or "") == "auto" then
-      if type(D.set_policy) == "function" then
-        pcall(D.set_policy, "manual")
-      else
-        D.state.policy = "manual"
-      end
-    end
-  end
-  if silent ~= true then
+  ctx = ctx or {}
+  local reason = tostring(ctx.reason or "manual")
+  if ctx.silent ~= true then
     _echo(string.format("Party aff loop OFF (%s).", reason))
   end
-  return false
 end
 
-function PA.loop_tick()
-  PA.init()
-  if PA.state then PA.state.timer_id = nil end
-  if PA.state.loop_enabled ~= true then return false end
-  if not _route_is_active() then
-    return PA.stop_loop(false, "route_inactive")
-  end
-  if PA.state.busy == true then
-    PA.schedule_loop(PA.state.loop_delay)
-    return false
-  end
-  if _waiting_blocks_tick() then
-    PA.schedule_loop(PA.state.loop_delay)
-    return false
-  end
-  PA.state.busy = true
-  local ok, sent, detail = pcall(function() return PA.attack_function() end)
-  PA.state.busy = false
-  if not ok then
-    _echo("Party aff loop error: " .. tostring(sent))
-    PA.schedule_loop(PA.state.loop_delay)
-    return false
-  end
-  if sent ~= true and (detail == "inactive" or detail == "disabled" or detail == "policy") then
-    return PA.stop_loop(false, detail)
-  end
-  PA.schedule_loop(PA.state.loop_delay)
-  return sent == true
+function PA.alias_loop_clear_waiting()
+  return _clear_waiting()
 end
 
-function PA.toggle(on)
-  PA.init()
-  if on == nil then
-    if PA.state.loop_enabled == true then
-      PA.stop_loop(false, "toggle")
-      return false
-    end
-    return PA.start_loop()
-  end
-  if on == true then return PA.start_loop() end
-  PA.stop_loop(false, "toggle")
-  return false
+function PA.alias_loop_waiting_blocks()
+  return _waiting_blocks_tick()
+end
+
+function PA.alias_loop_on_error(err)
+  _echo("Party aff loop error: " .. tostring(err))
 end
 
 function PA.tick(reasons)
   return false
 end
-
-function PA.start() return PA.start_loop() end
-function PA.stop()  return PA.stop_loop(false, "manual") end
 
 function PA.init()
   PA.cfg = PA.cfg or {}
@@ -908,16 +809,6 @@ function PA.reset(reason)
   return true
 end
 
-function PA.enable()
-  PA.init()
-  return PA.start_loop()
-end
-
-function PA.disable(reason)
-  PA.init()
-  PA.state.template.last_disable_reason = tostring(reason or "manual")
-  return PA.stop_loop(false, reason or "manual")
-end
 function PA.is_enabled() return PA.state and (PA.state.enabled == true or PA.state.loop_enabled == true) end
 function PA.is_active()  return _route_is_active() end
 
@@ -1142,7 +1033,9 @@ end
 
 function PA.on_enter(ctx)   PA.init(); return true end
 function PA.on_exit(ctx)
-  PA.stop_loop(true, "exit")
+  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
+    Yso.mode.stop_route_loop("party_aff", "exit", true)
+  end
   PA.reset("exit")
   return true
 end

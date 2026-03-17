@@ -1,11 +1,11 @@
 --========================================================--
 -- occ_aff_burst.lua
---  • Combat-mode duel affliction burst route for Occultist.
---  • Owns the mana-bury -> cleanseaura -> truename -> WM -> mentals ->
+--  * Combat-mode duel affliction burst route for Occultist.
+--  * Owns the mana-bury -> cleanseaura -> truename -> WM -> mentals ->
 --    enlighten -> speed strip -> utter -> unravel sequence.
---  • Firelord intentionally omitted in this pass.
---  • Route owns its affliction loop and sends directly; payload/propose remain
---    available as compatibility wrappers.
+--  * Firelord intentionally omitted in this pass.
+--  * Alias-controlled loop ownership now lives in the shared mode controller.
+--    This route keeps payload/propose logic plus route-specific lifecycle hooks.
 --========================================================--
 
 Yso = Yso or {}
@@ -2698,67 +2698,35 @@ local function _kill_loop_timer()
 end
 
 function AB.schedule_loop(delay)
-  AB.init()
-  _kill_loop_timer()
-  if AB.state.loop_enabled ~= true then return false end
-  delay = tonumber(delay)
-  if delay == nil then
-    delay = tonumber(AB.state.loop_delay or AB.cfg.loop_delay or 0.15) or 0.15
+  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
+    return Yso.mode.schedule_route_loop("occ_aff_burst", delay)
   end
-  if delay < 0 then delay = 0 end
-  if type(tempTimer) ~= "function" then return false end
-  AB.state.timer_id = tempTimer(delay, function()
-    if AB.state then AB.state.timer_id = nil end
-    if Yso and Yso.off and Yso.off.oc and Yso.off.oc.occ_aff_burst == AB and type(AB.loop_tick) == "function" then
-      AB.loop_tick()
-    end
-  end)
-  return AB.state.timer_id ~= nil
+  return false
 end
 
-function AB.start_loop()
+AB.alias_loop_stop_details = AB.alias_loop_stop_details or {
+  inactive = true,
+  disabled = true,
+}
+
+function AB.alias_loop_prepare_start(ctx)
   AB.init()
   local ok_runtime, runtime_ready = pcall(_ensure_runtime, false)
   if not ok_runtime then runtime_ready = false end
   pcall(_install_runtime_hooks)
+  ctx = ctx or {}
+  ctx.runtime_ready = (runtime_ready == true)
+  return ctx
+end
 
-  Yso = Yso or {}
-  Yso.off = Yso.off or {}
-  Yso.off.oc = Yso.off.oc or {}
-  Yso.off.driver = Yso.off.driver or { state = {} }
-
-  local D = Yso.off.driver
-  if Yso.mode and type(Yso.mode.set) == "function" then
-    pcall(Yso.mode.set, "combat", "aff_loop")
-  end
-  if type(D.toggle) == "function" then
-    pcall(D.toggle, true)
-  else
-    D.state = D.state or {}
-    D.state.enabled = true
-  end
-  if type(D.set_active) == "function" then
-    pcall(D.set_active, "occ_aff_burst")
-  else
-    D.state = D.state or {}
-    D.state.active = "occ_aff_burst"
-  end
-  if type(D.set_policy) == "function" then
-    pcall(D.set_policy, "auto")
-  else
-    D.state = D.state or {}
-    D.state.policy = "auto"
-  end
-
-  _set_loop_enabled(true)
+function AB.alias_loop_on_started(ctx)
+  ctx = ctx or {}
   _ensure_predict_enabled()
   AB.state.busy = false
   _clear_waiting()
-  AB.state.template.last_reason = "start_loop"
-  AB.schedule_loop(0)
 
   if AB.cfg.echo == true and type(cecho) == "function" then
-    if runtime_ready ~= true then
+    if ctx.runtime_ready ~= true then
       cecho("<HotPink>[Occultism] <reset>aff runtime bootstrap incomplete; using local fallback state.\n")
     end
     cecho("<dark_orchid>[Occultism] <aquamarine>aff loop ON<reset>\n")
@@ -2775,18 +2743,12 @@ function AB.start_loop()
       end
     end
   end
-
-  return true
 end
 
-function AB.stop_loop(silent, reason)
+function AB.alias_loop_on_stopped(ctx)
   AB.init()
-  reason = tostring(reason or "manual")
-  _kill_loop_timer()
-  _set_loop_enabled(false)
-  AB.state.busy = false
-  _clear_waiting()
-  AB.state.template.last_disable_reason = reason
+  ctx = ctx or {}
+  local reason = tostring(ctx.reason or "manual")
 
   if _loyals_any_active() then
     _send_loyals_passive("occ_aff_burst:" .. reason)
@@ -2796,89 +2758,24 @@ function AB.stop_loop(silent, reason)
   end
   _release_predict_if_bootstrapped()
 
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  if D and D.state then
-    local cur_active = _lc(D.state.active or "")
-    if cur_active == "occ_aff_burst" then
-      if type(D.set_active) == "function" then
-        pcall(D.set_active, "none")
-      else
-        D.state.active = "none"
-      end
-    end
-    local still_owns = (cur_active == "occ_aff_burst" or cur_active == "none" or cur_active == "")
-    if still_owns and _lc(D.state.policy or "") == "auto" then
-      if type(D.set_policy) == "function" then
-        pcall(D.set_policy, "manual")
-      else
-        D.state.policy = "manual"
-      end
-    end
-  end
-
-  if silent ~= true and AB.cfg.echo == true and type(cecho) == "function" then
+  if ctx.silent ~= true and AB.cfg.echo == true and type(cecho) == "function" then
     cecho(string.format("<dark_orchid>[Occultism] <yellow>aff loop OFF<reset> (%s)\n", reason))
   end
-
-  return false
 end
 
-function AB.toggle_loop()
-  AB.init()
-  if AB.state.loop_enabled == true then
-    return AB.stop_loop(false, "toggle")
-  end
-  return AB.start_loop()
+function AB.alias_loop_clear_waiting()
+  return _clear_waiting()
 end
 
-function AB.loop_tick()
-  AB.init()
-  if AB.state then AB.state.timer_id = nil end
-  if AB.state.loop_enabled ~= true then return false end
-  if not _route_active() then
-    return AB.stop_loop(false, "route_inactive")
-  end
-  if AB.state.busy == true then
-    AB.schedule_loop(AB.state.loop_delay)
-    return false
-  end
-  if _waiting_blocks_tick() then
-    AB.schedule_loop(AB.state.loop_delay)
-    return false
-  end
-
-  AB.state.busy = true
-  local ok, sent, detail = pcall(function() return AB.attack_function() end)
-  AB.state.busy = false
-
-  if not ok then
-    if AB.cfg.echo == true and type(cecho) == "function" then
-      cecho(string.format("<HotPink>[Occultism] <reset>aff loop error: %s\n", tostring(sent)))
-    end
-    AB.schedule_loop(AB.state.loop_delay)
-    return false
-  end
-
-  if sent ~= true and (detail == "inactive" or detail == "disabled") then
-    return AB.stop_loop(false, detail)
-  end
-
-  AB.schedule_loop(AB.state.loop_delay)
-  return sent == true
+function AB.alias_loop_waiting_blocks()
+  return _waiting_blocks_tick()
 end
 
-function AB.toggle(on)
-  if on == nil then return AB.toggle_loop() end
-  if on == true then return AB.start_loop() end
-  return AB.stop_loop(false, "toggle")
+function AB.alias_loop_on_error(err)
+  if AB.cfg.echo == true and type(cecho) == "function" then
+    cecho(string.format("<HotPink>[Occultism] <reset>aff loop error: %s\n", tostring(err)))
+  end
 end
-
-function AB.automation_toggle()
-  return AB.toggle_loop() == true
-end
-
-function AB.start() return AB.start_loop() end
-function AB.stop()  return AB.stop_loop(false, "manual") end
 
 ------------------------------------------------------------
 -- Template Contract Facade
@@ -2914,17 +2811,6 @@ function AB.reset(reason)
   AB.state.template.last_reason = tostring(reason or "manual")
   AB.state.template.last_payload = nil
   return true
-end
-
-function AB.enable()
-  AB.init()
-  return AB.toggle(true)
-end
-
-function AB.disable(reason)
-  AB.init()
-  AB.state.template.last_disable_reason = tostring(reason or "manual")
-  return AB.toggle(false)
 end
 
 function AB.is_enabled()
@@ -3510,7 +3396,9 @@ function AB.on_enter(ctx)
 end
 
 function AB.on_exit(ctx)
-  AB.stop_loop(true, "exit")
+  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
+    Yso.mode.stop_route_loop("occ_aff_burst", "exit", true)
+  end
   AB.reset("exit")
   return true
 end

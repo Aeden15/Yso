@@ -167,12 +167,16 @@ Aliases
     ^par aff$ selects party_aff support pressure only and does not invoke occ_aff_burst.
 
 
-Automation Notes (2026-03-16)
+Automation Notes (2026-03-17)
 -----------------------------
-  aff, dam, and party aff remain alias-owned, route-local timer loops.
-  aff toggles occ_aff_burst; dam toggles group_damage; party aff toggles party_aff.
+  aff, dam, and party aff are alias-owned loops driven by the shared
+  Yso.mode route-loop controller.
+  aff toggles occ_aff_burst; dam/gd toggle group_damage; party aff toggles
+  party_aff.
   occ_aff_burst is duel-only behind ^aff$; party aff remains a separate support
   route behind ^par aff$.
+  Route files now expose payload/reasoning hooks to the controller rather than
+  owning their own public start/stop/toggle timer wrapper layer.
   Loop payloads now emit through Yso.queue.emit and the lock-aware readiness layer
   instead of raw route-local sends, so entity lane spends are tracked locally.
   Combined payloads wait on every spent lane (EQ/BAL/entity/free as applicable)
