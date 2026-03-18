@@ -166,6 +166,7 @@ GD.state.empress = GD.state.empress or { pending = false, target = "", dir = "",
 GD.state.justice_once = GD.state.justice_once or {}
 local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
 local function _lc(s) return _trim(s):lower() end
+local function _tkey(s) return _lc(s) end
 
 local function _now()
   -- Use canonical clock (seconds, handles getEpoch ms) to keep worm timers sane.
@@ -313,10 +314,6 @@ local function _set_loyals_hostile(v)
   else
     Yso.state.loyals_hostile = (v == true)
   end
-end
-
-local function _tkey(s)
-  return _lc(s)
 end
 
 local function _vitals()

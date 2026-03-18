@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: 2026-03-16
+Last updated: 2026-03-18
 
 
 Recent READAURA Update
@@ -32,6 +32,33 @@ Implementation notes:
   Yso system.xml is rebuilt from the Occultist source tree.
   AK.xml is not rebuilt by the Occultist export pipeline and must be maintained
   separately when READAURA compatibility changes.
+
+
+Blademaster Spar 3 Follow-up (2026-03-18)
+-----------------------------------------
+  [fix] occ_aff_burst: free-lane routing now asks the Parry Module for a live
+        balanceless parry command and injects it into the affliction loop payload.
+        This keeps Blademaster arm-parry swaps inside the route loop instead of
+        waiting on prompt-only reevaluation.
+  [fix] Parry Module: added a transient Blademaster restore override. When an
+        actual damaged-leg restoration cure lands, parry can swap to a healthier
+        arm (rerolling ties) until both legs are clean and the character is
+        standing again. Explicit debounce added for loop safety.
+  [fix] occ_aff_burst: loyals opener now flags the immediate follow-up READAURA
+        window before the first payload is built, preventing the opener from
+        spending EQ on a normal aff action before the initial aura read.
+  [fix] target_intel + AK.xml: enemy herb/mineral cure tracking now treats
+        hawthorn/calamine as deaf reopen and bayberry/arsenic as blind reopen.
+  [fix] AK.xml: sileris shell-drop tracking is separated from slickness gain;
+        the protective coating slough-off line no longer promotes slickness as
+        though it were a fresh affliction gain.
+  [fix] AK.xml: aura-result echo now forces a clean newline after the [phys|ment]
+        display so downstream Occultist cechos do not bleed onto the same line.
+  [fix] Legacy V2.1.xml: added a transient Blademaster mobility reprio ladder:
+        disrupted > frozen > shivering before first leg damage, then disrupted >
+        frozen > damaged leg > shivering once either leg is damaged.
+  [fix] group_damage.lua: restored the local _tkey helper before worm/empress
+        helpers use it, eliminating the nil global call seen during testing.
 
 
 Architecture Overview

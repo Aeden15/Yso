@@ -2868,7 +2868,13 @@ function AB.attack_function(arg)
   end
 
   local tgt = info
+  local loyals_bootstrap_pending = (_trim(select(1, _loyals_open_cmd(tgt))) ~= "")
   local plan = CS.plan_aff(tgt)
+  if loyals_bootstrap_pending then
+    plan.needs_readaura = true
+    plan.readaura_via_loyals = true
+    plan.snapshot_fresh = false
+  end
   local anti = _anti_tumble_plan(tgt)
   plan.finish = _finish_view(tgt, plan)
   plan.finish_stage = plan.finish and plan.finish.stage or "pressure"
@@ -2890,6 +2896,7 @@ function AB.attack_function(arg)
   local eq_cmd, eq_cat, eq_tag, eq_lock = nil, nil, nil, nil
   local bal_cmd, bal_cat, bal_tag, bal_lock = anti.bal_cmd, anti.bal_cat, anti.bal_tag, nil
   local entity_cmd, entity_cat = nil, nil
+  local parry_cmd, parry_limb = nil, nil
 
   -- A. Defensive measures on me.
   -- This route currently has no self-defensive pre-send branch beyond loop invalidation.
@@ -2934,9 +2941,16 @@ function AB.attack_function(arg)
     _record_checkpoint(entity_cat)
   end
 
-  free_cmd = _chain_cmds(_take_free_recovery(), free_cmd)
-  if legality.queue_stand == true then
-    free_cmd = _chain_cmds("stand", free_cmd)
+  if Yso and Yso.parry and type(Yso.parry.next_command) == "function" then
+    local ok_parry, cand_cmd, cand_limb = pcall(Yso.parry.next_command, { source = "occ_aff_burst", target = tgt })
+    if ok_parry then
+      parry_cmd = _trim(cand_cmd)
+      parry_limb = _trim(cand_limb)
+    end
+  end
+
+  free_cmd = _chain_cmds((legality.queue_stand == true) and "stand" or "", parry_cmd, _take_free_recovery(), free_cmd)
+  if legality.queue_stand == true or _trim(parry_cmd) ~= "" then
     free_cat = free_cat or "self_legality"
   end
 
@@ -3082,6 +3096,8 @@ function AB.attack_function(arg)
       checkpoint = AB.state.resume_checkpoint,
       explain = AB.state.explain,
       main_lane = main_lane,
+      parry_cmd = parry_cmd,
+      parry_limb = parry_limb,
     },
   }
   AB.state.template.last_payload = payload
@@ -3150,6 +3166,10 @@ function AB.on_sent(payload, ctx)
 
   if tgt ~= "" then
     local loyals_cmd = (tostring(AB.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
+    if type(payload.meta) == "table" and _trim(payload.meta.parry_limb or "") ~= "" and Yso and Yso.parry and type(Yso.parry.note_sent) == "function" then
+      pcall(Yso.parry.note_sent, payload.meta.parry_limb)
+    end
+
     if _lane_contains_cmd(free_lane, loyals_cmd) then
       _mark_loyals_for_target(tgt)
     end

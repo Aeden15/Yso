@@ -7852,7 +7852,11 @@ ak.occie.aura.mental   = matches[4] + 0
 if ak and type(ak.scoreup) == "function" then ak.scoreup(matches[2]) end
 
 cecho(string.format("&lt;yellow&gt;[&lt;white&gt;%d|&lt;cyan&gt;%d&lt;yellow&gt;]", (matches[3] + 0), (matches[4] + 0)))
-if (not ak.defs.speed) then cecho("\n-- &lt;red&gt;-&lt;white&gt;SPEED&lt;red&gt;-&lt;white&gt;SPEED&lt;red&gt;-&lt;white&gt;SPEED&lt;red&gt;") end
+if (not ak.defs.speed) then
+  cecho("\n-- &lt;red&gt;-&lt;white&gt;SPEED&lt;red&gt;-&lt;white&gt;SPEED&lt;red&gt;-&lt;white&gt;SPEED&lt;red&gt;")
+else
+  cecho("\n")
+end
 
 tempTimer(0, function()
   disableTrigger("Finale Read Aura")
@@ -21155,11 +21159,14 @@ end</script>
 ak.limbs.ParseonLine()
 if IsTargetted(multimatches[2][2]) and not table.contains(ak.slickfucks,multimatches[2][2]) then 
   ak.defs.sileris = false
-  if affstrack.score.slickness == 100 then
-    OppGainedAff("slickness")
+  if Yso and Yso.tgt and type(Yso.tgt.get) == "function" then
+    local ok, row = pcall(Yso.tgt.get, multimatches[2][2])
+    if ok and type(row) == "table" then
+      row.meta = row.meta or {}
+      row.meta.last_sileris_down_at = (type(getEpoch) == "function" and getEpoch()) or os.time()
     end
-  if partyRelayed then partyRelayed("slickness") end
-
+  end
+  if partyRelayed then partyRelayed("sileris_down") end
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>1</conditonLineDelta>
@@ -31192,8 +31199,23 @@ end</script>
     ocured[ocured.conversion[what]] = {}
   end
   if what == "hawthorn berry" or what == "calamine crystal" then
-    affstrack.score.deaf = 100
-    tempTimer(3,[[affstrack.score.deaf = 0;ak.scoreup(target)]])
+    if affstrack.score.deaf > 0 then
+      affstrack.score.deaf = 0
+      ak.AfflictionCured("deaf")
+      ak.ResetConfirmAff("deaf")
+    end
+    if Yso and Yso.tgt and type(Yso.tgt.note_target_herb) == "function" then
+      pcall(Yso.tgt.note_target_herb, target, (what == "hawthorn berry") and "hawthorn" or "calamine")
+    end
+  elseif what == "bayberry bark" or what == "arsenic pellet" then
+    if affstrack.score.blind > 0 then
+      affstrack.score.blind = 0
+      ak.AfflictionCured("blind")
+      ak.ResetConfirmAff("blind")
+    end
+    if Yso and Yso.tgt and type(Yso.tgt.note_target_herb) == "function" then
+      pcall(Yso.tgt.note_target_herb, target, (what == "bayberry bark") and "bayberry" or "arsenic")
+    end
   elseif not affstrack.eaten[what] then 
     return
   else

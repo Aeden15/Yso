@@ -7118,6 +7118,7 @@ GD.state.empress = GD.state.empress or { pending = false, target = &quot;&quot;,
 GD.state.justice_once = GD.state.justice_once or {}
 local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
 local function _lc(s) return _trim(s):lower() end
+local function _tkey(s) return _lc(s) end
 
 local function _now()
   -- Use canonical clock (seconds, handles getEpoch ms) to keep worm timers sane.
@@ -7265,10 +7266,6 @@ local function _set_loyals_hostile(v)
   else
     Yso.state.loyals_hostile = (v == true)
   end
-end
-
-local function _tkey(s)
-  return _lc(s)
 end
 
 local function _vitals()
@@ -9108,6 +9105,10 @@ T.cure_map = T.cure_map or {
   lobelia    = {&quot;agoraphobia&quot;,&quot;guilt&quot;,&quot;spiritburn&quot;,&quot;tenderskin&quot;,&quot;claustrophobia&quot;,&quot;loneliness&quot;,&quot;masochism&quot;,&quot;recklessness&quot;,&quot;vertigo&quot;},
   ash        = {&quot;confusion&quot;,&quot;dementia&quot;,&quot;hallucinations&quot;,&quot;hypersomnia&quot;,&quot;paranoia&quot;},
   bellwort   = {&quot;retribution&quot;,&quot;timeloop&quot;,&quot;peace&quot;,&quot;justice&quot;,&quot;lovers&quot;},
+  hawthorn   = {&quot;deaf&quot;,&quot;deafness&quot;},
+  calamine   = {&quot;deaf&quot;,&quot;deafness&quot;},
+  bayberry   = {&quot;blind&quot;,&quot;blindness&quot;},
+  arsenic    = {&quot;blind&quot;,&quot;blindness&quot;},
 }
 
 -- Call this when you see: &quot;&lt;target&gt; eats &lt;herb&gt;.&quot;
@@ -12871,7 +12872,7 @@ end
 -- Yso Parry Module (class-agnostic)
 --   Defensive limb parrying against limb-prep classes.
 --   Parries the &quot;final limb&quot; closest to breaking for an
---   enemy&apos;s kill condition.  Special BM riftlock handling
+--   enemy&apos;s kill condition. Special BM restore handling
 --   keeps one arm delayed so rift/salve access is preserved.
 --
 --   PARRY is free/instant - no balance cost.
@@ -12882,12 +12883,22 @@ Yso.parry = Yso.parry or {}
 local P = Yso.parry
 
 P.cfg = P.cfg or {
-  enabled   = true,
-  threshold = 100,    -- min affstrack.score before we consider parrying a limb
-  debug     = false,
+  enabled            = true,
+  threshold          = 100,    -- min self limb score before we consider standard parrying
+  debug              = false,
+  route_debounce_s   = 0.45,   -- explicit debounce for free-lane routing
+  restore_override_s = 12.0,   -- safety cap if state gets desynced
 }
 
 P._current = P._current or nil
+P._last_sent_at = tonumber(P._last_sent_at or 0) or 0
+P._last_sent_limb = tostring(P._last_sent_limb or &quot;&quot;)
+P._restore = P._restore or {
+  active = false,
+  started_at = 0,
+  last_cured_leg = &quot;&quot;,
+}
+P._trigs = P._trigs or {}
 
 ------------------------------------------------------------
 -- Kill-condition table: which limbs each class needs
@@ -12928,16 +12939,79 @@ local function _p_echo(msg)
   end
 end
 
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v &gt; 1e12 then v = v / 1000 end
+      return v
+    end
+  end
+  return os.time()
+end
+
 local function _self_score(limb)
   if not affstrack or type(affstrack.score) ~= &quot;table&quot; then return 0 end
   return tonumber(affstrack.score[limb]) or 0
 end
 
+local function _self_has_aff(aff)
+  aff = tostring(aff or &quot;&quot;):lower()
+  if aff == &quot;&quot; then return false end
+  if Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(Yso.self.has_aff, aff)
+    if ok and v == true then return true end
+  end
+  if Legacy and Legacy.Curing and type(Legacy.Curing.Affs) == &quot;table&quot; and Legacy.Curing.Affs[aff] then
+    return true
+  end
+  if affstrack and type(affstrack.score) == &quot;table&quot; then
+    return (tonumber(affstrack.score[aff]) or 0) &gt;= 100
+  end
+  return false
+end
+
+local function _self_standing()
+  if Yso and Yso.self and type(Yso.self.is_standing) == &quot;function&quot; then
+    local ok, v = pcall(Yso.self.is_standing)
+    if ok then return v == true end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  local posture = tostring(v.position or v.posture or v.pose or v.state or &quot;&quot;):lower()
+  if posture ~= &quot;&quot; then
+    if posture:find(&quot;stand&quot;, 1, true) then return true end
+    if posture:find(&quot;prone&quot;, 1, true)
+      or posture:find(&quot;supine&quot;, 1, true)
+      or posture:find(&quot;kneel&quot;, 1, true)
+      or posture:find(&quot;sit&quot;, 1, true)
+      or posture:find(&quot;sleep&quot;, 1, true)
+    then
+      return false
+    end
+  end
+  return not (_self_has_aff(&quot;prone&quot;) or _self_has_aff(&quot;sleeping&quot;) or _self_has_aff(&quot;fallen&quot;))
+end
+
 local function _enemy_class()
-  if Legacy and Legacy.CT and Legacy.CT.Enemies and type(target) == &quot;string&quot; and target ~= &quot;&quot; then
-    return Legacy.CT.Enemies[target]
+  local cur_target = rawget(_G, &quot;target&quot;)
+  if Legacy and Legacy.CT and Legacy.CT.Enemies and type(cur_target) == &quot;string&quot; and cur_target ~= &quot;&quot; then
+    return Legacy.CT.Enemies[cur_target]
   end
   return nil
+end
+
+local function _current_cureset()
+  local prof = Yso and Yso.curing and Yso.curing._active_profile or nil
+  if type(prof) == &quot;string&quot; and prof ~= &quot;&quot; then return prof:lower() end
+  local cur = rawget(_G, &quot;CurrentCureset&quot;)
+  if type(cur) == &quot;string&quot; and cur ~= &quot;&quot; then return cur:lower() end
+  return &quot;&quot;
 end
 
 local function _find_highest_unbroken(limbs)
@@ -12952,6 +13026,74 @@ local function _find_highest_unbroken(limbs)
   return best_limb, best_score
 end
 
+local function _bm_restore_context()
+  if _current_cureset() == &quot;blademaster&quot; then return true end
+  return _enemy_class() == &quot;Blademaster&quot;
+end
+
+local function _arm_candidate_for_restore()
+  local la = _self_score(&quot;leftarm&quot;)
+  local ra = _self_score(&quot;rightarm&quot;)
+  local left_ok = la &lt; 300
+  local right_ok = ra &lt; 300
+  if not left_ok and not right_ok then return nil end
+  if left_ok and not right_ok then return &quot;leftarm&quot;, la end
+  if right_ok and not left_ok then return &quot;rightarm&quot;, ra end
+  if la == ra then
+    return ((math.random(2) == 1) and &quot;leftarm&quot; or &quot;rightarm&quot;), la
+  end
+  if la &lt; ra then return &quot;leftarm&quot;, la end
+  return &quot;rightarm&quot;, ra
+end
+
+local function _restore_finished()
+  return (not _self_has_aff(&quot;damagedleftleg&quot;))
+     and (not _self_has_aff(&quot;damagedrightleg&quot;))
+     and _self_standing()
+end
+
+function P.note_leg_restored(aff)
+  aff = tostring(aff or &quot;&quot;):lower()
+  if aff ~= &quot;damagedleftleg&quot; and aff ~= &quot;damagedrightleg&quot; then return false end
+  if not _bm_restore_context() then return false end
+  P._restore = P._restore or {}
+  P._restore.active = true
+  P._restore.started_at = _now()
+  P._restore.last_cured_leg = aff
+  _p_echo(&quot;BM restore override armed via &quot; .. aff)
+  return true
+end
+
+function P.clear_restore(reason)
+  if P._restore then
+    P._restore.active = false
+    P._restore.started_at = 0
+    P._restore.last_cured_leg = &quot;&quot;
+  end
+  if reason then _p_echo(&quot;restore override cleared: &quot; .. tostring(reason)) end
+end
+
+local function _restore_override_candidate()
+  local R = P._restore or {}
+  if R.active ~= true then return nil end
+  if not _bm_restore_context() then
+    P.clear_restore(&quot;context&quot;)
+    return nil
+  end
+  if _restore_finished() then
+    P.clear_restore(&quot;legs_clean_and_standing&quot;)
+    return nil
+  end
+  local cap = tonumber(P.cfg.restore_override_s or 12.0) or 12.0
+  if cap &gt; 0 and (_now() - tonumber(R.started_at or 0)) &gt; cap then
+    P.clear_restore(&quot;safety_timeout&quot;)
+    return nil
+  end
+  local limb, score = _arm_candidate_for_restore()
+  if not limb then return nil end
+  return limb, math.max(1000, 1000 - (tonumber(score) or 0)), &quot;bm_restore_override&quot;
+end
+
 ------------------------------------------------------------
 -- Core evaluation
 ------------------------------------------------------------
@@ -12959,6 +13101,11 @@ end
 function P.evaluate()
   if not P.cfg.enabled then return nil end
   if not (Yso.toggles and Yso.toggles.parry) then return nil end
+
+  local override_limb, override_score, override_reason = _restore_override_candidate()
+  if override_limb then
+    return override_limb, override_score, override_reason
+  end
 
   local class = _enemy_class()
   if not class then return nil end
@@ -12998,32 +13145,60 @@ function P.evaluate()
     end
   end
 
-  return candidate, candidate_score
+  return candidate, candidate_score, &quot;standard&quot;
 end
 
-------------------------------------------------------------
--- Send the PARRY command if the target changed
-------------------------------------------------------------
+function P.command_for_limb(limb)
+  limb = tostring(limb or &quot;&quot;)
+  if limb == &quot;&quot; then return nil end
+  return &quot;parry &quot; .. (_LIMB_CMD[limb] or limb)
+end
 
-function P.update()
-  local limb, score = P.evaluate()
+function P.next_command(opts)
+  opts = opts or {}
+  local limb, score, reason = P.evaluate()
   if not limb then
     if P._current then
       _p_echo(&quot;no parry needed - clearing&quot;)
       P._current = nil
     end
-    return
+    return nil, nil, score, reason
   end
+  if limb == P._current then return nil, limb, score, reason end
+  local now = _now()
+  local debounce = tonumber(P.cfg.route_debounce_s or 0.45) or 0.45
+  if debounce &gt; 0 and P._last_sent_limb == limb and (now - tonumber(P._last_sent_at or 0)) &lt; debounce then
+    return nil, limb, score, reason
+  end
+  return P.command_for_limb(limb), limb, score, reason
+end
 
-  if limb == P._current then return end
+function P.note_sent(limb_or_cmd)
+  local limb = tostring(limb_or_cmd or &quot;&quot;)
+  limb = limb:gsub(&quot;^parry%s+&quot;, &quot;&quot;)
+  limb = limb:gsub(&quot;%s+&quot;, &quot;&quot;)
+  if limb == &quot;leftleg&quot; or limb == &quot;rightleg&quot; or limb == &quot;leftarm&quot; or limb == &quot;rightarm&quot; or limb == &quot;head&quot; or limb == &quot;torso&quot; then
+    P._current = limb
+    P._last_sent_limb = limb
+    P._last_sent_at = _now()
+    return true
+  end
+  return false
+end
 
-  P._current = limb
-  local cmd_limb = _LIMB_CMD[limb] or limb
+------------------------------------------------------------
+-- Send the PARRY command if needed (non-route fallback)
+------------------------------------------------------------
+
+function P.update()
+  local cmd, limb, score, reason = P.next_command({ source = &quot;prompt&quot; })
+  if not cmd then return end
   if type(send) == &quot;function&quot; then
-    send(&quot;parry &quot; .. cmd_limb, false)
+    send(cmd, false)
+    P.note_sent(limb)
   end
-  _p_echo(string.format(&quot;%s (score: %d, class: %s)&quot;,
-    cmd_limb, score or 0, tostring(_enemy_class() or &quot;?&quot;)))
+  _p_echo(string.format(&quot;%s (score: %d, class: %s, reason: %s)&quot;,
+    (_LIMB_CMD[limb] or limb), score or 0, tostring(_enemy_class() or &quot;?&quot;), tostring(reason or &quot;-&quot;)))
 end
 
 ------------------------------------------------------------
@@ -13037,6 +13212,20 @@ if type(registerAnonymousEventHandler) == &quot;function&quot; then
 end
 
 ------------------------------------------------------------
+-- Runtime hooks
+------------------------------------------------------------
+
+if type(tempRegexTrigger) == &quot;function&quot; then
+  if P._trigs.leg_restored then killTrigger(P._trigs.leg_restored) end
+  P._trigs.leg_restored = tempRegexTrigger(
+    [[^You have cured the (damagedleftleg|damagedrightleg) affliction\.$]],
+    function()
+      pcall(P.note_leg_restored, matches[2])
+    end
+  )
+end
+
+------------------------------------------------------------
 -- Reset on mode change to bash
 ------------------------------------------------------------
 
@@ -13044,6 +13233,7 @@ if type(registerAnonymousEventHandler) == &quot;function&quot; then
   registerAnonymousEventHandler(&quot;yso.mode.changed&quot;, function(_, old, new, reason)
     if new == &quot;bash&quot; then
       P._current = nil
+      P.clear_restore(&quot;mode-&gt;bash&quot;)
       _p_echo(&quot;mode-&gt;bash: parry cleared&quot;)
     end
   end)
@@ -28442,7 +28632,13 @@ function AB.attack_function(arg)
   end
 
   local tgt = info
+  local loyals_bootstrap_pending = (_trim(select(1, _loyals_open_cmd(tgt))) ~= &quot;&quot;)
   local plan = CS.plan_aff(tgt)
+  if loyals_bootstrap_pending then
+    plan.needs_readaura = true
+    plan.readaura_via_loyals = true
+    plan.snapshot_fresh = false
+  end
   local anti = _anti_tumble_plan(tgt)
   plan.finish = _finish_view(tgt, plan)
   plan.finish_stage = plan.finish and plan.finish.stage or &quot;pressure&quot;
@@ -28464,6 +28660,7 @@ function AB.attack_function(arg)
   local eq_cmd, eq_cat, eq_tag, eq_lock = nil, nil, nil, nil
   local bal_cmd, bal_cat, bal_tag, bal_lock = anti.bal_cmd, anti.bal_cat, anti.bal_tag, nil
   local entity_cmd, entity_cat = nil, nil
+  local parry_cmd, parry_limb = nil, nil
 
   -- A. Defensive measures on me.
   -- This route currently has no self-defensive pre-send branch beyond loop invalidation.
@@ -28508,9 +28705,16 @@ function AB.attack_function(arg)
     _record_checkpoint(entity_cat)
   end
 
-  free_cmd = _chain_cmds(_take_free_recovery(), free_cmd)
-  if legality.queue_stand == true then
-    free_cmd = _chain_cmds(&quot;stand&quot;, free_cmd)
+  if Yso and Yso.parry and type(Yso.parry.next_command) == &quot;function&quot; then
+    local ok_parry, cand_cmd, cand_limb = pcall(Yso.parry.next_command, { source = &quot;occ_aff_burst&quot;, target = tgt })
+    if ok_parry then
+      parry_cmd = _trim(cand_cmd)
+      parry_limb = _trim(cand_limb)
+    end
+  end
+
+  free_cmd = _chain_cmds((legality.queue_stand == true) and &quot;stand&quot; or &quot;&quot;, parry_cmd, _take_free_recovery(), free_cmd)
+  if legality.queue_stand == true or _trim(parry_cmd) ~= &quot;&quot; then
     free_cat = free_cat or &quot;self_legality&quot;
   end
 
@@ -28656,6 +28860,8 @@ function AB.attack_function(arg)
       checkpoint = AB.state.resume_checkpoint,
       explain = AB.state.explain,
       main_lane = main_lane,
+      parry_cmd = parry_cmd,
+      parry_limb = parry_limb,
     },
   }
   AB.state.template.last_payload = payload
@@ -28724,6 +28930,10 @@ function AB.on_sent(payload, ctx)
 
   if tgt ~= &quot;&quot; then
     local loyals_cmd = (tostring(AB.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
+    if type(payload.meta) == &quot;table&quot; and _trim(payload.meta.parry_limb or &quot;&quot;) ~= &quot;&quot; and Yso and Yso.parry and type(Yso.parry.note_sent) == &quot;function&quot; then
+      pcall(Yso.parry.note_sent, payload.meta.parry_limb)
+    end
+
     if _lane_contains_cmd(free_lane, loyals_cmd) then
       _mark_loyals_for_target(tgt)
     end
