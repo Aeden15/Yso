@@ -219,7 +219,7 @@ function Off.sg_entity_cmd_for_aff(aff, t)
   elseif aff == "slickness" then ent = ents.asthma or "bubonis"      -- assumes your bubonis route/followups
   elseif aff == "clumsiness" then ent = ents.clumsiness or "storm"
   elseif aff == "healthleech" then ent = ents.healthleech or "worm"
-  elseif aff == "sensitivity" then ent = cfg.sensitivity_followup or "slime"
+  elseif aff == "paralysis" then ent = cfg.paralysis_followup or "slime"
   else
     return nil
   end
