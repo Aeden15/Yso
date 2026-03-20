@@ -1,15 +1,15 @@
 Yso Systems Workspace
 =====================
-Last updated: 2026-03-18
+Last updated: 2026-03-20
 
 This root README is now a workspace index.
 Class-specific notes live in the class folders.
 
-Blademaster Spar 3 follow-up patches are now reflected in the Occultist
-workspace, including aff-route free-lane parry injection, opener READAURA
-forcing, AK cure/reopen tracking adjustments, and the Legacy Blademaster
-mobility reprio ladder. See Ysindrolir/Occultist/README.txt for the detailed
-per-file notes.
+Recent Occultist workspace changes now also include the 2026-03-20 route /
+bootstrap repair pass: live aff-route debug resolution, automatic workspace
+bootstrap entry on package load, centralized route-registry ownership, and
+clearer Devtools artifact naming. See Ysindrolir/Occultist/README.txt for the
+detailed per-file notes.
 
 
 Documentation Map

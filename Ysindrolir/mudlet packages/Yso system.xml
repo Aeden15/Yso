@@ -3562,10 +3562,10 @@ end
 
 --========================================================--
 -- Yso / Achaea Curing Core (Skeleton)
---  * No snd() usage, Achaea-only.
---  * Assumes: Legacy handles serverside CURING PRIORITY, etc.
---  * Assumes: AK1 + AK Tracker track ENEMY afflictions only.
---  * This file just defines the Yso.curing API and debug/status.
+--  â€¢ No snd() usage, Achaea-only.
+--  â€¢ Assumes: Legacy handles serverside CURING PRIORITY, etc.
+--  â€¢ Assumes: AK1 + AK Tracker track ENEMY afflictions only.
+--  â€¢ This file just defines the Yso.curing API and debug/status.
 --========================================================--
 setConsoleBufferSize(&quot;main&quot;, 300000, 1000)
 
@@ -4213,23 +4213,49 @@ end
 Yso.curing.mode  = Yso.curing.mode or &quot;serverside&quot;
 Yso.curing.debug = Yso.curing.debug or false
 
--- Adapters wire Yso.curing API to Legacy + game commands.
--- ak_legacy_wiring.lua overrides these with real implementations on load.
+-- Adapters are where you wire to Legacy + game commands.
+-- Override these in a separate file if you like.
 Yso.curing.adapters = Yso.curing.adapters or {
-  game_curing_on = function() _send(&quot;curing on&quot;) end,
 
-  game_curing_off = function() _send(&quot;curing off&quot;) end,
+  -- Toggle game-side CURING ON/OFF if you desire.
+  game_curing_on = function()
+    -- example:
+    -- _send(&quot;CURING ON&quot;)
+    _cure_echo(&quot;game_curing_on() called (adapter not yet wired)&quot;)
+  end,
 
-  raise_aff = function(aff) if aff and aff ~= &quot;&quot; then _send(string.format(&quot;curing priority %s 1&quot;, aff)) end end,
+  game_curing_off = function()
+    -- example:
+    -- _send(&quot;CURING OFF&quot;)
+    _cure_echo(&quot;game_curing_off() called (adapter not yet wired)&quot;)
+  end,
 
-  lower_aff = function(aff) if aff and aff ~= &quot;&quot; then _send(string.format(&quot;curing priority %s 26&quot;, aff)) end end,
+  -- Legacy prio helpers: wire these to your real Legacy aliases/commands.
+  raise_aff = function(aff)
+    -- ex: _send(string.format(&quot;LEGACY PRIOUP %s&quot;, aff))
+    _cure_echo(string.format(&quot;raise_aff(%s) called (adapter not yet wired)&quot;, tostring(aff)))
+  end,
 
-  set_aff_prio = function(aff, prio) if aff and aff ~= &quot;&quot; then _send(string.format(&quot;curing priority %s %d&quot;, aff, tonumber(prio) or 1)) end end,
+  lower_aff = function(aff)
+    -- ex: _send(string.format(&quot;LEGACY PRIODOWN %s&quot;, aff))
+    _cure_echo(string.format(&quot;lower_aff(%s) called (adapter not yet wired)&quot;, tostring(aff)))
+  end,
 
-  use_profile = function(name) if name and name ~= &quot;&quot; then _send(string.format(&quot;curingset switch %s&quot;, name)) end end,
+  set_aff_prio = function(aff, prio)
+    -- ex: _send(string.format(&quot;CURING PRIORITY %s %d&quot;, aff, prio))
+    _cure_echo(string.format(&quot;set_aff_prio(%s, %s) called (adapter not yet wired)&quot;, tostring(aff), tostring(prio)))
+  end,
 
-  -- Optional &quot;emergency&quot; hooks, to be implemented as you decide.
-  emergency = function(tag) _cure_echo(string.format(&quot;emergency(%s) (default fallback)&quot;, tostring(tag or &quot;&quot;))) end,
+  use_profile = function(name)
+    -- ex: _send(string.format(&quot;LEGACY PROFILE %s&quot;, name))
+    _cure_echo(string.format(&quot;use_profile(%s) called (adapter not yet wired)&quot;, tostring(name)))
+  end,
+
+  -- Optional â€œemergencyâ€ hooks, to be implemented as you decide.
+  emergency = function(tag)
+    -- ex: if tag == &quot;lockpanic&quot; then _send(&quot;LEGACY LOCKPANIC&quot;) end
+    _cure_echo(string.format(&quot;emergency(%s) called (adapter not yet wired)&quot;, tostring(tag)))
+  end,
 }
 
 -- shortcut
@@ -4298,7 +4324,7 @@ function Yso.curing.use_profile(name)
   C.use_profile(name)
 end
 
--- Emergency entry point. &quot;tag&quot; is free-form, e.g. &quot;lockpanic&quot;, &quot;damagepanic&quot;.
+-- Emergency entry point. â€œtagâ€ is free-form, e.g. &quot;lockpanic&quot;, &quot;damagepanic&quot;.
 function Yso.curing.emergency(tag)
   if not tag or tag == &quot;&quot; then return end
   C.emergency(tag)
@@ -4307,98 +4333,45 @@ end
 -- ----------------- status &amp; diagnostics -----------------
 
 local function _curing_on_off()
-  if Legacy and Legacy.Curing then
-    if Legacy.Curing.Enabled == true then return &quot;ON&quot;
-    elseif Legacy.Curing.Enabled == false then return &quot;OFF&quot;
-    end
-  end
-  local g = rawget(_G, &quot;gmcp&quot;)
-  if g and g.Char and g.Char.Vitals and g.Char.Vitals.charstats then
-    local cs = g.Char.Vitals.charstats
-    if type(cs) == &quot;table&quot; then
-      for _, entry in ipairs(cs) do
-        local m = tostring(entry):match(&quot;^Curing:%s*(.+)$&quot;)
-        if m then return m end
-      end
-    end
-  end
+  -- stub; if you later parse game CURING status, return &quot;ON&quot;/&quot;OFF&quot; here.
   return &quot;unknown&quot;
 end
 
 local function _legacy_profile()
-  if Legacy and Legacy.Curing then
-    local set = Legacy.Curing.ActiveServerSet
-    if type(set) == &quot;string&quot; and set ~= &quot;&quot; then return set end
-  end
-  return &quot;default&quot;
-end
-
-local function _adapter_status()
-  local C = Yso.curing.adapters
-  if not C then return &quot;missing&quot; end
-  local wired = C.game_curing_on and C.raise_aff and C.emergency
-  if not wired then return &quot;partial&quot; end
-  local src = debug and debug.getinfo and debug.getinfo(C.emergency, &quot;S&quot;)
-  if src and src.source and src.source:find(&quot;ak_legacy_wiring&quot;) then
-    return &quot;wired (Legacy)&quot;
-  end
-  return &quot;loaded&quot;
+  -- stub; if Legacy exposes current profile, return it here.
+  return &quot;unknown&quot;
 end
 
 function Yso.curing.status()
-  local ce = type(cecho) == &quot;function&quot; and cecho or print
-  ce(&quot;&lt;green&gt;[Yso:Cure Status]&lt;reset&gt;\n&quot;)
-  ce(string.format(&quot;  Mode:         &lt;white&gt;%s&lt;reset&gt;\n&quot;, Yso.curing.mode or &quot;?&quot;))
-  ce(string.format(&quot;  Debug:        &lt;white&gt;%s&lt;reset&gt;\n&quot;, Yso.curing.debug and &quot;ON&quot; or &quot;OFF&quot;))
-  ce(string.format(&quot;  Game curing:  &lt;white&gt;%s&lt;reset&gt;\n&quot;, _curing_on_off()))
-  ce(string.format(&quot;  Curingset:    &lt;white&gt;%s&lt;reset&gt;\n&quot;, _legacy_profile()))
-  ce(string.format(&quot;  Adapters:     &lt;white&gt;%s&lt;reset&gt;\n&quot;, _adapter_status()))
-  local ak_status = &quot;n/a&quot;
-  if Yso.ak then
-    if type(Yso.ak.has) == &quot;function&quot; then
-      ak_status = &quot;ready&quot;
-      local affs = Yso.ak.list_affs and Yso.ak.list_affs()
-      if affs then ak_status = ak_status .. &quot; (&quot; .. #affs .. &quot; tracked)&quot; end
-    else
-      ak_status = &quot;skeleton&quot;
-    end
-  end
-  ce(string.format(&quot;  AK bridge:    &lt;white&gt;%s&lt;reset&gt;\n&quot;, ak_status))
-  local prio_fn = type(Prio) == &quot;function&quot; and &quot;yes&quot; or &quot;no&quot;
-  local deprio_fn = type(Deprio) == &quot;function&quot; and &quot;yes&quot; or &quot;no&quot;
-  ce(string.format(&quot;  Legacy Prio:  &lt;white&gt;%s&lt;reset&gt;  Deprio: &lt;white&gt;%s&lt;reset&gt;\n&quot;, prio_fn, deprio_fn))
-end
-
-function Yso.curing.snapshot()
-  return {
-    mode       = Yso.curing.mode,
-    debug      = Yso.curing.debug,
-    game       = _curing_on_off(),
-    profile    = _legacy_profile(),
-    adapters   = _adapter_status(),
-    ak_affs    = Yso.ak and Yso.ak.list_affs and Yso.ak.list_affs() or {},
-    prio_avail = type(Prio) == &quot;function&quot;,
-  }
+  cecho(&quot;&lt;green&gt;[Yso:Cure Status]\n&quot;)
+  cecho(string.format(&quot;  Mode:         &lt;white&gt;%s\n&quot;, Yso.curing.mode))
+  cecho(string.format(&quot;  Debug:        &lt;white&gt;%s\n&quot;, Yso.curing.debug and &quot;ON&quot; or &quot;OFF&quot;))
+  cecho(string.format(&quot;  Game CURING:  &lt;white&gt;%s\n&quot;, _curing_on_off()))
+  cecho(string.format(&quot;  Legacy set:   &lt;white&gt;%s\n&quot;, _legacy_profile()))
+  -- If you expose AK Tracker state, you can echo it here:
+  -- cecho(string.format(&quot;  AK Tracker:   &lt;white&gt;%s\n&quot;, Yso.ak and Yso.ak.ready and &quot;READY&quot; or &quot;n/a&quot;))
 end
 
 -- ----------------- init helper -----------------
 
 function Yso.curing.init()
-  _cure_echo(&quot;Yso.curing initialised (mode=&quot; .. (Yso.curing.mode or &quot;?&quot;) .. &quot;)&quot;)
+  _cure_echo(&quot;Yso.curing core skeleton initialised.&quot;)
+  -- If needed, you can call this once from your startup scripts.
 end
 
+-- Auto-init on load (if you prefer passive behaviour)
 Yso.curing.init()
 
 --========================================================--
--- End of Yso / Achaea Curing Core
+-- End of Yso / Achaea Curing Core (Skeleton)
 --========================================================--
 
 
 --========================================================--
 -- Yso / Achaea AK Wrapper (Enemy Aff Tracker Skeleton)
---  * Wraps AK1 / AK Tracker under Yso.ak namespace.
---  * Does NOT replace AK - it just mirrors/normalizes it.
---  * Other code should ONLY talk to Yso.ak, never raw AK.
+--  â€¢ Wraps AK1 / AK Tracker under Yso.ak namespace.
+--  â€¢ Does NOT replace AK â€“ it just mirrors/normalizes it.
+--  â€¢ Other code should ONLY talk to Yso.ak, never raw AK.
 --========================================================--
 
 Yso.ak         = Yso.ak or {}
@@ -4543,7 +4516,7 @@ end
 
 -- ----------------- query helpers -----------------
 
--- Basic &quot;does enemy have X?&quot;
+-- Basic â€œdoes enemy have X?â€
 function Yso.ak.has(aff)
   if not aff or aff == &quot;&quot; then return false end
   aff = tostring(aff):lower()
@@ -4573,7 +4546,7 @@ function Yso.ak.count(affs)
   return n
 end
 
--- &quot;Does enemy have at least N of these affs?&quot;
+-- â€œDoes enemy have at least N of these affs?â€
 function Yso.ak.any(affs, n)
   n = tonumber(n) or 1
   if n &lt;= 0 then return true end
@@ -4689,70 +4662,6 @@ end
 function Yso.self.is_paralyzed()
   return Yso.self.has_aff(&quot;paralysis&quot;)
 end
-
-function Yso.self.has_any_aff(list)
-  if type(list) ~= &quot;table&quot; then return false end
-  for i = 1, #list do
-    if Yso.self.has_aff(list[i]) then return true end
-  end
-  return false
-end
-
-function Yso.self.is_standing()
-  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
-  local posture = tostring(v.position or v.posture or v.pose or v.state or &quot;&quot;):lower()
-  if posture ~= &quot;&quot; then
-    if posture:find(&quot;stand&quot;, 1, true) then return true end
-    if posture:find(&quot;prone&quot;, 1, true)
-      or posture:find(&quot;supine&quot;, 1, true)
-      or posture:find(&quot;kneel&quot;, 1, true)
-      or posture:find(&quot;sit&quot;, 1, true)
-      or posture:find(&quot;sleep&quot;, 1, true)
-    then
-      return false
-    end
-  end
-
-  if Yso.self.has_any_aff({
-    &quot;prone&quot;, &quot;sleeping&quot;, &quot;unconscious&quot;, &quot;stun&quot;, &quot;frozen&quot;,
-  }) then
-    return false
-  end
-
-  return true
-end
-
-do
-  local ARM_BLOCKERS = {
-    &quot;brokenleftarm&quot;, &quot;brokenrightarm&quot;,
-    &quot;mangledleftarm&quot;, &quot;mangledrightarm&quot;,
-    &quot;crippledleftarm&quot;, &quot;crippledrightarm&quot;,
-  }
-  local BIND_BLOCKERS = {
-    &quot;bound&quot;, &quot;webbed&quot;, &quot;entangled&quot;, &quot;transfixed&quot;, &quot;impaled&quot;,
-  }
-
-  function Yso.self.eq_blockers()
-    local out = {
-      eq_blocked = false,
-      not_standing = false,
-      arms_unusable = false,
-      bound = false,
-      reasons = {},
-    }
-
-    out.not_standing = (Yso.self.is_standing() ~= true)
-    out.arms_unusable = Yso.self.has_any_aff(ARM_BLOCKERS)
-    out.bound = Yso.self.has_any_aff(BIND_BLOCKERS)
-
-    if out.not_standing then out.reasons[#out.reasons + 1] = &quot;not standing&quot; end
-    if out.arms_unusable then out.reasons[#out.reasons + 1] = &quot;arms unusable&quot; end
-    if out.bound then out.reasons[#out.reasons + 1] = &quot;bound&quot; end
-
-    out.eq_blocked = (#out.reasons &gt; 0)
-    return out
-  end
-end
 </script>
 					<eventHandlerList />
 				</Script>
@@ -4760,11 +4669,11 @@ end
 					<name>yso_orchestrator.lua</name>
 					<packageName />
 					<script>--========================================================--
--- Yso.Orchestrator - Central Tick Orchestration (Single Authority Pass)
---  [OK] Exclusive driver (optional): blocks other pulse callbacks
---  [OK] Module proposal contract: register() + propose(ctx) -&gt; actions
---  [OK] Deterministic arbitration: phase -&gt; module priority -&gt; action score
---  [OK] Single commit per pulse flush via Yso.queue
+-- Yso.Orchestrator â€” Central Tick Orchestration (Single Authority Pass)
+--  âœ… Exclusive driver (optional): blocks other pulse callbacks
+--  âœ… Module proposal contract: register() + propose(ctx) -&gt; actions
+--  âœ… Deterministic arbitration: phase -&gt; module priority -&gt; action score
+--  âœ… Single commit per pulse flush via Yso.queue
 --
 -- Action schema (table):
 --   cmd        = &quot;string&quot;    (required)
@@ -4781,13 +4690,13 @@ end
 --   replace    = true|false (allow replacing same-qtype primary if higher score)
 --
 -- Shared universal route categories:
---   * defense_break
---   * anti_tumble
+--   â€¢ defense_break
+--   â€¢ anti_tumble
 -- Other strategic categories remain route-local and may differ by route.
 --
 -- Recommended orchestrator override policy:
---   * narrow_global_only
---   * override only for hard global conditions and shared universal categories
+--   â€¢ narrow_global_only
+--   â€¢ override only for hard global conditions and shared universal categories
 --========================================================--
 
 Yso = Yso or {}
@@ -5168,7 +5077,7 @@ function O.run(reasons)
 
   -- Manual inhibit: block automation commit during 400ms window after manual cmd
   if Yso.inhibit and type(Yso.inhibit.active) == &quot;function&quot; and Yso.inhibit.active() then
-    _dbg(&quot;inhibit active - skipping commit&quot;)
+    _dbg(&quot;inhibit active â€” skipping commit&quot;)
     local Qi = Yso.queue
     if Qi and type(Qi.clear) == &quot;function&quot; then pcall(Qi.clear) end
     return false
@@ -5298,9 +5207,9 @@ _dbg(&quot;Orchestrator loaded (exclusive=&quot; .. tostring(O.cfg.exclusive) ..
 
 --========================================================--
 -- Yso / Achaea Wiring
---  * Wires Yso.curing.adapters -&gt; Legacy + game commands
---  * Wires Yso.ak -&gt; AK1 / AK Tracker (affstrack + ak.check)
---  * Assumes:
+--  â€¢ Wires Yso.curing.adapters -&gt; Legacy + game commands
+--  â€¢ Wires Yso.ak -&gt; AK1 / AK Tracker (affstrack + ak.check)
+--  â€¢ Assumes:
 --      - Legacy core is loaded (Prio/Deprio/UpdatePrios exist)
 --      - AK Tracker.xml is loaded (affstrack, ak.check exist)
 --      - Yso_curing_core + Yso_AK_core already loaded
@@ -5344,8 +5253,8 @@ C.game_curing_off = function()
 end
 
 -- Raise an affliction priority via Legacy:
---  * Prefer Legacy&apos;s Prio(aff) helper (moves to slot 1).
---  * Fallback: raw CURING PRIORITY command.
+--  â€¢ Prefer Legacy&apos;s Prio(aff) helper (moves to slot 1).
+--  â€¢ Fallback: raw CURING PRIORITY command.
 C.raise_aff = function(aff)
   if not aff or aff == &quot;&quot; then return end
   aff = tostring(aff)
@@ -5362,8 +5271,8 @@ C.raise_aff = function(aff)
 end
 
 -- Lower an affliction priority via Legacy:
---  * Prefer Legacy&apos;s Deprio(aff) helper (sets to 26).
---  * Fallback: raw CURING PRIORITY aff 26.
+--  â€¢ Prefer Legacy&apos;s Deprio(aff) helper (sets to 26).
+--  â€¢ Fallback: raw CURING PRIORITY aff 26.
 C.lower_aff = function(aff)
   if not aff or aff == &quot;&quot; then return end
   aff = tostring(aff)
@@ -5380,8 +5289,8 @@ C.lower_aff = function(aff)
 end
 
 -- Explicitly set an aff&apos;s position:
---  * Prefer Legacy&apos;s Prio(aff, pos).
---  * Fallback: raw CURING PRIORITY aff pos.
+--  â€¢ Prefer Legacy&apos;s Prio(aff, pos).
+--  â€¢ Fallback: raw CURING PRIORITY aff pos.
 C.set_aff_prio = function(aff, prio)
   if not aff or aff == &quot;&quot; then return end
   prio = tonumber(prio) or 1
@@ -5399,7 +5308,7 @@ C.set_aff_prio = function(aff, prio)
 end
 
 -- Switch server-side curingset/profile:
---  * Legacy uses &quot;curingset new legacy&quot; + &quot;curingset switch legacy&quot;
+--  â€¢ Legacy uses &quot;curingset new legacy&quot; + &quot;curingset switch legacy&quot;
 --    on install, so we mirror that here.
 C.use_profile = function(name)
   if not name or name == &quot;&quot; then return end
@@ -5413,71 +5322,18 @@ C.use_profile = function(name)
   end
 end
 
-------------------------------------------------------------
--- Class-specific curingset auto-switching
-------------------------------------------------------------
-Yso.curing._active_profile = Yso.curing._active_profile or &quot;hunt&quot;
-
-local _CLASS_CURINGSETS = {
-  Blademaster = &quot;Blademaster&quot;,
-}
-
-C.switch_for_class = function(class)
-  if not class or class == &quot;&quot; then return end
-  local target_set = _CLASS_CURINGSETS[class]
-  if not target_set then return end
-  if Yso.curing._active_profile == target_set then return end
-  Yso.curing._active_profile = target_set
-  C.use_profile(target_set)
-  _cwire_echo(&quot;class curingset: switched to &quot; .. target_set .. &quot; for &quot; .. class)
-end
-
+-- Emergency hook is intentionally minimal; you can flesh this out later.
 C.emergency = function(tag)
-  tag = tostring(tag or &quot;&quot;):lower()
+  tag = tostring(tag or &quot;&quot;)
   if tag == &quot;&quot; then return end
 
-  if type(send) ~= &quot;function&quot; then
-    _cwire_echo(&quot;emergency(&quot;..tag..&quot;): send() not available&quot;)
-    return
-  end
-
-  if tag == &quot;lockpanic&quot; then
-    send(&quot;curing priority paralysis 1&quot;, false)
-    send(&quot;curing priority asthma 2&quot;, false)
-    if type(Prio) == &quot;function&quot; then
-      Prio(&quot;paralysis&quot;, 1)
-      Prio(&quot;asthma&quot;, 2)
-    end
-    _cwire_echo(&quot;lockpanic: raised paralysis=1 asthma=2&quot;)
-  elseif tag == &quot;damagepanic&quot; then
-    send(&quot;curing priority mana 1&quot;, false)
-    send(&quot;curing priority health 2&quot;, false)
-    _cwire_echo(&quot;damagepanic: raised mana=1 health=2&quot;)
-  elseif tag == &quot;focuslock&quot; then
-    send(&quot;curing priority impatience 1&quot;, false)
-    send(&quot;curing priority stupidity 2&quot;, false)
-    send(&quot;curing priority anorexia 3&quot;, false)
-    if type(Prio) == &quot;function&quot; then
-      Prio(&quot;impatience&quot;, 1)
-      Prio(&quot;stupidity&quot;, 2)
-      Prio(&quot;anorexia&quot;, 3)
-    end
-    _cwire_echo(&quot;focuslock: raised impatience=1 stupidity=2 anorexia=3&quot;)
-  elseif tag == &quot;reset&quot; then
-    if Legacy and Legacy.Curing and type(Legacy.Curing.Prios) == &quot;table&quot; then
-      local set = Legacy.Curing.ActiveServerSet or &quot;legacy&quot;
-      if type(Legacy.Curing.Prios.UseBaseline) == &quot;function&quot; then
-        Legacy.Curing.Prios.UseBaseline(set)
-        _cwire_echo(&quot;reset: restored baseline priorities for set &apos;&quot;..set..&quot;&apos;&quot;)
-      end
-    end
-    if type(UpdatePrios) == &quot;function&quot; then
-      pcall(UpdatePrios)
-      _cwire_echo(&quot;reset: called UpdatePrios()&quot;)
-    end
-  else
-    _cwire_echo(&quot;emergency(&quot;..tag..&quot;) called (unrecognized tag)&quot;)
-  end
+  _cwire_echo(&quot;emergency(&quot;..tag..&quot;) called (no behaviour wired yet)&quot;)
+  -- Example you might add later:
+  -- if tag == &quot;lockpanic&quot; and type(send)==&quot;function&quot; then
+  --   send(&quot;curing tree on&quot;, false)
+  --   send(&quot;curing priority paralysis 1&quot;, false)
+  --   _cwire_echo(&quot;lockpanic: raised paralysis + toggled tree&quot;)
+  -- end
 end
 
 ------------------------------------------------------------
@@ -5629,22 +5485,6 @@ function Yso.ak.sync_from_ak()
 _akwire_echo(&quot;sync_from_ak(): &quot;..tostring(#Yso.ak.list_affs())..&quot; affs synced from AK&quot;)
 end
 
-------------------------------------------------------------
--- Mode-change handler: revert to hunt curingset on bash
-------------------------------------------------------------
-if type(registerAnonymousEventHandler) == &quot;function&quot; then
-  registerAnonymousEventHandler(&quot;yso.mode.changed&quot;, function(_, old, new, reason)
-    if new == &quot;bash&quot; and Yso.curing._active_profile ~= &quot;hunt&quot; then
-      local prev = Yso.curing._active_profile
-      Yso.curing._active_profile = &quot;hunt&quot;
-      if type(Yso.curing.adapters.use_profile) == &quot;function&quot; then
-        Yso.curing.adapters.use_profile(&quot;hunt&quot;)
-      end
-      _cwire_echo(&quot;mode-&gt;bash: reverted curingset from &quot; .. tostring(prev) .. &quot; to hunt&quot;)
-    end
-  end)
-end
-
 _akwire_echo(&quot;Yso / Achaea wiring loaded (Legacy + AK bridge)&quot;)
 --========================================================--
 </script>
@@ -5657,12 +5497,12 @@ _akwire_echo(&quot;Yso / Achaea wiring loaded (Legacy + AK bridge)&quot;)
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
--- Yso.queue - RAW payload emitter + lightweight client-side staging
+-- Yso.queue â€” RAW payload emitter + lightweight client-side staging
 --========================================================--
 -- This REPLACES the prior server-side QUEUE engine.
---  * No &quot;QUEUE ADD/REPLACE&quot; commands are sent to the game.
---  * All emissions are RAW send()/sendAll() of real game commands.
---  * Provides a compatible surface for existing modules:
+--  â€¢ No &quot;QUEUE ADD/REPLACE&quot; commands are sent to the game.
+--  â€¢ All emissions are RAW send()/sendAll() of real game commands.
+--  â€¢ Provides a compatible surface for existing modules:
 --      - stage()/commit()
 --      - addclear()/addclearfull()
 --      - replace()
@@ -5673,7 +5513,7 @@ _akwire_echo(&quot;Yso / Achaea wiring loaded (Legacy + AK bridge)&quot;)
 --   free, eq, bal, class
 --
 -- Policy:
---   * By default, never emit EQ+BAL together in the same commit.
+--   â€¢ By default, never emit EQ+BAL together in the same commit.
 --     If both are staged, commit() chooses one (opts.prefer = &quot;eq&quot;/&quot;bal&quot;)
 --     and leaves the other staged for the next commit.
 --========================================================--
@@ -5682,10 +5522,10 @@ Yso       = Yso       or {}
 
 --========================================================--
 -- Yso.net  (pipeline source-of-truth)
---  * Preferred joiner: &quot;&amp;&amp;&quot;
---  * Fallback joiner: &quot;;;&quot; (last resort)
---  * Default transport: send(joined_payload)
---  * sendAll() only if explicitly enabled: Yso.net.cfg.use_sendAll=true
+--  â€¢ Preferred joiner: &quot;&amp;&amp;&quot;
+--  â€¢ Fallback joiner: &quot;;;&quot; (last resort)
+--  â€¢ Default transport: send(joined_payload)
+--  â€¢ sendAll() only if explicitly enabled: Yso.net.cfg.use_sendAll=true
 --========================================================--
 Yso.net = Yso.net or {}
 do
@@ -5948,9 +5788,9 @@ end
 
 -- RAW multi-lane emission.
 -- payload may be:
---  * string: pipeline &quot;cmd1|cmd2|cmd3&quot; (pipe_sep)
---  * array: {&quot;cmd1&quot;,&quot;cmd2&quot;,...}
---  * table lanes: free/eq/bal/class/ent/entity/pre
+--  â€¢ string: pipeline &quot;cmd1|cmd2|cmd3&quot; (pipe_sep)
+--  â€¢ array: {&quot;cmd1&quot;,&quot;cmd2&quot;,...}
+--  â€¢ table lanes: free/eq/bal/class/ent/entity/pre
 -- ---------- emit observers (post-commit) ----------
 -- Tracks certain effect-duration gates only when a payload is actually emitted.
 local function _observe_offense_emits(cmd_list)
@@ -6138,8 +5978,8 @@ end
 
 -- commit staged lanes as RAW sends.
 -- opts:
---   * prefer: &quot;eq&quot; or &quot;bal&quot; when both staged (default &quot;eq&quot;)
---   * allow_eqbal: true to permit both (not recommended)
+--   â€¢ prefer: &quot;eq&quot; or &quot;bal&quot; when both staged (default &quot;eq&quot;)
+--   â€¢ allow_eqbal: true to permit both (not recommended)
 function Q.commit(opts)
   opts = opts or {}
   local prefer = tostring(opts.prefer or (Yso.cfg and Yso.cfg.emit_prefer) or &quot;eq&quot;):lower()
@@ -6170,24 +6010,7 @@ function Q.commit(opts)
   local send_eq, send_bal, send_class = nil, nil, nil
   local paired = false
 
-  -- Selection:
-  --   * Wake hint present: respect it (and optionally piggyback ENT onto EQ/BAL)
-  --   * No hint: coalesce eq &gt; class &gt; bal
-  local function choose()
-    if wlane == &quot;eq&quot; then
-      if staged_eq ~= nil and eq_r then send_eq = staged_eq end
-      if piggyback and send_eq and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
-      return
-    elseif wlane == &quot;bal&quot; then
-      if staged_bal ~= nil and bal_r then send_bal = staged_bal end
-      if piggyback and send_bal and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
-      return
-    elseif wlane == &quot;class&quot; then
-      if staged_class ~= nil and class_r then send_class = staged_class end
-      return
-    end
-
-    -- No wake lane: coalesce eq &gt; class &gt; bal
+  local function choose_default()
     if staged_eq ~= nil and eq_r then
       send_eq = staged_eq
       if piggyback and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
@@ -6202,6 +6025,28 @@ function Q.commit(opts)
       if piggyback and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
       return
     end
+  end
+
+  -- Selection:
+  --   â€¢ Wake hint present: prefer that lane (and optionally piggyback ENT onto EQ/BAL)
+  --   â€¢ If the hinted lane is unavailable by commit time, fall back to normal coalescing
+  --   â€¢ No hint: coalesce eq &gt; class &gt; bal
+  local function choose()
+    if wlane == &quot;eq&quot; then
+      if staged_eq ~= nil and eq_r then send_eq = staged_eq end
+      if piggyback and send_eq and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
+    elseif wlane == &quot;bal&quot; then
+      if staged_bal ~= nil and bal_r then send_bal = staged_bal end
+      if piggyback and send_bal and staged_class ~= nil and class_r then send_class = staged_class; paired = true end
+    elseif wlane == &quot;class&quot; then
+      if staged_class ~= nil and class_r then send_class = staged_class end
+    end
+
+    if send_eq ~= nil or send_bal ~= nil or send_class ~= nil then
+      return
+    end
+
+    choose_default()
   end
 
   choose()
@@ -6296,6 +6141,7 @@ function Q.clear(lane)
   end
   return true
 end
+
 </script>
 					<eventHandlerList />
 				</Script>
@@ -6306,7 +6152,7 @@ end
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
--- Yso.pulse (wake/tick bus) - PURE DISPATCHER
+-- Yso.pulse (wake/tick bus) â€” PURE DISPATCHER
 --========================================================--
 -- What this is:
 --   A centralized wake bus that simply *dispatches* work once per tick.
@@ -6452,9 +6298,9 @@ function P.entity_ack(kind, src)
   src = tostring(src or &quot;entity_ack&quot;)
 
   -- On failure/cooldown/disregard:
-  --   * clamp ENT lane immediately
-  --   * clear any staged ENT payloads (silent no-op)
-  --   * do NOT re-stage the last ENT command (avoids spam loops)
+  --   â€¢ clamp ENT lane immediately
+  --   â€¢ clear any staged ENT payloads (silent no-op)
+  --   â€¢ do NOT re-stage the last ENT command (avoids spam loops)
   local function _clamp_and_clear(reason, is_cooldown)
     local Y = rawget(_G, &quot;Yso&quot;)
     if Y and Y.queue and type(Y.queue.clear) == &quot;function&quot; then
@@ -6717,10 +6563,10 @@ end
 					<packageName />
 					<script>--========================================================--
 -- Yso_Occultist_Affmap.lua  (DROP-IN)  [UPDATED]
--- Skill -&gt; affliction/effect map for Occultism / Tarot / Domination
+-- Skill â†’ affliction/effect map for Occultism / Tarot / Domination
 -- Notes:
---   * &quot;affs&quot; are canonical keys you should track.
---   * AK limb state is tracked as: leftarm/rightarm/leftleg/rightleg (tiered 100/200/300),
+--   â€¢ â€œaffsâ€ are canonical keys you should track.
+--   â€¢ AK limb state is tracked as: leftarm/rightarm/leftleg/rightleg (tiered 100/200/300),
 --     NOT left_arm_broken style keys.
 --========================================================--
 
@@ -6833,7 +6679,7 @@ M.skills = M.skills or {
         [6] = { affs = { &quot;UNKNOWN&quot; } },
         [7] = { affs = { &quot;aeon&quot; }, effects = { &quot;strip_speed_all&quot; } },
       },
-      notes = &quot;Per your report: 7 spins =&gt; aeon + strips speed to all. 4-6 TBD.&quot;,
+      notes = &quot;Per your report: 7 spins =&gt; aeon + strips speed to all. 4â€“6 TBD.&quot;,
     },
   },
 
@@ -8668,311 +8514,64 @@ _ensure_registered()
 					<name>Yso.target</name>
 					<packageName />
 					<script>-- Auto-exported from Mudlet package script: Yso.target
--- DO NOT EDIT IN XML; edit the paired workspace source when promoted.
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso.target (compatibility shim)
+--  NOTE:
+--    Canonical combat targeting is implemented in Yso.targeting (Core scripts).
+--    This script is intentionally minimal and should NOT redefine Yso.set_target
+--    or Yso.get_target if they already exist.
+--  Purpose:
+--    â€¢ Keep older modules that reference Yso.target / Yso.ak.target working.
+--========================================================--
 
 Yso = Yso or {}
 Yso.ak = Yso.ak or {}
-Yso._loaded = Yso._loaded or {}
 
-if Yso._loaded[&quot;Yso.xml.yso_target&quot;] then
-  return Yso
-end
-Yso._loaded[&quot;Yso.xml.yso_target&quot;] = true
+-- Back-compat: keep a string field for legacy readers.
+Yso.target = Yso.target or &quot;&quot;
 
-local _G = _G
-local rawget = rawget
-local rawset = rawset
-local type = type
-local tostring = tostring
-local pcall = pcall
-local expandAlias = rawget(_G, &quot;expandAlias&quot;)
-local echo = rawget(_G, &quot;echo&quot;)
-local cecho = rawget(_G, &quot;cecho&quot;)
-local raiseEvent = rawget(_G, &quot;raiseEvent&quot;)
-
-local function _trim(s)
-  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
+-- If core target service exists, prefer it.
+if type(Yso.get_target) ~= &quot;function&quot; and Yso.targeting and type(Yso.targeting.get) == &quot;function&quot; then
+  function Yso.get_target() return Yso.targeting.get() end
 end
 
-local function _same_target(a, b)
-  a = _trim(a):lower()
-  b = _trim(b):lower()
-  return a ~= &quot;&quot; and a == b
+if type(Yso.set_target) ~= &quot;function&quot; and Yso.targeting and type(Yso.targeting.set) == &quot;function&quot; then
+  function Yso.set_target(who, source) return Yso.targeting.set(who, source or &quot;manual&quot;) end
 end
 
-local function _wake(reason)
-  if Yso and Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    pcall(Yso.pulse.wake, tostring(reason or &quot;target&quot;))
-  end
+if type(Yso.clear_target) ~= &quot;function&quot; and Yso.targeting and type(Yso.targeting.clear) == &quot;function&quot; then
+  function Yso.clear_target(reason) return Yso.targeting.clear(&quot;system&quot;, reason) end
 end
 
-local function _cleanup_pref(source, opts, keep_key, flush_key)
-  source = _trim(source):lower()
-  opts = type(opts) == &quot;table&quot; and opts or nil
-  if opts then
-    if opts[flush_key] == true then return false end
-    if opts[keep_key] == true or opts.keep_queue == true then return true end
-  end
-  return source == &quot;ak&quot; or source == &quot;manual&quot; or source == &quot;offense&quot;
-end
-
-local function _preserve_class_queue(source, opts)
-  return _cleanup_pref(source, opts, &quot;keep_class_queue&quot;, &quot;flush_class_queue&quot;)
-end
-
-local function _preserve_rawsend_state(source, opts)
-  return _cleanup_pref(source, opts, &quot;keep_rawsend&quot;, &quot;flush_rawsend&quot;)
-end
-
-function Yso.target_flush_send_state(reason)
-  reason = _trim(reason)
-  if Yso and Yso.queue and type(Yso.queue.clear) == &quot;function&quot; then
-    pcall(Yso.queue.clear, &quot;class&quot;)
-  end
-  if Yso and Yso.state then
-    Yso.state._last_ent_cmd = nil
-    Yso.state._last_ent_cmd_ts = nil
-  end
-  if reason ~= &quot;&quot; and Yso and Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    pcall(Yso.pulse.wake, &quot;target:flush:&quot; .. reason)
-  end
-  return true
-end
-
-local function _queue_swap_cleanup(prev, nxt, source, opts)
-  if _same_target(prev, nxt) then return end
-  if not _preserve_class_queue(source, opts) and Yso and Yso.queue and type(Yso.queue.clear) == &quot;function&quot; then
-    pcall(Yso.queue.clear, &quot;class&quot;)
-  end
-  if not _preserve_rawsend_state(source, opts) and Yso and Yso.state then
-    Yso.state._last_ent_cmd = nil
-    Yso.state._last_ent_cmd_ts = nil
-  end
-end
-
-local function _ak_target_name()
-  local cur = rawget(_G, &quot;target&quot;)
-  if type(cur) == &quot;string&quot; then
-    cur = _trim(cur)
-    if cur ~= &quot;&quot; then return cur end
-  end
-
-  local ak = rawget(_G, &quot;ak&quot;)
-  if type(ak) == &quot;table&quot; then
-    if type(ak.target) == &quot;string&quot; and _trim(ak.target) ~= &quot;&quot; then return _trim(ak.target) end
-    if type(ak.tgt) == &quot;string&quot; and _trim(ak.tgt) ~= &quot;&quot; then return _trim(ak.tgt) end
-    if type(ak.Target) == &quot;string&quot; and _trim(ak.Target) ~= &quot;&quot; then return _trim(ak.Target) end
-  end
-
-  return &quot;&quot;
-end
-
-local function _dispatch_target_set(name)
-  local ak = rawget(_G, &quot;ak&quot;)
-
-  if type(expandAlias) == &quot;function&quot; then
-    expandAlias(&quot;t &quot; .. name)
-    return true
-  end
-
-  if type(ak) == &quot;table&quot; and type(ak.target) == &quot;table&quot; and type(ak.target.set) == &quot;function&quot; then
-    local ok, err = pcall(ak.target.set, name)
-    if ok then return true end
-    return false, err
-  end
-
-  if type(ak) == &quot;table&quot; and type(ak.setTarget) == &quot;function&quot; then
-    local ok, err = pcall(ak.setTarget, name)
-    if ok then return true end
-    return false, err
-  end
-
-  return false, &quot;no_ak_target_setter&quot;
-end
-
-local function _dispatch_target_clear()
-  local ak = rawget(_G, &quot;ak&quot;)
-
-  if type(ak) == &quot;table&quot; and type(ak.target) == &quot;table&quot; and type(ak.target.clear) == &quot;function&quot; then
-    local ok, err = pcall(ak.target.clear)
-    if ok then return true end
-    return false, err
-  end
-
-  if type(ak) == &quot;table&quot; and type(ak.clearTarget) == &quot;function&quot; then
-    local ok, err = pcall(ak.clearTarget)
-    if ok then return true end
-    return false, err
-  end
-
-  rawset(_G, &quot;target&quot;, &quot;&quot;)
-  if type(ak) == &quot;table&quot; then
-    if type(ak.target) == &quot;string&quot; then ak.target = &quot;&quot; end
-    if type(ak.tgt) == &quot;string&quot; then ak.tgt = &quot;&quot; end
-    if type(ak.Target) == &quot;string&quot; then ak.Target = &quot;&quot; end
-  end
-
-  return true
-end
-
-local _pending_set = nil
-local _pending_clear = nil
-
-local function _apply_target_set(name, source, prev, opts)
-  name = _trim(name)
-  prev = _trim(prev)
-  source = _trim(source)
-  if source == &quot;&quot; then source = &quot;ak&quot; end
-  if name == &quot;&quot; then return false, &quot;no_target&quot; end
-
-  _queue_swap_cleanup(prev, name, source, opts)
-
-  if Yso and Yso.ingest and type(Yso.ingest.target_set) == &quot;function&quot; then
-    pcall(Yso.ingest.target_set, name, source, { nowake = true })
-  end
-
-  if Yso and type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused()
-     and type(Yso.pause_offense) == &quot;function&quot;
-  then
-    pcall(Yso.pause_offense, false, &quot;target_set&quot;, true)
-  end
-
-  _wake(&quot;target:set:&quot; .. source)
-  return true
-end
-
-local function _echo_target_clear(prev, reason)
-  if type(raiseEvent) == &quot;function&quot; then
-    pcall(raiseEvent, &quot;yso.target.cleared&quot;, prev, reason)
-  end
-
-  if type(cecho) == &quot;function&quot; then
-    cecho(string.format(&quot;&lt;cyan&gt;[Yso] Target cleared (%s): %s\n&quot;, reason, prev))
-  elseif type(echo) == &quot;function&quot; then
-    echo(string.format(&quot;[Yso] Target cleared (%s): %s\n&quot;, reason, prev))
-  end
-end
-
-local function _apply_target_clear(prev, reason, source, opts)
-  prev = _trim(prev)
-  reason = _trim(reason)
-  source = _trim(source)
-  if reason == &quot;&quot; then reason = &quot;auto&quot; end
-  if source == &quot;&quot; then source = &quot;system&quot; end
-  if prev == &quot;&quot; then return false end
-
-  Yso.last_target = prev
-  _queue_swap_cleanup(prev, &quot;&quot;, source, opts)
-
-  if Yso and Yso.ingest and type(Yso.ingest.target_left) == &quot;function&quot; then
-    pcall(Yso.ingest.target_left, reason, { nowake = true })
-  end
-
-  _wake(&quot;target:clear:&quot; .. source)
-  _echo_target_clear(prev, reason)
-  return true
-end
-
-function Yso._get_target_via_ak()
-  local name = _ak_target_name()
-  if name == &quot;&quot; then return nil end
-  return name
-end
-
-function Yso._set_target_via_ak(name, source, opts)
-  name = _trim(name)
-  source = _trim(source)
-  opts = type(opts) == &quot;table&quot; and opts or nil
-  local hinted_prev = opts and _trim(opts.prev) or &quot;&quot;
-  if source == &quot;&quot; then source = &quot;manual&quot; end
-  if name == &quot;&quot; then return false, &quot;no_target&quot; end
-
-  if source ~= &quot;ak&quot; then
-    _pending_set = {
-      prev = hinted_prev ~= &quot;&quot; and hinted_prev or _ak_target_name(),
-      source = source,
-      opts = opts,
-    }
-    local ok, err = _dispatch_target_set(name)
-    if not ok then
-      _pending_set = nil
-      return false, err
+if type(Yso.resolve_target) ~= &quot;function&quot; then
+  function Yso.resolve_target(arg, opts)
+    opts = opts or {}
+    if Yso.targeting and type(Yso.targeting.get) == &quot;function&quot; then
+      local a = tostring(arg or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)
+      if a ~= &quot;&quot; then
+        if opts.set and type(Yso.set_target) == &quot;function&quot; then pcall(Yso.set_target, a, opts.source or &quot;manual&quot;) end
+        return a
+      end
+      return Yso.targeting.get()
     end
-    if _pending_set then
-      local pending = _pending_set
-      _pending_set = nil
-      return _apply_target_set(name, source, pending.prev, opts or pending.opts)
-    end
-    return true
+    local a = tostring(arg or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)
+    if a ~= &quot;&quot; then return a end
+    if type(Yso.get_target) == &quot;function&quot; then return Yso.get_target() end
+    if type(Yso.target) == &quot;string&quot; and Yso.target ~= &quot;&quot; then return Yso.target end
+    return nil
   end
-
-  local pending = _pending_set or { prev = hinted_prev, source = source, opts = opts }
-  _pending_set = nil
-  return _apply_target_set(name, pending.source or source, pending.prev, opts or pending.opts)
 end
 
-function Yso._clear_target_via_ak(reason, source, opts)
-  reason = _trim(reason)
-  source = _trim(source)
-  opts = type(opts) == &quot;table&quot; and opts or nil
-  if reason == &quot;&quot; then reason = &quot;auto&quot; end
-  if source == &quot;&quot; then source = &quot;system&quot; end
-
-  local prev = _ak_target_name()
-  if prev == &quot;&quot; then return false end
-
-  if source ~= &quot;ak&quot; then
-    _pending_clear = { prev = prev, reason = reason, source = source, opts = opts }
-    local ok, err = _dispatch_target_clear()
-    if not ok then
-      _pending_clear = nil
-      return false, err
-    end
-    if _pending_clear then
-      local pending = _pending_clear
-      _pending_clear = nil
-      return _apply_target_clear(pending.prev, pending.reason, pending.source, opts or pending.opts)
-    end
-    return true
-  end
-
-  local pending = _pending_clear or { prev = prev, reason = reason, source = source, opts = opts }
-  _pending_clear = nil
-  return _apply_target_clear(pending.prev, pending.reason, pending.source, opts or pending.opts)
-end
-
-function Yso.get_target()
-  return Yso._get_target_via_ak()
-end
-
-function Yso.set_target(who, source, opts)
-  return Yso._set_target_via_ak(who, source, opts)
-end
-
-function Yso.clear_target(reason, source, opts)
-  return Yso._clear_target_via_ak(reason, source, opts)
-end
-
-function Yso.resolve_target(arg, opts)
-  opts = opts or {}
-  local explicit = _trim(arg)
-  if explicit ~= &quot;&quot; then
-    if opts.set and type(Yso.set_target) == &quot;function&quot; then
-      pcall(Yso.set_target, explicit, opts.source or &quot;manual&quot;, opts)
-    end
-    return explicit
-  end
-  return Yso.get_target()
-end
-
+-- AK shim: many older aliases call Yso.ak.target(arg)
 if type(Yso.ak.target) ~= &quot;function&quot; then
   function Yso.ak.target(arg)
     return Yso.resolve_target(arg, { set = false })
   end
 end
 
-return Yso
-
+--========================================================--
 </script>
 					<eventHandlerList />
 				</Script>
@@ -8982,10 +8581,10 @@ return Yso
 					<script>--========================================================--
 -- yso_target_intel.lua  (DROP-IN)
 -- Purpose:
---   * Central per-target state: mana%, tracked affs, inferred cures, lock flags
---   * Safe to run without Legacy/AK present (they merely call into it)
+--   â€¢ Central per-target state: mana%, tracked affs, inferred cures, lock flags
+--   â€¢ Safe to run without Legacy/AK present (they merely call into it)
 -- Notes:
---   * Do NOT use a table key named `true` (reserved keyword). This module
+--   â€¢ Do NOT use a table key named `true` (reserved keyword). This module
 --     returns lock flags as: softlock/truelock (and soft/hard aliases).
 --========================================================--
 
@@ -9098,17 +8697,11 @@ end
 -- ---------- cure inference buckets (from Legacy V2.1 CuringSwaps snippet) ----------
 T.cure_map = T.cure_map or {
   kelp       = {&quot;asthma&quot;,&quot;clumsiness&quot;,&quot;hypochondria&quot;,&quot;sensitivity&quot;,&quot;weariness&quot;,&quot;healthleech&quot;,&quot;parasite&quot;,&quot;rebbies&quot;},
-  bloodroot  = {&quot;pyramides&quot;,&quot;paralysis&quot;,&quot;slickness&quot;},
-  magnesium  = {&quot;pyramides&quot;,&quot;paralysis&quot;,&quot;slickness&quot;},
   ginseng    = {&quot;addiction&quot;,&quot;darkshade&quot;,&quot;haemophilia&quot;,&quot;lethargy&quot;,&quot;nausea&quot;,&quot;scytherus&quot;,&quot;flushings&quot;},
   goldenseal = {&quot;dizziness&quot;,&quot;epilepsy&quot;,&quot;impatience&quot;,&quot;shyness&quot;,&quot;stupidity&quot;,&quot;depression&quot;,&quot;shadowmadness&quot;,&quot;mycalium&quot;,&quot;sandfever&quot;,&quot;horror&quot;},
   lobelia    = {&quot;agoraphobia&quot;,&quot;guilt&quot;,&quot;spiritburn&quot;,&quot;tenderskin&quot;,&quot;claustrophobia&quot;,&quot;loneliness&quot;,&quot;masochism&quot;,&quot;recklessness&quot;,&quot;vertigo&quot;},
   ash        = {&quot;confusion&quot;,&quot;dementia&quot;,&quot;hallucinations&quot;,&quot;hypersomnia&quot;,&quot;paranoia&quot;},
   bellwort   = {&quot;retribution&quot;,&quot;timeloop&quot;,&quot;peace&quot;,&quot;justice&quot;,&quot;lovers&quot;},
-  hawthorn   = {&quot;deaf&quot;,&quot;deafness&quot;},
-  calamine   = {&quot;deaf&quot;,&quot;deafness&quot;},
-  bayberry   = {&quot;blind&quot;,&quot;blindness&quot;},
-  arsenic    = {&quot;blind&quot;,&quot;blindness&quot;},
 }
 
 -- Call this when you see: &quot;&lt;target&gt; eats &lt;herb&gt;.&quot;
@@ -9151,10 +8744,10 @@ end
 					<packageName />
 					<script>--========================================================--
 -- yso_target_tattoos.lua (DROP-IN)
---  * Tracks target Mindseye as a sticky defense (no duration).
---  * Tracks Tree-of-life touch as a passive uncertainty marker.
---  * Manual clear: alias msclear [name] (defined in AliasPackage).
---  * Clear-on-starburst is handled by Coordination module.
+--  â€¢ Tracks target Mindseye as a sticky defense (no duration).
+--  â€¢ Tracks Tree-of-life touch as a passive uncertainty marker.
+--  â€¢ Manual clear: alias msclear [name] (defined in AliasPackage).
+--  â€¢ Clear-on-starburst is handled by Coordination module.
 --========================================================--
 
 Yso = Yso or {}
@@ -9209,7 +8802,7 @@ function T.note_tree_touch(name)
   return true
 end
 
--- &quot;Can hear/see&quot; helpers: mindseye overrides deaf/blind gating.
+-- â€œCan hear/seeâ€ helpers: mindseye overrides deaf/blind gating.
 local function _score_from_affstrack(aff)
   if type(affstrack) ~= &quot;table&quot; then return 0 end
   local t = affstrack[aff]
@@ -9234,10 +8827,235 @@ end
 				<Script isActive="yes" isFolder="no">
 					<name>Softlock Gate</name>
 					<packageName />
-					<script>Yso = Yso or {}
+					<script>-- Auto-exported from Mudlet package script: Softlock Gate
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso_Occultist_Offense_SoftlockGate.lua (DROP-IN)
+-- Purpose:
+--   Soft-lock FIRST, then allow the existing kelp-bury phase to run.
+--
+-- Gate:
+--   Require: asthma == stuck AND softscore &gt;= 2
+--     softscore = (asthma + slickness + anorexia) / 100  (AK oscore)
+--   i.e. asthma + (slickness or anorexia) at minimum.
+--
+-- Load order:
+--   â€¢ AFTER Yso_Occultist_Offense.lua
+--========================================================--
+
+Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
--- softlock_gate removed: kelp-bury strategy retired; focus lock drives offense now.
+
+local Off = Yso.off.oc
+local Q   = Yso.queue
+
+-- ----------------------------
+-- Config (safe defaults)
+-- ----------------------------
+Off.cfg = Off.cfg or {}
+Off.cfg.softlock_gate = Off.cfg.softlock_gate or {
+  enabled = true,
+
+  -- Slickness is usually more reliable for you; default to slickness-first.
+  prefer = &quot;slickness&quot;, -- &quot;slickness&quot; or &quot;anorexia&quot;
+
+  -- Optional: if true, you will push for all 3 (asthma+sick+anorexia) before kelp bury.
+  push_three = false,
+
+  -- If true and asthma is already present, attempt slickness via Bubonis follow-up:
+  -- in your affmap: bubonis followup(asthma) =&gt; slickness.
+  slickness_via_bubonis_followup = true,
+
+  -- If true, keep paralysis pressure during the soft-lock setup when possible.
+  keep_paralysis = true,
+}
+
+Off._softlock_done = Off._softlock_done or {}
+
+-- ----------------------------
+-- Minimal helpers (self-contained)
+-- ----------------------------
+local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
+
+local function _vit_eqbal()
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  local eq  = tostring(v.eq or v.equilibrium or &quot;&quot;) == &quot;1&quot;
+  local bal = tostring(v.bal or v.balance or &quot;&quot;) == &quot;1&quot;
+  return eq and bal
+end
+
+local function _upright()
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  local pos = tostring(v.position or v.pos or &quot;&quot;):lower()
+  if pos == &quot;&quot; then return true end
+  return not (pos:find(&quot;lying&quot;) or pos:find(&quot;prone&quot;) or pos:find(&quot;sitting&quot;) or pos:find(&quot;kneel&quot;) or pos:find(&quot;rest&quot;))
+end
+
+local function _queue_addclear(qtype, piped)
+  if not piped or piped == &quot;&quot; then return false end
+  if Q and type(Q.addclear) == &quot;function&quot; then
+    Q.addclear(qtype, piped)
+    return true
+  end
+  return false
+end
+
+local function _queue_eqbal_clear(...)
+  local cmds = {}
+  for i = 1, select(&quot;#&quot;, ...) do
+    local c = select(i, ...)
+    c = _trim(c)
+    if c ~= &quot;&quot; then cmds[#cmds+1] = c end
+  end
+  if #cmds == 0 then return false end
+
+  if Off.cfg and Off.cfg.prepend_stand and not _upright() then
+    table.insert(cmds, 1, &quot;stand&quot;)
+  end
+
+  local qtype = Off.qtype_eqbal or &quot;eq&quot;
+  return _queue_addclear(qtype, table.concat(cmds, (Yso and Yso.sep) or &quot;&amp;&amp;&quot;))
+end
+
+local function _score(aff, afftbl)
+  if Off.score then return Off.score(aff, afftbl) end
+  local s = (afftbl and afftbl[aff]) or (affstrack and affstrack.score and affstrack.score[aff]) or 0
+  return tonumber(s) or 0
+end
+
+local function _stuck(aff, afftbl)
+  local stuck = Off.cfg.stuck_score or 100
+  return _score(aff, afftbl) &gt;= stuck
+end
+
+local function _softscore(afftbl)
+  -- Prefer AK global softscore if it exists (computed in ak.scoreup/oscore),
+  -- otherwise compute from aff presence (same formula).
+  if type(_G.softscore) == &quot;number&quot; then return _G.softscore end
+  local stuck = Off.cfg.stuck_score or 100
+  local n = 0
+  if _score(&quot;asthma&quot;, afftbl)   &gt;= stuck then n = n + 1 end
+  if _score(&quot;slickness&quot;, afftbl)&gt;= stuck then n = n + 1 end
+  if _score(&quot;anorexia&quot;, afftbl) &gt;= stuck then n = n + 1 end
+  return n
+end
+
+local function _softlock_ready(t, afftbl)
+  if not _stuck(&quot;asthma&quot;, afftbl) then return false end
+  local ss = _softscore(afftbl)
+  local need = (Off.cfg.softlock_gate and Off.cfg.softlock_gate.push_three) and 3 or 2
+  return ss &gt;= need
+end
+
+-- ----------------------------
+-- Soft-lock setup routine
+-- ----------------------------
+function Off.try_softlock_setup(t, afftbl)
+  local cfg = Off.cfg.softlock_gate or {}
+  if cfg.enabled == false then return false end
+  if not _vit_eqbal() then return false end
+  t = _trim(t)
+  if t == &quot;&quot; then return false end
+
+  local stuck = Off.cfg.stuck_score or 100
+
+  local asthma   = _score(&quot;asthma&quot;, afftbl)
+  local slick    = _score(&quot;slickness&quot;, afftbl)
+  local anorexia = _score(&quot;anorexia&quot;, afftbl)
+
+  -- Reset / track per-target completion
+  if asthma &lt; stuck then Off._softlock_done[t] = false end
+  if Off._softlock_done[t] == true and not _softlock_ready(t, afftbl) then
+    Off._softlock_done[t] = false
+  end
+  if _softlock_ready(t, afftbl) then
+    Off._softlock_done[t] = true
+    return false
+  end
+
+  -- Choose your â€œapplyâ€ method:
+  local ent_asthma = (((Off.cfg.kelp_bury or {}).entities or {}).asthma) or &quot;bubonis&quot;
+
+  -- Build commands: keep it simple and deterministic.
+  -- One instill per cycle: if we need anorexia specifically, instill anorexia; otherwise keep paralysis pressure.
+  local instill_cmd = nil
+  if cfg.keep_paralysis then instill_cmd = (&quot;instill %s with paralysis&quot;):format(t) end
+
+  -- 1) Ensure asthma first (required for your gate AND for Bubonis slickness follow-up).
+  if asthma &lt; stuck then
+    return _queue_eqbal_clear(
+      instill_cmd or (&quot;instill %s with paralysis&quot;):format(t),
+      (&quot;command %s at %s&quot;):format(ent_asthma, t)
+    )
+  end
+
+  -- 2) Prefer slickness (your stated reliability preference)
+  if slick &lt; stuck and (cfg.prefer == &quot;slickness&quot;) then
+    if cfg.slickness_via_bubonis_followup then
+      return _queue_eqbal_clear(
+        instill_cmd or (&quot;instill %s with paralysis&quot;):format(t),
+        (&quot;command %s at %s&quot;):format(ent_asthma, t) -- asthma already present =&gt; bubonis follow-up slickness (per your affmap)
+      )
+    end
+    return _queue_eqbal_clear(
+      instill_cmd or (&quot;instill %s with paralysis&quot;):format(t),
+      (&quot;instill %s with slickness&quot;):format(t)
+    )
+  end
+
+  -- 3) If slickness is handled (or prefer anorexia), fill anorexia if needed.
+  local need_three = cfg.push_three == true
+  local need_second = (not need_three) and (_softscore(afftbl) &lt; 2) -- asthma already present =&gt; missing either slickness or anorexia
+  if (anorexia &lt; stuck) and (need_three or need_second or cfg.prefer == &quot;anorexia&quot;) then
+    -- Instill anorexia takes priority over paralysis for this cycle (single-instll reality).
+    return _queue_eqbal_clear(
+      (&quot;instill %s with anorexia&quot;):format(t)
+    )
+  end
+
+  -- 4) If we get here, weâ€™re missing slickness but prefer anorexia (or slickness method is disabled).
+  if slick &lt; stuck then
+    if cfg.slickness_via_bubonis_followup then
+      return _queue_eqbal_clear(
+        instill_cmd or (&quot;instill %s with paralysis&quot;):format(t),
+        (&quot;command %s at %s&quot;):format(ent_asthma, t)
+      )
+    end
+    return _queue_eqbal_clear(
+      instill_cmd or (&quot;instill %s with paralysis&quot;):format(t),
+      (&quot;instill %s with slickness&quot;):format(t)
+    )
+  end
+
+  -- Fallback: keep paralysis pressure rather than doing nothing.
+  if instill_cmd then
+    return _queue_eqbal_clear(instill_cmd)
+  end
+  return false
+end
+
+-- ----------------------------
+-- Wrap kelp-bury: soft-lock runs first, then original kelp-bury.
+-- ----------------------------
+if not Off._softlock_gate_wrapped and type(Off.try_kelp_bury) == &quot;function&quot; then
+  Off._softlock_gate_wrapped = true
+  Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
+
+  Off.try_kelp_bury = function(t, afftbl)
+    local cfg = Off.cfg.softlock_gate or {}
+    if cfg.enabled ~= false then
+      if not _softlock_ready(t, afftbl) then
+        -- Run soft-lock setup instead of entering kelp-bury.
+        return Off.try_softlock_setup(t, afftbl) == true
+      end
+    end
+    return Off._try_kelp_bury_orig(t, afftbl)
+  end
+end
+
+--========================================================--
 </script>
 					<eventHandlerList />
 				</Script>
@@ -9254,23 +9072,23 @@ Yso.off.oc = Yso.off.oc or {}
 --   then map each affliction to AK cure buckets/actions where possible.
 --
 -- Why:
---   * Lets you query &quot;what bucket cures X?&quot;
---   * Lets you use AK stack scores like affstrack.kelpscore / ginsengscore
+--   â€¢ Lets you query &quot;what bucket cures X?&quot;
+--   â€¢ Lets you use AK stack scores like affstrack.kelpscore / ginsengscore
 --     while staying scoped to Occultist-kit afflictions.
 --
 -- Requirements:
---   * Load AFTER:
+--   â€¢ Load AFTER:
 --       - AK Opponent Tracking (affstrack tables/scores)
 --       - Yso_Occultist_Affmap.lua (Yso.oc.map.skills)
 --
 -- Notes:
---   * AK provides:
+--   â€¢ AK provides:
 --       - affstrack.eaten  (item -&gt; aff list)
 --       - affstrack.applied(part -&gt; aff list)
 --       - affstrack.smoked / treed / focused (aff lists)
 --       - affstrack.kelpscore / ginsengscore / goldenscore / mentalscore /
 --         enlightenscore / whisperscore / tramplescore
---   * This module does NOT use pyradiusscore in logic (per your request),
+--   â€¢ This module does NOT use pyradiusscore in logic (per your request),
 --     but you can still query it directly from AK if you want.
 --========================================================--
 
@@ -9379,8 +9197,8 @@ local ITEM_BUCKET = {
   [&quot;arsenic pellet&quot;]       = &quot;bayberry&quot;,
 }
 
--- Smoke herb specificity is not fully expressed in AK&apos;s smoked list; for Occultist-kit
--- affs, we provide a conservative &quot;best-known&quot; map (you can edit freely).
+-- Smoke herb specificity is not fully expressed in AKâ€™s smoked list; for Occultist-kit
+-- affs, we provide a conservative â€œbest-knownâ€ map (you can edit freely).
 local SMOKE_HERB_BY_AFF = {
   aeon      = &quot;elm&quot;,
   deadening = &quot;elm&quot;,
@@ -9457,7 +9275,7 @@ local function build_from_ak(occ_affs_set)
 
     if smoked_set[aff] then
       e.smoke.ok = true
-      e.smoke.herb = SMOKE_HERB_BY_AFF[aff] -- may be nil; that&apos;s fine
+      e.smoke.herb = SMOKE_HERB_BY_AFF[aff] -- may be nil; thatâ€™s fine
       by_bucket.smoke[aff] = true
     end
 
@@ -9567,7 +9385,7 @@ function C.dump()
   end
 end
 
--- Build now; if Affmap/AK aren&apos;t loaded yet, you can call Yso.oc.cures.rebuild() later.
+-- Build now; if Affmap/AK arenâ€™t loaded yet, you can call Yso.oc.cures.rebuild() later.
 C.rebuild()
 --========================================================--
 </script>
@@ -9581,8 +9399,8 @@ C.rebuild()
 
 --========================================================--
 -- Yso list of functions (Canonical getters / setters)
---  * Use these accessors in new logic going forward.
---  * Underlying tracking may change, but these should remain stable.
+--  â€¢ Use these accessors in new logic going forward.
+--  â€¢ Underlying tracking may change, but these should remain stable.
 --========================================================--
 
 Yso = Yso or {}
@@ -9711,7 +9529,7 @@ end
 
 --========================================================--
 -- Slowtime / Aeon / Retardation helpers (system-wide)
---  * Used by queue policy + offense modules
+--  â€¢ Used by queue policy + offense modules
 --========================================================--
 
 function Yso.now()
@@ -9743,9 +9561,9 @@ end
 --========================================================--
 -- Room presence (handled by Legacy)
 --  NOTE:
---   * Legacy maintains authoritative gmcp.Room tracking.
---   * Yso offense MUST NOT auto-clear or gate combat logic on room presence.
---   * These helpers remain as compatibility stubs only.
+--   â€¢ Legacy maintains authoritative gmcp.Room tracking.
+--   â€¢ Yso offense MUST NOT auto-clear or gate combat logic on room presence.
+--   â€¢ These helpers remain as compatibility stubs only.
 --========================================================--
 
 Yso.room = Yso.room or {}
@@ -10729,8 +10547,8 @@ end
 
 --========================================================--
 -- Central offense utility: shieldbreak (Gremlin)
---  * Gremlin uses EQUILIBRIUM lane (NOT entity balance)
---  * Returns an EQ-lane command string or nil
+--  â€¢ Gremlin uses EQUILIBRIUM lane (NOT entity balance)
+--  â€¢ Returns an EQ-lane command string or nil
 --========================================================--
 Yso.off = Yso.off or {}
 Yso.off.util = Yso.off.util or {}
@@ -10898,9 +10716,9 @@ function Yso.state.ent_fail(seconds, src)
 end
 
 --========================================================--
--- Locks (FULL) - pending/cooldown/backoff + lane wake reasons
---  * Upgrades the minimal locks from api_stuff.lua.
---  * Runs even if _yso_minlocks is already set.
+-- Locks (FULL) â€” pending/cooldown/backoff + lane wake reasons
+--  â€¢ Upgrades the minimal locks from api_stuff.lua.
+--  â€¢ Runs even if _yso_minlocks is already set.
 --========================================================--
 Yso.locks = Yso.locks or {}
 do
@@ -11054,8 +10872,8 @@ end
 --========================================================--
 --========================================================--
 -- Yso.fnref (static full index + runtime walker)
---  * static: comprehensive function list (union of disk+mpackage sources)
---  * runtime: walk currently-loaded Yso table and list discovered functions
+--  â€¢ static: comprehensive function list (union of disk+mpackage sources)
+--  â€¢ runtime: walk currently-loaded Yso table and list discovered functions
 --========================================================--
 Yso.fnref = Yso.fnref or {}
 do
@@ -12056,7 +11874,7 @@ do
     _echo(string.format(&quot;&lt;dim_grey&gt;[Yso.fnref] %s: %d&lt;reset&gt;&quot;, tostring(cat), #lst))
     for i=1,#lst do
       local p = lst[i]
-      local ok = (F.exists(p) and &quot;&lt;green&gt;OK&lt;reset&gt;&quot; or &quot;&lt;red&gt;X&lt;reset&gt;&quot;)
+      local ok = (F.exists(p) and &quot;&lt;green&gt;âœ“&lt;reset&gt;&quot; or &quot;&lt;red&gt;âœ—&lt;reset&gt;&quot;)
       _echo(&quot;&lt;dim_grey&gt;  &quot;..ok..&quot; &quot;..p..&quot;&lt;reset&gt;&quot;)
     end
     return lst
@@ -12077,29 +11895,29 @@ end
 					<packageName />
 					<script>--========================================================--
 -- Yso_Offense_Coordination.lua  (SUPERSEDING DROP-IN)
---  * Combat mode coordination (NO autostart)
---  * Target auto-clear on death / tumble-out / not-in-room
---  * Slowtime heuristic: &quot;You move sluggishly into action.&quot;
+--  â€¢ Combat mode coordination (NO autostart)
+--  â€¢ Target auto-clear on death / tumble-out / not-in-room
+--  â€¢ Slowtime heuristic: &quot;You move sluggishly into action.&quot;
 --
 -- Patch (2026-01-11):
---  * On: &quot;&lt;tgt&gt; begins to tumble towards the &lt;dir&gt;.&quot;
+--  â€¢ On: &quot;&lt;tgt&gt; begins to tumble towards the &lt;dir&gt;.&quot;
 --      - If Soulmaster balance NOT ready -&gt; QUEUE BAL_CLEAR: fling lust at &lt;tgt&gt;
 --      - Else (Soulmaster ready) -&gt; prefer Soulmaster anti-tumble (if available),
 --        otherwise fall back to Lust.
---  * On: &quot;&lt;tgt&gt; tumbles out to the &lt;dir&gt;.&quot;
+--  â€¢ On: &quot;&lt;tgt&gt; tumbles out to the &lt;dir&gt;.&quot;
 --      - QUEUE FREE: outd empress
 --      - QUEUE BAL_CLEAR: fling empress &lt;tgt&gt;
---  * Still marks tumble for group_damage (dmg) module, and won&apos;t break other modules.
+--  â€¢ Still marks tumble for group_damage (dmg) module, and wonâ€™t break other modules.
 --
 -- IMPORTANT COMPAT FIX (this drop-in):
---  * Do NOT overwrite Yso.off.oc.toggle() if the Unravel route module already defined it.
+--  â€¢ Do NOT overwrite Yso.off.oc.toggle() if the Unravel route module already defined it.
 --========================================================--
 
 Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
--- Only define if Unravel route (or another driver) didn&apos;t already define it.
+-- Only define if Unravel route (or another driver) didnâ€™t already define it.
 if type(Yso.off.oc.toggle) ~= &quot;function&quot; then
   function Yso.off.oc.toggle(on)
     if on == nil then
@@ -12110,9 +11928,7 @@ if type(Yso.off.oc.toggle) ~= &quot;function&quot; then
     if Yso and Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
       Yso.pulse.wake(&quot;oc:toggle&quot;)
     end
-    if type(cecho) == &quot;function&quot; then
-      cecho(string.format(&quot;&lt;orange&gt;[Yso] Occultist offense %s.\n&quot;, Yso.off.oc.enabled and &quot;ON&quot; or &quot;OFF&quot;))
-    end
+    cecho(string.format(&quot;&lt;orange&gt;[Yso] Occultist offense %s.\n&quot;, Yso.off.oc.enabled and &quot;ON&quot; or &quot;OFF&quot;))
   end
 end
 
@@ -12159,7 +11975,7 @@ end
 
 local function _cur_target()
   if type(Yso.get_target) == &quot;function&quot; then return _trim(Yso.get_target() or &quot;&quot;) end
-  return _trim(rawget(_G, &quot;target&quot;) or &quot;&quot;)
+  return _trim((type(Yso.target) == &quot;string&quot; and Yso.target) or (Yso.state and type(Yso.state.target) == &quot;string&quot; and Yso.state.target) or &quot;&quot;)
 end
 
 local function _is_current(t)
@@ -12170,16 +11986,6 @@ local function _clear(reason)
   if type(Yso.clear_target) == &quot;function&quot; then
     Yso.clear_target(reason or &quot;auto&quot;)
   end
-end
-
-function C.on_target_leap(who, dir)
-  who = _trim(who)
-  dir = _trim(dir)
-  if who == &quot;&quot; then return false end
-  if Yso and Yso.dop and type(Yso.dop.note_escape) == &quot;function&quot; then
-    pcall(Yso.dop.note_escape, who, &quot;leap&quot;, dir)
-  end
-  return true
 end
 
 C._tm = C._tm or {}
@@ -12195,8 +12001,8 @@ end
 
 local function _reset_enemy_state_on_starburst(tgt)
   -- AK compatibility: affstrack layouts vary by version.
-  --  * Modern: affstrack.score[aff] = number (0..100)
-  --  * Some builds: affstrack.score[aff] = { current = number, ... }
+  --  â€¢ Modern: affstrack.score[aff] = number (0..100)
+  --  â€¢ Some builds: affstrack.score[aff] = { current = number, ... }
   if type(affstrack) == &quot;table&quot; then
     if type(affstrack.score) == &quot;table&quot; then
       for k, v in pairs(affstrack.score) do
@@ -12246,9 +12052,9 @@ end
 --========================================================--
 -- Target presence / room tracking
 --  NOTE:
---   * Legacy maintains authoritative room occupant tracking.
---   * Yso MUST NOT auto-clear targets or gate offense on room presence.
---   * Any target clears should come only from explicit server lines
+--   â€¢ Legacy maintains authoritative room occupant tracking.
+--   â€¢ Yso MUST NOT auto-clear targets or gate offense on room presence.
+--   â€¢ Any target clears should come only from explicit server lines
 --     (e.g., death, flee, tumble), and only while actively fighting.
 --========================================================--
 
@@ -12257,13 +12063,13 @@ end
 
 ------------------------------------------------------------
 -- Enemy cure telemetry (from XML triggers)
---  * The XML package has triggers for:
+--  â€¢ The XML package has triggers for:
 --      &quot;&lt;tgt&gt; eats an aurum flake.&quot;
 --      &quot;&lt;tgt&gt; eats a piece of kelp.&quot;
 --      &quot;&lt;tgt&gt; touches a tree tattoo.&quot;
 --    They call Yso.off.oc.on_enemy_* if present.
 --
---  * This module implements those hooks so other offense planners can
+--  â€¢ This module implements those hooks so other offense planners can
 --    read &quot;last kelp eat&quot; etc without hard-wiring trigger scripts.
 ------------------------------------------------------------
 
@@ -12271,7 +12077,8 @@ Yso.off.oc = Yso.off.oc or {}
 
 -- Ensure the shared Occultist entity pool exists (routes may read this).
 Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
-  rotation = { &quot;worm&quot;, &quot;sycophant&quot;, &quot;bubonis&quot;, &quot;crone&quot;, &quot;hound&quot;, &quot;slime&quot;, &quot;storm&quot;, &quot;bloodleech&quot;, &quot;firelord&quot;, &quot;gremlin&quot;, &quot;humbug&quot;, &quot;chimera&quot; },
+  rotation = { &quot;worm&quot;, &quot;sycophant&quot;, &quot;bubonis&quot;, &quot;crone&quot;, &quot;hound&quot;, &quot;slime&quot;, &quot;storm&quot;, &quot;bloodleech&quot;, &quot;firelord&quot;, &quot;gremlin&quot; },
+  kelp = { asthma = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;, healthleech = &quot;worm&quot;, sensitivity = &quot;slime&quot; },
 }
 
 Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
@@ -12281,17 +12088,6 @@ Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
   aurum_eat_n   = {},
   tree_touch_at = {},
   tree_touch_n  = {},
-}
-
-Yso.off.oc.entity_events = Yso.off.oc.entity_events or {
-  slime_apply_at = {},
-  slime_apply_n  = {},
-  slime_end_at   = {},
-  slime_end_n    = {},
-  deaf_strip_at  = {},
-  deaf_strip_n   = {},
-  blind_strip_at = {},
-  blind_strip_n  = {},
 }
 
 local function _mark(tbl_at, tbl_n, who)
@@ -12308,15 +12104,6 @@ local function _note_target_herb(who, herb_key)
   if Yso and Yso.tgt and type(Yso.tgt.note_target_herb) == &quot;function&quot; then
     pcall(Yso.tgt.note_target_herb, who, herb_key)
   end
-end
-
-local function _note_target_meta_time(who, key, when)
-  if not (Yso and Yso.tgt and type(Yso.tgt.get) == &quot;function&quot;) then return false end
-  local ok, row = pcall(Yso.tgt.get, who)
-  if not ok or type(row) ~= &quot;table&quot; then return false end
-  row.meta = row.meta or {}
-  row.meta[tostring(key or &quot;&quot;)] = tonumber(when or 0) or 0
-  return true
 end
 
 function Yso.off.oc.on_enemy_kelp_eat(who)
@@ -12340,7 +12127,13 @@ end
 function Yso.off.oc.on_enemy_tree_touch(who)
   local E = Yso.off.oc.cure_events
   _mark(E.tree_touch_at, E.tree_touch_n, who)
-  _note_target_meta_time(who, &quot;last_tree_touch_at&quot;, E.tree_touch_at[tostring(who or &quot;&quot;):lower()])
+  if Yso and Yso.tgt and type(Yso.tgt.get)==&quot;function&quot; then
+    local ok,r = pcall(Yso.tgt.get, who)
+    if ok and type(r)==&quot;table&quot; then
+      r.meta = r.meta or {}
+      r.meta.last_tree_touch_at = E.tree_touch_at[tostring(who or &quot;&quot;):lower()]
+    end
+  end
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_tree_touch)==&quot;function&quot; then
     pcall(Yso.off.oc.group_damage.on_enemy_tree_touch, who)
   end
@@ -12352,34 +12145,10 @@ function Yso.off.oc.last_kelp_eat_at(who)
   return E and tonumber(E.kelp_eat_at and E.kelp_eat_at[k] or 0) or 0
 end
 
-function Yso.off.oc.on_enemy_slime_apply(who)
-  local E = Yso.off.oc.entity_events
-  _mark(E.slime_apply_at, E.slime_apply_n, who)
-  _note_target_meta_time(who, &quot;last_slime_apply_at&quot;, E.slime_apply_at[tostring(who or &quot;&quot;):lower()])
-end
-
-function Yso.off.oc.on_enemy_slime_end(who)
-  local E = Yso.off.oc.entity_events
-  _mark(E.slime_end_at, E.slime_end_n, who)
-  _note_target_meta_time(who, &quot;last_slime_end_at&quot;, E.slime_end_at[tostring(who or &quot;&quot;):lower()])
-end
-
-function Yso.off.oc.on_enemy_deaf_strip(who)
-  local E = Yso.off.oc.entity_events
-  _mark(E.deaf_strip_at, E.deaf_strip_n, who)
-  _note_target_meta_time(who, &quot;last_deaf_strip_at&quot;, E.deaf_strip_at[tostring(who or &quot;&quot;):lower()])
-end
-
-function Yso.off.oc.on_enemy_blind_strip(who)
-  local E = Yso.off.oc.entity_events
-  _mark(E.blind_strip_at, E.blind_strip_n, who)
-  _note_target_meta_time(who, &quot;last_blind_strip_at&quot;, E.blind_strip_at[tostring(who or &quot;&quot;):lower()])
-end
-
 --========================================================--
--- Yso.off.driver - offense route state/control only (single-authority orchestrator pass)
---  * Tracks policy + active route for the orchestrator and route proposals.
---  * Does NOT directly tick or emit offense routes.
+-- Yso.off.driver â€” offense route state/control only (single-authority orchestrator pass)
+--  â€¢ Tracks policy + active route for the orchestrator and route proposals.
+--  â€¢ Does NOT directly tick or emit offense routes.
 --========================================================--
 
 Yso = Yso or {}
@@ -12424,118 +12193,31 @@ local function _is_enabled(mod)
   return false
 end
 
-local function _fb_current_class()
-  local g = rawget(_G, &quot;gmcp&quot;)
-  if type(g) == &quot;table&quot; and type(g.Char) == &quot;table&quot; and type(g.Char.Status) == &quot;table&quot; then
-    return tostring(g.Char.Status.class or &quot;&quot;)
-  end
-  return &quot;&quot;
-end
-
-local _FALLBACK_ROUTE_ROWS = {
-  occ_aff_burst = {
-    id = &quot;occ_aff_burst&quot;,
-    mode = &quot;combat&quot;,
-    party_route = nil,
-    namespace = &quot;Yso.off.oc.occ_aff_burst&quot;,
-    description = &quot;Duel affliction loop&quot;,
-    priority = 58,
-  },
-  group_damage = {
-    id = &quot;group_damage&quot;,
-    mode = &quot;party&quot;,
-    party_route = &quot;dam&quot;,
-    namespace = &quot;Yso.off.oc.group_damage&quot;,
-    description = &quot;Group damage&quot;,
-    priority = 55,
-  },
-  party_aff = {
-    id = &quot;party_aff&quot;,
-    mode = &quot;party&quot;,
-    party_route = &quot;aff&quot;,
-    namespace = &quot;Yso.off.oc.party_aff&quot;,
-    description = &quot;Party affliction pressure&quot;,
-    priority = 53,
-  },
-  magi_focuslock = {
-    id = &quot;magi_focuslock&quot;,
-    mode = &quot;combat&quot;,
-    party_route = nil,
-    class = &quot;Magi&quot;,
-    namespace = &quot;Yso.off.magi.focuslock&quot;,
-    description = &quot;Duel focuslock loop (Magi)&quot;,
-    priority = 58,
-  },
-}
-
-local _FALLBACK_ROUTE_ALIASES = {
-  aff = &quot;occ_aff_burst&quot;,
-  occ_aff = &quot;occ_aff_burst&quot;,
-  occ = &quot;occ_aff_burst&quot;,
-  occultist_offense = &quot;occ_aff_burst&quot;,
-  gd = &quot;group_damage&quot;,
-  dmg = &quot;group_damage&quot;,
-  dam = &quot;group_damage&quot;,
-  party_dam = &quot;group_damage&quot;,
-  party_aff = &quot;party_aff&quot;,
-  team_aff = &quot;party_aff&quot;,
-  magi = &quot;magi_focuslock&quot;,
-  magi_aff = &quot;magi_focuslock&quot;,
-}
-
-local _FALLBACK_CLASS_ALIASES = {
-  aff = { Magi = &quot;magi_focuslock&quot; },
-}
-
-local function _fallback_route_id(name)
-  name = _lc(name)
-  if name == &quot;&quot; or name == &quot;none&quot; then return nil end
-  local ca = _FALLBACK_CLASS_ALIASES[name]
-  if type(ca) == &quot;table&quot; then
-    local cls = _fb_current_class()
-    if ca[cls] then return ca[cls] end
-  end
-  return _FALLBACK_ROUTE_ALIASES[name] or name
-end
-
-local function _fallback_registry()
-  Yso.Combat = Yso.Combat or {}
-  Yso.Combat.RouteRegistryFallback = Yso.Combat.RouteRegistryFallback or {
-    resolve = function(name)
-      local id = _fallback_route_id(name)
-      local entry = id and _FALLBACK_ROUTE_ROWS[id] or nil
-      if entry and entry.class and entry.class ~= _fb_current_class() then return nil end
-      return entry
-    end,
-    is_deprecated = function(name)
-      return false
-    end,
-    for_party_route = function(route)
-      route = _lc(route)
-      if route == &quot;dmg&quot; then route = &quot;dam&quot; end
-      for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-        if entry.party_route == route then return entry end
-      end
-      return nil
-    end,
-    primary_for_mode = function(mode)
-      mode = _lc(mode)
-      if mode == &quot;combat&quot; then
-        local cls = _fb_current_class()
-        if cls == &quot;Magi&quot; then return _FALLBACK_ROUTE_ROWS.magi_focuslock end
-        return _FALLBACK_ROUTE_ROWS.occ_aff_burst
-      end
-      if mode == &quot;party&quot; then return _FALLBACK_ROUTE_ROWS.group_damage end
-      return nil
-    end,
-  }
-  return Yso.Combat.RouteRegistryFallback
-end
-
 local function _route_registry()
   local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
   if RR and type(RR.resolve) == &quot;function&quot; then return RR end
-  return _fallback_registry()
+  if type(require) == &quot;function&quot; then
+    pcall(require, &quot;Yso.Combat.route_registry&quot;)
+    pcall(require, &quot;Yso.xml.route_registry&quot;)
+  end
+  RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == &quot;function&quot; then return RR end
+  return nil
+end
+
+local function _route_id(route)
+  route = _lc(route)
+  if route == &quot;&quot; or route == &quot;none&quot; then return nil end
+
+  local RR = _route_registry()
+  if not (RR and type(RR.resolve) == &quot;function&quot;) then
+    return nil
+  end
+  local entry = RR.resolve(route)
+  if entry and type(entry.id) == &quot;string&quot; and entry.id ~= &quot;&quot; then
+    return entry.id
+  end
+  return nil
 end
 
 local function _resolve_route()
@@ -12546,13 +12228,7 @@ local function _resolve_route()
 
   local route = _lc(D.state.active)
   if route == &quot;&quot; or route == &quot;none&quot; then return nil end
-
-  local RR = _route_registry()
-  if not RR then return nil end
-
-  local entry = RR.resolve(route)
-  if entry then return entry.id end
-  return nil
+  return _route_id(route)
 end
 
 function D.current_route()
@@ -12566,20 +12242,21 @@ function D.current_route()
   if explicit then return explicit end
 
   local RR = _route_registry()
+  if not RR then return nil end
 
   if mode and type(mode.is_party) == &quot;function&quot; and mode.is_party() then
     local pr = type(mode.party_route) == &quot;function&quot; and _lc(mode.party_route()) or &quot;&quot;
-    if RR and type(RR.for_party_route) == &quot;function&quot; then
+    if type(RR.for_party_route) == &quot;function&quot; then
       local entry = RR.for_party_route(pr)
-      if entry then return entry.id end
+      if entry and entry.id then return entry.id end
     end
     return nil
   end
 
   if mode and type(mode.is_combat) == &quot;function&quot; and mode.is_combat() then
-    if RR and type(RR.primary_for_mode) == &quot;function&quot; then
+    if type(RR.primary_for_mode) == &quot;function&quot; then
       local entry = RR.primary_for_mode(&quot;combat&quot;)
-      if entry then return entry.id end
+      if entry and entry.id then return entry.id end
     end
     return nil
   end
@@ -12614,8 +12291,8 @@ function Yso.is_actively_fighting()
   if type(Yso.get_target) == &quot;function&quot; then
     local ok, v = pcall(Yso.get_target)
     if ok then t = _trim(v or &quot;&quot;) end
-  else
-    t = _trim(rawget(_G, &quot;target&quot;) or &quot;&quot;)
+  elseif type(Yso.target) == &quot;string&quot; then
+    t = _trim(Yso.target)
   end
   if t == &quot;&quot; then return false end
 
@@ -12650,18 +12327,10 @@ end
 function D.set_active(route)
   route = _lc(route)
   if route == &quot;&quot; or route == &quot;none&quot; then route = &quot;none&quot; end
-
-  local RR = _route_registry()
-  if RR and route ~= &quot;none&quot; then
-    local entry = RR.resolve(route)
-    if entry then
-      route = entry.id
-    elseif RR.is_deprecated and RR.is_deprecated(route) then
-      return D.state.active
-    else
-      return D.state.active
-    end
-  elseif route ~= &quot;none&quot; then
+  if route ~= &quot;none&quot; then
+    route = _route_id(route)
+  end
+  if route == nil then
     return D.state.active
   end
   D.state.active = route
@@ -12670,118 +12339,6 @@ function D.set_active(route)
     Yso.pulse.wake(&quot;driver:active&quot;)
   end
   return route
-end
-
-local function _compat_echo(msg)
-  if type(cecho) == &quot;function&quot; then
-    cecho(string.format(&quot;&lt;orange&gt;[Yso:Occ] %s\n&quot;, tostring(msg)))
-  elseif type(echo) == &quot;function&quot; then
-    echo(string.format(&quot;[Yso:Occ] %s\n&quot;, tostring(msg)))
-  end
-end
-
-local Oc = Yso.off.oc
-Oc.cfg = Oc.cfg or {}
-Oc.state = Oc.state or {}
-
-Oc.cfg.mode = Oc.cfg.mode or Oc.state.mode or &quot;duel&quot;
-Oc.cfg.ai = Oc.cfg.ai or Oc.state.ai or &quot;lock&quot;
-Oc.cfg.tarot = Oc.cfg.tarot or Oc.state.tarot or &quot;aeon&quot;
-
-Oc.state.mode = Oc.state.mode or Oc.cfg.mode
-Oc.state.ai = Oc.state.ai or Oc.cfg.ai
-Oc.state.tarot = Oc.state.tarot or Oc.cfg.tarot
-Oc.state.enabled = (Oc.state.enabled == true)
-
-local function _compat_is_on()
-  return (D.state.enabled == true) and (_lc(D.state.policy) == &quot;auto&quot;)
-end
-
-local function _compat_sync_enabled(on)
-  on = (on == true)
-  Oc.enabled = on
-  Oc.state.enabled = on
-end
-
-local function _compat_toggle(on)
-  if on == nil then
-    on = not _compat_is_on()
-  else
-    on = (on == true)
-  end
-
-  D.toggle(on)
-  if on then
-    D.set_policy(&quot;auto&quot;)
-  else
-    D.set_policy(&quot;manual&quot;)
-    D.set_active(&quot;none&quot;)
-  end
-
-  _compat_sync_enabled(on)
-  _compat_echo(&quot;Occultist offense &quot; .. (on and &quot;ON.&quot; or &quot;OFF.&quot;))
-  return on
-end
-
-function Oc.on()
-  return _compat_toggle(true)
-end
-
-function Oc.off()
-  return _compat_toggle(false)
-end
-
-function Oc.toggle(on)
-  return _compat_toggle(on)
-end
-
-function Oc.set_mode(mode)
-  mode = _lc(mode)
-  if mode == &quot;&quot; then return Oc.state.mode end
-  Oc.state.mode = mode
-  Oc.cfg.mode = mode
-  _compat_echo(&quot;Offense mode set to &quot; .. mode)
-  return mode
-end
-
-function Oc.get_mode()
-  return Oc.state.mode or Oc.cfg.mode or &quot;duel&quot;
-end
-
-function Oc.set_ai(ai)
-  ai = _lc(ai)
-  if ai == &quot;&quot; then return Oc.get_ai() end
-
-  if ai == &quot;on&quot; or ai == &quot;yes&quot; or ai == &quot;true&quot; or ai == &quot;1&quot; then
-    _compat_toggle(true)
-    return Oc.get_ai()
-  end
-  if ai == &quot;off&quot; or ai == &quot;no&quot; or ai == &quot;false&quot; or ai == &quot;0&quot; then
-    _compat_toggle(false)
-    return Oc.get_ai()
-  end
-
-  Oc.state.ai = ai
-  Oc.cfg.ai = ai
-  _compat_echo(&quot;AI profile set to &quot; .. ai)
-  return ai
-end
-
-function Oc.get_ai()
-  return Oc.state.ai or Oc.cfg.ai or &quot;lock&quot;
-end
-
-function Oc.set_tarot(tarot)
-  tarot = _lc(tarot)
-  if tarot == &quot;&quot; then return Oc.get_tarot() end
-  Oc.state.tarot = tarot
-  Oc.cfg.tarot = tarot
-  _compat_echo(&quot;Tarot focus set to &quot; .. tarot)
-  return tarot
-end
-
-function Oc.get_tarot()
-  return Oc.state.tarot or Oc.cfg.tarot or &quot;aeon&quot;
 end
 
 function D.tick(reasons)
@@ -12793,68 +12350,6 @@ end
 -- Disable any legacy pulse-driver registration; orchestrator is the only automated emitter.
 if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg[&quot;offense_driver&quot;] then
   Yso.pulse.state.reg[&quot;offense_driver&quot;].enabled = false
-end
-
---========================================================--
--- Fool Fling - Defensive-lane action (class-agnostic)
---   Fires &quot;fling fool at me&quot; when 3+ limbs are broken
---   (affstrack.score &gt;= 200) and at least one arm is usable.
---========================================================--
-
-local _FOOL_LIMBS = { &quot;leftarm&quot;, &quot;rightarm&quot;, &quot;leftleg&quot;, &quot;rightleg&quot;, &quot;head&quot;, &quot;torso&quot; }
-local _fool_last_at = 0
-local _FOOL_COOLDOWN = 3.0
-
-local function _fool_now()
-  if type(getEpoch) == &quot;function&quot; then return getEpoch() end
-  return os.clock()
-end
-
-local function _fool_count_broken()
-  if not affstrack or type(affstrack.score) ~= &quot;table&quot; then return 0, false end
-  local broken, free_arm = 0, false
-  for _, limb in ipairs(_FOOL_LIMBS) do
-    if (affstrack.score[limb] or 0) &gt;= 200 then
-      broken = broken + 1
-    end
-  end
-  if (affstrack.score.leftarm  or 0) &lt; 200 then free_arm = true end
-  if (affstrack.score.rightarm or 0) &lt; 200 then free_arm = true end
-  return broken, free_arm
-end
-
-local function _fool_has_bal()
-  local g = rawget(_G, &quot;gmcp&quot;)
-  if type(g) == &quot;table&quot; and type(g.Char) == &quot;table&quot; and type(g.Char.Vitals) == &quot;table&quot; then
-    return tostring(g.Char.Vitals.bal) == &quot;1&quot;
-  end
-  return false
-end
-
-function Yso.off.oc.fool_fling_check()
-  if not (Yso.toggles and Yso.toggles.offense) then return end
-
-  local broken, free_arm = _fool_count_broken()
-  if broken &lt; 3 or not free_arm then return end
-  if not _fool_has_bal() then return end
-
-  local now = _fool_now()
-  if (now - _fool_last_at) &lt; _FOOL_COOLDOWN then return end
-
-  _fool_last_at = now
-  if type(send) == &quot;function&quot; then
-    send(&quot;fling fool at me&quot;, false)
-  end
-
-  if Yso.toggles.debug and type(cecho) == &quot;function&quot; then
-    cecho(string.format(&quot;&lt;PaleGreen&gt;[Fool] &lt;reset&gt;fling (broken: %d, free arm: yes)\n&quot;, broken))
-  end
-end
-
-if type(registerAnonymousEventHandler) == &quot;function&quot; then
-  registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
-    pcall(Yso.off.oc.fool_fling_check)
-  end)
 end
 
 --========================================================--
@@ -15244,6 +14739,42 @@ Yso.instill_affs = function()
     }
 end
 
+Yso.ent_cmd_for_aff = function(aff, tgt, has_aff_fn)
+    aff = tostring(aff or &quot;&quot;):lower()
+    tgt = tostring(tgt or &quot;&quot;)
+    if aff == &quot;&quot; or tgt == &quot;&quot; then return nil, nil end
+    local has = type(has_aff_fn) == &quot;function&quot; and has_aff_fn or function() return false end
+
+    if aff == &quot;asthma&quot; then
+        return (&quot;command bubonis at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;slickness&quot; and has(tgt, &quot;asthma&quot;) then
+        return (&quot;command bubonis at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;paralysis&quot; and has(tgt, &quot;asthma&quot;) then
+        return (&quot;command slime at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;clumsiness&quot; then
+        return (&quot;command storm at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;weariness&quot; then
+        return (&quot;command hound at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;healthleech&quot; then
+        return (&quot;command worm at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;haemophilia&quot; then
+        return (&quot;command bloodleech at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;addiction&quot; then
+        return (&quot;command humbug at %s&quot;):format(tgt), &quot;mana_bury&quot;
+    end
+    if aff == &quot;chimera_roar&quot; then
+        return (&quot;command chimera at %s&quot;):format(tgt), &quot;mental_build&quot;
+    end
+    return nil, nil
+end
+
 ------------------------------------------------------------
 -- Config / state
 ------------------------------------------------------------
@@ -16065,7 +15596,7 @@ Legacy.Occultist._eh = Legacy.Occultist._eh or {}
 -- Handler signature (Legacy.SLC.Hit): (event, attacker, limb, dmg, hits, dmgTotal)
 function Legacy.Occultist.onLimbHit(event, attacker, limb, dmg, hits, dmgTotal)
   -- Example filter: only care when attacker is your current target (Yso canonical target)
-  local t = (type(Yso.get_target)==&quot;function&quot; and Yso.get_target()) or rawget(_G, &quot;target&quot;)
+  local t = (type(Yso.get_target)==&quot;function&quot; and Yso.get_target()) or Yso.target
   if attacker and type(t)==&quot;string&quot; and t ~= &quot;&quot; and attacker:lower() ~= t:lower() then return end
 
   -- TODO: Your Occultist logic here (alerts, automated decisions, logging, etc.)
@@ -16127,7 +15658,7 @@ function Legacy.Curing.Prios.UseBaseline(set)
   local base = Legacy.Curing.Prios.baseSets[set]
   if not base then return false end
 
-  -- This is what Reprio() uses as &quot;default&quot;
+  -- This is what Reprio() uses as â€œdefaultâ€
   Legacy.Curing.Prios.legacy = base
   return true
 end
@@ -16151,6 +15682,7 @@ function Legacy.Curing.SwitchServerSet(set)
     end
   end
 end
+
 </script>
 					<eventHandlerList />
 				</Script>
@@ -16317,93 +15849,16 @@ local function _gd()
   return (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.dmg or Yso.off.oc.group_damage)) or nil
 end
 
-local _FALLBACK_ROUTE_ROWS = {
-  occ_aff_burst = {
-    id = &quot;occ_aff_burst&quot;,
-    mode = &quot;combat&quot;,
-    party_route = nil,
-    namespace = &quot;Yso.off.oc.occ_aff_burst&quot;,
-    description = &quot;Duel affliction loop&quot;,
-    priority = 58,
-  },
-  group_damage = {
-    id = &quot;group_damage&quot;,
-    mode = &quot;party&quot;,
-    party_route = &quot;dam&quot;,
-    namespace = &quot;Yso.off.oc.group_damage&quot;,
-    description = &quot;Group damage&quot;,
-    priority = 55,
-  },
-  party_aff = {
-    id = &quot;party_aff&quot;,
-    mode = &quot;party&quot;,
-    party_route = &quot;aff&quot;,
-    namespace = &quot;Yso.off.oc.party_aff&quot;,
-    description = &quot;Party affliction pressure&quot;,
-    priority = 53,
-  },
-}
-
-local _FALLBACK_ROUTE_ALIASES = {
-  aff = &quot;occ_aff_burst&quot;,
-  occ_aff = &quot;occ_aff_burst&quot;,
-  occ = &quot;occ_aff_burst&quot;,
-  occultist_offense = &quot;occ_aff_burst&quot;,
-  gd = &quot;group_damage&quot;,
-  dmg = &quot;group_damage&quot;,
-  dam = &quot;group_damage&quot;,
-  party_dam = &quot;group_damage&quot;,
-  party_aff = &quot;party_aff&quot;,
-  team_aff = &quot;party_aff&quot;,
-}
-
-local function _fallback_route_id(name)
-  name = _norm(name)
-  if name == &quot;&quot; or name == &quot;none&quot; then return nil end
-  return _FALLBACK_ROUTE_ALIASES[name] or name
-end
-
-local function _fallback_registry()
-  Yso.Combat = Yso.Combat or {}
-  Yso.Combat.RouteRegistryFallback = Yso.Combat.RouteRegistryFallback or {
-    resolve = function(name)
-      local id = _fallback_route_id(name)
-      return id and _FALLBACK_ROUTE_ROWS[id] or nil
-    end,
-    for_mode = function(mode)
-      mode = _norm(mode)
-      local out = {}
-      for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-        if entry.mode == mode then out[#out + 1] = entry end
-      end
-      table.sort(out, function(a, b)
-        if (a.priority or 0) ~= (b.priority or 0) then
-          return (a.priority or 0) &gt; (b.priority or 0)
-        end
-        return tostring(a.id or &quot;&quot;) &lt; tostring(b.id or &quot;&quot;)
-      end)
-      return out
-    end,
-    for_party_route = function(route)
-      route = _norm(route)
-      if route == &quot;dmg&quot; then route = &quot;dam&quot; end
-      for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-        if entry.party_route == route then return entry end
-      end
-      return nil
-    end,
-    primary_for_mode = function(mode)
-      local rows = Yso.Combat.RouteRegistryFallback.for_mode(mode)
-      return rows[1]
-    end,
-  }
-  return Yso.Combat.RouteRegistryFallback
-end
-
 local function _route_registry()
   local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
   if RR and type(RR.resolve) == &quot;function&quot; then return RR end
-  return _fallback_registry()
+  if type(require) == &quot;function&quot; then
+    pcall(require, &quot;Yso.Combat.route_registry&quot;)
+    pcall(require, &quot;Yso.xml.route_registry&quot;)
+  end
+  RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == &quot;function&quot; then return RR end
+  return nil
 end
 
 local function _route_module(entry)
@@ -16426,8 +15881,6 @@ local function _ensure_route_module(entry)
   if type(bootstrap) == &quot;table&quot; then
     if id == &quot;occ_aff_burst&quot; and type(bootstrap.occ_aff_burst) == &quot;function&quot; then
       pcall(bootstrap.occ_aff_burst, true)
-    elseif id == &quot;magi_focuslock&quot; and type(bootstrap.magi_focuslock) == &quot;function&quot; then
-      pcall(bootstrap.magi_focuslock, true)
     elseif type(bootstrap.entry) == &quot;function&quot; then
       pcall(bootstrap.entry, true)
     end
@@ -16453,26 +15906,15 @@ end
 
 local function _route_entries()
   local RR = _route_registry()
-  if RR and type(RR.active_ids) == &quot;function&quot; and type(RR.resolve) == &quot;function&quot; then
-    local out = {}
-    local ids = RR.active_ids()
-    for i = 1, #ids do
-      local entry = RR.resolve(ids[i])
-      if entry then out[#out + 1] = entry end
-    end
-    return out
+  if not (RR and type(RR.active_ids) == &quot;function&quot; and type(RR.resolve) == &quot;function&quot;) then
+    return {}
   end
-
   local out = {}
-  for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-    out[#out + 1] = entry
+  local ids = RR.active_ids()
+  for i = 1, #ids do
+    local entry = RR.resolve(ids[i])
+    if entry then out[#out + 1] = entry end
   end
-  table.sort(out, function(a, b)
-    if (a.priority or 0) ~= (b.priority or 0) then
-      return (a.priority or 0) &gt; (b.priority or 0)
-    end
-    return tostring(a.id or &quot;&quot;) &lt; tostring(b.id or &quot;&quot;)
-  end)
   return out
 end
 
@@ -16480,11 +15922,6 @@ local function _party_entry(route)
   local RR = _route_registry()
   if RR and type(RR.for_party_route) == &quot;function&quot; then
     return RR.for_party_route(route)
-  end
-  for _, entry in ipairs(_party_entries()) do
-    if tostring(entry.party_route or &quot;&quot;) == tostring(route or &quot;&quot;) then
-      return entry
-    end
   end
   return nil
 end
@@ -17140,19 +16577,19 @@ end
 					<script>--========================================================--
 -- yso_mode_autoswitch.lua (DROP-IN)
 -- Purpose:
---   * Auto-switch Yso.mode between bash/combat using:
+--   â€¢ Auto-switch Yso.mode between bash/combat using:
 --       1) Duel/Spar start/end lines (deterministic)
 --       2) Aggression cooldown line (fallback)
 --       3) PvP contact heuristics via gmcp.Room.Players + combat text
 --
 -- Notes:
---   * Does NOT require you to manually type &quot;cooldowns&quot;, but if you do,
+--   â€¢ Does NOT require you to manually type &quot;cooldowns&quot;, but if you do,
 --     it will parse &quot;Aggression: X minutes and Y seconds.&quot; automatically.
---   * Includes a &quot;sniffer&quot; that records lines containing duel/spar so you
+--   â€¢ Includes a &quot;sniffer&quot; that records lines containing duel/spar so you
 --     can identify the exact start/end messages from your own output.
 --
 -- Where to place:
---   * Load AFTER yso_modes.lua (recommended), but safe standalone.
+--   â€¢ Load AFTER yso_modes.lua (recommended), but safe standalone.
 --========================================================--
 
 _G.Yso = _G.Yso or _G.yso or {}
@@ -17465,11 +16902,11 @@ _sync_mode(&quot;init&quot;)
 					<script>--========================================================--
 -- yso_escape_button.lua  (DROP-IN)  [REFRESHED for current Yso]
 -- Purpose:
---   * F5 &quot;escape&quot; handler for Achaea (Yso namespace)
---   * Respects current Yso command separator (Yso.sep; default &quot;;;&quot;)
---   * Universe TOUCH defaults to Newthera
---   * Uses Legacy affliction tracking (Legacy.Curing.Affs) when present
---   * Uses Yso.queue.*_clear (or addclear) when available; otherwise sends directly
+--   â€¢ F5 â€œescapeâ€ handler for Achaea (Yso namespace)
+--   â€¢ Respects current Yso command separator (Yso.sep; default &quot;;;&quot;)
+--   â€¢ Universe TOUCH defaults to Newthera
+--   â€¢ Uses Legacy affliction tracking (Legacy.Curing.Affs) when present
+--   â€¢ Uses Yso.queue.*_clear (or addclear) when available; otherwise sends directly
 --
 -- Priority:
 --   1) Universe  (touch if up; else fling + touch)
@@ -17478,9 +16915,9 @@ _sync_mode(&quot;init&quot;)
 --   4) Astral fallback (optional)
 --
 -- Safety gates:
---   * NEVER fires if prone/fallen OR paralysis/paresis
---   * Universe/Hermit additionally require NOT webbed/bound and at least one unbroken arm
---   * Only fires if HP% &lt; threshold OR MP% &lt; threshold
+--   â€¢ NEVER fires if prone/fallen OR paralysis/paresis
+--   â€¢ Universe/Hermit additionally require NOT webbed/bound and at least one unbroken arm
+--   â€¢ Only fires if HP% &lt; threshold OR MP% &lt; threshold
 --========================================================--
 
 _G.Yso = _G.Yso or _G.yso or {}
@@ -17502,7 +16939,7 @@ end
 if E.cfg.echo == nil then E.cfg.echo = true end
 if E.cfg.threshold_pct == nil then E.cfg.threshold_pct = 75 end
 
--- Default Universe destination: Newthera (closest &quot;safe city&quot; target per your note)
+-- Default Universe destination: Newthera (closest â€œsafe cityâ€ target per your note)
 if E.cfg.universe_touch == nil or E.cfg.universe_touch == &quot;&quot; then
   E.cfg.universe_touch = &quot;newthera&quot;
 end
@@ -17713,7 +17150,7 @@ E._trig.uni_up = tempRegexTrigger(
   end
 )
 
--- Universe: map folds (down) - record duration
+-- Universe: map folds (down) â€” record duration
 _killTrig(E._trig.uni_down)
 E._trig.uni_down = tempRegexTrigger(
   [[^The shimmering map folds up and vanishes into the ether\.$]],
@@ -17865,10 +17302,10 @@ end
 
 --========================================================--
 -- RadianceAlert_Helper_Event
---  * Provides: Yso.radianceAlert.fire(stage, who, msg)
---  * Raises:   raiseEvent(&quot;YsoRadiance&quot;, stage, who, msg)
---  * Plays:    C:/Windows/Media/Alarm01.wav (all stages 1-4)
---  * Prints:   HASH banner (deferred)
+--  â€¢ Provides: Yso.radianceAlert.fire(stage, who, msg)
+--  â€¢ Raises:   raiseEvent(&quot;YsoRadiance&quot;, stage, who, msg)
+--  â€¢ Plays:    C:/Windows/Media/Alarm01.wav (all stages 1-4)
+--  â€¢ Prints:   HASH banner (deferred)
 --========================================================--
 
 Yso = Yso or {}
@@ -17989,14 +17426,14 @@ end
 -- Bash mode upkeep + Orb Defense Controller + Bash Shielding
 --
 -- Key fixes:
---   * Safe default-merge into existing M.cfg / M.state so reloading won&apos;t nil-index.
---   * Occultist-only gating: no entourage/entity/orb/pathfinder upkeep on non-Occultist classes.
---   * Bash-mode naming: Yso bash mode replaces the old hunt-mode label.
+--   â€¢ Safe default-merge into existing M.cfg / M.state so reloading wonâ€™t nil-index.
+--   â€¢ Occultist-only gating: no entourage/entity/orb/pathfinder upkeep on non-Occultist classes.
+--   â€¢ Bash-mode naming: Yso bash mode replaces the old hunt-mode label.
 --
 -- Bash shielding:
---   * If HP% &lt;= 50 and shield not active -&gt; touch shield + cecho:
+--   â€¢ If HP% &lt;= 50 and shield not active -&gt; touch shield + cecho:
 --       &lt;aquamarine&gt;[CURING:] &lt;yellow&gt;(SHIELDING UP!)
---   * Tracks shield UP/DOWN + generalized &quot;translucent hammer ... smashes&quot; (any denizen)
+--   â€¢ Tracks shield UP/DOWN + generalized â€œtranslucent hammer ... smashesâ€ (any denizen)
 --========================================================--
 
 _G.Yso = _G.Yso or _G.yso or {}
@@ -18611,13 +18048,13 @@ _echo_yso(&quot;Bash upkeep loaded (Occultist-gated)&quot;)
 				<Script isActive="yes" isFolder="no">
 					<name>Hunt - Primebond Shieldbreak Selector</name>
 					<packageName />
-					<script>-- Auto-exported from Mudlet package script: Hunt - Primebond Shieldbreak Selector
+					<script>-- Auto-exported from Mudlet package script: Hunt â€” Primebond Shieldbreak Selector
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
 -- yso_hunt_primebond_selector.lua (DROP-IN)
---  * On entering bash OR combat mode: query PRIMEBOND once and cache bonds
---  * Exposes Legacy.Settings.Basher.hasLycantha for denizen shieldbreak selection
+--  â€¢ On entering bash OR combat mode: query PRIMEBOND once and cache bonds
+--  â€¢ Exposes Legacy.Settings.Basher.hasLycantha for denizen shieldbreak selection
 --========================================================--
 
 Yso = Yso or {}
@@ -18724,6 +18161,13 @@ end
 					<packageName />
 					<script>-- Auto-exported from Mudlet package script: Occie Random Generator
 -- DO NOT EDIT IN XML; edit this file instead.
+
+ak = ak or {}
+ak.occie = ak.occie or {}
+ak.occie.aura = ak.occie.aura or {}
+ak.occie.aura.physical = ak.occie.aura.physical or 0
+ak.occie.aura.mental = ak.occie.aura.mental or 0
+ak.occie.aura.unknownparse = ak.occie.aura.unknownparse or {}
 
 --akocciegen
 --ak.occie.aura.physical
@@ -18845,8 +18289,8 @@ end
 --   Occultist offense modules (scores + lists).
 --
 -- Notes:
---   * Read-only: this does NOT modify AK core logic.
---   * Designed so offense logic can reference Yso.oc.ak.* instead of reaching
+--   â€¢ Read-only: this does NOT modify AK core logic.
+--   â€¢ Designed so offense logic can reference Yso.oc.ak.* instead of reaching
 --     directly into affstrack.* scattered across code.
 --========================================================--
 
@@ -18919,13 +18363,18 @@ B.refresh_lists_from_AK()
 				<Script isActive="yes" isFolder="no">
 					<name>Bootstrap</name>
 					<packageName />
-					<script>-- Auto-exported from Mudlet package script: Bootstrap
--- DO NOT EDIT IN XML; edit this file instead.
+					<script>--========================================================--
+-- Yso bootstrap
+--  â€¢ Locates the workspace root and extends package.path.
+--  â€¢ Exposes a small bootstrap API for route/module reloads.
+--========================================================--
 
 _G.yso_default_package_path = _G.yso_default_package_path or package.path
-if _G.yso_bootstrap_done then return end
+if _G.yso_bootstrap_done then
+  local root = rawget(_G, &quot;Yso&quot;) or rawget(_G, &quot;yso&quot;)
+  return type(root) == &quot;table&quot; and root.bootstrap or true
+end
 
--- Prefer standalone workspace first, then fall back to older layouts.
 local function _pick_root(...)
   local cand = { ... }
   for i = 1, #cand do
@@ -18938,20 +18387,17 @@ local function _pick_root(...)
   return tostring(cand[1] or &quot;&quot;)
 end
 
--- Try to locate an exported Yso filesystem root dynamically.
 local function _auto_roots()
   local out = {}
-  -- Allow user override
   if type(_G.YSO_ROOT) == &quot;string&quot; and _G.YSO_ROOT ~= &quot;&quot; then out[#out+1] = _G.YSO_ROOT end
   if type(_G.yso_root) == &quot;string&quot; and _G.yso_root ~= &quot;&quot; then out[#out+1] = _G.yso_root end
 
-  -- Mudlet home dir
   if type(getMudletHomeDir) == &quot;function&quot; then
-    local mhome = tostring(getMudletHomeDir() or &quot;&quot;):gsub(&quot;\\&quot;,&quot;/&quot;):gsub(&quot;/+$&quot;,&quot;&quot;)
+    local mhome = tostring(getMudletHomeDir() or &quot;&quot;):gsub(&quot;\\&quot;, &quot;/&quot;):gsub(&quot;/+$&quot;, &quot;&quot;)
     if mhome ~= &quot;&quot; then
       out[#out+1] = mhome .. &quot;/Yso/modules&quot;
       out[#out+1] = mhome .. &quot;/Achaea/Yso/modules&quot;
-      out[#out+1] = mhome .. &quot;/modules/Yso&quot; -- some layouts
+      out[#out+1] = mhome .. &quot;/modules/Yso&quot;
     end
   end
 
@@ -18979,7 +18425,7 @@ local root = _pick_root(
   &quot;D:/Achaea/Yso/modules&quot;
 )
 
-root = tostring(root):gsub(&quot;\\&quot;,&quot;/&quot;):gsub(&quot;/+$&quot;,&quot;&quot;)
+root = tostring(root):gsub(&quot;\\&quot;, &quot;/&quot;):gsub(&quot;/+$&quot;, &quot;&quot;)
 
 do
   local function _pp(pat)
@@ -18992,13 +18438,12 @@ do
   _pp(root .. &quot;/Yso/?.lua&quot;)
   _pp(root .. &quot;/Yso/?/init.lua&quot;)
 
-  -- Sibling class folders (Magi, etc.) live two levels above root.
   local sibling = root:gsub(&quot;/Occultist/modules$&quot;, &quot;&quot;)
   if sibling ~= root then
     _pp(sibling .. &quot;/Magi/?.lua&quot;)
   end
 end
--- Lua 5.1 / Mudlet compatibility: add package.searchpath if missing (Lua 5.2+ feature)
+
 if not package.searchpath then
   function package.searchpath(name, path, sep, rep)
     sep = sep or &quot;.&quot;
@@ -19019,7 +18464,6 @@ if not package.searchpath then
 end
 
 _G.yso_bootstrap_done = true
-
 
 Yso = rawget(_G, &quot;Yso&quot;) or rawget(_G, &quot;yso&quot;) or {}
 _G.Yso = Yso
@@ -19074,17 +18518,22 @@ local function _bootstrap_occ_aff(reload)
   return (((_G.Yso or {}).off or {}).oc or {}).occ_aff_burst
 end
 
-local function _bootstrap_magi_focuslock(reload)
-  _bootstrap_entry(reload)
-  _bootstrap_require(&quot;magi_reference&quot;, reload)
-  _bootstrap_require(&quot;magi_focuslock&quot;, reload)
-  return (((_G.Yso or {}).off or {}).magi or {}).focuslock
-end
-
 Yso.bootstrap.require = _bootstrap_require
 Yso.bootstrap.entry = _bootstrap_entry
 Yso.bootstrap.occ_aff_burst = _bootstrap_occ_aff
-Yso.bootstrap.magi_focuslock = _bootstrap_magi_focuslock
+
+local function _bootstrap_auto_entry()
+  if rawget(_G, &quot;yso_bootstrap_entry_attempted&quot;) then return end
+  _G.yso_bootstrap_entry_attempted = true
+  local _, ok, err = _bootstrap_entry(false)
+  Yso.bootstrap.entry_autoloaded = (ok == true)
+  Yso.bootstrap.entry_autoload_error = ok and nil or err
+end
+
+Yso.bootstrap.auto_entry = _bootstrap_auto_entry
+_bootstrap_auto_entry()
+
+return Yso.bootstrap
 </script>
 					<eventHandlerList />
 				</Script>
@@ -19099,25 +18548,24 @@ Yso.bootstrap.magi_focuslock = _bootstrap_magi_focuslock
 -- Purpose:
 --   Provide a small controller that decides how to open a PRONE window
 --   (for anorexia via REGRESS) using:
---     * COMMAND CHIMERA AT &lt;t&gt;  (entity balance)
---     * REGRESS &lt;t&gt;            (equilibrium)
+--     â€¢ COMMAND CHIMERA AT &lt;t&gt;  (entity balance)
+--     â€¢ REGRESS &lt;t&gt;            (equilibrium)
 --   with deaf-aware handling:
---     * If target is DEAF, chimera roar is BLOCKED (&quot;completely unphased&quot;);
---       attend must strip deaf first before chimera can land a mental.
+--     â€¢ If target is DEAF, chimera roar cures deafness instead of stunning/proning.
 --
 -- Design:
---   * Does NOT patch your offense by default.
---   * You can:
+--   â€¢ Does NOT patch your offense by default.
+--   â€¢ You can:
 --       (A) call it explicitly from your offense phase logic, or
 --       (B) enable autohook to make it pre-check inside Off.attack_eqonly().
 --
 -- Requirements:
---   * AK Opponent Tracking (affstrack.score.* including prone/deaf/anorexia)
---   * Yso.off.oc exists if you want autohook
+--   â€¢ AK Opponent Tracking (affstrack.score.* including prone/deaf/anorexia)
+--   â€¢ Yso.off.oc exists if you want autohook
 --
 -- Notes:
---   * We do NOT use pyradius score/formula here.
---   * We treat &quot;stuck&quot; as score &gt;= 100 (AK convention).
+--   â€¢ We do NOT use pyradius score/formula here.
+--   â€¢ We treat &quot;stuck&quot; as score &gt;= 100 (AK convention).
 --========================================================--
 
 Yso = Yso or {}
@@ -19244,7 +18692,7 @@ end
 --   1) If target already prone: REGRESS to apply anorexia (if EQ ready)
 --   2) Else:
 --        - If target NOT deaf: COMMAND CHIMERA AT &lt;t&gt; to stun/prone (entity ready/optional chimera ready)
---        - If target IS deaf: skip chimera (roar is blocked); fall through to regress
+--        - If target deaf: COMMAND CHIMERA AT &lt;t&gt; to strip deafness first (no prone), then next pass can prone
 --        - If chimera not available: REGRESS to force prone (no anorexia yet), then regress again while prone
 function P.step(t, aff)
   if not (P.cfg.enabled and t and t ~= &quot;&quot;) then return false end
@@ -19268,8 +18716,16 @@ function P.step(t, aff)
     return false
   end
 
-  -- 2) Not prone: try chimera path first if allowed AND target is NOT deaf
-  if P.cfg.use_chimera and _entity_ready() and _chimera_ready() and deaf &lt; stuck then
+  -- 2) Not prone: try chimera path first if allowed
+  if P.cfg.use_chimera and _entity_ready() and _chimera_ready() then
+    -- If target is deaf, chimera roar cures deafness (setup step).
+    if deaf &gt;= stuck then
+      _echo(&quot;target deaf -&gt; command chimera to strip deafness (setup)&quot;)
+      _mark()
+      return _send_eq_clear((&quot;command chimera at %s&quot;):format(t))
+    end
+
+    -- Not deaf: chimera command should stun/prone
     _echo(&quot;target not deaf -&gt; command chimera for stun/prone window&quot;)
     _mark()
     return _send_eq_clear((&quot;command chimera at %s&quot;):format(t))
@@ -19296,7 +18752,7 @@ function P.try_hook()
 
   Off.attack_eqonly = function(...)
     if P.cfg.enabled then
-      local t = (Off.resolve_target and Off.resolve_target()) or tostring(rawget(_G, &quot;target&quot;) or &quot;&quot;)
+      local t = (Off.resolve_target and Off.resolve_target()) or (Yso.target or &quot;&quot;)
       local aff = _aff()
       if t and t ~= &quot;&quot; and P.want_anorexia(aff) then
         if P.step(t, aff) then return true end
@@ -19333,83 +18789,83 @@ Yso / Achaea Curing Overview
 
 This project treats curing as a stack of four layers:
 
-  * Achaea game server
+  â€¢ Achaea game server
       - Owns all actual curing actions: SIP, EAT, SMOKE, APPLY, FOCUS, TREE, etc.
       - Owns serverside curing priorities and curingsets.
 
-  * Legacy
+  â€¢ Legacy
       - Purely a serverside-curing controller.
       - Talks to the game using CURING commands to move afflictions and defences up/down the in-game priority ladder.
       - Does NOT implement its own clientside curing; it manipulates serverside.
 
-  * AK1 + AK Tracker
+  â€¢ AK1 + AK Tracker
       - Purely PVP opponent tracking.
       - Tracks enemy afflictions and curing behaviour.
       - Used by offense/strategy logic, not by self-curing logic.
 
-  * Yso (this project)
-      - Client-side &quot;brain&quot; and API layer.
+  â€¢ Yso (this project)
+      - Client-side â€œbrainâ€ and API layer.
       - Makes decisions about curing modes, priority swaps, and emergency behaviour.
-      - Talks to Legacy + the game using CURING commands, but does not bypass Legacy&apos;s design.
+      - Talks to Legacy + the game using CURING commands, but does not bypass Legacyâ€™s design.
       - For Achaea, we DO NOT use snd() at all: Yso is the only namespace.
 
 
 2. SERVER CURING BASICS (GAME SYNTAX)
 -------------------------------------
 
-Yso assumes Achaea&apos;s built-in curing and healing system is available and that Legacy is configured around it.
+Yso assumes Achaeaâ€™s built-in curing and healing system is available and that Legacy is configured around it.
 
 Core game commands Yso/Legacy will rely on:
 
-  * Turning curing on/off
+  â€¢ Turning curing on/off
       CURING ON
       CURING OFF
 
-  * Using the server healing actions
+  â€¢ Using the server healing actions
       SIP &lt;elixir name or vial#&gt;
       EAT &lt;plant/mineral&gt;
       SMOKE &lt;plant&gt; FROM PIPE
       APPLY &lt;salve name or vial#&gt; [TO &lt;body part&gt;]
 
-    These are normally driven by the server&apos;s own curing engine; Yso should not spam these directly when in &quot;serverside mode&quot; (see section4).
+    These are normally driven by the serverâ€™s own curing engine; Yso should not spam these directly when in â€œserverside modeâ€ (see Â§4).
 
-  * Managing priorities (afflictions &amp; defences)
+  â€¢ Managing priorities (afflictions &amp; defences)
       CURING PRIORITY &lt;affliction&gt; &lt;number or OFF&gt;
       CURING PRIORITY DEFENCE &lt;defence&gt; &lt;number or OFF&gt;
       CURING PRIORITY &lt;...mass-setting / list / reset subcommands...&gt;
 
     Legacy uses these CURING PRIORITY commands as its low-level interface to serverside curing. Yso will call Legacy helpers rather than spamming raw CURING PRIORITY lines directly.
 
-  * Curingsets / profiles
+  â€¢ Curingsets / profiles
       (Exact syntax is game-side; e.g. CURING SET, CURING LOAD, etc.)
-      Legacy may expose its own aliases/macros on top of these; Yso treats those as a black box and only requests &quot;switch to set X&quot; via Legacy wrappers, not by micromanaging each curingset command itself.
+      Legacy may expose its own aliases/macros on top of these; Yso treats those as a black box and only requests â€œswitch to set Xâ€ via Legacy wrappers, not by micromanaging each curingset command itself.
 
 
 3. WHAT LEGACY DOES VS WHAT YSO DOES
 ------------------------------------
 
 Legacy:
-  * Owns all logic for &quot;what does a given priority number mean?&quot;
-  * Maintains mapping of afflictions -&gt; priority level for herb, salve, pipe, elixir, focus, tree, etc.
-  * Sends CURING PRIORITY commands to the server efficiently (delta-based changes, batching, respecting server rate limits).
-  * May provide aliases like:
+  â€¢ Owns all logic for â€œwhat does a given priority number mean?â€
+  â€¢ Maintains mapping of afflictions -&gt; priority level for herb, salve, pipe, elixir, focus, tree, etc.
+  â€¢ Sends CURING PRIORITY commands to the server efficiently (delta-based changes, batching, respecting server rate limits).
+  â€¢ May provide aliases like:
         LPRIOUP &lt;affliction&gt;
         LPRIODOWN &lt;affliction&gt;
         LSET &lt;profile&gt;
     (Names here are examples; use whatever Legacy actually defines.)
 
 Yso:
-  * Does NOT re-implement curing.
-  * Reads:
+  â€¢ Does NOT re-implement curing.
+  â€¢ Reads:
       - Our own afflictions (via GMCP/text and Yso.affs).
       - Enemy afflictions (via AK Tracker).
       - State flags (class, mode, hp%, mana%, etc.).
-  * Decides:
+  â€¢ Decides:
       - When to ask Legacy to move certain afflictions up/down in prio.
-      - When to request curingset swaps (e.g. &quot;lock defence set vs damage set&quot;).
-      - When to request emergency things like &quot;prioritise asthma/aeon/etc. above all else&quot;.
-  * Sends:
-      - Only higher-level &quot;intent&quot; to Legacy, e.g.:
+      - When to request curingset swaps (e.g. â€œlock defence set vs damage setâ€).
+      - When to request emergency things like â€œprioritise asthma/aeon/etc. above all elseâ€.
+  â€¢ Sends:
+      - Only higher-level â€œintentâ€ to Legacy, e.g.:
             Yso.curing.raise(&quot;paralysis&quot;)
             Yso.curing.lower(&quot;sensitivity&quot;)
             Yso.curing.use_set(&quot;anti_lock&quot;)
@@ -19417,10 +18873,10 @@ Yso:
 
 Conceptually:
 
-  GAME SERVER  &lt;-  Legacy (CURING PRIORITY, SET, etc.)
-                      up
+  GAME SERVER  â†  Legacy (CURING PRIORITY, SET, etc.)
+                      â†‘
                       Yso (decisions / policy)
-                      up
+                      â†‘
                    AK Tracker (enemy affs)
 
 
@@ -19429,28 +18885,28 @@ Conceptually:
 
 Yso should operate with an explicit curing mode flag:
 
-  * Yso.cure_mode = &quot;serverside&quot;   (default)
-      - Yso assumes the game&apos;s serverside curing is ON.
+  â€¢ Yso.cure_mode = &quot;serverside&quot;   (default)
+      - Yso assumes the gameâ€™s serverside curing is ON.
       - Legacy is allowed to control priorities.
       - Yso DOES NOT send raw curing actions (sip/eat/smoke/apply) on its own.
       - Yso only:
-          * asks Legacy to adjust prios/sets;
-          * optionally toggles CURING ON/OFF if needed;
-          * may send non-standard cures like TREE/FOCUS if you explicitly choose to have Yso do so.
+          â€¢ asks Legacy to adjust prios/sets;
+          â€¢ optionally toggles CURING ON/OFF if needed;
+          â€¢ may send non-standard cures like TREE/FOCUS if you explicitly choose to have Yso do so.
 
-  * Yso.cure_mode = &quot;manual&quot;
+  â€¢ Yso.cure_mode = &quot;manual&quot;
       - Optional/testing mode.
       - In this mode, Yso is allowed to send raw curing actions (SIP/EAT/SMOKE/APPLY) directly.
       - In this project, manual mode is considered secondary; the primary architecture is serverside+Legacy.
 
 Suggested user aliases:
 
-  * ^yc on / ^yc off
-      - Enables/disables Yso&apos;s overlay logic (without turning game curing off).
-  * ^yc mode serverside
-  * ^yc mode manual
+  â€¢ ^yc on / ^yc off
+      - Enables/disables Ysoâ€™s overlay logic (without turning game curing off).
+  â€¢ ^yc mode serverside
+  â€¢ ^yc mode manual
       - Swaps Yso.cure_mode and prints a status line.
-  * ^yc status
+  â€¢ ^yc status
       - Echoes:
           - current Yso.cure_mode,
           - whether CURING is ON/OFF,
@@ -19463,18 +18919,18 @@ Suggested user aliases:
 
 AK Tracker and AK1 are used purely for opponent tracking:
 
-  * AK Tracker tracks enemy afflictions and likely curing responses.
-  * Yso can read those tables to inform offense and strategy.
-  * Yso does NOT use AK Tracker to drive self-curing decisions directly; all self-curing remains a function of:
+  â€¢ AK Tracker tracks enemy afflictions and likely curing responses.
+  â€¢ Yso can read those tables to inform offense and strategy.
+  â€¢ Yso does NOT use AK Tracker to drive self-curing decisions directly; all self-curing remains a function of:
       - Our own aff tables (Yso.affs),
-      - Legacy&apos;s priority configuration,
-      - Yso&apos;s own high-level policies.
+      - Legacyâ€™s priority configuration,
+      - Ysoâ€™s own high-level policies.
 
 Example policy usage:
-  * If AK Tracker says enemy is a lock-heavy class:
+  â€¢ If AK Tracker says enemy is a lock-heavy class:
         - Yso may ask Legacy to raise aeon/anorexia/asthma priorities.
-  * If AK Tracker sees they&apos;re damage-focused:
-        - Yso may swap to a more &quot;hp-heavy&quot; priority profile via Legacy.
+  â€¢ If AK Tracker sees theyâ€™re damage-focused:
+        - Yso may swap to a more â€œhp-heavyâ€ priority profile via Legacy.
 
 But in all cases, AK Tracker never sends curing commands and does not alter our own aff priorities by itself.
 
@@ -19484,21 +18940,21 @@ But in all cases, AK Tracker never sends curing commands and does not alter our 
 
 For Achaea, we standardise around the Yso namespace:
 
-  * Aff tracking:
+  â€¢ Aff tracking:
       Yso.affs[affliction_name] = true/false
 
-  * Curing configuration:
+  â€¢ Curing configuration:
       Yso.cure_mode              -- &quot;serverside&quot; or &quot;manual&quot;
       Yso.curing                 -- subtable/module for all curing-related helpers
 
-  * Curing API (examples):
+  â€¢ Curing API (examples):
       Yso.curing.raise_aff(aff)        -- ask Legacy to move aff up
       Yso.curing.lower_aff(aff)        -- ask Legacy to move aff down
       Yso.curing.set_aff_prio(aff, n)  -- explicit priority set
       Yso.curing.use_profile(name)     -- switch Legacy/serverside profile
       Yso.curing.emergency(tag)        -- e.g. &apos;lockpanic&apos;, &apos;damagepanic&apos;
 
-  * Status / debug:
+  â€¢ Status / debug:
       Yso.curing.status()  -- print current curing mode, profile, summary
       Yso.curing.debug     -- toggle for verbose echoes
 
@@ -19511,7 +18967,7 @@ To keep the Achaea/Yso stack clean and consistent:
   1) Do NOT use snd() anywhere for Achaea.
      - All Achaea logic lives under Yso, Legacy, AK1/AK Tracker, or simple local helpers.
 
-  2) In &quot;serverside&quot; mode, do NOT have Yso send raw SIP/EAT/SMOKE/APPLY lines.
+  2) In â€œserversideâ€ mode, do NOT have Yso send raw SIP/EAT/SMOKE/APPLY lines.
      - If you need special curing behaviour, implement it via Legacy priority changes or curingset swaps first.
 
   3) Treat Legacy as the single source of truth for how priorities map to behaviour.
@@ -19522,7 +18978,7 @@ To keep the Achaea/Yso stack clean and consistent:
      - If a function is about enemy afflictions, it belongs in AK Tracker, with Yso merely consuming it.
 
   5) Document any new curing-related commands or expectations here.
-     - When adding new helpers (e.g. TREE timing logic, mass prio swaps, &quot;fitness/dragon/kaido&quot; hooks),
+     - When adding new helpers (e.g. TREE timing logic, mass prio swaps, â€œfitness/dragon/kaidoâ€ hooks),
        update this helpfile so future changes are aware of the division of responsibility.]]
 </script>
 					<eventHandlerList />
@@ -19659,10 +19115,10 @@ To keep the Achaea/Yso stack clean and consistent:
 --========================================================--
 -- yso_occultist_occultism_ref.lua
 -- Occultist: Occultism skill reference for Achaea (Yso project)
---   * Pure data + tiny helpers, no Mudlet dependencies.
---   * Intentionally conservative: only claims specific mechanics
+--   â€¢ Pure data + tiny helpers, no Mudlet dependencies.
+--   â€¢ Intentionally conservative: only claims specific mechanics
 --     where we have AB text/screens; everything else is fuzzy/meta.
---   * Use this as a central reference table for offense logic, UI,
+--   â€¢ Use this as a central reference table for offense logic, UI,
 --     docs, etc.
 --========================================================--
 
@@ -20148,7 +19604,7 @@ O.unnamable = {
   eq_cost    = 3.20,
   karma_cost = 1,
   role       = {&quot;offense&quot;,&quot;room-control&quot;},
-  summary    = &quot;UNNAMABLE SPEAK affects targets who hear the name, UNNAMABLE VISION affects targets who see the vision, it affects non-Occultists in the room, and it does not duplicate existing insanities or maladies.&quot;,
+  summary    = &quot;Speak/vision of the Unnamable afflicting all non-Occultists in the room with assorted insanities (no duplicates).&quot;,
   tags       = {&quot;room-aoe&quot;,&quot;insanity&quot;},
 }
 
@@ -20467,7 +19923,7 @@ function Yso.occultist.listOccultismByRole(role)
   return out
 end
 
--- Optional debug echo (comment out if you don&apos;t like chatter)
+-- Optional debug echo (comment out if you donâ€™t like chatter)
 if cecho then
   cecho(&quot;&lt;green&gt;[Yso] Loaded Occultist/Occultism reference (&quot;..
         tostring(#Yso.occultist.listOccultismByRole(&quot;offense&quot;))..
@@ -20999,9 +20455,9 @@ end
 --========================================================--
 -- yso_occ_domination_ref.lua
 --  Occultist Domination: entity / utility reference
---  * Pure data (no sends/aliases)
---  * Dameron + Glaaki currently treated as balanceless
---  * bal_type: &quot;ent&quot; = entity, &quot;eq&quot; = equilibrium, &quot;bal&quot; = standard balance
+--  â€¢ Pure data (no sends/aliases)
+--  â€¢ Dameron + Glaaki currently treated as balanceless
+--  â€¢ bal_type: &quot;ent&quot; = entity, &quot;eq&quot; = equilibrium, &quot;bal&quot; = standard balance
 --========================================================--
 
 Yso      = Yso      or {}
@@ -21011,7 +20467,7 @@ Yso.occ.dom = Yso.occ.dom or {}
 local D = Yso.occ.dom
 
 ----------------------------------------------------------------------
--- SKYRAX - DERVISH
+-- SKYRAX â€” DERVISH
 --  COMMAND DERVISH AT &lt;target&gt;  (2.10s entity balance, 50 mana)
 ----------------------------------------------------------------------
 D.skyrax = {
@@ -21030,7 +20486,7 @@ D.skyrax = {
 }
 
 ----------------------------------------------------------------------
--- RIXIL - SYCOPHANT
+-- RIXIL â€” SYCOPHANT
 --  COMMAND SYCOPHANT AT &lt;target&gt;  (2.00s entity balance, 50 mana)
 ----------------------------------------------------------------------
 D.rixil = {
@@ -21052,7 +20508,7 @@ D.rixil = {
 }
 
 ----------------------------------------------------------------------
--- SCRAG - BLOODLEECH
+-- SCRAG â€” BLOODLEECH
 --  COMMAND BLOODLEECH AT &lt;target&gt;  (2.20s entity balance, 50 mana)
 ----------------------------------------------------------------------
 D.scrag = {
@@ -21075,7 +20531,7 @@ D.scrag = {
 }
 
 ----------------------------------------------------------------------
--- PYRADIUS - FIRELORD
+-- PYRADIUS â€” FIRELORD
 --  COMMAND FIRELORD AT &lt;target&gt; &lt;affliction&gt; (3.00s entity, 50 mana)
 ----------------------------------------------------------------------
 D.pyradius = {
@@ -21120,7 +20576,7 @@ D.golgotha = {
 }
 
 ----------------------------------------------------------------------
--- DAMERON - MINION (UNRAVEL helper)
+-- DAMERON â€” MINION (UNRAVEL helper)
 --  COMMAND MINION AT &lt;target&gt;  (treated as balanceless for now)
 ----------------------------------------------------------------------
 D.dameron = {
@@ -21146,7 +20602,7 @@ D.dameron = {
 }
 
 ----------------------------------------------------------------------
--- WORM - GLUTTON WORM
+-- WORM â€” GLUTTON WORM
 --  COMMAND WORM AT &lt;target&gt;  (3.10s entity, 50 mana)
 ----------------------------------------------------------------------
 D.worm = {
@@ -21170,7 +20626,7 @@ D.worm = {
 }
 
 ----------------------------------------------------------------------
--- NIN&apos;KHARSAG - SLIME LORD
+-- NIN&apos;KHARSAG â€” SLIME LORD
 --  COMMAND SLIME AT &lt;target&gt;  (2.60s entity, 50 mana)
 ----------------------------------------------------------------------
 D.ninkharsag = {
@@ -21196,7 +20652,7 @@ D.ninkharsag = {
 }
 
 ----------------------------------------------------------------------
--- ISTRIA - PATHFINDER
+-- ISTRIA â€” PATHFINDER
 --  ORDER PATHFINDER HOME  (3.00s equilibrium)
 ----------------------------------------------------------------------
 D.istria = {
@@ -21214,7 +20670,7 @@ D.istria = {
 }
 
 ----------------------------------------------------------------------
--- MARDUK - SOULMASTER
+-- MARDUK â€” SOULMASTER
 --  ORDER SOULMASTER POSSESS &lt;target&gt; ; ORDER &lt;target&gt; &lt;command&gt;
 --  (3.00s equilibrium)
 ----------------------------------------------------------------------
@@ -21240,7 +20696,7 @@ D.marduk = {
 }
 
 ----------------------------------------------------------------------
--- NEMESIS - HUMBUG
+-- NEMESIS â€” HUMBUG
 --  COMMAND HUMBUG AT &lt;target&gt;  (2.20s entity, 50 mana)
 ----------------------------------------------------------------------
 D.nemesis = {
@@ -21263,7 +20719,7 @@ D.nemesis = {
 }
 
 ----------------------------------------------------------------------
--- BUUL - CHIMERA
+-- BUUL â€” CHIMERA
 --  COMMAND CHIMERA AT &lt;target&gt; ; MOUNT CHIMERA ; SPUR CHIMERA SKYWARD
 --  (2.50s entity, 50 mana)
 ----------------------------------------------------------------------
@@ -21282,16 +20738,16 @@ D.buul = {
   queue_flag = &quot;ent&quot;,
   mana_cost = 50,
   roles     = {&quot;offense&quot;,&quot;control&quot;,&quot;mount&quot;},
-  summary   = &quot;Chimera delivers a mind affliction (BLOCKED by deafness - attend first); primebond grants periodic passive effects.&quot;,
+  summary   = &quot;Chimera delivers a mind affliction; primebond grants periodic roar/headbutt/breath effects.&quot;,
   tags      = {&quot;prone&quot;,&quot;deaf&quot;,&quot;sleep&quot;,&quot;mount&quot;},
   primebond = {
-    summary = &quot;Heads periodically act: roar (strips deafness, or stuns/knocks prone if not deaf), headbutt (prone), breath (sleep).&quot;,
-    tags    = {&quot;stun&quot;,&quot;prone&quot;,&quot;deaf&quot;,&quot;sleep&quot;},
+    summary = &quot;Heads periodically act: roar (cures deafness or stuns/knocks prone), headbutt (prone), breath (sleep).&quot;,
+    tags    = {&quot;stun&quot;,&quot;prone&quot;,&quot;sleep&quot;},
   },
 }
 
 ----------------------------------------------------------------------
--- CADMUS - BUBONIS
+-- CADMUS â€” BUBONIS
 --  COMMAND BUBONIS AT &lt;target&gt;  (2.20s entity, 50 mana)
 ----------------------------------------------------------------------
 D.cadmus = {
@@ -21315,7 +20771,7 @@ D.cadmus = {
 
 
 ----------------------------------------------------------------------
--- LYCANTHA - HOUND
+-- LYCANTHA â€” HOUND
 --  COMMAND HOUND AT &lt;target&gt;  (2.20s entity balance, 50 mana)
 ----------------------------------------------------------------------
 D.lycantha = {
@@ -21339,7 +20795,7 @@ D.lycantha = {
 }
 
 ----------------------------------------------------------------------
--- PIRIDON - DOPPLEGANGER
+-- PIRIDON â€” DOPPLEGANGER
 --  ORDER DOPPLEGANGER CHANNEL &lt;ab&gt;|CLOAK|EXITS|LOOK|MOVE|RETURN|SEEK &lt;who&gt;
 --  Cooldown: equilibrium (no explicit seconds)
 ----------------------------------------------------------------------
@@ -21362,7 +20818,7 @@ D.piridon = {
 }
 
 ----------------------------------------------------------------------
--- DANAEUS - CHAOS STORM
+-- DANAEUS â€” CHAOS STORM
 --  COMMAND STORM AT &lt;target&gt;  (2.20s entity, 50 mana)
 ----------------------------------------------------------------------
 D.danaeus = {
@@ -21407,7 +20863,7 @@ D.tarotlink = {
 }
 
 ----------------------------------------------------------------------
--- HECATE - CRONE
+-- HECATE â€” CRONE
 --  COMMAND CRONE AT &lt;target&gt; &lt;LEFT|RIGHT ARM|LEG&gt;  (3.00s entity, 50 mana)
 ----------------------------------------------------------------------
 D.hecate = {
@@ -21429,7 +20885,7 @@ D.hecate = {
 }
 
 ----------------------------------------------------------------------
--- GLAAKI - ABOMINATION / TRUENAME
+-- GLAAKI â€” ABOMINATION / TRUENAME
 --  SUMMON GLAAKI ; COMMAND ABOMINATION AT &lt;target&gt;
 --  (treated as balanceless for now)
 ----------------------------------------------------------------------
@@ -21449,7 +20905,7 @@ D.glaaki = {
   summary   = &quot;Summons an abomination; when used on a sufficiently vulnerable aura, reveals the target&apos;s truename.&quot;,
   tags      = {&quot;truename&quot;,&quot;cleanseaura-synergy&quot;},
   notes     = {
-    &quot;Aura must be made &apos;sufficiently vulnerable&apos;, e.g. via Cleanseaura (target mana &lt;= 40%).&quot;,
+    &quot;Aura must be made &apos;sufficiently vulnerable&apos;, e.g. via Cleanseaura (target mana â‰¤ 40%).&quot;,
     &quot;Truenames obtained this way are shorter-lived than standard TRUENAME gains.&quot;,
     &quot;Intended to feed into Enlighten + Unravel kill routes when no corpse truename is available.&quot;,
   },
@@ -21542,12 +20998,12 @@ end
 --========================================================--
 -- Yso_Occultist_Phase_SightGate.lua (DROP-IN)
 -- Purpose:
---   * Add Off.phase() (softlock -&gt; unravel)
---   * Add explicit &quot;need sight&quot; gate:
+--   â€¢ Add Off.phase() (softlock -&gt; kelp build -&gt; post-bury/unravel)
+--   â€¢ Add explicit &quot;need sight&quot; gate:
 --       ATTEND &lt;t&gt; &amp;&amp; &lt;phase filler entity command&gt;
 --     ONLY when you request sight (Unnamable Vision / Heretic Witness).
---   * Prevent Off.ensure_chimera_ready() from auto-attending for blind/deaf.
---   * Phase-gate Yso.oc.prone (if present): only run during SOFTLOCK_SETUP.
+--   â€¢ Prevent Off.ensure_chimera_ready() from auto-attending for blind/deaf.
+--   â€¢ Phase-gate Yso.oc.prone (if present): only run during SOFTLOCK_SETUP.
 --
 -- Separator: &quot;;;&quot; (Achaea server-side queue batch)
 --========================================================--
@@ -21570,11 +21026,11 @@ SG.cfg = SG.cfg or {
 
   stuck_score = 100,
 
-  -- &quot;softscore &gt;= 2 AND asthma = 100&quot; gate (your requirement)
+  -- â€œsoftscore &gt;= 2 AND asthma = 100â€ gate (your requirement)
   softscore_affs = { &quot;asthma&quot;, &quot;slickness&quot;, &quot;anorexia&quot; },
   softscore_needed = 2,
 
-  -- Sight request TTL (seconds). Keep short: it&apos;s a &quot;do it now&quot; intent flag.
+  -- Sight request TTL (seconds). Keep short: itâ€™s a â€œdo it nowâ€ intent flag.
   sight_ttl = 2.0,
 
   -- If Off.cfg.prepend_stand exists, respect it. Otherwise: do not force stand.
@@ -21670,11 +21126,19 @@ function Off.phase(t, aff)
     return &quot;SOFTLOCK_SETUP&quot;
   end
 
+  -- If you are using the kelp bury builder, treat â€œnot done yetâ€ as KELP_BUILD
+  if Off.cfg and Off.cfg.kelp_bury and Off.cfg.kelp_bury.enabled then
+    if Off._bury_done and t ~= &quot;&quot; and not Off._bury_done[t] then
+      return &quot;KELP_BUILD&quot;
+    end
+  end
+
+  -- Post-bury: WM/enlighten/unravel track
   return &quot;UNRAVEL&quot;
 end
 
 --========================
--- Explicit &quot;need sight&quot; intent flag
+-- Explicit â€œneed sightâ€ intent flag
 --========================
 Off._need_sight = Off._need_sight or {}
 
@@ -21718,30 +21182,41 @@ function Off.sg_pick_missing_aff(phase, t, aff)
   if phase == &quot;SOFTLOCK_SETUP&quot; then
     if missing(&quot;asthma&quot;) then return &quot;asthma&quot; end
     if missing(&quot;slickness&quot;) then return &quot;slickness&quot; end
+    -- anorexia is handled by your prone/anorexia controller; do not force here.
     return nil
   end
 
-  -- UNRAVEL phase: top-up missing focus-lock layers.
+  if phase == &quot;KELP_BUILD&quot; then
+    if missing(&quot;asthma&quot;) then return &quot;asthma&quot; end
+    if missing(&quot;clumsiness&quot;) then return &quot;clumsiness&quot; end
+    if missing(&quot;healthleech&quot;) then return &quot;healthleech&quot; end
+    if missing(&quot;sensitivity&quot;) then return &quot;sensitivity&quot; end
+    return nil
+  end
+
+  -- UNRAVEL phase:
+  -- Keep it conservative: only top-up missing kelp/core layers; otherwise no filler.
   if missing(&quot;asthma&quot;) then return &quot;asthma&quot; end
   if missing(&quot;healthleech&quot;) then return &quot;healthleech&quot; end
-  if missing(&quot;haemophilia&quot;) then return &quot;haemophilia&quot; end
   if missing(&quot;clumsiness&quot;) then return &quot;clumsiness&quot; end
-  if missing(&quot;addiction&quot;) then return &quot;addiction&quot; end
   if missing(&quot;sensitivity&quot;) then return &quot;sensitivity&quot; end
   return nil
 end
 
 function Off.sg_entity_cmd_for_aff(aff, t)
   if not aff or aff == &quot;&quot; or not t or t == &quot;&quot; then return nil end
+  local cfg = (Off.cfg and Off.cfg.kelp_bury) or {}
+  local ents = cfg.entities or {}
 
-  local map = (Yso and Yso.ent_affs) or {
-    asthma = &quot;bubonis&quot;, slickness = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;,
-    healthleech = &quot;worm&quot;, sensitivity = &quot;slime&quot;, haemophilia = &quot;bloodleech&quot;,
-    addiction = &quot;humbug&quot;, weariness = &quot;hound&quot;,
-  }
-
-  local ent = map[aff]
-  if not ent then return nil end
+  local ent
+  if aff == &quot;asthma&quot; then ent = ents.asthma or &quot;bubonis&quot;
+  elseif aff == &quot;slickness&quot; then ent = ents.asthma or &quot;bubonis&quot;      -- assumes your bubonis route/followups
+  elseif aff == &quot;clumsiness&quot; then ent = ents.clumsiness or &quot;storm&quot;
+  elseif aff == &quot;healthleech&quot; then ent = ents.healthleech or &quot;worm&quot;
+  elseif aff == &quot;paralysis&quot; then ent = cfg.paralysis_followup or &quot;slime&quot;
+  else
+    return nil
+  end
 
   return (&quot;command %s at %s&quot;):format(ent, t)
 end
@@ -21763,7 +21238,7 @@ function Off.queue_attend_if_needed(t, aff, reason)
   aff = aff or ((affstrack and affstrack.score) or {})
   local stuck = (SG.cfg.stuck_score or (Off.cfg and Off.cfg.stuck_score) or 100)
 
-  -- Only attend if the target is actually blind (your &quot;last resort&quot; requirement)
+  -- Only attend if the target is actually blind (your â€œlast resortâ€ requirement)
   if (Off.score and Off.score(&quot;blind&quot;, aff) or 0) &lt; stuck then
     return false
   end
@@ -21787,6 +21262,11 @@ if Off.ensure_chimera_ready and not Off._sg_wrapped_ensure_chimera_ready then
   local _orig = Off.ensure_chimera_ready
 
   Off.ensure_chimera_ready = function(t, aff)
+    -- Preserve original gating (WM&gt;=stuck, not enlightened, have_eq, etc.)
+    -- by calling the original in &quot;readaura-only&quot; mode:
+    -- If aura missing, original will queue READAURA and return true.
+    -- If aura indicates blind/deaf, original would ATTEND; we block that here.
+
     t = t or (Off.resolve_target and Off.resolve_target()) or (Off.target) or &quot;&quot;
     if t == &quot;&quot; then return false end
     aff = aff or ((affstrack and affstrack.score) or {})
@@ -21797,8 +21277,10 @@ if Off.ensure_chimera_ready and not Off._sg_wrapped_ensure_chimera_ready then
     end
 
     -- Otherwise: allow READAURA behavior, but DO NOT ATTEND automatically.
+    -- We replicate the original decision boundary:
     local need = (Yso.occ.aura_need_attend and Yso.occ.aura_need_attend(t)) or nil
     if need == nil then
+      -- no aura data -&gt; let original do its normal READAURA queue if applicable
       return _orig(t, aff)
     end
 
@@ -21844,10 +21326,10 @@ end
 						<packageName />
 						<script>--========================================================--
 -- yso_occ_truename_capture.lua (DROP-IN)
---  * Tracks memorised truenames from:
+--  â€¢ Tracks memorised truenames from:
 --      - TRUENAME CORPSE success messaging (incl. line-wrap)
 --      - TRUENAMES listing output (authoritative refresh)
---  * Optional JSON persistence (Mudlet yajl if present)
+--  â€¢ Optional JSON persistence (Mudlet yajl if present)
 --========================================================--
 
 Yso = Yso or {}
@@ -22168,10 +21650,10 @@ _echo("Pathfinder helpers loaded (ready=" .. tostring(Yso.dom.pathfinder.ready) 
 
 --========================================================--
 -- Yso_Domination_Entourage
---  * Watches the &quot;entourage&quot; output
---  * Parses the full list (handles wrapped lines)
---  * Tracks which Domination ents you *currently* have
---  * Cechos missing ents as: [Occultism] Missing Domination ents: ...
+--  â€¢ Watches the &quot;entourage&quot; output
+--  â€¢ Parses the full list (handles wrapped lines)
+--  â€¢ Tracks which Domination ents you *currently* have
+--  â€¢ Cechos missing ents as: [Occultism] Missing Domination ents: ...
 --========================================================--
 
 Yso           = Yso           or {}
@@ -22182,7 +21664,7 @@ Yso.dom._trig = Yso.dom._trig or {}
 local Ent = Yso.dom.ents
 
 -- Ordered list of everything you can have in the entourage.
--- (Display names - used for the echo, and lowercased for keys.)
+-- (Display names â€“ used for the echo, and lowercased for keys.)
 Ent.list = Ent.list or {
   &quot;chaos hound&quot;,
   &quot;humbug&quot;,
@@ -22268,7 +21750,7 @@ if Yso.dom._trig.entourage then killTrigger(Yso.dom._trig.entourage) end
 Yso.dom._trig.entourage = tempRegexTrigger(
   [[^The following beings are in your entourage:]],
   function()
-    -- We&apos;ll collect the next few lines (A chaos hound..., wraps, etc.)
+    -- Weâ€™ll collect the next few lines (A chaos hound..., wraps, etc.)
     local buf, done = {}, false
 
     tempLineTrigger(1, 5, function()
@@ -22347,16 +21829,16 @@ end
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
--- Yso.dop - Doppleganger Remote Command Router (patched)
---  * Alias: ^dop(?:\s+(.*))?$
---  * Shorthand: dop &lt;card&gt; [&lt;target&gt;]  -&gt; Tarotlink channel fling
---  * Supports: dop fling &lt;card&gt; [at] &lt;target&gt;
---  * Targeting follows AK (string OR table `target`)
---  * Prepends (balanceless): seek &lt;target&gt; + look
+-- Yso.dop â€” Doppleganger Remote Command Router (patched)
+--  â€¢ Alias: ^dop(?:\s+(.*))?$
+--  â€¢ Shorthand: dop &lt;card&gt; [&lt;target&gt;]  -&gt; Tarotlink channel fling
+--  â€¢ Supports: dop fling &lt;card&gt; [at] &lt;target&gt;
+--  â€¢ Targeting follows AK (string OR table `target`)
+--  â€¢ Prepends (balanceless): seek &lt;target&gt; + look
 --
 -- Added:
---  * Domination standard cecho prefix: &lt;HotPink&gt;[Domination] &lt;LightCoral&gt;
---  * Trigger: &quot;Your doppleganger is out of range.&quot; -&gt; prints alert twice
+--  â€¢ Domination standard cecho prefix: &lt;HotPink&gt;[Domination] &lt;LightCoral&gt;
+--  â€¢ Trigger: &quot;Your doppleganger is out of range.&quot; -&gt; prints alert twice
 --========================================================--
 
 Yso = Yso or {}
@@ -22384,58 +21866,10 @@ Dop.cfg = Dop.cfg or {
 Dop._last_target = Dop._last_target or &quot;&quot;
 Dop.tarot_allow  = Dop.tarot_allow  or {}   -- if non-empty, only these allowed
 Dop.tarot_block  = Dop.tarot_block  or {}   -- always blocked
-Dop.state = Dop.state or {
-  targets = {},
-  last_event = &quot;&quot;,
-  last_target = &quot;&quot;,
-}
 
 -- ---------- helpers ----------
 local function _trim(s)  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
 local function _lower(s) return tostring(s or &quot;&quot;):lower() end
-local function _lc(s)    return _trim(s):lower() end
-
-local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
-    local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  if type(getEpoch) == &quot;function&quot; then
-    local v = tonumber(getEpoch()) or os.time()
-    if v &gt; 20000000000 then v = v / 1000 end
-    return v
-  end
-  return os.time()
-end
-
-local function _row(tgt, create)
-  local key = _lc(tgt)
-  if key == &quot;&quot; then return nil end
-  local rows = Dop.state.targets
-  local row = rows[key]
-  if row or create == false then return row end
-  row = {
-    target = _trim(tgt),
-    ally = false,
-    escaped = false,
-    remote_lust_pending = false,
-    remote_lust_followup = false,
-    last_escape_kind = &quot;&quot;,
-    last_escape_dir = &quot;&quot;,
-    last_escape_at = 0,
-    last_lust_at = 0,
-    updated_at = 0,
-  }
-  rows[key] = row
-  return row
-end
-
-local function _touch_state(tgt, event)
-  local row = _row(tgt, false)
-  Dop.state.last_target = _trim(tgt)
-  Dop.state.last_event = tostring(event or &quot;&quot;)
-  if row then row.updated_at = _now() end
-end
 
 local function _echo(msg)
   cecho(string.format(&quot;&lt;cyan&gt;[dop]&lt;reset&gt; %s\n&quot;, tostring(msg)))
@@ -22452,116 +21886,6 @@ function Dop.dom_echo(msg)
   msg = tostring(msg or &quot;&quot;)
   if msg == &quot;&quot; then return end
   cecho(string.format(&quot;%s(%s).&lt;reset&gt;\n&quot;, Dop.cfg.dom_prefix or &quot;&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;&quot;, msg))
-end
-
-function Dop.get_state(tgt)
-  local row = _row(tgt or Dop.getTarget(), false)
-  if not row then
-    return {
-      target = _trim(tgt or Dop.getTarget() or &quot;&quot;),
-      ally = false,
-      escaped = false,
-      remote_lust_pending = false,
-      remote_lust_followup = false,
-      last_escape_kind = &quot;&quot;,
-      last_escape_dir = &quot;&quot;,
-      last_escape_at = 0,
-      last_lust_at = 0,
-      updated_at = 0,
-    }
-  end
-  return {
-    target = row.target,
-    ally = (row.ally == true),
-    escaped = (row.escaped == true),
-    remote_lust_pending = (row.remote_lust_pending == true),
-    remote_lust_followup = (row.remote_lust_followup == true),
-    last_escape_kind = tostring(row.last_escape_kind or &quot;&quot;),
-    last_escape_dir = tostring(row.last_escape_dir or &quot;&quot;),
-    last_escape_at = tonumber(row.last_escape_at or 0) or 0,
-    last_lust_at = tonumber(row.last_lust_at or 0) or 0,
-    updated_at = tonumber(row.updated_at or 0) or 0,
-  }
-end
-
-function Dop.note_escape(tgt, kind, dir)
-  local row = _row(tgt, true)
-  if not row then return false end
-  local now = _now()
-  row.target = _trim(tgt)
-  row.ally = false
-  row.escaped = true
-  row.remote_lust_pending = true
-  row.remote_lust_followup = false
-  row.last_escape_kind = _trim(kind)
-  row.last_escape_dir = _trim(dir)
-  row.last_escape_at = now
-  row.updated_at = now
-  _touch_state(tgt, &quot;escape&quot;)
-  return true
-end
-
-function Dop.note_remote_lust_sent(tgt)
-  local row = _row(tgt, true)
-  if not row then return false end
-  row.target = _trim(tgt)
-  row.ally = false
-  row.remote_lust_pending = false
-  row.remote_lust_followup = false
-  row.updated_at = _now()
-  _touch_state(tgt, &quot;remote_lust_sent&quot;)
-  return true
-end
-
-function Dop.note_lust_landed(tgt)
-  local row = _row(tgt, true)
-  if not row then return false end
-  local now = _now()
-  row.target = _trim(tgt)
-  row.ally = true
-  row.escaped = false
-  row.remote_lust_pending = false
-  row.remote_lust_followup = true
-  row.last_lust_at = now
-  row.updated_at = now
-  _touch_state(tgt, &quot;lust_landed&quot;)
-  return true
-end
-
-function Dop.note_ally_state(tgt, is_ally)
-  local row = _row(tgt, true)
-  if not row then return false end
-  row.target = _trim(tgt)
-  row.ally = (is_ally == true)
-  if row.ally then
-    row.escaped = false
-    row.remote_lust_pending = false
-  else
-    row.remote_lust_followup = false
-  end
-  row.updated_at = _now()
-  _touch_state(tgt, row.ally and &quot;ally_on&quot; or &quot;ally_off&quot;)
-  return true
-end
-
-function Dop.consume_followup_lust(tgt)
-  local row = _row(tgt, false)
-  if not row or row.remote_lust_followup ~= true then return false end
-  row.remote_lust_followup = false
-  row.updated_at = _now()
-  _touch_state(row.target, &quot;followup_consumed&quot;)
-  return true
-end
-
-function Dop.clear_target_state(tgt)
-  local key = _lc(tgt)
-  if key == &quot;&quot; then return false end
-  Dop.state.targets[key] = nil
-  if _lc(Dop.state.last_target) == key then
-    Dop.state.last_target = &quot;&quot;
-    Dop.state.last_event = &quot;clear&quot;
-  end
-  return true
 end
 
 local function _split_words(s)
@@ -22854,13 +22178,8 @@ end
 --========================================================--
 Dop._trig = Dop._trig or {}
 
-local function _reinstall_trigger(name, pattern, fn)
-  if Dop._trig[name] then killTrigger(Dop._trig[name]) end
-  Dop._trig[name] = tempRegexTrigger(pattern, fn)
-end
-
-_reinstall_trigger(
-  &quot;out_of_range&quot;,
+if Dop._trig.out_of_range then killTrigger(Dop._trig.out_of_range) end
+Dop._trig.out_of_range = tempRegexTrigger(
   [[^Your doppleganger is out of range\.$]],
   function()
     if Dop.cfg.oor_gag then deleteLine() end
@@ -22872,56 +22191,8 @@ _reinstall_trigger(
   end
 )
 
-_reinstall_trigger(
-  &quot;lust_landed&quot;,
-  [[^You quickly fling a Lust card at ([\w&apos;\-]+) and (?:his|her|its|their|faen|faes) eyes light up\.$]],
-  function()
-    local tgt = _trim(matches[2] or &quot;&quot;)
-    if tgt ~= &quot;&quot; then Dop.note_lust_landed(tgt) end
-  end
-)
-
-_reinstall_trigger(
-  &quot;sniff_fail&quot;,
-  [[^You sniff a tarot card inscribed with the Empress, determining you would be unable to summon ([\w&apos;\-]+) with it\.$]],
-  function()
-    local tgt = _trim(matches[2] or &quot;&quot;)
-    if tgt ~= &quot;&quot; then Dop.note_ally_state(tgt, false) end
-  end
-)
-
-_reinstall_trigger(
-  &quot;sniff_success&quot;,
-  [[^You sniff a tarot card inscribed with the Empress, determining you would be able to summon ([\w&apos;\-]+) with it\.$]],
-  function()
-    local tgt = _trim(matches[2] or &quot;&quot;)
-    if tgt ~= &quot;&quot; then Dop.note_ally_state(tgt, true) end
-  end
-)
-
-_reinstall_trigger(
-  &quot;tumble_out&quot;,
-  [[^([\w&apos;\-]+) tumbles out to the ([\w&apos;\-]+)\.$]],
-  function()
-    local tgt = _trim(matches[2] or &quot;&quot;)
-    local dir = _trim(matches[3] or &quot;&quot;)
-    if tgt ~= &quot;&quot; then Dop.note_escape(tgt, &quot;tumble&quot;, dir) end
-  end
-)
-
-_reinstall_trigger(
-  &quot;somersault_out&quot;,
-  [[^([\w&apos;\-]+)&apos;s somersault takes \w+ out of the room to the ([\w&apos;\-]+)\.$]],
-  function()
-    local tgt = _trim(matches[2] or &quot;&quot;)
-    local dir = _trim(matches[3] or &quot;&quot;)
-    if tgt ~= &quot;&quot; then Dop.note_escape(tgt, &quot;tumble&quot;, dir) end
-  end
-)
-
 cecho(&quot;&lt;cyan&gt;[Yso] dop router loaded (patched).&lt;reset&gt;\n&quot;)
 --========================================================--
-
 </script>
 						<eventHandlerList />
 					</Script>
@@ -23170,10 +22441,10 @@ end
 
 --========================================================--
 -- Yso_ProbeObjects.lua  (FULL DROP-IN)
---  * Handles &quot;probe simulacrum&quot; + &quot;probe heartstone&quot; output
---  * Aliases: pprobe [sim|heart|both], plus psim / phs
---  * Probing is BALANCELESS: &quot;both&quot; fires back-to-back (optional tiny delay)
---  * Echo: HotPink remaining % (10000 max assumed)
+--  â€¢ Handles &quot;probe simulacrum&quot; + &quot;probe heartstone&quot; output
+--  â€¢ Aliases: pprobe [sim|heart|both], plus psim / phs
+--  â€¢ Probing is BALANCELESS: &quot;both&quot; fires back-to-back (optional tiny delay)
+--  â€¢ Echo: HotPink remaining % (10000 max assumed)
 --========================================================--
 
 Yso = Yso or {}
@@ -23290,16 +22561,16 @@ cecho(&quot;&lt;gray&gt;[Yso] ProbeObjects loaded: triggers + aliases (pprobe/ps
 --========================================================--
 -- yso_occultist_pacts_lowwarn.lua (DROP-IN)
 -- Purpose:
---   * Parse Chaos Court pacts list output (&quot;-pacts&quot;/&quot;pacts&quot;)
---   * Store remaining counts per pact-holder
---   * Print reminders:
---       (A) MISSING (not present in list) - based on expected roster
---       (B) LOW (&lt;= threshold) - excluding Glaaki + Ascendant&apos;s thrall
+--   â€¢ Parse Chaos Court pacts list output (&quot;-pacts&quot;/&quot;pacts&quot;)
+--   â€¢ Store remaining counts per pact-holder
+--   â€¢ Print reminders:
+--       (A) MISSING (not present in list) â€” based on expected roster
+--       (B) LOW (&lt;= threshold) â€” excluding Glaaki + Ascendant&apos;s thrall
 --
 -- Fixes:
---   * Corrects &quot;Istria&quot; spelling (not &quot;Istyria&quot;)
---   * Excludes &quot;The Ascendant&apos;s thrall&quot; from LOW (user mapping: = Glaaki)
---   * Prevent cecho bleed (forces newline; prints next tick)
+--   â€¢ Corrects &quot;Istria&quot; spelling (not &quot;Istyria&quot;)
+--   â€¢ Excludes &quot;The Ascendant&apos;s thrall&quot; from LOW (user mapping: = Glaaki)
+--   â€¢ Prevent cecho bleed (forces newline; prints next tick)
 --========================================================--
 
 _G.Yso = _G.Yso or _G.yso or {}
@@ -23313,8 +22584,8 @@ P.cfg = P.cfg or {
   debug         = false,
 
   -- Exclude these signatures from LOW warnings (see _sig()).
-  --  * &quot;imperator glaaki&quot; = Imperator Glaaki, the Eldritch
-  --  * &quot;the ascendants&quot;   = The Ascendant&apos;s thrall (your note: = Glaaki one-summon)
+  --  â€¢ &quot;imperator glaaki&quot; = Imperator Glaaki, the Eldritch
+  --  â€¢ &quot;the ascendants&quot;   = The Ascendant&apos;s thrall (your note: = Glaaki one-summon)
   ignore_low_sig = {
     [&quot;imperator glaaki&quot;] = true,
     [&quot;the ascendants&quot;]   = true,
@@ -23371,9 +22642,9 @@ local function _key(s)
 end
 
 -- Stable signature to survive truncation:
---   * default: first token
---   * &quot;imperator &lt;second&gt;&quot; for Imperator Glaaki
---   * &quot;the &lt;second&gt;&quot; for &quot;The Ascendant&apos;s ...&quot;
+--   â€¢ default: first token
+--   â€¢ &quot;imperator &lt;second&gt;&quot; for Imperator Glaaki
+--   â€¢ &quot;the &lt;second&gt;&quot; for &quot;The Ascendant&apos;s ...&quot;
 local function _sig(name)
   local k = _key(name)
   local a,b = k:match(&quot;^(%S+)%s*(%S*)&quot;)
@@ -23500,14 +22771,14 @@ function P.report_alerts(threshold)
   cecho(&quot;\n&lt;yellow&gt;[Pacts] Pact reminders:\n&quot;)
 
   if #missing &gt; 0 then
-    cecho(&quot;&lt;red&gt;[Pacts] MISSING (not present in list) - refresh these:\n&quot;)
+    cecho(&quot;&lt;red&gt;[Pacts] MISSING (not present in list) â€” refresh these:\n&quot;)
     for _, nm in ipairs(missing) do
       cecho((&quot;&lt;red&gt;  - %s\n&quot;):format(nm))
     end
   end
 
   if #low &gt; 0 then
-    cecho((&quot;&lt;yellow&gt;[Pacts] LOW (&lt;= %d) - consider refreshing soon:\n&quot;):format(thr))
+    cecho((&quot;&lt;yellow&gt;[Pacts] LOW (&lt;= %d) â€” consider refreshing soon:\n&quot;):format(thr))
     for _, row in ipairs(low) do
       local col = (row.count &lt;= 2 and &quot;&lt;red&gt;&quot;) or &quot;&lt;yellow&gt;&quot;
       cecho((&quot;%s  [%2d] %s\n&quot;):format(col, row.count, row.name))
@@ -23559,10 +22830,10 @@ _dbg(&quot;pacts_lowwarn loaded&quot;)
 
 --========================================================--
 -- entity_registry.lua
---  * Route-agnostic Occultist entity registry / selector core
---  * Phase 1 roster: worm, storm, slime, sycophant, humbug, firelord
---  * Returns ranked legal candidates and compact skip reasons
---  * Tracks per-target bootstrap / invalidation / reservation / effect state
+--  â€¢ Route-agnostic Occultist entity registry / selector core
+--  â€¢ Phase 1 roster: worm, storm, slime, sycophant, humbug, firelord
+--  â€¢ Returns ranked legal candidates and compact skip reasons
+--  â€¢ Tracks per-target bootstrap / invalidation / reservation / effect state
 --========================================================--
 
 Yso = Yso or {}
@@ -24091,9 +23362,9 @@ return ER
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
--- Yso.tarot.devil  - simple state helper
---  * Tracks Devil &quot;possessing you&quot; buff (30s-ish)
---  * Text-based: fling + leave/suppress lines
+-- Yso.tarot.devil  â€” simple state helper
+--  â€¢ Tracks Devil &quot;possessing you&quot; buff (30s-ish)
+--  â€¢ Text-based: fling + leave/suppress lines
 --========================================================--
 
 Yso       = Yso       or {}
@@ -24140,10 +23411,10 @@ end
 
 --========================================================--
 -- Yso Priestess Module (Tarot)
---  * Auto self-heal with Priestess at low HP (GMCP).
---  * Manual heal: self or another adventurer.
---  * Uses QUEUE ADDCLEARFULL bu to override all queues.
---  * bu = balance + upright (not prone), no eq requirement.
+--  â€¢ Auto self-heal with Priestess at low HP (GMCP).
+--  â€¢ Manual heal: self or another adventurer.
+--  â€¢ Uses QUEUE ADDCLEARFULL bu to override all queues.
+--  â€¢ bu = balance + upright (not prone), no eq requirement.
 --========================================================--
 
 Yso = Yso or {}
@@ -24353,10 +23624,10 @@ cecho(_tag_prefix() .. &quot;&lt;cyan&gt;Yso Priestess module loaded (bu queue).
 
 --========================================================--
 -- Yso Magician Module (Tarot)
---  * Auto mana-heal with Magician using GMCP.
---  * Condition: mana &lt; mp_threshold AND hp &gt; hp_min.
---  * Default: mp_threshold = 35%, hp_min = 75%.
---  * Uses QUEUE ADDCLEARFULL bu:
+--  â€¢ Auto mana-heal with Magician using GMCP.
+--  â€¢ Condition: mana &lt; mp_threshold AND hp &gt; hp_min.
+--  â€¢ Default: mp_threshold = 35%, hp_min = 75%.
+--  â€¢ Uses QUEUE ADDCLEARFULL bu:
 --       - overrides all queues
 --       - requires BAL + UPRIGHT (not prone)
 --========================================================--
@@ -24593,12 +23864,12 @@ cecho(_tag_prefix() .. &quot;&lt;cyan&gt;Yso Magician module loaded (bu queue).&
 
 --========================================================--
 -- Yso / Legacy Fool (Tarot) helper + AUTO + DIAG SNAPSHOT
---  * Uses Legacy.Curing.Affs for conditions
---  * Uses Yso.queue if present, else raw QUEUE commands
---  * Auto-Fool:
+--  â€¢ Uses Legacy.Curing.Affs for conditions
+--  â€¢ Uses Yso.queue if present, else raw QUEUE commands
+--  â€¢ Auto-Fool:
 --      - GMCP: checks on gmcp.Char.Vitals
 --      - Diagnose snapshot: checks when a queued DIAGNOSE finishes
---  * Requirements:
+--  â€¢ Requirements:
 --      - not prone
 --      - not webbed
 --      - at least one arm NOT brokenleftarm/brokenrightarm
@@ -24740,9 +24011,9 @@ local function _is_lock_state()
 end
 
 -- Resolve min_affs and whether &quot;lock&quot; is allowed to override the threshold
--- * HUNT cureset: min_affs_hunt, lock does NOT override (pure threshold)
--- * Other curesets: min_affs_default, lock CAN override (for PvP)
--- * Global Legacy.Fool.min_affs override (if set) always uses lock override.
+-- â€¢ HUNT cureset: min_affs_hunt, lock does NOT override (pure threshold)
+-- â€¢ Other curesets: min_affs_default, lock CAN override (for PvP)
+-- â€¢ Global Legacy.Fool.min_affs override (if set) always uses lock override.
 local function _min_affs_for_current_set()
   -- explicit global override wins
   if Legacy.Fool.min_affs ~= nil then
@@ -24791,11 +24062,11 @@ end
 
 --========================================================--
 --  Public helper: Legacy.FoolSelfCleanse(source)
---  * Used by:
+--  â€¢ Used by:
 --      - auto driver (GMCP)
 --      - diagnose snapshot hook
 --      - your ^fool$ alias (manual panic button)
---  * Returns true if Fool was queued.
+--  â€¢ Returns true if Fool was queued.
 --========================================================--
 function Legacy.FoolSelfCleanse(source)
   if not (Legacy and Legacy.Curing and Legacy.Curing.Affs) then
@@ -24981,10 +24252,10 @@ _fool_echo(&quot;Yso Fool auto module loaded (GMCP+diagnose hooks active).&quot;
 						<script>--========================================================--
 -- yso_travel_router.lua (DROP-IN)
 -- Purpose:
---   * Central travel router for Achaea (Yso namespace)
---   * Supports named routes (labels), provider selection, and map fallback
---   * Provider #1 (auto): Universe tarot IF Yso.uni is loaded
---   * Future providers can be added without changing calling code
+--   â€¢ Central travel router for Achaea (Yso namespace)
+--   â€¢ Supports named routes (labels), provider selection, and map fallback
+--   â€¢ Provider #1 (auto): Universe tarot IF Yso.uni is loaded
+--   â€¢ Future providers can be added without changing calling code
 --
 -- Suggested aliases:
 --   ^go$            -&gt; Yso.travel.alias(&quot;&quot;)
@@ -25396,10 +24667,10 @@ _ce(&quot;Travel router loaded. Use: go help&quot;)
 						<script>--========================================================--
 -- yso_travel_universe.lua (DROP-IN)
 -- Purpose:
---   * Robust Universe Tarot travel helper for Achaea (Yso namespace)
---   * Parses &quot;universe list&quot; into a destination cache automatically
---   * Provides one-command travel with fuzzy matching + favorites
---   * Optional auto-fling + server-side BAL queueing
+--   â€¢ Robust Universe Tarot travel helper for Achaea (Yso namespace)
+--   â€¢ Parses &quot;universe list&quot; into a destination cache automatically
+--   â€¢ Provides one-command travel with fuzzy matching + favorites
+--   â€¢ Optional auto-fling + server-side BAL queueing
 --
 -- Install:
 --   1) Add this as a Script in your Yso system (e.g., Yso Scripts/Travel).
@@ -26142,14 +25413,31 @@ local function _target_class_info(tgt)
   return out
 end
 
-local _bm_state
 local _target_state
 local _shield_is_up
 local _current_target_matches
 
+local function _class_defense_gates(plan)
+  local BMC = Yso.curing and Yso.curing.blademaster
+  if BMC and type(BMC.should_gate) == &quot;function&quot; then return BMC.should_gate(plan) end
+  return false
+end
+
 local function _bm_snapshot_view(tgt, snap, mana_pct)
+  local BMC = Yso.curing and Yso.curing.blademaster
+  if BMC and type(BMC.snapshot_view) == &quot;function&quot; then
+    return BMC.snapshot_view(tgt, {
+      snap = snap,
+      mana_pct = mana_pct,
+      class_info = _target_class_info(tgt),
+      shield_is_up = _shield_is_up and _shield_is_up(tgt) or nil,
+      target_meta = _target_meta(tgt),
+      now = _now(),
+      cfg = AB.cfg,
+    })
+  end
   local info = _target_class_info(tgt)
-  local out = {
+  return {
     active = false,
     class = info.class,
     class_known = info.known,
@@ -26158,124 +25446,16 @@ local function _bm_snapshot_view(tgt, snap, mana_pct)
     needs_readaura = false,
     passive_allowed = false,
     counts_under_pressure = false,
-    blind = nil,
-    blind_known = false,
-    blind_fresh = false,
-    deaf = nil,
-    deaf_known = false,
-    deaf_fresh = false,
-    shield = nil,
-    shield_known = false,
-    shield_fresh = false,
-    physical = nil,
-    physical_known = false,
-    physical_fresh = false,
-    mental = nil,
-    mental_known = false,
-    mental_fresh = false,
-    speed = nil,
-    speed_known = false,
-    speed_fresh = false,
+    blind = nil, blind_known = false, blind_fresh = false,
+    deaf = nil, deaf_known = false, deaf_fresh = false,
+    shield = nil, shield_known = false, shield_fresh = false,
+    physical = nil, physical_known = false, physical_fresh = false,
+    mental = nil, mental_known = false, mental_fresh = false,
+    speed = nil, speed_known = false, speed_fresh = false,
     mana_pct = tonumber(mana_pct),
     mana_known = (tonumber(mana_pct) ~= nil),
     mana_fresh = (tonumber(mana_pct) ~= nil),
   }
-  if info.known ~= true or info.class ~= &quot;Blademaster&quot; or type(_bm_state) ~= &quot;function&quot; then
-    return out
-  end
-
-  local BM = _bm_state(tgt)
-  if not BM then return out end
-  local now = _now()
-  local fresh_ttl = tonumber(AB.cfg.bm_snapshot_ttl_s or 24.0) or 24.0
-  local carry_ttl = tonumber(AB.cfg.bm_snapshot_carry_ttl_s or 30.0) or 30.0
-  local shield_ttl = tonumber(AB.cfg.bm_shield_ttl_s or 8.0) or 8.0
-  local shield_now = _shield_is_up(tgt)
-
-  BM.target_class = info.class
-  BM.class_source = info.source
-  BM.policy = true
-
-  if snap and snap.fresh == true then
-    if snap.read_complete == true then
-      if snap.blind ~= nil then BM.blind = (snap.blind == true); BM.blind_at = now end
-      if snap.deaf ~= nil then BM.deaf = (snap.deaf == true); BM.deaf_at = now end
-      if snap.shield ~= nil then BM.shield = (snap.shield == true); BM.shield_at = now end
-    end
-    if snap.physical ~= nil then BM.physical = tonumber(snap.physical); BM.physical_at = now end
-    if snap.mental ~= nil then BM.mental = tonumber(snap.mental); BM.mental_at = now end
-    if snap.speed ~= nil then BM.speed = (snap.speed == true); BM.speed_at = now end
-    if snap.had_mana == true and snap.mana_pct ~= nil then
-      BM.mana_pct = tonumber(snap.mana_pct)
-      BM.mana_at = now
-    end
-  end
-  if tonumber(mana_pct) ~= nil then
-    BM.mana_pct = tonumber(mana_pct)
-    BM.mana_at = now
-  end
-  if type(shield_now) == &quot;boolean&quot; and (BM.shield == nil or BM.shield ~= shield_now) then
-    BM.shield = shield_now
-    BM.shield_at = now
-  end
-
-  local meta = _target_meta(tgt)
-  local herb_at = _clock(meta.last_herb_at)
-  local blind_fresh = (BM.blind ~= nil) and ((now - _clock(BM.blind_at)) &lt;= fresh_ttl)
-  local deaf_fresh = (BM.deaf ~= nil) and ((now - _clock(BM.deaf_at)) &lt;= fresh_ttl)
-  local shield_fresh = (BM.shield ~= nil) and ((now - _clock(BM.shield_at)) &lt;= shield_ttl)
-  local counts_under_pressure = (herb_at &gt; 0)
-    and ((herb_at &gt; _clock(BM.physical_at)) or (herb_at &gt; _clock(BM.mental_at)))
-  local physical_fresh = (BM.physical ~= nil) and ((now - _clock(BM.physical_at)) &lt;= fresh_ttl) and not counts_under_pressure
-  local mental_fresh = (BM.mental ~= nil) and ((now - _clock(BM.mental_at)) &lt;= fresh_ttl) and not counts_under_pressure
-  local speed_fresh = (BM.speed ~= nil) and ((now - _clock(BM.speed_at)) &lt;= carry_ttl)
-  local mana_fresh = (BM.mana_pct ~= nil) and ((now - _clock(BM.mana_at)) &lt;= carry_ttl)
-  local complete_enough = blind_fresh and deaf_fresh and shield_fresh and physical_fresh and mental_fresh
-  local required_known = 0
-  if BM.blind ~= nil then required_known = required_known + 1 end
-  if BM.deaf ~= nil then required_known = required_known + 1 end
-  if BM.shield ~= nil then required_known = required_known + 1 end
-  if BM.physical ~= nil then required_known = required_known + 1 end
-  if BM.mental ~= nil then required_known = required_known + 1 end
-
-  if complete_enough then
-    BM.ever_complete = true
-    BM.state = &quot;complete_enough&quot;
-  elseif required_known &lt;= 0 then
-    BM.state = &quot;missing&quot;
-  elseif BM.ever_complete == true or counts_under_pressure then
-    BM.state = &quot;stale&quot;
-  else
-    BM.state = &quot;provisional&quot;
-  end
-
-  out.active = true
-  out.state = BM.state
-  out.needs_readaura = (BM.state ~= &quot;complete_enough&quot;)
-  out.passive_allowed = complete_enough and (tonumber(BM.physical or 0) or 0) &gt;= 4 and (tonumber(BM.mental or 0) or 0) &gt;= 4
-  out.counts_under_pressure = counts_under_pressure
-  out.blind = blind_fresh and BM.blind or nil
-  out.blind_known = (BM.blind ~= nil)
-  out.blind_fresh = blind_fresh
-  out.deaf = deaf_fresh and BM.deaf or nil
-  out.deaf_known = (BM.deaf ~= nil)
-  out.deaf_fresh = deaf_fresh
-  out.shield = shield_fresh and BM.shield or nil
-  out.shield_known = (BM.shield ~= nil)
-  out.shield_fresh = shield_fresh
-  out.physical = physical_fresh and BM.physical or nil
-  out.physical_known = (BM.physical ~= nil)
-  out.physical_fresh = physical_fresh
-  out.mental = mental_fresh and BM.mental or nil
-  out.mental_known = (BM.mental ~= nil)
-  out.mental_fresh = mental_fresh
-  out.speed = speed_fresh and BM.speed or nil
-  out.speed_known = (BM.speed ~= nil)
-  out.speed_fresh = speed_fresh
-  out.mana_pct = mana_fresh and tonumber(BM.mana_pct) or nil
-  out.mana_known = (BM.mana_pct ~= nil)
-  out.mana_fresh = mana_fresh
-  return out
 end
 
 function CS.snapshot(tgt)
@@ -26917,18 +26097,8 @@ local function _entity_candidates(tgt, plan)
 end
 
 local function _entity_aff_cmd(aff, tgt, ES)
-  aff = _lc(aff)
-  if aff == &quot;asthma&quot; then
-    return (&quot;command bubonis at %s&quot;):format(tgt), &quot;mana_bury&quot;
-  end
-  if aff == &quot;slickness&quot; and _has_aff(tgt, &quot;asthma&quot;) then
-    return (&quot;command bubonis at %s&quot;):format(tgt), &quot;mana_bury&quot;
-  end
-  if aff == &quot;paralysis&quot; and _has_aff(tgt, &quot;asthma&quot;) then
-    return (&quot;command slime at %s&quot;):format(tgt), &quot;mana_bury&quot;
-  end
-  if aff == &quot;chimera_roar&quot; then
-    return (&quot;command chimera at %s&quot;):format(tgt), &quot;mental_build&quot;
+  if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == &quot;function&quot; then
+    return Yso.ent_cmd_for_aff(_lc(aff), tgt, _has_aff)
   end
   return nil, nil
 end
@@ -26958,7 +26128,16 @@ local function _para_override_choice(tgt, plan, pair, ctx)
   local maturity = _lock_maturity(tgt)
   local meta = _target_meta(tgt)
   local last_herb = _lc(PS and PS.last_cure_herb or meta.last_herb or &quot;&quot;)
-  local threshold = tonumber(((ctx and ctx.bm_branch_active == true) and AB.cfg.para_bm_override_threshold) or AB.cfg.para_override_threshold or 0.75) or 0.75
+  local threshold, _bm_para_bonus
+  do
+    local BMC = Yso.curing and Yso.curing.blademaster
+    if BMC and type(BMC.para_adjust) == &quot;function&quot; then
+      threshold, _bm_para_bonus = BMC.para_adjust(AB.cfg, ctx and ctx.bm_branch_active == true)
+    else
+      threshold = tonumber(AB.cfg.para_override_threshold or 0.75) or 0.75
+      _bm_para_bonus = 0
+    end
+  end
   local out = {
     predicted_next_cure = tostring(predict.pick or &quot;&quot;),
     confidence = tonumber(predict.p or 0) or 0,
@@ -27013,7 +26192,7 @@ local function _para_override_choice(tgt, plan, pair, ctx)
   local eq_cd = tonumber(AB.cfg.para_eq_cd_s or 3.5) or 3.5
   local ent_cd = tonumber(AB.cfg.para_entity_cd_s or 6.0) or 6.0
   local evidence_bonus = 0.22
-  local bm_bonus = ((ctx and ctx.bm_branch_active == true) and 0.10) or 0
+  local bm_bonus = _bm_para_bonus or 0
   local recent_apply_penalty = (since_apply &gt; 0 and since_apply &lt; recent_apply_s) and 0.18 or 0
   local recent_cure_penalty = (since_cure &gt; 0 and since_cure &lt; recent_cure_s) and 0.12 or 0
   local lane_scores = {}
@@ -27088,7 +26267,7 @@ local function _entity_pair(tgt, plan, ctx)
   local target_is_deaf = (_ak_deaf &gt;= 100) or (plan and plan.deaf == true)
 
   if target_is_deaf and ent_ready
-    and not (plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true)
+    and not _class_defense_gates(plan)
     and not (plan.finish_stage == &quot;transition&quot; or plan.finish_stage == &quot;burst&quot;)
   then
     out.entity_cmd = (&quot;command chimera at %s&quot;):format(tgt)
@@ -27098,7 +26277,7 @@ local function _entity_pair(tgt, plan, ctx)
     ent_ready = false
     entity_reserved = true
   elseif plan and plan.needs_chimera == true and ent_ready
-    and not (plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true)
+    and not _class_defense_gates(plan)
     and not (plan.finish_stage == &quot;transition&quot; or plan.finish_stage == &quot;burst&quot;)
   then
     out.entity_cmd = (&quot;command chimera at %s&quot;):format(tgt)
@@ -27558,59 +26737,11 @@ _target_state = function(tgt)
         last_block_reason = &quot;&quot;,
         last_attend_status = &quot;wait&quot;,
       },
-      bm = {
-        target_class = &quot;&quot;,
-        class_source = &quot;&quot;,
-        policy = false,
-        state = &quot;missing&quot;,
-        ever_complete = false,
-        blind = nil,
-        blind_at = 0,
-        deaf = nil,
-        deaf_at = 0,
-        shield = nil,
-        shield_at = 0,
-        physical = nil,
-        physical_at = 0,
-        mental = nil,
-        mental_at = 0,
-        speed = nil,
-        speed_at = 0,
-        mana_pct = nil,
-        mana_at = 0,
-      },
     }
     AB.state.targets[key] = row
   end
   row.name = _trim(tgt)
   return row
-end
-
-_bm_state = function(tgt)
-  local row = _target_state(tgt)
-  if not row then return nil end
-  row.bm = row.bm or {
-    target_class = &quot;&quot;,
-    class_source = &quot;&quot;,
-    policy = false,
-    state = &quot;missing&quot;,
-    ever_complete = false,
-    blind = nil,
-    blind_at = 0,
-    deaf = nil,
-    deaf_at = 0,
-    shield = nil,
-    shield_at = 0,
-    physical = nil,
-    physical_at = 0,
-    mental = nil,
-    mental_at = 0,
-    speed = nil,
-    speed_at = 0,
-    mana_pct = nil,
-    mana_at = 0,
-  }
-  return row.bm
 end
 
 _para_state = function(tgt)
@@ -28335,7 +27466,7 @@ local function _bal_plan(tgt, plan)
     return nil, nil
   end
 
-  if plan and plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true then
+  if _class_defense_gates(plan) then
     return nil, nil
   end
   if plan and (plan.finish_stage == &quot;transition&quot; or plan.finish_stage == &quot;burst&quot;) then
@@ -28553,7 +27684,7 @@ local function _route_pair_plan(tgt, plan)
 
   if ent_ready
     and not (plan and (plan.finish_stage == &quot;transition&quot; or plan.finish_stage == &quot;burst&quot;))
-    and not (plan and plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true)
+    and not _class_defense_gates(plan)
   then
     if _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted_focus) then
       out.entity_cmd = (&quot;command chimera at %s&quot;):format(tgt)
@@ -28963,21 +28094,11 @@ function AB.attack_function(arg)
     eq_aff = pair and pair.eq_aff or &quot;&quot;,
     entity_aff = pair and pair.entity_aff or &quot;&quot;,
     pair_reason = pair and pair.reason or &quot;&quot;,
-    bm_snapshot = {
-      state = plan.bm_snapshot_state,
-      active = plan.bm_snapshot_active == true,
-      complete = plan.bm_snapshot_complete == true,
-      provisional = plan.bm_snapshot_provisional == true,
-      blind = { known = plan.bm_snapshot and plan.bm_snapshot.blind_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.blind_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.blind },
-      deaf = { known = plan.bm_snapshot and plan.bm_snapshot.deaf_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.deaf_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.deaf },
-      shield = { known = plan.bm_snapshot and plan.bm_snapshot.shield_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.shield_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.shield },
-      physical = { known = plan.bm_snapshot and plan.bm_snapshot.physical_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.physical_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.physical },
-      mental = { known = plan.bm_snapshot and plan.bm_snapshot.mental_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.mental_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.mental },
-      speed = { known = plan.bm_snapshot and plan.bm_snapshot.speed_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.speed_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.speed },
-      mana = { known = plan.bm_snapshot and plan.bm_snapshot.mana_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.mana_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.mana_pct },
-      passive_allowed = plan.bm_passive_allowed == true,
-      counts_under_pressure = plan.bm_snapshot and plan.bm_snapshot.counts_under_pressure == true,
-    },
+    bm_snapshot = (function()
+      local BMC = Yso.curing and Yso.curing.blademaster
+      if BMC and type(BMC.explain) == &quot;function&quot; then return BMC.explain(plan) end
+      return { state = plan.bm_snapshot_state, active = plan.bm_snapshot_active == true }
+    end)(),
     bm_branch_active = plan.bm_branch_active == true,
     bm_branch_provisional = plan.bm_branch_provisional == true,
     shield_up = _shield_is_up(tgt),

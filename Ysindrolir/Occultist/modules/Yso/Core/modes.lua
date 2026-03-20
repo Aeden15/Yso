@@ -127,93 +127,16 @@ local function _gd()
   return (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.dmg or Yso.off.oc.group_damage)) or nil
 end
 
-local _FALLBACK_ROUTE_ROWS = {
-  occ_aff_burst = {
-    id = "occ_aff_burst",
-    mode = "combat",
-    party_route = nil,
-    namespace = "Yso.off.oc.occ_aff_burst",
-    description = "Duel affliction loop",
-    priority = 58,
-  },
-  group_damage = {
-    id = "group_damage",
-    mode = "party",
-    party_route = "dam",
-    namespace = "Yso.off.oc.group_damage",
-    description = "Group damage",
-    priority = 55,
-  },
-  party_aff = {
-    id = "party_aff",
-    mode = "party",
-    party_route = "aff",
-    namespace = "Yso.off.oc.party_aff",
-    description = "Party affliction pressure",
-    priority = 53,
-  },
-}
-
-local _FALLBACK_ROUTE_ALIASES = {
-  aff = "occ_aff_burst",
-  occ_aff = "occ_aff_burst",
-  occ = "occ_aff_burst",
-  occultist_offense = "occ_aff_burst",
-  gd = "group_damage",
-  dmg = "group_damage",
-  dam = "group_damage",
-  party_dam = "group_damage",
-  party_aff = "party_aff",
-  team_aff = "party_aff",
-}
-
-local function _fallback_route_id(name)
-  name = _norm(name)
-  if name == "" or name == "none" then return nil end
-  return _FALLBACK_ROUTE_ALIASES[name] or name
-end
-
-local function _fallback_registry()
-  Yso.Combat = Yso.Combat or {}
-  Yso.Combat.RouteRegistryFallback = Yso.Combat.RouteRegistryFallback or {
-    resolve = function(name)
-      local id = _fallback_route_id(name)
-      return id and _FALLBACK_ROUTE_ROWS[id] or nil
-    end,
-    for_mode = function(mode)
-      mode = _norm(mode)
-      local out = {}
-      for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-        if entry.mode == mode then out[#out + 1] = entry end
-      end
-      table.sort(out, function(a, b)
-        if (a.priority or 0) ~= (b.priority or 0) then
-          return (a.priority or 0) > (b.priority or 0)
-        end
-        return tostring(a.id or "") < tostring(b.id or "")
-      end)
-      return out
-    end,
-    for_party_route = function(route)
-      route = _norm(route)
-      if route == "dmg" then route = "dam" end
-      for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-        if entry.party_route == route then return entry end
-      end
-      return nil
-    end,
-    primary_for_mode = function(mode)
-      local rows = Yso.Combat.RouteRegistryFallback.for_mode(mode)
-      return rows[1]
-    end,
-  }
-  return Yso.Combat.RouteRegistryFallback
-end
-
 local function _route_registry()
   local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
   if RR and type(RR.resolve) == "function" then return RR end
-  return _fallback_registry()
+  if type(require) == "function" then
+    pcall(require, "Yso.Combat.route_registry")
+    pcall(require, "Yso.xml.route_registry")
+  end
+  RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == "function" then return RR end
+  return nil
 end
 
 local function _route_module(entry)
@@ -236,8 +159,6 @@ local function _ensure_route_module(entry)
   if type(bootstrap) == "table" then
     if id == "occ_aff_burst" and type(bootstrap.occ_aff_burst) == "function" then
       pcall(bootstrap.occ_aff_burst, true)
-    elseif id == "magi_focuslock" and type(bootstrap.magi_focuslock) == "function" then
-      pcall(bootstrap.magi_focuslock, true)
     elseif type(bootstrap.entry) == "function" then
       pcall(bootstrap.entry, true)
     end
@@ -263,26 +184,15 @@ end
 
 local function _route_entries()
   local RR = _route_registry()
-  if RR and type(RR.active_ids) == "function" and type(RR.resolve) == "function" then
-    local out = {}
-    local ids = RR.active_ids()
-    for i = 1, #ids do
-      local entry = RR.resolve(ids[i])
-      if entry then out[#out + 1] = entry end
-    end
-    return out
+  if not (RR and type(RR.active_ids) == "function" and type(RR.resolve) == "function") then
+    return {}
   end
-
   local out = {}
-  for _, entry in pairs(_FALLBACK_ROUTE_ROWS) do
-    out[#out + 1] = entry
+  local ids = RR.active_ids()
+  for i = 1, #ids do
+    local entry = RR.resolve(ids[i])
+    if entry then out[#out + 1] = entry end
   end
-  table.sort(out, function(a, b)
-    if (a.priority or 0) ~= (b.priority or 0) then
-      return (a.priority or 0) > (b.priority or 0)
-    end
-    return tostring(a.id or "") < tostring(b.id or "")
-  end)
   return out
 end
 
@@ -290,11 +200,6 @@ local function _party_entry(route)
   local RR = _route_registry()
   if RR and type(RR.for_party_route) == "function" then
     return RR.for_party_route(route)
-  end
-  for _, entry in ipairs(_party_entries()) do
-    if tostring(entry.party_route or "") == tostring(route or "") then
-      return entry
-    end
   end
   return nil
 end

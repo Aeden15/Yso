@@ -265,7 +265,7 @@ D.cfg = D.cfg or {
   enabled = true,
   verbose = false,
   follow_mode = true,  -- when policy="auto": prefer route from Yso.mode (party->group_damage); never overrides policy="active"
-  auto_priority = { "occ_aff_burst", "group_damage", "clock" },
+  auto_priority = { "occ_aff_burst", "group_damage", "party_aff" },
 }
 
 D.state = D.state or {
@@ -287,9 +287,6 @@ end
 local function _get_gd()
   return (Yso.off and Yso.off.oc and (Yso.off.oc.group_damage or Yso.off.oc.dmg)) or nil
 end
-local function _get_clock()
-  return (Yso.occ and Yso.occ.clock) or nil
-end
 
 local function _is_enabled(mod)
   if not mod then return false end
@@ -301,6 +298,33 @@ local function _is_enabled(mod)
   return false
 end
 
+local function _route_registry()
+  local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == "function" then return RR end
+  if type(require) == "function" then
+    pcall(require, "Yso.Combat.route_registry")
+    pcall(require, "Yso.xml.route_registry")
+  end
+  RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == "function" then return RR end
+  return nil
+end
+
+local function _route_id(route)
+  route = _lc(route)
+  if route == "" or route == "none" then return nil end
+
+  local RR = _route_registry()
+  if not (RR and type(RR.resolve) == "function") then
+    return nil
+  end
+  local entry = RR.resolve(route)
+  if entry and type(entry.id) == "string" and entry.id ~= "" then
+    return entry.id
+  end
+  return nil
+end
+
 local function _resolve_route()
   -- ACTIVE-ROUTE ONLY: when policy is not auto, do nothing.
   local pol = _lc(D.state.policy)
@@ -309,14 +333,7 @@ local function _resolve_route()
 
   local route = _lc(D.state.active)
   if route == "" or route == "none" then return nil end
-  if route == "gd" or route == "dmg" then route = "group_damage" end
-  if route == "aff" or route == "burst" or route == "occultist_offense" or route == "occ_aff" then route = "occ_aff_burst" end
-  if route == "occ" then route = "occ_aff_burst" end
-
-  if route ~= "group_damage" and route ~= "clock" and route ~= "occ_aff_burst" then
-    return nil
-  end
-  return route
+  return _route_id(route)
 end
 
 function D.current_route()
@@ -329,14 +346,24 @@ function D.current_route()
   local explicit = _resolve_route()
   if explicit then return explicit end
 
+  local RR = _route_registry()
+  if not RR then return nil end
+
   if mode and type(mode.is_party) == "function" and mode.is_party() then
     local pr = type(mode.party_route) == "function" and _lc(mode.party_route()) or ""
-    if pr == "dam" then return "group_damage" end
+    if type(RR.for_party_route) == "function" then
+      local entry = RR.for_party_route(pr)
+      if entry and entry.id then return entry.id end
+    end
     return nil
   end
 
   if mode and type(mode.is_combat) == "function" and mode.is_combat() then
-    return "occ_aff_burst"
+    if type(RR.primary_for_mode) == "function" then
+      local entry = RR.primary_for_mode("combat")
+      if entry and entry.id then return entry.id end
+    end
+    return nil
   end
 
   return nil
@@ -405,10 +432,10 @@ end
 function D.set_active(route)
   route = _lc(route)
   if route == "" or route == "none" then route = "none" end
-  if route == "gd" or route == "dmg" then route = "group_damage" end
-  if route == "aff" or route == "burst" or route == "occultist_offense" or route == "occ_aff" then route = "occ_aff_burst" end
-  if route == "occ" then route = "occ_aff_burst" end
-  if route ~= "none" and route ~= "group_damage" and route ~= "clock" and route ~= "occ_aff_burst" then
+  if route ~= "none" then
+    route = _route_id(route)
+  end
+  if route == nil then
     return D.state.active
   end
   D.state.active = route

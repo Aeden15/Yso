@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $legacyNameMap = @{
+  'bootstrap.lua' = @('Bootstrap')
   'softlock_gate.lua' = @('Softlock Gate')
   'yso_occultist_offense.lua' = @('Yso.occ.offense')
 }

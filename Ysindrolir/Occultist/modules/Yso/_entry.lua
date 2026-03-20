@@ -22,11 +22,27 @@ end
 
 local Yso = _G.Yso
 
+local function _record_failure(mod, err)
+  local failures = Yso._entry_failures or {}
+  failures[#failures + 1] = {
+    module = tostring(mod or ""),
+    error = tostring(err or ""),
+  }
+  Yso._entry_failures = failures
+end
+
+local function _try_require(mod)
+  local ok, res = pcall(require, mod)
+  if ok then return true, res end
+  return false, res
+end
+
 -- Guard: only run init once per session.
 if Yso._entry_loaded then
   return Yso
 end
 Yso._entry_loaded = true
+Yso._entry_failures = {}
 
 -- Provide a lightweight time helper if missing.
 if type(rawget(_G, "_now")) ~= "function" then
@@ -44,8 +60,9 @@ end
 
 -- Safe require wrapper.
 local function safe_require(mod)
-  local ok, err = pcall(require, mod)
+  local ok, err = _try_require(mod)
   if ok then return true end
+  _record_failure(mod, err)
   -- If you want this noisy, flip Yso._entry_debug=true.
   if Yso._entry_debug and type(rawget(_G, "echo")) == "function" then
     echo(("[YSO] require failed: %s (%s)\n"):format(tostring(mod), tostring(err)))
@@ -53,12 +70,33 @@ local function safe_require(mod)
   return false
 end
 
+local function safe_require_any(...)
+  local tried = {}
+  local errs = {}
+  for i = 1, select("#", ...) do
+    local mod = select(i, ...)
+    if type(mod) == "string" and mod ~= "" then
+      tried[#tried + 1] = mod
+      local ok, err = _try_require(mod)
+      if ok then return true end
+      errs[#errs + 1] = { module = mod, error = err }
+    end
+  end
+  for i = 1, #errs do
+    _record_failure(errs[i].module, errs[i].error)
+  end
+  if Yso._entry_debug and #tried > 1 and type(rawget(_G, "echo")) == "function" then
+    echo(("[YSO] require group failed: %s\n"):format(table.concat(tried, ", ")))
+  end
+  return false
+end
+
 -- Load canonical modules first, then remaining XML-resident legacy scripts.
-safe_require("Yso.Core.api")
-safe_require("Yso.Integration.ak_legacy_wiring")
+safe_require_any("Yso.Core.api", "Yso.xml.api_stuff")
+safe_require_any("Yso.Integration.ak_legacy_wiring", "Yso.xml.ak_legacy_wiring")
 safe_require("Yso.Core.queue")
 safe_require("Yso.Core.wake_bus")
-safe_require("Yso.Combat.route_registry")
+safe_require_any("Yso.Combat.route_registry", "Yso.xml.route_registry")
 safe_require("Yso.Combat.route_interface")
 safe_require("Yso.Combat.parry")
 safe_require("Yso.Combat.offense_driver")
@@ -66,7 +104,7 @@ safe_require("Yso.Core.orchestrator")
 safe_require("Yso.Curing.blademaster_curing")
 safe_require("Yso.Combat.occultist.entity_registry")
 safe_require("Yso.xml.yso_occultist_affmap")
-safe_require("Yso.Combat.occultist.aeon")
+safe_require_any("Yso.Combat.occultist.aeon", "Yso.xml.yso_aeon")
 safe_require("Yso.Combat.routes.group_damage")
 safe_require("Yso.Combat.routes.occ_aff_burst")
 safe_require("Yso.Combat.routes.party_aff")
@@ -75,7 +113,7 @@ safe_require("Yso.xml.information")
 safe_require("Yso.xml.yso_target")
 safe_require("Yso.Core.target_intel")
 safe_require("Yso.xml.yso_target_tattoos")
-safe_require("Yso.Combat.occultist.softlock_gate")
+safe_require_any("Yso.Combat.occultist.softlock_gate", "Yso.xml.softlock_gate")
 safe_require("Yso.xml.curebuckets")
 safe_require("Yso.xml.pronecontroller")
 safe_require("Yso.xml.yso_list_of_functions")
@@ -100,7 +138,7 @@ safe_require("Yso.xml.prio_baselines")
 safe_require("Yso.xml.cureset_baselines")
 safe_require("Yso.xml.yso_configs")
 safe_require("Yso.Core.modes")
-safe_require("Yso.Core.mode_autoswitch")
+safe_require_any("Yso.Core.mode_autoswitch", "Yso.xml.yso_mode_autoswitch")
 safe_require("Yso.xml.yso_escape_button")
 safe_require("Yso.xml.yso_alert_radiance_helper")
 safe_require("Yso.xml.radiance_event")
@@ -108,8 +146,8 @@ safe_require("Yso.xml.yso_hunt_mode_upkeep")
 safe_require("Yso.xml.hunt_primebond_shieldbreak_selector")
 safe_require("Yso.xml.occie_random_generator")
 safe_require("Yso.xml.yso_ak_score_exports")
-safe_require("Yso.Core.predict_cure")
-safe_require("Yso.Core.bootstrap")
+safe_require_any("Yso.Core.predict_cure", "Yso.xml.yso_predict_cure")
+safe_require_any("Yso.Core.bootstrap", "Yso.xml.bootstrap")
 
 -- Sibling class folders (Magi, etc.) live outside the Occultist modules tree.
 -- Add them to package.path so require() can find them.
@@ -127,7 +165,43 @@ do
 end
 
 safe_require("magi_reference")
-safe_require("magi_focuslock")
+
+local function _report_boot_status()
+  local failures = Yso._entry_failures or {}
+  local count = #failures
+  Yso._entry_boot_ok = (count == 0)
+  Yso._entry_boot_failures = failures
+
+  if type(Yso.bootstrap) == "table" then
+    Yso.bootstrap.entry_autoloaded = (count == 0)
+    Yso.bootstrap.entry_autoload_error = (count == 0)
+      and nil
+      or ("_entry completed with %d load failure(s)"):format(count)
+  end
+
+  if count == 0 or Yso._entry_boot_reported then return end
+  Yso._entry_boot_reported = true
+
+  local names = {}
+  local limit = math.min(count, 5)
+  for i = 1, limit do
+    names[#names + 1] = failures[i].module
+  end
+  local more = (count > limit) and ", ..." or ""
+  local msg = ("[YSO] boot warnings: %d module(s) failed to load: %s%s"):format(
+    count,
+    table.concat(names, ", "),
+    more
+  )
+  local cecho = rawget(_G, "cecho")
+  if type(cecho) == "function" then
+    cecho(("<orange>%s<reset>\n"):format(msg))
+  elseif type(echo) == "function" then
+    echo(msg .. "\n")
+  end
+end
+
+_report_boot_status()
 
 -- Back-compat shims expected by some triggers.
 

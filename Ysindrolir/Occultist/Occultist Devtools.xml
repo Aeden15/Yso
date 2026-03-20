@@ -906,7 +906,7 @@ end
 
 function RD.debug_toggle(route, on_off)
   route = tostring(route or ""):lower()
-  if route == "" then
+  if route == "" or route == "on" or route == "off" then
     _tprint("usage: yrdebug [on|off] [aff|dam|par]")
     return
   end

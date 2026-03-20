@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: 2026-03-18
+Last updated: 2026-03-20
 
 
 Recent READAURA Update
@@ -61,6 +61,31 @@ Blademaster Spar 3 Follow-up (2026-03-18)
         helpers use it, eliminating the nil global call seen during testing.
 
 
+Route / Bootstrap Repair (2026-03-20)
+-------------------------------------
+  [fix] Bootstrap now auto-attempts the workspace `_entry` load once on package
+        startup, so no-slot filesystem-managed modules such as `route_registry.lua`
+        are present in live Mudlet sessions without requiring a manual
+        `lua Yso.bootstrap.entry(true)` bootstrap kick.
+  [fix] Live aff-route debugging was verified against the connected Mudlet/Achaea
+        session after the bootstrap repair:
+        `Yso.Combat.RouteRegistry.resolve('aff') -> occ_aff_burst`
+        `yrdebug on aff` works
+        `yrdebug off aff` works
+  [fix] Devtools route-debug alias handling now treats bare `yrdebug on` /
+        `yrdebug off` as usage rather than mis-parsing `on` or `off` as a route.
+  [fix] Route metadata is now centralized again through `route_registry.lua`;
+        duplicate fallback route tables were removed from `modes.lua` and
+        `offense_driver.lua`.
+  [fix] `_entry.lua` now records boot failures and emits a one-time boot warning
+        summary when modules fail to load, instead of silently swallowing all
+        require failures by default.
+  [note] The source-side Occultist Devtools export artifact was renamed to
+        `Occultist Devtools.xml` / `Occultist Devtools.mpackage` so it is no
+        longer easily confused with the live import package at
+        `Ysindrolir/mudlet packages/Devtools.xml`.
+
+
 Architecture Overview
 ---------------------
 Yso is a modular combat automation system for the Occultist class in Achaea,
@@ -94,9 +119,9 @@ Mode-to-route mapping:
   party aff       -> party_aff
   bash            -> Legacy bashing (not a Yso route)
 
-Deprecated routes (removed 2026-03-11):
+Inactive legacy route stubs:
   lock, limb, limb_prep, finisher, bash, clock
-  These were placeholder wrappers that never had real implementations.
+  These files remain on disk as legacy placeholders and compatibility stubs, but they are not part of the active route set.
 
 
 File Layout
@@ -137,7 +162,8 @@ File Layout
         *.lua                       - export mirrors + remaining XML-resident legacy scripts
         README_EXPORT_ONLY.txt      - documents mirror vs canonical distinction
     EXPORT_MANIFEST.lua             - canonical source -> xml mirror mapping (22 entries)
-    mudlet packages/
+  Ysindrolir/
+    mudlet packages/                - sibling package folder used by Mudlet imports
       Yso system.xml                - bundled Mudlet XML package
       AK.xml                        - Legacy AK package with local compatibility patches
 
@@ -288,7 +314,7 @@ Phase 1 - Route Matrix Completion:
   [done] Created route registry (single source of truth for all routes)
   [done] Implemented real party_aff route as orchestrator proposal module
   [done] Wired party aff mode to real route in driver + mode system
-  [done] Classified and removed 6 deprecated placeholder routes
+  [done] Classified 6 deprecated placeholder routes as inactive stubs outside the active route set
   [done] All modes resolve to real implementations
 
 Phase 2 - Curing/Legacy Integration:
@@ -318,11 +344,11 @@ Phase 3 - Canonical Source Promotion:
   [done] Updated README_EXPORT_ONLY.txt with full promotion map
 
 Cleanup (2026-03-11):
-  [done] Deleted 25 broken auto-fixed wrapper files (Core/*, Combat/*, top-level shims)
-  [done] Deleted 5 deprecated route stub files (lock, limb, limb_prep, finisher, bash)
+  [done] Isolated the active route set from the legacy wrapper/stub files.
+  [note] Compatibility wrappers and deprecated route stubs still exist in the committed tree as part of the current hybrid runtime.
   [done] Deleted 5 temporary PowerShell patch scripts (tmp_patch_*.ps1)
-  [done] Deleted clock_limb_dry_test.lua and all Yso.occ.clock references
+  [done] Deleted clock_limb_dry_test.lua and removed the remaining driver-side Yso.occ.clock references
   [done] Deleted 3 .bak backup files
   [done] Removed dead _get_clock() function from driver + XML mirror
-  [done] Cleaned clock route refs from occ_aff_burst, yso_list_of_functions, offense_coordination
+  [done] Cleaned remaining clock-route refs from occ_aff_burst, yso_list_of_functions, and offense coordination
   [done] Split root docs into workspace + class-specific README files
