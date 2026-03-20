@@ -4,9 +4,9 @@
 -- Automated emission authority has moved to Yso.Orchestrator + route modules.
 --
 -- Design goals:
---   • Plug into existing Yso queue / pulse architecture.
---   • Respect softlock_gate + sightgate drop-ins.
---   • Stay conservative and readable so you can extend it.
+--   * Plug into existing Yso queue / pulse architecture.
+--   * Respect sightgate drop-ins.
+--   * Stay conservative and readable so you can extend it.
 --========================================================--
 
 Yso       = Yso       or {}
@@ -14,6 +14,73 @@ Yso.off   = Yso.off   or {}
 Yso.off.oc = Yso.off.oc or {}
 
 local Off = Yso.off.oc
+
+------------------------------------------------------------
+-- Entity affliction map (affliction -> responsible entity)
+------------------------------------------------------------
+
+Yso.ent_affs = {
+    anorexia       = "firelord",    -- *needs manaleech
+    addiction      = "humbug",
+    haemophilia    = "bloodleech",
+    worms          = "worm",
+    clumsiness     = "storm",
+    asthma         = "bubonis",
+    slickness      = "bubonis",     -- *needs asthma
+    weariness      = "hound",
+    paralysis      = "slime",       -- *needs asthma
+    agoraphobia    = "chimera",
+    confusion      = "chimera",
+    claustrophobia = "chimera",
+    dementia       = "chimera",
+    hallucinations = "chimera",
+    unravel        = "minion",
+    pyradius       = "firelord",
+    glaaki         = "abomination",
+}
+
+Yso.instill_affs = function()
+    return {
+        "paralysis", "asthma", "slickness", "clumsiness",
+        "healthleech", "sensitivity", "darkshade",
+    }
+end
+
+Yso.ent_cmd_for_aff = function(aff, tgt, has_aff_fn)
+    aff = tostring(aff or ""):lower()
+    tgt = tostring(tgt or "")
+    if aff == "" or tgt == "" then return nil, nil end
+    local has = type(has_aff_fn) == "function" and has_aff_fn or function() return false end
+
+    if aff == "asthma" then
+        return ("command bubonis at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "slickness" and has(tgt, "asthma") then
+        return ("command bubonis at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "paralysis" and has(tgt, "asthma") then
+        return ("command slime at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "clumsiness" then
+        return ("command storm at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "weariness" then
+        return ("command hound at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "healthleech" then
+        return ("command worm at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "haemophilia" then
+        return ("command bloodleech at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "addiction" then
+        return ("command humbug at %s"):format(tgt), "mana_bury"
+    end
+    if aff == "chimera_roar" then
+        return ("command chimera at %s"):format(tgt), "mental_build"
+    end
+    return nil, nil
+end
 
 ------------------------------------------------------------
 -- Config / state
@@ -25,6 +92,8 @@ Off.cfg = Off.cfg or {}
 -- If your routes explicitly request AEON, they can still do so; this merely
 -- provides a default integration point for the core offense tick.
 if Off.cfg.use_aeon_module == nil then Off.cfg.use_aeon_module = true end
+Off.cfg.ai = Off.cfg.ai or "lock"
+Off.cfg.tarot = Off.cfg.tarot or "aeon"
 
 -- Affliction score at/above this is treated as "stuck".
 Off.cfg.stuck_score = Off.cfg.stuck_score or 100
@@ -36,20 +105,7 @@ Off.cfg.mode = Off.cfg.mode or "duel"   -- duel | custom
 Off.qtype_eq    = Off.qtype_eq    or "eq"
 Off.qtype_eqbal = Off.qtype_eqbal or "eq"
 
--- Minimal kelp-bury config so softlock_gate has sane defaults.
-Off.cfg.kelp_bury = Off.cfg.kelp_bury or {
-  enabled  = true,
-  entities = {
-    asthma      = "bubonis",
-    clumsiness  = "storm",
-    healthleech = "worm",
-    sensitivity = "slime",
-  },
-  -- Optional: where to take sensitivity from once you extend this.
-  sensitivity_followup = "slime",
-}
-
--- Stand-prepend is respected by softlock_gate and sightgate.
+-- Stand-prepend is respected by sightgate.
 if Off.cfg.prepend_stand == nil then
   Off.cfg.prepend_stand = true
 end
@@ -57,8 +113,8 @@ end
 Off.state = Off.state or {
   enabled = false,
   mode    = Off.cfg.mode,
-  ai      = "lock",   -- future expansion hook
-  tarot   = "aeon",   -- future expansion hook
+  ai      = Off.cfg.ai,      -- future expansion hook
+  tarot   = Off.cfg.tarot,   -- future expansion hook
 }
 
 ------------------------------------------------------------
@@ -96,17 +152,14 @@ end
 local function _current_target()
   if type(Yso.get_target) == "function" then
     local ok, v = pcall(Yso.get_target)
-    if ok then return _trim(v) end
+    if ok and _trim(v) ~= "" then return _trim(v) end
   end
-  if type(Yso.target) == "string" then
-    return _trim(Yso.target)
-  end
-  if Yso.state and type(Yso.state.target) == "string" then
-    return _trim(Yso.state.target)
-  end
-  local g = rawget(_G, "gmcp")
-  if g and g.Char and g.Char.Target and type(g.Char.Target.name) == "string" then
-    return _trim(g.Char.Target.name)
+  local cur = rawget(_G, "target")
+  if type(cur) == "string" and _trim(cur) ~= "" then return _trim(cur) end
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    if type(ak.target) == "string" and _trim(ak.target) ~= "" then return _trim(ak.target) end
+    if type(ak.tgt) == "string" and _trim(ak.tgt) ~= "" then return _trim(ak.tgt) end
   end
   return ""
 end
@@ -212,65 +265,95 @@ local function _echo(msg)
   end
 end
 
-function Off.set_mode(mode)
-  mode = _lc(mode)
-  if mode == "" then return Off.state.mode end
-  Off.state.mode = mode
-  Off.cfg.mode = mode
-  _echo("Offense mode set to "..mode)
-  return mode
-end
-
-function Off.get_mode()
-  return Off.state.mode or Off.cfg.mode or "duel"
-end
-
-function Off.set_ai(ai)
-  ai = _lc(ai)
-  if ai == "" then return Off.state.ai end
-  Off.state.ai = ai
-  _echo("AI profile set to "..ai)
-  return ai
-end
-
-function Off.get_ai()
-  return Off.state.ai or "lock"
-end
-
-function Off.set_tarot(tarot)
-  tarot = _lc(tarot)
-  if tarot == "" then return Off.state.tarot end
-  Off.state.tarot = tarot
-  _echo("Tarot focus set to "..tarot)
-  return tarot
-end
-
-function Off.get_tarot()
-  return Off.state.tarot or "aeon"
-end
-
-function Off.on()
-  Off.state.enabled = true
-  Yso.off.oc.enabled = true
-  _echo("Occultist offense ON.")
-  if Yso.pulse and type(Yso.pulse.wake) == "function" then
-    Yso.pulse.wake("oc:on")
+if type(Off.set_mode) ~= "function" then
+  function Off.set_mode(mode)
+    mode = _lc(mode)
+    if mode == "" then return Off.state.mode end
+    Off.state.mode = mode
+    Off.cfg.mode = mode
+    _echo("Offense mode set to "..mode)
+    return mode
   end
 end
 
-function Off.off()
-  Off.state.enabled = false
-  Yso.off.oc.enabled = false
-  _echo("Occultist offense OFF.")
+if type(Off.get_mode) ~= "function" then
+  function Off.get_mode()
+    return Off.state.mode or Off.cfg.mode or "duel"
+  end
 end
 
-function Off.toggle(on)
-  if on == nil then
-    if Off.state.enabled then Off.off() else Off.on() end
-  elseif on == true then
-    Off.on()
-  else
-    Off.off()
+if type(Off.set_ai) ~= "function" then
+  function Off.set_ai(ai)
+    ai = _lc(ai)
+    if ai == "" then return Off.get_ai() end
+
+    if ai == "on" or ai == "yes" or ai == "true" or ai == "1" then
+      Off.on()
+      return Off.get_ai()
+    end
+    if ai == "off" or ai == "no" or ai == "false" or ai == "0" then
+      Off.off()
+      return Off.get_ai()
+    end
+
+    Off.state.ai = ai
+    Off.cfg.ai = ai
+    _echo("AI profile set to "..ai)
+    return ai
+  end
+end
+
+if type(Off.get_ai) ~= "function" then
+  function Off.get_ai()
+    return Off.state.ai or Off.cfg.ai or "lock"
+  end
+end
+
+if type(Off.set_tarot) ~= "function" then
+  function Off.set_tarot(tarot)
+    tarot = _lc(tarot)
+    if tarot == "" then return Off.get_tarot() end
+    Off.state.tarot = tarot
+    Off.cfg.tarot = tarot
+    _echo("Tarot focus set to "..tarot)
+    return tarot
+  end
+end
+
+if type(Off.get_tarot) ~= "function" then
+  function Off.get_tarot()
+    return Off.state.tarot or Off.cfg.tarot or "aeon"
+  end
+end
+
+if type(Off.on) ~= "function" then
+  function Off.on()
+    Off.state.enabled = true
+    Yso.off.oc.enabled = true
+    _echo("Occultist offense ON.")
+    if Yso.pulse and type(Yso.pulse.wake) == "function" then
+      Yso.pulse.wake("oc:on")
+    end
+  end
+end
+
+if type(Off.off) ~= "function" then
+  function Off.off()
+    Off.state.enabled = false
+    Yso.off.oc.enabled = false
+    _echo("Occultist offense OFF.")
+  end
+end
+
+if type(Off.toggle) ~= "function" then
+  function Off.toggle(on)
+    if on == nil then
+      if Off.state.enabled then Off.off() else Off.on() end
+    elseif on == true then
+      Off.on()
+    else
+      Off.off()
+    end
   end
 end
 
@@ -282,19 +365,17 @@ function Off.set_target(tgt)
   tgt = _trim(tgt)
   if tgt == "" then return false end
 
-  if Yso.targeting and type(Yso.targeting.set) == "function" then
-    local ok = pcall(Yso.targeting.set, tgt, "offense")
-    if ok then return true end
-  end
-
   if type(Yso.set_target) == "function" then
-    local ok = pcall(Yso.set_target, tgt)
-    if ok then return true end
+    local ok, res = pcall(Yso.set_target, tgt, "offense", { keep_class_queue = true, keep_rawsend = true })
+    if ok and res ~= false then return true end
   end
 
-  rawset(_G, "target", tgt)
-  Yso.target = tgt
-  return true
+  if type(expandAlias) == "function" then
+    expandAlias("t " .. tgt)
+    return true
+  end
+
+  return false
 end
 
 function Off.resolve_target()
@@ -330,18 +411,6 @@ function Off.attack_eqonly()
 end
 
 ------------------------------------------------------------
--- Kelp-bury stub (for softlock_gate wrapper)
-------------------------------------------------------------
-
--- softlock_gate.lua wraps this to run Off.try_softlock_setup() first.
-function Off.try_kelp_bury(t, afftbl)
-  -- Base implementation intentionally minimal; returns false so that
-  -- once soft-lock is satisfied, control falls back to the main tick
-  -- logic below.
-  return false
-end
-
-------------------------------------------------------------
 -- Main offense tick (pulse-driven)
 ------------------------------------------------------------
 
@@ -352,20 +421,7 @@ local function _build_eq_cmd(tgt, scores, phase)
     if sb then return sb end
   end
 
-  -- During SOFTLOCK_SETUP / KELP_BUILD, lean on core affs.
-  if phase == "SOFTLOCK_SETUP" or phase == "KELP_BUILD" then
-    if not _aff_stuck("asthma", scores) then
-      return string.format("instill %s with asthma", tgt)
-    end
-    if not _aff_stuck("slickness", scores) then
-      return string.format("instill %s with slickness", tgt)
-    end
-    if not _aff_stuck("anorexia", scores) then
-      return string.format("regress %s", tgt)
-    end
-  end
-
-  -- Post-softlock: keep pressure using healthleech/sensitivity/paralysis.
+  -- Keep pressure using healthleech/sensitivity/paralysis.
   if not _aff_stuck("healthleech", scores) then
     return string.format("instill %s with healthleech", tgt)
   end
@@ -433,12 +489,6 @@ end
   -- Optional sight-gate (only runs when you have an explicit need_sight flag).
   if type(Off.queue_attend_if_needed) == "function" then
     local ok, handled = pcall(Off.queue_attend_if_needed, tgt, scores, "tick")
-    if ok and handled then return end
-  end
-
-  -- Soft-lock / kelp-bury wrapper: Off.try_kelp_bury() is wrapped by softlock_gate.lua
-  if type(Off.try_kelp_bury) == "function" then
-    local ok, handled = pcall(Off.try_kelp_bury, tgt, scores)
     if ok and handled then return end
   end
 

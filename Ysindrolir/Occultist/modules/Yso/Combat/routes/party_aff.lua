@@ -290,10 +290,13 @@ local function _entity_cmd_for_aff(aff, tgt)
     cmd = _trim(ok and cmd or "")
     if cmd ~= "" then return cmd end
   end
+  if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == "function" then
+    local cmd = Yso.ent_cmd_for_aff(aff, tgt, _has_aff)
+    if cmd then return cmd end
+  end
   if aff == "asthma" then return ("command bubonis at %s"):format(tgt) end
   if aff == "clumsiness" then return ("command storm at %s"):format(tgt) end
   if aff == "healthleech" then return ("command worm at %s"):format(tgt) end
-  if aff == "sensitivity" then return ("command slime at %s"):format(tgt) end
   return nil
 end
 

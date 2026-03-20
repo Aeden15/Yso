@@ -144,6 +144,9 @@ AB.debug = AB.debug or {
 }
 local _render_debug_screen
 local _install_debug_aliases
+local _mana_bury_ready
+local _focus_lock_count
+local _focus_lock_roar_desired
 CS.cfg = CS.cfg or {
   mana_burst_pct = tonumber(AB.cfg.mana_burst_pct or 40) or 40,
 }
@@ -358,14 +361,31 @@ local function _target_class_info(tgt)
   return out
 end
 
-local _bm_state
 local _target_state
 local _shield_is_up
 local _current_target_matches
 
+local function _class_defense_gates(plan)
+  local BMC = Yso.curing and Yso.curing.blademaster
+  if BMC and type(BMC.should_gate) == "function" then return BMC.should_gate(plan) end
+  return false
+end
+
 local function _bm_snapshot_view(tgt, snap, mana_pct)
+  local BMC = Yso.curing and Yso.curing.blademaster
+  if BMC and type(BMC.snapshot_view) == "function" then
+    return BMC.snapshot_view(tgt, {
+      snap = snap,
+      mana_pct = mana_pct,
+      class_info = _target_class_info(tgt),
+      shield_is_up = _shield_is_up and _shield_is_up(tgt) or nil,
+      target_meta = _target_meta(tgt),
+      now = _now(),
+      cfg = AB.cfg,
+    })
+  end
   local info = _target_class_info(tgt)
-  local out = {
+  return {
     active = false,
     class = info.class,
     class_known = info.known,
@@ -374,124 +394,16 @@ local function _bm_snapshot_view(tgt, snap, mana_pct)
     needs_readaura = false,
     passive_allowed = false,
     counts_under_pressure = false,
-    blind = nil,
-    blind_known = false,
-    blind_fresh = false,
-    deaf = nil,
-    deaf_known = false,
-    deaf_fresh = false,
-    shield = nil,
-    shield_known = false,
-    shield_fresh = false,
-    physical = nil,
-    physical_known = false,
-    physical_fresh = false,
-    mental = nil,
-    mental_known = false,
-    mental_fresh = false,
-    speed = nil,
-    speed_known = false,
-    speed_fresh = false,
+    blind = nil, blind_known = false, blind_fresh = false,
+    deaf = nil, deaf_known = false, deaf_fresh = false,
+    shield = nil, shield_known = false, shield_fresh = false,
+    physical = nil, physical_known = false, physical_fresh = false,
+    mental = nil, mental_known = false, mental_fresh = false,
+    speed = nil, speed_known = false, speed_fresh = false,
     mana_pct = tonumber(mana_pct),
     mana_known = (tonumber(mana_pct) ~= nil),
     mana_fresh = (tonumber(mana_pct) ~= nil),
   }
-  if info.known ~= true or info.class ~= "Blademaster" or type(_bm_state) ~= "function" then
-    return out
-  end
-
-  local BM = _bm_state(tgt)
-  if not BM then return out end
-  local now = _now()
-  local fresh_ttl = tonumber(AB.cfg.bm_snapshot_ttl_s or 24.0) or 24.0
-  local carry_ttl = tonumber(AB.cfg.bm_snapshot_carry_ttl_s or 30.0) or 30.0
-  local shield_ttl = tonumber(AB.cfg.bm_shield_ttl_s or 8.0) or 8.0
-  local shield_now = _shield_is_up(tgt)
-
-  BM.target_class = info.class
-  BM.class_source = info.source
-  BM.policy = true
-
-  if snap and snap.fresh == true then
-    if snap.read_complete == true then
-      if snap.blind ~= nil then BM.blind = (snap.blind == true); BM.blind_at = now end
-      if snap.deaf ~= nil then BM.deaf = (snap.deaf == true); BM.deaf_at = now end
-      if snap.shield ~= nil then BM.shield = (snap.shield == true); BM.shield_at = now end
-    end
-    if snap.physical ~= nil then BM.physical = tonumber(snap.physical); BM.physical_at = now end
-    if snap.mental ~= nil then BM.mental = tonumber(snap.mental); BM.mental_at = now end
-    if snap.speed ~= nil then BM.speed = (snap.speed == true); BM.speed_at = now end
-    if snap.had_mana == true and snap.mana_pct ~= nil then
-      BM.mana_pct = tonumber(snap.mana_pct)
-      BM.mana_at = now
-    end
-  end
-  if tonumber(mana_pct) ~= nil then
-    BM.mana_pct = tonumber(mana_pct)
-    BM.mana_at = now
-  end
-  if type(shield_now) == "boolean" and (BM.shield == nil or BM.shield ~= shield_now) then
-    BM.shield = shield_now
-    BM.shield_at = now
-  end
-
-  local meta = _target_meta(tgt)
-  local herb_at = _clock(meta.last_herb_at)
-  local blind_fresh = (BM.blind ~= nil) and ((now - _clock(BM.blind_at)) <= fresh_ttl)
-  local deaf_fresh = (BM.deaf ~= nil) and ((now - _clock(BM.deaf_at)) <= fresh_ttl)
-  local shield_fresh = (BM.shield ~= nil) and ((now - _clock(BM.shield_at)) <= shield_ttl)
-  local counts_under_pressure = (herb_at > 0)
-    and ((herb_at > _clock(BM.physical_at)) or (herb_at > _clock(BM.mental_at)))
-  local physical_fresh = (BM.physical ~= nil) and ((now - _clock(BM.physical_at)) <= fresh_ttl) and not counts_under_pressure
-  local mental_fresh = (BM.mental ~= nil) and ((now - _clock(BM.mental_at)) <= fresh_ttl) and not counts_under_pressure
-  local speed_fresh = (BM.speed ~= nil) and ((now - _clock(BM.speed_at)) <= carry_ttl)
-  local mana_fresh = (BM.mana_pct ~= nil) and ((now - _clock(BM.mana_at)) <= carry_ttl)
-  local complete_enough = blind_fresh and deaf_fresh and shield_fresh and physical_fresh and mental_fresh
-  local required_known = 0
-  if BM.blind ~= nil then required_known = required_known + 1 end
-  if BM.deaf ~= nil then required_known = required_known + 1 end
-  if BM.shield ~= nil then required_known = required_known + 1 end
-  if BM.physical ~= nil then required_known = required_known + 1 end
-  if BM.mental ~= nil then required_known = required_known + 1 end
-
-  if complete_enough then
-    BM.ever_complete = true
-    BM.state = "complete_enough"
-  elseif required_known <= 0 then
-    BM.state = "missing"
-  elseif BM.ever_complete == true or counts_under_pressure then
-    BM.state = "stale"
-  else
-    BM.state = "provisional"
-  end
-
-  out.active = true
-  out.state = BM.state
-  out.needs_readaura = (BM.state ~= "complete_enough")
-  out.passive_allowed = complete_enough and (tonumber(BM.physical or 0) or 0) >= 4 and (tonumber(BM.mental or 0) or 0) >= 4
-  out.counts_under_pressure = counts_under_pressure
-  out.blind = blind_fresh and BM.blind or nil
-  out.blind_known = (BM.blind ~= nil)
-  out.blind_fresh = blind_fresh
-  out.deaf = deaf_fresh and BM.deaf or nil
-  out.deaf_known = (BM.deaf ~= nil)
-  out.deaf_fresh = deaf_fresh
-  out.shield = shield_fresh and BM.shield or nil
-  out.shield_known = (BM.shield ~= nil)
-  out.shield_fresh = shield_fresh
-  out.physical = physical_fresh and BM.physical or nil
-  out.physical_known = (BM.physical ~= nil)
-  out.physical_fresh = physical_fresh
-  out.mental = mental_fresh and BM.mental or nil
-  out.mental_known = (BM.mental ~= nil)
-  out.mental_fresh = mental_fresh
-  out.speed = speed_fresh and BM.speed or nil
-  out.speed_known = (BM.speed ~= nil)
-  out.speed_fresh = speed_fresh
-  out.mana_pct = mana_fresh and tonumber(BM.mana_pct) or nil
-  out.mana_known = (BM.mana_pct ~= nil)
-  out.mana_fresh = mana_fresh
-  return out
 end
 
 function CS.snapshot(tgt)
@@ -641,14 +553,13 @@ function CS.plan_aff(tgt)
   elseif fresh and tonumber(snap.aff_total) then
     aff_total = tonumber(snap.aff_total)
   end
-  local mental_pressure_threshold = tonumber(AB.cfg.mental_pressure_threshold or 3) or 3
-  local mental_count = tonumber(mental) or _mental_score()
-  local needs_chimera_mental = (deaf ~= true) and (mental_count < mental_pressure_threshold)
-  local needs_chimera = needs_chimera_mental
+  local focus_count = (_focus_lock_count and _focus_lock_count(tgt)) or 0
+  local mana_bury_ready = (_mana_bury_ready and _mana_bury_ready(tgt)) or false
+  local needs_chimera = (_focus_lock_roar_desired and _focus_lock_roar_desired(tgt)) or false
   if bm.active == true and bm.passive_allowed ~= true then
     needs_chimera = false
   end
-  local needs_attend = (deaf == true) and (mental_count < mental_pressure_threshold)
+  local needs_attend = (deaf == true) and needs_chimera
     and not (bm.active == true and bm.passive_allowed ~= true)
   local loyals_readaura = false
   if AB.S and type(AB.S.loyals_hostile) == "function" then
@@ -700,12 +611,14 @@ function CS.plan_aff(tgt)
     snapshot_read_id = snap and tonumber(snap.read_id or 0) or 0,
     mana_ready = (mana ~= nil and mana <= mana_cap) or false,
     needs_mana_bury = (mana == nil) or (mana > mana_cap),
+    mana_bury_ready = mana_bury_ready,
     needs_readaura = needs_readaura,
     readaura_via_loyals = loyals_readaura,
     needs_speed_strip = (speed == true) or false,
     cleanseaura_ready = (mana ~= nil and mana <= mana_cap) or false,
     needs_attend = needs_attend,
     needs_chimera = needs_chimera,
+    focus_lock_count = focus_count,
     bm_snapshot = bm,
     bm_snapshot_state = bm.state,
     bm_snapshot_active = (bm.active == true),
@@ -839,16 +752,183 @@ local function _route_active()
   return _lc(D.state.active) == "occ_aff_burst"
 end
 
-local function _focus_lock_order()
-  return { "asthma", "haemophilia", "addiction", "clumsiness", "healthleech", "weariness", "sensitivity" }
+local _FOCUS_LOCK_ROAR_POOL = {
+  "agoraphobia",
+  "confusion",
+  "claustrophobia",
+  "dementia",
+  "hallucinations",
+}
+local _FOCUS_LOCK_MOON_FALLBACK = {
+  "stupidity",
+  "epilepsy",
+  "confusion",
+  "hallucinations",
+  "claustrophobia",
+  "agoraphobia",
+  "masochism",
+  "hypersomnia",
+}
+local _FOCUS_LOCK_DISCORD_FALLBACK = { "loneliness", "dizziness" }
+local _FOCUS_LOCK_ENLIGHTEN_FALLBACK = {
+  "claustrophobia",
+  "agoraphobia",
+  "lovers",
+  "dementia",
+  "epilepsy",
+  "hallucinations",
+  "confusion",
+  "stupidity",
+  "paranoia",
+  "vertigo",
+  "shyness",
+  "addiction",
+  "recklessness",
+  "masochism",
+}
+
+local function _normalized_aff_list(src)
+  local out = {}
+  if type(src) ~= "table" then return out end
+  if #src > 0 then
+    for i = 1, #src do
+      local aff = _lc(src[i])
+      if aff ~= "" then _push_unique(out, aff) end
+    end
+    return out
+  end
+  for k, v in pairs(src) do
+    if type(v) == "string" then
+      local aff = _lc(v)
+      if aff ~= "" then _push_unique(out, aff) end
+    elseif v == true and type(k) == "string" then
+      local aff = _lc(k)
+      if aff ~= "" then _push_unique(out, aff) end
+    end
+  end
+  return out
 end
 
-local function _focus_lock_count(tgt)
-  local list = _focus_lock_order()
-  local n = 0
-  for i = 1, #list do
-    if _has_aff(tgt, list[i]) then n = n + 1 end
+local function _list_to_set(list)
+  local out = {}
+  for i = 1, #(list or {}) do
+    local aff = _lc(list[i])
+    if aff ~= "" then out[aff] = true end
   end
+  return out
+end
+
+local function _moon_focus_affs()
+  local map = Yso and Yso.oc and Yso.oc.map and Yso.oc.map.skills or nil
+  if type(map) == "table"
+    and type(map.tarot) == "table"
+    and type(map.tarot.moon) == "table"
+  then
+    local live = _normalized_aff_list(map.tarot.moon.affs)
+    if #live > 0 then return live end
+  end
+  return _normalized_aff_list(_FOCUS_LOCK_MOON_FALLBACK)
+end
+
+local function _discord_focus_affs()
+  local map = Yso and Yso.oc and Yso.oc.map and Yso.oc.map.skills or nil
+  if type(map) == "table"
+    and type(map.occultism) == "table"
+    and type(map.occultism.compel_discord) == "table"
+  then
+    local live = _normalized_aff_list(map.occultism.compel_discord.affs)
+    if #live > 0 then return live end
+  end
+  return _normalized_aff_list(_FOCUS_LOCK_DISCORD_FALLBACK)
+end
+
+local function _enlighten_focus_affs()
+  local AK = Yso and Yso.oc and Yso.oc.ak or nil
+  if type(AK) == "table" and type(AK.refresh_lists_from_AK) == "function" then
+    pcall(AK.refresh_lists_from_AK)
+  end
+  if type(AK) == "table" and type(AK.lists) == "table" then
+    local live = _normalized_aff_list(AK.lists.enlightenlist)
+    if #live > 0 then return live end
+  end
+  return _normalized_aff_list(_FOCUS_LOCK_ENLIGHTEN_FALLBACK)
+end
+
+local function _focus_lock_roar_set()
+  return _list_to_set(_FOCUS_LOCK_ROAR_POOL)
+end
+
+local function _focus_lock_moon_set()
+  return _list_to_set(_moon_focus_affs())
+end
+
+local function _focus_lock_discord_set()
+  return _list_to_set(_discord_focus_affs())
+end
+
+local function _focus_lock_enlighten_set()
+  return _list_to_set(_enlighten_focus_affs())
+end
+
+local function _focus_lock_aff_in_set(aff, set)
+  aff = _lc(aff)
+  return aff ~= "" and type(set) == "table" and set[aff] == true
+end
+
+local function _focus_lock_in_roar_pool(aff)
+  return _focus_lock_aff_in_set(aff, _focus_lock_roar_set())
+end
+
+local function _focus_lock_in_moon_pool(aff)
+  return _focus_lock_aff_in_set(aff, _focus_lock_moon_set())
+end
+
+local function _focus_lock_in_discord_pool(aff)
+  return _focus_lock_aff_in_set(aff, _focus_lock_discord_set())
+end
+
+local function _discord_contribution_present(tgt)
+  local list = _discord_focus_affs()
+  for i = 1, #list do
+    if _has_aff(tgt, list[i]) then return true end
+  end
+  return _has_aff(tgt, "asthma") and _has_aff(tgt, "healthleech")
+end
+
+local function _has_bloodroot_hold(tgt)
+  return _has_aff(tgt, "slickness") or _has_aff(tgt, "paralysis")
+end
+
+local function _mana_bury_slot_count(tgt)
+  local n = 0
+  if _has_bloodroot_hold(tgt) then n = n + 1 end
+  if _has_aff(tgt, "disloyalty") then n = n + 1 end
+  if _has_aff(tgt, "anorexia") then n = n + 1 end
+  return n
+end
+
+_mana_bury_ready = function(tgt)
+  if not _has_aff(tgt, "asthma") then return false end
+  return _mana_bury_slot_count(tgt) >= 2
+end
+
+_focus_lock_count = function(tgt)
+  local n = 0
+  local seen = {}
+  local function count_aff(aff)
+    aff = _lc(aff)
+    if aff == "" or seen[aff] or _focus_lock_in_discord_pool(aff) then return end
+    if _has_aff(tgt, aff) then
+      seen[aff] = true
+      n = n + 1
+    end
+  end
+  for i = 1, #_FOCUS_LOCK_ROAR_POOL do count_aff(_FOCUS_LOCK_ROAR_POOL[i]) end
+  local moon = _moon_focus_affs()
+  for i = 1, #moon do count_aff(moon[i]) end
+  local enlighten = _enlighten_focus_affs()
+  for i = 1, #enlighten do count_aff(enlighten[i]) end
+  if _discord_contribution_present(tgt) then n = n + 1 end
   return n
 end
 
@@ -856,14 +936,6 @@ local function _lock_stable(tgt)
   local need = tonumber(AB.cfg.mental_pressure_threshold or 3) or 3
   if need < 1 then need = 1 end
   return _focus_lock_count(tgt) >= need
-end
-
-local function _first_missing_aff(tgt, order)
-  for i = 1, #(order or {}) do
-    local aff = tostring(order[i] or "")
-    if aff ~= "" and not _has_aff(tgt, aff) then return aff end
-  end
-  return nil
 end
 
 local function _entity_refresh_state(tgt)
@@ -884,49 +956,6 @@ local function _entity_refresh_state(tgt)
   return out
 end
 
-local function _aff_scores_table()
-  local A = rawget(_G, "affstrack")
-  if type(A) == "table" and type(A.score) == "table" then return A.score end
-  return {}
-end
-
-local function _predict_cured_aff(tgt, plan)
-  local info = { pick = "", p = 0 }
-  if Yso and Yso.predict and Yso.predict.cure and type(Yso.predict.cure.next) == "function" then
-    local ok, res = pcall(Yso.predict.cure.next, tgt)
-    if ok and type(res) == "table" then
-      info.pick = tostring(res.pick or "")
-      info.p = tonumber(res.p or 0) or 0
-    end
-  end
-  local aff = info.pick
-  local p = info.p
-  if aff == "" or p < (tonumber(AB.cfg.predict_bias_threshold or 0.60) or 0.60) then return nil end
-  local allowed = {}
-  local order = _focus_lock_order()
-  for i = 1, #order do allowed[order[i]] = true end
-  if allowed[aff] ~= true or _has_aff(tgt, aff) then return nil end
-  return aff
-end
-
-local function _entity_candidates(tgt, plan)
-  local predicted = _predict_cured_aff(tgt, plan)
-  local out, seen = {}, {}
-  local function push(aff)
-    aff = tostring(aff or "")
-    if aff == "" or seen[aff] or _has_aff(tgt, aff) then return end
-    seen[aff] = true
-    out[#out + 1] = aff
-  end
-  if predicted then push(predicted) end
-  if plan and (plan.bm_branch_active == true or plan.bm_branch_provisional == true) then
-    push("weariness")
-  end
-  local order = _focus_lock_order()
-  for i = 1, #order do push(order[i]) end
-  return out, predicted and "predict" or "fallback"
-end
-
 local function _predict_cure_info(tgt)
   local out = { pick = "", p = 0 }
   if not (Yso and Yso.predict and Yso.predict.cure and type(Yso.predict.cure.next) == "function") then
@@ -939,22 +968,86 @@ local function _predict_cure_info(tgt)
   return out
 end
 
-local function _entity_aff_cmd(aff, tgt, ES)
-  aff = tostring(aff or "")
-  local Off = Yso and Yso.off and Yso.off.oc or nil
-  if aff == "healthleech" and ES and ES.worm_refresh ~= true then return nil, nil end
-  if Off and type(Off.sg_entity_cmd_for_aff) == "function" then
-    local ok, cmd = pcall(Off.sg_entity_cmd_for_aff, aff, tgt)
-    cmd = _trim(ok and cmd or "")
-    if cmd ~= "" then return cmd, "mana_bury" end
+local function _predict_cured_aff_in_family(tgt, allowed_set)
+  local info = _predict_cure_info(tgt)
+  local aff = _lc(info.pick or "")
+  local threshold = tonumber(AB.cfg.predict_bias_threshold or 0.60) or 0.60
+  if aff == "" or info.p < threshold then return nil end
+  if type(allowed_set) ~= "table" or allowed_set[aff] ~= true or _has_aff(tgt, aff) then return nil end
+  return aff
+end
+
+local function _mana_bury_prediction_set()
+  return {
+    asthma = true,
+    slickness = true,
+    paralysis = true,
+    disloyalty = true,
+    anorexia = true,
+    manaleech = true,
+  }
+end
+
+local function _focus_lock_prediction_set()
+  local set = _focus_lock_roar_set()
+  for aff in pairs(_focus_lock_moon_set()) do set[aff] = true end
+  for aff in pairs(_focus_lock_enlighten_set()) do set[aff] = true end
+  for aff in pairs(_focus_lock_discord_set()) do set[aff] = true end
+  return set
+end
+
+local function _predict_mana_bury_aff(tgt, plan)
+  return _predict_cured_aff_in_family(tgt, _mana_bury_prediction_set())
+end
+
+local function _predict_focus_lock_aff(tgt, plan)
+  return _predict_cured_aff_in_family(tgt, _focus_lock_prediction_set())
+end
+
+_focus_lock_roar_desired = function(tgt)
+  if _lock_stable(tgt) ~= true then return true end
+  return _focus_lock_in_roar_pool(_predict_focus_lock_aff(tgt))
+end
+
+local function _focus_lock_needs_moon(tgt)
+  local target = tonumber(AB.cfg.mental_target or 5) or 5
+  if target < 1 then target = 1 end
+  if _focus_lock_count(tgt) < target then return true end
+  return _focus_lock_in_moon_pool(_predict_focus_lock_aff(tgt))
+end
+
+local function _entity_candidates(tgt, plan)
+  local predicted = nil
+  local out, seen = {}, {}
+  local function push(aff)
+    aff = tostring(aff or "")
+    if aff == "" or seen[aff] or _has_aff(tgt, aff) then return end
+    seen[aff] = true
+    out[#out + 1] = aff
   end
-  if aff == "asthma" then return ("command bubonis at %s"):format(tgt), "mana_bury" end
-  if aff == "clumsiness" then return ("command storm at %s"):format(tgt), "mana_bury" end
-  if aff == "healthleech" then return ("command worm at %s"):format(tgt), "mana_bury" end
-  if aff == "weariness" then return ("command hound at %s"):format(tgt), "mana_bury" end
-  if aff == "sensitivity" then return ("command slime at %s"):format(tgt), "mana_bury" end
-  if aff == "haemophilia" then return ("command bloodleech at %s"):format(tgt), "mana_bury" end
-  if aff == "addiction" then return ("command humbug at %s"):format(tgt), "mana_bury" end
+  if _has_aff(tgt, "manaleech") ~= true then
+    predicted = _predict_mana_bury_aff(tgt, plan)
+    if predicted == "asthma" or predicted == "slickness" or predicted == "paralysis" then
+      push(predicted)
+    end
+    if not _has_aff(tgt, "asthma") then
+      push("asthma")
+    elseif not _has_bloodroot_hold(tgt) then
+      push("slickness")
+      push("paralysis")
+    end
+    return out, predicted and "predict" or "mana_bury"
+  end
+  predicted = _predict_focus_lock_aff(tgt, plan)
+  if _focus_lock_in_roar_pool(predicted) then push("chimera_roar") end
+  if _focus_lock_roar_desired(tgt) then push("chimera_roar") end
+  return out, predicted and "predict" or "focus_lock"
+end
+
+local function _entity_aff_cmd(aff, tgt, ES)
+  if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == "function" then
+    return Yso.ent_cmd_for_aff(_lc(aff), tgt, _has_aff)
+  end
   return nil, nil
 end
 
@@ -983,7 +1076,16 @@ local function _para_override_choice(tgt, plan, pair, ctx)
   local maturity = _lock_maturity(tgt)
   local meta = _target_meta(tgt)
   local last_herb = _lc(PS and PS.last_cure_herb or meta.last_herb or "")
-  local threshold = tonumber(((ctx and ctx.bm_branch_active == true) and AB.cfg.para_bm_override_threshold) or AB.cfg.para_override_threshold or 0.75) or 0.75
+  local threshold, _bm_para_bonus
+  do
+    local BMC = Yso.curing and Yso.curing.blademaster
+    if BMC and type(BMC.para_adjust) == "function" then
+      threshold, _bm_para_bonus = BMC.para_adjust(AB.cfg, ctx and ctx.bm_branch_active == true)
+    else
+      threshold = tonumber(AB.cfg.para_override_threshold or 0.75) or 0.75
+      _bm_para_bonus = 0
+    end
+  end
   local out = {
     predicted_next_cure = tostring(predict.pick or ""),
     confidence = tonumber(predict.p or 0) or 0,
@@ -1038,7 +1140,7 @@ local function _para_override_choice(tgt, plan, pair, ctx)
   local eq_cd = tonumber(AB.cfg.para_eq_cd_s or 3.5) or 3.5
   local ent_cd = tonumber(AB.cfg.para_entity_cd_s or 6.0) or 6.0
   local evidence_bonus = 0.22
-  local bm_bonus = ((ctx and ctx.bm_branch_active == true) and 0.10) or 0
+  local bm_bonus = _bm_para_bonus or 0
   local recent_apply_penalty = (since_apply > 0 and since_apply < recent_apply_s) and 0.18 or 0
   local recent_cure_penalty = (since_cure > 0 and since_cure < recent_cure_s) and 0.12 or 0
   local lane_scores = {}
@@ -1113,7 +1215,7 @@ local function _entity_pair(tgt, plan, ctx)
   local target_is_deaf = (_ak_deaf >= 100) or (plan and plan.deaf == true)
 
   if target_is_deaf and ent_ready
-    and not (plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true)
+    and not _class_defense_gates(plan)
     and not (plan.finish_stage == "transition" or plan.finish_stage == "burst")
   then
     out.entity_cmd = ("command chimera at %s"):format(tgt)
@@ -1123,7 +1225,7 @@ local function _entity_pair(tgt, plan, ctx)
     ent_ready = false
     entity_reserved = true
   elseif plan and plan.needs_chimera == true and ent_ready
-    and not (plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true)
+    and not _class_defense_gates(plan)
     and not (plan.finish_stage == "transition" or plan.finish_stage == "burst")
   then
     out.entity_cmd = ("command chimera at %s"):format(tgt)
@@ -1260,14 +1362,14 @@ local function _finish_view(tgt, plan)
     stage = "burst"
     next_action = (plan and plan.needs_speed_strip == true) and "pinchaura speed" or "utter truename"
     if plan and plan.needs_speed_strip == true then blocker = "speed strip" end
-  elseif clean_ready and _lock_stable(tgt) and _has_aff(tgt, "manaleech") then
+  elseif clean_ready and _has_aff(tgt, "manaleech") then
     stage = "transition"
     next_action = "cleanseaura"
     if plan and plan.needs_readaura == true then
       blocker = "readaura needed"
       next_action = "readaura"
     end
-  elseif mana ~= nil and mana <= (mana_cap + 10) and _lock_stable(tgt) and _has_aff(tgt, "manaleech") then
+  elseif mana ~= nil and mana <= (mana_cap + 10) and _has_aff(tgt, "manaleech") then
     stage = "primed"
     next_action = clean_ready and "cleanseaura" or "maintain aff"
     if clean_ready ~= true then blocker = "waiting cleanseaura" end
@@ -1277,10 +1379,8 @@ local function _finish_view(tgt, plan)
       blocker = "mana unknown"
     elseif mana > mana_cap then
       blocker = "mana high"
-    elseif not _lock_stable(tgt) then
-      blocker = "lock unstable"
     elseif not _has_aff(tgt, "manaleech") then
-      blocker = "manaleech missing"
+      blocker = ((plan and plan.mana_bury_ready == true) and "manaleech missing") or "mana_bury setup"
     end
   end
 
@@ -1585,59 +1685,11 @@ _target_state = function(tgt)
         last_block_reason = "",
         last_attend_status = "wait",
       },
-      bm = {
-        target_class = "",
-        class_source = "",
-        policy = false,
-        state = "missing",
-        ever_complete = false,
-        blind = nil,
-        blind_at = 0,
-        deaf = nil,
-        deaf_at = 0,
-        shield = nil,
-        shield_at = 0,
-        physical = nil,
-        physical_at = 0,
-        mental = nil,
-        mental_at = 0,
-        speed = nil,
-        speed_at = 0,
-        mana_pct = nil,
-        mana_at = 0,
-      },
     }
     AB.state.targets[key] = row
   end
   row.name = _trim(tgt)
   return row
-end
-
-_bm_state = function(tgt)
-  local row = _target_state(tgt)
-  if not row then return nil end
-  row.bm = row.bm or {
-    target_class = "",
-    class_source = "",
-    policy = false,
-    state = "missing",
-    ever_complete = false,
-    blind = nil,
-    blind_at = 0,
-    deaf = nil,
-    deaf_at = 0,
-    shield = nil,
-    shield_at = 0,
-    physical = nil,
-    physical_at = 0,
-    mental = nil,
-    mental_at = 0,
-    speed = nil,
-    speed_at = 0,
-    mana_pct = nil,
-    mana_at = 0,
-  }
-  return row.bm
 end
 
 _para_state = function(tgt)
@@ -2005,6 +2057,8 @@ local function _eq_wasted_by_shield(cmd, cat)
   if cat == "cleanseaura_window" and cmd:match("^readaura%s+") then return false end
   if cat == "mental_build" and (cmd == "unnamable speak" or cmd == "unnamable vision") then return false end
   return cmd:match("^instill%s+")
+      or cmd:match("^devolve%s+")
+      or cmd:match("^regress%s+")
       or cmd:match("^enervate%s+")
       or cmd:match("^cleanseaura%s+")
       or cmd:match("^whisperingmadness%s+")
@@ -2348,27 +2402,26 @@ end
 local function _bal_plan(tgt, plan)
   if not _bal_ready() then return nil, nil end
 
-  if not _lock_stable(tgt) then
-    return nil, nil
-  end
-
   if not _has_aff(tgt, "manaleech") then
-    return ("ruinate lovers at %s"):format(tgt), "mana_bury"
+    if _mana_bury_ready(tgt) ~= true then
+      return nil, nil
+    end
+    return ("outd lovers&&ruinate lovers at %s"):format(tgt), "mana_bury",
+      "ab:bal:manaleech:" .. _lc(tgt), 3.0
   end
 
-  local predicted = _predict_cured_aff(tgt, plan)
-  if predicted then
+  if _lock_stable(tgt) ~= true then
     return nil, nil
   end
 
-  if plan and plan.bm_snapshot_active == true and plan.bm_passive_allowed ~= true then
+  if _class_defense_gates(plan) then
     return nil, nil
   end
   if plan and (plan.finish_stage == "transition" or plan.finish_stage == "burst") then
     return nil, nil
   end
 
-  if _mental_score() < tonumber(AB.cfg.mental_target or 5) then
+  if _focus_lock_needs_moon(tgt) then
     local moon_tag = "ab:bal:moon:" .. _lc(tgt)
     if not _recent_sent(moon_tag, tonumber(AB.cfg.moon_lockout_s or 4.5) or 4.5) then
       return ("outd moon&&fling moon at %s"):format(tgt), "mental_build", moon_tag, tonumber(AB.cfg.moon_lockout_s or 4.5)
@@ -2431,7 +2484,6 @@ local function _eq_plan(tgt, plan, gate)
 
   local burst_ready = _burst_ready(tgt)
   local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
-  local stable_lock = _lock_stable(tgt)
   local has_manaleech = _has_aff(tgt, "manaleech")
   local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = _readaura_plan(tgt, plan, burst_ready)
 
@@ -2439,17 +2491,7 @@ local function _eq_plan(tgt, plan, gate)
     return readaura_cmd, readaura_cat, readaura_tag, readaura_lock
   end
 
-  local attend_cmd, attend_cat, attend_tag, attend_lock = _unnamable_attend_plan(tgt, plan)
-  if attend_cmd then
-    return attend_cmd, attend_cat, attend_tag, attend_lock
-  end
-
-  local unnamable = _unnamable_candidate(tgt, plan)
-  if unnamable and _trim(unnamable.cmd) ~= "" then
-    return unnamable.cmd, "mental_build", "ab:eq:unnamable:" .. _lc(tgt), 4.0
-  end
-
-  if plan.cleanseaura_ready and stable_lock and has_manaleech and not _truebook_can_utter(tgt) then
+  if plan.cleanseaura_ready and has_manaleech and not _truebook_can_utter(tgt) then
     if not gate or gate.stable == true then
       return ("cleanseaura %s"):format(tgt), "truename_acquire", "ab:eq:cleanseaura:" .. _lc(tgt), tonumber(AB.cfg.cleanseaura_lockout_s or 4.1)
     end
@@ -2472,6 +2514,16 @@ local function _eq_plan(tgt, plan, gate)
     return ("enervate %s"):format(tgt), "mana_bury", "ab:eq:enervate:" .. _lc(tgt), 4.0
   end
 
+  local attend_cmd, attend_cat, attend_tag, attend_lock = _unnamable_attend_plan(tgt, plan)
+  if attend_cmd then
+    return attend_cmd, attend_cat, attend_tag, attend_lock
+  end
+
+  local unnamable = _unnamable_candidate(tgt, plan)
+  if unnamable and _trim(unnamable.cmd) ~= "" then
+    return unnamable.cmd, "mental_build", "ab:eq:unnamable:" .. _lc(tgt), 4.0
+  end
+
   local sm_cmd, sm_tag = _soulmaster_order_cmd(tgt)
   if sm_cmd then
     return sm_cmd, "mana_bury", sm_tag, 4.0
@@ -2480,152 +2532,140 @@ local function _eq_plan(tgt, plan, gate)
   return nil, nil, nil, nil
 end
 
-local _kelp_eq_order = {"asthma", "clumsiness", "healthleech", "sensitivity"}
-local _kelp_ent_map = {
-  asthma      = "command bubonis at %s",
-  clumsiness  = "command storm at %s",
-  healthleech = "command worm at %s",
-  weariness   = "command hound at %s",
-  sensitivity = "command slime at %s",
-}
-local _kelp_ent_order = {"asthma", "clumsiness", "healthleech", "weariness", "sensitivity"}
-
-local function _pick_kelp_eq(tgt)
-  for i = 1, #_kelp_eq_order do
-    if not _has_aff(tgt, _kelp_eq_order[i]) then return _kelp_eq_order[i] end
+local function _mana_bury_eq_cmd(tgt, aff)
+  aff = _lc(aff)
+  if aff == "asthma" or aff == "slickness" or aff == "paralysis" then
+    return ("instill %s with %s"):format(tgt, aff), "mana_bury", "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff, 2.5
   end
-  return _kelp_eq_order[1]
+  if aff == "disloyalty" then
+    return ("devolve %s"):format(tgt), "mana_bury", "ab:eq:devolve:" .. _lc(tgt), 2.5
+  end
+  if aff == "anorexia" then
+    return ("regress %s"):format(tgt), "mana_bury", "ab:eq:regress:" .. _lc(tgt), 2.5
+  end
+  return nil, nil, nil, nil
 end
 
-local function _pick_kelp_ent(tgt, exclude_aff, ES)
-  for i = 1, #_kelp_ent_order do
-    local aff = _kelp_ent_order[i]
-    if aff ~= exclude_aff and not _has_aff(tgt, aff) and _kelp_ent_map[aff] then
-      if aff == "healthleech" and ES and ES.worm_refresh ~= true then
-        -- worm already active, skip
-      else
-        return _kelp_ent_map[aff]:format(tgt), aff
-      end
-    end
-  end
-  return nil, nil
+local function _mana_bury_entity_aff(tgt, predicted)
+  predicted = _lc(predicted)
+  if not _has_aff(tgt, "asthma") then return "asthma" end
+  if _has_bloodroot_hold(tgt) then return nil end
+  if predicted == "paralysis" then return "paralysis" end
+  if predicted == "slickness" then return "slickness" end
+  return "slickness"
 end
 
-local function _kelp_loop_plan(tgt, plan)
+local function _mana_bury_eq_aff(tgt, entity_aff, predicted)
+  predicted = _lc(predicted)
+  entity_aff = _lc(entity_aff)
+  if predicted == "asthma" and entity_aff ~= "asthma" and not _has_aff(tgt, "asthma") then
+    return "asthma"
+  end
+  if predicted == "disloyalty" and not _has_aff(tgt, "disloyalty") then
+    return "disloyalty"
+  end
+  if predicted == "anorexia" and not _has_aff(tgt, "anorexia") then
+    return "anorexia"
+  end
+  if (predicted == "slickness" or predicted == "paralysis")
+    and _has_aff(tgt, "asthma") and not _has_bloodroot_hold(tgt) and entity_aff == ""
+  then
+    return predicted
+  end
+
+  if not _has_aff(tgt, "asthma") and entity_aff ~= "asthma" then
+    return "asthma"
+  end
+  if not _has_aff(tgt, "disloyalty") then
+    return "disloyalty"
+  end
+  if not _has_aff(tgt, "anorexia") then
+    return "anorexia"
+  end
+  if _has_aff(tgt, "asthma") and not _has_bloodroot_hold(tgt) and entity_aff == "" then
+    return "paralysis"
+  end
+  return nil
+end
+
+local function _route_pair_plan(tgt, plan)
   local out = {
     eq_cmd = nil, eq_cat = nil, eq_tag = nil, eq_lock = nil,
+    eq_aff = nil,
     entity_cmd = nil, entity_cat = nil,
+    entity_aff = nil,
     reason = "",
   }
 
   local ES = _entity_refresh_state(tgt)
   local ent_ready = _ent_ready()
   local eq_ready = _eq_ready()
+  local has_manaleech = _has_aff(tgt, "manaleech")
+  local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
+  local predicted_mana = _predict_mana_bury_aff(tgt, plan)
+  local predicted_focus = _predict_focus_lock_aff(tgt, plan)
 
-  local A = rawget(_G, "affstrack") or {}
-  local score = type(A.score) == "table" and A.score or {}
-  local kelpscore = tonumber(A.kelpscore or 0) or 0
-  local deaf = (tonumber(score.deaf or 0) or 0) >= 100
+  if has_manaleech ~= true then
+    if ent_ready then
+      local entity_aff = _mana_bury_entity_aff(tgt, predicted_mana)
+      if entity_aff then
+        out.entity_cmd, out.entity_cat = _entity_aff_cmd(entity_aff, tgt, ES)
+        out.entity_aff = entity_aff
+      end
+    end
 
-  local has_asthma = _has_aff(tgt, "asthma")
-  local has_paralysis = _has_aff(tgt, "paralysis")
+    if eq_ready then
+      local eq_aff = _mana_bury_eq_aff(tgt, out.entity_aff or "", predicted_mana)
+      if eq_aff then
+        out.eq_cmd, out.eq_cat, out.eq_tag, out.eq_lock = _mana_bury_eq_cmd(tgt, eq_aff)
+        out.eq_aff = eq_aff
+      end
+    end
 
-  if ent_ready then
-    if ES.worm_refresh == true then
-      out.entity_cmd = ("command worm at %s"):format(tgt)
-      out.entity_cat = "dot_refresh"
-      ent_ready = false
-    elseif ES.syc_refresh == true then
+    if out.eq_aff or out.entity_aff then
+      out.reason = predicted_mana ~= nil and ("mana_bury_predict:" .. predicted_mana) or "mana_bury_setup"
+    else
+      out.reason = (_mana_bury_ready(tgt) == true) and "mana_bury_payoff_window" or "mana_bury_wait"
+    end
+    return out
+  end
+
+  if ent_ready
+    and not (plan and (plan.finish_stage == "transition" or plan.finish_stage == "burst"))
+    and not _class_defense_gates(plan)
+  then
+    if _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted_focus) then
+      out.entity_cmd = ("command chimera at %s"):format(tgt)
+      out.entity_cat = "mental_build"
+      out.entity_aff = "chimera_roar"
+      out.reason = _focus_lock_in_roar_pool(predicted_focus) and ("focus_lock_predict:" .. predicted_focus) or "focus_lock_roar"
+    elseif ES.syc_refresh == true and has_wm ~= true and plan and plan.cleanseaura_ready ~= true then
       out.entity_cmd = ("command sycophant at %s"):format(tgt)
-      out.entity_cat = "focus_slow_refresh"
-      ent_ready = false
+      out.entity_cat = "mental_build"
+      out.entity_aff = "sycophant"
+      out.reason = "focus_lock_sycophant"
     end
   end
 
-  if has_asthma and not has_paralysis then
-    if eq_ready then
-      out.eq_cmd = ("instill %s with paralysis"):format(tgt)
-      out.eq_cat = "kelp_loop"
-      out.eq_tag = "ab:eq:instill:" .. _lc(tgt) .. ":paralysis"
-      out.eq_lock = 2.5
-    end
-    if ent_ready and not out.entity_cmd then
-      if not eq_ready then
-        out.entity_cmd = ("command slime at %s"):format(tgt)
-        out.entity_cat = "kelp_loop"
-      else
-        local cmd, _ = _pick_kelp_ent(tgt, nil, ES)
-        if cmd then
-          out.entity_cmd = cmd
-          out.entity_cat = "kelp_loop"
-        end
-      end
-    end
-    out.reason = "paralysis_setup"
+  return out
+end
 
-  elseif has_paralysis and kelpscore >= 1 then
-    if eq_ready then
-      local aff = _pick_kelp_eq(tgt)
-      out.eq_cmd = ("instill %s with %s"):format(tgt, aff)
-      out.eq_cat = "kelp_loop"
-      out.eq_tag = "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff
-      out.eq_lock = 2.5
-    end
-    if ent_ready and not out.entity_cmd then
-      local eq_aff = out.eq_cmd and out.eq_cmd:match("with (%w+)$")
-      local cmd, _ = _pick_kelp_ent(tgt, eq_aff, ES)
-      if cmd then
-        out.entity_cmd = cmd
-        out.entity_cat = "kelp_loop"
-      end
-    end
-    out.reason = "kelp_stack"
-
-  elseif kelpscore >= 2 and not deaf then
-    if eq_ready then
-      local aff = _pick_kelp_eq(tgt)
-      out.eq_cmd = ("instill %s with %s"):format(tgt, aff)
-      out.eq_cat = "kelp_loop"
-      out.eq_tag = "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff
-      out.eq_lock = 2.5
-    end
-    if ent_ready and not out.entity_cmd then
-      out.entity_cmd = ("command chimera at %s"):format(tgt)
-      out.entity_cat = "mental_build"
-    end
-    out.reason = "chimera_mental"
-
-  elseif kelpscore >= 2 and deaf then
-    if eq_ready then
-      out.eq_cmd = ("attend %s"):format(tgt)
-      out.eq_cat = "attend_deaf"
-      out.eq_tag = "ab:eq:attend_deaf:" .. _lc(tgt)
-      out.eq_lock = 2.0
-    end
-    if ent_ready and not out.entity_cmd then
-      out.entity_cmd = ("command chimera at %s"):format(tgt)
-      out.entity_cat = "mental_build"
-    end
-    out.reason = "attend_deaf_chimera"
-
-  else
-    if eq_ready then
-      local aff = _pick_kelp_eq(tgt)
-      out.eq_cmd = ("instill %s with %s"):format(tgt, aff)
-      out.eq_cat = "kelp_loop"
-      out.eq_tag = "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff
-      out.eq_lock = 2.5
-    end
-    if ent_ready and not out.entity_cmd then
-      local cmd, _ = _pick_kelp_ent(tgt, nil, ES)
-      if cmd then
-        out.entity_cmd = cmd
-        out.entity_cat = "kelp_loop"
-      end
-    end
-    out.reason = "kelp_default"
+local function _focus_lock_giving_sources(tgt, plan)
+  local predicted = _predict_focus_lock_aff(tgt, plan)
+  local out = {}
+  if _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted) then
+    out[#out + 1] = "chimera_roar"
   end
-
+  if _focus_lock_needs_moon(tgt) or _focus_lock_in_moon_pool(predicted) then
+    out[#out + 1] = "moon"
+  end
+  local unnamable = _unnamable_candidate(tgt, plan)
+  if unnamable and unnamable.eligible == true then
+    out[#out + 1] = "unnamable"
+  end
+  if _discord_contribution_present(tgt) then
+    out[#out + 1] = "discord"
+  end
   return out
 end
 local function _ensure_registered()
@@ -2903,7 +2943,7 @@ function AB.attack_function(arg)
 
   -- B. Main offensive spam logic.
   local raw_eq_cmd, raw_eq_cat, raw_eq_tag, raw_eq_lock = nil, nil, nil, nil
-  local kelp = nil
+  local pair = nil
   if anti.active ~= true then
     if plan.needs_mana_bury == true then
       _record_checkpoint("mana_bury")
@@ -2920,18 +2960,18 @@ function AB.attack_function(arg)
       end
     end
 
-    kelp = _kelp_loop_plan(tgt, plan)
+    pair = _route_pair_plan(tgt, plan)
 
-    if not eq_cmd and kelp.eq_cmd then
-      eq_cmd = kelp.eq_cmd
-      eq_cat = kelp.eq_cat
-      eq_tag = kelp.eq_tag
-      eq_lock = kelp.eq_lock
+    if not eq_cmd and pair.eq_cmd then
+      eq_cmd = pair.eq_cmd
+      eq_cat = pair.eq_cat
+      eq_tag = pair.eq_tag
+      eq_lock = pair.eq_lock
     end
 
-    if kelp.entity_cmd then
-      entity_cmd = kelp.entity_cmd
-      entity_cat = kelp.entity_cat
+    if pair.entity_cmd then
+      entity_cmd = pair.entity_cmd
+      entity_cat = pair.entity_cat
     end
 
     bal_cmd, bal_cat, bal_tag, bal_lock = _bal_plan(tgt, plan)
@@ -2982,6 +3022,7 @@ function AB.attack_function(arg)
     snapshot_had_counts = plan.snapshot_had_counts,
     snapshot_had_mana = plan.snapshot_had_mana,
     needs_mana_bury = plan.needs_mana_bury,
+    mana_bury_ready = plan.mana_bury_ready == true,
     cleanseaura_ready = plan.cleanseaura_ready,
     truename_ready = _truebook_can_utter(tgt),
     truename_entry_eligible = gate.eligible,
@@ -2996,25 +3037,16 @@ function AB.attack_function(arg)
     loyals_active = _loyals_active_for(tgt),
     focus_lock_count = _focus_lock_count(tgt),
     lock_stable = _lock_stable(tgt),
+    focus_lock_sources = _focus_lock_giving_sources(tgt, plan),
     manaleech = _has_aff(tgt, "manaleech"),
-    eq_aff = kelp and kelp.eq_cat or "",
-    entity_aff = kelp and kelp.entity_cat or "",
-    pair_reason = kelp and kelp.reason or "",
-    bm_snapshot = {
-      state = plan.bm_snapshot_state,
-      active = plan.bm_snapshot_active == true,
-      complete = plan.bm_snapshot_complete == true,
-      provisional = plan.bm_snapshot_provisional == true,
-      blind = { known = plan.bm_snapshot and plan.bm_snapshot.blind_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.blind_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.blind },
-      deaf = { known = plan.bm_snapshot and plan.bm_snapshot.deaf_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.deaf_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.deaf },
-      shield = { known = plan.bm_snapshot and plan.bm_snapshot.shield_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.shield_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.shield },
-      physical = { known = plan.bm_snapshot and plan.bm_snapshot.physical_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.physical_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.physical },
-      mental = { known = plan.bm_snapshot and plan.bm_snapshot.mental_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.mental_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.mental },
-      speed = { known = plan.bm_snapshot and plan.bm_snapshot.speed_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.speed_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.speed },
-      mana = { known = plan.bm_snapshot and plan.bm_snapshot.mana_known == true, fresh = plan.bm_snapshot and plan.bm_snapshot.mana_fresh == true, value = plan.bm_snapshot and plan.bm_snapshot.mana_pct },
-      passive_allowed = plan.bm_passive_allowed == true,
-      counts_under_pressure = plan.bm_snapshot and plan.bm_snapshot.counts_under_pressure == true,
-    },
+    eq_aff = pair and pair.eq_aff or "",
+    entity_aff = pair and pair.entity_aff or "",
+    pair_reason = pair and pair.reason or "",
+    bm_snapshot = (function()
+      local BMC = Yso.curing and Yso.curing.blademaster
+      if BMC and type(BMC.explain) == "function" then return BMC.explain(plan) end
+      return { state = plan.bm_snapshot_state, active = plan.bm_snapshot_active == true }
+    end)(),
     bm_branch_active = plan.bm_branch_active == true,
     bm_branch_provisional = plan.bm_branch_provisional == true,
     shield_up = _shield_is_up(tgt),
@@ -3243,9 +3275,15 @@ function AB.on_sent(payload, ctx)
     elseif para_lane == "entity" and _lane_contains_cmd(class_lane, ("command slime at %s"):format(tgt)) then
       _note_refresh_sent(tgt, "entity", "paralysis")
     else
-      if eq_aff ~= "" and _lane_contains_cmd(eq_lane, ("instill %s with %s"):format(tgt, eq_aff)) then
+      if eq_aff ~= "" and (
+        _lane_contains_cmd(eq_lane, ("instill %s with %s"):format(tgt, eq_aff))
+        or (eq_aff == "disloyalty" and _lane_contains_cmd(eq_lane, ("devolve %s"):format(tgt)))
+        or (eq_aff == "anorexia" and _lane_contains_cmd(eq_lane, ("regress %s"):format(tgt)))
+      ) then
         _note_refresh_sent(tgt, "eq", eq_aff)
-      elseif entity_aff ~= "" and entity_cmd ~= "" and _lane_contains_cmd(class_lane, entity_cmd) then
+      elseif entity_aff ~= "" and entity_aff ~= "chimera_roar" and entity_aff ~= "sycophant"
+        and entity_cmd ~= "" and _lane_contains_cmd(class_lane, entity_cmd)
+      then
         _note_refresh_sent(tgt, "entity", entity_aff)
       end
     end
@@ -3338,8 +3376,9 @@ local function _debug_screen_text()
       _dbg_field(bm.physical), _dbg_field(bm.mental), _dbg_field(bm.speed), _dbg_field(bm.mana)),
     string.format(" Legal  | eq_blocked=%s reasons=%s retry=%.2f",
       _dbg_bool(ex.eq_blocked), _dbg_list(ex.eq_block_reasons), tonumber(ex.eq_retry_until or 0) or 0),
-    string.format(" Finish | cleanseaura=%s mana_ready=%s stage=%s blocker=%s",
-      tostring(finish.cleanseaura_state or "-"), _dbg_bool(finish.mana_ready), tostring(finish.stage or "-"), tostring(finish.blocker or "-")),
+    string.format(" Finish | cleanseaura=%s mana_ready=%s bury=%s focus=%s stage=%s blocker=%s",
+      tostring(finish.cleanseaura_state or "-"), _dbg_bool(finish.mana_ready), _dbg_bool(ex.mana_bury_ready),
+      tostring(ex.focus_lock_count or 0), tostring(finish.stage or "-"), tostring(finish.blocker or "-")),
   }
   return table.concat(lines, "\n") .. "\n"
 end

@@ -12,7 +12,7 @@
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>yhelp</name>
-				<script>cecho("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|off [secs] [force] | ra status [target]\n")</script>
+				<script>cecho("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|off [secs] [force] | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
 				<command />
 				<packageName />
 				<regex>^yhelp$</regex>
@@ -185,6 +185,33 @@ cecho(string.format("&lt;red&gt;[Yso] &lt;white&gt;Target: %s  &lt;red&gt;Occult
 				<command />
 				<packageName />
 				<regex>^yon\s+(.+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>yrdebug</name>
+				<script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
+if not RD then cecho("&lt;red&gt;[Devtools] route_debug not loaded\n"); return end
+local args = matches[2] or ""
+local toks = {}
+for w in args:gmatch("%S+") do toks[#toks+1] = w:lower() end
+if #toks == 0 then
+  cecho("&lt;CadetBlue&gt;[Devtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par&gt;\n")
+elseif #toks == 1 then
+  RD.debug_toggle(toks[1])
+else
+  RD.debug_toggle(toks[2], toks[1])
+end</script>
+				<command />
+				<packageName />
+				<regex>^yrdebug(?:\s+(.+))?$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>yrshow</name>
+				<script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
+if not RD then cecho("&lt;red&gt;[Devtools] route_debug not loaded\n"); return end
+RD.show(matches[2] or "")</script>
+				<command />
+				<packageName />
+				<regex>^yrshow(?:\s+(.+))?$</regex>
 			</Alias>
 		</AliasGroup>
 	</AliasPackage>
@@ -825,6 +852,118 @@ end
 if D.cfg.auto_dry then
   D.ensure_gmcp()
   D.set_dry(true)
+end
+</script>
+			<eventHandlerList />
+		</Script>
+		<Script isActive="yes" isFolder="no">
+			<name>Route Debug Helpers</name>
+			<packageName />
+			<script>-- Route-aware debug helpers for Devtools.
+-- Provides yrdebug, yrshow aliases.
+
+Yso = Yso or {}
+Yso.devtools = Yso.devtools or {}
+local D = Yso.devtools
+D.route_debug = D.route_debug or {}
+local RD = D.route_debug
+
+RD.routes = {
+  aff  = function() return Yso.off and Yso.off.oc and Yso.off.oc.aff_burst end,
+  dam  = function() return Yso.off and Yso.off.oc and Yso.off.oc.group_damage end,
+  par  = function() return Yso.off and Yso.off.oc and Yso.off.oc.party_aff end,
+}
+RD.aliases = RD.aliases or {}
+
+local function _tprint(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("&lt;CadetBlue&gt;[Devtools:Route]&lt;reset&gt; %s\n", tostring(msg)))
+  end
+end
+
+local function _route_mod(name)
+  name = tostring(name or ""):lower()
+  local getter = RD.routes[name]
+  if type(getter) == "function" then return getter() end
+  return nil
+end
+
+local function _route_state(name)
+  local mod = _route_mod(name)
+  if not mod then return nil end
+  return type(mod.state) == "table" and mod.state or nil
+end
+
+local function _route_explain(name)
+  local mod = _route_mod(name)
+  if not mod then return nil end
+  if type(mod.explain) == "function" then
+    local ok, ex = pcall(mod.explain)
+    if ok then return ex end
+  end
+  return nil
+end
+
+function RD.debug_toggle(route, on_off)
+  route = tostring(route or ""):lower()
+  if route == "" then
+    _tprint("usage: yrdebug [on|off] [aff|dam|par]")
+    return
+  end
+  local mod = _route_mod(route)
+  if not mod then
+    _tprint("unknown route: " .. route)
+    return
+  end
+  local st = type(mod.state) == "table" and mod.state or nil
+  if not st then
+    _tprint(route .. " has no state table")
+    return
+  end
+  on_off = tostring(on_off or ""):lower()
+  if on_off == "on" or on_off == "1" then
+    st.debug = true
+  elseif on_off == "off" or on_off == "0" then
+    st.debug = false
+  else
+    st.debug = not (st.debug == true)
+  end
+  _tprint(route .. " debug = " .. tostring(st.debug))
+end
+
+function RD.show(route)
+  route = tostring(route or ""):lower()
+  if route == "" then
+    for k, _ in pairs(RD.routes) do
+      RD.show(k)
+    end
+    return
+  end
+  local ex = _route_explain(route)
+  if not ex then
+    local st = _route_state(route)
+    if st then
+      _tprint(route .. " state.enabled=" .. tostring(st.enabled) .. " loop=" .. tostring(st.loop_enabled))
+    else
+      _tprint(route .. ": no data")
+    end
+    return
+  end
+  _tprint(route .. " snapshot:")
+  local keys = {}
+  for k in pairs(ex) do keys[#keys + 1] = k end
+  table.sort(keys)
+  for _, k in ipairs(keys) do
+    local v = ex[k]
+    if type(v) == "table" then
+      local parts = {}
+      for sk, sv in pairs(v) do parts[#parts + 1] = tostring(sk) .. "=" .. tostring(sv) end
+      table.sort(parts)
+      _tprint("  " .. k .. " = {" .. table.concat(parts, ", ") .. "}")
+    else
+      _tprint("  " .. k .. " = " .. tostring(v))
+    end
+  end
 end
 </script>
 			<eventHandlerList />
