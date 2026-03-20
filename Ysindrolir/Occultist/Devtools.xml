@@ -949,20 +949,36 @@ function RD.show(route)
     end
     return
   end
-  _tprint(route .. " snapshot:")
-  local keys = {}
-  for k in pairs(ex) do keys[#keys + 1] = k end
-  table.sort(keys)
-  for _, k in ipairs(keys) do
-    local v = ex[k]
-    if type(v) == "table" then
-      local parts = {}
-      for sk, sv in pairs(v) do parts[#parts + 1] = tostring(sk) .. "=" .. tostring(sv) end
-      table.sort(parts)
-      _tprint("  " .. k .. " = {" .. table.concat(parts, ", ") .. "}")
-    else
-      _tprint("  " .. k .. " = " .. tostring(v))
-    end
+  local function _b(v) return (v == true) and "Y" or "N" end
+  local function _s(v)
+    if v == nil then return "-" end
+    local t = tostring(v)
+    return (t == "" and "-") or t
+  end
+
+  local planned = type(ex.planned) == "table" and ex.planned or {}
+  local finish = type(ex.finish_transition) == "table" and ex.finish_transition or {}
+  local para = type(ex.para) == "table" and ex.para or {}
+  local bm = type(ex.bm_snapshot) == "table" and ex.bm_snapshot or {}
+
+  _tprint(string.format("%s | target=%s active=%s debug=%s",
+    route, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(ex.debug == true)))
+  _tprint(string.format(" plan | eq=%s class=%s bal=%s free=%s",
+    _s(planned.eq), _s(planned.class), _s(planned.bal), _s(planned.free)))
+
+  if route == "aff" then
+    _tprint(string.format(" aff  | stage=%s next=%s blocker=%s focus=%s mana=%s",
+      _s(finish.stage), _s(finish.next_action), _s(finish.blocker), _s(ex.focus_lock_count), _s(ex.mana_pct)))
+    _tprint(string.format(" para | allow=%s lane=%s cure=%s p=%.2f why=%s",
+      _b(para.allowed == true), _s(para.lane), _s(para.predicted_next_cure), tonumber(para.confidence or 0) or 0, _s(para.block_reason)))
+    _tprint(string.format(" bm   | state=%s branch=%s/%s passive=%s",
+      _s(bm.state), _b(ex.bm_branch_active == true), _b(ex.bm_branch_provisional == true), _b(bm.passive_allowed == true)))
+  elseif route == "dam" then
+    _tprint(string.format(" dam  | mode=%s burst=%s aeon=%s sticky=%s",
+      _s(ex.mode), _b(ex.burst_window == true), _b(ex.aeon_ready == true), _b(ex.sticky == true)))
+  elseif route == "par" then
+    _tprint(string.format(" par  | need=%s mana=%s lock=%s",
+      _s(ex.need_aff), _s(ex.mana_pct), _b(ex.lock_ready == true)))
   end
 end
 </script>

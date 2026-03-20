@@ -25971,16 +25971,8 @@ end</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
 						<string>^([\w'\-]+) finally rids [\w'\-]+ of the slime covering [\w'\-]+\.$</string>
-						<string>^The slime covering ([\w'\-]+) dissolves\.$</string>
-						<string>^([\w'\-]+) shakes off the slime\.$</string>
-						<string>^([\w'\-]+) is no longer covered in slime\.$</string>
-						<string>^The slime on ([\w'\-]+) (?:fades|dries|melts|clears|dissolves|dissipates)</string>
 					</regexCodeList>
 					<regexCodePropertyList>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
 						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
