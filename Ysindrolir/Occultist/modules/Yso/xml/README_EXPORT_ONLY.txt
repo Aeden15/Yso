@@ -19,6 +19,7 @@ Canonical source locations (edit these):
 
   Combat system:
   - modules/Yso/Combat/offense_driver.lua                 -> xml/yso_offense_coordination.lua
+  - modules/Yso/Combat/parry.lua                          -> xml/parry.lua
   - modules/Yso/Combat/route_interface.lua                -> xml/route_interface.lua
   - modules/Yso/Combat/route_registry.lua                 -> xml/route_registry.lua
 
@@ -41,7 +42,7 @@ See EXPORT_MANIFEST.lua for the machine-readable mapping.
 Rebuild notes (2026-03-16):
 
   rebuild_yso_system_xml.ps1 only rewrites package items that actually exist in
-  mudlet_packages/Yso system.xml.
+  mudlet packages/Yso system.xml.
   It now validates the candidate XML before writing so a failed regex match
   does not corrupt the package artifact on disk.
 

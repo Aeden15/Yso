@@ -19033,6 +19033,7 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.Core.wake_bus&quot;,
   &quot;Yso.Combat.route_registry&quot;,
   &quot;Yso.Combat.route_interface&quot;,
+  &quot;Yso.Combat.parry&quot;,
   &quot;Yso.Combat.offense_driver&quot;,
   &quot;Yso.Core.orchestrator&quot;,
   &quot;Yso.Combat.occultist.entity_registry&quot;,

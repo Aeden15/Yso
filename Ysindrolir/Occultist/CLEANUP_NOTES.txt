@@ -5,8 +5,9 @@ This bundle removes duplicate copies of the same modules that existed in multipl
 Canonical code is now under:
   Achaea/Yso/modules/Yso/...
 
-Compatibility wrappers are provided so old requires still work:
+Old wrapper-style requires should be removed instead of reintroduced:
   require("AffTracker"), require("LimbPressure"), require("Core.state"), require("Combat.offense_core"), etc.
+The workspace-backed runtime should load canonical Yso modules directly.
 
 Integration remains:
   require("Integration.mudlet")  -> Achaea/Yso/modules/Integration/mudlet.lua

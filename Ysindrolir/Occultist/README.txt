@@ -117,6 +117,7 @@ File Layout
         Template.lua                - route template reference
       Combat/
         offense_driver.lua          - CANONICAL: route/policy state machine
+        parry.lua                   - CANONICAL: class-agnostic parry evaluator
         route_interface.lua         - CANONICAL: shared route contract (defense_break, anti_tumble)
         route_registry.lua          - CANONICAL: route metadata registry
         routes/
@@ -135,17 +136,17 @@ File Layout
       xml/
         *.lua                       - export mirrors + remaining XML-resident legacy scripts
         README_EXPORT_ONLY.txt      - documents mirror vs canonical distinction
-    EXPORT_MANIFEST.lua             - canonical source -> xml mirror mapping (21 entries)
-    mudlet_packages/
+    EXPORT_MANIFEST.lua             - canonical source -> xml mirror mapping (22 entries)
+    mudlet packages/
       Yso system.xml                - bundled Mudlet XML package
       AK.xml                        - Legacy AK package with local compatibility patches
 
 
 Canonical vs Generated Files
 ----------------------------
-21 files are now canonical (edit these, then refresh mirrors):
+22 files are now canonical (edit these, then refresh mirrors):
   Core:     api, orchestrator, wake_bus, queue, bootstrap, modes, mode_autoswitch, target_intel, predict_cure
-  Combat:   offense_driver, route_interface, route_registry
+  Combat:   offense_driver, parry, route_interface, route_registry
   Routes:   occ_aff_burst, group_damage, party_aff
   Occultist: aeon, domination_reference, entity_registry, offense_helpers, softlock_gate
   Integration: ak_legacy_wiring
@@ -227,7 +228,7 @@ Bug Fixes (2026-03-16)
   [fix] occ_aff_burst: alias-owned sends now stamp route-local tags into
         Orchestrator.last_sent so _recent_sent-based throttles, including the
         8-second READAURA requery, work in loop mode.
-  [sync] XML mirror files were refreshed and mudlet_packages/Yso system.xml was
+  [sync] XML mirror files were refreshed and mudlet packages/Yso system.xml was
         rebuilt after these route changes.
 
 Export Audit (2026-03-16)

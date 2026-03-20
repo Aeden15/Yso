@@ -1,5 +1,5 @@
 param(
-  [string]$XmlPath = 'C:\Users\shuji\OneDrive\Desktop\Yso systems\Ysindrolir\mudlet_packages\Yso system.xml',
+  [string]$XmlPath = 'C:\Users\shuji\OneDrive\Desktop\Yso systems\Ysindrolir\mudlet packages\Yso system.xml',
   [string]$MirrorRoot = 'C:\Users\shuji\OneDrive\Desktop\Yso systems\Ysindrolir\Occultist\modules\Yso\xml'
 )
 

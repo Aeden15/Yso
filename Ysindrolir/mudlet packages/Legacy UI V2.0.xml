@@ -1,0 +1,1731 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Map Triggers</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Wilderness Map</name>
+				<script></script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList />
+				<regexCodePropertyList />
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>GMCP Map</name>
+					<script></script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string>return gmcp.Room</string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>4</integer>
+					</regexCodePropertyList>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>GMCP Rooms</name>
+						<script>if not Legacy then return end
+
+-- Safely toggle Mudlet map/UI panes (these objects can be nil early in load)
+if Map and Map.show then pcall(function() Map:show() end) end
+if Legacy.UI and Legacy.UI.Map and Legacy.UI.Map.show then pcall(function() Legacy.UI.Map:show() end) end
+if wilderness_map_container and wilderness_map_container.hide then pcall(function() wilderness_map_container:hide() end) end
+if Wilderness and Wilderness.hide then pcall(function() Wilderness:hide() end) end
+if Ocean and Ocean.hide then pcall(function() Ocean:hide() end) end
+</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>return (gmcp and gmcp.Room and gmcp.Room.Info and tonumber(gmcp.Room.Info.num or 0) &lt; 2121028)</string>
+							<string>return (gmcp and gmcp.Room and gmcp.Room.Info and tonumber(gmcp.Room.Info.num or 0) &gt; 0)</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>4</integer>
+							<integer>4</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Wilderness</name>
+						<script>Wilderness:show()</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>return (gmcp and gmcp.Room and gmcp.Room.Info and tonumber(gmcp.Room.Info.num or 0) &gt; 2121028)</string>
+							<string>return (gmcp and gmcp.Room and gmcp.Room.Info and (gmcp.Room.Info.coords or "")=="")</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>4</integer>
+							<integer>4</integer>
+						</regexCodePropertyList>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Catch All</name>
+							<script>selectCurrentLine()
+copy()
+if wilderness_map_container and wilderness_map_container.show then pcall(function() wilderness_map_container:show() end) end
+if Map and Map.hide then pcall(function() Map:hide() end) end
+if Wilderness and Wilderness.show then pcall(function() Wilderness:show() end) end
+if Ocean and Ocean.hide then pcall(function() Ocean:hide() end) end
+--x = x..'\n'..getSelection()
+appendBuffer("Wilderness")
+deleteLine()
+</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>^[ wnmjSIMXWYx',;&amp;\\#=@~%/!\-\.\^\|\*\?\+\(]+$</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+							</regexCodePropertyList>
+						</Trigger>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Ocean</name>
+						<script>Ocean:show() 
+</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>return (gmcp and gmcp.Room and gmcp.Room.Info and gmcp.Room.Info.environment=='Vessel')</string>
+							<string>return (gmcp and gmcp.Room and gmcp.Room.Info and tonumber(gmcp.Room.Info.num or 0)==-2)</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>4</integer>
+							<integer>4</integer>
+						</regexCodePropertyList>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Catch All</name>
+							<script>selectCurrentLine()
+copy()
+if wilderness_map_container and wilderness_map_container.show then pcall(function() wilderness_map_container:show() end) end
+if Map and Map.hide then pcall(function() Map:hide() end) end
+appendBuffer("Ocean")
+deleteLine()</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>^[ wnmjSIMXWYx',;\\#=@~%/!\-\.\^\|\*\?\+\(]+$</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+							</regexCodePropertyList>
+						</Trigger>
+					</Trigger>
+				</Trigger>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Ship Room Detected</name>
+					<script>clearWindow("Ocean") 
+</script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string>The ship moves</string>
+						<string>The ship drifts</string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>2</integer>
+						<integer>2</integer>
+					</regexCodePropertyList>
+				</Trigger>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>New trigger</name>
+					<script></script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string></string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>7</integer>
+					</regexCodePropertyList>
+				</Trigger>
+			</TriggerGroup>
+		</TriggerGroup>
+	</TriggerPackage>
+	<TimerPackage />
+	<AliasPackage>
+		<Alias isActive="yes" isFolder="no">
+			<name>Change border color</name>
+			<script>Legacy.UI.borderColor = matches[2]
+UI_Setup()
+Legacy_AK_Draw()
+send('ql')</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^bcolor\s(.+)$</regex>
+		</Alias>
+	</AliasPackage>
+	<ActionPackage />
+	<ScriptPackage>
+		<Script isActive="yes" isFolder="no">
+			<name>UI Setup</name>
+			<packageName></packageName>
+			<script>function UI_Setup()
+--if not Legacy then return end
+
+  Legacy.UI = Legacy.UI or {}
+  Legacy.UI.borderColor = Legacy.UI.borderColor or "DimGrey"
+  Legacy.Settings.UI = Legacy.Settings.UI or {}
+  Legacy.Settings.UI.Chatbox = Legacy.Settings.UI.Chatbox or {}
+  Legacy.Settings.UI.Chatbox.ignoreMobs = Legacy.Settings.UI.Chatbox.ignoreMobs or false
+  Legacy.Settings.UI.whoInfo = Legacy.Settings.UI.whoInfo or "class"
+  Legacy.UI[(gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.name) or 'me'] = Legacy.UI[(gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.name) or 'me'] or {}
+  
+  
+  --COLOR MOBS HERE
+  Legacy.UI.ThingsIWantColored = {
+     ["a shipmate"] = "green",
+     ["a Naxian mistweaver"] = "&lt;purple&gt;",
+     ["a Blackstone swordsman"] = "&lt;gold&gt;",
+     ["a Shornwall defender"]   = "&lt;pink&gt;",
+     ["a Riverwall bow-maiden"] = "&lt;cornflower_blue&gt;",
+     ["Sensha, a brown bear cub"] = "&lt;green&gt;",
+     ["Vesyra, a golden leopard"] = "&lt;HotPink&gt;",
+     ["Jaydus"] = "&lt;red&gt;",
+     
+     }
+  
+  
+
+  --Build the Containers/Labels/Consoles
+
+--Where Here
+  Legacy.UI.WhoHereContainer = Adjustable.Container:new({
+    name = "WhoHere",
+    x=0, y="-35%",                 
+    width = 300, height= 300, 
+  })
+
+  WhoLabel = Geyser.Label:new({
+    name = "WhoLabel",
+    x = "0%", y = "0%",
+    width = "100%", height = "100%",
+  },Legacy.UI.WhoHereContainer)
+
+  WhoLabel:setStyleSheet([[
+    background-color: black;
+    border-width: 3px;
+    border-style: solid;
+    border-color: ]]..Legacy.UI.borderColor..[[;
+    border-radius: 10px;
+  ]])
+
+Who = Geyser.MiniConsole:new({
+  name='Who',
+  color='black',
+  x='7', y='7',
+  width = '100%-10', height = '100%-10',
+  fontSize = 10,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = true
+}, WhoLabel)
+
+
+--Map
+
+Legacy.UI.Map = Adjustable.Container:new({
+  name = "Map",
+  x = "30%", y = "30%",
+  width = 400, height = 300,
+})
+
+wilderness_map_container = Adjustable.Container:new({
+  name = "Wilderness Map",
+  x = "50%", y = "30%",
+  width = 400, height = 300,
+}) 
+
+MapLabel = Geyser.Label:new({
+    name = "MapLabel",
+    x=0, y=0,
+    width = "100%", height = "100%"
+
+}, Legacy.UI.Map)
+
+MapLabel:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+  qproperty-wordWrap: false;
+]])
+
+
+Map = Geyser.Mapper:new({
+  name = "Map",
+  x = 3, y = 3,
+  width = "100%-8", height = "100%-10",
+}, Legacy.UI.Map)
+
+Wilderness = Geyser.MiniConsole:new({
+  name='Wilderness',
+  color='black',
+  x=3, y=3,
+  width = '100%-10', height = '100%-10',
+  fontSize = 10,
+  scrollbar = true,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = false
+}, wilderness_map_container)
+
+Ocean = Geyser.MiniConsole:new({
+  name='Ocean',
+  color='black',
+  x=3, y=3,
+  width = '100%-18', height = '100%-10',
+  fontSize = 10,
+  scrollbar = true,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = false
+}, wilderness_map_container)
+
+if Ocean and Ocean.hide then pcall(function() Ocean:hide() end) end
+if Wilderness and Wilderness.hide then pcall(function() Wilderness:hide() end) end
+if Map and Map.show then pcall(function() Map:show() end) end
+
+
+--Mobs
+Legacy.UI.Denizens = Adjustable.Container:new({
+  name = "left_container_top",
+  x=0, y=0,                     
+  width = 300, height="33%",
+})              
+
+MobLabel = Geyser.Label:new({
+  name = "MobLabel",
+  x = "0%", y = "0%",
+  width = "100%", height = "100%"
+}, Legacy.UI.Denizens)
+
+
+
+MobLabel:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+]])
+
+Mobs = Geyser.MiniConsole:new({
+  name='Mobs',
+  color='black',
+  x='7', y='7',
+  width = '100%-10', height = '100%-10',
+  fontSize = 10,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = false
+}, MobLabel)
+
+MobTitle = Geyser.Label:new({
+  name = "MobTitle",
+  x = "0%", y = "0%",
+  width = "100%", height = 25,
+  fgColor = "Gold",
+  message = [[&lt;center&gt;DENIZENS&lt;/center&gt;]]
+}, MobLabel)
+
+MobTitle:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+]])
+
+
+
+--Items
+Legacy.UI.Item = Adjustable.Container:new({
+  name = "Items",
+  x=0, y="31.5%",                     -- this container occupies the top, so it starts top-left as well
+  width = 300, height= 300, -- but only uses up half of the height
+})              -- this is the important bit - it says that left_container_top should be inside left_container
+
+ItemLabel = Geyser.Label:new({
+  name = "ItemLabel",
+  x = "0%", y = "0%",
+  width = "100%", height = "100%"
+}, Legacy.UI.Item)
+
+
+
+ItemLabel:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+  qproperty-wordWrap: false;
+]])
+
+Items = Geyser.MiniConsole:new({
+  name='Items',
+  color='black',
+  x='7', y='7',
+  width = '100%-10', height = '100%-10',
+  fontSize = 10,
+  scrollbar = true,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = false
+}, ItemLabel)
+
+ItemTitle = Geyser.Label:new({
+  name = "ItemTitle",
+  x = "0%", y = "0%",
+  width = "100%", height = 25,
+  fgColor = "Gold",
+  message = [[&lt;center&gt;ITEMS&lt;/center&gt;]]
+}, ItemLabel)
+
+ItemTitle:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+]])
+
+--Chatbox
+Legacy.UI.Chatbox = {
+  tabs = {"All", "Direct", "Tells", "Says", "Party", "City", "Clans", "Market", "House", "Newbie"},
+  height = "30%",
+  width  = "30%",
+  current = "All",
+  color1  = Legacy.UI.borderColor,
+  color2  = "black",
+}
+
+Legacy.UI.Chatbox.current = Legacy.UI.Chatbox.current or Chatbox.tabs[1]
+
+Legacy.UI.Chatbox.container = Adjustable.Container:new({
+  name = "Chatbox",
+  x = "69%", y = "-30%",
+  width = Legacy.UI.Chatbox.width,
+  height = Legacy.UI.Chatbox.height,
+})
+
+Legacy.UI.Chatbox.header = Geyser.HBox:new({
+  name = "Chatbox.header",
+  x = 0, y = 0,
+  width = "100%",
+  height = "10%",
+},Legacy.UI.Chatbox.container)
+
+Legacy.UI.Chatbox.footer = Geyser.Label:new({
+  name = "Chatbox.footer",
+  x = 0, y = "10%",
+  width = "100%",
+  height = "90%",
+},Legacy.UI.Chatbox.container)
+
+
+Legacy.UI.Chatbox.center = Geyser.Label:new({
+  name = "Chatbox.center",
+  x = 0, y = 0,
+  width = "100%",
+  height = "100%",
+},Legacy.UI.Chatbox.footer)
+
+Legacy.UI.Chatbox.center:setStyleSheet([[
+  background-color: ]]..Legacy.UI.Chatbox.color2..[[;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+]])
+
+
+
+for k,v in pairs(Legacy.UI.Chatbox.tabs) do
+--echo(v.."\n")
+Legacy.UI.Chatbox[v.."tab"] = Geyser.Label:new({
+    name = "Chatbox."..v.."tab",
+  },Legacy.UI.Chatbox.header)
+  
+  Legacy.UI.Chatbox[v.."tab"]:setStyleSheet([[
+    background-color: ]]..Legacy.UI.Chatbox.color1..[[;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    margin-right: 1px;
+    margin-left: 1px;
+  ]])
+  Legacy.UI.Chatbox[v] = Geyser.MiniConsole:new({
+    name = "Chatbox."..v,
+    x = 7, y = 0,
+    width = "99%",
+    height = "99%",
+    autoWrap = true,
+    color = "black",
+    scrollBar = true,
+    fontSize = 10,
+  },Legacy.UI.Chatbox.footer)
+
+Legacy.UI.Chatbox[v.."tab"]:echo("&lt;center&gt;"..v)
+Legacy.UI.Chatbox[v.."tab"]:setClickCallback("Legacy.Settings.UI.tabs", v)
+Legacy.UI.Chatbox[v]:hide()
+Legacy.UI.Chatbox.All:show()
+end
+
+  function Legacy.Settings.UI.tabs(tab)
+   Legacy.UI.Chatbox[Legacy.UI.Chatbox.current]:hide()
+    Legacy.UI.Chatbox[Legacy.UI.Chatbox.current.."tab"]:setStyleSheet([[
+    background-color: ]]..Legacy.UI.Chatbox.color1..[[;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    margin-right: 1px;
+    margin-left: 1px;
+    ]])
+    Legacy.UI.Chatbox.current = tab
+    Legacy.UI.Chatbox[tab.."tab"]:setStyleSheet([[
+    background-color: black;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    margin-right: 1px;
+    margin-left: 1px;
+  ]])
+    Legacy.UI.Chatbox[Legacy.UI.Chatbox.current]:show()
+  end
+  
+  
+  --Player Info Card
+  Legacy.UI.PlayerInfo = Adjustable.Container:new({
+  name = "PlayerInfo",
+  x = "30%", y = "30%",
+  width = 550, height = 200,
+})
+
+PlayerLabel = Geyser.Label:new({
+    name = "PlayerLabel",
+    x = 0, y = 0,
+    width = "100%", height = "100%",
+}, Legacy.UI.PlayerInfo)
+
+PlayerLabel:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+]])
+
+PlayerTitleLabel = Geyser.Label:new({
+  name = "PlayerTitle",
+  x = 3, y = 3,
+  width = math.floor((#gmcp.Char.Status.fullname)*6), height = 25,
+}, PlayerLabel)
+
+PlayerMsgsLabel = Geyser.Label:new({
+  name = "PlayerMsgs",
+  x = math.floor((#gmcp.Char.Status.fullname*6) + 2), y = 3,
+  width = "100%-"..math.floor((#gmcp.Char.Status.fullname*6) + 5), height = 25,
+}, PlayerLabel)
+
+PlayerTitleLabel:setStyleSheet([[
+  background-color: rgb(32,32,32);
+  border-width: 1px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 1px;
+]])
+
+PlayerMsgsLabel:setStyleSheet([[
+  background-color: rgb(32,32,32);
+  border-width: 1px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 1px;
+]])
+
+
+PlayerStatusConsole = Geyser.MiniConsole:new({
+  name = "PlayerConsole",
+  color='black',
+  x=5, y= 28,
+  width = '100%-9', height = '100%-32',
+  fontSize = 10,
+  scrollbar = true,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = false
+    
+}, PlayerLabel)
+
+function TitleCard()
+PlayerTitleLabel = Geyser.Label:new({
+  name = "PlayerTitle",
+  x = 3, y = 3,
+  width = math.floor((#gmcp.Char.Status.fullname)*6), height = 25,
+}, PlayerLabel)
+
+PlayerMsgsLabel = Geyser.Label:new({
+  name = "PlayerMsgs",
+  x = math.floor((#gmcp.Char.Status.fullname*6) + 2), y = 3,
+  width = "100%-"..math.floor((#gmcp.Char.Status.fullname*6) + 5), height = 25,
+}, PlayerLabel)
+PlayerStatusConsole:clear()
+PlayerTitleLabel:cecho("&lt;gold&gt;"..gmcp.Char.Status.fullname)
+PlayerMsgsLabel:cecho("&lt;gold&gt;Msgs: &lt;white&gt;"..gmcp.Char.Status.unread_msgs.."     &lt;gold&gt;News: &lt;white&gt;"..gmcp.Char.Status.unread_news.."  &lt;gold&gt;Gold: &lt;white&gt;"..gmcp.Char.Status.gold.."  &lt;gold&gt;Banked:&lt;white&gt; "..gmcp.Char.Status.bank)
+PlayerStatusConsole:cecho("\n&lt;gold&gt;Level: &lt;white&gt;"..gmcp.Char.Status.level)
+PlayerStatusConsole:cecho("     &lt;gold&gt;Class: &lt;white&gt;"..gmcp.Char.Status.class)
+PlayerStatusConsole:cecho("\n\n&lt;gold&gt;Race: &lt;white&gt;"..gmcp.Char.Status.gender:title().." "..gmcp.Char.Status.race.." "..gmcp.Char.Status.specialisation)
+PlayerStatusConsole:cecho("\n\n&lt;gold&gt;Endurance: &lt;magenta&gt;"..math.floor((tonumber(gmcp.Char.Vitals.ep)/tonumber(gmcp.Char.Vitals.maxep))* 100).."%".."  &lt;gold&gt;Willpower: &lt;yellow&gt;"..math.floor((tonumber(gmcp.Char.Vitals.wp)/tonumber(gmcp.Char.Vitals.maxwp))* 100).."%")
+end
+registerAnonymousEventHandler("gmcp.Char.Vitals", "TitleCard")
+  
+
+
+--Bars
+function Build_Bars()
+  if not gmcp.Char or not gmcp.Room then
+    tempTimer(3, [[Build_Bars()]])
+    return
+  end
+  HPContainer = HPContainer or Adjustable.Container:new({
+    name = "HPContainer",
+    x = "30%", y = "30%",
+    width = 400, height = 100
+  })
+
+
+  HPBarBack = Geyser.Label:new({
+    name = "HPBack",
+    x= 0, y=0,
+    width = "100%", height = "100%",
+  }, HPContainer)
+
+  HPBarBack:setStyleSheet([[
+    background-color: black;
+    border-width: 3px;
+    border-style: solid;
+    border-color: ]]..Legacy.UI.borderColor..[[;
+    border-radius: 10px;
+  ]])
+
+HPBar = Geyser.Gauge:new({
+  name="HPBar",
+  x=3, y=3,
+  width="100%-7", height="100%-7",
+}, HPBarBack)
+
+
+HPBar.front:setStyleSheet([[background-color: green;
+    border-top: 1px black solid;
+    border-left: 1px black solid;
+    border-bottom: 1px black solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+HPBar.back:setStyleSheet([[background-color: DimGrey;
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+
+
+HPBar:setValue(tonumber(gmcp.Char.Vitals.maxhp) ,tonumber(gmcp.Char.Vitals.maxhp))
+
+MPContainer = Adjustable.Container:new({
+  name = "MPContainer",
+  x = "30%", y = "30%",
+  width = 400, height = 100
+})
+
+
+MPBarBack = Geyser.Label:new({
+  name = "MPBack",
+  x= 0, y=0,
+  width = "100%", height = "100%",
+}, MPContainer)
+
+MPBarBack:setStyleSheet([[
+  background-color: black;
+  border-width: 3px;
+  border-style: solid;
+  border-color: ]]..Legacy.UI.borderColor..[[;
+  border-radius: 10px;
+]])
+
+MPBar = Geyser.Gauge:new({
+  name="MPBar",
+  x=3, y=3,
+  width="100%-7", height="100%-7",
+}, MPBarBack)
+
+
+MPBar.front:setStyleSheet([[background-color: DeepSkyBlue;
+    border-top: 1px black solid;
+    border-left: 1px black solid;
+    border-bottom: 1px black solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+
+MPBar.back:setStyleSheet([[background-color: pink;
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 7;
+    padding: 3px;
+]])
+
+
+MPBar:setValue(tonumber(gmcp.Char.Vitals.maxmp) ,tonumber(gmcp.Char.Vitals.maxmp))
+end
+registerAnonymousEventHandler("LegacyLoaded", "Build_Bars")
+Build_Bars() 
+
+  
+  function Legacy.UI.WhoHere()
+    Who:clear()
+    if gmcp.Room.Info.area == "" and gmcp.Room.Info.num == -2 and gmcp.Room.Info.environment == "Vessel" then
+      Who:cecho("&lt;gold&gt;Area&lt;white&gt;: &lt;ansi_white&gt;A Ship!\n")
+      Who:cecho("&lt;gold&gt;Room&lt;white&gt;: &lt;ansi_white&gt;"..gmcp.Room.Info.name.."\n") 
+    else
+      Who:cecho("&lt;gold&gt;Area&lt;white&gt;: &lt;ansi_white&gt;"..gmcp.Room.Info.area.."\n")
+      Who:cecho("&lt;gold&gt;Room&lt;white&gt;: &lt;ansi_white&gt;"..gmcp.Room.Info.name.." &lt;DimGrey&gt;(&lt;gold&gt;"..gmcp.Room.Info.num.."&lt;DimGrey&gt;)\n") 
+    end
+    
+    Who:cecho("\n&lt;OrangeRed&gt;Who Here: &lt;OrangeRed&gt;(&lt;white&gt;"..math.floor(table.size(Legacy.Room.players) - 1).."&lt;OrangeRed&gt;)\n")
+    
+     Legacy.UI.isDead = {}
+    for k,v in pairs(Legacy.Room.players) do
+      if table.contains(gmcp.Room.Players, "the soul of "..k) then
+       table.insert(Legacy.UI.isDead, k)
+      end
+    end
+
+  for k, v in pairs(Legacy.Room.players) do
+    local info = Legacy.Settings.UI.whoInfo
+    if Legacy.NDB.db[tostring(k)] == nil then
+      Legacy.NDB.lookup(tostring(k))
+    elseif Legacy.NDB.db[tostring(k)].city:lower() == nil then
+    elseif Legacy.NDB.db[tostring(k)].city:lower() == Legacy.NDB.db[gmcp.Char.Status.name].city:lower() and tostring(k) == gmcp.Char.Status.name then
+    elseif Legacy.NDB.db[tostring(k)].city then
+      if table.contains(Legacy.UI.isDead, tostring(k)) then
+        Who:cechoLink("&lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[tostring(k)].city:lower()].color.."&gt;"..tostring(k).." &lt;DimGrey&gt;(&lt;red&gt;&lt;b&gt;DEAD&lt;/b&gt;&lt;DimGrey&gt;)", function() expandAlias("ndb "..tostring(k)) end, "Click to show NDB Info.", true) if info ~= "none" then Who:cecho(" &lt;DimGrey&gt;(") Who:cechoPopup(Legacy.NDB.db[tostring(k)][info], {function() Legacy.Settings.UI.whoInfo = "class" raiseEvent("UI Update") end, function() Legacy.Settings.UI.whoInfo = "level" raiseEvent("UI Update") end, function() Legacy.Settings.UI.whoInfo = "ArmyRank" raiseEvent("UI Update") end}, {"Click to show class.", "Click to show level.", "Click to show Army Rank"}, true) Who:cecho("&lt;DimGrey&gt;)") end Who:echo("\n")
+      else
+        Who:cechoLink("&lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[tostring(k)].city:lower()].color.."&gt;"..tostring(k), function() expandAlias("ndb "..tostring(k)) end, "Click to show NDB Info.", true) if info ~= "none" then Who:cecho(" &lt;DimGrey&gt;(") Who:cechoPopup(Legacy.NDB.db[tostring(k)][info], {function() Legacy.Settings.UI.whoInfo = "class" raiseEvent("UI Update") end, function() Legacy.Settings.UI.whoInfo = "level" raiseEvent("UI Update") end, function() Legacy.Settings.UI.whoInfo = "ArmyRank" raiseEvent("UI Update") end}, {"Click to show class.", "Click to show level.", "Click to show Army Rank"}, true) Who:cecho("&lt;DimGrey&gt;)") end Who:echo("\n")
+      end 
+    elseif not city then
+      Who:cecho("&lt;orange&gt;"..tostring(k).."\n")
+    else
+      Who:cecho("&lt;orange&gt;"..tostring(k).."\n")
+    end
+   end
+  Who:echo("\n")
+  end
+registerAnonymousEventHandler("gmcp.Room.Players", "Legacy.UI.WhoHere")
+  
+  
+ --[[ 
+  function Legacy.UI.Mobs()
+    Mobs:clear()
+    Mobs:echo("\n\n")
+      for k,v in pairs(Legacy.Room.mobs) do
+        local thing = v
+        local id = k
+        if Legacy.Basher then
+          if Legacy.Settings.Basher.status == true then
+            if Legacy.Settings.Basher.currentTar == k then
+              Mobs:cecho("&lt;ansi_white&gt;[&lt;SeaGreen&gt;T&lt;ansi_white&gt;] ")
+            end
+            if table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower()) then
+              Mobs:cechoPopup("&lt;ansi_red&gt;"..v, {function() 
+                if not table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower()) then
+                  table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower())
+                  Legacy.echo("Added '&lt;gold&gt;"..v.."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
+                  send("ql")
+                  PrioUpdate()
+                end
+              end, function() send("attack "..id) end,}, {"Add "..thing.." to hunting targets in "..gmcp.Room.Info.area, "Attack "..thing}, true) Mobs:echo("\n")
+            elseif table.contains(Legacy.Settings.Basher.Ignore, v:lower()) then
+              Mobs:cechoPopup("&lt;ansi_green&gt;"..v, {function() 
+                if not table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower()) then
+                  table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower())
+                  Legacy.echo("Added '&lt;gold&gt;"..v.."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
+                  send("ql")
+                  PrioUpdate()
+                end
+            end, function() send("attack "..id) end,}, {"Add "..thing.." to hunting targets in "..gmcp.Room.Info.area, "Attack "..thing}, true) Mobs:echo("\n")
+            else
+              Mobs:cechoPopup("&lt;ansi_light_yellow&gt;"..v, {function() 
+                if not table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower()) then
+                  table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], v:lower())
+                  Legacy.echo("Added '&lt;gold&gt;"..v.."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
+                  send("ql")
+                  PrioUpdate()
+                end
+            end, function() send("attack "..id) end,}, {"Add "..thing.." to hunting targets in "..gmcp.Room.Info.area, "Attack "..thing}, true) Mobs:echo("\n")
+          end
+          else
+            Mobs:cechoPopup("&lt;ansi_white&gt;"..v, {function() send("greet "..id) end, function() send("attack "..id) end, function() send("get "..id) end}, {"Greet "..thing, "Attack "..thing, "Get "..thing}, true) Mobs:echo("\n")
+          end
+        else
+            Mobs:cechoPopup("&lt;ansi_white&gt;"..v, {function() send("greet "..id) end, function() send("attack "..id) end, function() send("get "..id) end}, {"Greet "..thing, "Attack "..thing, "Get "..thing}, true) Mobs:echo("\n")
+        end
+      end
+  end
+]]
+
+ function Legacy.UI.Mobs()
+    Mobs:clear()
+    Mobs:echo("\n\n")
+
+     MobCountTable = {} 
+      for k,v in pairs(Legacy.Room.mobs) do
+        if MobCountTable[v] == nil then
+          MobCountTable[v] = {}
+          MobCountTable[v].count = 1
+        else
+          MobCountTable[v].count = MobCountTable[v].count + 1
+        end
+        
+        
+      end
+      table.sort(MobCountTable)
+      for k,v in pairs(MobCountTable) do
+          if MobCountTable[k].count &gt; 1 then
+            Mobs:cecho((Legacy.UI.ThingsIWantColored[k] or "&lt;white&gt;")..k.." &lt;white&gt;x"..MobCountTable[k].count.."\n")
+          else
+            Mobs:cecho((Legacy.UI.ThingsIWantColored[k] or "&lt;white&gt;")..k.."\n")
+          end
+        end
+     end
+registerAnonymousEventHandler("gmcp.Char.Items", "Legacy.UI.Mobs")
+  
+  function Legacy.UI.Items()
+    Items:clear()
+    Items:echo("\n\n")
+    for k,v in pairs(Legacy.Room.items) do
+      if v == "a large wall of ice" then
+        Items:cecho("&lt;DeepSkyBlue&gt;"..v.."\n")
+      elseif v == "a scorching wall of fire" then
+        Items:cecho("&lt;firebrick&gt;"..v.."\n")
+      elseif v == "a large wall of stone" then
+        Items:cecho("&lt;DimGrey&gt;"..v.."\n")
+      elseif v == "a ballista" then
+        Items:cecho("&lt;DarkViolet&gt;"..v.."\n")
+      elseif v == "an onager" then
+        Items:cecho("&lt;steel_blue&gt;"..v.."\n")
+      elseif v:match("the corpse of ") then
+        local person = v:gsub("the corpse of ", "")
+        Items:cecho("&lt;DimGrey&gt;the corpse of &lt;"..(Legacy.Settings.NDB.Config[Legacy.NDB.db[person].city:lower()].color or "white").."&gt;"..person.."\n")
+      elseif v == "a tall stone beacon" then
+        Items:cecho("&lt;ansiLightMagenta&gt;"..v.."\n")
+      elseif v == "an Arcanian arm thrower" then
+        Items:cecho("&lt;DarkOrange&gt;"..v.."\n")
+      elseif v:match("a shrine of ") then
+        Items:cechoPopup("&lt;green&gt;"..v, {function() send("queue add freestand get "..k) end, function() send("queue add freestand generosity") send("queue add freestand offer corpses") send("queue add freestand selfishness") end}, {"Probe "..v, "Offer corpses to "..v:gsub("a shrine of ", "")}, true) Items:echo("\n")
+      elseif v:match("a metal tank") then
+        Items:cechoPopup("&lt;red&gt;"..v, {function() send("queue add freestand curing off") send("queue add freestand dissarm "..k) end, function() send("queue add freestand curing off") send("queue add freestand capture "..k) end}, {"Dissarm tank", "Capture Tank"}, true) Items:echo("\n")
+      elseif v:match("a sewer grate") then
+        Items:cechoPopup("&lt;yellow&gt;"..v, {function() send("queue add freestand enter "..k) end, }, {"Enter "..v}, true) Items:echo("\n")
+      elseif v:match("a group of") then
+        Items:cechoPopup("&lt;white&gt;"..v, {function() send("queue add freestand get group "..k) end, function() send("queue add freestand probe "..k) end}, {"Get "..v, "Probe "..v}, true) Items:echo("\n")
+      elseif v:match("sigil") then
+        Items:cechoPopup("&lt;cyan&gt;"..v, {function() send("queue add freestand get "..k) end, function() send("queue add freestand probe "..k) end, function() send("attatch flame to "..k) end}, {"Get "..v,"Probe "..v, "Attatch a flame to "..v}, true) Items:echo("\n")
+      elseif v:match("chest") then
+        Items:cechoPopup("&lt;magenta&gt;"..v, {function() send("queue add freestand probe "..k) end, function() send("queue add freestand open "..k) end, function() send("queue add freestand close "..k) end}, {"Probe "..v, "Open "..v, "Close "..v}, true) Items:echo("\n")
+      elseif v:match("a runic totem") then
+        Items:cechoPopup("&lt;forest_green&gt;"..v, {function() send("queue add freestand probe "..k) end, function() send("queue add freestand smudge "..k) end}, {"Probe "..v, "Smudge "..v}, true) Items:echo("\n")
+      else
+        Items:cechoPopup("&lt;white&gt;"..v, {function() send("queue add freestand get "..k) end, function() send("queue add freestand probe "..k) end}, {"Get "..v, "Probe "..v}, true) Items:echo("\n")
+      end
+    end
+  end
+registerAnonymousEventHandler("gmcp.Char.Vitals", "Legacy.UI.Items")
+
+
+function Legacy.UI.Bars()
+
+  if HPBar == nil then return end
+  if MPBar == nil then return end
+    
+    if tonumber(gmcp.Char.Vitals.hp) &gt; tonumber(gmcp.Char.Vitals.maxhp) then
+      HPBar:setValue(tonumber(gmcp.Char.Vitals.maxhp) ,tonumber(gmcp.Char.Vitals.maxhp))
+      HPBar:setColor("orange")
+      HPBar:setBold(true)
+      HPBar:setFontSize("13")
+      HPBar:setFgColor("black")
+      HPBar:setText("&lt;center&gt;Health "..gmcp.Char.Vitals.hp.."/"..gmcp.Char.Vitals.maxhp)
+    elseif math.floor((tonumber(gmcp.Char.Vitals.hp)/tonumber(gmcp.Char.Vitals.maxhp)* 100)) &lt; 50 then
+      HPBar:setColor("red")
+      HPBar:setValue(tonumber(gmcp.Char.Vitals.hp) ,tonumber(gmcp.Char.Vitals.maxhp))
+      HPBar:setBold(true)
+      HPBar:setFontSize("13")
+      HPBar:setFgColor("black")
+      HPBar:setText("&lt;center&gt;Health "..gmcp.Char.Vitals.hp.."/"..gmcp.Char.Vitals.maxhp.." "..math.floor((tonumber(gmcp.Char.Vitals.hp)/tonumber(gmcp.Char.Vitals.maxhp)* 100)).."%")
+    else
+      HPBar:setValue(tonumber(gmcp.Char.Vitals.hp) ,tonumber(gmcp.Char.Vitals.maxhp))
+      HPBar:setColor("forest_green")
+      HPBar:setBold(true)
+      HPBar:setFontSize("13")
+      HPBar:setFgColor("black")
+      HPBar:setText("&lt;center&gt;Health "..gmcp.Char.Vitals.hp.."/"..gmcp.Char.Vitals.maxhp.." "..math.floor((tonumber(gmcp.Char.Vitals.hp)/tonumber(gmcp.Char.Vitals.maxhp)* 100)).."%")
+    end
+    
+    if tonumber(gmcp.Char.Vitals.mp) &gt; tonumber(gmcp.Char.Vitals.maxmp) then
+      MPBar:setValue(tonumber(gmcp.Char.Vitals.maxmp) ,tonumber(gmcp.Char.Vitals.maxmp))
+      MPBar:setBold(true)
+      MPBar:setFontSize("13")
+      MPBar:setFgColor("black")
+      MPBar:setText("&lt;center&gt;Mana "..gmcp.Char.Vitals.mp.."/"..gmcp.Char.Vitals.maxmp)
+    else
+      MPBar:setValue(tonumber(gmcp.Char.Vitals.mp) ,tonumber(gmcp.Char.Vitals.maxmp))
+      MPBar:setBold(true)
+      MPBar:setFontSize("13")
+      MPBar:setFgColor("black")
+      MPBar:setText("&lt;center&gt;Mana "..gmcp.Char.Vitals.mp.."/"..gmcp.Char.Vitals.maxmp.." "..math.floor((tonumber(gmcp.Char.Vitals.mp)/tonumber(gmcp.Char.Vitals.maxmp)* 100)).."%")
+    end
+  end
+   registerAnonymousEventHandler("gmcp.Char.Vitals", "Legacy.UI.Bars")
+   
+   
+   
+   
+   
+   singlePrompt = Adjustable.Container:new({
+    name = "singlePrompt",
+    x=0, y="-35%",                 -- this container starts halfway down the first one
+    width = 100, height= 200, -- and has the same half height of the original container
+  })
+
+  PromptLabel = Geyser.Label:new({
+    name = "PromptLabel",
+    x = "0%", y = "0%",
+    width = "100%", height = "100%",
+  }, singlePrompt)
+
+  PromptLabel:setStyleSheet([[
+    background-color: black;
+    border-width: 1px;
+    border-style: solid;
+    border-color: ]]..Legacy.UI.borderColor..[[;
+    border-radius: 10px;
+  ]])
+
+Prompt = Geyser.MiniConsole:new({
+  name='Prompt',
+  color= 'black',
+  x='4', y='5',
+  width = '100%-10', height = '100%-10',
+  fontSize = 12,
+  font = "Bitstream Vera Sans Mono",
+  autoWrap = true
+}, PromptLabel)
+
+
+
+
+
+
+
+
+function Single_Prompt()
+Prompt:clear()
+if Legacy then
+if gmcp.IRE == nil then
+  gmcp.IRE = {}
+  gmcp.IRE.Target = {}
+  gmcp.IRE.Target.Info = {}
+  gmcp.IRE.Target.Info.hpperc = "-1"
+end
+if gmcp.Char then
+deleteLine()
+if target == nil then
+  target = gmcp.Char.Status.name
+end
+
+if gmcp.IRE then
+  if gmcp.IRE.Target then
+    if gmcp.IRE.Target.Info.hpperc == nil then
+      tarHealth = "100%"
+    else
+      tarHealth = gmcp.IRE.Target.Info.hpperc:gsub("%%", "")
+    end
+  end
+end
+local vitals = Legacy[gmcp.Char.Status.name].Vitals
+local stats = Legacy[gmcp.Char.Status.name]
+
+Legacy.Settings.Prompt = Legacy.Settings.Prompt or {
+
+["showHealth"]        = true,
+["showMana"]          = true,
+["showWillpower"]     = false,
+["showTarget"]        = true,
+["showEndurance"]     = false,
+["gameDate"]          = false,
+["xp"]                = false,
+["rage"]              = false,
+["exits"]             = true,
+["defs"]              = false,
+["seasons"]           = false,
+["timestamps"]        = true,
+["vitalsChange"]      = true,
+["display"]           = "rawper",
+["limbtracker"]       = false,
+["showClassStats"]    = false,
+}
+
+if Legacy.Settings.usePrompt and not DelLPrompt then
+  --deleteFull()
+  --Set HP Colors by %
+  if vitals.hpPer &lt; 30 then
+    healthColor = "red"
+  elseif vitals.hpPer &lt; 75 then
+    healthColor = "yellow"
+  elseif vitals.hpPer &gt; 100 then
+    healthColor = "orange"
+  else
+    healthColor = "forest_green"
+  end
+  
+  --Set Mana Colors by %
+  if vitals.mpPer &lt; 30 then
+    manaColor = "red"
+  elseif vitals.mpPer &lt; 75 then
+    manaColor = "yellow"
+  elseif vitals.mpPer &gt; 100 then
+    manaColor = "orange"
+  else
+    manaColor = "forest_green"
+  end
+  
+  --Set Endurance Colors by %
+  if vitals.epPer &lt; 30 then
+    endColor = "red"
+  elseif vitals.epPer &lt; 75 then
+    endColor = "yellow"
+  elseif vitals.epPer &gt; 100 then
+    endColor = "orange"
+  else
+    endColor = "forest_green"
+  end
+  
+  --Set Willpower Colors by %
+  if vitals.wpPer &lt; 30 then
+    willColor = "red"
+  elseif vitals.wpPer &lt; 75 then
+    willColor = "yellow"
+  elseif vitals.wpPer &gt; 100 then
+    willColor = "orange"
+  else
+    willColor = "forest_green"
+  end
+  
+  --Set Target HP% by color
+  if gmcp.IRE.Target then
+    if gmcp.IRE.Target.Info.hpperc ~= "-1" then
+      if tonumber(tarHealth) &lt; 30 then
+        tarColor = "red"
+      elseif tonumber(tarHealth) &lt; 75 then
+        tarColor = "yellow"
+      elseif tonumber(tarHealth) &gt; 100 then
+        tarColor = "orange"
+      else
+        tarColor = "forest_green"
+      end
+    end
+  end
+  
+  
+  
+  --Move the table Show X order around to change where it will appear in your prompt
+  --handling Alertness from mapper (Auto disabled from the actual mapper folder)
+mmp.firstAlert = false
+-- handle alertness
+if mmp.alertness and next(mmp.alertness) then
+  
+  local dirs = {}
+  for direction, _ in pairs(mmp.alertness) do dirs[#dirs+1] = direction end
+  local people = select(2, next(mmp.alertness)) or {}
+  --coloring people
+  for _,v in pairs(people) do
+    if Legacy.NDB.db[v:title()] then
+      table.remove(people, table.index_of(people, v))
+      table.insert(people, "&lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[v].city:lower()].color.."&gt;"..v)
+    end
+  end
+  
+   Prompt:cecho("\n&lt;red&gt;[&lt;cyan&gt;" .. dirs[table.size(dirs)].. " &lt;red&gt;-".." &lt;white&gt;" .. table.concat(people, ', ').. "&lt;cyan&gt; ("..#people..")&lt;red&gt;]")
+   mmp.alertness = nil
+
+  raiseEvent("mmapper updated pdb")
+end
+  --Prompt:echo("\n")
+  
+  if Legacy.Settings.Prompt.gameDate == true then
+    Prompt:cecho("&lt;ansi_yellow&gt;(&lt;ansi_white&gt;"..Legacy.Settings.IGDate.monthabrev[Legacy.Settings.IGDate.month].."&lt;ansi_yellow&gt; &lt;ansi_white&gt;"..Legacy.Settings.IGDate.day.."&lt;ansi_yellow&gt;, &lt;ansi_white&gt;"..Legacy.Settings.IGDate.year.."&lt;ansi_yellow&gt;)")
+  end
+  
+  if Legacy.Settings.Prompt.seasons == true then
+    if Legacy.Settings.IGDate.season == "fall" then
+      Prompt:echo("ðŸ?? ")
+    elseif Legacy.Settings.IGDate.season == "winter" then
+      Prompt:echo("â›„ ")
+    elseif Legacy.Settings.IGDate.season == "spring" then
+      Prompt:echo("ðŸ?€ ")
+    elseif Legacy.Settings.IGDate.season == "summer" then
+      Prompt:echo("ðŸŒ» ")
+    else
+      Prompt:echo("ðŸŒ» ")
+    end
+  end
+  
+  --Show Health
+  if Legacy.Settings.Prompt.showHealth == true then
+    if Legacy.Curing.Affs.blackout then
+      Prompt:cecho("&lt;green&gt;H:&lt;gold&gt;BLACKOUT&lt;white&gt;|&lt;gold&gt;BLACKOUT ")
+    else
+      if Legacy.Settings.Prompt.display == "rawper" then
+        Prompt:cecho("&lt;green&gt;H:&lt;"..healthColor.."&gt;"..vitals.Health.."&lt;white&gt;|&lt;"..healthColor.."&gt;"..vitals.hpPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "per" then
+        Prompt:cecho("&lt;green&gt;H:&lt;"..healthColor.."&gt;"..vitals.hpPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "raw" then
+        Prompt:cecho("&lt;green&gt;H:&lt;"..healthColor.."&gt;"..vitals.Health.." ")
+      elseif Legacy.Settings.Prompt.display == "rawmax" then
+        Prompt:cecho("&lt;green&gt;H:&lt;"..healthColor.."&gt;"..vitals.Health.."&lt;white&gt;|&lt;"..healthColor.."&gt;"..vitals.MaxHP.." ")
+      end
+    end
+  end
+  
+  --Show Mana
+  if Legacy.Settings.Prompt.showMana == true then
+    if Legacy.Curing.Affs.blackout then
+      Prompt:cecho("&lt;cyan&gt;M:&lt;gold&gt;BLACKOUT&lt;white&gt;|&lt;gold&gt;BLACKOUT ")
+    else
+      if Legacy.Settings.Prompt.display == "rawper" then
+        Prompt:cecho("&lt;cyan&gt;M:&lt;"..manaColor.."&gt;"..vitals.Mana.."&lt;white&gt;|&lt;"..manaColor.."&gt;"..vitals.mpPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "per" then
+        Prompt:cecho("&lt;cyan&gt;M:&lt;"..manaColor.."&gt;"..vitals.mpPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "raw" then
+        Prompt:cecho("&lt;cyan&gt;M:&lt;"..manaColor.."&gt;"..vitals.Mana.." ")
+      elseif Legacy.Settings.Prompt.display == "rawmax" then
+        Prompt:cecho("&lt;cyan&gt;M:&lt;"..manaColor.."&gt;"..vitals.Mana.."&lt;white&gt;|&lt;"..manaColor.."&gt;"..vitals.MaxMP.." ")
+      end
+    end
+  end
+  
+  --Show Endurance
+  if Legacy.Settings.Prompt.showEndurance == true then
+    if Legacy.Curing.Affs.blackout then
+      Prompt:cecho("&lt;purple&gt;E:&lt;gold&gt;BLACKOUT&lt;white&gt;|&lt;gold&gt;BLACKOUT ")
+    else
+      if Legacy.Settings.Prompt.display == "rawper" then
+        Prompt:cecho("&lt;purple&gt;E:&lt;"..endColor.."&gt;"..vitals.Endurance.."&lt;white&gt;|&lt;"..endColor.."&gt;"..vitals.epPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "per" then
+        Prompt:cecho("&lt;purple&gt;E:&lt;"..endColor.."&gt;"..vitals.epPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "raw" then
+        Prompt:cecho("&lt;purple&gt;E:&lt;"..endColor.."&gt;"..vitals.Endurance.." ")
+      elseif Legacy.Settings.Prompt.display == "rawmax" then
+        Prompt:cecho("&lt;purple&gt;E:&lt;"..endColor.."&gt;"..vitals.Endurance.."&lt;white&gt;|&lt;"..endColor.."&gt;"..vitals.MaxEP.." ")
+      end
+    end
+  end
+  
+  --Show Willpower
+  if Legacy.Settings.Prompt.showWillpower == true then
+    if Legacy.Curing.Affs.blackout then
+      Prompt:cecho("&lt;yellow&gt;W:&lt;gold&gt;BLACKOUT&lt;white&gt;|&lt;gold&gt;BLACKOUT ")
+    else
+      if Legacy.Settings.Prompt.display == "rawper" then
+        Prompt:cecho("&lt;yellow&gt;W:&lt;"..willColor.."&gt;"..vitals.Willpower.."&lt;white&gt;|&lt;"..willColor.."&gt;"..vitals.wpPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "per" then
+        Prompt:cecho("&lt;yellow&gt;W:&lt;"..willColor.."&gt;"..vitals.wpPer.."% ")
+      elseif Legacy.Settings.Prompt.display == "raw" then
+        Prompt:cecho("&lt;yellow&gt;W:&lt;"..willColor.."&gt;"..vitals.Willpower.." ")
+      elseif Legacy.Settings.Prompt.display == "rawmax" then
+        Prompt:cecho("&lt;yellow&gt;W:&lt;"..willColor.."&gt;"..vitals.Willpower.."&lt;white&gt;|&lt;"..willColor.."&gt;"..vitals.MaxWP.." ")
+      end    
+    end
+  end
+  
+  if Legacy.Settings.Prompt.exits == true and gmcp.Room then
+    local dirtab = table.deepcopy(Legacy.Room.directionTable)
+    
+    Prompt:cecho("&lt;ansi_yellow&gt;[&lt;cyan&gt;")
+    local exits = {}
+    local exitcount = 0
+    for k,v in pairs(gmcp.Room.Info.exits) do
+      exitcount = exitcount + 1
+      if exitcount &lt; table.size(gmcp.Room.Info.exits) then
+        if table.contains(Legacy.Room.Walls.Ice, tostring(k)) then
+          Prompt:cechoLink("&lt;cyan&gt;"..k:upper().."&lt;DimGrey&gt;|", function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        elseif table.contains(Legacy.Room.Walls.Fire, tostring(k)) then
+          Prompt:cechoLink("&lt;red&gt;"..k:upper().."&lt;DimGrey&gt;|", function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        elseif table.contains(Legacy.Room.Walls.Stone, tostring(k)) then
+          Prompt:cechoLink("&lt;grey&gt;"..k:upper().."&lt;DimGrey&gt;|", function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        elseif table.contains(Legacy.Room.Walls.Thorn, tostring(k)) then
+          Prompt:cechoLink("&lt;forest_green&gt;"..k:upper().."&lt;DimGrey&gt;|", function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        else
+          Prompt:cechoLink("&lt;white&gt;"..k:upper().."&lt;DimGrey&gt;|", function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        end
+      else
+        if table.contains(Legacy.Room.Walls.Ice, tostring(k)) then
+          Prompt:cechoLink("&lt;cyan&gt;"..k:upper(), function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        elseif table.contains(Legacy.Room.Walls.Fire, tostring(k)) then
+          Prompt:cechoLink("&lt;red&gt;"..k:upper(), function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        elseif table.contains(Legacy.Room.Walls.Stone, tostring(k)) then
+          Prompt:cechoLink("&lt;grey&gt;"..k:upper(), function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        elseif table.contains(Legacy.Room.Walls.Thorn, tostring(k)) then
+          Prompt:cechoLink("&lt;forest_green&gt;"..k:upper(), function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        else
+          Prompt:cechoLink("&lt;white&gt;"..k:upper().."&lt;DimGrey&gt;", function() send("queue addclear free go "..dirtab[k]) end, "Click to go "..dirtab[k], true)
+        end
+      end
+    end
+    Prompt:cecho("&lt;ansi_yellow&gt;]")
+  end
+  
+  
+  if Legacy.Settings.Prompt.xp == true then
+    Prompt:cecho(" &lt;gold&gt;"..gmcp.Char.Status.level)
+  end
+  
+  
+  if Legacy.Settings.Prompt.rage == true then
+    Prompt:cecho(" &lt;ansi_yellow&gt;Rage:&lt;white&gt;"..Legacy[gmcp.Char.Status.name].rage)
+  end
+  
+  
+  
+  
+  if Legacy.Settings.Prompt.timestamps == true then
+    Prompt:echo(" "..getTime(true, "hh:mm:ss").." ")
+  end
+  
+  if Legacy.Settings.Prompt.defs == true then
+    Prompt:echo("-")
+    
+    if gmcp.Char.Vitals.eq  == "1" then
+      Prompt:cecho("&lt;red&gt;e")
+    end
+    if gmcp.Char.Vitals.bal == "1" then
+      Prompt:cecho("&lt;red&gt;x")
+    end
+    if table.contains(Legacy.Curing.Defs.current, "cloak") then
+      Prompt:cecho("&lt;green&gt;c")
+    end
+    if table.contains(Legacy.Curing.Defs.current, "kola") then
+      Prompt:cecho("&lt;green&gt;k")
+    end
+    if table.contains(Legacy.Curing.Defs.current, "blindness") then
+      Prompt:cecho("&lt;green&gt;b")
+    end
+    if table.contains(Legacy.Curing.Defs.current, "deafness") then
+      Prompt:cecho("&lt;green&gt;d")
+    end
+     Prompt:echo("-")
+  end
+  
+  --Show Class Specifics
+  --Reference Legacy.{your character name}.Vitals for the variables
+  
+  if Legacy.Settings.Prompt.showClassStats == true then
+    if gmcp.Char.Status.class == "Apostate" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Essence: &lt;white&gt;"..stats.essence)
+    elseif gmcp.Char.Status.class == "Bard" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Voice "..stats.voice)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Stance "..stats.stance)
+    elseif gmcp.Char.Status.class == "Blademaster" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Shin: "..stats.shin)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Stance: "..stats.stance)
+    elseif gmcp.Char.Status.class == "Depthswalker" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Word : "..stats.word)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Age: "..stats.age)
+    elseif gmcp.Char.Status.class == "Druid" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Morph: "..stats.morph)
+    elseif gmcp.Char.Status.class == "Infernal" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Essence: "..stats.essence)
+    elseif gmcp.Char.Status.class == "Magi" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Channels: "..stats.channels)
+    elseif gmcp.Char.Status.class == "Monk" then
+      
+      if stats.stance == nil then else Prompt:cecho(" &lt;ansi_yellow&gt;Stance: "..stats.stance) end
+      if stats.form == nil then else Prompt:cecho(" &lt;ansi_yellow&gt;Form: "..stats.form) end
+      if stats.kata == nil then else Prompt:cecho(" &lt;ansi_yellow&gt;Kata: "..stats.kata) end
+      Prompt:cecho(" &lt;ansi_yellow&gt;Kai: "..stats.kai)
+    elseif gmcp.Char.Status.class == "Occultist" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Karma: &lt;white&gt;"..stats.karma)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Entity: "..stats.entity)
+    elseif gmcp.Char.Status.class == "Paladin" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Wrath: "..stats.wrath)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Wrath?: "..stats.wrathbal)
+    elseif gmcp.Char.Status.class == "Pariah" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Epitaph: "..stats.epitaphlength)
+    elseif gmcp.Char.Status.class == "Priest" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Conviction: "..stats.conviction)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Prayer#: "..stats.prayerlength)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Prayer?: "..stats.prayer)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Angelpower: "..stats.angelpower)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Devotion: "..stats.devotion)
+    elseif gmcp.Char.Status.class == "Runewarden" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Empower: "..stats.empower)
+    elseif gmcp.Char.Status.class == "Sentinel" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Morph: "..stats.morph)
+    elseif gmcp.Char.Status.class == "Serpent" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Venom: "..stats.venom)
+    elseif gmcp.Char.Status.class == "Shaman" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Spirits: "..stats.spirits)
+    elseif gmcp.Char.Status.class == "Sylvan" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Channels: "..stats.channels)
+    elseif gmcp.Char.Status.class == "Unnamable" then
+      Prompt:cecho(" &lt;ansi_yellow&gt;Karma: &lt;white&gt;"..stats.karma)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Anathema: "..stats.anathema)
+      Prompt:cecho(" &lt;ansi_yellow&gt;Manifestation: "..stats.manifestation)
+    end
+  end
+  
+  
+  --Show Target
+  if Legacy.Settings.Prompt.showTarget == true then
+    if gmcp.IRE.Target then
+      if gmcp.IRE.Target.Info.id == "-1" then
+        if Legacy.NDB.db[target] then
+          local city = Legacy.NDB.db[target].city:lower()
+          local citycolor = Legacy.Settings.NDB.Config[city].color
+          if Legacy.Settings.lockPrompt == true then
+            Prompt:cecho(" &lt;DimGray&gt;[ &lt;"..citycolor.."&gt;"..target.." &lt;DimGray&gt;]")
+          elseif Legacy.Settings.lockPrompt == false then
+            Prompt:cechoLink(" &lt;DimGray&gt;[ &lt;cyan&gt;"..target.." &lt;DimGray&gt;]", [[expandAlias("ndb "..target)]], "click for information", true)
+          end
+        else
+        Prompt:cecho(" &lt;DimGray&gt;[ &lt;orange&gt;"..target.." &lt;DimGray&gt;]")
+        end
+      else
+        if table.contains(gmcp.Char.Items.List.items, gmcp.IRE.Target.Set) then
+          Prompt:cecho("&lt;DimGray&gt; [ &lt;cyan&gt;"..gmcp.IRE.Target.Info.id.." &lt;DimGray&gt;] &lt;ansi_white&gt;-&lt;"..tarColor.."&gt;"..gmcp.IRE.Target.Info.hpperc.."&lt;ansi_white&gt;-")
+        end
+      end
+    end
+  end
+  
+  if Legacy.Settings.Prompt.limbtracker == true and lb then
+    Prompt:cecho(lb.prompt())
+  end
+  
+  
+  if Legacy.Settings.Prompt.vitalsChange == true then
+      Legacy[gmcp.Char.Status.name].newHealth = tonumber(gmcp.Char.Vitals.hp)
+      Legacy[gmcp.Char.Status.name].newMana = tonumber(gmcp.Char.Vitals.mp)
+      
+      if (Legacy[gmcp.Char.Status.name].newHealth == Legacy[gmcp.Char.Status.name].oldHealth) and (Legacy[gmcp.Char.Status.name].newMana == Legacy[gmcp.Char.Status.name].oldMana) then
+        --nothing
+      elseif math.floor((Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) / gmcp.Char.Vitals.maxhp * 100) == 100 or math.floor((Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) / gmcp.Char.Vitals.maxhp * 100) == 100 or math.floor((Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) / gmcp.Char.Vitals.maxmp * 100) == 100 or math.floor((Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) / gmcp.Char.Vitals.maxmp * 100) == 100 then
+        --stops from seeing everytime the prompt breaks out of blackout
+      elseif math.floor(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) &gt; 150 or math.floor(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) &gt; 150 or math.floor(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) &gt; 150 or math.floor(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) &gt; 150  then 
+        Prompt:cecho(" &lt;DimGrey&gt;( ")
+        if Legacy[gmcp.Char.Status.name].oldHealth &gt; Legacy[gmcp.Char.Status.name].newHealth and math.floor(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) &gt; 150 then
+          Prompt:cecho("&lt;ansiRed&gt;-&lt;red&gt;"..math.floor(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth).."h ")
+          if math.floor((Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) / gmcp.Char.Vitals.maxhp * 100) &gt; 0 then
+            Prompt:cecho("&lt;ansiRed&gt;"..math.floor((Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) / gmcp.Char.Vitals.maxhp * 100).."% ")
+          end
+        elseif Legacy[gmcp.Char.Status.name].oldHealth &lt; Legacy[gmcp.Char.Status.name].newHealth and math.floor(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) &gt; 150 then
+          Prompt:cecho("&lt;forest_green&gt;+&lt;green&gt;"..math.floor(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth).."h ")
+          if math.floor((Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) / gmcp.Char.Vitals.maxhp * 100) &gt; 0 then
+            Prompt:cecho("&lt;forest_green&gt;"..math.floor((Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) / gmcp.Char.Vitals.maxhp * 100).."% ")
+          end
+        end
+        
+        if Legacy[gmcp.Char.Status.name].oldMana &gt; Legacy[gmcp.Char.Status.name].newMana and math.floor(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) &gt; 150 then
+          Prompt:cecho("&lt;ansiRed&gt;-&lt;red&gt;"..math.floor(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana).."m ")
+          if math.floor((Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) / gmcp.Char.Vitals.maxmp * 100) &gt; 0 then
+            Prompt:cecho("&lt;ansiRed&gt;"..math.floor((Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) / gmcp.Char.Vitals.maxmp * 100).."% ")
+          end
+        elseif Legacy[gmcp.Char.Status.name].oldMana &lt; Legacy[gmcp.Char.Status.name].newMana and math.floor(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) &gt; 150 then
+          Prompt:cecho("&lt;forest_green&gt;+&lt;green&gt;"..math.floor(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana).."m ")
+          if math.floor((Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) / gmcp.Char.Vitals.maxmp * 100) &gt; 0 then
+            Prompt:cecho("&lt;forest_green&gt;"..math.floor((Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) / gmcp.Char.Vitals.maxmp * 100).."% ")
+          end
+        end
+        Prompt:cecho("&lt;DimGrey&gt;)")
+        
+        if Legacy[gmcp.Char.Status.name].Vitals.bleed &gt; 100 then
+          Prompt:cecho(" &lt;DimGrey&gt;(&lt;ansiRed&gt;"..Legacy[gmcp.Char.Status.name].Vitals.bleed.."B&lt;DimGrey&gt;)")
+        end
+      end
+      
+      Legacy[gmcp.Char.Status.name].oldHealth = tonumber(gmcp.Char.Vitals.hp)
+      Legacy[gmcp.Char.Status.name].oldMana = tonumber(gmcp.Char.Vitals.mp)
+
+  end
+  if Legacy.Settings.Curing.affPrompt ~= nil and Legacy.Settings.Curing.affPrompt then
+    Prompt:cecho(LegacyAffPrompt())
+  end
+  if Legacy.Settings.Curing.status ~=  nil and Legacy.Settings.Curing.status == true then
+    --nothing
+  else
+    Prompt:cecho(" &lt;red&gt;(&lt;dim_grey&gt;PP&lt;red&gt;)")
+  end
+  if Legacy.Settings.lockPrompt == false then
+  Prompt:cechoPopup("*", 
+  {  
+  function() Legacy.echo("Right clicking might work better.") end, 
+  function() if Legacy.Settings.Prompt.showHealth == true then Legacy.Settings.Prompt.showHealth = false Legacy.echo("Removed Health from the Legacy Prompt") else Legacy.Settings.Prompt.showHealth = true Legacy.echo("Added Health to the Legacy Prompt")end send("ql") end, 
+  function() if Legacy.Settings.Prompt.showMana == true then Legacy.Settings.Prompt.showMana = false Legacy.echo("Removed Mana from the Legacy Prompt") else Legacy.Settings.Prompt.showMana = true Legacy.echo("Added Mana to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.showTarget == true then Legacy.Settings.Prompt.showTarget = false Legacy.echo("Removed Target from the Legacy Prompt") else Legacy.Settings.Prompt.showTarget = true Legacy.echo("Added Target to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.showEndurance == true then Legacy.Settings.Prompt.showEndurance = false Legacy.echo("Remoed Endurance from the Legacy Prompt") else Legacy.Settings.Prompt.showEndurance = true Legacy.echo("Added Endurance to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.showWillpower == true then Legacy.Settings.Prompt.showWillpower = false Legacy.echo("Removed Willpower from the Legacy Prompt") else Legacy.Settings.Prompt.showWillpower = true Legacy.echo("Added Willpower to the Legacy Prompt")end send("ql") end,
+  function() if Legacy.Settings.Prompt.gameDate == true then Legacy.Settings.Prompt.gameDate = false Legacy.echo("Removed Game Date from the Legacy Prompt") else Legacy.Settings.Prompt.gameDate = true Legacy.echo("Added Game Date to the Legacy Prompt")end send("ql") end,
+  function() if Legacy.Settings.Prompt.exits == true then Legacy.Settings.Prompt.exits = false Legacy.echo("Removed Exits from the Legacy Prompt") else Legacy.Settings.Prompt.exits = true Legacy.echo("Added Exits to the Legacy Prompt")end send("ql") end,
+  function() if Legacy.Settings.Prompt.defs == true then Legacy.Settings.Prompt.defs = false Legacy.echo("Removed Defs from the Legacy Prompt") else Legacy.Settings.Prompt.defs = true Legacy.echo("Added Defs to the Legacy Prompt")end send("ql") end,
+  function() if Legacy.Settings.Prompt.seasons == true then Legacy.Settings.Prompt.seasons = false Legacy.echo("Removed Seasons from the Legacy Prompt") else Legacy.Settings.Prompt.seasons = true Legacy.echo("Added Seasons to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.timestamps == true then Legacy.Settings.Prompt.timestamps = false Legacy.echo("Removed Timestamps from the Legacy Prompt") else Legacy.Settings.Prompt.timestamps = true Legacy.echo("Added Timestamps to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.vitalsChange == true then Legacy.Settings.Prompt.vitalsChange = false Legacy.echo("Removed Vitals Changes from the Legacy Prompt") else Legacy.Settings.Prompt.vitalsChange = true Legacy.echo("Added Vitals Changes to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.limbtracker == true then Legacy.Settings.Prompt.limbtracker = false Legacy.echo("Removed Limb Tracker from the Legacy Prompt") else Legacy.Settings.Prompt.limbtracker = true Legacy.echo("Added Limb Tracker to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.showClassStats == true then Legacy.Settings.Prompt.showClassStats = false Legacy.echo("Removed Class Stats from the Legacy Prompt") else Legacy.Settings.Prompt.showClassStats = true Legacy.echo("Added Class Stats to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.rage == true then Legacy.Settings.Prompt.rage = false Legacy.echo("Removed Rage from the Legacy Prompt") else Legacy.Settings.Prompt.rage = true Legacy.echo("Added Rage to the Legacy Prompt") end send("ql") end,
+  function() if Legacy.Settings.Prompt.xp == true then Legacy.Settings.Prompt.xp = false Legacy.echo("Removed Experience from the Legacy Prompt") else Legacy.Settings.Prompt.xp = true Legacy.echo("Added Experience to the Legacy Prompt") end send("ql") end,
+  },
+  
+  {
+  "Click Below to Toggle Prompt Settings",
+  "Toggle Health", 
+  "Toggle Mana",
+  "Toggle Target",
+  "Toggle Endurance",
+  "Toggle Willpower",
+  "Toggle Game Date",
+  "Toggle Exits",
+  "Toggle Defences",
+  "Toggle Seasons",
+  "Toggle Timestamps",
+  "Toggle Vitals Changes",
+  "Toggle Limb Tracker",
+  "Toggle Class Stats",
+  "Toggle Rage",
+  "Toggle XP",
+  }, true)
+  end
+  end
+end
+end
+end
+
+registerAnonymousEventHandler("LPrompt", "Single_Prompt")
+   
+   
+   
+   
+  function Legacy.UI.Update()
+    --setBorderLeft(310)
+    --setWindowWrap(100)
+    Legacy.UI.WhoHere()
+    Legacy.UI.Items()
+    Legacy.UI.Mobs()
+    Legacy.UI.Bars()
+  end
+  registerAnonymousEventHandler("UI Update", "Legacy.UI.Update")
+end
+registerAnonymousEventHandler("LegacyLoaded", "UI_Setup")
+</script>
+			<eventHandlerList />
+		</Script>
+		<Script isActive="yes" isFolder="no">
+			<name>Chat Box Messages</name>
+			<packageName></packageName>
+			<script>function ChatBoxMessages()
+  if not Legacy then return end
+  Legacy.Settings = Legacy.Settings or {}
+  Legacy.Settings.UI = Legacy.Settings.UI or {}
+  Legacy.Settings.UI.Chatbox = Legacy.Settings.UI.Chatbox or { ignoreMobs = false }
+  if not (Legacy.UI and Legacy.UI.Chatbox) then return end
+  if not (gmcp and gmcp.Comm and gmcp.Comm.Channel and gmcp.Comm.Channel.Text) then return end
+  local txt = gmcp.Comm.Channel.Text
+  local talker = (txt.talker and txt.talker:title()) or ""
+  local channel = txt.channel or ""
+  local rawtext = txt.text or ""
+  if Legacy.Settings.UI.Chatbox.ignoreMobs and (Legacy.NDB and Legacy.NDB.db) and Legacy.NDB.db[talker] == nil and talker ~= "You" then return end
+  local msg = ansi2decho(rawtext)
+  
+--rawtext:gsub("%\27%[[%dl;]+m", "")
+  if msg:match("says to you") then
+    Legacy.UI.Chatbox.Direct:decho(msg.."\n")
+  end
+  
+  if channel:match("clt") then
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+    Legacy.UI.Chatbox.Clans:decho(msg.."\n")
+    Legacy.UI.Chatbox.Clanstab:flash(1)
+    tempTimer(2, [[Legacy.UI.Chatbox.Clanstab:flash(1)]])
+    tempTimer(4, [[Legacy.UI.Chatbox.Clanstab:flash(1)]])
+  elseif channel == "says" then
+   Legacy.UI.Chatbox.All:decho(msg.."\n")
+   Legacy.UI.Chatbox.Says:decho(msg.."\n")
+   Legacy.UI.Chatbox.Saystab:flash(1)
+   tempTimer(2, [[Legacy.UI.Chatbox.Saystab:flash(1)]])
+   tempTimer(4, [[Legacy.UI.Chatbox.Saystab:flash(1)]])
+  elseif channel == "party" then
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+    Legacy.UI.Chatbox.Party:decho(msg.."\n")
+  elseif channel:match("tell") then
+    if channel == "armytell" then
+      Legacy.UI.Chatbox.All:decho(msg.."\n")
+    else
+      Legacy.UI.Chatbox.Tells:decho(msg.."\n")
+      Legacy.UI.Chatbox.All:decho(msg.."\n")
+      Legacy.UI.Chatbox.Tellstab:flash(1)
+      tempTimer(2, [[Legacy.UI.Chatbox.Tellstab:flash(1)]])
+      tempTimer(4, [[Legacy.UI.Chatbox.Tellstab:flash(1)]])
+    end
+  elseif channel == "ct" then
+    Legacy.UI.Chatbox.City:decho(msg.."\n")
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+    Legacy.UI.Chatbox.Citytab:flash(1)
+    tempTimer(2, [[Legacy.UI.Chatbox.Citytab:flash(1)]])
+    tempTimer(4, [[Legacy.UI.Chatbox.Citytab:flash(1)]])
+  elseif channel == "market" then
+    Legacy.UI.Chatbox.Market:decho(msg.."\n")
+    Legacy.UI.Chatbox.Markettab:flash(1)
+    tempTimer(2, [[Legacy.UI.Chatbox.Markettab:flash(1)]])
+    tempTimer(4, [[Legacy.UI.Chatbox.Markettab:flash(1)]])
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+
+  elseif channel == "ht" or channel == "hts" or channel == "hnt" then
+    Legacy.UI.Chatbox.House:decho(msg.."\n")
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+    Legacy.UI.Chatbox.Housetab:flash(1)
+    tempTimer(2, [[Legacy.UI.Chatbox.Housetab:flash(1)]])
+    tempTimer(4, [[Legacy.UI.Chatbox.Housetab:flash(1)]])
+
+  elseif channel == "newbie" then
+    Legacy.UI.Chatbox.Newbie:decho(msg.."\n")
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+    Legacy.UI.Chatbox.Newbietab:flash(1)
+    tempTimer(2, [[Legacy.UI.Chatbox.Newbietab:flash(1)]])
+    tempTimer(4, [[Legacy.UI.Chatbox.Newbietab:flash(1)]])
+  else
+    Legacy.UI.Chatbox.All:decho(msg.."\n")
+  end    
+end
+registerAnonymousEventHandler("gmcp.Comm.Channel.Text", "ChatBoxMessages")</script>
+			<eventHandlerList />
+		</Script>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>AK Display</name>
+			<packageName></packageName>
+			<script></script>
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>Legacy AK Display</name>
+				<packageName></packageName>
+				<script>function Legacy_AK_Draw()
+if Legacy then
+if not ak then return end
+Legacy.UI.AK = Adjustable.Container:new({
+  name = "Aff Tracking",
+  x = 0, y = 0,
+  width = 300, height = 300
+
+})
+
+Legacy.UI.AK.Label = Geyser.Label:new({
+    name = "Ak Label",
+    x=0,y=0,
+    width = "100%", height = "100%"
+}, Legacy.UI.AK)
+
+Legacy.UI.AK.Label:setStyleSheet([[
+    background-color: black;
+    border-width: 3px;
+    border-style: solid;
+    border-color: ]]..Legacy.UI.borderColor..[[;
+    border-radius: 10px;
+  ]]
+  )
+
+Legacy.UI.AK.TargetLabel = Geyser.Label:new({
+    name = "Target Label",
+    x = 3, y = 3,
+    width = "100%-6", height = "20%"
+
+}, Legacy.UI.AK.Label)
+
+Legacy.UI.AK.TargetLabel:setStyleSheet([[
+    background-color: black;
+    border-width: 3px;
+    border-style: solid;
+    border-color: ]]..Legacy.UI.borderColor..[[;
+    border-radius: 10px;
+  ]]
+  )
+  Legacy.UI.AK.TargetConsole = Geyser.MiniConsole:new({
+      name = "Target Console",
+      x = 4, y = 4,
+      width = "100%-8", height = "100%-9",
+      color='black',
+      fontSize = 10,
+      scrollbar = false,
+      font = "Bitstream Vera Sans Mono",
+      autoWrap = false
+  }, Legacy.UI.AK.TargetLabel)
+  
+Legacy.UI.AK.Console = Geyser.MiniConsole:new({
+      name = "Aff Console",
+      x = 4, y = "22%",
+      width = "100%-8", height = "80%-15",
+      color='Black',
+      fontSize = 10,
+      scrollbar = false,
+      font = "Bitstream Vera Sans Mono",
+      autoWrap = false
+  }, Legacy.UI.AK.Label)
+
+
+function Legacy.UI.AK.Update()
+
+  -- Guard: no target / basher running / no NDB record
+  if target == nil or target == "None" or target == "none" then return end
+  if Legacy.Settings.Basher.status == true then return end
+
+  local tname = target
+  if type(target) == "table" then
+    if type(target.title) == "function" then
+      tname = target:title()
+    elseif type(target.title) == "string" then
+      tname = target.title
+    elseif type(target.name) == "string" then
+      tname = target.name
+    end
+  end
+  if type(tname) ~= "string" or tname == "" or tname == "None" or tname == "none" then return end
+  if not (Legacy and Legacy.NDB and Legacy.NDB.db) or Legacy.NDB.db[tname] == nil then return end
+
+  
+  Legacy.UI.AK.Console:clear()
+  Legacy.UI.AK.TargetConsole:clear()
+  ak.healthpercent = math.floor((ak.currenthealth/ak.maxhealth)*100)
+  ak.manapercent   = math.floor((ak.currentmana/ak.maxmana)*100)
+  
+  Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Target: &lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[tname].city:lower()].color.."&gt;"..tname.."\n")
+  Legacy.UI.AK.TargetConsole:cecho("&lt;ansi_white&gt;Health: &lt;forest_green&gt;"..ak.healthpercent.."%      &lt;ansi_white&gt;Mana: &lt;cyan&gt;"..ak.manapercent.."%\n")
+  Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Rebounding: ")
+  if ak.defs.rebounding == true then
+    Legacy.UI.AK.TargetConsole:cecho("&lt;green&gt;YES")
+  else
+    Legacy.UI.AK.TargetConsole:cecho("&lt;red&gt;NO")
+  end
+  Legacy.UI.AK.TargetConsole:cecho("   &lt;gold&gt;Shield: ")
+  if ak.defs.shield == true then
+    Legacy.UI.AK.TargetConsole:cecho("&lt;green&gt;YES")
+  else
+    Legacy.UI.AK.TargetConsole:cecho("&lt;red&gt;NO")
+  end
+  local lockaffs = {"impatience", "paralysis", "asthma", "slickness", "anorexia"}
+  Legacy.UI.AK.Console:cecho("&lt;orange&gt;Limbs: "..lb.prompt().."\n")
+  for k,v in pairs(affstrack.score) do
+  
+    if v &gt; 0 then
+      if table.contains(lockaffs, k) then
+        Legacy.UI.AK.Console:cecho("\n&lt;red&gt;"..tostring(k):title().." "..math.floor(v))
+      else
+        Legacy.UI.AK.Console:cecho("\n&lt;green&gt;"..tostring(k):title().." "..math.floor(v))
+      end
+    end
+  end
+end
+registerAnonymousEventHandler("LPrompt", "Legacy.UI.AK.Update")
+else
+tempTimer(5, [[Legacy_AK_Draw()]])
+end
+end
+
+registerAnonymousEventHandler("LegacyLoaded", "Legacy_AK_Draw")</script>
+				<eventHandlerList />
+			</Script>
+		</ScriptGroup>
+	</ScriptPackage>
+	<KeyPackage />
+	<VariablePackage>
+		<HiddenVariables />
+	</VariablePackage>
+</MudletPackage>
