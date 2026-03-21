@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: 2026-03-20
+Last updated: 2026-03-21
 
 
 Recent READAURA Update
@@ -61,6 +61,22 @@ Blademaster Spar 3 Follow-up (2026-03-18)
         helpers use it, eliminating the nil global call seen during testing.
 
 
+Aff Route Debug Wiring Repair (2026-03-21)
+------------------------------------------
+  [fix] occ_aff_burst: unified the live aff-route debug flag back onto
+        `AB.debug.enabled`. `yrdebug on aff` / `yrdebug off aff` now drive the
+        same debug state that `abdebug` and the in-route screen renderer use.
+  [fix] occ_aff_burst: `AB.explain()` now surfaces `debug`, `route_enabled`,
+        `active`, and `waiting` fields even while the loop is between payloads,
+        so `yrshow aff` reflects the real route state instead of a stale or
+        incomplete snapshot.
+  [fix] occ_aff_burst: wait-gated loop ticks now repaint the debug screen while
+        queued-lane recovery is blocking the planner, making queue/balance/entity
+        hold states visible instead of appearing silent between sends.
+  [fix] Devtools route-debug helpers: route-aware toggles now prefer a route's
+        own debug API (`toggle_debug_screen` / `show_debug_screen`) before
+        falling back to generic `state.debug`, preventing aff-route desync.
+
 Route / Bootstrap Repair (2026-03-20)
 -------------------------------------
   [fix] Bootstrap now defers package autoload until the package scripts have
@@ -84,9 +100,10 @@ Route / Bootstrap Repair (2026-03-20)
   [fix] `_entry.lua` now records boot failures and emits a one-time boot warning
         summary when modules fail to load, instead of silently swallowing all
         require failures by default.
-  [note] The source-side Occultist Devtools export artifact was renamed to
-        `Occultist Devtools.xml` / `Occultist Devtools.mpackage` so it is no
-        longer easily confused with the live import package at
+  [note] The parked source-side Devtools mirror now lives under
+        `Ysindrolir/Magi/MagiDevtools.xml` / `MagiDevtools.mpackage` instead of
+        the Occultist folder, so the Occultist tree only carries runtime/export
+        inputs that are actually class-owned. The live import package remains
         `Ysindrolir/mudlet packages/Devtools.xml`.
 
 
@@ -278,14 +295,24 @@ Bash Upkeep / Orb Queue Repair (2026-03-21)
 
 Export Audit (2026-03-16)
 -------------------------
-  [fix] rebuild_yso_system_xml.ps1 now distinguishes between three cases:
+  [fix] rebuild_yso_system_xml.lua now distinguishes between three cases:
         legacy-name package items, active no-slot mirrors, and true skips.
-  [fix] rebuild_yso_system_xml.ps1 now validates the rebuilt XML in memory
+  [fix] rebuild_yso_system_xml.lua now validates the rebuilt XML in memory
         before writing so a bad replacement cannot leave Yso system.xml
         half-corrupted on disk.
+  [compat] rebuild_yso_system_xml.ps1 is now only a thin wrapper around the
+        Lua builder so Windows-side workflows still have the same entry point.
   [fix] Legacy package-name mismatches now rebuild correctly for:
+        yso_ak_score_exports.lua -> "Yso_AK_Score_Exports.lua"
+        yso_mode_autoswitch.lua -> "Yso_mode_autoswitch.lua"
+        yso_modes.lua -> "Yso_modes.lua"
+        yso_occultist_affmap.lua -> "Yso_Occultist_Affmap.lua"
+        yso_offense_coordination.lua -> "Yso_Offense_Coordination.lua"
         softlock_gate.lua -> "Softlock Gate"
+        yso_queue.lua -> "Yso.queue"
         yso_occultist_offense.lua -> "Yso.occ.offense"
+        yso_targeting.lua -> "Yso.targeting"
+        exported title lines are normalized for CRLF/BOM before name matching
         hunt_primebond_shieldbreak_selector.lua -> matched by body signature
         because the stored package name is mojibake.
   [note] Active Occultist files that currently have no dedicated script slot in

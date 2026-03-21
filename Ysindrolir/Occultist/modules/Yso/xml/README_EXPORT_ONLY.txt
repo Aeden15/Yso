@@ -41,14 +41,25 @@ See EXPORT_MANIFEST.lua for the machine-readable mapping.
 
 Rebuild notes (2026-03-16):
 
-  rebuild_yso_system_xml.ps1 only rewrites package items that actually exist in
+  rebuild_yso_system_xml.lua only rewrites package items that actually exist in
   mudlet packages/Yso system.xml.
   It now validates the candidate XML before writing so a failed regex match
   does not corrupt the package artifact on disk.
+  rebuild_yso_system_xml.ps1 is now only a compatibility wrapper that calls
+  the Lua builder.
 
   Legacy-name package slots currently handled by the rebuild script:
+  - xml/yso_ak_score_exports.lua -> package name "Yso_AK_Score_Exports.lua"
+  - xml/yso_mode_autoswitch.lua  -> package name "Yso_mode_autoswitch.lua"
+  - xml/yso_modes.lua            -> package name "Yso_modes.lua"
+  - xml/yso_occultist_affmap.lua -> package name "Yso_Occultist_Affmap.lua"
+  - xml/yso_offense_coordination.lua
+      -> package name "Yso_Offense_Coordination.lua"
   - xml/softlock_gate.lua         -> package name "Softlock Gate"
+  - xml/yso_queue.lua             -> package name "Yso.queue"
   - xml/yso_occultist_offense.lua -> package name "Yso.occ.offense"
+  - xml/yso_targeting.lua         -> package name "Yso.targeting"
+  - exported title lines are normalized for CRLF/BOM before name matching
   - xml/hunt_primebond_shieldbreak_selector.lua
       package item exists, but the stored Mudlet name is mojibake; rebuild now
       matches it by body signature instead of by <name>.

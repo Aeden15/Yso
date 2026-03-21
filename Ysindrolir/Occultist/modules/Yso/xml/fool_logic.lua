@@ -369,6 +369,45 @@ function F.set_min_affs(n)
   cecho(string.format("<cyan>[Fool] Global min_affs override now %d.\n", v))
 end
 
+local function _queue_diag()
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.addclearfull) == "function" then
+    Q.addclearfull("e", "diagnose")
+    return true
+  end
+  if Q and type(Q.eq_clear) == "function" then
+    Q.eq_clear("diagnose")
+    return true
+  end
+  if type(send) == "function" then
+    send("diagnose")
+    return true
+  end
+  return false
+end
+
+local function _kill_alias(id)
+  if id then
+    pcall(killAlias, id)
+  end
+end
+
+Yso._alias = Yso._alias or {}
+if type(tempAlias) == "function" then
+  _kill_alias(Yso._alias.fool_diag)
+  Yso._alias.fool_diag = tempAlias([[^dv$]], _safe(function()
+    if type(F.mark_diag_pending) == "function" then
+      F.mark_diag_pending()
+    else
+      F.state.await_diag = true
+    end
+
+    if not _queue_diag() then
+      _fool_echo("Failed to queue diagnose from dv alias.")
+    end
+  end))
+end
+
 --========================================================--
 --  Register GMCP handler
 --========================================================--
