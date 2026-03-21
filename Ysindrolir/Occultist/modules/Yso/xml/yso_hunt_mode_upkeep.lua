@@ -69,6 +69,7 @@ M.cfg = M.cfg or {
   ent_request_gcd = 2.5,
   ent_rescan_gcd = 8.0,
   ent_inflight_timeout = 3.0,
+  summon_queue_gcd = 4.0,
   summons = {
     orb = "summon orb",
     hound = "summon hound",
@@ -79,6 +80,7 @@ M.cfg = M.cfg or {
 
 M.state = M.state or {
   present = { orb = false, hound = false, pathfinder = false },
+  pending = { orb = 0, hound = 0, pathfinder = 0, mask = 0 },
   mask_active = false,
   ent = {
     synced = false,
@@ -186,22 +188,30 @@ local function _upkeep_pass(force_ent)
   end
 
   local missing = _missing_entities()
+  local now = _now()
+  local sq_gcd = tonumber(M.cfg.summon_queue_gcd or 4.0) or 4.0
   if #missing > 0 then
     M.state.mask_active = false
     for i = 1, #missing do
       local id = missing[i]
-      local cmd = M.cfg.summons and M.cfg.summons[id] or ""
-      if cmd ~= "" then
-        _dbg("queue summon: " .. cmd)
-        _queue_addclear_free(cmd)
+      if (now - tonumber(M.state.pending[id] or 0)) >= sq_gcd then
+        local cmd = M.cfg.summons and M.cfg.summons[id] or ""
+        if cmd ~= "" then
+          M.state.pending[id] = now
+          _dbg("queue summon: " .. cmd)
+          _queue_addclear_free(cmd)
+        end
       end
     end
     return true
   end
 
   if M.state.mask_active ~= true then
-    _dbg("queue mask")
-    return _queue_addclear_free(M.cfg.mask_cmd or "mask")
+    if (now - tonumber(M.state.pending.mask or 0)) >= sq_gcd then
+      M.state.pending.mask = now
+      _dbg("queue mask")
+      return _queue_addclear_free(M.cfg.mask_cmd or "mask")
+    end
   end
   return true
 end
@@ -213,6 +223,7 @@ function M.refresh(reason)
   _dbg("refresh " .. reason)
   _reset_ent_sync()
   M.state.mask_active = false
+  M.state.pending = { orb = 0, hound = 0, pathfinder = 0, mask = 0 }
   return _upkeep_pass(true)
 end
 
@@ -257,6 +268,7 @@ M._trig.summon_orb = tempRegexTrigger(
   [[^A swirling portal of chaos opens, spits out a chaos orb, then vanishes\.]],
   function()
     M.state.present.orb = true
+    M.state.pending.orb = 0
     M.state.mask_active = false
     _upkeep_pass(false)
   end)
@@ -266,6 +278,7 @@ M._trig.summon_hound = tempRegexTrigger(
   [[^A swirling portal of chaos opens, spits out a chaos hound, then vanishes\.]],
   function()
     M.state.present.hound = true
+    M.state.pending.hound = 0
     M.state.mask_active = false
     _upkeep_pass(false)
   end)
@@ -275,6 +288,7 @@ M._trig.summon_pathfinder = tempRegexTrigger(
   [[^A swirling portal of chaos opens, spits out a pathfinder, then vanishes\.]],
   function()
     M.state.present.pathfinder = true
+    M.state.pending.pathfinder = 0
     M.state.mask_active = false
     _upkeep_pass(false)
   end)
@@ -284,6 +298,7 @@ M._trig.mask_on = tempRegexTrigger(
   [[^Calling upon your powers within, you mask the movements of your chaos entities from the world\.$]],
   function()
     M.state.mask_active = true
+    M.state.pending.mask = 0
   end)
 
 -- ---------- event hooks (registered here; not via package UI) ----------
