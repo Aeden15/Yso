@@ -82,8 +82,17 @@ local function _is_bash_mode()
   return false
 end
 
+local function _legacy_basher_active()
+  local legacy = rawget(_G, "Legacy")
+  local basher = legacy and legacy.Settings and legacy.Settings.Basher
+  if type(basher) == "table" and basher.status ~= nil then
+    return basher.status == true
+  end
+  return true
+end
+
 local function _is_active_bash_mode()
-  return _is_occultist() and _is_bash_mode()
+  return _is_occultist() and _is_bash_mode() and _legacy_basher_active()
 end
 
 local function _echo_yso(msg)
@@ -120,6 +129,55 @@ local function _priority_send(cmd)
     _send(M.cfg.priority.clear_cmd)
   end
   _send(cmd)
+end
+
+local function _queue_call(mode, qtype, cmd)
+  local Q = Yso and Yso.queue
+  local fn = Q and Q[mode]
+  if type(fn) ~= "function" then return false end
+  local ok = pcall(fn, qtype, cmd)
+  return ok == true
+end
+
+local function _orb_controller()
+  local dom = Yso and Yso.dom
+  local orbdef = dom and dom.orbdef
+  if type(orbdef) == "table" and type(orbdef.cmd) == "function" then
+    return orbdef
+  end
+  return nil
+end
+
+local function _orb_issue(flag, priority)
+  local C = M.cfg.orb or {}
+
+  if flag == "s" then
+    if _queue_call(tostring(C.queue_summon_mode or "addclear"), C.queue_summon or "free", C.summon_cmd) then
+      return true
+    end
+  elseif flag == "d" then
+    if _queue_call(tostring(C.queue_mode or "addclearfull"), C.queue_defense or "class", C.command_cmd) then
+      return true
+    end
+  end
+
+  local orbdef = _orb_controller()
+  if orbdef then
+    local ok = pcall(orbdef.cmd, flag)
+    if ok then return true end
+  end
+
+  if flag == "s" then
+    if priority then _priority_send(C.summon_cmd) else _send(C.summon_cmd) end
+    return true
+  end
+
+  if flag == "d" then
+    _priority_send(C.command_cmd)
+    return true
+  end
+
+  return false
 end
 
 local function _hp_pct()
@@ -175,6 +233,10 @@ local defaults_cfg = {
 
     command_cmd = "command orb",
     summon_cmd  = "summon orb",
+    queue_mode = "addclearfull",
+    queue_defense = "class",
+    queue_summon_mode = "addclear",
+    queue_summon = "free",
 
     command_gcd = 1.0,
     summon_gcd  = 1.0,
@@ -371,8 +433,7 @@ local function orb_try_summon(priority)
   o.summon_pending = true
   o.summon_pending_since = n
 
-  if priority then _priority_send(C.summon_cmd) else _send(C.summon_cmd) end
-  return true
+  return _orb_issue("s", priority)
 end
 
 local function orb_try_command()
@@ -402,8 +463,7 @@ local function orb_try_command()
   o.command_pending = true
   o.command_pending_since = n
 
-  _priority_send(C.command_cmd)
-  return true
+  return _orb_issue("d", true)
 end
 
 local function orb_on_defense_fade()
@@ -491,6 +551,34 @@ local function upkeep_tick()
   if M.cfg.upkeep.pathfinder_enabled and not M.state.present.pathfinder then
     _send(M.cfg.upkeep.pathfinder_cmd)
   end
+end
+
+local function _reset_ent_sync()
+  M.state.ent.synced = false
+  M.state.ent.scanning = false
+  M.state.ent.inflight = false
+  M.state.ent.inflight_until = 0
+  M.state.ent.buf = {}
+end
+
+local function _clear_orb_pending()
+  M.state.orb.command_pending = false
+  M.state.orb.summon_pending = false
+  M.state.orb.command_pending_since = 0
+  M.state.orb.summon_pending_since = 0
+  M.state.orb.want_command_on_expire = false
+  M.state.orb.want_command_after_summon = false
+end
+
+local function _refresh_active_upkeep()
+  if not _is_active_bash_mode() then return end
+  _reset_ent_sync()
+  ent_request()
+
+  M.state.hp_pct = _hp_pct()
+  shield_on_hp_update()
+  orb_on_hp_update()
+  upkeep_tick()
 end
 
 M._trig = M._trig or {}
@@ -607,17 +695,23 @@ M._eh.mode_changed = registerAnonymousEventHandler("yso.mode.changed", _safe(fun
   if not (M.cfg and M.cfg.enabled) then return end
   if not _is_occultist() then return end
   if _norm_mode_name(newMode) ~= "bash" then return end
+  _refresh_active_upkeep()
+end))
 
-  M.state.ent.synced = false
-  M.state.ent.scanning = false
-  M.state.ent.inflight = false
-  M.state.ent.inflight_until = 0
-  ent_request()
+_kill_eh(M._eh.legacy_basher)
+M._eh.legacy_basher = registerAnonymousEventHandler("LegacyBasherStatus", _safe(function(enabled)
+  if not (M.cfg and M.cfg.enabled) then return end
+  if not _is_occultist() then return end
 
-  M.state.hp_pct = _hp_pct()
-  shield_on_hp_update()
-  orb_on_hp_update()
-  upkeep_tick()
+  if enabled == true then
+    M.state.last_upkeep = 0
+    _refresh_active_upkeep()
+    return
+  end
+
+  _reset_ent_sync()
+  _clear_orb_pending()
+  M.state.last_upkeep = 0
 end))
 
 _echo_yso("Bash upkeep loaded (Occultist-gated)")

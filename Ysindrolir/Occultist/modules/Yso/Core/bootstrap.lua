@@ -153,16 +153,139 @@ local function _bootstrap_occ_aff(reload)
   return (((_G.Yso or {}).off or {}).oc or {}).occ_aff_burst
 end
 
+local function _bootstrap_require_any(mods, reload)
+  local last_err = nil
+  for i = 1, #(mods or {}) do
+    local _, ok, err = _bootstrap_require(mods[i], reload)
+    if ok then return true, mods[i] end
+    last_err = err
+  end
+  return false, nil, last_err
+end
+
+Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
+  {
+    name = "route_registry",
+    modules = { "Yso.Combat.route_registry", "Yso.xml.route_registry" },
+    probe = function()
+      return type((((_G.Yso or {}).Combat or {}).RouteRegistry)) == "table"
+    end,
+  },
+  {
+    name = "route_interface",
+    modules = { "Yso.Combat.route_interface" },
+    probe = function()
+      return type((((_G.Yso or {}).Combat or {}).RouteInterface)) == "table"
+    end,
+  },
+  {
+    name = "aeon",
+    modules = { "Yso.Combat.occultist.aeon", "Yso.xml.yso_aeon" },
+    probe = function()
+      return type((((_G.Yso or {}).occ or {}).aeon)) == "table"
+    end,
+  },
+  {
+    name = "party_aff",
+    modules = { "Yso.Combat.routes.party_aff" },
+    probe = function()
+      return type((((_G.Yso or {}).off or {}).oc or {}).party_aff) == "table"
+    end,
+  },
+  {
+    name = "predict_cure",
+    modules = { "Yso.Core.predict_cure", "Yso.xml.yso_predict_cure" },
+    probe = function()
+      return type((((_G.Yso or {}).predict or {}).cure)) == "table"
+    end,
+  },
+  {
+    name = "skillset_reference_chart",
+    modules = { "Yso.xml.skillset_reference_chart" },
+    probe = function()
+      return type((((_G.Yso or {}).occultist or {}).build_affcap)) == "function"
+    end,
+  },
+}
+
+local function _bootstrap_package_runtime_seeded()
+  return type(Yso) == "table" and (
+    type(Yso.off) == "table" or
+    type(Yso.queue) == "table" or
+    type(Yso.mode) == "table" or
+    type(Yso.Orchestrator) == "table"
+  )
+end
+
+local function _bootstrap_load_missing(reload)
+  local loaded = {}
+  local failed = {}
+  local items = Yso.bootstrap.package_missing_order or {}
+
+  for i = 1, #items do
+    local item = items[i]
+    local probe = type(item.probe) == "function" and item.probe() == true
+    if not probe then
+      local ok, _, err = _bootstrap_require_any(item.modules, reload)
+      local now_ok = type(item.probe) == "function" and item.probe() == true
+      if ok and now_ok then
+        loaded[#loaded + 1] = tostring(item.name or item.modules[1] or ("slot_" .. i))
+      else
+        failed[#failed + 1] = {
+          name = tostring(item.name or item.modules[1] or ("slot_" .. i)),
+          error = tostring(err or "load failed"),
+        }
+      end
+    end
+  end
+
+  Yso.bootstrap.missing_autoloaded = loaded
+  Yso.bootstrap.missing_autoload_failures = failed
+  return (#failed == 0), loaded, failed
+end
+
 Yso.bootstrap.require = _bootstrap_require
 Yso.bootstrap.entry = _bootstrap_entry
 Yso.bootstrap.occ_aff_burst = _bootstrap_occ_aff
 
-local function _bootstrap_auto_entry()
-  if rawget(_G, "yso_bootstrap_entry_attempted") then return end
-  _G.yso_bootstrap_entry_attempted = true
+local function _bootstrap_finish_autoload()
+  if _bootstrap_package_runtime_seeded() then
+    local ok, _, failed = _bootstrap_load_missing(false)
+    Yso.bootstrap.entry_autoloaded = (ok == true)
+    if ok then
+      Yso.bootstrap.entry_autoload_error = nil
+    else
+      local names = {}
+      for i = 1, #failed do names[#names + 1] = failed[i].name end
+      Yso.bootstrap.entry_autoload_error = "missing-module autoload failed: " .. table.concat(names, ", ")
+    end
+    return
+  end
+
   local _, ok, err = _bootstrap_entry(false)
   Yso.bootstrap.entry_autoloaded = (ok == true)
   Yso.bootstrap.entry_autoload_error = ok and nil or err
+end
+
+local function _bootstrap_auto_entry()
+  if rawget(_G, "yso_bootstrap_entry_attempted") then return end
+  _G.yso_bootstrap_entry_attempted = true
+  if type(tempTimer) == "function" then
+    tempTimer(0, function()
+      local ok, err = pcall(_bootstrap_finish_autoload)
+      if not ok then
+        Yso.bootstrap.entry_autoloaded = false
+        Yso.bootstrap.entry_autoload_error = err
+      end
+    end)
+    return
+  end
+
+  local ok, err = pcall(_bootstrap_finish_autoload)
+  if not ok then
+    Yso.bootstrap.entry_autoloaded = false
+    Yso.bootstrap.entry_autoload_error = err
+  end
 end
 
 Yso.bootstrap.auto_entry = _bootstrap_auto_entry

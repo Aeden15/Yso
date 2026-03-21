@@ -242,10 +242,9 @@ Yso = Yso or {}
 Yso.devtools = Yso.devtools or {}
 local D = Yso.devtools
 
-D.cfg = D.cfg or {
-  echo = true,
-  auto_dry = true, -- safest default when loading Devtools
-}
+D.cfg = D.cfg or {}
+D.cfg.echo = (D.cfg.echo ~= false)
+D.cfg.auto_dry = false
 
 local function _nl() return string.char(10) end
 local function _ce(s)
@@ -848,8 +847,8 @@ function D.test.run(argstr)
   _tprint("unknown subcommand: "..sub)
 end
 
--- safest defaults
-if D.cfg.auto_dry then
+-- optional load default; keep DRY off unless explicitly requested
+if D.cfg.auto_dry == true and not (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run ~= nil) then
   D.ensure_gmcp()
   D.set_dry(true)
 end

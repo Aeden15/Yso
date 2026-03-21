@@ -1,15 +1,22 @@
 Yso Systems Workspace
 =====================
-Last updated: 2026-03-20
+Last updated: 2026-03-21
 
 This root README is now a workspace index.
 Class-specific notes live in the class folders.
 
 Recent Occultist workspace changes now also include the 2026-03-20 route /
-bootstrap repair pass: live aff-route debug resolution, automatic workspace
-bootstrap entry on package load, centralized route-registry ownership, and
-clearer Devtools artifact naming. See Ysindrolir/Occultist/README.txt for the
-detailed per-file notes.
+bootstrap repair pass: live aff-route debug resolution, deferred no-slot module
+autoload on package load (without a second full XML boot), centralized
+route-registry ownership, Devtools dry-run defaulting off on load, and clearer
+Devtools artifact naming. See Ysindrolir/Occultist/README.txt for the detailed
+per-file notes.
+
+On 2026-03-21 the Occultist bash upkeep/orb pass was also corrected: the Yso
+hunt upkeep now respects the Legacy basher on/off state instead of free-running
+whenever mode=bash, orb summon/defense uses Yso.queue-compatible modes again,
+and the Orb Defense timer now has a mirrored source file in
+Ysindrolir/Occultist/modules/Yso/xml/ for package rebuilds.
 
 
 Documentation Map

@@ -63,10 +63,12 @@ Blademaster Spar 3 Follow-up (2026-03-18)
 
 Route / Bootstrap Repair (2026-03-20)
 -------------------------------------
-  [fix] Bootstrap now auto-attempts the workspace `_entry` load once on package
-        startup, so no-slot filesystem-managed modules such as `route_registry.lua`
-        are present in live Mudlet sessions without requiring a manual
-        `lua Yso.bootstrap.entry(true)` bootstrap kick.
+  [fix] Bootstrap now defers package autoload until the package scripts have
+        finished loading, then backfills only the known no-slot workspace
+        modules (`route_registry`, `route_interface`, `party_aff`, `aeon`,
+        `predict_cure`, `skillset_reference_chart`). This keeps the live
+        package session populated without replaying the full XML legacy load
+        stack a second time.
   [fix] Live aff-route debugging was verified against the connected Mudlet/Achaea
         session after the bootstrap repair:
         `Yso.Combat.RouteRegistry.resolve('aff') -> occ_aff_burst`
@@ -74,6 +76,8 @@ Route / Bootstrap Repair (2026-03-20)
         `yrdebug off aff` works
   [fix] Devtools route-debug alias handling now treats bare `yrdebug on` /
         `yrdebug off` as usage rather than mis-parsing `on` or `off` as a route.
+  [fix] Devtools lane-lab no longer forces `ydry` on during package load.
+        DRY defaults off until explicitly toggled or enabled by `yreset`.
   [fix] Route metadata is now centralized again through `route_registry.lua`;
         duplicate fallback route tables were removed from `modes.lua` and
         `offense_driver.lua`.
@@ -256,6 +260,21 @@ Bug Fixes (2026-03-16)
         8-second READAURA requery, work in loop mode.
   [sync] XML mirror files were refreshed and mudlet packages/Yso system.xml was
         rebuilt after these route changes.
+
+Bash Upkeep / Orb Queue Repair (2026-03-21)
+-------------------------------------------
+  [fix] yso_hunt_mode_upkeep now treats bash upkeep as active only when the
+        Occultist is in bash mode and Legacy basher is actually toggled on.
+        This stops orb/hound/pathfinder upkeep from free-running while hunt is off.
+  [fix] yso_hunt_mode_upkeep now queues orb summon/defense through
+        Yso.queue-compatible calls before falling back to package helpers/raw send.
+        The upkeep path no longer depends on direct raw SEND for orb maintenance.
+  [fix] Orb Defense timer had been using queue mode "add" for summon even though
+        Yso.queue does not expose Q.add(). The mirrored source now uses
+        addclear-compatible queueing and reports missing queue modes truthfully.
+  [fix] Added xml/orb_defense_timer.lua as the editable source mirror for the
+        package slot "Orb Defense timer", so rebuilds now keep that script in sync
+        instead of leaving it package-only.
 
 Export Audit (2026-03-16)
 -------------------------

@@ -17502,8 +17502,17 @@ local function _is_bash_mode()
   return false
 end
 
+local function _legacy_basher_active()
+  local legacy = rawget(_G, &quot;Legacy&quot;)
+  local basher = legacy and legacy.Settings and legacy.Settings.Basher
+  if type(basher) == &quot;table&quot; and basher.status ~= nil then
+    return basher.status == true
+  end
+  return true
+end
+
 local function _is_active_bash_mode()
-  return _is_occultist() and _is_bash_mode()
+  return _is_occultist() and _is_bash_mode() and _legacy_basher_active()
 end
 
 local function _echo_yso(msg)
@@ -17540,6 +17549,55 @@ local function _priority_send(cmd)
     _send(M.cfg.priority.clear_cmd)
   end
   _send(cmd)
+end
+
+local function _queue_call(mode, qtype, cmd)
+  local Q = Yso and Yso.queue
+  local fn = Q and Q[mode]
+  if type(fn) ~= &quot;function&quot; then return false end
+  local ok = pcall(fn, qtype, cmd)
+  return ok == true
+end
+
+local function _orb_controller()
+  local dom = Yso and Yso.dom
+  local orbdef = dom and dom.orbdef
+  if type(orbdef) == &quot;table&quot; and type(orbdef.cmd) == &quot;function&quot; then
+    return orbdef
+  end
+  return nil
+end
+
+local function _orb_issue(flag, priority)
+  local C = M.cfg.orb or {}
+
+  if flag == &quot;s&quot; then
+    if _queue_call(tostring(C.queue_summon_mode or &quot;addclear&quot;), C.queue_summon or &quot;free&quot;, C.summon_cmd) then
+      return true
+    end
+  elseif flag == &quot;d&quot; then
+    if _queue_call(tostring(C.queue_mode or &quot;addclearfull&quot;), C.queue_defense or &quot;class&quot;, C.command_cmd) then
+      return true
+    end
+  end
+
+  local orbdef = _orb_controller()
+  if orbdef then
+    local ok = pcall(orbdef.cmd, flag)
+    if ok then return true end
+  end
+
+  if flag == &quot;s&quot; then
+    if priority then _priority_send(C.summon_cmd) else _send(C.summon_cmd) end
+    return true
+  end
+
+  if flag == &quot;d&quot; then
+    _priority_send(C.command_cmd)
+    return true
+  end
+
+  return false
 end
 
 local function _hp_pct()
@@ -17595,6 +17653,10 @@ local defaults_cfg = {
 
     command_cmd = &quot;command orb&quot;,
     summon_cmd  = &quot;summon orb&quot;,
+    queue_mode = &quot;addclearfull&quot;,
+    queue_defense = &quot;class&quot;,
+    queue_summon_mode = &quot;addclear&quot;,
+    queue_summon = &quot;free&quot;,
 
     command_gcd = 1.0,
     summon_gcd  = 1.0,
@@ -17791,8 +17853,7 @@ local function orb_try_summon(priority)
   o.summon_pending = true
   o.summon_pending_since = n
 
-  if priority then _priority_send(C.summon_cmd) else _send(C.summon_cmd) end
-  return true
+  return _orb_issue(&quot;s&quot;, priority)
 end
 
 local function orb_try_command()
@@ -17822,8 +17883,7 @@ local function orb_try_command()
   o.command_pending = true
   o.command_pending_since = n
 
-  _priority_send(C.command_cmd)
-  return true
+  return _orb_issue(&quot;d&quot;, true)
 end
 
 local function orb_on_defense_fade()
@@ -17911,6 +17971,34 @@ local function upkeep_tick()
   if M.cfg.upkeep.pathfinder_enabled and not M.state.present.pathfinder then
     _send(M.cfg.upkeep.pathfinder_cmd)
   end
+end
+
+local function _reset_ent_sync()
+  M.state.ent.synced = false
+  M.state.ent.scanning = false
+  M.state.ent.inflight = false
+  M.state.ent.inflight_until = 0
+  M.state.ent.buf = {}
+end
+
+local function _clear_orb_pending()
+  M.state.orb.command_pending = false
+  M.state.orb.summon_pending = false
+  M.state.orb.command_pending_since = 0
+  M.state.orb.summon_pending_since = 0
+  M.state.orb.want_command_on_expire = false
+  M.state.orb.want_command_after_summon = false
+end
+
+local function _refresh_active_upkeep()
+  if not _is_active_bash_mode() then return end
+  _reset_ent_sync()
+  ent_request()
+
+  M.state.hp_pct = _hp_pct()
+  shield_on_hp_update()
+  orb_on_hp_update()
+  upkeep_tick()
 end
 
 M._trig = M._trig or {}
@@ -18027,17 +18115,23 @@ M._eh.mode_changed = registerAnonymousEventHandler(&quot;yso.mode.changed&quot;,
   if not (M.cfg and M.cfg.enabled) then return end
   if not _is_occultist() then return end
   if _norm_mode_name(newMode) ~= &quot;bash&quot; then return end
+  _refresh_active_upkeep()
+end))
 
-  M.state.ent.synced = false
-  M.state.ent.scanning = false
-  M.state.ent.inflight = false
-  M.state.ent.inflight_until = 0
-  ent_request()
+_kill_eh(M._eh.legacy_basher)
+M._eh.legacy_basher = registerAnonymousEventHandler(&quot;LegacyBasherStatus&quot;, _safe(function(enabled)
+  if not (M.cfg and M.cfg.enabled) then return end
+  if not _is_occultist() then return end
 
-  M.state.hp_pct = _hp_pct()
-  shield_on_hp_update()
-  orb_on_hp_update()
-  upkeep_tick()
+  if enabled == true then
+    M.state.last_upkeep = 0
+    _refresh_active_upkeep()
+    return
+  end
+
+  _reset_ent_sync()
+  _clear_orb_pending()
+  M.state.last_upkeep = 0
 end))
 
 _echo_yso(&quot;Bash upkeep loaded (Occultist-gated)&quot;)
@@ -18518,16 +18612,139 @@ local function _bootstrap_occ_aff(reload)
   return (((_G.Yso or {}).off or {}).oc or {}).occ_aff_burst
 end
 
+local function _bootstrap_require_any(mods, reload)
+  local last_err = nil
+  for i = 1, #(mods or {}) do
+    local _, ok, err = _bootstrap_require(mods[i], reload)
+    if ok then return true, mods[i] end
+    last_err = err
+  end
+  return false, nil, last_err
+end
+
+Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
+  {
+    name = &quot;route_registry&quot;,
+    modules = { &quot;Yso.Combat.route_registry&quot;, &quot;Yso.xml.route_registry&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).Combat or {}).RouteRegistry)) == &quot;table&quot;
+    end,
+  },
+  {
+    name = &quot;route_interface&quot;,
+    modules = { &quot;Yso.Combat.route_interface&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).Combat or {}).RouteInterface)) == &quot;table&quot;
+    end,
+  },
+  {
+    name = &quot;aeon&quot;,
+    modules = { &quot;Yso.Combat.occultist.aeon&quot;, &quot;Yso.xml.yso_aeon&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).occ or {}).aeon)) == &quot;table&quot;
+    end,
+  },
+  {
+    name = &quot;party_aff&quot;,
+    modules = { &quot;Yso.Combat.routes.party_aff&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).off or {}).oc or {}).party_aff) == &quot;table&quot;
+    end,
+  },
+  {
+    name = &quot;predict_cure&quot;,
+    modules = { &quot;Yso.Core.predict_cure&quot;, &quot;Yso.xml.yso_predict_cure&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).predict or {}).cure)) == &quot;table&quot;
+    end,
+  },
+  {
+    name = &quot;skillset_reference_chart&quot;,
+    modules = { &quot;Yso.xml.skillset_reference_chart&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).occultist or {}).build_affcap)) == &quot;function&quot;
+    end,
+  },
+}
+
+local function _bootstrap_package_runtime_seeded()
+  return type(Yso) == &quot;table&quot; and (
+    type(Yso.off) == &quot;table&quot; or
+    type(Yso.queue) == &quot;table&quot; or
+    type(Yso.mode) == &quot;table&quot; or
+    type(Yso.Orchestrator) == &quot;table&quot;
+  )
+end
+
+local function _bootstrap_load_missing(reload)
+  local loaded = {}
+  local failed = {}
+  local items = Yso.bootstrap.package_missing_order or {}
+
+  for i = 1, #items do
+    local item = items[i]
+    local probe = type(item.probe) == &quot;function&quot; and item.probe() == true
+    if not probe then
+      local ok, _, err = _bootstrap_require_any(item.modules, reload)
+      local now_ok = type(item.probe) == &quot;function&quot; and item.probe() == true
+      if ok and now_ok then
+        loaded[#loaded + 1] = tostring(item.name or item.modules[1] or (&quot;slot_&quot; .. i))
+      else
+        failed[#failed + 1] = {
+          name = tostring(item.name or item.modules[1] or (&quot;slot_&quot; .. i)),
+          error = tostring(err or &quot;load failed&quot;),
+        }
+      end
+    end
+  end
+
+  Yso.bootstrap.missing_autoloaded = loaded
+  Yso.bootstrap.missing_autoload_failures = failed
+  return (#failed == 0), loaded, failed
+end
+
 Yso.bootstrap.require = _bootstrap_require
 Yso.bootstrap.entry = _bootstrap_entry
 Yso.bootstrap.occ_aff_burst = _bootstrap_occ_aff
 
-local function _bootstrap_auto_entry()
-  if rawget(_G, &quot;yso_bootstrap_entry_attempted&quot;) then return end
-  _G.yso_bootstrap_entry_attempted = true
+local function _bootstrap_finish_autoload()
+  if _bootstrap_package_runtime_seeded() then
+    local ok, _, failed = _bootstrap_load_missing(false)
+    Yso.bootstrap.entry_autoloaded = (ok == true)
+    if ok then
+      Yso.bootstrap.entry_autoload_error = nil
+    else
+      local names = {}
+      for i = 1, #failed do names[#names + 1] = failed[i].name end
+      Yso.bootstrap.entry_autoload_error = &quot;missing-module autoload failed: &quot; .. table.concat(names, &quot;, &quot;)
+    end
+    return
+  end
+
   local _, ok, err = _bootstrap_entry(false)
   Yso.bootstrap.entry_autoloaded = (ok == true)
   Yso.bootstrap.entry_autoload_error = ok and nil or err
+end
+
+local function _bootstrap_auto_entry()
+  if rawget(_G, &quot;yso_bootstrap_entry_attempted&quot;) then return end
+  _G.yso_bootstrap_entry_attempted = true
+  if type(tempTimer) == &quot;function&quot; then
+    tempTimer(0, function()
+      local ok, err = pcall(_bootstrap_finish_autoload)
+      if not ok then
+        Yso.bootstrap.entry_autoloaded = false
+        Yso.bootstrap.entry_autoload_error = err
+      end
+    end)
+    return
+  end
+
+  local ok, err = pcall(_bootstrap_finish_autoload)
+  if not ok then
+    Yso.bootstrap.entry_autoloaded = false
+    Yso.bootstrap.entry_autoload_error = err
+  end
 end
 
 Yso.bootstrap.auto_entry = _bootstrap_auto_entry
@@ -22199,7 +22416,13 @@ cecho(&quot;&lt;cyan&gt;[Yso] dop router loaded (patched).&lt;reset&gt;\n&quot;)
 					<Script isActive="yes" isFolder="no">
 						<name>Orb Defense timer</name>
 						<packageName />
-						<script>--========================================================--
+						<script>-- Auto-exported from Mudlet package script: Orb Defense timer
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Orb Defense timer
+--  â€¢ Tracks Domination orb defense duration and warnings.
+--  â€¢ Queues summon/defense through Yso.queue when available.
 --========================================================--
 
 Yso = Yso or {}
@@ -22212,40 +22435,26 @@ O.cfg = O.cfg or {
   duration   = 35,
   warn_at    = {10, 5, 1},
 
-  gag_lines  = true,   -- deleteLine() when triggers fire
+  gag_lines  = true,
   echo       = true,
 
-  prefix     = "&lt;HotPink&gt;[Domination] ",
-  up_color   = "&lt;dodger_blue&gt;",
-  warn_color = "&lt;gold&gt;",
-  down_color = "&lt;OrangeRed&gt;",
+  prefix     = &quot;&lt;HotPink&gt;[Domination] &quot;,
+  up_color   = &quot;&lt;dodger_blue&gt;&quot;,
+  warn_color = &quot;&lt;gold&gt;&quot;,
+  down_color = &quot;&lt;OrangeRed&gt;&quot;,
 
-  -- If true, when your DOWN trigger fires, we update cfg.duration to match
-  -- the measured time between UP and DOWN (within bounds below).
   autolearn      = false,
   autolearn_min  = 10,
   autolearn_max  = 180,
-
-  -- If true, prints a note when predicted end is reached (still stays UP).
   soft_expire_echo = false,
 
-  -- Optional alias helpers (adjust if needed)
-  cmd_summon  = "summon orb",
-  cmd_defense = "command orb",  -- adjust if needed: "command orb defense"
+  cmd_summon  = &quot;summon orb&quot;,
+  cmd_defense = &quot;command orb&quot;,
 
-  -- ================================
-  -- Queueing / override behavior
-  -- ================================
-  -- "addclearfull" = clears ALL queues (hard override), then queues your command
-  -- "addclear"     = clears only the specified queue type, then queues your command
-  queue_mode    = "addclearfull",
-
-  -- Domination entity commands are commonly "class"/custom style actions.
-  -- If you confirm COMMAND ORB uses equilibrium instead, set this to "eq".
-  queue_defense = "class",
-
-  -- Summon usually doesn't need to nuke your queue (leave as "add").
-  queue_summon  = "free",
+  queue_mode        = &quot;addclearfull&quot;,
+  queue_defense     = &quot;class&quot;,
+  queue_summon_mode = &quot;addclear&quot;,
+  queue_summon      = &quot;free&quot;,
 }
 
 O.state = O.state or {
@@ -22253,11 +22462,11 @@ O.state = O.state or {
   started_at = nil,
   expires_at = 0,
   timers     = {},
-  src        = "",
+  src        = &quot;&quot;,
 }
 
 local function _now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == &quot;function&quot; then return getEpoch() end
   return os.time()
 end
 
@@ -22274,48 +22483,57 @@ end
 
 local function _echo(color, msg)
   if not O.cfg.echo then return end
-  cecho(string.format("%s%s%s\n", O.cfg.prefix or "", color or "", msg or ""))
+  cecho(string.format(&quot;%s%s%s\n&quot;, O.cfg.prefix or &quot;&quot;, color or &quot;&quot;, msg or &quot;&quot;))
 end
 
--- Server-side queue helper (hard override capable)
 local function _q(mode, qtype, cmd)
-  mode  = tostring(mode  or "add"):lower()
-  qtype = tostring(qtype or "free")
-  cmd   = tostring(cmd   or "")
-  if cmd == "" then return false end
+  mode  = tostring(mode  or &quot;addclear&quot;):lower()
+  qtype = tostring(qtype or &quot;free&quot;)
+  cmd   = tostring(cmd   or &quot;&quot;)
+  if cmd == &quot;&quot; then return false end
 
   local Q = Yso and Yso.queue
-  local fn = Q and Q[mode]
-  if type(fn) ~= "function" then
-    _echo(O.cfg.warn_color, "Yso.queue not loaded; cannot queue orb command.")
+  local resolved = mode
+  local fn = Q and Q[resolved]
+
+  if type(fn) ~= &quot;function&quot; and resolved == &quot;add&quot; then
+    resolved = &quot;addclear&quot;
+    fn = Q and Q[resolved]
+  end
+
+  if type(fn) ~= &quot;function&quot; then
+    _echo(O.cfg.warn_color, (&quot;Yso.queue mode &apos;%s&apos; unavailable; cannot queue orb command.&quot;):format(resolved))
     return false
   end
 
-  fn(qtype, cmd)
+  local ok, err = pcall(fn, qtype, cmd)
+  if not ok then
+    _echo(O.cfg.warn_color, (&quot;Orb queue failed: %s&quot;):format(tostring(err)))
+    return false
+  end
+
   return true
 end
 
 local function _schedule(duration)
   duration = tonumber(duration) or O.cfg.duration or 35
 
-  -- warnings
   for _, t in ipairs(O.cfg.warn_at or {}) do
     t = tonumber(t)
     if t and t &gt; 0 and t &lt; duration then
       local id = tempTimer(duration - t, function()
         if not O.state.up then return end
         local left = math.floor(O.remaining() + 0.5)
-        _echo(O.cfg.warn_color, ("Orb defense: %ds remaining."):format(left))
+        _echo(O.cfg.warn_color, (&quot;Orb defense: %ds remaining.&quot;):format(left))
       end)
       table.insert(O.state.timers, id)
     end
   end
 
-  -- soft-expire only: does NOT force DOWN
   local id = tempTimer(duration + 0.15, function()
     if not O.state.up then return end
     if O.cfg.soft_expire_echo then
-      _echo(O.cfg.warn_color, "Orb defense predicted end reached (awaiting dissipate/remove).")
+      _echo(O.cfg.warn_color, &quot;Orb defense predicted end reached (awaiting dissipate/remove).&quot;)
     end
   end)
   table.insert(O.state.timers, id)
@@ -22329,7 +22547,7 @@ end
 
 function O.start(duration, src)
   duration = tonumber(duration) or O.cfg.duration or 35
-  src = src or "start"
+  src = src or &quot;start&quot;
 
   _kill_all()
 
@@ -22342,20 +22560,19 @@ function O.start(duration, src)
   Yso.defs = Yso.defs or {}
   Yso.defs.orb_defense = true
 
-  _echo(O.cfg.up_color, "ORB DEFENSE UP!")
+  _echo(O.cfg.up_color, &quot;ORB DEFENSE UP!&quot;)
 
   _schedule(duration)
 end
 
 function O.stop(msg, src)
-  src = src or "stop"
+  src = src or &quot;stop&quot;
 
   if not O.state.up then
-    -- still clear any stale timers/state
     _kill_all()
     O.state.started_at = nil
     O.state.expires_at = 0
-    O.state.src = ""
+    O.state.src = &quot;&quot;
     Yso.defs = Yso.defs or {}
     Yso.defs.orb_defense = nil
     return
@@ -22376,60 +22593,58 @@ function O.stop(msg, src)
   O.state.up = false
   O.state.started_at = nil
   O.state.expires_at = 0
-  O.state.src = ""
+  O.state.src = &quot;&quot;
 
   Yso.defs = Yso.defs or {}
   Yso.defs.orb_defense = nil
 
-  _echo(O.cfg.down_color, msg or "ORB DEFENSE DISSIPATED.")
+  _echo(O.cfg.down_color, msg or &quot;ORB DEFENSE DISSIPATED.&quot;)
 end
 
--- Text trigger entrypoints
 function O.on_up(duration_override)
   if O.cfg.gag_lines then deleteLine() end
-  O.start(duration_override, "text_up")
+  O.start(duration_override, &quot;text_up&quot;)
 end
 
 function O.on_down()
   if O.cfg.gag_lines then deleteLine() end
-  O.stop("ORB DEFENSE DISSIPATED.", "text_down")
+  O.stop(&quot;ORB DEFENSE DISSIPATED.&quot;, &quot;text_down&quot;)
 end
 
--- Optional GMCP entrypoints (only use if you decide to wire them)
-local function _norm(s) return tostring(s or ""):gsub("%s+","_"):lower() end
+local function _norm(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;%s+&quot;, &quot;_&quot;):lower()
+end
+
 function O.on_gmcp_add(def)
   local name = _norm(def and (def.name or def.id) or def)
-  if name == "arctar" or name == "orb_defense" or name == "orbdefense" then
-    O.start(tonumber(def and def.duration) or nil, "gmcp_add")
+  if name == &quot;arctar&quot; or name == &quot;orb_defense&quot; or name == &quot;orbdefense&quot; then
+    O.start(tonumber(def and def.duration) or nil, &quot;gmcp_add&quot;)
   end
 end
+
 function O.on_gmcp_remove(def)
   local name = _norm(def and (def.name or def.id) or def)
-  if name == "arctar" or name == "orb_defense" or name == "orbdefense" then
-    O.stop("ORB DEFENSE DISSIPATED.", "gmcp_remove")
+  if name == &quot;arctar&quot; or name == &quot;orb_defense&quot; or name == &quot;orbdefense&quot; then
+    O.stop(&quot;ORB DEFENSE DISSIPATED.&quot;, &quot;gmcp_remove&quot;)
   end
 end
 
--- Optional alias helper: orbs / orbd / orbr
 function O.cmd(flag)
-  flag = tostring(flag or ""):lower()
+  flag = tostring(flag or &quot;&quot;):lower()
 
-  if flag == "s" then
-    -- Summon (normal queue add)
-    _q("add", O.cfg.queue_summon, O.cfg.cmd_summon)
+  if flag == &quot;s&quot; then
+    _q(O.cfg.queue_summon_mode or &quot;addclear&quot;, O.cfg.queue_summon, O.cfg.cmd_summon)
 
-  elseif flag == "d" then
-    -- DEFENSE (HARD OVERRIDE): clears all queued actions, then queues command orb
+  elseif flag == &quot;d&quot; then
     _q(O.cfg.queue_mode, O.cfg.queue_defense, O.cfg.cmd_defense)
 
-  elseif flag == "r" or flag == "t" then
+  elseif flag == &quot;r&quot; or flag == &quot;t&quot; then
     local left = math.floor(O.remaining() + 0.5)
-    _echo(O.cfg.warn_color, ("Orb defense remaining: %ds"):format(left))
+    _echo(O.cfg.warn_color, (&quot;Orb defense remaining: %ds&quot;):format(left))
   else
-    _echo(O.cfg.warn_color, "Usage: orbs (summon), orbd (defense), orbr (remaining)")
+    _echo(O.cfg.warn_color, &quot;Usage: orbs (summon), orbd (defense), orbr (remaining)&quot;)
   end
 end
---========================================================--
 </script>
 						<eventHandlerList />
 					</Script>
