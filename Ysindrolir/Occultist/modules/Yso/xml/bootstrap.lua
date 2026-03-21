@@ -200,6 +200,46 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     end,
   },
   {
+    name = "targeting",
+    modules = { "Yso.xml.yso_targeting", "Yso.xml.yso_target" },
+    probe = function()
+      local targeting = ((_G.Yso or {}).targeting or {})
+      return type(targeting.get) == "function"
+         and (type(targeting.set) == "function" or type(targeting.set_target) == "function")
+    end,
+  },
+  {
+    name = "domination_reference",
+    modules = { "Yso.Combat.occultist.domination_reference", "Yso.xml.domination_reference" },
+    probe = function()
+      local occ = ((_G.Yso or {}).occ or {})
+      return type(occ.getDom) == "function"
+         and type(occ.getDomByEntity) == "function"
+    end,
+  },
+  {
+    name = "orb_defense_timer",
+    modules = { "Yso.xml.orb_defense_timer" },
+    probe = function()
+      return type(((((_G.Yso or {}).dom or {}).orbdef or {}).cmd)) == "function"
+    end,
+  },
+  {
+    name = "hunt_mode_upkeep",
+    modules = { "Yso.xml.yso_hunt_mode_upkeep" },
+    probe = function()
+      local huntmode = ((_G.Yso or {}).huntmode or {})
+      return type(huntmode.cfg) == "table" and type(huntmode.state) == "table"
+    end,
+  },
+  {
+    name = "primebond_selector",
+    modules = { "Yso.xml.hunt_primebond_shieldbreak_selector" },
+    probe = function()
+      return type((((_G.Yso or {}).primebond or {}).request)) == "function"
+    end,
+  },
+  {
     name = "skillset_reference_chart",
     modules = { "Yso.xml.skillset_reference_chart" },
     probe = function()

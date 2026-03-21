@@ -19,6 +19,11 @@ local insert_before_name_map = {
   ["yso_targeting.lua"] = "Yso.target",
 }
 
+local retired_script_name_map = {
+  ["yso_travel_router.lua"] = { "yso_travel_router.lua" },
+  ["yso_travel_universe.lua"] = { "yso_travel_universe.lua" },
+}
+
 local expected_no_slot = {
   ["party_aff.lua"] = true,
   ["route_interface.lua"] = true,
@@ -146,6 +151,15 @@ local function read_first_line(path)
   return line
 end
 
+local function path_exists(path)
+  local fh = io.open(path, "rb")
+  if not fh then
+    return false
+  end
+  fh:close()
+  return true
+end
+
 local function write_all(path, data)
   local fh, err = io.open(path, "wb")
   if not fh then
@@ -262,6 +276,7 @@ local function parse_script_blocks(xml)
 
     blocks[#blocks + 1] = {
       start_pos = start_pos,
+      close_end = close_end,
       name = name,
       body_start = body_start,
       body_end = body_end,
@@ -323,6 +338,24 @@ local function insert_script_before_name(xml, insert_name, escaped_body, before_
       local indent = xml:sub(insert_pos, block.start_pos - 1)
       local new_block = build_script_block(insert_name, escaped_body, indent ~= "" and indent or "\t\t\t\t")
       return xml:sub(1, insert_pos - 1) .. new_block .. xml:sub(insert_pos), true
+    end
+  end
+  return xml, false
+end
+
+local function remove_script_block_by_name(xml, name)
+  for _, block in ipairs(parse_script_blocks(xml)) do
+    if block.name == name then
+      local remove_from = line_start_for_pos(xml, block.start_pos)
+      local remove_to = block.close_end
+      while true do
+        local ch = xml:sub(remove_to + 1, remove_to + 1)
+        if ch ~= "\r" and ch ~= "\n" then
+          break
+        end
+        remove_to = remove_to + 1
+      end
+      return xml:sub(1, remove_from - 1) .. xml:sub(remove_to + 1), true
     end
   end
   return xml, false
@@ -406,6 +439,7 @@ local xml = read_all(xml_path)
 local updated = {}
 local no_slot = {}
 local skipped = {}
+local removed = {}
 
 for _, path in ipairs(list_lua_files(mirror_root)) do
   local name = basename(path)
@@ -453,6 +487,19 @@ for _, path in ipairs(list_lua_files(mirror_root)) do
   end
 end
 
+for file_name, slot_names in pairs(retired_script_name_map) do
+  local retired_path = path_join(mirror_root, file_name)
+  if not path_exists(retired_path) then
+    for _, slot_name in ipairs(slot_names) do
+      local new_xml, matched = remove_script_block_by_name(xml, slot_name)
+      if matched then
+        xml = new_xml
+        removed[#removed + 1] = slot_name
+      end
+    end
+  end
+end
+
 local ok, err = validate_xml(xml)
 if not ok then
   fail("XML validation failed before write: " .. tostring(err))
@@ -469,6 +516,9 @@ end
 io.write(string.format("updated=%d\n", #updated))
 if #updated > 0 then
   io.write("updated_files=" .. table.concat(updated, ", ") .. "\n")
+end
+if #removed > 0 then
+  io.write("removed_slots=" .. table.concat(removed, ", ") .. "\n")
 end
 if #no_slot > 0 then
   io.write("no_slot_files=" .. table.concat(no_slot, ", ") .. "\n")

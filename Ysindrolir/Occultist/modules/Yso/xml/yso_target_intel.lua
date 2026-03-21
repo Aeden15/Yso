@@ -1,10 +1,10 @@
 --========================================================--
 -- yso_target_intel.lua  (DROP-IN)
 -- Purpose:
---   • Central per-target state: mana%, tracked affs, inferred cures, lock flags
---   • Safe to run without Legacy/AK present (they merely call into it)
+--   * Central per-target state: mana%, tracked affs, inferred cures, lock flags
+--   * Safe to run without Legacy/AK present (they merely call into it)
 -- Notes:
---   • Do NOT use a table key named `true` (reserved keyword). This module
+--   * Do NOT use a table key named `true` (reserved keyword). This module
 --     returns lock flags as: softlock/truelock (and soft/hard aliases).
 --========================================================--
 
@@ -117,11 +117,17 @@ end
 -- ---------- cure inference buckets (from Legacy V2.1 CuringSwaps snippet) ----------
 T.cure_map = T.cure_map or {
   kelp       = {"asthma","clumsiness","hypochondria","sensitivity","weariness","healthleech","parasite","rebbies"},
+  bloodroot  = {"pyramides","paralysis","slickness"},
+  magnesium  = {"pyramides","paralysis","slickness"},
   ginseng    = {"addiction","darkshade","haemophilia","lethargy","nausea","scytherus","flushings"},
   goldenseal = {"dizziness","epilepsy","impatience","shyness","stupidity","depression","shadowmadness","mycalium","sandfever","horror"},
   lobelia    = {"agoraphobia","guilt","spiritburn","tenderskin","claustrophobia","loneliness","masochism","recklessness","vertigo"},
   ash        = {"confusion","dementia","hallucinations","hypersomnia","paranoia"},
   bellwort   = {"retribution","timeloop","peace","justice","lovers"},
+  hawthorn   = {"deaf","deafness"},
+  calamine   = {"deaf","deafness"},
+  bayberry   = {"blind","blindness"},
+  arsenic    = {"blind","blindness"},
 }
 
 -- Call this when you see: "<target> eats <herb>."
