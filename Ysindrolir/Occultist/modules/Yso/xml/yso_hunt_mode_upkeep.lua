@@ -95,6 +95,14 @@ local function _is_active_bash_mode()
   return _is_occultist() and _is_bash_mode() and _legacy_basher_active()
 end
 
+local function _upkeep_grace_active()
+  return (_now() < tonumber(M.state.enable_grace_until or 0))
+end
+
+local function _can_run_upkeep()
+  return _is_active_bash_mode() and not _upkeep_grace_active()
+end
+
 local function _echo_yso(msg)
   if not (M.cfg and M.cfg.echo) then return end
   if type(cecho) == "function" then
@@ -209,6 +217,7 @@ local defaults_cfg = {
   require_hunt_mode = true,
   echo = true,
   debug = false,
+  enable_grace = 1.0,
 
   priority = { enabled = true, clear_cmd = "clearqueue all" },
 
@@ -267,6 +276,7 @@ local defaults_cfg = {
 local defaults_state = {
   hp_pct = 1.0,
   last_upkeep = 0,
+  enable_grace_until = 0,
 
   present = { orb = false, hound = false, pathfinder = false },
 
@@ -325,7 +335,7 @@ end
 
 local function ent_request()
   if not (M.cfg.enabled and M.cfg.ent.enabled) then return false end
-  if not _is_active_bash_mode() then return false end
+  if not _can_run_upkeep() then return false end
 
   local e = M.state.ent
   local n = _now()
@@ -385,7 +395,7 @@ end
 local function shield_on_hp_update()
   local C = M.cfg.shield
   if not (M.cfg.enabled and C.enabled) then return end
-  if not _is_active_bash_mode() then return end
+  if not _can_run_upkeep() then return end
 
   local s = M.state.shield
   local n = _now()
@@ -415,7 +425,7 @@ end
 local function orb_try_summon(priority)
   local C = M.cfg.orb
   if not (M.cfg.enabled and C.enabled) then return false end
-  if not _is_active_bash_mode() then return false end
+  if not _can_run_upkeep() then return false end
 
   local o = M.state.orb
   local n = _now()
@@ -439,7 +449,7 @@ end
 local function orb_try_command()
   local C = M.cfg.orb
   if not (M.cfg.enabled and C.enabled) then return false end
-  if not _is_active_bash_mode() then return false end
+  if not _can_run_upkeep() then return false end
 
   local o = M.state.orb
   local n = _now()
@@ -469,7 +479,7 @@ end
 local function orb_on_defense_fade()
   local o = M.state.orb
   o.defense_active = false
-  if not _is_active_bash_mode() then return end
+  if not _can_run_upkeep() then return end
   if (M.state.hp_pct or 1.0) <= (M.cfg.orb.hp_threshold or 0.40) then
     o.want_command_on_expire = false
     orb_try_command()
@@ -511,7 +521,7 @@ end
 
 local function orb_on_hp_update()
   if not (M.cfg.enabled and M.cfg.orb.enabled) then return end
-  if not _is_active_bash_mode() then return end
+  if not _can_run_upkeep() then return end
 
   if (M.state.hp_pct or 1.0) <= (M.cfg.orb.hp_threshold or 0.40) then
     orb_try_command()
@@ -523,7 +533,7 @@ end
 
 local function upkeep_tick()
   if not (M.cfg.enabled and M.cfg.upkeep.enabled) then return end
-  if not _is_active_bash_mode() then return end
+  if not _can_run_upkeep() then return end
 
   ent_tick()
 
@@ -704,13 +714,16 @@ M._eh.legacy_basher = registerAnonymousEventHandler("LegacyBasherStatus", _safe(
   if not _is_occultist() then return end
 
   if enabled == true then
+    _reset_ent_sync()
+    _clear_orb_pending()
+    M.state.enable_grace_until = _now() + (tonumber(M.cfg.enable_grace or 1.0) or 1.0)
     M.state.last_upkeep = 0
-    _refresh_active_upkeep()
     return
   end
 
   _reset_ent_sync()
   _clear_orb_pending()
+  M.state.enable_grace_until = 0
   M.state.last_upkeep = 0
 end))
 

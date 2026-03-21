@@ -1067,7 +1067,11 @@ if Legacy.Settings.Basher.status == false then
     Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack = "kill"
   end
   if gmcp.Char.Status.class == "Occultist" and Yso and Yso.primebond and type(Yso.primebond.request) == "function" then
-    pcall(Yso.primebond.request)
+    local now = (type(getEpoch) == "function" and getEpoch()) or os.time()
+    local last = tonumber(Yso.primebond.last_scan or 0) or 0
+    if last == 0 or (now - last) > 300 then
+      pcall(Yso.primebond.request)
+    end
   end
   send("setalias basher "..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].pre.."/"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack)
   Legacy.echo("&lt;green&gt;Bashing Activated.")
