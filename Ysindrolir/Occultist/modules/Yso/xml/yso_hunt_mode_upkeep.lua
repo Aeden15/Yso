@@ -4,14 +4,16 @@
 --========================================================--
 -- Yso_hunt_mode_upkeep
 --
--- Bash-mode entourage upkeep only:
---   1) Request ENT and parse entourage listing.
---   2) Queue missing summons (Achaea server queue syntax).
---   3) Send MASK only when chaos orb, chaos hound, and pathfinder are present.
+-- Bash-mode entourage upkeep (trigger-driven, no vitals loop):
+--   1) refresh() sends ENT once.
+--   2) ENT-result triggers parse the listing.
+--   3) After parse, missing summons are sent once each (plain send).
+--   4) Summon-confirmation triggers mark present; when all three
+--      are present, MASK is sent once.
+--   5) A periodic rescan timer re-sends ENT every ~10 s while in bash.
 --
--- Mudlet UI: "Registered Events" may stay empty. This script registers
--- anonymous handlers at load (gmcp.Char.Vitals, yso.mode.changed) and
--- tempRegexTriggers for game lines. Call Yso.huntmode.refresh(...) from mbash.
+-- No QUEUE ADDCLEAR, no gmcp.Char.Vitals handler.
+-- Mudlet UI "Registered Events" will be empty; all wiring is in Lua.
 --========================================================--
 
 _G.Yso = _G.Yso or _G.yso or {}
@@ -44,13 +46,6 @@ local function _send(cmd)
   return false
 end
 
---- Achaea HELP QUEUEING: QUEUE ADDCLEAR <queue> <command>
-local function _queue_addclear_free(cmd)
-  cmd = tostring(cmd or "")
-  if cmd == "" then return false end
-  return _send(("QUEUE ADDCLEAR free %s"):format(cmd))
-end
-
 local function _is_bash_mode()
   local mode = Yso and Yso.mode
   if type(mode) ~= "table" then return false end
@@ -66,10 +61,8 @@ M.cfg = M.cfg or {
   enabled = true,
   debug = false,
   ent_cmd = "ent",
-  ent_request_gcd = 2.5,
-  ent_rescan_gcd = 8.0,
   ent_inflight_timeout = 3.0,
-  summon_queue_gcd = 4.0,
+  rescan_interval = 10.0,
   summons = {
     orb = "summon orb",
     hound = "summon hound",
@@ -79,15 +72,14 @@ M.cfg = M.cfg or {
 }
 
 M.state = M.state or {
-  present = { orb = false, hound = false, pathfinder = false },
-  pending = { orb = 0, hound = 0, pathfinder = 0, mask = 0 },
+  present  = { orb = false, hound = false, pathfinder = false },
+  sent     = { orb = false, hound = false, pathfinder = false, mask = false },
   mask_active = false,
   ent = {
-    synced = false,
+    synced   = false,
     scanning = false,
     inflight = false,
     inflight_until = 0,
-    last_request = 0,
     buf = {},
   },
 }
@@ -98,59 +90,76 @@ local function _dbg(msg)
   end
 end
 
-local function _missing_entities()
-  local out = {}
-  if M.state.present.orb ~= true then out[#out + 1] = "orb" end
-  if M.state.present.hound ~= true then out[#out + 1] = "hound" end
-  if M.state.present.pathfinder ~= true then out[#out + 1] = "pathfinder" end
-  return out
+local function _all_present()
+  return M.state.present.orb == true
+     and M.state.present.hound == true
+     and M.state.present.pathfinder == true
 end
 
-local function _sync_mask_with_presence()
-  if #_missing_entities() > 0 then
-    M.state.mask_active = false
+local function _reset_sent()
+  M.state.sent = { orb = false, hound = false, pathfinder = false, mask = false }
+end
+
+-- Send missing summons (once each) then mask if all present.
+-- Called exactly once after ENT parse completes, and once after
+-- each summon-confirmation trigger.
+local function _act()
+  if M.cfg.enabled ~= true then return end
+  if not _is_bash_mode() then return end
+
+  if not M.state.ent.synced then return end
+
+  local did_summon = false
+  for _, id in ipairs({ "orb", "hound", "pathfinder" }) do
+    if M.state.present[id] ~= true and M.state.sent[id] ~= true then
+      local cmd = M.cfg.summons and M.cfg.summons[id] or ""
+      if cmd ~= "" then
+        M.state.sent[id] = true
+        _dbg("send " .. cmd)
+        _send(cmd)
+        did_summon = true
+      end
+    end
+  end
+  if did_summon then return end
+
+  if _all_present() and M.state.mask_active ~= true and M.state.sent.mask ~= true then
+    M.state.sent.mask = true
+    _dbg("send mask")
+    _send(M.cfg.mask_cmd or "mask")
   end
 end
 
-local function _reset_ent_sync()
-  local e = M.state.ent
-  e.synced = false
-  e.scanning = false
-  e.inflight = false
-  e.inflight_until = 0
-  e.buf = {}
-end
+-- ---------- ENT request / parse ----------
 
-local function _request_ent(force)
+local function _request_ent()
   local e = M.state.ent
   local now = _now()
-  local gcd = tonumber(M.cfg.ent_request_gcd or 2.5) or 2.5
-  if force ~= true and (now - tonumber(e.last_request or 0)) < gcd then
-    return false
-  end
-  e.last_request = now
   e.inflight = true
   e.scanning = false
+  e.synced   = false
   e.inflight_until = now + (tonumber(M.cfg.ent_inflight_timeout or 3.0) or 3.0)
   e.buf = {}
-  _dbg("request ent")
+  _reset_sent()
+  M.state.mask_active = false
+  _dbg("send ent")
   return _send(M.cfg.ent_cmd or "ent")
 end
 
 local function _apply_block(block)
   local text = tostring(block or ""):lower()
-  M.state.present.orb = (text:find("chaos orb#%d+", 1, false) ~= nil)
-  M.state.present.hound = (text:find("chaos hound#%d+", 1, false) ~= nil)
-  M.state.present.pathfinder = (text:find("pathfinder#%d+", 1, false) ~= nil)
+  M.state.present.orb        = (text:find("chaos orb#%d+",  1, false) ~= nil)
+  M.state.present.hound      = (text:find("chaos hound#%d+", 1, false) ~= nil)
+  M.state.present.pathfinder = (text:find("pathfinder#%d+",  1, false) ~= nil)
   local e = M.state.ent
-  e.synced = true
+  e.synced   = true
   e.scanning = false
   e.inflight = false
-  e.inflight_until = 0
   e.buf = {}
-  _sync_mask_with_presence()
+  if not _all_present() then M.state.mask_active = false end
   _dbg(("ent parsed orb=%s hound=%s path=%s"):format(
     tostring(M.state.present.orb), tostring(M.state.present.hound), tostring(M.state.present.pathfinder)))
+  _act()
 end
 
 local function _apply_none()
@@ -158,76 +167,50 @@ local function _apply_none()
   M.state.present.hound = false
   M.state.present.pathfinder = false
   local e = M.state.ent
-  e.synced = true
+  e.synced   = true
   e.scanning = false
   e.inflight = false
-  e.inflight_until = 0
   e.buf = {}
   M.state.mask_active = false
   _dbg("entourage empty")
+  _act()
 end
 
-local function _upkeep_pass(force_ent)
-  if M.cfg.enabled ~= true then return false end
-  if not _is_bash_mode() then return false end
+-- ---------- public API ----------
 
-  local e = M.state.ent
-  if e.inflight == true and _now() > tonumber(e.inflight_until or 0) then
-    e.inflight = false
-    e.scanning = false
-    e.buf = {}
-    _dbg("ent inflight timeout")
-  end
-
-  if force_ent == true or e.synced ~= true then
-    return _request_ent(force_ent == true)
-  end
-
-  if (_now() - tonumber(e.last_request or 0)) >= (tonumber(M.cfg.ent_rescan_gcd or 8.0) or 8.0) then
-    return _request_ent(false)
-  end
-
-  local missing = _missing_entities()
-  local now = _now()
-  local sq_gcd = tonumber(M.cfg.summon_queue_gcd or 4.0) or 4.0
-  if #missing > 0 then
-    M.state.mask_active = false
-    for i = 1, #missing do
-      local id = missing[i]
-      if (now - tonumber(M.state.pending[id] or 0)) >= sq_gcd then
-        local cmd = M.cfg.summons and M.cfg.summons[id] or ""
-        if cmd ~= "" then
-          M.state.pending[id] = now
-          _dbg("queue summon: " .. cmd)
-          _queue_addclear_free(cmd)
-        end
-      end
-    end
-    return true
-  end
-
-  if M.state.mask_active ~= true then
-    if (now - tonumber(M.state.pending.mask or 0)) >= sq_gcd then
-      M.state.pending.mask = now
-      _dbg("queue mask")
-      return _queue_addclear_free(M.cfg.mask_cmd or "mask")
-    end
-  end
-  return true
-end
-
---- Force a fresh ent scan and re-run upkeep (call from mbash even if already bash).
 function M.refresh(reason)
   reason = tostring(reason or "")
   if M.cfg.enabled ~= true then return false end
   _dbg("refresh " .. reason)
-  _reset_ent_sync()
+  _reset_sent()
   M.state.mask_active = false
-  M.state.pending = { orb = 0, hound = 0, pathfinder = 0, mask = 0 }
-  return _upkeep_pass(true)
+  return _request_ent()
 end
 
--- ---------- triggers (entourage + summon feedback + mask line) ----------
+-- ---------- periodic rescan timer ----------
+
+M._rescan_timer = M._rescan_timer or nil
+local function _kill_timer(id) if id and type(killTimer) == "function" then pcall(killTimer, id) end end
+
+local function _start_rescan()
+  _kill_timer(M._rescan_timer)
+  local interval = tonumber(M.cfg.rescan_interval or 10.0) or 10.0
+  M._rescan_timer = tempTimer(interval, function()
+    M._rescan_timer = nil
+    if M.cfg.enabled ~= true then return end
+    if not _is_bash_mode() then return end
+    _dbg("rescan tick")
+    _request_ent()
+    _start_rescan()
+  end)
+end
+
+local function _stop_rescan()
+  _kill_timer(M._rescan_timer)
+  M._rescan_timer = nil
+end
+
+-- ---------- triggers ----------
 
 M._trig = M._trig or {}
 local function _kill_tr(id)
@@ -246,7 +229,6 @@ _kill_tr(M._trig.ent_none)
 M._trig.ent_none = tempRegexTrigger([[^There are no beings in your entourage\.$]], function()
   if M.state.ent.inflight ~= true then return end
   _apply_none()
-  _upkeep_pass(false)
 end)
 
 _kill_tr(M._trig.ent_line)
@@ -258,7 +240,6 @@ M._trig.ent_line = tempRegexTrigger([[#\d+]], function()
     e.buf[#e.buf + 1] = ln
     if ln:match("%.%s*$") then
       _apply_block(table.concat(e.buf, "\n"))
-      _upkeep_pass(false)
     end
   end
 end)
@@ -268,9 +249,9 @@ M._trig.summon_orb = tempRegexTrigger(
   [[^A swirling portal of chaos opens, spits out a chaos orb, then vanishes\.]],
   function()
     M.state.present.orb = true
-    M.state.pending.orb = 0
-    M.state.mask_active = false
-    _upkeep_pass(false)
+    M.state.sent.orb = false
+    _dbg("orb confirmed")
+    _act()
   end)
 
 _kill_tr(M._trig.summon_hound)
@@ -278,9 +259,9 @@ M._trig.summon_hound = tempRegexTrigger(
   [[^A swirling portal of chaos opens, spits out a chaos hound, then vanishes\.]],
   function()
     M.state.present.hound = true
-    M.state.pending.hound = 0
-    M.state.mask_active = false
-    _upkeep_pass(false)
+    M.state.sent.hound = false
+    _dbg("hound confirmed")
+    _act()
   end)
 
 _kill_tr(M._trig.summon_pathfinder)
@@ -288,9 +269,9 @@ M._trig.summon_pathfinder = tempRegexTrigger(
   [[^A swirling portal of chaos opens, spits out a pathfinder, then vanishes\.]],
   function()
     M.state.present.pathfinder = true
-    M.state.pending.pathfinder = 0
-    M.state.mask_active = false
-    _upkeep_pass(false)
+    M.state.sent.pathfinder = false
+    _dbg("pathfinder confirmed")
+    _act()
   end)
 
 _kill_tr(M._trig.mask_on)
@@ -298,10 +279,11 @@ M._trig.mask_on = tempRegexTrigger(
   [[^Calling upon your powers within, you mask the movements of your chaos entities from the world\.$]],
   function()
     M.state.mask_active = true
-    M.state.pending.mask = 0
+    M.state.sent.mask = false
+    _dbg("mask confirmed")
   end)
 
--- ---------- event hooks (registered here; not via package UI) ----------
+-- ---------- event hooks ----------
 
 M._eh = M._eh or {}
 local function _kill_eh(id)
@@ -310,18 +292,21 @@ local function _kill_eh(id)
   end
 end
 
-_kill_eh(M._eh.vitals)
-M._eh.vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
-  _upkeep_pass(false)
-end)
-
 _kill_eh(M._eh.mode_changed)
 M._eh.mode_changed = registerAnonymousEventHandler("yso.mode.changed", function(_, old, new, _reason)
   local m = tostring(new or ""):lower()
   if m == "hunt" then m = "bash" end
   if m == "bash" then
     M.refresh("event:mode_changed")
+    _start_rescan()
+  else
+    _stop_rescan()
   end
 end)
+
+-- Start rescan if already in bash at load time
+if _is_bash_mode() then
+  _start_rescan()
+end
 
 --========================================================--
