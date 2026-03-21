@@ -1724,21 +1724,59 @@ function Basher_Setup()
   
   --send("queue addclear freestand go "..Legacy.Settings.Basher.fleeExit)
   function Legacy.Basher.Attack()
-  if Legacy.Settings.Basher.status == false then return end
-  if gmcp.IRE.Target then
-  if Legacy.Settings.Basher.fleeing == true then return end
-  if Legacy[gmcp.Char.Status.name].Vitals.hpPer &lt;= math.floor(tonumber(Legacy.Settings.Basher.fleeAt) + 2) and not Legacy.Curing.Affs.blackout and Legacy.Settings.Basher.flee == true then Legacy.bigEcho("Flee! Run for your life!!", "gold", "red") Legacy.Basher.flee(gmcp.Room.Info.num) Legacy.Settings.Basher.fleeing = true return end
-  if Legacy.Settings.Basher.status == true then
-    if (gmcp.Char.Vitals.eq or gmcp.Char.Vitals.bal) == "0" then return end
-    if (gmcp.Char.Vitals.eq and gmcp.Char.Vitals.bal) == "1" then attacked = false end
-    if Legacy.Settings.Basher.queued == true then return end
-    if attacked == true then return end
-  end
-  local str = string.gsub(gmcp.IRE.Target.Info.hpperc, "%%", "")
-  local health = tonumber(str)
-  if Legacy.Settings.Basher.status == false then return end
-  --if gmcp.IRE.Target.Info.short_desc:match("a harrowing thrall of") and health &lt; 21 then cecho("\n&lt;red&gt;DON'T KILL THE THRALL!") Legacy.Settings.Basher.status = false end
-  if gmcp.IRE.Target.Set == "Aranos" then send("settarget none") return end
+    if Legacy.Settings.Basher.status == false then return end
+    if not (gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.Char and gmcp.Char.Status and gmcp.Char.Vitals) then return end
+    if Legacy.Settings.Basher.fleeing == true then return end
+
+    local status = gmcp.Char.Status or {}
+    local vitals = gmcp.Char.Vitals or {}
+    local target = gmcp.IRE.Target or {}
+    local targetInfo = target.Info or {}
+    local charName = status.name
+    local class = status.class
+    local me = Legacy[charName] or {}
+    local meVitals = (type(me) == "table" and me.Vitals) or {}
+    local class_cfg = Legacy.Settings.Basher.Classes[class] or {}
+    local configRage = class_cfg.configRage or {}
+    local fleeAt = tonumber(Legacy.Settings.Basher.fleeAt) or 0
+    local hpPer = tonumber(meVitals.hpPer)
+    local hp = tonumber(vitals.hp)
+    local hp_text = vitals.hp
+    local targetSet = tostring(target.Set or "")
+    local targetHpPerc = tostring(targetInfo.hpperc or "")
+    local health = tonumber((targetHpPerc:gsub("%%", "")))
+    local rage_now = tonumber(me.rage) or 0
+    local mobCount = 0
+    local itemsList = (gmcp.Char.Items and gmcp.Char.Items.List) or {}
+    local currentTargetKnown = false
+
+    Legacy.Settings.Basher.possibleTargets = Legacy.Settings.Basher.possibleTargets or {}
+
+    if type(Legacy.Settings.Basher.mobCount) == "function" then
+      mobCount = tonumber(Legacy.Settings.Basher.mobCount()) or 0
+    end
+
+    if type(table.contains) == "function" then
+      currentTargetKnown = table.contains(itemsList, Legacy.Settings.Basher.currentTar)
+    end
+
+    if hpPer ~= nil and hpPer &lt;= math.floor(fleeAt + 2) and not Legacy.Curing.Affs.blackout and Legacy.Settings.Basher.flee == true then
+      Legacy.bigEcho("Flee! Run for your life!!", "gold", "red")
+      Legacy.Basher.flee(gmcp.Room.Info.num)
+      Legacy.Settings.Basher.fleeing = true
+      return
+    end
+
+    if Legacy.Settings.Basher.status == true then
+      if (vitals.eq or vitals.bal) == "0" then return end
+      if (vitals.eq and vitals.bal) == "1" then attacked = false end
+      if Legacy.Settings.Basher.queued == true then return end
+      if attacked == true then return end
+    end
+
+    if Legacy.Settings.Basher.status == false then return end
+    --if gmcp.IRE.Target.Info.short_desc:match("a harrowing thrall of") and health &lt; 21 then cecho("\n&lt;red&gt;DON'T KILL THE THRALL!") Legacy.Settings.Basher.status = false end
+    if targetSet == "Aranos" then send("settarget none") return end
   
     sendCount = sendCount or 0
     if sendCounter then
@@ -1747,18 +1785,35 @@ function Basher_Setup()
     else
       sendCounter = tempTimer(10, function() if sendCount &lt; 49 then sendCount = 0 end end )
     end
-    if (Legacy.Settings.Basher.currentTar == "" and table.size(Legacy.Settings.Basher.possibleTargets) &gt; 0) then for k,v in pairs(Legacy.Settings.Basher.possibleTargets) do Legacy.Settings.Basher.currentTar = tostring(k) send("settarget "..k)  break end send("ql") return end
+
+    if (Legacy.Settings.Basher.currentTar == "" and table.size(Legacy.Settings.Basher.possibleTargets) &gt; 0) then
+      for k,v in pairs(Legacy.Settings.Basher.possibleTargets) do
+        Legacy.Settings.Basher.currentTar = tostring(k)
+        send("settarget "..k)
+        break
+      end
+      send("ql")
+      return
+    end
+
     if Legacy.Settings.Basher.onlyTarget == true then return end
     if sendCount &gt;= 20 then  Legacy.bigEcho("SOMETHING BROKE, TURNING HUNTING OFF", "red", "gold") Legacy.Settings.Basher.status = false return end 
-    if gmcp.IRE.Target.Set == "" and not table.contains(gmcp.Char.Items.List, Legacy.Settings.Basher.currentTar) then Legacy.Settings.Basher.currentTar = "" end
-    if gmcp.IRE.Target.Info.hpperc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and gmcp.IRE.Target.Set ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and ((tonumber(gmcp.Char.Vitals.hp) &gt; 0 and gmcp.Char.Vitals.hp ~= nil) or (gmcp.Char.Vitals.hp == nil and Legacy.Settings.Basher.powerThrough == true)) and gmcp.IRE.Target.Set ~= "" and gmcp.Char.Vitals.eq == "1" and gmcp.Char.Vitals.bal == "1" and Legacy.Settings.Basher.mobCount() &gt; 0 and (Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack ~= nil or Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack ~= "") and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
+    if targetSet == "" and not currentTargetKnown then Legacy.Settings.Basher.currentTar = "" end
+
+    local hp_ok = ((hp ~= nil and hp &gt; 0) or (hp_text == nil and Legacy.Settings.Basher.powerThrough == true))
+    local eq_ready = tostring(vitals.eq or "") == "1"
+    local bal_ready = tostring(vitals.bal or "") == "1"
+    local bigDamage = tonumber(configRage.bigDamage)
+    local smallDamage = tonumber(configRage.smallDamage)
+    local hasAttack = (class_cfg.attack ~= nil and class_cfg.attack ~= "")
+
+    if health ~= nil and targetHpPerc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and targetSet ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and hp_ok and targetSet ~= "" and eq_ready and bal_ready and mobCount &gt; 0 and hasAttack and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
       if Legacy.Settings.Basher.shield == false then
-        local str = string.gsub(gmcp.IRE.Target.Info.hpperc, "%%", "")
-        local health = tonumber(str)
-        if health &gt;= Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage then
-          for k,v  in pairs(Legacy.Settings.Basher.Classes[gmcp.Char.Status.class]) do
+        if bigDamage ~= nil and health &gt;= bigDamage then
+          for k,v  in pairs(class_cfg) do
             if v.desc == "Big Damage" then
-              if math.floor(Legacy[gmcp.Char.Status.name].rage - v.rage) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true then
+              local rageCost = tonumber(v.rage) or 0
+              if math.floor(rage_now - rageCost) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true and v.cmd ~= nil and v.cmd ~= "" then
                 send("queue add freestand "..v.cmd)
                 send("queue add freestand basher")
                 Legacy.Settings.Basher.queued = true
@@ -1770,10 +1825,11 @@ function Basher_Setup()
               end
             end
           end
-        elseif health &gt;= Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage then
-          for k,v  in pairs(Legacy.Settings.Basher.Classes[gmcp.Char.Status.class]) do
+        elseif smallDamage ~= nil and health &gt;= smallDamage then
+          for k,v  in pairs(class_cfg) do
             if v.desc == "Small Damage" then
-              if math.floor(Legacy[gmcp.Char.Status.name].rage - v.rage) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true then
+              local rageCost = tonumber(v.rage) or 0
+              if math.floor(rage_now - rageCost) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true and v.cmd ~= nil and v.cmd ~= "" then
                 send("queue add freestand "..v.cmd)
                 send("queue add freestand basher")
                 Legacy.Settings.Basher.queued = true
@@ -1792,7 +1848,6 @@ function Basher_Setup()
       end
       sendCount = sendCount + 1
     end
-  end
   end
   registerAnonymousEventHandler("gmcp.Char.Vitals", "Legacy.Basher.Attack")
   function Legacy.Settings.Basher.Rage()

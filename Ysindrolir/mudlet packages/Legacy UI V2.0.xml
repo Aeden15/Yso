@@ -928,43 +928,57 @@ function Legacy.UI.Bars()
 
   if HPBar == nil then return end
   if MPBar == nil then return end
-    
-    if tonumber(gmcp.Char.Vitals.hp) &gt; tonumber(gmcp.Char.Vitals.maxhp) then
-      HPBar:setValue(tonumber(gmcp.Char.Vitals.maxhp) ,tonumber(gmcp.Char.Vitals.maxhp))
+
+  local vitals = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  local hp = tonumber(vitals.hp)
+  local maxhp = tonumber(vitals.maxhp)
+  local mp = tonumber(vitals.mp)
+  local maxmp = tonumber(vitals.maxmp)
+
+  if hp and maxhp and maxhp &gt; 0 then
+    local hp_pct = math.floor((hp / maxhp) * 100)
+
+    if hp &gt; maxhp then
+      HPBar:setValue(maxhp ,maxhp)
       HPBar:setColor("orange")
       HPBar:setBold(true)
       HPBar:setFontSize("13")
       HPBar:setFgColor("black")
-      HPBar:setText("&lt;center&gt;Health "..gmcp.Char.Vitals.hp.."/"..gmcp.Char.Vitals.maxhp)
-    elseif math.floor((tonumber(gmcp.Char.Vitals.hp)/tonumber(gmcp.Char.Vitals.maxhp)* 100)) &lt; 50 then
+      HPBar:setText("&lt;center&gt;Health "..hp.."/"..maxhp)
+    elseif hp_pct &lt; 50 then
       HPBar:setColor("red")
-      HPBar:setValue(tonumber(gmcp.Char.Vitals.hp) ,tonumber(gmcp.Char.Vitals.maxhp))
+      HPBar:setValue(hp ,maxhp)
       HPBar:setBold(true)
       HPBar:setFontSize("13")
       HPBar:setFgColor("black")
-      HPBar:setText("&lt;center&gt;Health "..gmcp.Char.Vitals.hp.."/"..gmcp.Char.Vitals.maxhp.." "..math.floor((tonumber(gmcp.Char.Vitals.hp)/tonumber(gmcp.Char.Vitals.maxhp)* 100)).."%")
+      HPBar:setText("&lt;center&gt;Health "..hp.."/"..maxhp.." "..hp_pct.."%")
     else
-      HPBar:setValue(tonumber(gmcp.Char.Vitals.hp) ,tonumber(gmcp.Char.Vitals.maxhp))
+      HPBar:setValue(hp ,maxhp)
       HPBar:setColor("forest_green")
       HPBar:setBold(true)
       HPBar:setFontSize("13")
       HPBar:setFgColor("black")
-      HPBar:setText("&lt;center&gt;Health "..gmcp.Char.Vitals.hp.."/"..gmcp.Char.Vitals.maxhp.." "..math.floor((tonumber(gmcp.Char.Vitals.hp)/tonumber(gmcp.Char.Vitals.maxhp)* 100)).."%")
+      HPBar:setText("&lt;center&gt;Health "..hp.."/"..maxhp.." "..hp_pct.."%")
     end
+  end
     
-    if tonumber(gmcp.Char.Vitals.mp) &gt; tonumber(gmcp.Char.Vitals.maxmp) then
-      MPBar:setValue(tonumber(gmcp.Char.Vitals.maxmp) ,tonumber(gmcp.Char.Vitals.maxmp))
+  if mp and maxmp and maxmp &gt; 0 then
+    local mp_pct = math.floor((mp / maxmp) * 100)
+
+    if mp &gt; maxmp then
+      MPBar:setValue(maxmp ,maxmp)
       MPBar:setBold(true)
       MPBar:setFontSize("13")
       MPBar:setFgColor("black")
-      MPBar:setText("&lt;center&gt;Mana "..gmcp.Char.Vitals.mp.."/"..gmcp.Char.Vitals.maxmp)
+      MPBar:setText("&lt;center&gt;Mana "..mp.."/"..maxmp)
     else
-      MPBar:setValue(tonumber(gmcp.Char.Vitals.mp) ,tonumber(gmcp.Char.Vitals.maxmp))
+      MPBar:setValue(mp ,maxmp)
       MPBar:setBold(true)
       MPBar:setFontSize("13")
       MPBar:setFgColor("black")
-      MPBar:setText("&lt;center&gt;Mana "..gmcp.Char.Vitals.mp.."/"..gmcp.Char.Vitals.maxmp.." "..math.floor((tonumber(gmcp.Char.Vitals.mp)/tonumber(gmcp.Char.Vitals.maxmp)* 100)).."%")
+      MPBar:setText("&lt;center&gt;Mana "..mp.."/"..maxmp.." "..mp_pct.."%")
     end
+  end
   end
    registerAnonymousEventHandler("gmcp.Char.Vitals", "Legacy.UI.Bars")
    
