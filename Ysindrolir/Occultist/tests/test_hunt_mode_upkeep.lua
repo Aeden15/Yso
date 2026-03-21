@@ -279,36 +279,23 @@ for i = 1, 1000 do
 end
 assert_eq("13e: 1000x mask confirm = 0 sends", send_count(), 0)
 
-print("\n=== Test 14: rescan when all present + mask active → 0 extra commands ===")
+print("\n=== Test 14: stable state → rescan timer stops, no ent sent ===")
 -- State: all present, mask_active = true (from test 13 mask confirm)
 assert_true("14a: mask_active", M.state.mask_active)
 assert_true("14a: all present", M.state.present.orb and M.state.present.hound and M.state.present.pathfinder)
 
--- Simulate 5 rescan cycles — each sends ent, parses all-present result
+-- Advance past 5 rescan intervals — timer should NOT fire (stopped at stability)
 for cycle = 1, 5 do
   clear_sends()
-  -- Rescan timer fires → _request_ent (only sends ent, no reset)
   advance_timers(M.cfg.rescan_interval + 0.1)
-  -- Should only have sent "ent"
-  assert_eq("14b-" .. cycle .. ": rescan sends ent only", send_count(), 1)
-  assert_eq("14b-" .. cycle .. ": it was ent", _sends[1], "ent")
-
-  -- ENT response: all still present
-  clear_sends()
-  fire_line("The following beings are in your entourage:")
-  _current_line = "a chaos orb#501520, a chaos hound#55803, a pathfinder#423950."
-  for _, t in pairs(_triggers) do
-    if t.pattern == [[#\d+]] then t.fn(); break end
-  end
-  -- mask_active is still true, nothing changed → zero sends
-  assert_eq("14c-" .. cycle .. ": no mask/summon re-sent", send_count(), 0)
-  assert_true("14c-" .. cycle .. ": mask still active", M.state.mask_active)
+  assert_eq("14b-" .. cycle .. ": no sends at all", send_count(), 0)
 end
+assert_eq("14c: timer is nil (stopped)", M._rescan_timer, nil)
 
-print("\n=== Test 15: rescan detects entity death → re-summons only that one ===")
--- All present + mask active from test 14
+print("\n=== Test 15: entity death during stable → refresh re-summons ===")
+-- Simulate: player manually types ENT or refresh is called after entity dies
 clear_sends()
-advance_timers(M.cfg.rescan_interval + 0.1)
+M.refresh("test-entity-death")
 assert_eq("15a: ent sent", _sends[1], "ent")
 -- ENT response: hound died
 clear_sends()
@@ -329,10 +316,12 @@ assert_eq("15c: it was mask", _sends[1], "mask")
 -- Mask confirms
 fire_line("Calling upon your powers within, you mask the movements of your chaos entities from the world.")
 assert_true("15d: mask active again", M.state.mask_active)
+-- Timer should stop again
+assert_eq("15e: timer stopped at stability", M._rescan_timer, nil)
 
-print("\n=== Test 16: rescan all entities lost → re-summons all 3 ===")
+print("\n=== Test 16: refresh → all entities lost → re-summons all 3 ===")
 clear_sends()
-advance_timers(M.cfg.rescan_interval + 0.1)
+M.refresh("test-all-lost")
 clear_sends()
 fire_line("There are no beings in your entourage.")
 assert_eq("16: 3 summons", send_count(), 3)

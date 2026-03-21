@@ -4,15 +4,16 @@
 --========================================================--
 -- Yso_hunt_mode_upkeep
 --
--- Bash-mode entourage upkeep (trigger-driven, no vitals loop):
+-- Bash-mode entourage upkeep (trigger-driven, no polling):
 --   1) refresh() sends ENT once.
 --   2) ENT-result triggers parse the listing.
 --   3) After parse, missing summons are sent once each (plain send).
 --   4) Summon-confirmation triggers mark present; when all three
 --      are present, MASK is sent once.
---   5) A periodic rescan timer re-sends ENT every ~10 s while in bash.
+--   5) Rescan timer runs only while something is missing or mask
+--      is not yet confirmed. Stops once stable (all present + masked).
 --
--- No QUEUE ADDCLEAR, no gmcp.Char.Vitals handler.
+-- No QUEUE ADDCLEAR, no gmcp.Char.Vitals handler, no idle polling.
 -- Mudlet UI "Registered Events" will be empty; all wiring is in Lua.
 --========================================================--
 
@@ -96,6 +97,12 @@ local function _all_present()
      and M.state.present.pathfinder == true
 end
 
+local function _is_stable()
+  return _all_present() and M.state.mask_active == true
+end
+
+local _start_rescan, _stop_rescan
+
 local function _reset_sent()
   M.state.sent = { orb = false, hound = false, pathfinder = false, mask = false }
 end
@@ -176,6 +183,17 @@ local function _apply_block(block)
 
   _dbg(("ent parsed orb=%s hound=%s path=%s"):format(
     tostring(M.state.present.orb), tostring(M.state.present.hound), tostring(M.state.present.pathfinder)))
+
+  if _is_stable() then
+    _dbg("stable — rescan stopped")
+    _stop_rescan()
+    return
+  end
+
+  if something_lost then
+    _start_rescan()
+  end
+
   _act()
 end
 
@@ -191,6 +209,7 @@ local function _apply_none()
   M.state.mask_active = false
   _reset_sent()
   _dbg("entourage empty")
+  _start_rescan()
   _act()
 end
 
@@ -210,20 +229,24 @@ end
 M._rescan_timer = M._rescan_timer or nil
 local function _kill_timer(id) if id and type(killTimer) == "function" then pcall(killTimer, id) end end
 
-local function _start_rescan()
+_start_rescan = function()
   _kill_timer(M._rescan_timer)
   local interval = tonumber(M.cfg.rescan_interval or 10.0) or 10.0
   M._rescan_timer = tempTimer(interval, function()
     M._rescan_timer = nil
     if M.cfg.enabled ~= true then return end
     if not _is_bash_mode() then return end
+    if _is_stable() then
+      _dbg("rescan tick: already stable, stopping")
+      return
+    end
     _dbg("rescan tick")
     _request_ent()
     _start_rescan()
   end)
 end
 
-local function _stop_rescan()
+_stop_rescan = function()
   _kill_timer(M._rescan_timer)
   M._rescan_timer = nil
 end
@@ -299,6 +322,10 @@ M._trig.mask_on = tempRegexTrigger(
     M.state.mask_active = true
     M.state.sent.mask = false
     _dbg("mask confirmed")
+    if _is_stable() then
+      _dbg("stable — rescan stopped")
+      _stop_rescan()
+    end
   end)
 
 -- ---------- event hooks ----------
@@ -322,8 +349,8 @@ M._eh.mode_changed = registerAnonymousEventHandler("yso.mode.changed", function(
   end
 end)
 
--- Start rescan if already in bash at load time
-if _is_bash_mode() then
+-- Start rescan at load if in bash and not already stable
+if _is_bash_mode() and not _is_stable() then
   _start_rescan()
 end
 
