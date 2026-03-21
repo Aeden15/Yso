@@ -132,6 +132,8 @@ end
 
 -- ---------- ENT request / parse ----------
 
+-- Only touches ent-inflight state; does NOT reset sent/mask flags.
+-- Full reset lives in refresh() (called from mbash).
 local function _request_ent()
   local e = M.state.ent
   local now = _now()
@@ -140,14 +142,17 @@ local function _request_ent()
   e.synced   = false
   e.inflight_until = now + (tonumber(M.cfg.ent_inflight_timeout or 3.0) or 3.0)
   e.buf = {}
-  _reset_sent()
-  M.state.mask_active = false
   _dbg("send ent")
   return _send(M.cfg.ent_cmd or "ent")
 end
 
 local function _apply_block(block)
   local text = tostring(block or ""):lower()
+  local old = {
+    orb  = M.state.present.orb,
+    hound = M.state.present.hound,
+    pathfinder = M.state.present.pathfinder,
+  }
   M.state.present.orb        = (text:find("chaos orb#%d+",  1, false) ~= nil)
   M.state.present.hound      = (text:find("chaos hound#%d+", 1, false) ~= nil)
   M.state.present.pathfinder = (text:find("pathfinder#%d+",  1, false) ~= nil)
@@ -156,7 +161,19 @@ local function _apply_block(block)
   e.scanning = false
   e.inflight = false
   e.buf = {}
-  if not _all_present() then M.state.mask_active = false end
+
+  local something_lost = false
+  for _, id in ipairs({ "orb", "hound", "pathfinder" }) do
+    if old[id] == true and M.state.present[id] ~= true then
+      M.state.sent[id] = false
+      something_lost = true
+    end
+  end
+  if something_lost then
+    M.state.mask_active = false
+    M.state.sent.mask = false
+  end
+
   _dbg(("ent parsed orb=%s hound=%s path=%s"):format(
     tostring(M.state.present.orb), tostring(M.state.present.hound), tostring(M.state.present.pathfinder)))
   _act()
@@ -172,6 +189,7 @@ local function _apply_none()
   e.inflight = false
   e.buf = {}
   M.state.mask_active = false
+  _reset_sent()
   _dbg("entourage empty")
   _act()
 end
