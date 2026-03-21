@@ -45,7 +45,7 @@ Q._staged = Q._staged or {
   class = nil,
 }
 
-Q._impl_version = "2026-03-21"
+Q._impl_version = "2026-03-21.1"
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
@@ -77,6 +77,63 @@ local function _lane_key(lane)
     return "free"
   end
   return nil
+end
+
+local function _infer_lane_from_payload(payload)
+  if type(payload) ~= "string" then return nil end
+
+  local cmd = _trim(payload):lower()
+  if cmd == "" then return nil end
+
+  if cmd == "stand"
+     or cmd == "diag"
+     or cmd == "diagnose"
+     or cmd:match("^writhe%s+")
+     or cmd:match("^contemplate%s+")
+     or cmd:match("^order%s+")
+     or cmd:match("^out[dc]%s+")
+  then
+    return "free"
+  end
+
+  if cmd:match("^command%s+")
+     and not cmd:match("^command%s+gremlin%s+")
+     and not cmd:match("^command%s+soulmaster%s+")
+  then
+    return "class"
+  end
+
+  if cmd:match("^fling%s+")
+     or cmd:match("^flick%s+")
+     or cmd:match("^toss%s+")
+     or cmd:match("^ruinate%s+")
+     or cmd:match("^throw%s+")
+     or cmd:match("^wipe%s+")
+     or cmd:match("^envenom%s+")
+  then
+    return "bal"
+  end
+
+  return "eq"
+end
+
+local function _coerce_stage_args(lane, payload)
+  local key = _lane_key(lane)
+  if key then return key, payload, nil end
+
+  local swapped = _lane_key(payload)
+  if swapped and type(lane) == "string" then
+    return swapped, lane, "swapped"
+  end
+
+  if payload == nil and type(lane) == "string" then
+    local inferred = _infer_lane_from_payload(lane)
+    if inferred then
+      return inferred, lane, "inferred"
+    end
+  end
+
+  return nil, payload, nil
 end
 
 local function _clear_targets(token)
@@ -326,6 +383,17 @@ end
 local function _raw_queue(verb, qtype, payload)
   verb = _trim(verb):upper()
   qtype = _trim(qtype)
+  if type(payload) == "boolean" then
+    _debug("raw queue rejected boolean payload for " .. qtype)
+    return false
+  end
+  if type(payload) ~= "string" then
+    if type(payload) == "number" then
+      payload = tostring(payload)
+    else
+      return false
+    end
+  end
   payload = _trim(payload)
   if verb == "" or qtype == "" or payload == "" then return false end
   return _send_compound(("QUEUE %s %s %s"):format(verb, qtype, payload))
@@ -359,10 +427,18 @@ end
 
 function Q.stage(lane, payload, opts)
   opts = opts or {}
-  local key = _lane_key(lane)
+  local key, staged_payload, compat = _coerce_stage_args(lane, payload)
   if not key then return false end
+  payload = staged_payload
+
+  if compat == "swapped" then
+    _debug(("stage compat swap => %s :: %s"):format(key, _trim(payload)))
+  elseif compat == "inferred" then
+    _debug(("stage compat infer => %s :: %s"):format(key, _trim(payload)))
+  end
 
   if key == "free" then
+    if type(payload) ~= "string" and type(payload) ~= "table" then return false end
     if opts.clear == true or opts.replace == true then
       Q._staged.free = {}
     end
@@ -374,6 +450,14 @@ function Q.stage(lane, payload, opts)
     return true
   end
 
+  if type(payload) == "boolean" then return false end
+  if type(payload) ~= "string" then
+    if type(payload) == "number" then
+      payload = tostring(payload)
+    else
+      return false
+    end
+  end
   payload = _trim(payload)
   if payload == "" then return false end
   Q._staged[key] = payload
@@ -447,6 +531,10 @@ end
 
 function Q.addclearfull(qtype, payload)
   return _raw_queue("ADDCLEARFULL", qtype, payload)
+end
+
+function Q.addclearfull_bu(payload)
+  return Q.addclearfull("bu", payload)
 end
 
 function Q.eq_clear(payload)

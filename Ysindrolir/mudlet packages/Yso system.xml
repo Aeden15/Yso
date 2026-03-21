@@ -2566,15 +2566,15 @@ tgt = _trim(tgt)
 
 if tgt == "" then return end
 
-local cmd = send("CLEANSEAURA " .. tgt)
+local cmd = "CLEANSEAURA " .. tgt
 
--- Emergency override:
-if Q and type(Q.addclearfull) == "function" then
-  Q.addclearfull("eq", cmd)
-elseif Q and type(Q.eq_clear) == "function" then
-  Q.eq_clear(cmd)
-elseif Q and type(Q.push) == "function" then
-  Q.push(cmd, "eq")
+if Yso and type(Yso.emit_now) == "function" then
+  Yso.emit_now({ eq = cmd }, { src = "cleanse_alias" })
+elseif Yso and type(Yso.emit) == "function" then
+  Yso.emit({ eq = cmd }, { force = true, commit = true, src = "cleanse_alias" })
+elseif Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
+  Q.stage("eq", cmd)
+  Q.commit()
 else
   send(cmd)
 end</script>
@@ -2903,9 +2903,12 @@ if mode == "a" then
   local cmd_outd = "outd hermit"
   local cmd_act  = "activate hermit"..tag_str
 
-  if Q and Q.push then
-    Q.push(cmd_outd, "free")  -- no bal/eq cost
-    Q.push(cmd_act,  "eq")    -- uses equilibrium
+  if Yso and type(Yso.emit_now) == "function" then
+    Yso.emit_now({ free = cmd_outd, eq = cmd_act }, { src = "hermit_alias" })
+  elseif Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
+    Q.stage("free", cmd_outd)  -- no bal/eq cost
+    Q.stage("eq", cmd_act)     -- uses equilibrium
+    Q.commit()
   else
     send(cmd_outd)
     send(cmd_act)
@@ -2920,8 +2923,11 @@ elseif mode == "f" then
   -- FLING (eq)
   local cmd_fling = "fling hermit at ground"..tag_str
 
-  if Q and Q.push then
-    Q.push(cmd_fling, "eq")
+  if Yso and type(Yso.emit_now) == "function" then
+    Yso.emit_now({ eq = cmd_fling }, { src = "hermit_alias" })
+  elseif Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
+    Q.stage("eq", cmd_fling)
+    Q.commit()
   else
     send(cmd_fling)
   end
@@ -2950,9 +2956,12 @@ local Q   = Yso.queue or {}
 
 local cmd = "fling sun at ground"
 
-if Q and Q.push then
-  -- Tarot uses balance, so mark as "bal" queue by default
-  Q.push(cmd, "bal")
+if Yso and type(Yso.emit_now) == "function" then
+  Yso.emit_now({ bal = cmd }, { src = "sun_alias" })
+elseif Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
+  -- Tarot uses balance, so send it on the balance lane.
+  Q.stage("bal", cmd)
+  Q.commit()
 else
   send(cmd)
 end
@@ -5511,7 +5520,7 @@ Q._staged = Q._staged or {
   class = nil,
 }
 
-Q._impl_version = &quot;2026-03-21&quot;
+Q._impl_version = &quot;2026-03-21.1&quot;
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
@@ -5543,6 +5552,63 @@ local function _lane_key(lane)
     return &quot;free&quot;
   end
   return nil
+end
+
+local function _infer_lane_from_payload(payload)
+  if type(payload) ~= &quot;string&quot; then return nil end
+
+  local cmd = _trim(payload):lower()
+  if cmd == &quot;&quot; then return nil end
+
+  if cmd == &quot;stand&quot;
+     or cmd == &quot;diag&quot;
+     or cmd == &quot;diagnose&quot;
+     or cmd:match(&quot;^writhe%s+&quot;)
+     or cmd:match(&quot;^contemplate%s+&quot;)
+     or cmd:match(&quot;^order%s+&quot;)
+     or cmd:match(&quot;^out[dc]%s+&quot;)
+  then
+    return &quot;free&quot;
+  end
+
+  if cmd:match(&quot;^command%s+&quot;)
+     and not cmd:match(&quot;^command%s+gremlin%s+&quot;)
+     and not cmd:match(&quot;^command%s+soulmaster%s+&quot;)
+  then
+    return &quot;class&quot;
+  end
+
+  if cmd:match(&quot;^fling%s+&quot;)
+     or cmd:match(&quot;^flick%s+&quot;)
+     or cmd:match(&quot;^toss%s+&quot;)
+     or cmd:match(&quot;^ruinate%s+&quot;)
+     or cmd:match(&quot;^throw%s+&quot;)
+     or cmd:match(&quot;^wipe%s+&quot;)
+     or cmd:match(&quot;^envenom%s+&quot;)
+  then
+    return &quot;bal&quot;
+  end
+
+  return &quot;eq&quot;
+end
+
+local function _coerce_stage_args(lane, payload)
+  local key = _lane_key(lane)
+  if key then return key, payload, nil end
+
+  local swapped = _lane_key(payload)
+  if swapped and type(lane) == &quot;string&quot; then
+    return swapped, lane, &quot;swapped&quot;
+  end
+
+  if payload == nil and type(lane) == &quot;string&quot; then
+    local inferred = _infer_lane_from_payload(lane)
+    if inferred then
+      return inferred, lane, &quot;inferred&quot;
+    end
+  end
+
+  return nil, payload, nil
 end
 
 local function _clear_targets(token)
@@ -5792,6 +5858,17 @@ end
 local function _raw_queue(verb, qtype, payload)
   verb = _trim(verb):upper()
   qtype = _trim(qtype)
+  if type(payload) == &quot;boolean&quot; then
+    _debug(&quot;raw queue rejected boolean payload for &quot; .. qtype)
+    return false
+  end
+  if type(payload) ~= &quot;string&quot; then
+    if type(payload) == &quot;number&quot; then
+      payload = tostring(payload)
+    else
+      return false
+    end
+  end
   payload = _trim(payload)
   if verb == &quot;&quot; or qtype == &quot;&quot; or payload == &quot;&quot; then return false end
   return _send_compound((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, payload))
@@ -5825,10 +5902,18 @@ end
 
 function Q.stage(lane, payload, opts)
   opts = opts or {}
-  local key = _lane_key(lane)
+  local key, staged_payload, compat = _coerce_stage_args(lane, payload)
   if not key then return false end
+  payload = staged_payload
+
+  if compat == &quot;swapped&quot; then
+    _debug((&quot;stage compat swap =&gt; %s :: %s&quot;):format(key, _trim(payload)))
+  elseif compat == &quot;inferred&quot; then
+    _debug((&quot;stage compat infer =&gt; %s :: %s&quot;):format(key, _trim(payload)))
+  end
 
   if key == &quot;free&quot; then
+    if type(payload) ~= &quot;string&quot; and type(payload) ~= &quot;table&quot; then return false end
     if opts.clear == true or opts.replace == true then
       Q._staged.free = {}
     end
@@ -5840,6 +5925,14 @@ function Q.stage(lane, payload, opts)
     return true
   end
 
+  if type(payload) == &quot;boolean&quot; then return false end
+  if type(payload) ~= &quot;string&quot; then
+    if type(payload) == &quot;number&quot; then
+      payload = tostring(payload)
+    else
+      return false
+    end
+  end
   payload = _trim(payload)
   if payload == &quot;&quot; then return false end
   Q._staged[key] = payload
@@ -5913,6 +6006,10 @@ end
 
 function Q.addclearfull(qtype, payload)
   return _raw_queue(&quot;ADDCLEARFULL&quot;, qtype, payload)
+end
+
+function Q.addclearfull_bu(payload)
+  return Q.addclearfull(&quot;bu&quot;, payload)
 end
 
 function Q.eq_clear(payload)
@@ -18578,7 +18675,6 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.xml.yso_target_tattoos&quot;,
   &quot;Yso.Combat.occultist.softlock_gate&quot;,
   &quot;Yso.xml.curebuckets&quot;,
-  &quot;Yso.xml.yso_list_of_functions&quot;,
   &quot;Yso.Core.predict_cure&quot;,
   &quot;Yso.Core.modes&quot;,
   &quot;Yso.Core.mode_autoswitch&quot;,
@@ -23704,20 +23800,6 @@ local function _vitals()
   return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
 end
 
-local function _send_cmd(cmd)
-  cmd = _trim(cmd or &quot;&quot;)
-  if cmd == &quot;&quot; then return false end
-  if type(send) == &quot;function&quot; then
-    send(cmd, false)
-    return true
-  end
-  if type(expandAlias) == &quot;function&quot; then
-    expandAlias(cmd)
-    return true
-  end
-  return false
-end
-
 local function _hp_percent()
   local v = _vitals()
   local hp    = tonumber(v.hp) or 0
@@ -23784,9 +23866,16 @@ local function _queue_addclearfull_bu(cmd)
   cmd = _trim(cmd or &quot;&quot;)
   if cmd == &quot;&quot; then return false end
 
-  -- &apos;bu&apos; = balance + upright (not prone)
-  _send_cmd((&quot;QUEUE ADDCLEARFULL bu %s&quot;):format(cmd))
-  return true
+  if Yso.queue and type(Yso.queue.addclearfull_bu) == &quot;function&quot; then
+    return Yso.queue.addclearfull_bu(cmd)
+  end
+
+  if Yso.queue and type(Yso.queue.addclearfull) == &quot;function&quot; then
+    return Yso.queue.addclearfull(&quot;bu&quot;, cmd)
+  end
+
+  _info(&quot;&lt;red&gt;Yso.queue not loaded; cannot queue Priestess.&quot;)
+  return false
 end
 
 -- ---------- core actions ----------
@@ -24003,9 +24092,12 @@ local function _queue_addclearfull_bu(cmd)
   cmd = _trim(cmd or &quot;&quot;)
   if cmd == &quot;&quot; then return false end
 
+  if Yso.queue and type(Yso.queue.addclearfull_bu) == &quot;function&quot; then
+    return Yso.queue.addclearfull_bu(cmd)
+  end
+
   if Yso.queue and type(Yso.queue.addclearfull) == &quot;function&quot; then
-    Yso.queue.addclearfull(&quot;bu&quot;, cmd)
-    return true
+    return Yso.queue.addclearfull(&quot;bu&quot;, cmd)
   end
 
   _info(&quot;&lt;red&gt;Yso.queue not loaded; cannot queue Magician.&quot;)

@@ -108,13 +108,15 @@ local function _queue_addclearfull_bu(cmd)
   cmd = _trim(cmd or "")
   if cmd == "" then return false end
 
-  if Yso.queue and type(Yso.queue.addclearfull) == "function" then
-    -- 'bu' = balance + upright (not prone)
-    Yso.queue.addclearfull("bu", cmd)
-    return true
+  if Yso.queue and type(Yso.queue.addclearfull_bu) == "function" then
+    return Yso.queue.addclearfull_bu(cmd)
   end
 
-  _info("<red>Yso.queue not loaded; cannot queue Priestess heal.")
+  if Yso.queue and type(Yso.queue.addclearfull) == "function" then
+    return Yso.queue.addclearfull("bu", cmd)
+  end
+
+  _info("<red>Yso.queue not loaded; cannot queue Priestess.")
   return false
 end
 

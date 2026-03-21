@@ -278,6 +278,34 @@ Bug Fixes (2026-03-16)
   [sync] XML mirror files were refreshed and mudlet packages/Yso system.xml was
         rebuilt after these route changes.
 
+Queue / Alias Compatibility Repair (2026-03-21)
+-----------------------------------------------
+  [fix] Yso.queue now preserves several legacy caller shapes instead of silently
+        dropping them:
+          Q.push("fling sun at ground", "bal")
+          Yso.queue.stage("fling ...")
+        are coerced back onto the intended lane when the lane can be inferred.
+  [fix] Raw queue wrappers now reject boolean payloads, preventing bad callers
+        from emitting commands like:
+          QUEUE ADDCLEARFULL eq true
+        after accidentally passing the return value of send() into the queue.
+  [fix] Manual aliases that had been echoing success without actually committing
+        the command were corrected:
+          cleanse -> queues CLEANSEAURA <target> as an EQ action
+          sun     -> commits FLING SUN AT GROUND on BAL
+          hera/herf -> now commit their free/eq payloads instead of only staging
+        or using reversed Q.push arguments.
+  [fix] Priestess + Magician self-heal wrappers now share one helper on
+        Yso.queue:
+          Q.addclearfull_bu(payload)
+        so both cards preserve the existing QUEUE ADDCLEARFULL bu behavior
+        through the same path.
+  [change] yso_list_of_functions / Yso.fnref remains available as a debug helper
+           but is no longer loaded on normal startup, so it cannot interfere with
+           everyday bashing/play unless loaded intentionally.
+  [sync] XML mirrors and mudlet packages/Yso system.xml were refreshed after
+        these queue and alias fixes.
+
 Bash Upkeep / Orb Queue Repair (2026-03-21)
 -------------------------------------------
   [fix] yso_hunt_mode_upkeep now treats bash upkeep as active only when the

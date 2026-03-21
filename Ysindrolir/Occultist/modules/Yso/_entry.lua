@@ -117,7 +117,7 @@ safe_require("Yso.xml.yso_target_tattoos")
 safe_require_any("Yso.Combat.occultist.softlock_gate", "Yso.xml.softlock_gate")
 safe_require("Yso.xml.curebuckets")
 safe_require("Yso.xml.pronecontroller")
-safe_require("Yso.xml.yso_list_of_functions")
+-- Debug helper only; load manually when needed.
 safe_require("Yso.xml.devil_tracker")
 safe_require("Yso.xml.priestess_heal")
 safe_require("Yso.xml.magician_heal")

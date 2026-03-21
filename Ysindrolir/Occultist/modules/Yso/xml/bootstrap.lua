@@ -126,7 +126,6 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.xml.yso_target_tattoos",
   "Yso.Combat.occultist.softlock_gate",
   "Yso.xml.curebuckets",
-  "Yso.xml.yso_list_of_functions",
   "Yso.Core.predict_cure",
   "Yso.Core.modes",
   "Yso.Core.mode_autoswitch",
