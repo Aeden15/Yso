@@ -14,19 +14,14 @@
 --   raiseEvent("yso.mode.changed", old, new, reason) on mode change
 --   raiseEvent("yso.party.route.changed", old, new, reason) on party route change
 --
--- Suggested aliases (tempAlias, auto-registered if available):
---   ^mode$                               -> Yso.mode.echo()
---   ^mode\s+(bash|combat|party|hunt)$    -> Yso.mode.set(matches[2], "alias")
---   ^mbash$                              -> Yso.mode.set("bash", "alias")
---   ^combat$                             -> Yso.mode.set("combat", "alias")
---   ^par(?:\s+(<route>))?$              -> set party mode; optional registered route
---   ^partyroute\s+(<route>)$            -> Yso.mode.set_party_route(matches[2])
---   ^mt$                                 -> Yso.mode.toggle("alias")
+-- Runtime aliases (tempAlias, auto-registered if available):
+--   ^mbash$   -> Yso.mode.set("bash","alias"); Yso.huntmode.refresh("alias:mbash")
+--   ^par...$  -> party mode / route toggle (see implementation)
+--   ^partyroute\s+(\S+)$ -> Yso.mode.set_party_route(matches[2], "alias")
 --
 -- Back-compat:
 --   * "hunt" normalizes to "bash"
 --   * is_hunt() remains available and maps to bash mode
---   * ^mhunt$ is kept as a compatibility shim to set bash mode
 --========================================================--
 
 -- Normalize namespace so both _G.Yso and _G.yso point to the same table.
@@ -725,9 +720,9 @@ end
 
 function M.echo()
   if M.is_party() then
-    _echo(("Mode: <yellow>%s<reset> (route: <yellow>%s<reset>)"):format(M.state, M.party_route()))
+    _echo(("Mode: %s (route: %s)"):format(M.state, M.party_route()))
   else
-    _echo(("Mode: <yellow>%s<reset>"):format(M.state))
+    _echo(("Mode: %s"):format(M.state))
   end
 end
 
@@ -756,6 +751,7 @@ function M.set(mode, reason)
   if old == mode then
     M.last_reason = reason or M.last_reason
     if mode == "party" then _party_apply("mode_noop") end
+    M.echo()
     return true
   end
 
@@ -765,17 +761,12 @@ function M.set(mode, reason)
 
   M.apply_profile(mode)
 
-  if mode == "party" then
-    _echo(("Mode set to <yellow>%s<reset> (route: <yellow>%s<reset>)"):format(mode, M.party_route()))
-  else
-    _echo(("Mode set to <yellow>%s<reset>"):format(mode))
-  end
-
   if type(raiseEvent) == "function" then
     raiseEvent("yso.mode.changed", old, mode, M.last_reason)
   end
 
   _party_apply("mode:"..tostring(M.last_reason))
+  M.echo()
 
   return true
 end
@@ -798,22 +789,12 @@ local function _kill_alias(id) if id then pcall(killAlias, id) end end
 
 if type(tempAlias) == "function" then
   _kill_alias(M._alias.mode)
-  M._alias.mode = tempAlias([[^mode$]], function() if Yso.mode and Yso.mode.echo then Yso.mode.echo() end end)
-
   _kill_alias(M._alias.mode_set)
-  M._alias.mode_set = tempAlias([[^mode\s+(bash|combat|party|hunt)$]], function() Yso.mode.set(matches[2], "alias") end)
-
   _kill_alias(M._alias.hunt)
   _kill_alias(M._alias.bash)
   _kill_alias(M._alias.mbash)
   _kill_alias(M._alias.mhunt)
-  -- NOTE: Do NOT register ^hunt$ here; Legacy uses it for actual bashing automation.
-  M._alias.mbash = tempAlias([[^mbash$]], function() Yso.mode.set("bash", "alias") end)
-  M._alias.mhunt = tempAlias([[^mhunt$]], function() Yso.mode.set("bash", "alias:compat") end)
-
   _kill_alias(M._alias.combat)
-  M._alias.combat = tempAlias([[^combat$]], function() Yso.mode.set("combat", "alias") end)
-
   _kill_alias(M._alias.party)
   M._alias.party = tempAlias([[^par(?:\s+(\S+))?$]], function()
     local r = matches[2]
@@ -835,8 +816,21 @@ if type(tempAlias) == "function" then
   _kill_alias(M._alias.partyroute)
   M._alias.partyroute = tempAlias([[^partyroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], "alias") end)
 
+  M._alias.mbash = tempAlias([[^mbash$]], function()
+    Yso.mode.set("bash", "alias")
+    if Yso.huntmode and type(Yso.huntmode.refresh) == "function" then
+      pcall(Yso.huntmode.refresh, "alias:mbash")
+    end
+  end)
+
   _kill_alias(M._alias.mt)
-  M._alias.mt = tempAlias([[^mt$]], function() Yso.mode.toggle("alias") end)
+  M._alias.mode = nil
+  M._alias.mode_set = nil
+  M._alias.hunt = nil
+  M._alias.bash = nil
+  M._alias.mhunt = nil
+  M._alias.combat = nil
+  M._alias.mt = nil
 end
 
 M._tip_shown = M._tip_shown or false

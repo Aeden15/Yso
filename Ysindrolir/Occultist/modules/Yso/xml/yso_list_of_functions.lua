@@ -1578,6 +1578,7 @@ do
     "Yso.fool.toggle_auto",
     "Yso.frost",
     "Yso.get_target",
+    "Yso.huntmode.refresh",
     "Yso.insomnia",
     "Yso.is_slowtime",
     "Yso.kola",
@@ -2210,6 +2211,9 @@ do
     },
     misc_get_target = {
       "Yso.get_target",
+    },
+    misc_huntmode = {
+      "Yso.huntmode.refresh",
     },
     misc_log = {
       "Yso.log.error",
