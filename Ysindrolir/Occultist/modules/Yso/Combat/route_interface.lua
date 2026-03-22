@@ -1,7 +1,7 @@
 --========================================================--
 -- Yso Combat Route Interface (Common Contract)
 --  • Canonical shared route contract for Occultist combat routes.
---  • Routes return intent/proposals only; orchestrator remains final authority.
+--  • Routes expose shared metadata/hooks for the alias-owned loop controller.
 --  • Shared universal categories across future routes:
 --      - defense_break
 --      - anti_tumble
@@ -11,7 +11,7 @@
 --
 -- Recommended override policy:
 --  • Narrow global-only overrides.
---  • Orchestrator may override route intent only for hard global conditions:
+--  • Shared route helpers may override route intent only for hard global conditions:
 --      - reserved_burst
 --      - target_invalid / target_slain
 --      - route_off

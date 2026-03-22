@@ -4090,7 +4090,8 @@ function Yso.emit(payload, opts)
     if opts.commit == true or opts.force_commit == true then return true end
     if opts.commit == false then return false end
     if opts.force == true then return true end
-    -- In combat/party, lane-table offense emits are staged; Orchestrator commits once.
+    -- In combat/party, lane-table offense emits are staged so the route loop or
+    -- wake bus can flush them on the next viable reopen.
     if _in_combat_party() and _is_lane_payload(p) and _offenseish() then return false end
     return true
   end
@@ -4140,11 +4141,26 @@ function Yso.emit(payload, opts)
     if ok and Yso.pulse and Yso.pulse.state and Yso.pulse.state._in_flush then
       Yso.pulse.state._did_emit = true
     end
+    if ok then
+      if Q then Q._commit_hint = nil end
+      return true
+    end
+
+    -- If a lane spend could not commit yet, keep the staged payload alive and
+    -- hand it back to the wake bus so it flushes on the next viable reopen.
+    if _is_lane_payload(payload) and Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
+      Q._commit_hint = opts
+      if not (Yso.pulse.state and Yso.pulse.state._in_flush) then
+        pcall(Yso.pulse.wake, &quot;emit:staged&quot;)
+      end
+      return true
+    end
+
     if Q then Q._commit_hint = nil end
-    return ok
+    return false
   end
 
-  -- Stage-only: let Orchestrator commit once per tick. Preserve commit hint (wake_lane, allow_eqbal, etc).
+  -- Stage-only: preserve commit hint (wake_lane, allow_eqbal, etc) for the next flush.
   Q._commit_hint = opts
   if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; and not (Yso.pulse.state and Yso.pulse.state._in_flush) then
     pcall(Yso.pulse.wake, &quot;emit:staged&quot;)
@@ -4642,540 +4658,6 @@ end
 function Yso.self.is_paralyzed()
   return Yso.self.has_aff(&quot;paralysis&quot;)
 end
-</script>
-					<eventHandlerList />
-				</Script>
-				<Script isActive="yes" isFolder="no">
-					<name>yso_orchestrator.lua</name>
-					<packageName />
-					<script>--========================================================--
--- Yso.Orchestrator — Central Tick Orchestration (Single Authority Pass)
---  ✅ Exclusive driver (optional): blocks other pulse callbacks
---  ✅ Module proposal contract: register() + propose(ctx) -&gt; actions
---  ✅ Deterministic arbitration: phase -&gt; module priority -&gt; action score
---  ✅ Single commit per pulse flush via Yso.queue
---
--- Action schema (table):
---   cmd        = &quot;string&quot;    (required)
---   qtype      = &quot;eq|bal|free|...&quot; (required; passed to Yso.queue.stage)
---   tag        = &quot;stable.id&quot; (recommended; used for lockout/no-repeat)
---   score      = number      (default 0)
---   kind       = &quot;defense|cure|offense|utility&quot; (optional; else module.kind)
---   requires   = { bal=true/false, eq=true/false, target=true, target_present=true/false,
---                  aff_present={...}, aff_absent={...} }
---   lockout    = seconds
---   no_repeat  = true|false (default true when tag exists)
---   exclusive  = { &quot;other.tag&quot;, ... }  (mutual exclusion)
---   allow_multi= true|false (default false; per-qtype single primary)
---   replace    = true|false (allow replacing same-qtype primary if higher score)
---
--- Shared universal route categories:
---   • defense_break
---   • anti_tumble
--- Other strategic categories remain route-local and may differ by route.
---
--- Recommended orchestrator override policy:
---   • narrow_global_only
---   • override only for hard global conditions and shared universal categories
---========================================================--
-
-Yso = Yso or {}
-Yso.Orchestrator = Yso.Orchestrator or {}
-local O = Yso.Orchestrator
-
-O.cfg = O.cfg or {
-  -- Single automated authority for Occultist offense.
-  -- When we commit, later pulse callbacks should not emit again on the same wake.
-  exclusive  = true,
-  debug      = false,
-  trace      = false,
-  max_cmds   = 10,     -- Achaea global cap
-  free_multi = 2,      -- allow up to N primary &quot;free&quot; actions per tick
-  commit_even_if_no_proposals = false, -- single-authority mode: do not commit shadow staged offense
-}
-
-O.modules   = O.modules   or { list = {} }
-O.lockouts  = O.lockouts  or {}   -- tag -&gt; expire_time (epoch seconds)
-O.last_sent = O.last_sent or {}   -- tag -&gt; { cmd=..., state_sig=..., at=... }
-O.last_lane_categories = O.last_lane_categories or {}
-O.state = O.state or { last_tick = nil, last_picked = {}, last_override = false, last_reasons = {} }
-
-O.override_policy = O.override_policy or {
-  mode = &quot;narrow_global_only&quot;,
-  allowed = {
-    reserved_burst        = true,
-    target_invalid        = true,
-    target_slain          = true,
-    route_off             = true,
-    pause                 = true,
-    manual_suppression    = true,
-    target_swap_bootstrap = true,
-    defense_break         = true,
-    anti_tumble           = true,
-  },
-}
-
-O.route_contract = O.route_contract or {
-  shared_categories = { &quot;defense_break&quot;, &quot;anti_tumble&quot; },
-  route_local_categories = &quot;route_defined&quot;,
-}
-
-local PHASE = { defense=1, cure=2, offense=3, utility=4 }
-
-local function _now()
-  local getEpoch = rawget(_G, &quot;getEpoch&quot;)
-  if type(getEpoch) == &quot;function&quot; then
-    local t = tonumber(getEpoch()) or os.time()
-    if t &gt; 20000000000 then t = t / 1000 end
-    return t
-  end
-  local _now = rawget(_G, &quot;_now&quot;)
-  if type(_now) == &quot;function&quot; then return _now() end
-  return os.time()
-end
-
-local function _dbg(msg)
-  if O.cfg.debug and cecho then
-    cecho((&quot;&lt;dim_grey&gt;[Yso.Orch] &lt;reset&gt;%s\n&quot;):format(tostring(msg)))
-  end
-end
-
-local function _trc(msg)
-  if O.cfg.trace and cecho then
-    cecho((&quot;&lt;gray&gt;[Yso.Orch.trace] &lt;reset&gt;%s\n&quot;):format(tostring(msg)))
-  end
-end
-
-local function _has_aff(a)
-  return (Yso.affs and Yso.affs[a] == true) or false
-end
-
-local function _is_shared_category(cat)
-  cat = tostring(cat or &quot;&quot;)
-  if cat == &quot;&quot; then return false end
-
-  local shared = (O.route_contract and O.route_contract.shared_categories) or {}
-  if type(shared) == &quot;table&quot; then
-    if shared[cat] == true then return true end
-    for i = 1, #shared do
-      if tostring(shared[i] or &quot;&quot;) == cat then return true end
-    end
-  end
-
-  return false
-end
-
-local function _prefer_route_local_over_shared(a, b)
-  if type(a) ~= &quot;table&quot; or type(b) ~= &quot;table&quot; then return nil end
-
-  local a_pref = (a.prefer_over_shared == true)
-  local b_pref = (b.prefer_over_shared == true)
-  if a_pref == b_pref then return nil end
-
-  local a_shared = _is_shared_category(a.category)
-  local b_shared = _is_shared_category(b.category)
-
-  if a_pref and b_shared and not a_shared then return true end
-  if b_pref and a_shared and not b_shared then return false end
-
-  return nil
-end
-
-local function _snapshot()
-  if Yso.state and type(Yso.state.snapshot) == &quot;function&quot; then
-    local ok, s = pcall(Yso.state.snapshot)
-    if ok and type(s) == &quot;table&quot; then return s end
-  end
-  return { raw = (Yso.state or {}) }
-end
-
-local function _state_sig(s)
-  local tgt = &quot;&quot;
-  if s and s.tgt and s.tgt.name then tgt = tostring(s.tgt.name) end
-  local me = s and s.me or {}
-  local bal = tostring(me.bal or me.balance or &quot;&quot;)
-  local eq  = tostring(me.eq  or me.equilibrium or &quot;&quot;)
-  local hp  = tostring(me.hp or &quot;&quot;)
-  local mp  = tostring(me.mp or &quot;&quot;)
-  local av  = tostring((Yso.state and Yso.state.aff_version) or (s and s.aff_version) or &quot;&quot;)
-  return table.concat({tgt, bal, eq, hp, mp, av}, &quot;|&quot;)
-end
-
-local function _requires_ok(req, s)
-  if not req then return true end
-  local me  = (s and s.me)  or {}
-  local tgt = (s and s.tgt) or {}
-
-  if req.target then
-    if not (tgt and tgt.present and tgt.name and tgt.name ~= &quot;&quot;) then return false end
-  end
-
-  if req.bal ~= nil then
-    local bal = (me.bal == true) or (tostring(me.bal or me.balance or &quot;&quot;) == &quot;1&quot;)
-    if bal ~= req.bal then return false end
-  end
-  if req.eq ~= nil then
-    local eq = (me.eq == true) or (tostring(me.eq or me.equilibrium or &quot;&quot;) == &quot;1&quot;)
-    if eq ~= req.eq then return false end
-  end
-
-  if type(req.aff_present) == &quot;table&quot; then
-    for i=1,#req.aff_present do
-      if not _has_aff(req.aff_present[i]) then return false end
-    end
-  end
-  if type(req.aff_absent) == &quot;table&quot; then
-    for i=1,#req.aff_absent do
-      if _has_aff(req.aff_absent[i]) then return false end
-    end
-  end
-
-  return true
-end
-
-local function _lockout_ok(tag)
-  if not tag or tag == &quot;&quot; then return true end
-  local exp = O.lockouts[tag]
-  return (not exp) or (_now() &gt;= exp)
-end
-
-local function _apply_lockout(tag, seconds)
-  if not tag or tag == &quot;&quot; then return end
-  local s = tonumber(seconds or 0)
-  if s &gt; 0 then O.lockouts[tag] = _now() + s end
-end
-
-local function _no_repeat_ok(a, s)
-  if a.no_repeat == false then return true end
-  if not a.tag or a.tag == &quot;&quot; then return true end
-  local last = O.last_sent[a.tag]
-  if not last then return true end
-  return not (last.cmd == a.cmd and last.state_sig == _state_sig(s))
-end
-
-local function _mark_sent(a, s)
-  if not a.tag or a.tag == &quot;&quot; then return end
-  O.last_sent[a.tag] = { cmd = a.cmd, state_sig = _state_sig(s), at = _now() }
-end
-
-local function _payload_contains_cmd(payload, qtype, cmd)
-  if type(payload) ~= &quot;table&quot; then return false end
-  local lane = tostring(qtype or &quot;&quot;):lower()
-  if lane == &quot;ent&quot; or lane == &quot;entity&quot; then lane = &quot;class&quot; end
-  local row = payload[lane]
-  if row == nil then return false end
-  if type(row) == &quot;string&quot; then return row == cmd end
-  if type(row) == &quot;table&quot; then
-    for i=1,#row do
-      if row[i] == cmd then return true end
-    end
-  end
-  return false
-end
-
-local function _mark_sent_actions(actions, payload, s)
-  if type(actions) ~= &quot;table&quot; or type(payload) ~= &quot;table&quot; then return end
-  for i=1,#actions do
-    local a = actions[i]
-    if type(a) == &quot;table&quot; and _payload_contains_cmd(payload, a.qtype, a.cmd) then
-      O.last_lane_categories[a.qtype] = a.category or &quot;unspecified&quot;
-      _apply_lockout(a.tag, a.lockout)
-      _mark_sent(a, s)
-    end
-  end
-end
-
-function O.register(mod)
-  if type(mod) ~= &quot;table&quot; or type(mod.id) ~= &quot;string&quot; then return false end
-  mod.kind     = mod.kind or &quot;utility&quot;
-  mod.priority = tonumber(mod.priority or 0)
-  mod._phase   = PHASE[mod.kind] or 99
-  table.insert(O.modules.list, mod)
-  return true
-end
-
-local function _collect_actions(ctx)
-  local out = {}
-
-  local mods = {}
-  for i=1,#O.modules.list do mods[#mods+1] = O.modules.list[i] end
-  table.sort(mods, function(a,b)
-    if a._phase ~= b._phase then return a._phase &lt; b._phase end
-    if a.priority ~= b.priority then return a.priority &gt; b.priority end
-    return (a.id or &quot;&quot;) &lt; (b.id or &quot;&quot;)
-  end)
-
-  for _, m in ipairs(mods) do
-    if type(m.propose) == &quot;function&quot; then
-      local ok, proposed = pcall(m.propose, ctx)
-      if ok and type(proposed) == &quot;table&quot; then
-        for i=1,#proposed do
-          local a = proposed[i]
-          if type(a) == &quot;table&quot; then
-            a._mid   = m.id
-            a._mprio = m.priority
-            a._phase = PHASE[a.kind or m.kind] or m._phase or 99
-            a.score  = tonumber(a.score or 0)
-            a.tag    = a.tag or (m.id .. &quot;:&quot; .. tostring(i))
-            if a.no_repeat == nil then a.no_repeat = true end
-            out[#out+1] = a
-            if O.cfg.trace then _trc((&quot;%s -&gt; %s [%s]&quot;):format(m.id, tostring(a.cmd), tostring(a.tag))) end
-          end
-        end
-      end
-    end
-  end
-
-  return out
-end
-
--- Lua 5.1 compatible &quot;continue&quot; pattern: per-iteration repeat..until true
-function O.select(actions, s)
-  local picked = {}
-  local used_cmd = {}
-  local used_tag = {}
-  local used_q_primary = {} -- qtype -&gt; true
-  local blocked = {}        -- tag -&gt; true
-  local free_left = tonumber(O.cfg.free_multi or 2)
-  local cap = tonumber(O.cfg.max_cmds or 10)
-
-  table.sort(actions, function(a,b)
-    if a._phase ~= b._phase then return a._phase &lt; b._phase end
-
-    local pref = _prefer_route_local_over_shared(a, b)
-    if pref ~= nil then return pref end
-
-    if a._mprio ~= b._mprio then return a._mprio &gt; b._mprio end
-    if a.score ~= b.score then return a.score &gt; b.score end
-    local aid = (a._mid or &quot;&quot;) .. &quot;:&quot; .. (a.tag or &quot;&quot;)
-    local bid = (b._mid or &quot;&quot;) .. &quot;:&quot; .. (b.tag or &quot;&quot;)
-    return aid &lt; bid
-  end)
-
-  for _, a in ipairs(actions) do
-    if #picked &gt;= cap then break end
-
-    repeat
-      if type(a.cmd) ~= &quot;string&quot; or a.cmd == &quot;&quot; then break end
-      a.qtype = tostring(a.qtype or &quot;&quot;)
-      if a.qtype == &quot;&quot; then break end
-
-      if blocked[a.tag] then break end
-      if not _requires_ok(a.requires, s) then break end
-      if not _lockout_ok(a.tag) then break end
-      if not _no_repeat_ok(a, s) then break end
-      if used_cmd[a.cmd] then break end
-
-      -- exclusives: don&apos;t allow if any exclusive already used
-      if type(a.exclusive) == &quot;table&quot; then
-        local bad = false
-        for i=1,#a.exclusive do
-          if used_tag[a.exclusive[i]] then bad = true; break end
-        end
-        if bad then break end
-      end
-
-      local is_free = (a.qtype == &quot;free&quot;)
-      local allow_multi = (a.allow_multi == true)
-
-      -- per-qtype primary rule (except allow_multi)
-      if not allow_multi then
-        if is_free then
-          if free_left &lt;= 0 then break end
-        else
-          if used_q_primary[a.qtype] then
-            -- replace existing primary if requested + higher score
-            if a.replace then
-              local idx, old = nil, nil
-              for i=1,#picked do
-                if picked[i].qtype == a.qtype and picked[i]._primary then idx, old = i, picked[i]; break end
-              end
-              if idx and old and a.score &gt; tonumber(old.score or 0) then
-                used_cmd[old.cmd] = nil
-                used_tag[old.tag] = nil
-                picked[idx] = a
-                a._primary = true
-                used_cmd[a.cmd] = true
-                used_tag[a.tag] = true
-                used_q_primary[a.qtype] = true
-                if type(a.exclusive) == &quot;table&quot; then
-                  for j=1,#a.exclusive do blocked[a.exclusive[j]] = true end
-                end
-              end
-            end
-            break
-          end
-        end
-      end
-
-      -- accept
-      a._primary = (not allow_multi)
-      picked[#picked+1] = a
-      used_cmd[a.cmd] = true
-      used_tag[a.tag] = true
-
-      if a._primary and not is_free then used_q_primary[a.qtype] = true end
-      if is_free and not allow_multi then free_left = free_left - 1 end
-
-      if type(a.exclusive) == &quot;table&quot; then
-        for j=1,#a.exclusive do blocked[a.exclusive[j]] = true end
-      end
-    until true
-  end
-
-  return picked
-end
-
-local function _queue_has_staged()
-  local Q = Yso.queue
-  if not (Q and type(Q._staged) == &quot;table&quot;) then return false end
-  for _, list in pairs(Q._staged) do
-    if type(list) == &quot;table&quot; and #list &gt; 0 then return true end
-  end
-  return false
-end
-
-function O.run(reasons)
-  O.last_lane_categories = {}
-  local s = _snapshot()
-  local ctx = {
-    now = _now(),
-    reasons = reasons or {},
-    snap = s,
-    state = Yso.state,
-    affs = Yso.affs,
-  }
-
-  -- Hard stop: if offense is paused, clear any staged payloads and do not emit.
-  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then
-    local Qp = Yso.queue
-    if Qp and type(Qp.clear) == &quot;function&quot; then
-      pcall(Qp.clear)
-    end
-    return false
-  end
-
-  -- Manual inhibit: block automation commit during 400ms window after manual cmd
-  if Yso.inhibit and type(Yso.inhibit.active) == &quot;function&quot; and Yso.inhibit.active() then
-    _dbg(&quot;inhibit active — skipping commit&quot;)
-    local Qi = Yso.queue
-    if Qi and type(Qi.clear) == &quot;function&quot; then pcall(Qi.clear) end
-    return false
-  end
-
-  local actions = _collect_actions(ctx)
-  local picked = {}
-  if #actions &gt; 0 then
-    picked = O.select(actions, s)
-  end
-
-    local Q = Yso.queue
-  if not (Q and type(Q.stage) == &quot;function&quot; and type(Q.commit) == &quot;function&quot;) then
-    _dbg(&quot;queue missing stage/commit; skipping output&quot;)
-    return false
-  end
-
-  -- Enforce centralized commit: turn off legacy autocommit wrappers (migration-safe)
-  if Q.cfg and Q.cfg.legacy_autocommit ~= false then
-    Q.cfg.legacy_autocommit = false
-  end
-
-  -- Stage picked actions
-  local staged = {}
-  for i=1,#picked do
-    local a = picked[i]
-    local ok, staged_ok = pcall(Q.stage, a.qtype, a.cmd, a.opts or {})
-    if ok and staged_ok == true then
-      staged[#staged+1] = a
-    end
-  end
-
-  -- Commit once if we staged anything OR if other code staged ops (migration-friendly)
-  local did_commit = false
-  if (#staged &gt; 0) or (O.cfg.commit_even_if_no_proposals and _queue_has_staged()) then
-        local hint = (Q and type(Q._commit_hint)==&quot;table&quot; and Q._commit_hint) or {}
-    Q._commit_hint = nil
-
-    -- Derive lane isolation from pulse wake reasons (coalesce eq &gt; class &gt; bal).
-    if hint.wake_lane == nil and type(reasons) == &quot;table&quot; then
-      local w = nil
-      for i=1,#reasons do
-        if tostring(reasons[i] or &quot;&quot;) == &quot;lane:eq&quot; then w = &quot;eq&quot;; break end
-      end
-      if not w then
-        for i=1,#reasons do
-          if tostring(reasons[i] or &quot;&quot;) == &quot;lane:class&quot; then w = &quot;class&quot;; break end
-        end
-      end
-      if not w then
-        for i=1,#reasons do
-          if tostring(reasons[i] or &quot;&quot;) == &quot;lane:bal&quot; then w = &quot;bal&quot;; break end
-        end
-      end
-      if w then hint.wake_lane = w end
-    end
-
-    -- Piggyback hint: allow EQ+CLASS in the same emission only when both lanes woke.
-    if hint.piggyback == nil and type(reasons) == &quot;table&quot; then
-      local saw_eq, saw_class = false, false
-      for i=1,#reasons do
-        local r = tostring(reasons[i] or &quot;&quot;)
-        if r == &quot;lane:eq&quot; then saw_eq = true
-        elseif r == &quot;lane:class&quot; then saw_class = true
-        end
-      end
-      if saw_eq and saw_class then hint.piggyback = true end
-    end
-
-    local ok_commit, commit_ok, sent_payload = pcall(Q.commit, hint)
-    if ok_commit and commit_ok == true then
-      _mark_sent_actions(staged, sent_payload, s)
-      did_commit = true
-    end
-  end
-
-  O.state.last_tick = _now()
-  O.state.last_reasons = reasons or {}
-  O.state.last_picked = picked
-
-  if O.cfg.debug then
-    local cats = {}
-    for lane, cat in pairs(O.last_lane_categories or {}) do cats[#cats+1] = tostring(lane)..&quot;:&quot;..tostring(cat) end
-    table.sort(cats)
-    _dbg((&quot;tick: proposals=%d picked=%d commit=%s cats=%s&quot;):format(#actions, #picked, tostring(did_commit), table.concat(cats, &quot;,&quot;)))
-  end
-
-  return did_commit
-end
-
-function O.wake(reason)
-  reason = tostring(reason or &quot;orchestrator&quot;)
-  if Yso and Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    return pcall(Yso.pulse.wake, &quot;orch:&quot;..reason)
-  end
-  return false
-end
-
--- Compatibility: older code may call Yso.tick(&quot;reason&quot;)
-if type(_G.Yso.tick) ~= &quot;function&quot; then
-  function _G.Yso.tick(reason) O.wake(reason) end
-end
-
--- Pulse driver (exclusive by default)
-if Yso and Yso.pulse and type(Yso.pulse.register) == &quot;function&quot; then
-  Yso.pulse.register(&quot;orchestrator&quot;, function(reasons)
-    local ok, did_commit = pcall(O.run, reasons)
-    -- Only block other callbacks when we *actually* committed commands.
-    local ex = (O.cfg.exclusive == true)
-    if Yso and Yso.mode and type(Yso.mode.is_hunt)==&quot;function&quot; and Yso.mode.is_hunt() then ex = false end
-    if ex and ok and did_commit and Yso.pulse and Yso.pulse.state then
-      Yso.pulse.state._did_emit = true
-    end
-  end, { order = 1 })
-end
-
-_dbg(&quot;Orchestrator loaded (exclusive=&quot; .. tostring(O.cfg.exclusive) .. &quot;)&quot;)
---========================================================--
 </script>
 					<eventHandlerList />
 				</Script>
@@ -6093,7 +5575,7 @@ P.state = P.state or {
   reasons = {},
   _debounce_timer = nil,
   _in_flush = false,
-  _did_emit = false, -- used by orchestrator/exclusive callbacks
+  _did_emit = false, -- used by flush callbacks to detect a successful emit
   _eh_vitals = nil,
   _eh_prompt = nil,
 }
@@ -6796,9 +6278,6 @@ end
 
 GD.cfg = GD.cfg or {
   enabled = false,
-
-  -- Single-authority offense: this route produces proposals only.
-  use_orchestrator = true,
   echo = true,
   loop_delay = 0.15,
 
@@ -7556,10 +7035,6 @@ end
 --  * Keeps legacy propose/tick behavior intact while exposing a uniform
 --    route API for future routes and tooling.
 ------------------------------------------------------------
-local function _driver_state()
-  return Yso and Yso.off and Yso.off.driver and Yso.off.driver.state or nil
-end
-
 local function _party_damage_context_active()
   local M = Yso and Yso.mode or nil
   if type(M) ~= &quot;table&quot; then return true end
@@ -7585,21 +7060,14 @@ local function _party_damage_context_active()
 end
 
 local function _route_is_active()
-  local D = Yso and Yso.off and Yso.off.driver or nil
   if not _party_damage_context_active() then return false end
-  if D and type(D.current_route) == &quot;function&quot; then
-    local ok, v = pcall(D.current_route)
-    if ok and tostring(v or &quot;&quot;):lower() == &quot;group_damage&quot; then return true end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
+    return Yso.mode.route_loop_active(&quot;group_damage&quot;) == true
   end
-  local st = _driver_state()
-  local active = st and tostring(st.active or &quot;&quot;):lower() or &quot;&quot;
-  return active == &quot;group_damage&quot; or active == &quot;gd&quot; or active == &quot;dmg&quot;
+  return GD.state and GD.state.loop_enabled == true
 end
 local function _automation_allowed()
-  local st = _driver_state()
-  local pol = st and tostring(st.policy or &quot;&quot;):lower() or &quot;&quot;
-  if pol == &quot;active&quot; then pol = &quot;manual&quot; end
-  return pol == &quot;auto&quot;
+  return _route_is_active()
 end
 
 function GD.init()
@@ -7612,7 +7080,6 @@ function GD.init()
   GD.state.busy = (GD.state.busy == true)
   GD.state.loop_delay = tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15
   _set_loop_enabled((GD.state.loop_enabled == true) or (GD.state.enabled == true))
-  _ensure_registered()
   return true
 end
 function GD.reset(reason)
@@ -7863,32 +7330,6 @@ function GD.on_send_result(payload, ctx)
   return GD.on_sent(payload, ctx)
 end
 
-local function _ensure_registered()
-  if not (GD.cfg.use_orchestrator ~= false and Yso and Yso.Orchestrator and type(Yso.Orchestrator.register) == &quot;function&quot;) then
-    return false
-  end
-
-  -- Disable any legacy pulse-route registration; orchestrator is the only automated authority.
-  if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg[&quot;group_damage&quot;] then
-    Yso.pulse.state.reg[&quot;group_damage&quot;].enabled = false
-  end
-
-  if not GD._orch_registered then
-    local O = Yso.Orchestrator
-    local already = false
-    if O.modules and type(O.modules.list) == &quot;table&quot; then
-      for i=1,#O.modules.list do
-        if O.modules.list[i] and O.modules.list[i].id == &quot;group_damage&quot; then already = true; break end
-      end
-    end
-    if not already then
-      pcall(O.register, { id = &quot;group_damage&quot;, kind = &quot;offense&quot;, priority = 55, propose = function(ctx) return GD.propose(ctx) end })
-    end
-    GD._orch_registered = true
-  end
-  return true
-end
-
 local function _kill_loop_timer()
   if GD.state and GD.state.timer_id then
     pcall(killTimer, GD.state.timer_id)
@@ -7911,7 +7352,6 @@ GD.alias_loop_stop_details = GD.alias_loop_stop_details or {
 
 function GD.alias_loop_prepare_start(ctx)
   GD.init()
-  _ensure_registered()
   return ctx or {}
 end
 
@@ -8189,85 +7629,6 @@ local function _rescue_empress_action(now)
     no_repeat = false,
   }
 end
-------------------------------------------------------------
--- Orchestrator proposal (preferred)
--- Universal shared route categories:
---   * defense_break
---   * anti_tumble
--- All other strategic categories for group_damage are route-local.
---  Returns a list of actions for Yso.Orchestrator to arbitrate/stage.
-------------------------------------------------------------
-function GD.propose(ctx)
-  GD.init()
-  local actions = {}
-
-  local D = (Yso and Yso.off and Yso.off.driver) or nil
-  local pol = D and D.state and tostring(D.state.policy or &quot;&quot;):lower() or &quot;&quot;
-  if pol == &quot;active&quot; then pol = &quot;manual&quot; end
-  if pol ~= &quot;auto&quot; then return actions end
-
-  local route = &quot;&quot;
-  if D and type(D.current_route) == &quot;function&quot; then
-    local ok, v = pcall(D.current_route)
-    if ok then route = tostring(v or &quot;&quot;):lower() end
-  else
-    route = D and D.state and tostring(D.state.active or &quot;&quot;):lower() or &quot;&quot;
-    if route == &quot;gd&quot; or route == &quot;dmg&quot; then route = &quot;group_damage&quot; end
-  end
-  if route ~= &quot;group_damage&quot; then return actions end
-
-  if GD.state and GD.state.loop_enabled == true then return actions end
-
-  local payload = GD.build_payload(ctx)
-  if type(payload) ~= &quot;table&quot; or type(payload.lanes) ~= &quot;table&quot; then
-    return actions
-  end
-
-  local lanes = payload.lanes or {}
-  local meta = payload.meta or {}
-  local tgt = _lc(payload.target or &quot;&quot;)
-
-  if lanes.eq and _eq_ready() then
-    local eq_cat = meta.eq_category or &quot;route&quot;
-    actions[#actions + 1] = {
-      cmd = lanes.eq,
-      qtype = &quot;eq&quot;,
-      kind = &quot;offense&quot;,
-      score = _eq_lane_score(eq_cat),
-      tag = &quot;gd:eq:&quot; .. tgt .. &quot;:&quot; .. _lc(eq_cat),
-      category = eq_cat,
-    }
-  end
-
-  local entity_cmd = lanes.class or lanes.entity
-  if entity_cmd and _ent_ready() then
-    local entity_cat = meta.entity_category or &quot;route&quot;
-    local score = (tostring(entity_cat or &quot;&quot;) == &quot;reserved_burst&quot; and 32) or 28
-    actions[#actions + 1] = {
-      cmd = entity_cmd,
-      qtype = &quot;class&quot;,
-      kind = &quot;offense&quot;,
-      score = score,
-      tag = &quot;gd:class:&quot; .. tgt .. &quot;:&quot; .. _lc(entity_cat),
-      category = entity_cat,
-    }
-  end
-
-  if lanes.bal and _bal_ready() then
-    local bal_cat = meta.bal_category or &quot;route&quot;
-    actions[#actions + 1] = {
-      cmd = lanes.bal,
-      qtype = &quot;bal&quot;,
-      kind = &quot;offense&quot;,
-      score = _bal_lane_score(bal_cat),
-      tag = &quot;gd:bal:&quot; .. tgt .. &quot;:&quot; .. _lc(bal_cat),
-      category = bal_cat,
-    }
-  end
-
-  return actions
-end
-------------------------------------------------------------
 -- Main tick
 ------------------------------------------------------------
 function GD.tick(reasons)
@@ -8403,8 +7764,6 @@ function GD.status()
   return snapshot
 end
 
--- Register with pulse bus (so EQ/BAL/ENT wake triggers drive it)
-_ensure_registered()
 
 
 </script>
@@ -11400,10 +10759,11 @@ Yso.fnref = Yso.fnref or {}
 do
   local F = Yso.fnref
   F.all = F.all or {
-    &quot;Yso.Orchestrator.register&quot;,
-    &quot;Yso.Orchestrator.run&quot;,
-    &quot;Yso.Orchestrator.select&quot;,
-    &quot;Yso.Orchestrator.wake&quot;,
+    &quot;Yso.off.state.clear&quot;,
+    &quot;Yso.off.state.locked&quot;,
+    &quot;Yso.off.state.note&quot;,
+    &quot;Yso.off.state.prune&quot;,
+    &quot;Yso.off.state.recent&quot;,
     &quot;Yso._req.try&quot;,
     &quot;Yso.ak.adapters.pull_full_state&quot;,
     &quot;Yso.ak.any&quot;,
@@ -12031,11 +11391,12 @@ do
       &quot;Yso.fnref.echo&quot;,
       &quot;Yso.fnref.walk&quot;,
     },
-    misc_Orchestrator = {
-      &quot;Yso.Orchestrator.register&quot;,
-      &quot;Yso.Orchestrator.run&quot;,
-      &quot;Yso.Orchestrator.select&quot;,
-      &quot;Yso.Orchestrator.wake&quot;,
+    misc_offense_state = {
+      &quot;Yso.off.state.clear&quot;,
+      &quot;Yso.off.state.locked&quot;,
+      &quot;Yso.off.state.note&quot;,
+      &quot;Yso.off.state.prune&quot;,
+      &quot;Yso.off.state.recent&quot;,
     },
     misc__req = {
       &quot;Yso._req.try&quot;,
@@ -12351,30 +11712,16 @@ end
 					<name>Yso_Offense_Coordination.lua</name>
 					<packageName />
 					<script>--========================================================--
--- Yso_Offense_Coordination.lua  (SUPERSEDING DROP-IN)
---  • Combat mode coordination (NO autostart)
---  • Target auto-clear on death / tumble-out / not-in-room
---  • Slowtime heuristic: &quot;You move sluggishly into action.&quot;
---
--- Patch (2026-01-11):
---  • On: &quot;&lt;tgt&gt; begins to tumble towards the &lt;dir&gt;.&quot;
---      - If Soulmaster balance NOT ready -&gt; QUEUE BAL_CLEAR: fling lust at &lt;tgt&gt;
---      - Else (Soulmaster ready) -&gt; prefer Soulmaster anti-tumble (if available),
---        otherwise fall back to Lust.
---  • On: &quot;&lt;tgt&gt; tumbles out to the &lt;dir&gt;.&quot;
---      - QUEUE FREE: outd empress
---      - QUEUE BAL_CLEAR: fling empress &lt;tgt&gt;
---  • Still marks tumble for group_damage (dmg) module, and won’t break other modules.
---
--- IMPORTANT COMPAT FIX (this drop-in):
---  • Do NOT overwrite Yso.off.oc.toggle() if the Unravel route module already defined it.
+-- Yso_Offense_Coordination.lua
+--  • Compatibility shim for older aliases/debug surfaces.
+--  • Authoritative alias-loop ownership now lives in Yso.mode.
+--  • Target auto-clear and enemy cure telemetry still live here.
 --========================================================--
 
 Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
--- Only define if Unravel route (or another driver) didn’t already define it.
 if type(Yso.off.oc.toggle) ~= &quot;function&quot; then
   function Yso.off.oc.toggle(on)
     if on == nil then
@@ -12389,20 +11736,12 @@ if type(Yso.off.oc.toggle) ~= &quot;function&quot; then
   end
 end
 
-
 Yso.off.coord = Yso.off.coord or {}
 local C = Yso.off.coord
 
 C.cfg = C.cfg or {}
-
--- CANCELLED per project decision (2026-03-01):
--- Lust/Empress reactive automation is forcibly OFF on load.
--- (If you ever want it back, change this line to true.)
 C.cfg.lust_empress_automation = false
-
--- On leap-out, pause offense automation lanes.
 C.cfg.pause_on_leap_out = true
-
 
 C._ev = C._ev or {}
 C._tr = C._tr or {}
@@ -12457,9 +11796,6 @@ local function _cancel_dead_clear()
 end
 
 local function _reset_enemy_state_on_starburst(tgt)
-  -- AK compatibility: affstrack layouts vary by version.
-  --  • Modern: affstrack.score[aff] = number (0..100)
-  --  • Some builds: affstrack.score[aff] = { current = number, ... }
   if type(affstrack) == &quot;table&quot; then
     if type(affstrack.score) == &quot;table&quot; then
       for k, v in pairs(affstrack.score) do
@@ -12471,7 +11807,6 @@ local function _reset_enemy_state_on_starburst(tgt)
         end
       end
     else
-      -- Legacy: wipe any numeric .score fields found directly on affstrack entries
       for _, v in pairs(affstrack) do
         if type(v) == &quot;table&quot; and type(v.score) == &quot;number&quot; then v.score = 0 end
       end
@@ -12482,10 +11817,9 @@ local function _reset_enemy_state_on_starburst(tgt)
   if type(softscore) == &quot;number&quot; then softscore = 0 end
 
   if Yso and Yso.tgt and type(Yso.tgt.set_mindseye) == &quot;function&quot; then
-    Yso.tgt.set_mindseye(tgt, false, true)
+    pcall(Yso.tgt.set_mindseye, tgt, false, true)
   end
 end
-
 
 local function _schedule_dead_clear(tgt)
   tgt = _trim(tgt)
@@ -12506,33 +11840,7 @@ local function _schedule_dead_clear(tgt)
   end)
 end
 
---========================================================--
--- Target presence / room tracking
---  NOTE:
---   • Legacy maintains authoritative room occupant tracking.
---   • Yso MUST NOT auto-clear targets or gate offense on room presence.
---   • Any target clears should come only from explicit server lines
---     (e.g., death, flee, tumble), and only while actively fighting.
---========================================================--
-
---========================================================--
-
-
-------------------------------------------------------------
--- Enemy cure telemetry (from XML triggers)
---  • The XML package has triggers for:
---      &quot;&lt;tgt&gt; eats an aurum flake.&quot;
---      &quot;&lt;tgt&gt; eats a piece of kelp.&quot;
---      &quot;&lt;tgt&gt; touches a tree tattoo.&quot;
---    They call Yso.off.oc.on_enemy_* if present.
---
---  • This module implements those hooks so other offense planners can
---    read &quot;last kelp eat&quot; etc without hard-wiring trigger scripts.
-------------------------------------------------------------
-
 Yso.off.oc = Yso.off.oc or {}
-
--- Ensure the shared Occultist entity pool exists (routes may read this).
 Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
   rotation = { &quot;worm&quot;, &quot;sycophant&quot;, &quot;bubonis&quot;, &quot;crone&quot;, &quot;hound&quot;, &quot;slime&quot;, &quot;storm&quot;, &quot;bloodleech&quot;, &quot;firelord&quot;, &quot;gremlin&quot; },
   kelp = { asthma = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;, healthleech = &quot;worm&quot;, sensitivity = &quot;slime&quot; },
@@ -12566,7 +11874,7 @@ end
 function Yso.off.oc.on_enemy_kelp_eat(who)
   local E = Yso.off.oc.cure_events
   _mark(E.kelp_eat_at, E.kelp_eat_n, who)
-  _note_target_herb(who, &quot;kelp&quot;) -- normalize: aurum+kelp both map to kelp bucket
+  _note_target_herb(who, &quot;kelp&quot;)
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_kelp_eat)==&quot;function&quot; then
     pcall(Yso.off.oc.group_damage.on_enemy_kelp_eat, who)
   end
@@ -12575,7 +11883,7 @@ end
 function Yso.off.oc.on_enemy_aurum_eat(who)
   local E = Yso.off.oc.cure_events
   _mark(E.aurum_eat_at, E.aurum_eat_n, who)
-  _note_target_herb(who, &quot;kelp&quot;) -- aurum flake is a kelp-equivalent cure
+  _note_target_herb(who, &quot;kelp&quot;)
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_aurum_eat)==&quot;function&quot; then
     pcall(Yso.off.oc.group_damage.on_enemy_aurum_eat, who)
   end
@@ -12602,32 +11910,19 @@ function Yso.off.oc.last_kelp_eat_at(who)
   return E and tonumber(E.kelp_eat_at and E.kelp_eat_at[k] or 0) or 0
 end
 
---========================================================--
--- Yso.off.driver — offense route state/control only (single-authority orchestrator pass)
---  • Tracks policy + active route for the orchestrator and route proposals.
---  • Does NOT directly tick or emit offense routes.
---========================================================--
-
-Yso = Yso or {}
-Yso.off = Yso.off or {}
 Yso.off.driver = Yso.off.driver or {}
 local D = Yso.off.driver
 
 D.cfg = D.cfg or {
   enabled = true,
   verbose = false,
-  follow_mode = true,  -- when policy=&quot;auto&quot;: prefer route from Yso.mode (party-&gt;group_damage); never overrides policy=&quot;active&quot;
-  auto_priority = { &quot;occ_aff_burst&quot;, &quot;group_damage&quot;, &quot;party_aff&quot; },
 }
 
 D.state = D.state or {
   enabled = (D.cfg.enabled ~= false),
-  policy  = &quot;manual&quot;,            -- &quot;manual&quot; | &quot;active&quot; | &quot;auto&quot;
-  active  = &quot;none&quot;,              -- manual route selection when policy=&quot;active&quot; (&quot;none&quot; = idle)
+  policy  = &quot;manual&quot;,
+  active  = &quot;none&quot;,
 }
-
-local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
-local function _lc(s) return _trim(s):lower() end
 
 local function _v(msg)
   if not (D.cfg.verbose == true) then return end
@@ -12636,124 +11931,30 @@ local function _v(msg)
   end
 end
 
-local function _get_gd()
-  return (Yso.off and Yso.off.oc and (Yso.off.oc.group_damage or Yso.off.oc.dmg)) or nil
+local function _mode()
+  return Yso and Yso.mode or nil
 end
 
-local function _is_enabled(mod)
-  if not mod then return false end
-  if type(mod) == &quot;table&quot; then
-    if mod.state and type(mod.state.enabled) == &quot;boolean&quot; then return mod.state.enabled end
-    if mod.cfg and type(mod.cfg.enabled) == &quot;boolean&quot; then return mod.cfg.enabled end
-    if type(mod.enabled) == &quot;boolean&quot; then return mod.enabled end
+local function _sync_state()
+  D.state = D.state or {}
+  local M = _mode()
+  local route = &quot;&quot;
+  if M and type(M.active_route_id) == &quot;function&quot; then
+    local ok, v = pcall(M.active_route_id)
+    if ok then route = _lc(v or &quot;&quot;) end
   end
-  return false
-end
 
-local function _route_registry()
-  local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
-  if RR and type(RR.resolve) == &quot;function&quot; then return RR end
-  if type(require) == &quot;function&quot; then
-    pcall(require, &quot;Yso.Combat.route_registry&quot;)
-    pcall(require, &quot;Yso.xml.route_registry&quot;)
-  end
-  RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
-  if RR and type(RR.resolve) == &quot;function&quot; then return RR end
-  return nil
-end
-
-local function _route_id(route)
-  route = _lc(route)
-  if route == &quot;&quot; or route == &quot;none&quot; then return nil end
-
-  local RR = _route_registry()
-  if not (RR and type(RR.resolve) == &quot;function&quot;) then
-    return nil
-  end
-  local entry = RR.resolve(route)
-  if entry and type(entry.id) == &quot;string&quot; and entry.id ~= &quot;&quot; then
-    return entry.id
-  end
-  return nil
-end
-
-local function _resolve_route()
-  -- ACTIVE-ROUTE ONLY: when policy is not auto, do nothing.
-  local pol = _lc(D.state.policy)
-  if pol == &quot;active&quot; then pol = &quot;manual&quot; end -- legacy alias
-  if pol ~= &quot;auto&quot; then return nil end
-
-  local route = _lc(D.state.active)
-  if route == &quot;&quot; or route == &quot;none&quot; then return nil end
-  return _route_id(route)
+  D.state.enabled = (D.cfg.enabled ~= false)
+  D.state.active = (route ~= &quot;&quot; and route) or &quot;none&quot;
+  D.state.policy = (route ~= &quot;&quot; and &quot;auto&quot;) or &quot;manual&quot;
+  return D.state
 end
 
 function D.current_route()
-  local pol = _lc(D.state.policy)
-  if pol ~= &quot;auto&quot; then return nil end
-
-  local mode = Yso and Yso.mode or nil
-  if mode and type(mode.is_hunt) == &quot;function&quot; and mode.is_hunt() then return nil end
-
-  local explicit = _resolve_route()
-  if explicit then return explicit end
-
-  local RR = _route_registry()
-  if not RR then return nil end
-
-  if mode and type(mode.is_party) == &quot;function&quot; and mode.is_party() then
-    local pr = type(mode.party_route) == &quot;function&quot; and _lc(mode.party_route()) or &quot;&quot;
-    if type(RR.for_party_route) == &quot;function&quot; then
-      local entry = RR.for_party_route(pr)
-      if entry and entry.id then return entry.id end
-    end
-    return nil
-  end
-
-  if mode and type(mode.is_combat) == &quot;function&quot; and mode.is_combat() then
-    if type(RR.primary_for_mode) == &quot;function&quot; then
-      local entry = RR.primary_for_mode(&quot;combat&quot;)
-      if entry and entry.id then return entry.id end
-    end
-    return nil
-  end
-
-  return nil
-end
-
--- External helper: used by target presence auto-clear and other guards.
-function Yso.is_actively_fighting()
-  if not (D and D.state and D.state.enabled == true) then return false end
-  local pol = _lc(D.state.policy)
-  if pol == &quot;active&quot; then pol = &quot;manual&quot; end
-  if pol ~= &quot;auto&quot; then return false end
-
-  local route = &quot;&quot;
-  if type(D.current_route) == &quot;function&quot; then
-    local ok, v = pcall(D.current_route)
-    if ok then route = _lc(v or &quot;&quot;) end
-  end
-  if route == &quot;&quot; then
-    route = _lc(D.state.active)
-  end
-  if route == &quot;&quot; or route == &quot;none&quot; then return false end
-
-  -- Hunt mode: driver does not own bashing.
-  if Yso and Yso.mode and type(Yso.mode.is_hunt) == &quot;function&quot; and Yso.mode.is_hunt() then
-    return false
-  end
-
-  -- Require a current target.
-  local t = &quot;&quot;
-  if type(Yso.get_target) == &quot;function&quot; then
-    local ok, v = pcall(Yso.get_target)
-    if ok then t = _trim(v or &quot;&quot;) end
-  elseif type(Yso.target) == &quot;string&quot; then
-    t = _trim(Yso.target)
-  end
-  if t == &quot;&quot; then return false end
-
-  return true
+  local st = _sync_state()
+  local route = _lc(st.active or &quot;&quot;)
+  if route == &quot;&quot; or route == &quot;none&quot; then return nil end
+  return route
 end
 
 function D.toggle(on)
@@ -12762,6 +11963,7 @@ function D.toggle(on)
   else
     D.state.enabled = (on == true)
   end
+  D.cfg.enabled = (D.state.enabled == true)
   _v(&quot;enabled=&quot;..tostring(D.state.enabled))
   if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
     Yso.pulse.wake(&quot;driver:toggle&quot;)
@@ -12769,48 +11971,28 @@ function D.toggle(on)
   return D.state.enabled
 end
 
-function D.set_policy(p)
-  p = _lc(p)
-  if p == &quot;active&quot; then p = &quot;manual&quot; end -- legacy alias
-  if p ~= &quot;manual&quot; and p ~= &quot;auto&quot; then return D.state.policy end
-  D.state.policy = p
-  _v(&quot;policy=&quot;..p)
-  if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    Yso.pulse.wake(&quot;driver:policy&quot;)
-  end
-  return p
+function D.set_policy(_p)
+  _sync_state()
+  return D.state.policy
 end
 
-function D.set_active(route)
-  route = _lc(route)
-  if route == &quot;&quot; or route == &quot;none&quot; then route = &quot;none&quot; end
-  if route ~= &quot;none&quot; then
-    route = _route_id(route)
-  end
-  if route == nil then
-    return D.state.active
-  end
-  D.state.active = route
-  _v(&quot;active=&quot;..route)
-  if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    Yso.pulse.wake(&quot;driver:active&quot;)
-  end
-  return route
+function D.set_active(_route)
+  _sync_state()
+  return D.state.active
 end
 
-function D.tick(reasons)
-  -- Single-authority pass: the orchestrator owns all automated offense emits.
-  -- Driver remains as route/policy state for proposal modules and manual controls.
+function D.tick(_reasons)
+  _sync_state()
   return false
 end
 
--- Disable any legacy pulse-driver registration; orchestrator is the only automated emitter.
+_sync_state()
+
 if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg[&quot;offense_driver&quot;] then
   Yso.pulse.state.reg[&quot;offense_driver&quot;].enabled = false
 end
 
---========================================================--
-
+return D
 </script>
 					<eventHandlerList />
 				</Script>
@@ -15151,7 +14333,7 @@ end
 					<script>--========================================================--
 -- yso_occultist_offense.lua
 -- Occultist single-target offense helper shim for Yso.
--- Automated emission authority has moved to Yso.Orchestrator + route modules.
+-- Automated emission authority now lives on alias-owned route modules.
 --
 -- Design goals:
 --   * Plug into existing Yso queue / pulse architecture.
@@ -15611,12 +14793,6 @@ end
 function Off.tick(reasons)
   -- Deprecated automated path: retained only for manual/helper compatibility.
   if not (reasons == &quot;manual&quot; or (type(reasons) == &quot;table&quot; and reasons._manual_helper == true)) then return false end
--- Offense driver guard: when enabled, this module only runs via the driver tick.
-do
-  local D = (Yso and Yso.off and Yso.off.driver) or nil
-  local enabled = (D and ((D.state and D.state.enabled) or D.enabled)) or false
-  if enabled and not (D._from_driver == true) then return end
-end
 
   if not (Off.state and Off.state.enabled == true) then return end
   if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return end
@@ -16291,6 +15467,12 @@ M.party = M.party or {
   owns = {},
 }
 
+M.route_loop = M.route_loop or {
+  active = &quot;&quot;,
+  last_change = _now(),
+  last_reason = &quot;init&quot;,
+}
+
 local function _route_norm(r)
   r = _norm(r)
   if r == &quot;dmg&quot; then r = &quot;dam&quot; end
@@ -16568,8 +15750,12 @@ local function _loop_kill_timer(mod)
   return true
 end
 
-local function _driver_state()
-  return Yso and Yso.off and Yso.off.driver or nil
+local function _set_active_loop(entry, reason)
+  M.route_loop = M.route_loop or {}
+  M.route_loop.active = type(entry) == &quot;table&quot; and tostring(entry.id or &quot;&quot;) or &quot;&quot;
+  M.route_loop.last_change = _now()
+  M.route_loop.last_reason = tostring(reason or &quot;route_loop&quot;)
+  return M.route_loop.active
 end
 
 local function _loop_activate(entry, reason)
@@ -16590,30 +15776,7 @@ local function _loop_activate(entry, reason)
     pcall(M.set, mode, reason)
   end
 
-  local D = _driver_state()
-  if type(D) ~= &quot;table&quot; then return true end
-
-  if type(D.toggle) == &quot;function&quot; then
-    pcall(D.toggle, true)
-  else
-    D.state = D.state or {}
-    D.state.enabled = true
-  end
-
-  if type(D.set_active) == &quot;function&quot; then
-    pcall(D.set_active, entry.id)
-  else
-    D.state = D.state or {}
-    D.state.active = entry.id
-  end
-
-  if type(D.set_policy) == &quot;function&quot; then
-    pcall(D.set_policy, &quot;auto&quot;)
-  else
-    D.state = D.state or {}
-    D.state.policy = &quot;auto&quot;
-  end
-
+  _set_active_loop(entry, reason)
   return true
 end
 
@@ -16624,28 +15787,9 @@ local function _loop_release(entry)
     pcall(M.set_route_owned, entry.party_route, false)
   end
 
-  local D = _driver_state()
-  if not (type(D) == &quot;table&quot; and type(D.state) == &quot;table&quot;) then
-    return true
-  end
-
   local route_id = _norm(entry.id or &quot;&quot;)
-  local cur_active = _norm(D.state.active or &quot;&quot;)
-  if cur_active == route_id then
-    if type(D.set_active) == &quot;function&quot; then
-      pcall(D.set_active, &quot;none&quot;)
-    else
-      D.state.active = &quot;none&quot;
-    end
-  end
-
-  local still_owns = (cur_active == route_id or cur_active == &quot;none&quot; or cur_active == &quot;&quot;)
-  if still_owns and _norm(D.state.policy or &quot;&quot;) == &quot;auto&quot; then
-    if type(D.set_policy) == &quot;function&quot; then
-      pcall(D.set_policy, &quot;manual&quot;)
-    else
-      D.state.policy = &quot;manual&quot;
-    end
+  if _norm(M.route_loop and M.route_loop.active or &quot;&quot;) == route_id then
+    _set_active_loop(nil, &quot;loop_release&quot;)
   end
 
   return true
@@ -16689,6 +15833,19 @@ end
 
 function M.route_loop_entry(name)
   return _loop_entry(name)
+end
+
+function M.active_route_id()
+  return _norm(M.route_loop and M.route_loop.active or &quot;&quot;)
+end
+
+function M.route_loop_active(name)
+  local entry = _loop_entry(name)
+  if not entry then return false end
+  local mod = _route_module(entry)
+  return type(mod) == &quot;table&quot;
+     and type(mod.state) == &quot;table&quot;
+     and mod.state.loop_enabled == true
 end
 
 function M.schedule_route_loop(name, delay)
@@ -16867,6 +16024,24 @@ function M.tick_route_loop(name)
 
   M.schedule_route_loop(entry.id, state.loop_delay)
   return sent == true
+end
+
+function Yso.is_actively_fighting()
+  local route = type(M.active_route_id) == &quot;function&quot; and M.active_route_id() or &quot;&quot;
+  if route == &quot;&quot; or route == &quot;none&quot; then return false end
+  if type(M.is_hunt) == &quot;function&quot; and M.is_hunt() then return false end
+  if not ((type(M.is_combat) == &quot;function&quot; and M.is_combat()) or (type(M.is_party) == &quot;function&quot; and M.is_party())) then
+    return false
+  end
+
+  local t = &quot;&quot;
+  if type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok then t = tostring(v or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;) end
+  elseif type(Yso.target) == &quot;string&quot; then
+    t = tostring(Yso.target):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+  end
+  return t ~= &quot;&quot;
 end
 
 function M.set_party_route(route, reason)
@@ -18656,6 +17831,7 @@ Yso.bootstrap = Yso.bootstrap or {}
 Yso.bootstrap.root = root
 Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.Core.api&quot;,
+  &quot;Yso.Core.offense_state&quot;,
   &quot;Yso.Integration.ak_legacy_wiring&quot;,
   &quot;Yso.Core.queue&quot;,
   &quot;Yso.Core.wake_bus&quot;,
@@ -18663,7 +17839,6 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.Combat.route_interface&quot;,
   &quot;Yso.Combat.parry&quot;,
   &quot;Yso.Combat.offense_driver&quot;,
-  &quot;Yso.Core.orchestrator&quot;,
   &quot;Yso.Combat.occultist.entity_registry&quot;,
   &quot;Yso.xml.yso_occultist_affmap&quot;,
   &quot;Yso.Combat.occultist.aeon&quot;,
@@ -18800,8 +17975,7 @@ local function _bootstrap_package_runtime_seeded()
   return type(Yso) == &quot;table&quot; and (
     type(Yso.off) == &quot;table&quot; or
     type(Yso.queue) == &quot;table&quot; or
-    type(Yso.mode) == &quot;table&quot; or
-    type(Yso.Orchestrator) == &quot;table&quot;
+    type(Yso.mode) == &quot;table&quot;
   )
 end
 
@@ -19410,7 +18584,7 @@ To keep the Achaea/Yso stack clean and consistent:
 -- end
 --
 -- function Route.is_active()
---   return false -- route driver / orchestrator decides this
+--   return false -- route-loop ownership decides this
 -- end
 --
 -- function Route.can_run(ctx)
@@ -24718,7 +23892,6 @@ AB.route_contract = AB.route_contract or {
 
 AB.cfg = AB.cfg or {
   enabled = false,
-  use_orchestrator = true,
   echo = true,
   loop_delay = 0.15,
 
@@ -24756,6 +23929,11 @@ AB.cfg = AB.cfg or {
   bm_shield_ttl_s = 8.0,
   debug_screen_interval_s = 1.0,
 }
+
+local function _offense_state()
+  return Yso and Yso.off and Yso.off.state or nil
+end
+
 AB.state = AB.state or {
   enabled = (AB.cfg.enabled ~= false),
   loop_enabled = (AB.cfg.enabled ~= false),
@@ -25278,31 +24456,18 @@ function CS.plan_aff(tgt)
 end
 
 local function _recent_sent(tag, within_s)
-  local O = Yso and Yso.Orchestrator or nil
-  if not (O and type(O.last_sent) == &quot;table&quot;) then return false end
-  local row = O.last_sent[tag]
-  if type(row) ~= &quot;table&quot; then return false end
-  return (_now() - tonumber(row.at or 0)) &lt;= (tonumber(within_s or 0) or 0)
+  local S = _offense_state()
+  if not (S and type(S.recent) == &quot;function&quot;) then return false end
+  return S.recent(tag, within_s)
 end
 
 local function _note_recent_tag(tag, cmd, lockout)
   tag = _trim(tag)
   cmd = _trim(cmd)
   if tag == &quot;&quot; or cmd == &quot;&quot; then return false end
-  local O = Yso and Yso.Orchestrator or nil
-  if type(O) ~= &quot;table&quot; then return false end
-  O.last_sent = O.last_sent or {}
-  O.last_sent[tag] = {
-    cmd = cmd,
-    state_sig = &quot;route_local&quot;,
-    at = _now(),
-  }
-  local hold = tonumber(lockout or 0) or 0
-  if hold &gt; 0 then
-    O.lockouts = O.lockouts or {}
-    O.lockouts[tag] = _now() + hold
-  end
-  return true
+  local S = _offense_state()
+  if not (S and type(S.note) == &quot;function&quot;) then return false end
+  return S.note(tag, cmd, { lockout = lockout, state_sig = &quot;route_local&quot; })
 end
 
 local function _note_payload_tags(payload)
@@ -25385,16 +24550,11 @@ local function _combat_mode_active()
 end
 
 local function _route_active()
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  if not (D and D.state) then return false end
-  local pol = _lc(D.state.policy)
-  if pol ~= &quot;auto&quot; then return false end
   if not _combat_mode_active() then return false end
-  if type(D.current_route) == &quot;function&quot; then
-    local ok, v = pcall(D.current_route)
-    if ok and _lc(v or &quot;&quot;) == &quot;occ_aff_burst&quot; then return true end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
+    return Yso.mode.route_loop_active(&quot;occ_aff_burst&quot;) == true
   end
-  return _lc(D.state.active) == &quot;occ_aff_burst&quot;
+  return AB.state and AB.state.loop_enabled == true
 end
 
 local _FOCUS_LOCK_ROAR_POOL = {
@@ -27340,45 +26500,6 @@ local function _focus_lock_giving_sources(tgt, plan)
   end
   return out
 end
-local function _ensure_registered()
-  if not (AB.cfg.use_orchestrator == true and Yso and Yso.Orchestrator and type(Yso.Orchestrator.register) == &quot;function&quot;) then
-    return false
-  end
-
-  if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg[&quot;occ_aff_burst&quot;] then
-    Yso.pulse.state.reg[&quot;occ_aff_burst&quot;].enabled = false
-  end
-
-  if not AB._orch_registered then
-    local O = Yso.Orchestrator
-    local already = false
-    if O.modules and type(O.modules.list) == &quot;table&quot; then
-      for i = 1, #O.modules.list do
-        if O.modules.list[i] and O.modules.list[i].id == &quot;occ_aff_burst&quot; then already = true break end
-      end
-    end
-    if not already then
-      pcall(O.register, { id = &quot;occ_aff_burst&quot;, kind = &quot;offense&quot;, priority = 58, propose = function(ctx) return AB.propose(ctx) end })
-    end
-    AB._orch_registered = true
-  end
-  return true
-end
-
-local function _ensure_runtime(reload)
-  _ensure_registered()
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  local ok_driver = (type(D) == &quot;table&quot; and type(D.set_active) == &quot;function&quot; and type(D.set_policy) == &quot;function&quot;)
-  if ok_driver then return true end
-  if Yso and Yso.bootstrap and type(Yso.bootstrap.occ_aff_burst) == &quot;function&quot; then
-    pcall(Yso.bootstrap.occ_aff_burst, reload == true)
-  end
-  _ensure_registered()
-  D = Yso and Yso.off and Yso.off.driver or nil
-  ok_driver = (type(D) == &quot;table&quot; and type(D.set_active) == &quot;function&quot; and type(D.set_policy) == &quot;function&quot;)
-  return ok_driver
-end
-
 local function _ensure_predict_enabled()
   local P = Yso and Yso.predict or nil
   if type(P) ~= &quot;table&quot; then return false end
@@ -27423,11 +26544,9 @@ AB.alias_loop_stop_details = AB.alias_loop_stop_details or {
 
 function AB.alias_loop_prepare_start(ctx)
   AB.init()
-  local ok_runtime, runtime_ready = pcall(_ensure_runtime, false)
-  if not ok_runtime then runtime_ready = false end
   pcall(_install_runtime_hooks)
   ctx = ctx or {}
-  ctx.runtime_ready = (runtime_ready == true)
+  ctx.runtime_ready = true
   return ctx
 end
 
@@ -28201,82 +27320,11 @@ function AB.explain()
   return ex
 end
 
-function AB.propose(ctx)
-  if AB.state and AB.state.loop_enabled == true then return {} end
-
-  local payload, why = AB.build_payload(ctx)
-  if not payload then return {} end
-
-  local actions = {}
-  local lanes = payload.lanes or {}
-  local meta = payload.meta or {}
-  local tgt = _trim(payload.target or &quot;&quot;)
-
-  if lanes.free then
-    local cat = meta.free_category or &quot;route&quot;
-    actions[#actions + 1] = {
-      cmd = lanes.free,
-      qtype = &quot;free&quot;,
-      kind = &quot;offense&quot;,
-      score = (cat == &quot;anti_tumble&quot; and 120) or 68,
-      tag = meta.free_tag or (&quot;ab:free:loyals:&quot; .. _lc(tgt)),
-      category = cat,
-      prefer_over_shared = true,
-    }
-  end
-
-  if lanes.eq then
-    local cat = meta.eq_category or &quot;route&quot;
-    actions[#actions + 1] = {
-      cmd = lanes.eq,
-      qtype = &quot;eq&quot;,
-      kind = &quot;offense&quot;,
-      score = (cat == &quot;defense_break&quot; and 122) or (cat == &quot;reserved_burst&quot; and 60) or (cat == &quot;speed_strip_window&quot; and 52) or (cat == &quot;truename_acquire&quot; and 44) or 36,
-      tag = meta.eq_tag or (&quot;ab:eq:&quot; .. _lc(tgt)),
-      category = cat,
-      lockout = meta.eq_lockout,
-      prefer_over_shared = (cat == &quot;defense_break&quot;) or _prefer_over_shared(cat),
-    }
-  end
-
-  if (lanes.class or lanes.entity) and _ent_ready() then
-    local cmd = lanes.class or lanes.entity
-    local cat = meta.entity_category or &quot;route&quot;
-    actions[#actions + 1] = {
-      cmd = cmd,
-      qtype = &quot;class&quot;,
-      kind = &quot;offense&quot;,
-      score = (cat == &quot;reserved_burst&quot; and 59) or 30,
-      tag = &quot;ab:class:&quot; .. _lc(tgt) .. &quot;:&quot; .. _lc(cat),
-      category = cat,
-    }
-  end
-
-  if lanes.bal and _bal_ready() then
-    local cat = meta.bal_category or &quot;route&quot;
-    actions[#actions + 1] = {
-      cmd = lanes.bal,
-      qtype = &quot;bal&quot;,
-      kind = &quot;offense&quot;,
-      score = (cat == &quot;anti_tumble&quot; and 118) or (cat == &quot;mental_build&quot; and 24) or 16,
-      tag = meta.bal_tag or (&quot;ab:bal:&quot; .. _lc(tgt) .. &quot;:&quot; .. _lc(cat)),
-      category = cat,
-      lockout = meta.bal_lockout,
-      prefer_over_shared = (cat == &quot;anti_tumble&quot;),
-    }
-  end
-
-  return actions
-end
 do
   local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == &quot;function&quot; then
     RI.ensure_hooks(AB, AB.route_contract)
   end
-end
-
-if AB.cfg.use_orchestrator == true then
-  _ensure_registered()
 end
 
 return AB

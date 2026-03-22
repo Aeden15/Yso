@@ -8,7 +8,7 @@ Canonical source locations (edit these):
 
   Core infrastructure:
   - modules/Yso/Core/api.lua                              -> xml/api_stuff.lua
-  - modules/Yso/Core/orchestrator.lua                     -> xml/yso_orchestrator.lua
+  - modules/Yso/Core/offense_state.lua                    -> xml/yso_offense_state.lua
   - modules/Yso/Core/wake_bus.lua                         -> xml/yso_pulse_wake_bus.lua
   - modules/Yso/Core/queue.lua                            -> xml/yso_queue.lua
   - modules/Yso/Core/bootstrap.lua                        -> xml/bootstrap.lua

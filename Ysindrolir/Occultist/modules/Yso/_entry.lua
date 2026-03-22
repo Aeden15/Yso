@@ -93,6 +93,7 @@ end
 
 -- Load canonical modules first, then remaining XML-resident legacy scripts.
 safe_require_any("Yso.Core.api", "Yso.xml.api_stuff")
+safe_require_any("Yso.Core.offense_state", "Yso.xml.yso_offense_state")
 safe_require_any("Yso.Integration.ak_legacy_wiring", "Yso.xml.ak_legacy_wiring")
 safe_require("Yso.Core.queue")
 safe_require("Yso.Core.wake_bus")
@@ -100,7 +101,6 @@ safe_require_any("Yso.Combat.route_registry", "Yso.xml.route_registry")
 safe_require("Yso.Combat.route_interface")
 safe_require("Yso.Combat.parry")
 safe_require("Yso.Combat.offense_driver")
-safe_require("Yso.Core.orchestrator")
 safe_require("Yso.Curing.blademaster_curing")
 safe_require("Yso.Combat.occultist.entity_registry")
 safe_require("Yso.xml.yso_occultist_affmap")

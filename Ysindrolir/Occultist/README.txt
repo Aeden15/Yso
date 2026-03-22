@@ -115,9 +115,8 @@ entity management, and mode switching through shared services plus route-local
 automation drivers.
 
 Key components:
-  Orchestrator    - proposal/arbitration layer kept for shared services and
-                    compatibility with proposal-driven routes
-  Offense Driver  - policy/route state machine (manual | auto); resolves mode to route
+  Offense State   - shared route-loop send memory (`last_sent`, lockouts)
+  Offense Driver  - compatibility shim over the mode-owned route loop state
   Route Registry  - single source of truth for all valid routes and their metadata
   Queue / Emit    - lane-aware command staging (eq, bal, class/entity, free)
   Pulse / Wake    - event bus for balance regain and timed triggers
@@ -152,7 +151,7 @@ File Layout
       _entry.lua                    - disk-workspace loader (loads canonical modules + XML legacy in order)
       Core/
         api.lua                     - CANONICAL: core Yso API surface + curing + emit
-        orchestrator.lua            - CANONICAL: single-authority offense orchestrator
+        offense_state.lua           - CANONICAL: shared alias-loop send memory
         wake_bus.lua                - CANONICAL: pulse/wake event dispatcher
         queue.lua                   - CANONICAL: command queue with lane isolation
         modes.lua                   - CANONICAL: mode system (bash/combat/party)
@@ -162,7 +161,7 @@ File Layout
         predict_cure.lua            - CANONICAL: enemy cure prediction service
         Template.lua                - route template reference
       Combat/
-        offense_driver.lua          - CANONICAL: route/policy state machine
+        offense_driver.lua          - CANONICAL: compatibility shim over mode state
         parry.lua                   - CANONICAL: class-agnostic parry evaluator
         route_interface.lua         - CANONICAL: shared route contract (defense_break, anti_tumble)
         route_registry.lua          - CANONICAL: route metadata registry
@@ -192,7 +191,7 @@ File Layout
 Canonical vs Generated Files
 ----------------------------
 22 files are now canonical (edit these, then refresh mirrors):
-  Core:     api, orchestrator, wake_bus, queue, bootstrap, modes, mode_autoswitch, target_intel, predict_cure
+  Core:     api, offense_state, wake_bus, queue, bootstrap, modes, mode_autoswitch, target_intel, predict_cure
   Combat:   offense_driver, parry, route_interface, route_registry
   Routes:   occ_aff_burst, group_damage, party_aff
   Occultist: aeon, domination_reference, entity_registry, offense_helpers, softlock_gate
@@ -258,8 +257,8 @@ Automation Notes (2026-03-17)
   before reopening, which prevents EQ-only reopen spam when entity balance is
   still cooling down. Mode or route invalidation hard-stops the loop and kills
   its timer.
-  propose() returns empty when the route's loop is active so the orchestrator
-  does not double-send.
+  Proposal-mode offense has been removed; the route loop is the only automated
+  sender for the active Occultist routes.
 
 Bug Fixes (2026-03-16)
 ----------------------
@@ -273,7 +272,7 @@ Bug Fixes (2026-03-16)
         Once loyals are hostile on the target, the route rechecks READAURA on the
         normal 8s cadence.
   [fix] occ_aff_burst: alias-owned sends now stamp route-local tags into
-        Orchestrator.last_sent so _recent_sent-based throttles, including the
+        the shared offense-state cache so _recent_sent-based throttles, including the
         8-second READAURA requery, work in loop mode.
   [sync] XML mirror files were refreshed and mudlet packages/Yso system.xml was
         rebuilt after these route changes.
@@ -361,7 +360,7 @@ Cleanup (2026-03-13)
         moved to one-time call in start_loop() only.
   [del] occ_aff_burst: removed CS.plan_limb stub (limb route leftover),
         AB.loop_enabled legacy compat field, _driver_state() (never called),
-        AB._ensure_registered / AB._ensure_runtime debug shims,
+        AB._ensure_runtime debug shims,
         _eq_lane_score / _bal_lane_score / _choose_main_lane (replaced by
         direct multi-lane payload construction).
   [sync] XML mirror (occ_aff_burst.lua) synced after all changes.
@@ -376,9 +375,8 @@ Bug Fixes (2026-03-13)
         own start_loop. Now only resets policy if the stopping route still owns it.
   [fix] occ_aff_burst: removed dead Yso.room_has_player references (never defined;
         Yso.target_is_valid already delegates to Yso.room.has via GMCP).
-  [fix] occ_aff_burst + group_damage: propose() now returns empty when the route's
-        Sunder-style loop is active, preventing the orchestrator from double-firing
-        commands alongside the timer-driven loop.
+  [fix] occ_aff_burst + group_damage: legacy proposal-mode hooks now stand down while the
+        Sunder-style loop is active, preventing double-fires alongside the timer-driven loop.
   [fix] Deleted orphan Yso/target.lua wrapper (never loaded by _entry.lua).
 
 
@@ -386,7 +384,7 @@ Completed Architecture Work (2026-03-11)
 ----------------------------------------
 Phase 1 - Route Matrix Completion:
   [done] Created route registry (single source of truth for all routes)
-  [done] Implemented real party_aff route as orchestrator proposal module
+  [done] Implemented real party_aff route as a first-class active route
   [done] Wired party aff mode to real route in driver + mode system
   [done] Classified 6 deprecated placeholder routes as inactive stubs outside the active route set
   [done] All modes resolve to real implementations

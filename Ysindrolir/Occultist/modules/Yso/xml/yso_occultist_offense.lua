@@ -1,7 +1,7 @@
 --========================================================--
 -- yso_occultist_offense.lua
 -- Occultist single-target offense helper shim for Yso.
--- Automated emission authority has moved to Yso.Orchestrator + route modules.
+-- Automated emission authority now lives on alias-owned route modules.
 --
 -- Design goals:
 --   * Plug into existing Yso queue / pulse architecture.
@@ -461,12 +461,6 @@ end
 function Off.tick(reasons)
   -- Deprecated automated path: retained only for manual/helper compatibility.
   if not (reasons == "manual" or (type(reasons) == "table" and reasons._manual_helper == true)) then return false end
--- Offense driver guard: when enabled, this module only runs via the driver tick.
-do
-  local D = (Yso and Yso.off and Yso.off.driver) or nil
-  local enabled = (D and ((D.state and D.state.enabled) or D.enabled)) or false
-  if enabled and not (D._from_driver == true) then return end
-end
 
   if not (Off.state and Off.state.enabled == true) then return end
   if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return end

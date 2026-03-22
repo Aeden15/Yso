@@ -75,7 +75,6 @@ PA.route_contract = PA.route_contract or {
 
 PA.cfg = PA.cfg or {
   enabled = false,
-  use_orchestrator = true,
   echo = true,
   loop_delay = 0.15,
 
@@ -91,6 +90,10 @@ PA.cfg = PA.cfg or {
 
   loyals_on_cmd = "order entourage kill %s",
 }
+
+local function _offense_state()
+  return Yso and Yso.off and Yso.off.state or nil
+end
 
 PA.state = PA.state or {
   enabled = false,
@@ -220,11 +223,9 @@ local function _lock_stable(tgt)
 end
 
 local function _recent_sent(tag, within_s)
-  local O = Yso and Yso.Orchestrator or nil
-  if not (O and type(O.last_sent) == "table") then return false end
-  local row = O.last_sent[tag]
-  if type(row) ~= "table" then return false end
-  return (_now() - tonumber(row.at or 0)) <= (tonumber(within_s or 0) or 0)
+  local S = _offense_state()
+  if not (S and type(S.recent) == "function") then return false end
+  return S.recent(tag, within_s)
 end
 
 local function _tgt_valid(tgt)
@@ -300,10 +301,6 @@ local function _entity_cmd_for_aff(aff, tgt)
   return nil
 end
 
-local function _driver_state()
-  return Yso and Yso.off and Yso.off.driver and Yso.off.driver.state or nil
-end
-
 local function _party_aff_context_active()
   local M = Yso and Yso.mode or nil
   if type(M) ~= "table" then return true end
@@ -324,22 +321,15 @@ local function _party_aff_context_active()
 end
 
 local function _route_is_active()
-  local D = Yso and Yso.off and Yso.off.driver or nil
   if not _party_aff_context_active() then return false end
-  if D and type(D.current_route) == "function" then
-    local ok, v = pcall(D.current_route)
-    if ok and tostring(v or ""):lower() == "party_aff" then return true end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
+    return Yso.mode.route_loop_active("party_aff") == true
   end
-  local st = D and D.state or nil
-  local active = st and tostring(st.active or ""):lower() or ""
-  return active == "party_aff"
+  return PA.state and PA.state.loop_enabled == true
 end
 
 local function _automation_allowed()
-  local st = _driver_state()
-  local pol = st and tostring(st.policy or ""):lower() or ""
-  if pol == "active" then pol = "manual" end
-  return pol == "auto"
+  return _route_is_active()
 end
 
 local function _echo(msg)
@@ -699,36 +689,6 @@ local function _plan_free(tgt)
   return cmd, "team_coordination"
 end
 
-local function _ensure_registered()
-  if not (PA.cfg.use_orchestrator == true and Yso and Yso.Orchestrator and type(Yso.Orchestrator.register) == "function") then
-    return false
-  end
-  if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg["party_aff"] then
-    Yso.pulse.state.reg["party_aff"].enabled = false
-  end
-  if not PA._orch_registered then
-    local O = Yso.Orchestrator
-    local already = false
-    if O.modules and type(O.modules.list) == "table" then
-      for i = 1, #O.modules.list do
-        if O.modules.list[i] and O.modules.list[i].id == "party_aff" then already = true; break end
-      end
-    end
-    if not already then
-      pcall(O.register, {
-        id = "party_aff",
-        kind = "offense",
-        priority = 53,
-        propose = function(ctx) return PA.propose(ctx) end,
-      })
-    end
-    PA._orch_registered = true
-  end
-  return true
-end
-
-PA._ensure_registered = _ensure_registered
-
 function PA.schedule_loop(delay)
   if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
     return Yso.mode.schedule_route_loop("party_aff", delay)
@@ -744,7 +704,6 @@ PA.alias_loop_stop_details = PA.alias_loop_stop_details or {
 
 function PA.alias_loop_prepare_start(ctx)
   PA.init()
-  _ensure_registered()
   return ctx or {}
 end
 
@@ -795,7 +754,6 @@ function PA.init()
   PA.state.busy = (PA.state.busy == true)
   PA.state.loop_delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
   _set_loop_enabled((PA.state.loop_enabled == true) or (PA.state.enabled == true))
-  _ensure_registered()
   return true
 end
 
@@ -893,98 +851,6 @@ function PA.attack_function(arg)
   return true, cmd, payload
 end
 
-function PA.propose(ctx)
-  local actions = {}
-  if PA.state and PA.state.loop_enabled == true then return actions end
-
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  local pol = D and D.state and tostring(D.state.policy or ""):lower() or ""
-  if pol == "active" then pol = "manual" end
-  if pol ~= "auto" then return actions end
-
-  if not _route_is_active() then return actions end
-  if PA.state.enabled ~= true then return actions end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return actions end
-  if Yso and Yso.mode and type(Yso.mode.is_hunt) == "function" and Yso.mode.is_hunt() then return actions end
-
-  local tgt = _target()
-  if tgt == "" or not _tgt_valid(tgt) then return actions end
-
-  local tkey = _lc(tgt)
-
-  local free_cmd, free_cat = _plan_free(tgt)
-  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt)
-  local bal_cmd, bal_cat = _plan_bal(tgt)
-  local class_cmd, class_cat = _plan_entity(tgt)
-
-  PA.state.last_target = tgt
-  PA.state.explain = {
-    route = "party_aff",
-    target = tgt,
-    focus_lock_count = _focus_lock_count(tgt),
-    lock_stable = _lock_stable(tgt),
-    manaleech = _has_aff(tgt, "manaleech"),
-    mental_score = _mental_score(),
-    shield_up = _shield_is_up(tgt),
-    planned = { free = free_cmd, eq = eq_cmd, bal = bal_cmd, class = class_cmd },
-    categories = { free = free_cat, eq = eq_cat, bal = bal_cat, class = class_cat },
-  }
-
-  if free_cmd then
-    actions[#actions + 1] = {
-      cmd = free_cmd,
-      qtype = "free",
-      kind = "offense",
-      score = 50,
-      tag = "pa:free:loyals:" .. tkey,
-      category = free_cat or "team_coordination",
-    }
-  end
-
-  if eq_cmd then
-    local score = 36
-    if eq_cat == "defense_break" then score = 122
-    elseif eq_cat == "mental_pressure" then score = 40
-    elseif eq_cat == "mana_drain" then score = 38
-    elseif eq_cat == "team_coordination" then score = 35
-    end
-    actions[#actions + 1] = {
-      cmd = eq_cmd,
-      qtype = "eq",
-      kind = "offense",
-      score = score,
-      tag = eq_tag or ("pa:eq:" .. tkey),
-      category = eq_cat or "kelp_pressure",
-      lockout = eq_lock,
-      prefer_over_shared = (eq_cat == "defense_break"),
-    }
-  end
-
-  if class_cmd and _ent_ready() then
-    actions[#actions + 1] = {
-      cmd = class_cmd,
-      qtype = "class",
-      kind = "offense",
-      score = 28,
-      tag = "pa:class:" .. tkey .. ":" .. _lc(class_cat or "entity_support"),
-      category = class_cat or "entity_support",
-    }
-  end
-
-  if bal_cmd and _bal_ready() then
-    actions[#actions + 1] = {
-      cmd = bal_cmd,
-      qtype = "bal",
-      kind = "offense",
-      score = (bal_cat == "mental_pressure" and 22) or 16,
-      tag = "pa:bal:" .. tkey .. ":" .. _lc(bal_cat or "support"),
-      category = bal_cat or "mana_drain",
-    }
-  end
-
-  return actions
-end
-
 function PA.on_sent(payload, ctx)
   PA.init()
   if type(payload) ~= "table" then return true end
@@ -1068,10 +934,6 @@ do
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(PA, PA.route_contract)
   end
-end
-
-if PA.cfg.use_orchestrator == true then
-  _ensure_registered()
 end
 
 return PA

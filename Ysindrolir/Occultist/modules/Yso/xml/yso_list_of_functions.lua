@@ -1483,10 +1483,11 @@ Yso.fnref = Yso.fnref or {}
 do
   local F = Yso.fnref
   F.all = F.all or {
-    "Yso.Orchestrator.register",
-    "Yso.Orchestrator.run",
-    "Yso.Orchestrator.select",
-    "Yso.Orchestrator.wake",
+    "Yso.off.state.clear",
+    "Yso.off.state.locked",
+    "Yso.off.state.note",
+    "Yso.off.state.prune",
+    "Yso.off.state.recent",
     "Yso._req.try",
     "Yso.ak.adapters.pull_full_state",
     "Yso.ak.any",
@@ -2114,11 +2115,12 @@ do
       "Yso.fnref.echo",
       "Yso.fnref.walk",
     },
-    misc_Orchestrator = {
-      "Yso.Orchestrator.register",
-      "Yso.Orchestrator.run",
-      "Yso.Orchestrator.select",
-      "Yso.Orchestrator.wake",
+    misc_offense_state = {
+      "Yso.off.state.clear",
+      "Yso.off.state.locked",
+      "Yso.off.state.note",
+      "Yso.off.state.prune",
+      "Yso.off.state.recent",
     },
     misc__req = {
       "Yso._req.try",

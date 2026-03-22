@@ -73,7 +73,6 @@ AB.route_contract = AB.route_contract or {
 
 AB.cfg = AB.cfg or {
   enabled = false,
-  use_orchestrator = true,
   echo = true,
   loop_delay = 0.15,
 
@@ -111,6 +110,11 @@ AB.cfg = AB.cfg or {
   bm_shield_ttl_s = 8.0,
   debug_screen_interval_s = 1.0,
 }
+
+local function _offense_state()
+  return Yso and Yso.off and Yso.off.state or nil
+end
+
 AB.state = AB.state or {
   enabled = (AB.cfg.enabled ~= false),
   loop_enabled = (AB.cfg.enabled ~= false),
@@ -633,31 +637,18 @@ function CS.plan_aff(tgt)
 end
 
 local function _recent_sent(tag, within_s)
-  local O = Yso and Yso.Orchestrator or nil
-  if not (O and type(O.last_sent) == "table") then return false end
-  local row = O.last_sent[tag]
-  if type(row) ~= "table" then return false end
-  return (_now() - tonumber(row.at or 0)) <= (tonumber(within_s or 0) or 0)
+  local S = _offense_state()
+  if not (S and type(S.recent) == "function") then return false end
+  return S.recent(tag, within_s)
 end
 
 local function _note_recent_tag(tag, cmd, lockout)
   tag = _trim(tag)
   cmd = _trim(cmd)
   if tag == "" or cmd == "" then return false end
-  local O = Yso and Yso.Orchestrator or nil
-  if type(O) ~= "table" then return false end
-  O.last_sent = O.last_sent or {}
-  O.last_sent[tag] = {
-    cmd = cmd,
-    state_sig = "route_local",
-    at = _now(),
-  }
-  local hold = tonumber(lockout or 0) or 0
-  if hold > 0 then
-    O.lockouts = O.lockouts or {}
-    O.lockouts[tag] = _now() + hold
-  end
-  return true
+  local S = _offense_state()
+  if not (S and type(S.note) == "function") then return false end
+  return S.note(tag, cmd, { lockout = lockout, state_sig = "route_local" })
 end
 
 local function _note_payload_tags(payload)
@@ -740,16 +731,11 @@ local function _combat_mode_active()
 end
 
 local function _route_active()
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  if not (D and D.state) then return false end
-  local pol = _lc(D.state.policy)
-  if pol ~= "auto" then return false end
   if not _combat_mode_active() then return false end
-  if type(D.current_route) == "function" then
-    local ok, v = pcall(D.current_route)
-    if ok and _lc(v or "") == "occ_aff_burst" then return true end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
+    return Yso.mode.route_loop_active("occ_aff_burst") == true
   end
-  return _lc(D.state.active) == "occ_aff_burst"
+  return AB.state and AB.state.loop_enabled == true
 end
 
 local _FOCUS_LOCK_ROAR_POOL = {
@@ -2178,17 +2164,41 @@ end
 local function _waiting_blocks_tick()
   local wait = AB.state.waiting or {}
   local queued = _trim(wait.queue)
-  if queued == "" then return false end
+  if queued == "" then
+    if type(AB.state.explain) == "table" and type(AB.state.explain.waiting) == "table" then
+      AB.state.explain.waiting.active = false
+      AB.state.explain.waiting.queue = ""
+      AB.state.explain.waiting.main_lane = ""
+      AB.state.explain.waiting.lanes = {}
+      AB.state.explain.waiting.age = 0
+    end
+    return false
+  end
 
+  local age = math.max(0, _now() - (tonumber(wait.at) or _now()))
   if (_now() - (tonumber(wait.at) or 0)) >= 3.0 then
     _clear_waiting()
     return false
   end
 
+  if type(AB.state.explain) ~= "table" then AB.state.explain = {} end
+  AB.state.explain.route = AB.state.explain.route or "occ_aff_burst"
+  AB.state.explain.target = AB.state.explain.target or AB.state.last_target or _target()
+  AB.state.explain.resume_checkpoint = AB.state.explain.resume_checkpoint or AB.state.resume_checkpoint
+  AB.state.explain.debug = (AB.debug and AB.debug.enabled == true) or false
+  AB.state.explain.waiting = {
+    active = true,
+    queue = queued,
+    main_lane = _lc(wait.main_lane or ""),
+    lanes = (type(wait.lanes) == "table") and wait.lanes or {},
+    age = age,
+  }
+
   local lanes = wait.lanes
   if type(lanes) == "table" and #lanes > 0 then
     for i = 1, #lanes do
       if not _lane_ready(lanes[i]) then
+        _render_debug_screen(false)
         return true
       end
     end
@@ -2199,14 +2209,17 @@ local function _waiting_blocks_tick()
   local lane = _lc(wait.main_lane or "")
   if lane == "eq" then
     if _eq_ready() then _clear_waiting(); return false end
+    _render_debug_screen(false)
     return true
   end
   if lane == "bal" then
     if _bal_ready() then _clear_waiting(); return false end
+    _render_debug_screen(false)
     return true
   end
   if lane == "entity" or lane == "class" then
     if _ent_ready() then _clear_waiting(); return false end
+    _render_debug_screen(false)
     return true
   end
 
@@ -2668,45 +2681,6 @@ local function _focus_lock_giving_sources(tgt, plan)
   end
   return out
 end
-local function _ensure_registered()
-  if not (AB.cfg.use_orchestrator == true and Yso and Yso.Orchestrator and type(Yso.Orchestrator.register) == "function") then
-    return false
-  end
-
-  if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg["occ_aff_burst"] then
-    Yso.pulse.state.reg["occ_aff_burst"].enabled = false
-  end
-
-  if not AB._orch_registered then
-    local O = Yso.Orchestrator
-    local already = false
-    if O.modules and type(O.modules.list) == "table" then
-      for i = 1, #O.modules.list do
-        if O.modules.list[i] and O.modules.list[i].id == "occ_aff_burst" then already = true break end
-      end
-    end
-    if not already then
-      pcall(O.register, { id = "occ_aff_burst", kind = "offense", priority = 58, propose = function(ctx) return AB.propose(ctx) end })
-    end
-    AB._orch_registered = true
-  end
-  return true
-end
-
-local function _ensure_runtime(reload)
-  _ensure_registered()
-  local D = Yso and Yso.off and Yso.off.driver or nil
-  local ok_driver = (type(D) == "table" and type(D.set_active) == "function" and type(D.set_policy) == "function")
-  if ok_driver then return true end
-  if Yso and Yso.bootstrap and type(Yso.bootstrap.occ_aff_burst) == "function" then
-    pcall(Yso.bootstrap.occ_aff_burst, reload == true)
-  end
-  _ensure_registered()
-  D = Yso and Yso.off and Yso.off.driver or nil
-  ok_driver = (type(D) == "table" and type(D.set_active) == "function" and type(D.set_policy) == "function")
-  return ok_driver
-end
-
 local function _ensure_predict_enabled()
   local P = Yso and Yso.predict or nil
   if type(P) ~= "table" then return false end
@@ -2751,11 +2725,9 @@ AB.alias_loop_stop_details = AB.alias_loop_stop_details or {
 
 function AB.alias_loop_prepare_start(ctx)
   AB.init()
-  local ok_runtime, runtime_ready = pcall(_ensure_runtime, false)
-  if not ok_runtime then runtime_ready = false end
   pcall(_install_runtime_hooks)
   ctx = ctx or {}
-  ctx.runtime_ready = (runtime_ready == true)
+  ctx.runtime_ready = true
   return ctx
 end
 
@@ -3007,6 +2979,7 @@ function AB.attack_function(arg)
   local US = _unnamable_state(tgt)
   AB.state.explain = {
     route = "occ_aff_burst",
+    debug = AB.debug.enabled == true,
     target = tgt,
     target_class = plan.target_class,
     mana_pct = plan.mana_pct,
@@ -3090,6 +3063,13 @@ function AB.attack_function(arg)
     finish_transition = plan.finish,
     anti_tumble_active = (anti.active == true),
     anti_tumble = anti.state,
+    waiting = {
+      active = false,
+      queue = "",
+      main_lane = "",
+      lanes = {},
+      age = 0,
+    },
     planned = { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = entity_cmd },
     categories = { free = free_cat, eq = eq_cat, bal = bal_cat, entity = entity_cat },
     main_lane = main_lane,
@@ -3345,6 +3325,7 @@ local function _debug_screen_text()
   local para = type(ex.para) == "table" and ex.para or {}
   local unnamable = type(ex.unnamable) == "table" and ex.unnamable or {}
   local bm = type(ex.bm_snapshot) == "table" and ex.bm_snapshot or {}
+  local waiting = type(ex.waiting) == "table" and ex.waiting or {}
   local blockers = {}
   if ex.eq_blocked == true then blockers[#blockers + 1] = "eq:" .. _dbg_list(ex.eq_block_reasons) end
   if ex.anti_tumble_active == true then blockers[#blockers + 1] = "anti-tumble" end
@@ -3376,6 +3357,9 @@ local function _debug_screen_text()
       _dbg_field(bm.physical), _dbg_field(bm.mental), _dbg_field(bm.speed), _dbg_field(bm.mana)),
     string.format(" Legal  | eq_blocked=%s reasons=%s retry=%.2f",
       _dbg_bool(ex.eq_blocked), _dbg_list(ex.eq_block_reasons), tonumber(ex.eq_retry_until or 0) or 0),
+    string.format(" Wait   | active=%s lane=%s age=%.2f lanes=%s q=%s",
+      _dbg_bool(waiting.active), tostring(waiting.main_lane or "-"), tonumber(waiting.age or 0) or 0,
+      _dbg_list(waiting.lanes), tostring(waiting.queue or "-")),
     string.format(" Finish | cleanseaura=%s mana_ready=%s bury=%s focus=%s stage=%s blocker=%s",
       tostring(finish.cleanseaura_state or "-"), _dbg_bool(finish.mana_ready), _dbg_bool(ex.mana_bury_ready),
       tostring(ex.focus_lock_count or 0), tostring(finish.stage or "-"), tostring(finish.blocker or "-")),
@@ -3496,85 +3480,32 @@ function AB.on_send_result(payload, ctx)
 end
 
 function AB.explain()
-  return AB.state and AB.state.explain or {}
+  AB.state = AB.state or {}
+  AB.state.explain = type(AB.state.explain) == "table" and AB.state.explain or {}
+  local ex = AB.state.explain
+  ex.route = ex.route or "occ_aff_burst"
+  ex.target = ex.target or AB.state.last_target or _target()
+  ex.resume_checkpoint = ex.resume_checkpoint or AB.state.resume_checkpoint
+  ex.debug = AB.debug and AB.debug.enabled == true or false
+  ex.route_enabled = AB.is_enabled()
+  ex.active = AB.is_active()
+
+  local wait = AB.state.waiting or {}
+  local queued = _trim(wait.queue)
+  ex.waiting = ex.waiting or {}
+  ex.waiting.active = queued ~= ""
+  ex.waiting.queue = queued
+  ex.waiting.main_lane = _lc(wait.main_lane or "")
+  ex.waiting.lanes = (type(wait.lanes) == "table") and wait.lanes or {}
+  ex.waiting.age = (queued ~= "") and math.max(0, _now() - (tonumber(wait.at) or _now())) or 0
+  return ex
 end
 
-function AB.propose(ctx)
-  if AB.state and AB.state.loop_enabled == true then return {} end
-
-  local payload, why = AB.build_payload(ctx)
-  if not payload then return {} end
-
-  local actions = {}
-  local lanes = payload.lanes or {}
-  local meta = payload.meta or {}
-  local tgt = _trim(payload.target or "")
-
-  if lanes.free then
-    local cat = meta.free_category or "route"
-    actions[#actions + 1] = {
-      cmd = lanes.free,
-      qtype = "free",
-      kind = "offense",
-      score = (cat == "anti_tumble" and 120) or 68,
-      tag = meta.free_tag or ("ab:free:loyals:" .. _lc(tgt)),
-      category = cat,
-      prefer_over_shared = true,
-    }
-  end
-
-  if lanes.eq then
-    local cat = meta.eq_category or "route"
-    actions[#actions + 1] = {
-      cmd = lanes.eq,
-      qtype = "eq",
-      kind = "offense",
-      score = (cat == "defense_break" and 122) or (cat == "reserved_burst" and 60) or (cat == "speed_strip_window" and 52) or (cat == "truename_acquire" and 44) or 36,
-      tag = meta.eq_tag or ("ab:eq:" .. _lc(tgt)),
-      category = cat,
-      lockout = meta.eq_lockout,
-      prefer_over_shared = (cat == "defense_break") or _prefer_over_shared(cat),
-    }
-  end
-
-  if (lanes.class or lanes.entity) and _ent_ready() then
-    local cmd = lanes.class or lanes.entity
-    local cat = meta.entity_category or "route"
-    actions[#actions + 1] = {
-      cmd = cmd,
-      qtype = "class",
-      kind = "offense",
-      score = (cat == "reserved_burst" and 59) or 30,
-      tag = "ab:class:" .. _lc(tgt) .. ":" .. _lc(cat),
-      category = cat,
-    }
-  end
-
-  if lanes.bal and _bal_ready() then
-    local cat = meta.bal_category or "route"
-    actions[#actions + 1] = {
-      cmd = lanes.bal,
-      qtype = "bal",
-      kind = "offense",
-      score = (cat == "anti_tumble" and 118) or (cat == "mental_build" and 24) or 16,
-      tag = meta.bal_tag or ("ab:bal:" .. _lc(tgt) .. ":" .. _lc(cat)),
-      category = cat,
-      lockout = meta.bal_lockout,
-      prefer_over_shared = (cat == "anti_tumble"),
-    }
-  end
-
-  return actions
-end
 do
   local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(AB, AB.route_contract)
   end
-end
-
-if AB.cfg.use_orchestrator == true then
-  _ensure_registered()
 end
 
 return AB

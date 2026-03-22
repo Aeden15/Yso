@@ -3,7 +3,7 @@
 return {
   -- Core infrastructure
   { source = "modules/Yso/Core/api.lua",              mirror = "modules/Yso/xml/api_stuff.lua" },
-  { source = "modules/Yso/Core/orchestrator.lua",     mirror = "modules/Yso/xml/yso_orchestrator.lua" },
+  { source = "modules/Yso/Core/offense_state.lua",    mirror = "modules/Yso/xml/yso_offense_state.lua" },
   { source = "modules/Yso/Core/wake_bus.lua",         mirror = "modules/Yso/xml/yso_pulse_wake_bus.lua" },
   { source = "modules/Yso/Core/queue.lua",            mirror = "modules/Yso/xml/yso_queue.lua" },
   { source = "modules/Yso/Core/bootstrap.lua",        mirror = "modules/Yso/xml/bootstrap.lua" },

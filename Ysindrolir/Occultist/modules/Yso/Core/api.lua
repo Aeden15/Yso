@@ -565,7 +565,8 @@ function Yso.emit(payload, opts)
     if opts.commit == true or opts.force_commit == true then return true end
     if opts.commit == false then return false end
     if opts.force == true then return true end
-    -- In combat/party, lane-table offense emits are staged; Orchestrator commits once.
+    -- In combat/party, lane-table offense emits are staged so the route loop or
+    -- wake bus can flush them on the next viable reopen.
     if _in_combat_party() and _is_lane_payload(p) and _offenseish() then return false end
     return true
   end
@@ -615,11 +616,26 @@ function Yso.emit(payload, opts)
     if ok and Yso.pulse and Yso.pulse.state and Yso.pulse.state._in_flush then
       Yso.pulse.state._did_emit = true
     end
+    if ok then
+      if Q then Q._commit_hint = nil end
+      return true
+    end
+
+    -- If a lane spend could not commit yet, keep the staged payload alive and
+    -- hand it back to the wake bus so it flushes on the next viable reopen.
+    if _is_lane_payload(payload) and Yso.pulse and type(Yso.pulse.wake) == "function" then
+      Q._commit_hint = opts
+      if not (Yso.pulse.state and Yso.pulse.state._in_flush) then
+        pcall(Yso.pulse.wake, "emit:staged")
+      end
+      return true
+    end
+
     if Q then Q._commit_hint = nil end
-    return ok
+    return false
   end
 
-  -- Stage-only: let Orchestrator commit once per tick. Preserve commit hint (wake_lane, allow_eqbal, etc).
+  -- Stage-only: preserve commit hint (wake_lane, allow_eqbal, etc) for the next flush.
   Q._commit_hint = opts
   if Yso.pulse and type(Yso.pulse.wake) == "function" and not (Yso.pulse.state and Yso.pulse.state._in_flush) then
     pcall(Yso.pulse.wake, "emit:staged")

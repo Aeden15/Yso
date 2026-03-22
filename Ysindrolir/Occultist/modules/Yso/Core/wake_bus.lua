@@ -43,7 +43,7 @@ P.state = P.state or {
   reasons = {},
   _debounce_timer = nil,
   _in_flush = false,
-  _did_emit = false, -- used by orchestrator/exclusive callbacks
+  _did_emit = false, -- used by flush callbacks to detect a successful emit
   _eh_vitals = nil,
   _eh_prompt = nil,
 }

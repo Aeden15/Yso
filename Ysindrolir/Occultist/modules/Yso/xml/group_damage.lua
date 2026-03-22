@@ -98,9 +98,6 @@ end
 
 GD.cfg = GD.cfg or {
   enabled = false,
-
-  -- Single-authority offense: this route produces proposals only.
-  use_orchestrator = true,
   echo = true,
   loop_delay = 0.15,
 
@@ -858,10 +855,6 @@ end
 --  * Keeps legacy propose/tick behavior intact while exposing a uniform
 --    route API for future routes and tooling.
 ------------------------------------------------------------
-local function _driver_state()
-  return Yso and Yso.off and Yso.off.driver and Yso.off.driver.state or nil
-end
-
 local function _party_damage_context_active()
   local M = Yso and Yso.mode or nil
   if type(M) ~= "table" then return true end
@@ -887,21 +880,14 @@ local function _party_damage_context_active()
 end
 
 local function _route_is_active()
-  local D = Yso and Yso.off and Yso.off.driver or nil
   if not _party_damage_context_active() then return false end
-  if D and type(D.current_route) == "function" then
-    local ok, v = pcall(D.current_route)
-    if ok and tostring(v or ""):lower() == "group_damage" then return true end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
+    return Yso.mode.route_loop_active("group_damage") == true
   end
-  local st = _driver_state()
-  local active = st and tostring(st.active or ""):lower() or ""
-  return active == "group_damage" or active == "gd" or active == "dmg"
+  return GD.state and GD.state.loop_enabled == true
 end
 local function _automation_allowed()
-  local st = _driver_state()
-  local pol = st and tostring(st.policy or ""):lower() or ""
-  if pol == "active" then pol = "manual" end
-  return pol == "auto"
+  return _route_is_active()
 end
 
 function GD.init()
@@ -914,7 +900,6 @@ function GD.init()
   GD.state.busy = (GD.state.busy == true)
   GD.state.loop_delay = tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15
   _set_loop_enabled((GD.state.loop_enabled == true) or (GD.state.enabled == true))
-  _ensure_registered()
   return true
 end
 function GD.reset(reason)
@@ -1165,32 +1150,6 @@ function GD.on_send_result(payload, ctx)
   return GD.on_sent(payload, ctx)
 end
 
-local function _ensure_registered()
-  if not (GD.cfg.use_orchestrator ~= false and Yso and Yso.Orchestrator and type(Yso.Orchestrator.register) == "function") then
-    return false
-  end
-
-  -- Disable any legacy pulse-route registration; orchestrator is the only automated authority.
-  if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg["group_damage"] then
-    Yso.pulse.state.reg["group_damage"].enabled = false
-  end
-
-  if not GD._orch_registered then
-    local O = Yso.Orchestrator
-    local already = false
-    if O.modules and type(O.modules.list) == "table" then
-      for i=1,#O.modules.list do
-        if O.modules.list[i] and O.modules.list[i].id == "group_damage" then already = true; break end
-      end
-    end
-    if not already then
-      pcall(O.register, { id = "group_damage", kind = "offense", priority = 55, propose = function(ctx) return GD.propose(ctx) end })
-    end
-    GD._orch_registered = true
-  end
-  return true
-end
-
 local function _kill_loop_timer()
   if GD.state and GD.state.timer_id then
     pcall(killTimer, GD.state.timer_id)
@@ -1213,7 +1172,6 @@ GD.alias_loop_stop_details = GD.alias_loop_stop_details or {
 
 function GD.alias_loop_prepare_start(ctx)
   GD.init()
-  _ensure_registered()
   return ctx or {}
 end
 
@@ -1491,85 +1449,6 @@ local function _rescue_empress_action(now)
     no_repeat = false,
   }
 end
-------------------------------------------------------------
--- Orchestrator proposal (preferred)
--- Universal shared route categories:
---   * defense_break
---   * anti_tumble
--- All other strategic categories for group_damage are route-local.
---  Returns a list of actions for Yso.Orchestrator to arbitrate/stage.
-------------------------------------------------------------
-function GD.propose(ctx)
-  GD.init()
-  local actions = {}
-
-  local D = (Yso and Yso.off and Yso.off.driver) or nil
-  local pol = D and D.state and tostring(D.state.policy or ""):lower() or ""
-  if pol == "active" then pol = "manual" end
-  if pol ~= "auto" then return actions end
-
-  local route = ""
-  if D and type(D.current_route) == "function" then
-    local ok, v = pcall(D.current_route)
-    if ok then route = tostring(v or ""):lower() end
-  else
-    route = D and D.state and tostring(D.state.active or ""):lower() or ""
-    if route == "gd" or route == "dmg" then route = "group_damage" end
-  end
-  if route ~= "group_damage" then return actions end
-
-  if GD.state and GD.state.loop_enabled == true then return actions end
-
-  local payload = GD.build_payload(ctx)
-  if type(payload) ~= "table" or type(payload.lanes) ~= "table" then
-    return actions
-  end
-
-  local lanes = payload.lanes or {}
-  local meta = payload.meta or {}
-  local tgt = _lc(payload.target or "")
-
-  if lanes.eq and _eq_ready() then
-    local eq_cat = meta.eq_category or "route"
-    actions[#actions + 1] = {
-      cmd = lanes.eq,
-      qtype = "eq",
-      kind = "offense",
-      score = _eq_lane_score(eq_cat),
-      tag = "gd:eq:" .. tgt .. ":" .. _lc(eq_cat),
-      category = eq_cat,
-    }
-  end
-
-  local entity_cmd = lanes.class or lanes.entity
-  if entity_cmd and _ent_ready() then
-    local entity_cat = meta.entity_category or "route"
-    local score = (tostring(entity_cat or "") == "reserved_burst" and 32) or 28
-    actions[#actions + 1] = {
-      cmd = entity_cmd,
-      qtype = "class",
-      kind = "offense",
-      score = score,
-      tag = "gd:class:" .. tgt .. ":" .. _lc(entity_cat),
-      category = entity_cat,
-    }
-  end
-
-  if lanes.bal and _bal_ready() then
-    local bal_cat = meta.bal_category or "route"
-    actions[#actions + 1] = {
-      cmd = lanes.bal,
-      qtype = "bal",
-      kind = "offense",
-      score = _bal_lane_score(bal_cat),
-      tag = "gd:bal:" .. tgt .. ":" .. _lc(bal_cat),
-      category = bal_cat,
-    }
-  end
-
-  return actions
-end
-------------------------------------------------------------
 -- Main tick
 ------------------------------------------------------------
 function GD.tick(reasons)
@@ -1705,7 +1584,5 @@ function GD.status()
   return snapshot
 end
 
--- Register with pulse bus (so EQ/BAL/ENT wake triggers drive it)
-_ensure_registered()
 
 

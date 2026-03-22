@@ -107,6 +107,7 @@ Yso.bootstrap = Yso.bootstrap or {}
 Yso.bootstrap.root = root
 Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.Core.api",
+  "Yso.Core.offense_state",
   "Yso.Integration.ak_legacy_wiring",
   "Yso.Core.queue",
   "Yso.Core.wake_bus",
@@ -114,7 +115,6 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.Combat.route_interface",
   "Yso.Combat.parry",
   "Yso.Combat.offense_driver",
-  "Yso.Core.orchestrator",
   "Yso.Combat.occultist.entity_registry",
   "Yso.xml.yso_occultist_affmap",
   "Yso.Combat.occultist.aeon",
@@ -251,8 +251,7 @@ local function _bootstrap_package_runtime_seeded()
   return type(Yso) == "table" and (
     type(Yso.off) == "table" or
     type(Yso.queue) == "table" or
-    type(Yso.mode) == "table" or
-    type(Yso.Orchestrator) == "table"
+    type(Yso.mode) == "table"
   )
 end
 

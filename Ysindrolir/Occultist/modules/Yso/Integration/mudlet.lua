@@ -370,7 +370,7 @@ function M.onOppProneCured(who)
   tlog("opp.prone", { target = who, value = false })
 end
 
--- tickOffense is a no-op: the Orchestrator now owns all automated offense ticking.
+-- tickOffense is a no-op: alias-owned route loops now own automated offense ticking.
 function M.tickOffense()
   return nil
 end

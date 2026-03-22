@@ -112,6 +112,12 @@ M.party = M.party or {
   owns = {},
 }
 
+M.route_loop = M.route_loop or {
+  active = "",
+  last_change = _now(),
+  last_reason = "init",
+}
+
 local function _route_norm(r)
   r = _norm(r)
   if r == "dmg" then r = "dam" end
@@ -389,8 +395,12 @@ local function _loop_kill_timer(mod)
   return true
 end
 
-local function _driver_state()
-  return Yso and Yso.off and Yso.off.driver or nil
+local function _set_active_loop(entry, reason)
+  M.route_loop = M.route_loop or {}
+  M.route_loop.active = type(entry) == "table" and tostring(entry.id or "") or ""
+  M.route_loop.last_change = _now()
+  M.route_loop.last_reason = tostring(reason or "route_loop")
+  return M.route_loop.active
 end
 
 local function _loop_activate(entry, reason)
@@ -411,30 +421,7 @@ local function _loop_activate(entry, reason)
     pcall(M.set, mode, reason)
   end
 
-  local D = _driver_state()
-  if type(D) ~= "table" then return true end
-
-  if type(D.toggle) == "function" then
-    pcall(D.toggle, true)
-  else
-    D.state = D.state or {}
-    D.state.enabled = true
-  end
-
-  if type(D.set_active) == "function" then
-    pcall(D.set_active, entry.id)
-  else
-    D.state = D.state or {}
-    D.state.active = entry.id
-  end
-
-  if type(D.set_policy) == "function" then
-    pcall(D.set_policy, "auto")
-  else
-    D.state = D.state or {}
-    D.state.policy = "auto"
-  end
-
+  _set_active_loop(entry, reason)
   return true
 end
 
@@ -445,28 +432,9 @@ local function _loop_release(entry)
     pcall(M.set_route_owned, entry.party_route, false)
   end
 
-  local D = _driver_state()
-  if not (type(D) == "table" and type(D.state) == "table") then
-    return true
-  end
-
   local route_id = _norm(entry.id or "")
-  local cur_active = _norm(D.state.active or "")
-  if cur_active == route_id then
-    if type(D.set_active) == "function" then
-      pcall(D.set_active, "none")
-    else
-      D.state.active = "none"
-    end
-  end
-
-  local still_owns = (cur_active == route_id or cur_active == "none" or cur_active == "")
-  if still_owns and _norm(D.state.policy or "") == "auto" then
-    if type(D.set_policy) == "function" then
-      pcall(D.set_policy, "manual")
-    else
-      D.state.policy = "manual"
-    end
+  if _norm(M.route_loop and M.route_loop.active or "") == route_id then
+    _set_active_loop(nil, "loop_release")
   end
 
   return true
@@ -510,6 +478,19 @@ end
 
 function M.route_loop_entry(name)
   return _loop_entry(name)
+end
+
+function M.active_route_id()
+  return _norm(M.route_loop and M.route_loop.active or "")
+end
+
+function M.route_loop_active(name)
+  local entry = _loop_entry(name)
+  if not entry then return false end
+  local mod = _route_module(entry)
+  return type(mod) == "table"
+     and type(mod.state) == "table"
+     and mod.state.loop_enabled == true
 end
 
 function M.schedule_route_loop(name, delay)
@@ -688,6 +669,24 @@ function M.tick_route_loop(name)
 
   M.schedule_route_loop(entry.id, state.loop_delay)
   return sent == true
+end
+
+function Yso.is_actively_fighting()
+  local route = type(M.active_route_id) == "function" and M.active_route_id() or ""
+  if route == "" or route == "none" then return false end
+  if type(M.is_hunt) == "function" and M.is_hunt() then return false end
+  if not ((type(M.is_combat) == "function" and M.is_combat()) or (type(M.is_party) == "function" and M.is_party())) then
+    return false
+  end
+
+  local t = ""
+  if type(Yso.get_target) == "function" then
+    local ok, v = pcall(Yso.get_target)
+    if ok then t = tostring(v or ""):gsub("^%s+", ""):gsub("%s+$", "") end
+  elseif type(Yso.target) == "string" then
+    t = tostring(Yso.target):gsub("^%s+", ""):gsub("%s+$", "")
+  end
+  return t ~= ""
 end
 
 function M.set_party_route(route, reason)
