@@ -2650,6 +2650,50 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Bloodboil: EQ recovered</name>
+						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.on_eq_recovered) == "function" then
+  Yso.magi.elemental.on_eq_recovered()
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>You have recovered equilibrium.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Bloodboil ready</name>
+						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.on_ready_line) == "function" then
+  Yso.magi.elemental.on_ready_line()
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>You may boil your blood once again.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Miscellaneous</name>
@@ -27736,6 +27780,215 @@ return AB
 					<packageName></packageName>
 					<script></script>
 					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Bloodboil auto</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+
+local M = Yso.magi.elemental
+
+M.cfg = M.cfg or {
+  auto_bloodboil = true,
+  min_affs_hunt = 4,
+  cooldown_s = 4.0,
+  queue_mode = "prepend",
+  queue_type = "eq",
+  command = "cast bloodboil",
+  debug = false,
+  min_retry_s = 0.25,
+}
+
+M.state = M.state or {
+  cooldown_until = 0,
+  last_attempt = 0,
+}
+
+local function _now()
+  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 1000000000000 then t = t / 1000 end
+  return t or os.time()
+end
+
+local function _debug(msg)
+  if M.cfg.debug and type(cecho) == "function" then
+    cecho(string.format("[Magi:Bloodboil] %s\n", tostring(msg)))
+  end
+end
+
+local function _status()
+  return (gmcp and gmcp.Char and gmcp.Char.Status) or {}
+end
+
+local function _vitals()
+  return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+end
+
+local function _eq_ready()
+  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then return v == true end
+  end
+
+  local v = _vitals()
+  return tostring(v.eq or v.equilibrium or "") == "1"
+      or v.eq == true
+      or v.equilibrium == true
+end
+
+local function _is_magi()
+  if Yso and Yso.magi and Yso.magi.defs and type(Yso.magi.defs.is_magi) == "function" then
+    local ok, v = pcall(Yso.magi.defs.is_magi)
+    if ok then return v == true end
+  end
+
+  local s = _status()
+  local cls = s.class or s.classname
+  if (type(cls) ~= "string" or cls == "") and Yso and Yso.magi and Yso.magi.defs and Yso.magi.defs.state then
+    cls = Yso.magi.defs.state.class_name
+  end
+
+  return tostring(cls or ""):lower() == "magi"
+end
+
+local function _current_cureset()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and set ~= "" then
+    return set:lower()
+  end
+
+  local prof = Yso and Yso.curing and Yso.curing._active_profile
+  if type(prof) == "string" and prof ~= "" then
+    return prof:lower()
+  end
+
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and cur ~= "" then
+    return cur:lower()
+  end
+
+  return ""
+end
+
+local function _Aff()
+  return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+end
+
+local function _has(aff)
+  return _Aff()[aff] == true
+end
+
+local function _aff_count()
+  local A = _Aff()
+  local n = 0
+
+  for k, v in pairs(A) do
+    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+      n = n + 1
+    end
+  end
+
+  return n
+end
+
+function M.is_ready()
+  return _now() &gt;= tonumber(M.state.cooldown_until or 0)
+end
+
+function M.set_ready(is_ready, src)
+  if is_ready then
+    M.state.cooldown_until = 0
+  else
+    M.state.cooldown_until = _now() + (tonumber(M.cfg.cooldown_s or 4.0) or 4.0)
+  end
+
+  _debug(string.format("ready=%s src=%s", tostring(is_ready), tostring(src or "?")))
+  return true
+end
+
+function M.should_bloodboil()
+  if M.cfg.auto_bloodboil ~= true then
+    return false, "disabled"
+  end
+
+  if not _is_magi() then
+    return false, "class"
+  end
+
+  if _current_cureset() ~= "hunt" then
+    return false, "cureset"
+  end
+
+  if not M.is_ready() then
+    return false, "cooldown"
+  end
+
+  if not _eq_ready() then
+    return false, "eq"
+  end
+
+  if _has("haemophilia") then
+    return false, "haemophilia"
+  end
+
+  local count = _aff_count()
+  local min_affs = tonumber(M.cfg.min_affs_hunt or 4) or 4
+  if count &lt; min_affs then
+    return false, "affs", count, min_affs
+  end
+
+  return true, "ok", count, min_affs
+end
+
+local function _queue_bloodboil(source)
+  local cmd = tostring(M.cfg.command or "cast bloodboil")
+  local mode = tostring(M.cfg.queue_mode or "prepend")
+  local qtype = tostring(M.cfg.queue_type or "eq")
+
+  local ok = false
+  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
+    ok = (Yso.queue.raw(mode, qtype, cmd) == true)
+  elseif type(send) == "function" then
+    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
+    ok = true
+  end
+
+  if ok then
+    M.state.last_attempt = _now()
+    M.set_ready(false, "queue:" .. tostring(source or "?"))
+    _debug(string.format("queued mode=%s qtype=%s src=%s", mode, qtype, tostring(source or "?")))
+  end
+
+  return ok
+end
+
+function M.try_bloodboil(source)
+  local now = _now()
+  local min_retry = tonumber(M.cfg.min_retry_s or 0.25) or 0.25
+  if (now - tonumber(M.state.last_attempt or 0)) &lt; min_retry then
+    return false
+  end
+
+  local ok, reason = M.should_bloodboil()
+  if not ok then
+    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
+    return false
+  end
+
+  return _queue_bloodboil(source)
+end
+
+function M.on_eq_recovered()
+  return M.try_bloodboil("eq_recovered")
+end
+
+function M.on_ready_line()
+  M.set_ready(true, "line:ready")
+  return M.try_bloodboil("ready_line")
+end</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Crystalism</name>
