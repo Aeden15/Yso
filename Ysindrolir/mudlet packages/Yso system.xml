@@ -2338,7 +2338,7 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 							<script>Yso.elemental = "djinn"
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Djinn summoned!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Djinn summoned!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2361,7 +2361,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Djinn summoned!).\n")</script>
 							<script>Yso.elemental = false
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Djinn faded!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Djinn faded!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2384,7 +2384,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Djinn faded!).\n")</script>
 							<script>Yso.elemental = "waterweird"
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Waterweird summoned!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Waterweird summoned!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2407,7 +2407,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Waterweird summoned!).\n")</sc
 							<script>Yso.elemental = false
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Waterweird faded!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Waterweird faded!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2430,7 +2430,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Waterweird faded!).\n")</script>
 							<script>Yso.elemental = "mistfiend"
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Mistfiend summoned!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Mistfiend summoned!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2453,7 +2453,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Mistfiend summoned!).\n")</scr
 							<script>Yso.elemental = false
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Mistfiend faded!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Mistfiend faded!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2476,7 +2476,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Mistfiend faded!).\n")</script>
 							<script>Yso.elemental = "stoneback"
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Stoneback summoned!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Stoneback summoned!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2499,7 +2499,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Stoneback summoned!).\n")</scr
 							<script>Yso.elemental = false
 Yso.elemental_lev_ready = false
 
-cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -2576,7 +2576,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Crystal vibration focus</name>
-						<script>cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Crystal vibration focused on this location.)\n")</script>
+						<script>cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Crystal vibration focused on this location.)\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2589,6 +2589,55 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>You produce an arcane frequency, focusing your crystal vibrations upon this location.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Energise embed ready</name>
+						<script>Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+Yso.magi.energy = true
+deleteLine()
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;ansi_light_magenta&gt;(HEAL BURST READY!).\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>A slightly charged, vibrating circle of energy appears on the ground and then fades from view.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Energise embed down</name>
+						<script>Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+Yso.magi.energy = false
+deleteLine()
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(HEAL BURST USED!).\n")
+cecho("&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(EMBED ENERGISE!).\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>You are filled with vitality as the vibration imparts its energy to you.</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>3</integer>
@@ -2692,6 +2741,27 @@ end</script>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Hailstorm</name>
+						<script>deleteLine()
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;DodgerBlue&gt;(RAINING ICE!).\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^Summoning the elemental powers of air and water, you bring a hailstorm down upon those around you\. Hailstones rain down around you but fail to strike you\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 				</TriggerGroup>
@@ -3709,6 +3779,70 @@ end</script>
 						<packageName></packageName>
 						<regex>^mreflect(?:\s+(on|off|status|\d+))?$</regex>
 					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Firelash</name>
+						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.firelash) == "function" then
+  Yso.magi.elemental.firelash(matches[2])
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^firelash(?:\s+(icewall|totem|ground|vines))?$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Flood</name>
+						<script>send("queue prepend eqbal cast flood")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^flood$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Quake</name>
+						<script>send("queue prepend eqbal cast quake")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^quake$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Smog</name>
+						<script>send("queue prepend eqbal cast hellfumes")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^smog$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Hailstorm</name>
+						<script>send("queue prepend eqbal cast hailstorm")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hailstorm$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Destroy</name>
+						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.destroy_current_target) == "function" then
+  Yso.magi.elemental.destroy_current_target()
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^destroy$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Holocaust</name>
+						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.cast_holocaust) == "function" then
+  Yso.magi.elemental.cast_holocaust(matches[2])
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^holocaust\s+([1-5]\d|60)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Magmasphere</name>
+						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.cast_magmasphere) == "function" then
+  Yso.magi.elemental.cast_magmasphere(matches[2])
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^magmasphere\s+([1-5]\d|60)$</regex>
+					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Crystalism</name>
@@ -3797,6 +3931,18 @@ end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^vibed$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Energise</name>
+						<script>Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+
+if Yso.magi.energy then
+send("queue prepend egbal absorb energy")
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^mheals</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
@@ -22226,32 +22372,38 @@ local function _echo(color, msg)
   cecho(string.format(&quot;%s%s%s\n&quot;, O.cfg.prefix or &quot;&quot;, color or &quot;&quot;, msg or &quot;&quot;))
 end
 
+local function _send_cmd(cmd)
+  cmd = tostring(cmd or &quot;&quot;)
+  if cmd == &quot;&quot; then return false end
+  if type(send) == &quot;function&quot; then
+    send(cmd, false)
+    return true
+  end
+  if type(expandAlias) == &quot;function&quot; then
+    expandAlias(cmd)
+    return true
+  end
+  return false
+end
+
 local function _q(mode, qtype, cmd)
   mode  = tostring(mode  or &quot;addclear&quot;):lower()
   qtype = tostring(qtype or &quot;free&quot;)
   cmd   = tostring(cmd   or &quot;&quot;)
   if cmd == &quot;&quot; then return false end
-
-  local Q = Yso and Yso.queue
-  local resolved = mode
-  local fn = Q and Q[resolved]
-
-  if type(fn) ~= &quot;function&quot; and resolved == &quot;add&quot; then
-    resolved = &quot;addclear&quot;
-    fn = Q and Q[resolved]
+  local verb = &quot;ADDCLEAR&quot;
+  if mode == &quot;addclearfull&quot; then
+    verb = &quot;ADDCLEARFULL&quot;
+  elseif mode == &quot;add&quot; then
+    verb = &quot;ADD&quot;
+  elseif mode == &quot;prepend&quot; then
+    verb = &quot;PREPEND&quot;
+  elseif mode == &quot;insert&quot; then
+    verb = &quot;INSERT&quot;
+  elseif mode == &quot;replace&quot; then
+    verb = &quot;REPLACE&quot;
   end
-
-  if type(fn) ~= &quot;function&quot; then
-    _echo(O.cfg.warn_color, (&quot;Yso.queue mode &apos;%s&apos; unavailable; cannot queue orb command.&quot;):format(resolved))
-    return false
-  end
-
-  local ok, err = pcall(fn, qtype, cmd)
-  if not ok then
-    _echo(O.cfg.warn_color, (&quot;Orb queue failed: %s&quot;):format(tostring(err)))
-    return false
-  end
-
+  _send_cmd((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, cmd))
   return true
 end
 
@@ -27794,10 +27946,19 @@ M.cfg = M.cfg or {
   min_retry_s = 0.25,
 }
 
+M.cfg.destroy = M.cfg.destroy or {
+  require_conflagration = true,
+  hp_threshold = 40,
+  enforce_hp_gate = false,
+}
+
 M.state = M.state or {
   cooldown_until = 0,
   last_attempt = 0,
 }
+
+M.state.timers = M.state.timers or {}
+M.state.destroy_hp_stub_noted = M.state.destroy_hp_stub_noted or false
 
 local function _now()
   local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
@@ -27809,6 +27970,16 @@ local function _debug(msg)
   if M.cfg.debug and type(cecho) == "function" then
     cecho(string.format("[Magi:Bloodboil] %s\n", tostring(msg)))
   end
+end
+
+local function _echo(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("&lt;SlateBlue&gt;[Magi] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _trim(s)
+  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
 local function _status()
@@ -27884,6 +28055,67 @@ local function _aff_count()
   end
 
   return n
+end
+
+local function _resolve_current_target()
+  local tgt = ""
+
+  if Yso and type(Yso.get_target) == "function" then
+    local ok, res = pcall(Yso.get_target)
+    if ok and type(res) == "string" then
+      tgt = _trim(res)
+    end
+  end
+
+  if tgt == "" and Yso and Yso.targeting and type(Yso.targeting.get) == "function" then
+    local ok, res = pcall(Yso.targeting.get)
+    if ok and type(res) == "string" then
+      tgt = _trim(res)
+    end
+  end
+
+  if tgt == "" then
+    tgt = _trim(rawget(_G, "target"))
+  end
+
+  tgt = tostring(tgt or ""):gsub("%s*%b()%s*$", "")
+  return _trim(tgt)
+end
+
+local function _queue_eqbal(cmd)
+  cmd = _trim(cmd)
+  if cmd == "" or type(send) ~= "function" then
+    return false
+  end
+
+  send("queue prepend eqbal " .. cmd, false)
+  return true
+end
+
+local function _target_has_aff(aff)
+  aff = _trim(aff):lower()
+  if aff == "" then return false end
+
+  if Yso and Yso.ak and type(Yso.ak.has) == "function" then
+    local ok, has_aff = pcall(Yso.ak.has, aff)
+    if ok then
+      return has_aff == true
+    end
+  end
+
+  local threshold = tonumber(Yso and Yso.ak and Yso.ak.threshold) or 100
+  if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    return (tonumber(affstrack.score[aff] or 0) or 0) &gt;= threshold
+  end
+
+  return false
+end
+
+local function _record_timer(spell, seconds)
+  M.state.timers[spell] = {
+    seconds = tonumber(seconds) or 0,
+    armed_at = _now(),
+  }
 end
 
 function M.is_ready()
@@ -27980,6 +28212,101 @@ end
 function M.on_ready_line()
   M.set_ready(true, "line:ready")
   return M.try_bloodboil("ready_line")
+end
+
+function M.get_target_hp_percent(_target_name)
+  return nil
+end
+
+function M.firelash(mode)
+  local arg = _trim(mode):lower()
+  local target = arg
+
+  if target == "" then
+    target = _resolve_current_target()
+  end
+
+  if target == "" then
+    _echo("No target set for firelash.")
+    return false
+  end
+
+  local ok = _queue_eqbal("cast firelash at " .. target)
+  if ok then
+    _echo("Firelash queued at " .. target .. ".")
+  end
+  return ok
+end
+
+function M.destroy_current_target()
+  local tgt = _resolve_current_target()
+  if tgt == "" then
+    _echo("No target set for destroy.")
+    return false
+  end
+
+  if M.cfg.destroy.require_conflagration ~= false and not _target_has_aff("conflagration") then
+    _echo(string.format("Destroy blocked on %s: conflagration not confirmed.", tgt))
+    return false
+  end
+
+  if M.cfg.destroy.enforce_hp_gate == true then
+    local hp_pct = M.get_target_hp_percent(tgt)
+    if not hp_pct then
+      _echo("Destroy HP gate is enabled but target HP% is not wired yet.")
+      return false
+    end
+    if hp_pct &gt; (tonumber(M.cfg.destroy.hp_threshold or 40) or 40) then
+      _echo(string.format(
+        "Destroy blocked on %s: %.1f%%%% is above the %d%%%% threshold.",
+        tgt,
+        hp_pct,
+        tonumber(M.cfg.destroy.hp_threshold or 40) or 40
+      ))
+      return false
+    end
+  elseif M.state.destroy_hp_stub_noted ~= true then
+    M.state.destroy_hp_stub_noted = true
+    _echo(string.format(
+      "Destroy HP gate is stubbed for now; only conflagration is checked (planned threshold: %d%%%%).",
+      tonumber(M.cfg.destroy.hp_threshold or 40) or 40
+    ))
+  end
+
+  local ok = _queue_eqbal("cast destroy at " .. tgt)
+  if ok then
+    _echo("Destroy queued on " .. tgt .. ".")
+  end
+  return ok
+end
+
+local function _cast_timed_spell(spell, seconds)
+  local secs = tonumber(seconds)
+  if not secs then
+    _echo(string.format("%s requires a timer between 10 and 60 seconds.", tostring(spell)))
+    return false
+  end
+
+  secs = math.floor(secs)
+  if secs &lt; 10 or secs &gt; 60 then
+    _echo(string.format("%s requires a timer between 10 and 60 seconds.", tostring(spell)))
+    return false
+  end
+
+  local ok = _queue_eqbal(string.format("cast %s %d", tostring(spell), secs))
+  if ok then
+    _record_timer(spell, secs)
+    _echo(string.format("%s armed for %ds.", tostring(spell):gsub("^%l", string.upper), secs))
+  end
+  return ok
+end
+
+function M.cast_holocaust(seconds)
+  return _cast_timed_spell("holocaust", seconds)
+end
+
+function M.cast_magmasphere(seconds)
+  return _cast_timed_spell("magmasphere", seconds)
 end</script>
 						<eventHandlerList />
 					</Script>
