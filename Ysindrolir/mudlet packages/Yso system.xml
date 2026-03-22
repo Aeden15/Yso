@@ -1,4 +1,5 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
 	<TriggerPackage>
 		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -27,26 +28,26 @@ end</script>
 			<triggerType>0</triggerType>
 			<conditonLineDelta>0</conditonLineDelta>
 			<mStayOpen>0</mStayOpen>
-			<mCommand />
-			<packageName />
+			<mCommand></mCommand>
+			<packageName></packageName>
 			<mFgColor>#ff0000</mFgColor>
 			<mBgColor>#ffff00</mBgColor>
-			<mSoundFile />
+			<mSoundFile></mSoundFile>
 			<colorTriggerFgColor>#000000</colorTriggerFgColor>
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList />
 			<regexCodePropertyList />
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Curing</name>
-				<script />
+				<script></script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
-				<mCommand />
-				<packageName />
+				<mCommand></mCommand>
+				<packageName></packageName>
 				<mFgColor>#ff0000</mFgColor>
 				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile />
+				<mSoundFile></mSoundFile>
 				<colorTriggerFgColor>#000000</colorTriggerFgColor>
 				<colorTriggerBgColor>#000000</colorTriggerBgColor>
 				<regexCodeList />
@@ -75,11 +76,11 @@ end)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -108,11 +109,11 @@ end
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -140,11 +141,11 @@ end
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -170,11 +171,11 @@ cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios f
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -192,8 +193,8 @@ cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt; TIME TO SPAR!.\n")
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
 					<mSoundFile>C:/Windows/Media/Alarm01.wav</mSoundFile>
@@ -208,15 +209,15 @@ cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt; TIME TO SPAR!.\n")
 				</Trigger>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Miscellaneous combat</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -228,8 +229,8 @@ cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt; TIME TO SPAR!.\n")
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
 						<mSoundFile>C:/Windows/Media/Alarm01.wav</mSoundFile>
@@ -244,15 +245,15 @@ cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt; TIME TO SPAR!.\n")
 					</Trigger>
 					<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Target eating track</name>
-						<script />
+						<script></script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList />
@@ -279,11 +280,11 @@ end</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
+							<mSoundFile></mSoundFile>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
@@ -300,15 +301,15 @@ end</script>
 					</TriggerGroup>
 					<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Monk radiance</name>
-						<script />
+						<script></script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList />
@@ -328,11 +329,11 @@ Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
+							<mSoundFile></mSoundFile>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
@@ -357,11 +358,11 @@ Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
+							<mSoundFile></mSoundFile>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
@@ -386,11 +387,11 @@ Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
+							<mSoundFile></mSoundFile>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
@@ -416,11 +417,11 @@ Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
+							<mSoundFile></mSoundFile>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
@@ -449,11 +450,11 @@ Yso.radianceAlert.fire(0, who, "pre-tell")
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
+							<mSoundFile></mSoundFile>
 							<colorTriggerFgColor>#000000</colorTriggerFgColor>
 							<colorTriggerBgColor>#000000</colorTriggerBgColor>
 							<regexCodeList>
@@ -477,11 +478,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -501,11 +502,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#000000</mFgColor>
 						<mBgColor>#000000</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -525,11 +526,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#000000</mFgColor>
 						<mBgColor>#000000</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -545,8 +546,8 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
 						<mSoundFile>C:/Windows/Media/Alarm01.wav</mSoundFile>
@@ -564,8 +565,8 @@ end
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
+							<mCommand></mCommand>
+							<packageName></packageName>
 							<mFgColor>#ff0000</mFgColor>
 							<mBgColor>#ffff00</mBgColor>
 							<mSoundFile>C:/Windows/Media/Alarm01.wav</mSoundFile>
@@ -597,11 +598,11 @@ send("curing predict brokenrightleg")
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -614,15 +615,15 @@ send("curing predict brokenrightleg")
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Miscellaneous stuff</name>
-				<script />
+				<script></script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
-				<mCommand />
-				<packageName />
+				<mCommand></mCommand>
+				<packageName></packageName>
 				<mFgColor>#ff0000</mFgColor>
 				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile />
+				<mSoundFile></mSoundFile>
 				<colorTriggerFgColor>#000000</colorTriggerFgColor>
 				<colorTriggerBgColor>#000000</colorTriggerBgColor>
 				<regexCodeList />
@@ -633,11 +634,11 @@ send("curing predict brokenrightleg")
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -649,15 +650,15 @@ send("curing predict brokenrightleg")
 				</Trigger>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Pulse wake lines</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -670,11 +671,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -692,11 +693,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -714,11 +715,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -737,11 +738,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -762,11 +763,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -787,11 +788,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -812,11 +813,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -836,11 +837,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -856,15 +857,15 @@ end</script>
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Enemy curing</name>
-				<script />
+				<script></script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
-				<mCommand />
-				<packageName />
+				<mCommand></mCommand>
+				<packageName></packageName>
 				<mFgColor>#ff0000</mFgColor>
 				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile />
+				<mSoundFile></mSoundFile>
 				<colorTriggerFgColor>#000000</colorTriggerFgColor>
 				<colorTriggerBgColor>#000000</colorTriggerBgColor>
 				<regexCodeList />
@@ -879,11 +880,11 @@ require("Integration.mudlet").onEnemySalve(who, loc)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -903,11 +904,11 @@ require("Integration.mudlet").onCeasesToFavour(who, limb)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -928,11 +929,11 @@ require("Integration.mudlet").onTargetSip(who, item)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -952,11 +953,11 @@ require("Integration.mudlet").onTargetEat(who, what)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -976,11 +977,11 @@ require("Integration.mudlet").onTargetSmoke(who, what)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -1003,11 +1004,11 @@ require("Integration.mudlet").onOppProneGained(who)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -1026,11 +1027,11 @@ require("Integration.mudlet").onOppProneCured(who)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -1049,11 +1050,11 @@ require("Integration.mudlet").onOppFrozenGained(who)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -1075,11 +1076,11 @@ require("Integration.mudlet").onLimbDamage(who, limb, pct)
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
@@ -1092,30 +1093,30 @@ require("Integration.mudlet").onLimbDamage(who, limb, pct)
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Occultist</name>
-				<script />
+				<script></script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
-				<mCommand />
-				<packageName />
+				<mCommand></mCommand>
+				<packageName></packageName>
 				<mFgColor>#ff0000</mFgColor>
 				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile />
+				<mSoundFile></mSoundFile>
 				<colorTriggerFgColor>#000000</colorTriggerFgColor>
 				<colorTriggerBgColor>#000000</colorTriggerBgColor>
 				<regexCodeList />
 				<regexCodePropertyList />
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Occultism</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -1152,11 +1153,11 @@ cecho("\n" .. string.format(
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1174,11 +1175,11 @@ cecho("&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW SIMULACRUM
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1211,11 +1212,11 @@ cecho(string.format(
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1252,11 +1253,11 @@ resetFormat()
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1291,11 +1292,11 @@ cecho(string.format(
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1313,11 +1314,11 @@ cecho("&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW HEARTSTONE
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1343,11 +1344,11 @@ end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1371,11 +1372,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1386,19 +1387,19 @@ end
 							<integer>1</integer>
 							<integer>1</integer>
 						</regexCodePropertyList>
-				</Trigger>
+					</Trigger>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Tarot</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -1411,11 +1412,11 @@ cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt;(SELF-CLEANSED).\n")
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1434,11 +1435,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1457,11 +1458,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1481,11 +1482,11 @@ if who and who ~= "" then oc_death_rub(who) end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1504,11 +1505,11 @@ if who and who ~= "" then oc_death_sniff(who, n) end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1525,11 +1526,11 @@ if who and who ~= "" then oc_death_sniff(who, n) end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1547,11 +1548,11 @@ if who and who ~= "" then oc_death_fling_success(who) end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1568,11 +1569,11 @@ if who and who ~= "" then oc_death_fling_success(who) end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1589,11 +1590,11 @@ cecho("&lt;yellow&gt;[Tarot] &lt;HotPink&gt;TARGET LUSTED!!.\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1610,11 +1611,11 @@ cecho("&lt;yellow&gt;[Tarot] &lt;chartreuse&gt;LUST THE TARGET!\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1631,11 +1632,11 @@ cecho("&lt;yellow&gt;[Tarot] &lt;salmon&gt;CAN EMPRESS!\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1648,15 +1649,15 @@ cecho("&lt;yellow&gt;[Tarot] &lt;salmon&gt;CAN EMPRESS!\n")</script>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Domination</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -1677,11 +1678,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1706,11 +1707,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1737,11 +1738,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1769,11 +1770,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1805,11 +1806,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1833,11 +1834,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1854,11 +1855,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1877,11 +1878,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;(RANDOM MENTAL).\n")</scrip
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1914,11 +1915,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1944,11 +1945,11 @@ loyals_attack = true
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1968,11 +1969,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;(POSSESSING - WRESTLING STA
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -1992,11 +1993,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;salmon&gt;(READY TO DOMINATE!).\n")</scri
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2015,11 +2016,11 @@ deleteLine()</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2038,11 +2039,11 @@ deleteLine()</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2065,11 +2066,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;orange&gt;(CHIMERA BLOCKED - TARGET IS DE
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2097,11 +2098,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;salmon&gt;(ATTEND STRIPPED DEAF+BLIND!).\
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2124,11 +2125,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;chartreuse&gt;(SLIMEY-BLIMEY!).\n")</scri
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2151,11 +2152,11 @@ cecho("&lt;HotPink&gt;[Domination] &lt;chartreuse&gt;(SLIME CURED!).\n")</script
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2185,11 +2186,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2227,11 +2228,11 @@ end
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2251,11 +2252,11 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2271,11 +2272,11 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2289,46 +2290,240 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Magi</name>
-				<script />
+				<script></script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
-				<mCommand />
-				<packageName />
+				<mCommand></mCommand>
+				<packageName></packageName>
 				<mFgColor>#ff0000</mFgColor>
 				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile />
+				<mSoundFile></mSoundFile>
 				<colorTriggerFgColor>#000000</colorTriggerFgColor>
 				<colorTriggerBgColor>#000000</colorTriggerBgColor>
 				<regexCodeList />
 				<regexCodePropertyList />
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Artificing</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
 					<regexCodePropertyList />
+					<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Elementals</name>
+						<script></script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList />
+						<regexCodePropertyList />
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Djinn present</name>
+							<script>Yso.elemental = "djinn"
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Djinn summoned!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>The air becomes a miniature cyclone before you, from within which steps a capricious djinn.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Djinn not present</name>
+							<script>Yso.elemental = false
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Djinn faded!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>You send a capricious djinn back to the Plane from which it came.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Mistfiend present</name>
+							<script>Yso.elemental = "mistfiend"
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Mistfiend summoned!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>coalesce into a Mistfiend\.$</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Mistfiend not present</name>
+							<script>Yso.elemental = false
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Mistfiend faded!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>You send an obscured mistfiend back to the Plane from which it came.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Stoneback present</name>
+							<script>Yso.elemental = "stoneback"
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Stoneback summoned!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>draw forth entity from Conduit: a mighty stoneback\.$</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>1</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Stoneback not present</name>
+							<script>Yso.elemental = false
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>You send a hulking stoneback back to the Plane from which it came.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+					</TriggerGroup>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Levitate ready</name>
+						<script>Yso.elemental_lev_ready = true</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>You may be carried to the sky by a Djinn once more.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Levitate cooldown</name>
+						<script>Yso.elemental_lev_ready = false</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>You command your Djinn to raise you up, and with a delighted laugh you find yourself launched skyward.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Crystalism</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -2336,15 +2531,15 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Elementalism</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -2355,11 +2550,11 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2375,11 +2570,11 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2392,15 +2587,15 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Miscellaneous</name>
-					<script />
+					<script></script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
+					<mCommand></mCommand>
+					<packageName></packageName>
 					<mFgColor>#ff0000</mFgColor>
 					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
+					<mSoundFile></mSoundFile>
 					<colorTriggerFgColor>#000000</colorTriggerFgColor>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
@@ -2411,11 +2606,11 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
+						<mCommand></mCommand>
+						<packageName></packageName>
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -2433,22 +2628,22 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 	<AliasPackage>
 		<AliasGroup isActive="yes" isFolder="yes">
 			<name>Yso Aliases</name>
-			<script />
-			<command />
-			<packageName />
-			<regex />
+			<script></script>
+			<command></command>
+			<packageName></packageName>
+			<regex></regex>
 			<AliasGroup isActive="yes" isFolder="yes">
 				<name>Occultist</name>
-				<script />
-				<command />
-				<packageName />
-				<regex />
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Occultism</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Ague(chill)</name>
 						<script>local tgt = nil
@@ -2458,8 +2653,8 @@ if Yso and type(Yso.resolve_target) == "function" then
 end
 if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
 Yso.queue.eq("AGUE " .. tgt)</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^chill(?:\s+(\w+))?$
 </regex>
 					</Alias>
@@ -2473,8 +2668,8 @@ end
 if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
 Yso.queue.eq("WARP " .. tgt)
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^warp(?:\s+(\w+))?$
 </regex>
 					</Alias>
@@ -2487,14 +2682,14 @@ if Yso and type(Yso.resolve_target) == "function" then
 end
 if not tgt then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
 Yso.queue.eq("ATTEND " .. tgt)</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^att(?:\s+(\w+))?$
 </regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Affliction automation</name>
-<script>Yso = Yso or {}
+						<script>Yso = Yso or {}
 local mode = Yso.mode or nil
 if not (mode and type(mode.toggle_route_loop) == "function") then
   if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
@@ -2517,13 +2712,13 @@ local ok, err = pcall(mode.toggle_route_loop, "aff", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] aff alias failed: %s\n", tostring(err)))
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^aff$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Cleanseaura</name>
-                        <script>Yso = Yso or {}
+						<script>Yso = Yso or {}
 local Q = Yso.queue or {}
 
 ak = ak or {}
@@ -2578,8 +2773,8 @@ elseif Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
 else
   send(cmd)
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^cleanse\s*(.*)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -2616,13 +2811,13 @@ end</script>
 
   send("readaura " .. tgt)
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^ra(?:\s+(?!status(?:\s|$))(.+))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group damage  automation</name>
-<script>Yso = Yso or {}
+						<script>Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
@@ -2648,8 +2843,8 @@ local ok, err = pcall(mode.toggle_route_loop, "dam", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] dam alias failed: %s\n", tostring(err)))
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^dam$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -2662,21 +2857,21 @@ end
 elseif matches[2] == "s" then
 send("unnamable speak")
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^unname(.)$</regex>
 					</Alias>
 					<AliasGroup isActive="yes" isFolder="yes">
 						<name>Attainment</name>
-						<script />
-						<command />
-						<packageName />
-						<regex />
+						<script></script>
+						<command></command>
+						<packageName></packageName>
+						<regex></regex>
 						<Alias isActive="yes" isFolder="no">
 							<name>Charm</name>
 							<script>send("temper " ..matches[2])</script>
-							<command />
-							<packageName />
+							<command></command>
+							<packageName></packageName>
 							<regex>^temp (\w+)$</regex>
 						</Alias>
 						<Alias isActive="yes" isFolder="no">
@@ -2694,8 +2889,8 @@ end</script>
   end
   send("stagnate " .. tgt)
 end</script>
-							<command />
-							<packageName />
+							<command></command>
+							<packageName></packageName>
 							<regex>^stag$</regex>
 						</Alias>
 					</AliasGroup>
@@ -2812,8 +3007,8 @@ else
   yso("Usage: tn | tn sync | tn corpse | tn &lt;name&gt; | tn can &lt;name&gt; | tn dump | tn forget &lt;name&gt;")
 end
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^tn(?:\s+(.*))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -2838,17 +3033,17 @@ else
   cecho("&lt;red&gt;[YSO]&lt;reset&gt; clock module not loaded.\n")
 end
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^clock(?:\s+(.+))?$</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Tarot</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Priestess(health self heal)</name>
 						<script>Yso.priestess.queue_self()
@@ -2857,16 +3052,16 @@ end
 --lua Yso.priestess.set_threshold(45) to tweak threshold
 --lua Yso.priestess.toggle_auto() to toggle on/off
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^heal$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Heal another</name>
 						<script>Yso.priestess.queue_target(matches[2])
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^pheal\s+(\w+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -2881,8 +3076,8 @@ end
 
 
 --lua Yso.magician.toggle_auto() to toggle on/off</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^mana$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -2941,8 +3136,8 @@ else
   cecho("&lt;green&gt;[Tarot] &lt;red&gt;Usage:&lt;reset&gt; hera[#] / herf[#]\n")
 end
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^her([af])([0-9]*)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -2968,24 +3163,24 @@ end
 
 cecho("&lt;gray&gt;[Tarot] &lt;yellow&gt;Flinging Sun at ground (periodic self-cleanse).\n")
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^sun$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Orb(defense)</name>
 						<script>Yso.dom.orbdef.cmd(matches[2])
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^orb(.)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Fool</name>
 						<script>Legacy.FoolSelfCleanse()
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^fool$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -3007,8 +3202,8 @@ end
 
 send("outd empress")
 send("fling empress " .. tgt)</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^emp(?:\s+(\w+))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -3027,33 +3222,33 @@ send("fling empress " .. tgt)</script>
   send("outd star")
   send("fling star " .. tgt)
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^star$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Universe</name>
 						<script>Yso.uni.alias("")
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^uni$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Go go</name>
 						<script>Yso.travel.alias("")
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^go$</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Domination</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Pathfinding home</name>
 						<script>if Yso and Yso.dom and type(Yso.dom.pathfinder_go_home) == "function" then
@@ -3062,8 +3257,8 @@ else
   send("order pathfinder home")
 end
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^pfhome$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -3071,8 +3266,8 @@ end
 						<script>if matches[2] == "1" or matches[2] == "2" then
 send("summon lycantha swift, nemesis swift, buul swift, nin'kharsag swift")
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^prim(1|2)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -3080,16 +3275,16 @@ end</script>
 						<script>send("summon swift lycantha nemesis buul nin'kharsag rixil scrag palpatar arctar pyradius marduk cadmus danaeus hecate")
 send("mask")
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^swift$</regex>
 					</Alias>
 					<AliasGroup isActive="yes" isFolder="yes">
 						<name>Doppleganger stuff</name>
-						<script />
-						<command />
-						<packageName />
-						<regex />
+						<script></script>
+						<command></command>
+						<packageName></packageName>
+						<regex></regex>
 						<Alias isActive="yes" isFolder="no">
 							<name>Doppie</name>
 							<script>Yso = Yso or {}
@@ -3102,8 +3297,8 @@ else
   cecho("&lt;red&gt;[dop] Dop module not loaded (Yso.dop.handle missing).\n")
 end
 </script>
-							<command />
-							<packageName />
+							<command></command>
+							<packageName></packageName>
 							<regex>^dop(?:\s+(.*))?$</regex>
 						</Alias>
 					</AliasGroup>
@@ -3148,23 +3343,23 @@ elseif mode == "p" then
 else
   if cecho then cecho("&lt;orange&gt;[YSO]&lt;reset&gt; Usage: lok (kill current target)  OR  lop (passive)\n") end
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^lo(.)$</regex>
 					</Alias>
 				</AliasGroup>
 			</AliasGroup>
 			<AliasGroup isActive="yes" isFolder="yes">
 				<name>Miscellaneous</name>
-				<script />
-				<command />
-				<packageName />
-				<regex />
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
 				<Alias isActive="yes" isFolder="no">
 					<name>Occultist Prompt</name>
 					<script>send("config prompt custom #C(#G*h#C|*%h#G%#C)#C(#G*m#C|*%m#G%#C) *b*c #G*r #Y*t#C(#y*T#C) #M(*R#M)")</script>
-					<command />
-					<packageName />
+					<command></command>
+					<packageName></packageName>
 					<regex>^oprompt$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
@@ -3175,8 +3370,8 @@ else
   send("whistle mount&amp;&amp;call entities&amp;&amp;mask&amp;&amp;order gargoyle follow me")
 end
 </script>
-					<command />
-					<packageName />
+					<command></command>
+					<packageName></packageName>
 					<regex>^entret$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
@@ -3217,8 +3412,8 @@ echo("  devil_moon_cmd():     " .. (ok_devil_moon and "OK" or "MISSING") .. "\n"
 echo("[YSO DIAG] Offense:\n")
 echo("  Off.toggle/attack/tick: " .. (ok_off and "OK" or "MISSING") .. "\n\n")
 </script>
-					<command />
-					<packageName />
+					<command></command>
+					<packageName></packageName>
 					<regex>^ysodiag$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
@@ -3227,24 +3422,24 @@ echo("  Off.toggle/attack/tick: " .. (ok_off and "OK" or "MISSING") .. "\n\n")
   Yso.set_target(matches[2], "manual", { keep_class_queue = true, keep_rawsend = true })
 end
 </script>
-					<command />
-					<packageName />
+					<command></command>
+					<packageName></packageName>
 					<regex>^y\s+(\w+)$</regex>
 				</Alias>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Modes of Combat</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Bash mode</name>
 						<script>Yso.mode.set("bash", "alias")
 if Yso.huntmode and type(Yso.huntmode.refresh) == "function" then
   pcall(Yso.huntmode.refresh, "alias:mbash")
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^mbash$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -3262,13 +3457,13 @@ if Yso and Yso.tgt and type(Yso.tgt.set_mindseye) == "function" then
   Yso.tgt.set_mindseye(who, false)
 end
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^msclear(?:\s+(\w+))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group offense</name>
-<script>Yso = Yso or {}
+						<script>Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
@@ -3294,13 +3489,13 @@ local ok, err = pcall(mode.toggle_route_loop, "dam", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] gd alias failed: %s\n", tostring(err)))
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^gd$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group offense on(Alt)</name>
-<script>Yso = Yso or {}
+						<script>Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
@@ -3326,13 +3521,13 @@ local ok, err = pcall(mode.start_route_loop, "dam", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] gdon failed: %s\n", tostring(err)))
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^gdon$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group offense off(Alt)</name>
-<script>Yso = Yso or {}
+						<script>Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
@@ -3358,8 +3553,8 @@ local ok, err = pcall(mode.stop_route_loop, "dam", "alias", false)
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] gdoff failed: %s\n", tostring(err)))
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^gdoff$</regex>
 					</Alias>
 				</AliasGroup>
@@ -3367,24 +3562,24 @@ end</script>
 					<name>Fly</name>
 					<script>send("vault chimera&amp;&amp;fly")
 </script>
-					<command />
-					<packageName />
+					<command></command>
+					<packageName></packageName>
 					<regex>^fly$
 </regex>
 				</Alias>
 			</AliasGroup>
 			<AliasGroup isActive="yes" isFolder="yes">
 				<name>Magi</name>
-				<script />
-				<command />
-				<packageName />
-				<regex />
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Elementalism</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Reflection</name>
 						<script>local arg = matches[2]
@@ -3400,72 +3595,75 @@ elseif arg == "status" then
 else
   Yso.magi.defs.set_threshold(arg)
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^mreflect(?:\s+(on|off|status|\d+))?$</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Crystalism</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Recalls</name>
 						<script>send("vibes focus")</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^rec$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Portal</name>
-						<script>send("embed sonicportal " ..tgt)</script>
-						<command />
-						<packageName />
-						<regex>^port (\w+)$</regex>
+						<script>local tgt = tostring(matches[2] or "")
+if tgt ~= "" then
+  send("embed sonicportal " .. tgt)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^port\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Home recall</name>
 						<script>send("crystalhome")</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^home$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Vibe duration extension</name>
 						<script>send("vibes ring")
 </script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^ring$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Vibe pause</name>
-						<script>send("vibe muffle")</script>
-						<command />
-						<packageName />
+						<script>send("vibes muffle")</script>
+						<command></command>
+						<packageName></packageName>
 						<regex>^muf$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Dissonance</name>
 						<script>send("embed dissonance")</script>
-						<command />
-						<packageName />
-						<regex />
+						<command></command>
+						<packageName></packageName>
+						<regex>^diss$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Retardation</name>
 						<script>send("embed retardation")</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^ret$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Cataclysm</name>
-						<script>send("embed cataclysim")</script>
-						<command />
-						<packageName />
+						<script>send("embed cataclysm")</script>
+						<command></command>
+						<packageName></packageName>
 						<regex>^cata$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
@@ -3486,24 +3684,123 @@ local ok, err = pcall(Yso.magi.vibes.run)
 if not ok and type(cecho) == "function" then
   cecho(string.format("&lt;red&gt;[Yso:Magi:Vibes] run failed: %s&lt;reset&gt;\n", tostring(err)))
 end</script>
-						<command />
-						<packageName />
+						<command></command>
+						<packageName></packageName>
 						<regex>^vibed$</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Artificing</name>
-					<script />
-					<command />
-					<packageName />
-					<regex />
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Staff cast</name>
-						<script>send("staff cast horripilation at " ..target)</script>
-						<command />
-						<packageName />
-						<regex>^staff$</regex>
+						<script>local crystal = ({
+  c = "horripilation",
+  f = "scintilla",
+  l = "lightning",
+})[matches[2]]
+
+local tgt = tostring(rawget(_G, "target") or "")
+
+if crystal and tgt ~= "" then
+  send(string.format("staff cast %s %s", crystal, tgt))
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^sta([cfl])$</regex>
 					</Alias>
+					<AliasGroup isActive="yes" isFolder="yes">
+						<name>Treaties</name>
+						<script></script>
+						<command></command>
+						<packageName></packageName>
+						<regex></regex>
+						<Alias isActive="yes" isFolder="no">
+							<name>List</name>
+							<script>send("treaty list")</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^tlist$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Elemental summon</name>
+							<script>if matches[2] == "f" then
+sendAll("outr coal&amp;&amp;elemental summon efreeti")
+elseif matches[2] == "w" then
+sendAll("outr ice&amp;&amp;elemental summon waterweird")
+elseif matches[2] == "a" then
+sendAll("outr dust&amp;&amp;elemental summon djinn")
+elseif matches[2] == "e" then 
+sendAll("outr clay&amp;&amp;elemental summon sandling")
+elseif matches[2] == "m" then
+sendAll("outr ice&amp;&amp;elemental summon mistfiend")
+elseif matches[2] == "s" then
+sendAll("outr stone&amp;&amp;elemental summon stoneback")
+elseif matches[2] == "b" then
+--sendAll("outr dust&amp;&amp;elemental summon air")
+elseif matches[2] == "k" then
+sendAll("outr coal&amp;&amp;elemental summon ashbeast")
+end
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^esum([abefkmsw])$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Levitate</name>
+							<script>if Yso.elemental == "djinn" and Yso.elemental_lev_ready == true then
+send("queue prepend eqbal elemental levitate")
+end
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^lev$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Burrow</name>
+							<script>if Yso.elemental == "sandling" then
+send("queue prepend eqbal elemental descend")
+end</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^bur$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Bulwark (Anti vibration)</name>
+							<script>if Yso.elemental == "stoneback" then
+send("queue prepend eqbal elemental bulwark me")
+end
+</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^bul$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Water control</name>
+							<script>if Yso.elemental == "mistfiend" then
+if matches[2] == "c" then
+send("queue prepend eqbal elemental condense")
+elseif matches[2] == "f" then
+send("queue prepend eqbal elemental fogbank")
+end
+end</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^mis([cf])$</regex>
+						</Alias>
+						<Alias isActive="yes" isFolder="no">
+							<name>Surge</name>
+							<script>if Yso.elemental == "ashbeast" then
+send("queue prepend eqbal elemental surge")
+end</script>
+							<command></command>
+							<packageName></packageName>
+							<regex>^surge$</regex>
+						</Alias>
+					</AliasGroup>
 				</AliasGroup>
 			</AliasGroup>
 		</AliasGroup>
@@ -3512,17 +3809,17 @@ end</script>
 	<ScriptPackage>
 		<ScriptGroup isActive="yes" isFolder="yes">
 			<name>Yso Scripts</name>
-			<packageName />
-			<script />
+			<packageName></packageName>
+			<script></script>
 			<eventHandlerList />
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>Core scripts</name>
-				<packageName />
-				<script />
+				<packageName></packageName>
+				<script></script>
 				<eventHandlerList />
 				<Script isActive="yes" isFolder="no">
 					<name>Api stuff</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Api stuff
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -4663,7 +4960,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>AK+Legacy wiring</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: AK+Legacy wiring
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -4954,7 +5251,7 @@ _akwire_echo(&quot;Yso / Achaea wiring loaded (Legacy + AK bridge)&quot;)
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.queue</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso/Core/queue.lua
 --  * Canonical lane-aware queue implementation.
@@ -5529,7 +5826,7 @@ return Q
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.pulse (wake bus)</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso.pulse (wake bus)
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -5972,7 +6269,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_Occultist_Affmap.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso_Occultist_Affmap.lua  (DROP-IN)  [UPDATED]
 -- Skill → affliction/effect map for Occultism / Tarot / Domination
@@ -6207,7 +6504,7 @@ return M
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>group_damage.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--Group damage offense logic
 --========================================================--
 -- group_damage.lua  (Achaea / Occultist / Yso)
@@ -7799,9 +8096,9 @@ end
 </script>
 					<eventHandlerList />
 				</Script>
-								<Script isActive="yes" isFolder="no">
+				<Script isActive="yes" isFolder="no">
 					<name>Yso.targeting</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso.targeting
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -8225,9 +8522,10 @@ if type(tempAlias) == &quot;function&quot; then
 end
 </script>
 					<eventHandlerList />
-				</Script><Script isActive="yes" isFolder="no">
+				</Script>
+				<Script isActive="yes" isFolder="no">
 					<name>Yso.target</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso.target
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -8481,7 +8779,7 @@ TG.target = _trim_target(TG.target or Yso.target)
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>yso_target_intel.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- yso_target_intel.lua  (DROP-IN)
 -- Purpose:
@@ -8651,7 +8949,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>yso_target_tattoos.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- yso_target_tattoos.lua (DROP-IN)
 --  • Tracks target Mindseye as a sticky defense (no duration).
@@ -8736,7 +9034,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Softlock Gate</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Softlock Gate
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -8971,7 +9269,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Curebuckets</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Curebuckets
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -9303,7 +9601,7 @@ C.rebuild()
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso list of functions</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso list of functions
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -11740,7 +12038,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_Offense_Coordination.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso_Offense_Coordination.lua
 --  • Compatibility shim for older aliases/debug surfaces.
@@ -12028,7 +12326,7 @@ return D
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Parry Module</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Parry Module
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -12410,7 +12708,7 @@ _p_echo(&quot;Yso parry module loaded&quot;)
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Cleanseaura module</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso_Occultist_clock.lua (DROP-IN)  [UPDATED]
 -- "clock" = Cleanseaura lock planner (mana route to &lt;=39%, then CLEANSEAURA)
@@ -13383,7 +13681,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.state</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 --
 -- Goals:
@@ -13720,7 +14018,7 @@ Yso.state.init()
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.state wiring</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso.state wiring (DEPRECATED)
 --
@@ -13742,7 +14040,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso ingest</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 --
 -- Design:
@@ -14294,7 +14592,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.offense.request_tick</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 --========================================================--
 
@@ -14359,7 +14657,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.occ.offense</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- yso_occultist_offense.lua
 -- Occultist single-target offense helper shim for Yso.
@@ -14936,7 +15234,7 @@ _ensure_pulse()
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.offense.tick</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 --========================================================--
 
@@ -15079,7 +15377,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.engine (event plumbing)</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 --
 -- Responsibilities:
@@ -15227,17 +15525,17 @@ _dbg("engine loaded")
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>Curing</name>
-				<packageName />
-				<script />
+				<packageName></packageName>
+				<script></script>
 				<eventHandlerList />
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Blademaster</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 					<Script isActive="yes" isFolder="no">
 						<name>blademaster_curing</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Loaded via canonical require in _entry.lua: Yso.Curing.blademaster_curing
 -- See Ysindrolir/Occultist/modules/Yso/Curing/blademaster_curing.lua
 if Yso and Yso.curing and Yso.curing.blademaster then
@@ -15248,7 +15546,7 @@ end</script>
 				</ScriptGroup>
 				<Script isActive="yes" isFolder="no">
 					<name>Self Limb tracking</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Self Limb tracking
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -15274,7 +15572,7 @@ Legacy.Occultist._eh.slc_hit = registerAnonymousEventHandler(&quot;Legacy.SLC.Hi
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Prio Baselines</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Prio Baselines
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -15304,7 +15602,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Cureset Baselines</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Cureset Baselines
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -15351,7 +15649,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_configs</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso_configs
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -15382,7 +15680,7 @@ Yso.fool.cfg.debug   = false
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_modes.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- yso_modes.lua (DROP-IN)
 -- Purpose:
@@ -16229,7 +16527,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_mode_autoswitch.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- yso_mode_autoswitch.lua (DROP-IN)
 -- Purpose:
@@ -16554,7 +16852,7 @@ _sync_mode(&quot;init&quot;)
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>yso_escape_button.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- yso_escape_button.lua  (DROP-IN)  [REFRESHED for current Yso]
 -- Purpose:
@@ -16902,7 +17200,7 @@ _cecho(string.format(
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_Alert_Radiance helper</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso_Alert_Radiance helper
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -16952,7 +17250,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Radiance event</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Radiance event
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -17073,7 +17371,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_hunt_mode_upkeep</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Yso_hunt_mode_upkeep
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -17436,7 +17734,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Hunt - Primebond Shieldbreak Selector</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Hunt — Primebond Shieldbreak Selector
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -17542,12 +17840,12 @@ end
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>Miscellaneous scripts</name>
-				<packageName />
-				<script />
+				<packageName></packageName>
+				<script></script>
 				<eventHandlerList />
 				<Script isActive="yes" isFolder="no">
 					<name>Occie Random Generator</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Occie Random Generator
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -17669,7 +17967,7 @@ end
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso_AK_Score_Exports.lua</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso_AK_Score_Exports.lua (DROP-IN)
 --
@@ -17751,7 +18049,7 @@ B.refresh_lists_from_AK()
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Bootstrap</name>
-					<packageName />
+					<packageName></packageName>
 					<script>--========================================================--
 -- Yso bootstrap
 --  • Locates the workspace root and extends package.path.
@@ -18089,7 +18387,7 @@ return Yso.bootstrap
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>ProneController</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: ProneController
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -18325,7 +18623,7 @@ P.try_hook()
 				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Information</name>
-					<packageName />
+					<packageName></packageName>
 					<script>-- Auto-exported from Mudlet package script: Information
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -18533,11 +18831,10 @@ To keep the Achaea/Yso stack clean and consistent:
 </script>
 					<eventHandlerList />
 				</Script>
-			
 				<Script isActive="yes" isFolder="no">
-									<name>Offense Template</name>
-									<packageName></packageName>
-									<script>-- Offense Template (informational only)
+					<name>Offense Template</name>
+					<packageName></packageName>
+					<script>-- Offense Template (informational only)
 -- ========================================================
 -- Purpose:
 --   This script is a documentation template for structured offense modules.
@@ -18643,22 +18940,22 @@ To keep the Achaea/Yso stack clean and consistent:
 -- end
 -- ========================================================
 </script>
-									<eventHandlerList />
-								</Script>
+					<eventHandlerList />
+				</Script>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>Occultism</name>
-				<packageName />
-				<script />
+				<packageName></packageName>
+				<script></script>
 				<eventHandlerList />
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Occultism Scripts</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 					<Script isActive="yes" isFolder="no">
 						<name>Occultism reference</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Occultism reference
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -19488,7 +19785,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Tarot reference</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Tarot reference
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -19897,7 +20194,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Cleanseaura script</name>
-						<packageName />
+						<packageName></packageName>
 						<script>Yso       = Yso       or {}
 Yso.occ   = Yso.occ   or {}
 Yso.occ.aura          = Yso.occ.aura          or {}
@@ -19955,7 +20252,7 @@ Yso.occ._trig.cleanseaura_success = tempRegexTrigger(
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Cleanseaura macro helper (copy/paste)</name>
-						<packageName />
+						<packageName></packageName>
 						<script>--========================================================--
 -- Cleanseaura macro helper (copy/paste)
 --========================================================--
@@ -19998,7 +20295,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Domination reference</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Domination reference
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -20541,7 +20838,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>SightGate</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: SightGate
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -20873,7 +21170,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>yso_occ_truename_capture.lua</name>
-						<packageName />
+						<packageName></packageName>
 						<script>--========================================================--
 -- yso_occ_truename_capture.lua (DROP-IN)
 --  • Tracks memorised truenames from:
@@ -21082,12 +21379,12 @@ d(&quot;truename capture loaded&quot;)
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Domination scripts</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 					<Script isActive="yes" isFolder="no">
 						<name>Pathfinder Tracker</name>
-						<packageName />
+						<packageName></packageName>
 						<script>--========================================================--
 -- Yso / Achaea - Domination: Istria Pathfinder (State + Helpers)
 --
@@ -21194,7 +21491,7 @@ _echo("Pathfinder helpers loaded (ready=" .. tostring(Yso.dom.pathfinder.ready) 
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Entourage script</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Entourage script
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -21374,7 +21671,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Doppleganger things</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Doppleganger things
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -21748,7 +22045,7 @@ cecho(&quot;&lt;cyan&gt;[Yso] dop router loaded (patched).&lt;reset&gt;\n&quot;)
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Orb Defense timer</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Orb Defense timer
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -21989,7 +22286,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Vitals stones</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Vitals stones
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -22108,7 +22405,7 @@ cecho(&quot;&lt;gray&gt;[Yso] ProbeObjects loaded: triggers + aliases (pprobe/ps
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Yso_occultist_pacts</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Yso_occultist_pacts
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -22378,7 +22675,7 @@ _dbg(&quot;pacts_lowwarn loaded&quot;)
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>entity_registry.lua</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: entity_registry.lua
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -22906,12 +23203,12 @@ return ER
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Tarot scripts</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 					<Script isActive="yes" isFolder="no">
 						<name>Devil tracker</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Devil tracker
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -22959,7 +23256,7 @@ end
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Priestess heal</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Priestess heal
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -23174,7 +23471,7 @@ cecho(_tag_prefix() .. &quot;&lt;cyan&gt;Yso Priestess module loaded (bu queue).
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Magician heal</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Magician heal
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -23417,7 +23714,7 @@ cecho(_tag_prefix() .. &quot;&lt;cyan&gt;Yso Magician module loaded (bu queue).&
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Fool logic</name>
-						<packageName />
+						<packageName></packageName>
 						<script>-- Auto-exported from Mudlet package script: Fool logic
 -- DO NOT EDIT IN XML; edit this file instead.
 
@@ -23846,7 +24143,7 @@ _fool_echo(&quot;Yso Fool auto module loaded (GMCP+diagnose hooks active).&quot;
 					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>occ_aff_burst.lua</name>
-						<packageName />
+						<packageName></packageName>
 						<script>--========================================================--
 -- occ_aff_burst.lua
 --  * Combat-mode duel affliction burst route for Occultist.
@@ -27365,35 +27662,35 @@ return AB
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>Magi</name>
-				<packageName />
-				<script />
+				<packageName></packageName>
+				<script></script>
 				<eventHandlerList />
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Elementalism</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Crystalism</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Artificing</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Class core</name>
-					<packageName />
-					<script />
+					<packageName></packageName>
+					<script></script>
 					<eventHandlerList />
 					<Script isActive="yes" isFolder="no">
 						<name>Defensive checks</name>
-						<packageName />
+						<packageName></packageName>
 						<script>Yso = Yso or {}
 Yso.magi = Yso.magi or {}
 Yso.magi.defs = Yso.magi.defs or {}
@@ -27581,21 +27878,14 @@ M.install()</script>
 	<KeyPackage>
 		<Key isActive="yes" isFolder="no">
 			<name>Yso_escape</name>
-			<packageName />
+			<packageName></packageName>
 			<script>if Yso and Yso.escape and Yso.escape.press then
   Yso.escape.press()
 end
 </script>
-			<command />
+			<command></command>
 			<keyCode>16777268</keyCode>
 			<keyModifier>0</keyModifier>
 		</Key>
 	</KeyPackage>
 </MudletPackage>
-
-
-
-
-
-
-

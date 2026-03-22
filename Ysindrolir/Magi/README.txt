@@ -1,6 +1,6 @@
 Magi workspace notes
 ====================
-Last updated: March 21, 2026
+Last updated: March 22, 2026
 
 This folder is the class-specific home for Magi work.
 
@@ -18,7 +18,8 @@ Current fixes
   Occultist-side copy remains at:
     ../Occultist/Occultist Devtools.xml
 
-  No broader Magi combat automation changes were made in this pass.
+  Magi aliases and triggers in Yso system.xml were corrected for the current
+  Elementalism / Crystalism helpers.
 
 Current Magi helpers
 --------------------
@@ -45,3 +46,17 @@ Notes
 -----
   Future Magi-only offense, defense, resonance, or debug helpers should live
   here rather than inside the Occultist tree.
+
+Current Magi follow-up
+----------------------
+  The local skill reference chart was corrected against live helpfile output for:
+    retardation
+    cataclysm
+
+  The shared Yso package now keeps elemental tracking as:
+    Yso.elemental            current summoned elemental or false
+    Yso.elemental_lev_ready  Djinn levitate readiness boolean
+
+  Exact summon text is still needed before adding active-state triggers for:
+    sandling
+    ashbeast
