@@ -2380,6 +2380,52 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Djinn faded!).\n")</script>
 							</regexCodePropertyList>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Waterweird present</name>
+							<script>Yso.elemental = "waterweird"
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Waterweird summoned!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>You take a deep breath and channel Water, and in but a moment are cast adrift upon that which is Sllshya. To summon Water, you must first surrender to it. You wait, your mind opening to channel and current, and the endless flow of the Great Ocean washes over you. Into it. Through you. Carried forth from pellucid depths you rise, and with you comes but the slightest piece of the Foundation: a water weird.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<name>Waterweird not present</name>
+							<script>Yso.elemental = false
+Yso.elemental_lev_ready = false
+
+cecho("&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Waterweird faded!).\n")</script>
+							<triggerType>0</triggerType>
+							<conditonLineDelta>0</conditonLineDelta>
+							<mStayOpen>0</mStayOpen>
+							<mCommand></mCommand>
+							<packageName></packageName>
+							<mFgColor>#ff0000</mFgColor>
+							<mBgColor>#ffff00</mBgColor>
+							<mSoundFile></mSoundFile>
+							<colorTriggerFgColor>#000000</colorTriggerFgColor>
+							<colorTriggerBgColor>#000000</colorTriggerBgColor>
+							<regexCodeList>
+								<string>You send a water weird back to the Plane from which it came.</string>
+							</regexCodeList>
+							<regexCodePropertyList>
+								<integer>3</integer>
+							</regexCodePropertyList>
+						</Trigger>
+						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Mistfiend present</name>
 							<script>Yso.elemental = "mistfiend"
 Yso.elemental_lev_ready = false
