@@ -305,6 +305,36 @@ function P.queue(payload, opts)
   return _emit({ free = free, class = ent, eq = eq, bal = bal }, opts or { reason = "pulse.queue" })
 end
 
+local function _staged_has_payload(staged)
+  if type(staged) ~= "table" then return false end
+  if type(staged.free) == "table" and #staged.free > 0 then return true end
+  if _trim(staged.eq) ~= "" then return true end
+  if _trim(staged.bal) ~= "" then return true end
+  if _trim(staged.class) ~= "" then return true end
+  return false
+end
+
+local function _flush_staged_queue()
+  local Q = Yso and Yso.queue or nil
+  if not (Q and type(Q.commit) == "function") then return false end
+
+  local staged = type(Q.list) == "function" and Q.list() or Q._staged
+  if not _staged_has_payload(staged) then
+    Q._commit_hint = nil
+    return false
+  end
+
+  local opts = type(Q._commit_hint) == "table" and Q._commit_hint or {}
+  local ok, sent = pcall(Q.commit, opts)
+  if not ok or sent ~= true then return false end
+
+  Q._commit_hint = nil
+  P.state._did_emit = true
+  return true
+end
+
+P.register("queue.commit", _flush_staged_queue, { order = -100 })
+
 -- ---------------- dispatch loop ----------------
 function P._flush_inner()
   if P.state._in_flush then return end

@@ -1,64 +1,58 @@
 Yso Systems Workspace
 =====================
-Last updated: 2026-03-21
+Last updated: March 21, 2026
 
-This root README is now a workspace index.
-Class-specific notes live in the class folders.
+This root README is now a workspace snapshot rather than a changelog.
+Class-specific detail lives in the class folders.
 
-Recent Occultist workspace changes now also include the 2026-03-20 route /
-bootstrap repair pass: live aff-route debug resolution, deferred no-slot module
-autoload on package load (without a second full XML boot), centralized
-route-registry ownership, Devtools dry-run defaulting off on load, and clearer
-Devtools artifact naming. See Ysindrolir/Occultist/README.txt for the detailed
-per-file notes.
+Current fixes
+-------------
+  Occultist offense is now alias-owned end to end. Shared send memory lives in
+  offense_state.lua, and the old orchestrator is no longer part of the active
+  route pipeline.
 
-On 2026-03-21 the Occultist bash upkeep/orb pass was also corrected: the Yso
-hunt upkeep now respects the Legacy basher on/off state instead of free-running
-whenever mode=bash, orb summon/defense uses Yso.queue-compatible modes again,
-and the Orb Defense timer now has a mirrored source file in
-Ysindrolir/Occultist/modules/Yso/xml/ for package rebuilds.
+  The wake bus now retries staged queue commits on lane wakes. Manual lane
+  aliases such as cleanse can queue while EQ is down and flush on reopen.
 
+  The stale generic package:
+    Ysindrolir/mudlet packages/Devtools.xml
+  has been retired. Split devtools sources now live at:
+    Ysindrolir/Occultist/Occultist Devtools.xml
+    Ysindrolir/Magi/MagiDevtools.xml
 
-Documentation Map
+  Export artifacts were refreshed from the canonical workspace sources,
+  including Yso system.xml and the wake-bus/queue mirrors that feed it.
+
+Documentation map
 -----------------
-  Ysindrolir/AFFLICTION_CURES.txt
-    Shared Achaea affliction list (action, herbal cure, alchemical cure).
-    Reference for both Magi and Occultist (curative types, predict_cure, offense).
-
   Ysindrolir/Occultist/README.txt
-    Occultist architecture, routes, READAURA tracking, export notes,
-    and current automation status.
+    Occultist architecture, routes, aliases, export notes, and current status.
 
   Ysindrolir/Magi/README.txt
-    Magi-specific notes, helpers, and future Magi-only work.
+    Magi-specific notes, helper files, and current package status.
 
   Ysindrolir/Occultist/modules/Yso/xml/README_EXPORT_ONLY.txt
     Canonical-vs-exported file notes for the Occultist package.
 
-
-Workspace Layout
+Workspace layout
 ----------------
   Ysindrolir/Occultist/
     Canonical Occultist source, route logic, integration modules,
     and export inputs for Yso.
 
   Ysindrolir/Magi/
-    Magi-specific helpers and class-local notes.
+    Magi-specific helpers and class-local package notes.
 
   Ysindrolir/mudlet packages/
     Exported Mudlet packages, including:
       Yso system.xml
       AK.xml
-
+      Yso offense aliases.xml
+      limb.1.2.xml
 
 Notes
 -----
   Yso system.xml is rebuilt from the Occultist source tree.
   AK.xml is maintained separately and may also carry compatibility patches.
-  This Desktop workspace is intended to be the primary working copy for
-  editing, Cursor, Mudlet, and git operations so code changes and commits
-  happen in the same folder.
-  The separate Documents/GitHub clone can be kept as a fallback copy, but it
-  should not be the place where changes are manually re-synced before commit.
   Root-level docs should stay class-agnostic now that this workspace supports
   more than one class.

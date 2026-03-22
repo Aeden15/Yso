@@ -914,20 +914,50 @@ function RD.debug_toggle(route, on_off)
     _tprint("unknown route: " .. route)
     return
   end
+
+  on_off = tostring(on_off or ""):lower()
+  local desired = nil
+  if on_off == "on" or on_off == "1" then
+    desired = true
+  elseif on_off == "off" or on_off == "0" then
+    desired = false
+  end
+
+  local dbg = type(mod.debug) == "table" and mod.debug or nil
   local st = type(mod.state) == "table" and mod.state or nil
+
+  if type(mod.toggle_debug_screen) == "function" then
+    local ok = pcall(mod.toggle_debug_screen, desired)
+    if ok then
+      local current = (dbg and dbg.enabled == true) or (st and st.debug == true) or false
+      _tprint(route .. " debug = " .. tostring(current))
+      return
+    end
+  end
+
+  if dbg then
+    if desired == nil then
+      dbg.enabled = not (dbg.enabled == true)
+    else
+      dbg.enabled = desired
+    end
+    if dbg.enabled == true and type(mod.show_debug_screen) == "function" then
+      pcall(mod.show_debug_screen)
+    end
+    _tprint(route .. " debug = " .. tostring(dbg.enabled == true))
+    return
+  end
+
   if not st then
     _tprint(route .. " has no state table")
     return
   end
-  on_off = tostring(on_off or ""):lower()
-  if on_off == "on" or on_off == "1" then
-    st.debug = true
-  elseif on_off == "off" or on_off == "0" then
-    st.debug = false
-  else
+  if desired == nil then
     st.debug = not (st.debug == true)
+  else
+    st.debug = desired
   end
-  _tprint(route .. " debug = " .. tostring(st.debug))
+  _tprint(route .. " debug = " .. tostring(st.debug == true))
 end
 
 function RD.show(route)
@@ -938,6 +968,7 @@ function RD.show(route)
     end
     return
   end
+  local mod = _route_mod(route)
   local ex = _route_explain(route)
   if not ex then
     local st = _route_state(route)
@@ -959,15 +990,19 @@ function RD.show(route)
   local finish = type(ex.finish_transition) == "table" and ex.finish_transition or {}
   local para = type(ex.para) == "table" and ex.para or {}
   local bm = type(ex.bm_snapshot) == "table" and ex.bm_snapshot or {}
+  local waiting = type(ex.waiting) == "table" and ex.waiting or {}
+  local debug_enabled = ((type(mod) == "table" and type(mod.debug) == "table" and mod.debug.enabled == true) or ex.debug == true)
 
   _tprint(string.format("%s | target=%s active=%s debug=%s",
-    route, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(ex.debug == true)))
+    route, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(debug_enabled)))
   _tprint(string.format(" plan | eq=%s class=%s bal=%s free=%s",
     _s(planned.eq), _s(planned.class), _s(planned.bal), _s(planned.free)))
 
   if route == "aff" then
     _tprint(string.format(" aff  | stage=%s next=%s blocker=%s focus=%s mana=%s",
       _s(finish.stage), _s(finish.next_action), _s(finish.blocker), _s(ex.focus_lock_count), _s(ex.mana_pct)))
+    _tprint(string.format(" wait | active=%s lane=%s age=%.2f q=%s",
+      _b(waiting.active == true), _s(waiting.main_lane), tonumber(waiting.age or 0) or 0, _s(waiting.queue)))
     _tprint(string.format(" para | allow=%s lane=%s cure=%s p=%.2f why=%s",
       _b(para.allowed == true), _s(para.lane), _s(para.predicted_next_cure), tonumber(para.confidence or 0) or 0, _s(para.block_reason)))
     _tprint(string.format(" bm   | state=%s branch=%s/%s passive=%s",

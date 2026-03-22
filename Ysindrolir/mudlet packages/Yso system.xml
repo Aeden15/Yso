@@ -5837,6 +5837,36 @@ function P.queue(payload, opts)
   return _emit({ free = free, class = ent, eq = eq, bal = bal }, opts or { reason = &quot;pulse.queue&quot; })
 end
 
+local function _staged_has_payload(staged)
+  if type(staged) ~= &quot;table&quot; then return false end
+  if type(staged.free) == &quot;table&quot; and #staged.free &gt; 0 then return true end
+  if _trim(staged.eq) ~= &quot;&quot; then return true end
+  if _trim(staged.bal) ~= &quot;&quot; then return true end
+  if _trim(staged.class) ~= &quot;&quot; then return true end
+  return false
+end
+
+local function _flush_staged_queue()
+  local Q = Yso and Yso.queue or nil
+  if not (Q and type(Q.commit) == &quot;function&quot;) then return false end
+
+  local staged = type(Q.list) == &quot;function&quot; and Q.list() or Q._staged
+  if not _staged_has_payload(staged) then
+    Q._commit_hint = nil
+    return false
+  end
+
+  local opts = type(Q._commit_hint) == &quot;table&quot; and Q._commit_hint or {}
+  local ok, sent = pcall(Q.commit, opts)
+  if not ok or sent ~= true then return false end
+
+  Q._commit_hint = nil
+  P.state._did_emit = true
+  return true
+end
+
+P.register(&quot;queue.commit&quot;, _flush_staged_queue, { order = -100 })
+
 -- ---------------- dispatch loop ----------------
 function P._flush_inner()
   if P.state._in_flush then return end
@@ -21789,32 +21819,38 @@ local function _echo(color, msg)
   cecho(string.format(&quot;%s%s%s\n&quot;, O.cfg.prefix or &quot;&quot;, color or &quot;&quot;, msg or &quot;&quot;))
 end
 
+local function _send_cmd(cmd)
+  cmd = tostring(cmd or &quot;&quot;)
+  if cmd == &quot;&quot; then return false end
+  if type(send) == &quot;function&quot; then
+    send(cmd, false)
+    return true
+  end
+  if type(expandAlias) == &quot;function&quot; then
+    expandAlias(cmd)
+    return true
+  end
+  return false
+end
+
 local function _q(mode, qtype, cmd)
   mode  = tostring(mode  or &quot;addclear&quot;):lower()
   qtype = tostring(qtype or &quot;free&quot;)
   cmd   = tostring(cmd   or &quot;&quot;)
   if cmd == &quot;&quot; then return false end
-
-  local Q = Yso and Yso.queue
-  local resolved = mode
-  local fn = Q and Q[resolved]
-
-  if type(fn) ~= &quot;function&quot; and resolved == &quot;add&quot; then
-    resolved = &quot;addclear&quot;
-    fn = Q and Q[resolved]
+  local verb = &quot;ADDCLEAR&quot;
+  if mode == &quot;addclearfull&quot; then
+    verb = &quot;ADDCLEARFULL&quot;
+  elseif mode == &quot;add&quot; then
+    verb = &quot;ADD&quot;
+  elseif mode == &quot;prepend&quot; then
+    verb = &quot;PREPEND&quot;
+  elseif mode == &quot;insert&quot; then
+    verb = &quot;INSERT&quot;
+  elseif mode == &quot;replace&quot; then
+    verb = &quot;REPLACE&quot;
   end
-
-  if type(fn) ~= &quot;function&quot; then
-    _echo(O.cfg.warn_color, (&quot;Yso.queue mode &apos;%s&apos; unavailable; cannot queue orb command.&quot;):format(resolved))
-    return false
-  end
-
-  local ok, err = pcall(fn, qtype, cmd)
-  if not ok then
-    _echo(O.cfg.warn_color, (&quot;Orb queue failed: %s&quot;):format(tostring(err)))
-    return false
-  end
-
+  _send_cmd((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, cmd))
   return true
 end
 
