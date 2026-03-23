@@ -701,6 +701,7 @@ function M.set_party_route(route, reason)
   local old = M.party_route()
   if old == route then
     if M.party then M.party.last_reason = reason or M.party.last_reason end
+    if M.is_party() then M.echo() end
     return true
   end
 
@@ -713,6 +714,8 @@ function M.set_party_route(route, reason)
   if type(raiseEvent) == "function" then
     raiseEvent("yso.party.route.changed", old, route, M.party.last_reason)
   end
+
+  if M.is_party() then M.echo() end
 
   return true
 end
@@ -783,6 +786,30 @@ end
 function M.on_engage(reason)    return M.set("combat", reason or "engage") end
 function M.on_disengage(reason) return M.set("combat", reason or "disengage") end
 
+local function _refresh_huntmode(reason)
+  if Yso.huntmode and type(Yso.huntmode.refresh) == "function" then
+    pcall(Yso.huntmode.refresh, tostring(reason or "alias"))
+  end
+end
+
+local function _set_bash_mode(reason)
+  local why = tostring(reason or "alias")
+  local ok = M.set("bash", why)
+  if ok then
+    _refresh_huntmode(why)
+  end
+  return ok
+end
+
+local function _set_party_mode(route, reason)
+  local why = tostring(reason or "alias")
+  local ok = M.set("party", why)
+  if ok and route and tostring(route) ~= "" then
+    M.set_party_route(route, why)
+  end
+  return ok
+end
+
 M._alias = M._alias or {}
 local function _kill_alias(id) if id then pcall(killAlias, id) end end
 
@@ -795,7 +822,8 @@ if type(tempAlias) == "function" then
   _kill_alias(M._alias.mhunt)
   _kill_alias(M._alias.combat)
   _kill_alias(M._alias.party)
-  M._alias.party = tempAlias([[^par(?:\s+(\S+))?$]], function()
+  _kill_alias(M._alias.par)
+  M._alias.par = tempAlias([[^par(?:\s+(\S+))?$]], function()
     local r = matches[2]
     if r and r ~= "" then
       local route = _route_norm(r)
@@ -804,32 +832,46 @@ if type(tempAlias) == "function" then
           Yso.mode.toggle_route_loop(route, "alias")
         end
       else
-        Yso.mode.set("party", "alias")
-        Yso.mode.set_party_route(r, "alias")
+        _set_party_mode(r, "alias:par")
       end
     else
-      Yso.mode.set("party", "alias")
+      _set_party_mode(nil, "alias:par")
     end
+  end)
+
+  M._alias.party = tempAlias([[^party(?:\s+(\S+))?$]], function()
+    _set_party_mode(matches[2], "alias:party")
   end)
 
   _kill_alias(M._alias.partyroute)
-  M._alias.partyroute = tempAlias([[^partyroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], "alias") end)
+  M._alias.partyroute = tempAlias([[^partyroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], "alias:partyroute") end)
 
-  M._alias.mbash = tempAlias([[^mbash$]], function()
-    Yso.mode.set("bash", "alias")
-    if Yso.huntmode and type(Yso.huntmode.refresh) == "function" then
-      pcall(Yso.huntmode.refresh, "alias:mbash")
+  M._alias.mode = tempAlias([[^mode$]], function() M.echo() end)
+  M._alias.mode_set = tempAlias([[^mode\s+(\S+)(?:\s+(\S+))?$]], function()
+    local mode = _norm(matches[2] or "")
+    local arg = matches[3]
+    if mode == "party" then
+      _set_party_mode(arg, "alias:mode")
+    elseif mode == "bash" then
+      _set_bash_mode("alias:mode")
+    else
+      M.set(mode, "alias:mode")
     end
   end)
 
+  M._alias.hunt = tempAlias([[^hunt$]], function() _set_bash_mode("alias:hunt") end)
+  M._alias.bash = tempAlias([[^bash$]], function() _set_bash_mode("alias:bash") end)
+  M._alias.mbash = tempAlias([[^mbash$]], function() _set_bash_mode("alias:mbash") end)
+  M._alias.mhunt = tempAlias([[^mhunt$]], function() _set_bash_mode("alias:mhunt") end)
+  M._alias.combat = tempAlias([[^(?:combat|mcombat)$]], function() M.set("combat", "alias:combat") end)
+
   _kill_alias(M._alias.mt)
-  M._alias.mode = nil
-  M._alias.mode_set = nil
-  M._alias.hunt = nil
-  M._alias.bash = nil
-  M._alias.mhunt = nil
-  M._alias.combat = nil
-  M._alias.mt = nil
+  M._alias.mt = tempAlias([[^mt$]], function()
+    local old = _norm(M.state)
+    if M.toggle("alias:mt") and _norm(M.state) == "bash" and old ~= "bash" then
+      _refresh_huntmode("alias:mt")
+    end
+  end)
 end
 
 M._tip_shown = M._tip_shown or false

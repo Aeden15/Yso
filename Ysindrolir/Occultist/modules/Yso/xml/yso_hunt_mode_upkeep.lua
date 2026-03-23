@@ -13,7 +13,8 @@
 --   5) Rescan timer runs only while something is missing or mask
 --      is not yet confirmed. Stops once stable (all present + masked).
 --
--- No QUEUE ADDCLEAR, no gmcp.Char.Vitals handler, no idle polling.
+-- No QUEUE ADDCLEAR and no idle polling.
+-- Class changes are watched so only Occultist bash mode manages entourage.
 -- Mudlet UI "Registered Events" will be empty; all wiring is in Lua.
 --========================================================--
 
@@ -58,6 +59,35 @@ local function _is_bash_mode()
   return s == "bash" or s == "hunt"
 end
 
+local function _normalize_class(cls)
+  cls = tostring(cls or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if cls == "" then return "" end
+  return cls:sub(1, 1):upper() .. cls:sub(2):lower()
+end
+
+local function _current_class()
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+    local ok, cls = pcall(Yso.classinfo.get)
+    if ok and tostring(cls or "") ~= "" then
+      return _normalize_class(cls)
+    end
+  end
+
+  local g = rawget(_G, "gmcp")
+  local cls = g and g.Char and g.Char.Status and g.Char.Status.class or nil
+  if (type(cls) ~= "string" or cls == "") and g and g.Char and g.Char.Vitals then
+    cls = g.Char.Vitals.class
+  end
+  if (type(cls) ~= "string" or cls == "") and type(Yso.class) == "string" then
+    cls = Yso.class
+  end
+  return _normalize_class(cls)
+end
+
+local function _supports_entourage()
+  return _current_class() == "Occultist"
+end
+
 M.cfg = M.cfg or {
   enabled = true,
   debug = false,
@@ -76,6 +106,10 @@ M.state = M.state or {
   present  = { orb = false, hound = false, pathfinder = false },
   sent     = { orb = false, hound = false, pathfinder = false, mask = false },
   mask_active = false,
+  class_gate = {
+    class = "",
+    supports_entourage = false,
+  },
   ent = {
     synced   = false,
     scanning = false,
@@ -84,6 +118,35 @@ M.state = M.state or {
     buf = {},
   },
 }
+M.state.class_gate = M.state.class_gate or {
+  class = "",
+  supports_entourage = false,
+}
+
+local function _clear_ent_request()
+  local e = M.state.ent
+  e.synced = false
+  e.scanning = false
+  e.inflight = false
+  e.inflight_until = 0
+  e.buf = {}
+end
+
+local function _clear_presence()
+  M.state.present.orb = false
+  M.state.present.hound = false
+  M.state.present.pathfinder = false
+end
+
+local function _sync_class_gate()
+  local cls = _current_class()
+  local supported = (cls == "Occultist")
+  local gate = M.state.class_gate
+  local changed = gate.class ~= cls or gate.supports_entourage ~= supported
+  gate.class = cls
+  gate.supports_entourage = supported
+  return supported, cls, changed
+end
 
 local function _dbg(msg)
   if M.cfg.debug == true and type(cecho) == "function" then
@@ -107,12 +170,27 @@ local function _reset_sent()
   M.state.sent = { orb = false, hound = false, pathfinder = false, mask = false }
 end
 
+local function _suspend_for_class(reason)
+  _stop_rescan()
+  _clear_ent_request()
+  _clear_presence()
+  _reset_sent()
+  M.state.mask_active = false
+  local cls = tostring((M.state.class_gate and M.state.class_gate.class) or "")
+  _dbg(("skip entourage upkeep class=%s reason=%s"):format(cls ~= "" and cls or "unknown", tostring(reason or "")))
+end
+
 -- Send missing summons (once each) then mask if all present.
 -- Called exactly once after ENT parse completes, and once after
 -- each summon-confirmation trigger.
 local function _act()
   if M.cfg.enabled ~= true then return end
   if not _is_bash_mode() then return end
+  if not _supports_entourage() then
+    _sync_class_gate()
+    _suspend_for_class("act")
+    return
+  end
 
   if not M.state.ent.synced then return end
 
@@ -142,6 +220,11 @@ end
 -- Only touches ent-inflight state; does NOT reset sent/mask flags.
 -- Full reset lives in refresh() (called from mbash).
 local function _request_ent()
+  if not _supports_entourage() then
+    _sync_class_gate()
+    _suspend_for_class("request_ent")
+    return false
+  end
   local e = M.state.ent
   local now = _now()
   e.inflight = true
@@ -218,6 +301,11 @@ end
 function M.refresh(reason)
   reason = tostring(reason or "")
   if M.cfg.enabled ~= true then return false end
+  _sync_class_gate()
+  if not _supports_entourage() then
+    _suspend_for_class("refresh:" .. reason)
+    return false
+  end
   _dbg("refresh " .. reason)
   _reset_sent()
   M.state.mask_active = false
@@ -230,12 +318,22 @@ M._rescan_timer = M._rescan_timer or nil
 local function _kill_timer(id) if id and type(killTimer) == "function" then pcall(killTimer, id) end end
 
 _start_rescan = function()
+  _sync_class_gate()
+  if not _supports_entourage() then
+    _suspend_for_class("start_rescan")
+    return
+  end
   _kill_timer(M._rescan_timer)
   local interval = tonumber(M.cfg.rescan_interval or 10.0) or 10.0
   M._rescan_timer = tempTimer(interval, function()
     M._rescan_timer = nil
     if M.cfg.enabled ~= true then return end
     if not _is_bash_mode() then return end
+    if not _supports_entourage() then
+      _sync_class_gate()
+      _suspend_for_class("rescan_tick")
+      return
+    end
     if _is_stable() then
       _dbg("rescan tick: already stable, stopping")
       return
@@ -342,15 +440,48 @@ M._eh.mode_changed = registerAnonymousEventHandler("yso.mode.changed", function(
   local m = tostring(new or ""):lower()
   if m == "hunt" then m = "bash" end
   if m == "bash" then
-    M.refresh("event:mode_changed")
-    _start_rescan()
+    _sync_class_gate()
+    if _supports_entourage() then
+      M.refresh("event:mode_changed")
+      _start_rescan()
+    else
+      _suspend_for_class("event:mode_changed")
+    end
   else
     _stop_rescan()
+    _clear_ent_request()
   end
 end)
 
+local function _on_class_update(reason)
+  local supported, cls, changed = _sync_class_gate()
+  if changed ~= true then return end
+  _dbg(("class update class=%s supported=%s reason=%s"):format(
+    cls ~= "" and cls or "unknown",
+    tostring(supported),
+    tostring(reason or "")))
+  if not _is_bash_mode() then return end
+  if supported then
+    M.refresh("event:" .. tostring(reason or "class_update"))
+    _start_rescan()
+  else
+    _suspend_for_class("event:" .. tostring(reason or "class_update"))
+  end
+end
+
+_kill_eh(M._eh.class_status)
+M._eh.class_status = registerAnonymousEventHandler("gmcp.Char.Status", function()
+  _on_class_update("gmcp.Char.Status")
+end)
+
+_kill_eh(M._eh.class_vitals)
+M._eh.class_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+  _on_class_update("gmcp.Char.Vitals")
+end)
+
 -- Start rescan at load if in bash and not already stable
-if _is_bash_mode() and not _is_stable() then
+_sync_class_gate()
+if _is_bash_mode() and M.state.class_gate.supports_entourage == true and not _is_stable() then
   _start_rescan()
 end
 
