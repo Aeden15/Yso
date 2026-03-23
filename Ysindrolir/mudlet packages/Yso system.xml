@@ -467,12 +467,39 @@ Yso.radianceAlert.fire(0, who, "pre-tell")
 					</TriggerGroup>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Target leaping</name>
-						<script>local who = matches[2] or ""
-local dir = matches[3] or ""
+						<script>local who = tostring(matches[2] or ""):gsub("^%s+", ""):gsub("%s+$", "")
+local dir = tostring(matches[3] or ""):gsub("^%s+", ""):gsub("%s+$", "")
+local tgt = ""
+
+if Yso and type(Yso.get_target) == "function" then
+  local ok, res = pcall(Yso.get_target)
+  if ok and type(res) == "string" then
+    tgt = tostring(res or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  end
+end
+
+if tgt == "" and Yso and Yso.targeting and type(Yso.targeting.get) == "function" then
+  local ok, res = pcall(Yso.targeting.get)
+  if ok and type(res) == "string" then
+    tgt = tostring(res or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  end
+end
+
+if tgt == "" then
+  tgt = tostring(rawget(_G, "target") or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+who = who:gsub("%s*%b()%s*$", "")
+tgt = tgt:gsub("%s*%b()%s*$", "")
+
+if who == "" or tgt == "" or who:lower() ~= tgt:lower() then
+  return
+end
+
 if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_target_leap) == "function" then
   Yso.off.coord.on_target_leap(who, dir)
 else
-  cecho(string.format("&lt;yellow&gt;[DEFENSE] &lt;HotPink&gt; CAREFUL: %s leapt out of the room (%s)!\n", tostring(who), tostring(dir)))
+  cecho(string.format("\n&lt;yellow&gt;[DEFENSE] &lt;HotPink&gt; CAREFUL: %s leapt out of the room (%s)!\n", tostring(who), tostring(dir)))
 end
 </script>
 						<triggerType>0</triggerType>
