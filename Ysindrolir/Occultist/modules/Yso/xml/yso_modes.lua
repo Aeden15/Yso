@@ -15,7 +15,8 @@
 --   raiseEvent("yso.party.route.changed", old, new, reason) on party route change
 --
 -- Runtime aliases (tempAlias, auto-registered if available):
---   ^mbash$   -> Yso.mode.set("bash","alias"); Yso.huntmode.refresh("alias:mbash")
+--   ^hunt$    -> switch to bash mode without forcing a huntmode reset on noop
+--   ^mbash$   -> if already in bash, force a huntmode refresh/reset
 --   ^par...$  -> party mode / route toggle (see implementation)
 --   ^partyroute\s+(\S+)$ -> Yso.mode.set_party_route(matches[2], "alias")
 --
@@ -792,10 +793,12 @@ local function _refresh_huntmode(reason)
   end
 end
 
-local function _set_bash_mode(reason)
+local function _set_bash_mode(reason, opts)
+  opts = type(opts) == "table" and opts or {}
   local why = tostring(reason or "alias")
+  local was_bash = M.is_bash()
   local ok = M.set("bash", why)
-  if ok then
+  if ok and was_bash and opts.refresh_if_already_bash == true then
     _refresh_huntmode(why)
   end
   return ok
@@ -861,16 +864,13 @@ if type(tempAlias) == "function" then
 
   M._alias.hunt = tempAlias([[^hunt$]], function() _set_bash_mode("alias:hunt") end)
   M._alias.bash = tempAlias([[^bash$]], function() _set_bash_mode("alias:bash") end)
-  M._alias.mbash = tempAlias([[^mbash$]], function() _set_bash_mode("alias:mbash") end)
-  M._alias.mhunt = tempAlias([[^mhunt$]], function() _set_bash_mode("alias:mhunt") end)
+  M._alias.mbash = tempAlias([[^mbash$]], function() _set_bash_mode("alias:mbash", { refresh_if_already_bash = true }) end)
+  M._alias.mhunt = tempAlias([[^mhunt$]], function() _set_bash_mode("alias:mhunt", { refresh_if_already_bash = true }) end)
   M._alias.combat = tempAlias([[^(?:combat|mcombat)$]], function() M.set("combat", "alias:combat") end)
 
   _kill_alias(M._alias.mt)
   M._alias.mt = tempAlias([[^mt$]], function()
-    local old = _norm(M.state)
-    if M.toggle("alias:mt") and _norm(M.state) == "bash" and old ~= "bash" then
-      _refresh_huntmode("alias:mt")
-    end
+    M.toggle("alias:mt")
   end)
 end
 

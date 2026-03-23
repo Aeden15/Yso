@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: March 21, 2026
+Last updated: March 23, 2026
 
 
 Current fixes
@@ -26,6 +26,14 @@ Current fixes
   Export artifacts were refreshed from the canonical source tree, including:
     modules/Yso/xml/yso_pulse_wake_bus.lua
     mudlet packages/Yso system.xml
+
+  `hunt` / `bash` now behave as pure mode switches when you are already in bash,
+  so stable entourage state is preserved instead of forcing a fresh `ent` /
+  `mask` cycle. `mbash` / `mhunt` remain the explicit manual refresh path.
+
+  Truename persistence now validates the saved blob before calling Mudlet's
+  JSON decoder, which suppresses startup spam from corrupted non-JSON files in
+  the Mudlet home directory.
 
 
 Architecture overview
@@ -147,7 +155,10 @@ Aliases
 -------
   ^aff$         - toggle the duel affliction loop (occ_aff_burst)
   ^dam$         - toggle the group damage loop
+  ^hunt$        - switch to bash mode without a noop entourage reset
+  ^bash$        - same as hunt
   ^mbash$       - switch to bash mode
+  ^mhunt$       - manual bash refresh if already in bash
   ^mode (.+)$   - switch mode (bash | combat | party)
   ^par (.+)$    - set party sub-route (aff | dam)
 

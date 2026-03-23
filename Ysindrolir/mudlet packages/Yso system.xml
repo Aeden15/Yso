@@ -15999,7 +15999,8 @@ Yso.fool.cfg.debug   = false
 --   raiseEvent(&quot;yso.party.route.changed&quot;, old, new, reason) on party route change
 --
 -- Runtime aliases (tempAlias, auto-registered if available):
---   ^mbash$   -&gt; Yso.mode.set(&quot;bash&quot;,&quot;alias&quot;); Yso.huntmode.refresh(&quot;alias:mbash&quot;)
+--   ^hunt$    -&gt; switch to bash mode without forcing a huntmode reset on noop
+--   ^mbash$   -&gt; if already in bash, force a huntmode refresh/reset
 --   ^par...$  -&gt; party mode / route toggle (see implementation)
 --   ^partyroute\s+(\S+)$ -&gt; Yso.mode.set_party_route(matches[2], &quot;alias&quot;)
 --
@@ -16776,10 +16777,12 @@ local function _refresh_huntmode(reason)
   end
 end
 
-local function _set_bash_mode(reason)
+local function _set_bash_mode(reason, opts)
+  opts = type(opts) == &quot;table&quot; and opts or {}
   local why = tostring(reason or &quot;alias&quot;)
+  local was_bash = M.is_bash()
   local ok = M.set(&quot;bash&quot;, why)
-  if ok then
+  if ok and was_bash and opts.refresh_if_already_bash == true then
     _refresh_huntmode(why)
   end
   return ok
@@ -16845,16 +16848,13 @@ if type(tempAlias) == &quot;function&quot; then
 
   M._alias.hunt = tempAlias([[^hunt$]], function() _set_bash_mode(&quot;alias:hunt&quot;) end)
   M._alias.bash = tempAlias([[^bash$]], function() _set_bash_mode(&quot;alias:bash&quot;) end)
-  M._alias.mbash = tempAlias([[^mbash$]], function() _set_bash_mode(&quot;alias:mbash&quot;) end)
-  M._alias.mhunt = tempAlias([[^mhunt$]], function() _set_bash_mode(&quot;alias:mhunt&quot;) end)
+  M._alias.mbash = tempAlias([[^mbash$]], function() _set_bash_mode(&quot;alias:mbash&quot;, { refresh_if_already_bash = true }) end)
+  M._alias.mhunt = tempAlias([[^mhunt$]], function() _set_bash_mode(&quot;alias:mhunt&quot;, { refresh_if_already_bash = true }) end)
   M._alias.combat = tempAlias([[^(?:combat|mcombat)$]], function() M.set(&quot;combat&quot;, &quot;alias:combat&quot;) end)
 
   _kill_alias(M._alias.mt)
   M._alias.mt = tempAlias([[^mt$]], function()
-    local old = _norm(M.state)
-    if M.toggle(&quot;alias:mt&quot;) and _norm(M.state) == &quot;bash&quot; and old ~= &quot;bash&quot; then
-      _refresh_huntmode(&quot;alias:mt&quot;)
-    end
+    M.toggle(&quot;alias:mt&quot;)
   end)
 end
 
@@ -21999,6 +21999,12 @@ function TB.load()
   local f = io.open(_path(), &quot;r&quot;); if not f then return end
   local blob = f:read(&quot;*a&quot;); f:close()
   if not blob or blob == &quot;&quot; then return end
+  blob = tostring(blob):gsub(&quot;^\239\187\191&quot;, &quot;&quot;)
+  local lead = blob:match(&quot;^%s*(.)&quot;)
+  if lead ~= &quot;{&quot; and lead ~= &quot;[&quot; then
+    d(&quot;skip invalid truename persistence blob&quot;)
+    return
+  end
   local ok,t = pcall(yajl.to_value, blob)
   if ok and type(t)==&quot;table&quot; then
     TB.known = type(t.known)==&quot;table&quot; and t.known or TB.known
@@ -22860,32 +22866,38 @@ local function _echo(color, msg)
   cecho(string.format(&quot;%s%s%s\n&quot;, O.cfg.prefix or &quot;&quot;, color or &quot;&quot;, msg or &quot;&quot;))
 end
 
+local function _send_cmd(cmd)
+  cmd = tostring(cmd or &quot;&quot;)
+  if cmd == &quot;&quot; then return false end
+  if type(send) == &quot;function&quot; then
+    send(cmd, false)
+    return true
+  end
+  if type(expandAlias) == &quot;function&quot; then
+    expandAlias(cmd)
+    return true
+  end
+  return false
+end
+
 local function _q(mode, qtype, cmd)
   mode  = tostring(mode  or &quot;addclear&quot;):lower()
   qtype = tostring(qtype or &quot;free&quot;)
   cmd   = tostring(cmd   or &quot;&quot;)
   if cmd == &quot;&quot; then return false end
-
-  local Q = Yso and Yso.queue
-  local resolved = mode
-  local fn = Q and Q[resolved]
-
-  if type(fn) ~= &quot;function&quot; and resolved == &quot;add&quot; then
-    resolved = &quot;addclear&quot;
-    fn = Q and Q[resolved]
+  local verb = &quot;ADDCLEAR&quot;
+  if mode == &quot;addclearfull&quot; then
+    verb = &quot;ADDCLEARFULL&quot;
+  elseif mode == &quot;add&quot; then
+    verb = &quot;ADD&quot;
+  elseif mode == &quot;prepend&quot; then
+    verb = &quot;PREPEND&quot;
+  elseif mode == &quot;insert&quot; then
+    verb = &quot;INSERT&quot;
+  elseif mode == &quot;replace&quot; then
+    verb = &quot;REPLACE&quot;
   end
-
-  if type(fn) ~= &quot;function&quot; then
-    _echo(O.cfg.warn_color, (&quot;Yso.queue mode &apos;%s&apos; unavailable; cannot queue orb command.&quot;):format(resolved))
-    return false
-  end
-
-  local ok, err = pcall(fn, qtype, cmd)
-  if not ok then
-    _echo(O.cfg.warn_color, (&quot;Orb queue failed: %s&quot;):format(tostring(err)))
-    return false
-  end
-
+  _send_cmd((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, cmd))
   return true
 end
 

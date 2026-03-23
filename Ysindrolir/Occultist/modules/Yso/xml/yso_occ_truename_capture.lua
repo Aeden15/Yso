@@ -82,6 +82,12 @@ function TB.load()
   local f = io.open(_path(), "r"); if not f then return end
   local blob = f:read("*a"); f:close()
   if not blob or blob == "" then return end
+  blob = tostring(blob):gsub("^\239\187\191", "")
+  local lead = blob:match("^%s*(.)")
+  if lead ~= "{" and lead ~= "[" then
+    d("skip invalid truename persistence blob")
+    return
+  end
   local ok,t = pcall(yajl.to_value, blob)
   if ok and type(t)=="table" then
     TB.known = type(t.known)=="table" and t.known or TB.known
