@@ -3816,6 +3816,24 @@ end</script>
 						<regex>^firelash(?:\s+(icewall|totem|ground|vines))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
+						<name>Stormhammer</name>
+						<script>local targets = {}
+
+for i = 2, 4 do
+  local tgt = matches[i]
+  if tgt and tgt ~= "" then
+    targets[#targets + 1] = tgt
+  end
+end
+
+if #targets &gt; 0 then
+  send("queue prepend eqbal cast stormhammer at " .. table.concat(targets, " and "))
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^ham\s+(\S+)(?:\s+(\S+))?(?:\s+(\S+))?$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
 						<name>Flood</name>
 						<script>send("queue prepend eqbal cast flood")</script>
 						<command></command>
