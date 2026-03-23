@@ -16,6 +16,7 @@ local body_signature_map = {
 }
 
 local insert_before_name_map = {
+  ["bash_vitals_swap.lua"] = "Bootstrap",
   ["yso_targeting.lua"] = "Yso.target",
 }
 

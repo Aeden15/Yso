@@ -30,4 +30,7 @@ return {
 
   -- Integration / bridges
   { source = "modules/Yso/Integration/ak_legacy_wiring.lua", mirror = "modules/Yso/xml/ak_legacy_wiring.lua" },
+
+  -- Curing helpers
+  { source = "modules/Yso/Curing/bash_vitals_swap.lua",      mirror = "modules/Yso/xml/bash_vitals_swap.lua" },
 }

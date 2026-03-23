@@ -18522,6 +18522,276 @@ B.refresh_lists_from_AK()
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
+					<name>Bash Vitals Swap</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Bash Vitals Swap
+-- Yso/Curing/bash_vitals_swap.lua
+-- Bash/hunt-only dynamic sip+moss threshold manager.
+
+Yso = Yso or {}
+Yso.curing = Yso.curing or {}
+Yso.curing.bash_vitals_swap = Yso.curing.bash_vitals_swap or {}
+
+Legacy = Legacy or {}
+
+local B = Yso.curing.bash_vitals_swap
+
+B.cfg = B.cfg or {
+  enabled = true,
+  restore_on_exit = true,
+
+  enter = {
+    hp_at_or_above = 85,
+    mp_below = 50,
+  },
+
+  leave = {
+    mp_at_or_above = 80,
+  },
+
+  normal = {
+    priority = &quot;health&quot;,
+    sipHealth = 85,
+    sipMana = 65,
+    mossHealth = 80,
+    mossMana = 60,
+  },
+
+  mana_recovery = {
+    priority = &quot;mana&quot;,
+    sipHealth = 60,
+    sipMana = 80,
+    mossHealth = 50,
+    mossMana = 70,
+  },
+}
+
+B.state = B.state or {
+  active_scope = false,
+  mode = &quot;normal&quot;,
+  saved = nil,
+  last_reason = &quot;init&quot;,
+}
+
+B._eh = B._eh or {}
+
+local function _num(v)
+  return tonumber(v)
+end
+
+local function _norm(s)
+  return tostring(s or &quot;&quot;):lower():gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _pct(cur, max)
+  cur = _num(cur) or 0
+  max = _num(max) or 0
+  if max &lt;= 0 then return nil end
+  return math.floor((cur / max) * 100)
+end
+
+local function _echo(msg)
+  if Legacy and type(Legacy.echo) == &quot;function&quot; then
+    Legacy.echo(&quot;&lt;cyan&gt;[Yso:BashCure]&lt;white&gt; &quot; .. tostring(msg))
+  elseif type(cecho) == &quot;function&quot; then
+    cecho(&quot;\n&lt;cyan&gt;[Yso:BashCure]&lt;white&gt; &quot; .. tostring(msg))
+  end
+end
+
+local function _send(cmd)
+  cmd = tostring(cmd or &quot;&quot;)
+  if cmd == &quot;&quot; then return false end
+  if type(send) == &quot;function&quot; then
+    send(cmd, false)
+    return true
+  end
+  return false
+end
+
+local function _settings()
+  Legacy.Settings = Legacy.Settings or {}
+  Legacy.Settings.Curing = Legacy.Settings.Curing or {}
+  Legacy.Settings.Curing.SS = Legacy.Settings.Curing.SS or {}
+  Legacy.Settings.Curing.SS.Settings = Legacy.Settings.Curing.SS.Settings or {}
+  return Legacy.Settings.Curing.SS.Settings
+end
+
+local function _active_serverset()
+  if Legacy and Legacy.Curing and type(Legacy.Curing.ActiveServerSet) == &quot;string&quot; then
+    return _norm(Legacy.Curing.ActiveServerSet)
+  end
+  return &quot;&quot;
+end
+
+local function _is_bash_mode()
+  local mode = Yso and Yso.mode
+  if type(mode) ~= &quot;table&quot; then return false end
+
+  if type(mode.is_bash) == &quot;function&quot; then
+    local ok, v = pcall(mode.is_bash)
+    if ok and v == true then return true end
+  end
+
+  if type(mode.is_hunt) == &quot;function&quot; then
+    local ok, v = pcall(mode.is_hunt)
+    if ok and v == true then return true end
+  end
+
+  local state = _norm(mode.state)
+  return state == &quot;bash&quot; or state == &quot;hunt&quot;
+end
+
+local function _scope_active()
+  if B.cfg.enabled ~= true then return false end
+  return _is_bash_mode() or _active_serverset() == &quot;hunt&quot;
+end
+
+local function _vitals_pct()
+  local v = gmcp and gmcp.Char and gmcp.Char.Vitals
+  if type(v) ~= &quot;table&quot; then return nil, nil end
+  return _pct(v.hp, v.maxhp), _pct(v.mp, v.maxmp)
+end
+
+local function _snapshot_current()
+  local st = _settings()
+  return {
+    priority = _norm(st.sipPrio ~= nil and st.sipPrio or &quot;Health&quot;),
+    sipHealth = _num(st.sipHealth) or B.cfg.normal.sipHealth,
+    sipMana = _num(st.sipMana) or B.cfg.normal.sipMana,
+    mossHealth = _num(st.mossHealth) or B.cfg.normal.mossHealth,
+    mossMana = _num(st.mossMana) or B.cfg.normal.mossMana,
+  }
+end
+
+local function _same_profile(a, b)
+  if type(a) ~= &quot;table&quot; or type(b) ~= &quot;table&quot; then return false end
+  return _norm(a.priority) == _norm(b.priority)
+    and _num(a.sipHealth) == _num(b.sipHealth)
+    and _num(a.sipMana) == _num(b.sipMana)
+    and _num(a.mossHealth) == _num(b.mossHealth)
+    and _num(a.mossMana) == _num(b.mossMana)
+end
+
+local function _cache_profile(profile)
+  local st = _settings()
+  st.sipPrio = (_norm(profile.priority) == &quot;mana&quot;) and &quot;Mana&quot; or &quot;Health&quot;
+  st.sipHealth = _num(profile.sipHealth)
+  st.sipMana = _num(profile.sipMana)
+  st.mossHealth = _num(profile.mossHealth)
+  st.mossMana = _num(profile.mossMana)
+end
+
+local function _apply_profile(profile, label)
+  if type(profile) ~= &quot;table&quot; then return false end
+
+  local current = _snapshot_current()
+  if _same_profile(current, profile) then
+    B.state.mode = (_norm(profile.priority) == &quot;mana&quot;) and &quot;mana_recovery&quot; or &quot;normal&quot;
+    return false
+  end
+
+  _send((&quot;curing priority %s&quot;):format(string.upper(_norm(profile.priority))))
+  _send((&quot;curing siphealth %d&quot;):format(profile.sipHealth))
+  _send((&quot;curing sipmana %d&quot;):format(profile.sipMana))
+  _send((&quot;curing mosshealth %d&quot;):format(profile.mossHealth))
+  _send((&quot;curing mossmana %d&quot;):format(profile.mossMana))
+
+  _cache_profile(profile)
+  B.state.mode = (_norm(profile.priority) == &quot;mana&quot;) and &quot;mana_recovery&quot; or &quot;normal&quot;
+
+  if label and label ~= &quot;&quot; then
+    _echo(&quot;Applied &quot; .. tostring(label))
+  end
+  return true
+end
+
+local function _enter_scope(reason)
+  if B.state.active_scope == true then return end
+  B.state.active_scope = true
+  B.state.last_reason = tostring(reason or &quot;enter&quot;)
+  B.state.saved = _snapshot_current()
+end
+
+local function _leave_scope(reason)
+  if B.state.active_scope ~= true then return end
+  B.state.active_scope = false
+  B.state.last_reason = tostring(reason or &quot;leave&quot;)
+
+  if B.cfg.restore_on_exit == true and type(B.state.saved) == &quot;table&quot; then
+    _apply_profile(B.state.saved, &quot;pre-scope curing&quot;)
+  end
+
+  B.state.saved = nil
+  B.state.mode = &quot;normal&quot;
+end
+
+function B.refresh(reason)
+  reason = tostring(reason or &quot;refresh&quot;)
+
+  local active = _scope_active()
+  if active then
+    _enter_scope(reason)
+  else
+    _leave_scope(reason)
+    return false
+  end
+
+  local hp, mp = _vitals_pct()
+  if not hp or not mp then return false end
+
+  if B.state.mode == &quot;mana_recovery&quot; then
+    if mp &gt;= (tonumber(B.cfg.leave.mp_at_or_above) or 80) then
+      _apply_profile(B.cfg.normal, &quot;normal bash curing&quot;)
+    else
+      _apply_profile(B.cfg.mana_recovery, &quot;mana recovery&quot;)
+    end
+    return true
+  end
+
+  if hp &gt;= (tonumber(B.cfg.enter.hp_at_or_above) or 85)
+     and mp &lt; (tonumber(B.cfg.enter.mp_below) or 50) then
+    _apply_profile(B.cfg.mana_recovery, &quot;mana recovery&quot;)
+  else
+    _apply_profile(B.cfg.normal, &quot;normal bash curing&quot;)
+  end
+
+  return true
+end
+
+function B.status()
+  local hp, mp = _vitals_pct()
+  _echo(string.format(
+    &quot;scope=%s mode=%s set=%s hp=%s mp=%s&quot;,
+    tostring(B.state.active_scope == true),
+    tostring(B.state.mode),
+    tostring(_active_serverset()),
+    tostring(hp or &quot;?&quot;),
+    tostring(mp or &quot;?&quot;)
+  ))
+end
+
+if B._eh.vitals then killAnonymousEventHandler(B._eh.vitals) end
+B._eh.vitals = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
+  B.refresh(&quot;gmcp:vitals&quot;)
+end)
+
+if B._eh.mode_changed then killAnonymousEventHandler(B._eh.mode_changed) end
+B._eh.mode_changed = registerAnonymousEventHandler(&quot;yso.mode.changed&quot;, function(_, _old, new, why)
+  B.refresh(&quot;mode:&quot; .. tostring(new or why or &quot;changed&quot;))
+end)
+
+if B._eh.basher_status then killAnonymousEventHandler(B._eh.basher_status) end
+B._eh.basher_status = registerAnonymousEventHandler(&quot;LegacyBasherStatus&quot;, function(_, active)
+  B.refresh(&quot;basher:&quot; .. tostring(active))
+end)
+
+B.refresh(&quot;load&quot;)
+
+return B
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
 					<name>Bootstrap</name>
 					<packageName></packageName>
 					<script>--========================================================--
@@ -22590,38 +22860,32 @@ local function _echo(color, msg)
   cecho(string.format(&quot;%s%s%s\n&quot;, O.cfg.prefix or &quot;&quot;, color or &quot;&quot;, msg or &quot;&quot;))
 end
 
-local function _send_cmd(cmd)
-  cmd = tostring(cmd or &quot;&quot;)
-  if cmd == &quot;&quot; then return false end
-  if type(send) == &quot;function&quot; then
-    send(cmd, false)
-    return true
-  end
-  if type(expandAlias) == &quot;function&quot; then
-    expandAlias(cmd)
-    return true
-  end
-  return false
-end
-
 local function _q(mode, qtype, cmd)
   mode  = tostring(mode  or &quot;addclear&quot;):lower()
   qtype = tostring(qtype or &quot;free&quot;)
   cmd   = tostring(cmd   or &quot;&quot;)
   if cmd == &quot;&quot; then return false end
-  local verb = &quot;ADDCLEAR&quot;
-  if mode == &quot;addclearfull&quot; then
-    verb = &quot;ADDCLEARFULL&quot;
-  elseif mode == &quot;add&quot; then
-    verb = &quot;ADD&quot;
-  elseif mode == &quot;prepend&quot; then
-    verb = &quot;PREPEND&quot;
-  elseif mode == &quot;insert&quot; then
-    verb = &quot;INSERT&quot;
-  elseif mode == &quot;replace&quot; then
-    verb = &quot;REPLACE&quot;
+
+  local Q = Yso and Yso.queue
+  local resolved = mode
+  local fn = Q and Q[resolved]
+
+  if type(fn) ~= &quot;function&quot; and resolved == &quot;add&quot; then
+    resolved = &quot;addclear&quot;
+    fn = Q and Q[resolved]
   end
-  _send_cmd((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, cmd))
+
+  if type(fn) ~= &quot;function&quot; then
+    _echo(O.cfg.warn_color, (&quot;Yso.queue mode &apos;%s&apos; unavailable; cannot queue orb command.&quot;):format(resolved))
+    return false
+  end
+
+  local ok, err = pcall(fn, qtype, cmd)
+  if not ok then
+    _echo(O.cfg.warn_color, (&quot;Orb queue failed: %s&quot;):format(tostring(err)))
+    return false
+  end
+
   return true
 end
 
