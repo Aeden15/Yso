@@ -14,7 +14,10 @@ return {
 
   -- Combat system
   { source = "modules/Yso/Combat/offense_driver.lua",    mirror = "modules/Yso/xml/yso_offense_coordination.lua" },
+  { source = "modules/Yso/Combat/hinder.lua",            mirror = "modules/Yso/xml/hinder.lua" },
+  { source = "modules/Yso/Combat/entities.lua",          mirror = "modules/Yso/xml/entities.lua" },
   { source = "modules/Yso/Combat/parry.lua",             mirror = "modules/Yso/xml/parry.lua" },
+  { source = "modules/Yso/Combat/route_gate.lua",        mirror = "modules/Yso/xml/route_gate.lua" },
   { source = "modules/Yso/Combat/route_interface.lua",   mirror = "modules/Yso/xml/route_interface.lua" },
   { source = "modules/Yso/Combat/route_registry.lua",    mirror = "modules/Yso/xml/route_registry.lua" },
 

@@ -681,7 +681,7 @@ end
 
 local function _record_checkpoint(cat)
   cat = tostring(cat or "")
-  if cat == "" or _is_truename_category(cat) then return end
+  if cat == "" or cat == "required_entity_maintenance" or _is_truename_category(cat) then return end
   AB.state.resume_checkpoint = cat
   AB.state.resume_checkpoint_at = _now()
 end
@@ -1484,6 +1484,15 @@ local function _chain_cmds(...)
   return table.concat(out, _command_sep())
 end
 
+local function _append_free_part(parts, cmd, offense)
+  cmd = _trim(cmd)
+  if cmd == "" then return end
+  parts[#parts + 1] = {
+    cmd = cmd,
+    offense = (offense == true),
+  }
+end
+
 local function _queue_free_recovery(cmd)
   cmd = _trim(cmd)
   if cmd == "" then return false end
@@ -1586,6 +1595,40 @@ local function _emit_payload(payload)
   return true, cmd
 end
 
+local function _route_gate_finalize(payload, ctx, tgt, required_entities)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == "function") then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = "occ_aff_burst",
+    target = tgt,
+    lane_ready = {
+      eq = _eq_ready(),
+      bal = _bal_ready(),
+      entity = _ent_ready(),
+    },
+    required_entities = required_entities or {},
+    ctx = ctx,
+  })
+end
+
+local function _record_payload_checkpoint(payload)
+  if type(payload) ~= "table" then return false end
+  local meta = type(payload.meta) == "table" and payload.meta or {}
+  local eq_cat = tostring(meta.eq_category or "")
+  local raw_eq_cat = tostring(meta.raw_eq_category or "")
+  local bal_cat = tostring(meta.bal_category or "")
+  local entity_cat = tostring(meta.entity_category or "")
+  if eq_cat == "defense_break" then
+    _record_checkpoint(raw_eq_cat)
+  else
+    _record_checkpoint(eq_cat)
+  end
+  _record_checkpoint(bal_cat)
+  _record_checkpoint(entity_cat)
+  return true
+end
+
 local function _self_gate_state()
   AB.state.self_gate = AB.state.self_gate or {
     retry_until = 0,
@@ -1598,16 +1641,6 @@ local function _self_gate_state()
   local SG = AB.state.self_gate
   local now = _now()
   local reasons = {}
-  local blockers = nil
-  if Yso and Yso.self and type(Yso.self.eq_blockers) == "function" then
-    local ok, res = pcall(Yso.self.eq_blockers)
-    if ok and type(res) == "table" then blockers = res end
-  end
-  blockers = blockers or { eq_blocked = false, reasons = {} }
-
-  for i = 1, #(blockers.reasons or {}) do
-    _push_unique(reasons, blockers.reasons[i])
-  end
   if now < tonumber(SG.not_standing_until or 0) then _push_unique(reasons, "not standing") end
   if now < tonumber(SG.arms_until or 0) then _push_unique(reasons, "arms unusable") end
   if now < tonumber(SG.bound_until or 0) then _push_unique(reasons, "bound") end
@@ -2917,9 +2950,6 @@ function AB.attack_function(arg)
   local raw_eq_cmd, raw_eq_cat, raw_eq_tag, raw_eq_lock = nil, nil, nil, nil
   local pair = nil
   if anti.active ~= true then
-    if plan.needs_mana_bury == true then
-      _record_checkpoint("mana_bury")
-    end
     gate = _truename_gate(tgt, plan)
     free_cmd, free_cat = _loyals_open_cmd(tgt)
     free_tag = free_cmd and ("ab:free:loyals:" .. _lc(tgt)) or nil
@@ -2947,10 +2977,6 @@ function AB.attack_function(arg)
     end
 
     bal_cmd, bal_cat, bal_tag, bal_lock = _bal_plan(tgt, plan)
-
-    _record_checkpoint((eq_cat == "defense_break") and raw_eq_cat or eq_cat)
-    _record_checkpoint(bal_cat)
-    _record_checkpoint(entity_cat)
   end
 
   if Yso and Yso.parry and type(Yso.parry.next_command) == "function" then
@@ -2961,7 +2987,13 @@ function AB.attack_function(arg)
     end
   end
 
-  free_cmd = _chain_cmds((legality.queue_stand == true) and "stand" or "", parry_cmd, _take_free_recovery(), free_cmd)
+  local free_recovery_cmd = _take_free_recovery()
+  local free_parts = {}
+  _append_free_part(free_parts, (legality.queue_stand == true) and "stand" or "", false)
+  _append_free_part(free_parts, parry_cmd, false)
+  _append_free_part(free_parts, free_recovery_cmd, false)
+  _append_free_part(free_parts, free_cmd, true)
+  free_cmd = _chain_cmds((legality.queue_stand == true) and "stand" or "", parry_cmd, free_recovery_cmd, free_cmd)
   if legality.queue_stand == true or _trim(parry_cmd) ~= "" then
     free_cat = free_cat or "self_legality"
   end
@@ -2975,6 +3007,13 @@ function AB.attack_function(arg)
 
   -- D. Bookkeeping.
   AB.state.last_target = tgt
+  local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
+  local required_entities = {
+    sycophant = (pair and pair.entity_aff == "sycophant")
+      or (entity_cmd == ("command sycophant at %s"):format(tgt))
+      or (plan and plan.needs_mana_bury == true and has_wm ~= true)
+      or (_has_aff(tgt, "manaleech") and has_wm ~= true and plan and plan.cleanseaura_ready ~= true),
+  }
   local unnamable = _unnamable_candidate(tgt, plan)
   local US = _unnamable_state(tgt)
   AB.state.explain = {
@@ -3003,7 +3042,7 @@ function AB.attack_function(arg)
     truename_entry_stable_pulses = gate.stable_pulses,
     truename_entry_required = gate.required,
     resume_checkpoint = AB.state.resume_checkpoint,
-    whisperingmadness = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness"),
+    whisperingmadness = has_wm,
     mental_score = _mental_score(),
     enlighten_score = _enlighten_score(),
     burst_ready = _burst_ready(tgt),
@@ -3098,7 +3137,9 @@ function AB.attack_function(arg)
     meta = {
       free_category = free_cat,
       free_tag = free_tag,
+      free_parts = (#free_parts > 0) and free_parts or nil,
       eq_category = eq_cat,
+      raw_eq_category = raw_eq_cat,
       eq_tag = eq_tag,
       eq_lockout = eq_lock,
       bal_category = bal_cat,
@@ -3110,19 +3151,36 @@ function AB.attack_function(arg)
       main_lane = main_lane,
       parry_cmd = parry_cmd,
       parry_limb = parry_limb,
+      required_entities = required_entities,
     },
   }
+  payload, _ = _route_gate_finalize(payload, ctx, tgt, required_entities)
+  local gate_state = type(payload) == "table" and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
+  AB.state.explain.planned = gate_state and gate_state.planned and gate_state.planned.lanes or AB.state.explain.planned
+  AB.state.explain.gated = gate_state and gate_state.gated and gate_state.gated.lanes or payload.lanes
+  AB.state.explain.blocked_reasons = gate_state and gate_state.blocked_reasons or {}
+  AB.state.explain.hindrance = gate_state and gate_state.hinder or {}
+  AB.state.explain.required_entities = gate_state and gate_state.entities and gate_state.entities.required or {}
+  AB.state.explain.entity_obligations = gate_state and gate_state.entities and gate_state.entities.obligations or {}
+  AB.state.explain.emitted = gate_state and gate_state.emitted or {}
+  AB.state.explain.confirmed = gate_state and gate_state.confirmed or {}
   AB.state.template.last_payload = payload
 
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == "function")
+    and Yso.route_gate.payload_for_emit(payload)
+    or payload
+  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
   if preview then
+    if planner_empty then return nil, "empty" end
     return payload
   end
-
-  local cmd = _payload_line(payload)
+  if emit_empty then return false, "empty" end
+  local cmd = _payload_line(emit_payload)
   if _trim(cmd) == "" then return false, "empty" end
   if _same_attack_is_hot(cmd) then return false, "hot_attack" end
 
-  local sent, err = _emit_payload(payload)
+  local sent, err = _emit_payload(emit_payload)
   if not sent then
     if eq_cat == "defense_break" then
       local SB = _shieldbreak_state(tgt)
@@ -3136,9 +3194,13 @@ function AB.attack_function(arg)
     return false, err
   end
 
-  _note_payload_tags(payload)
-  AB.on_sent(payload, ctx)
-  _remember_attack(cmd, payload)
+  AB.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == "function" then
+    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
+  end
+  _note_payload_tags(emit_payload)
+  AB.on_sent(emit_payload, ctx)
+  _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
 
@@ -3147,7 +3209,11 @@ function AB.build_payload(ctx)
 end
 function AB.on_sent(payload, ctx)
   AB.init()
-  AB.state.template.last_payload = payload
+  AB.state.template.last_emitted_payload = payload
+  _record_payload_checkpoint(payload)
+  if type(AB.state.explain) == "table" then
+    AB.state.explain.resume_checkpoint = AB.state.resume_checkpoint
+  end
 
   local tgt = ""
   local free_lane = nil

@@ -4161,6 +4161,7 @@ Yso.net.cfg.dry_run = false
 -- User preference: &quot;&amp;&amp;&quot; (override by setting Yso.cfg.pipe_sep before load).
 Yso.cfg.pipe_sep = Yso.cfg.pipe_sep or &quot;&amp;&amp;&quot;
 Yso.cfg.cmd_sep  = Yso.cfg.cmd_sep  or Yso.cfg.pipe_sep
+Yso.cfg.route_gate_live = (Yso.cfg.route_gate_live == true)
 Yso.sep      = Yso.sep or Yso.cfg.pipe_sep      -- used for multi-command sends
 
 
@@ -6804,6 +6805,1704 @@ return M
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
+					<name>hinder</name>
+					<packageName />
+					<script>-- DO NOT EDIT IN XML; edit this file instead.
+
+Yso = Yso or {}
+Yso.hinder = Yso.hinder or {}
+
+local H = Yso.hinder
+
+H.cfg = H.cfg or {}
+H.state = H.state or { snapshot = nil }
+
+local ALL_AFFS = {
+  &quot;paralysis&quot;,
+  &quot;clumsiness&quot;,
+  &quot;webbed&quot;,
+  &quot;entangled&quot;,
+  &quot;prone&quot;,
+  &quot;fallen&quot;,
+  &quot;sleeping&quot;,
+  &quot;transfixed&quot;,
+  &quot;impaled&quot;,
+}
+
+local EQ_BAL_AFFS = {
+  &quot;webbed&quot;,
+  &quot;entangled&quot;,
+  &quot;prone&quot;,
+  &quot;fallen&quot;,
+  &quot;sleeping&quot;,
+  &quot;transfixed&quot;,
+  &quot;impaled&quot;,
+}
+
+local function _trim(s)
+  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
+end
+
+local function _clone(value, seen)
+  if type(value) ~= &quot;table&quot; then return value end
+  seen = seen or {}
+  if seen[value] then return seen[value] end
+  local out = {}
+  seen[value] = out
+  for k, v in pairs(value) do
+    out[_clone(k, seen)] = _clone(v, seen)
+  end
+  return out
+end
+
+local function _append_unique(list, value)
+  value = _trim(value)
+  if value == &quot;&quot; then return end
+  for i = 1, #list do
+    if list[i] == value then return end
+  end
+  list[#list + 1] = value
+end
+
+local function _command_sep()
+  local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;)
+  if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
+  return sep
+end
+
+local function _join_parts(parts)
+  local cmds = {}
+  for i = 1, #(parts or {}) do
+    local cmd = _trim(parts[i] and parts[i].cmd)
+    if cmd ~= &quot;&quot; then cmds[#cmds + 1] = cmd end
+  end
+  return table.concat(cmds, _command_sep())
+end
+
+local function _free_parts(payload)
+  local meta = type(payload) == &quot;table&quot; and payload.meta or nil
+  local parts = meta and meta.free_parts or nil
+  return (type(parts) == &quot;table&quot;) and parts or nil
+end
+
+function H.collect(ctx)
+  local snapshot = {
+    at = (Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time(),
+    eq_bal_blockers = {},
+    entity_blockers = {},
+    all_offense_blocked = false,
+  }
+
+  for i = 1, #ALL_AFFS do
+    local aff = ALL_AFFS[i]
+    snapshot[aff] = (Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot;)
+      and Yso.self.has_aff(aff) == true
+      or false
+  end
+
+  if snapshot.paralysis == true then
+    snapshot.all_offense_blocked = true
+    _append_unique(snapshot.eq_bal_blockers, &quot;paralysis&quot;)
+    _append_unique(snapshot.entity_blockers, &quot;paralysis&quot;)
+  end
+  if snapshot.clumsiness == true then
+    _append_unique(snapshot.entity_blockers, &quot;clumsiness&quot;)
+  end
+  for i = 1, #EQ_BAL_AFFS do
+    local aff = EQ_BAL_AFFS[i]
+    if snapshot[aff] == true then
+      _append_unique(snapshot.eq_bal_blockers, aff)
+    end
+  end
+
+  H.state.snapshot = snapshot
+  return snapshot
+end
+
+function H.collected(ctx)
+  if type(H.state.snapshot) ~= &quot;table&quot; then
+    return H.collect(ctx)
+  end
+  return H.state.snapshot
+end
+
+function H.classify(snapshot, payload, ctx)
+  snapshot = type(snapshot) == &quot;table&quot; and snapshot or H.collected(ctx)
+  local decision = {
+    reevaluate = false,
+    all_offense_blocked = snapshot.all_offense_blocked == true,
+    blocked_lanes = { free = {}, eq = {}, bal = {}, entity = {} },
+    blocked_reasons = {},
+    offensive_free_parts = {},
+  }
+
+  local function block(lane, reason)
+    _append_unique(decision.blocked_lanes[lane], reason)
+    _append_unique(decision.blocked_reasons, reason)
+    decision.reevaluate = true
+  end
+
+  if snapshot.paralysis == true then
+    block(&quot;eq&quot;, &quot;paralysis&quot;)
+    block(&quot;bal&quot;, &quot;paralysis&quot;)
+    block(&quot;entity&quot;, &quot;paralysis&quot;)
+  end
+  if snapshot.clumsiness == true then
+    block(&quot;entity&quot;, &quot;clumsiness&quot;)
+  end
+  for i = 1, #(snapshot.eq_bal_blockers or {}) do
+    local reason = snapshot.eq_bal_blockers[i]
+    block(&quot;eq&quot;, reason)
+    block(&quot;bal&quot;, reason)
+  end
+
+  local parts = _free_parts(payload)
+  if type(parts) == &quot;table&quot; then
+    for i = 1, #parts do
+      local part = parts[i]
+      if type(part) == &quot;table&quot; and part.offense == true and _trim(part.cmd) ~= &quot;&quot; then
+        decision.offensive_free_parts[#decision.offensive_free_parts + 1] = _trim(part.cmd)
+      end
+    end
+  end
+  if snapshot.paralysis == true and #decision.offensive_free_parts &gt; 0 then
+    block(&quot;free&quot;, &quot;paralysis&quot;)
+  end
+
+  return decision
+end
+
+function H.apply(payload, decision, ctx)
+  local out = _clone(payload)
+  out.lanes = type(out.lanes) == &quot;table&quot; and out.lanes or {}
+  out.meta = type(out.meta) == &quot;table&quot; and out.meta or {}
+
+  local blocked = type(decision) == &quot;table&quot; and decision.blocked_lanes or {}
+  if type(blocked.eq) == &quot;table&quot; and #blocked.eq &gt; 0 then out.lanes.eq = nil end
+  if type(blocked.bal) == &quot;table&quot; and #blocked.bal &gt; 0 then out.lanes.bal = nil end
+  if type(blocked.entity) == &quot;table&quot; and #blocked.entity &gt; 0 then
+    out.lanes.entity = nil
+    out.lanes.class = nil
+  end
+
+  local parts = _free_parts(out)
+  if type(parts) == &quot;table&quot; and type(blocked.free) == &quot;table&quot; and #blocked.free &gt; 0 then
+    local kept = {}
+    for i = 1, #parts do
+      local part = parts[i]
+      if type(part) == &quot;table&quot; and part.offense ~= true then
+        kept[#kept + 1] = _clone(part)
+      end
+    end
+    out.meta.free_parts = kept
+    out.lanes.free = _join_parts(kept)
+    if _trim(out.lanes.free) == &quot;&quot; then
+      out.lanes.free = nil
+    end
+  end
+
+  return out
+end
+
+return H
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>entities</name>
+					<packageName />
+					<script>-- DO NOT EDIT IN XML; edit this file instead.
+
+Yso = Yso or {}
+Yso.entities = Yso.entities or {}
+
+local E = Yso.entities
+
+E.cfg = E.cfg or {
+  command_confirm_grace_s = 1.5,
+  order = { &quot;worm&quot;, &quot;sycophant&quot; },
+}
+E.state = E.state or {
+  last = nil,
+  hooks_installed = false,
+}
+
+local function _trim(s)
+  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
+end
+
+local function _lc(s)
+  return _trim(s):lower()
+end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  return os.time()
+end
+
+local function _clone(value, seen)
+  if type(value) ~= &quot;table&quot; then return value end
+  seen = seen or {}
+  if seen[value] then return seen[value] end
+  local out = {}
+  seen[value] = out
+  for k, v in pairs(value) do
+    out[_clone(k, seen)] = _clone(v, seen)
+  end
+  return out
+end
+
+local function _er()
+  return Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
+end
+
+local function _target_state(tgt)
+  local ER = _er()
+  local targets = ER and ER.state and ER.state.targets or nil
+  if type(targets) ~= &quot;table&quot; then return nil end
+  return targets[_lc(tgt)]
+end
+
+local function _entity_cmd(entity, tgt)
+  entity = _lc(entity)
+  tgt = _trim(tgt)
+  if entity == &quot;&quot; or tgt == &quot;&quot; then return nil end
+  return (&quot;command %s at %s&quot;):format(entity, tgt)
+end
+
+local function _required_map(ctx)
+  local out = {}
+  local payload = type(ctx) == &quot;table&quot; and ctx.payload or nil
+  local meta = type(payload) == &quot;table&quot; and payload.meta or nil
+  local src = (type(ctx) == &quot;table&quot; and ctx.required_entities) or (type(meta) == &quot;table&quot; and meta.required_entities) or nil
+  if type(src) ~= &quot;table&quot; then return out end
+  for name, wanted in pairs(src) do
+    out[_lc(name)] = (wanted == true)
+  end
+  return out
+end
+
+local function _entity_duration(entity)
+  local ER = _er()
+  local cfg = ER and ER.cfg or nil
+  if entity == &quot;worm&quot; then
+    return tonumber(cfg and cfg.worm_duration_s or 20) or 20
+  end
+  if entity == &quot;sycophant&quot; then
+    return tonumber(cfg and cfg.sycophant_duration_s or 30) or 30
+  end
+  return 0
+end
+
+local function _ak_enemy_matches(tgt)
+  local enemy = Yso and Yso.ak and Yso.ak.enemy or nil
+  if type(enemy) ~= &quot;table&quot; then return false end
+  local name = _lc(enemy.name or enemy.target or &quot;&quot;)
+  return name ~= &quot;&quot; and name == _lc(tgt)
+end
+
+local function _sycophant_confirm_state(tgt)
+  local last_gain = 0
+  local last_cure = 0
+  local aff_name = &quot;rixil&quot;
+  local enemy = Yso and Yso.ak and Yso.ak.enemy or nil
+  if type(enemy) == &quot;table&quot; then
+    local gains = type(enemy.last_gain) == &quot;table&quot; and enemy.last_gain or {}
+    local cures = type(enemy.last_cure) == &quot;table&quot; and enemy.last_cure or {}
+    last_gain = tonumber(gains[aff_name] or gains[_lc(aff_name)] or 0) or 0
+    last_cure = tonumber(cures[aff_name] or cures[_lc(aff_name)] or 0) or 0
+  end
+
+  local score = 0
+  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == &quot;function&quot; then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff_name)
+    if ok then score = tonumber(v or 0) or 0 end
+  end
+  local has_aff = false
+  if Yso and Yso.ak and type(Yso.ak.has) == &quot;function&quot; then
+    local ok, v = pcall(Yso.ak.has, aff_name)
+    if ok then has_aff = (v == true) end
+  end
+
+  local target_matches = _ak_enemy_matches(tgt)
+  local confirmed = target_matches and last_gain &gt; 0 and last_gain &gt;= last_cure and (has_aff or score &gt;= 100)
+  return {
+    last_confirmed_at = confirmed and last_gain or 0,
+    cured_at = target_matches and last_cure or 0,
+    active_confirmed = confirmed,
+  }
+end
+
+local function _collect_entity_state(entity, tgt, wanted)
+  local now = _now()
+  local T = _target_state(tgt)
+  local last_sent = 0
+  local last_success = 0
+  local expires_at = 0
+  local active_confirmed = false
+  local stale = false
+
+  if T and type(T.last_sent_at) == &quot;table&quot; then
+    last_sent = tonumber(T.last_sent_at[entity] or 0) or 0
+  end
+
+  if entity == &quot;worm&quot; then
+    local W = T and T.effects and T.effects.worm or nil
+    local proc_at = W and tonumber(W.last_proc_at or 0) or 0
+    last_success = math.max(
+      tonumber(T and T.last_success_at and T.last_success_at.worm or 0) or 0,
+      proc_at
+    )
+    expires_at = tonumber(W and W.until_t or 0) or 0
+    active_confirmed = last_success &gt; 0 and expires_at &gt; now
+  elseif entity == &quot;sycophant&quot; then
+    local S = T and T.effects and T.effects.sycophant or nil
+    local confirm = _sycophant_confirm_state(tgt)
+    last_success = tonumber(confirm.last_confirmed_at or 0) or 0
+    expires_at = math.max(
+      tonumber(S and S.until_t or 0) or 0,
+      (last_success &gt; 0) and (last_success + _entity_duration(entity)) or 0
+    )
+    active_confirmed = confirm.active_confirmed == true and expires_at &gt; now
+    if tonumber(confirm.cured_at or 0) &gt; last_success then
+      active_confirmed = false
+      stale = true
+    end
+  end
+
+  local grace = tonumber(E.cfg.command_confirm_grace_s or 1.5) or 1.5
+  if wanted == true then
+    if active_confirmed ~= true and last_sent &gt; 0 and (now - last_sent) &gt; grace then
+      stale = true
+    end
+    if active_confirmed == true and expires_at &lt;= now then
+      stale = true
+      active_confirmed = false
+    end
+    if active_confirmed ~= true and last_success &lt;= 0 and last_sent &lt;= 0 then
+      stale = true
+    end
+  end
+
+  return {
+    entity = entity,
+    target = _trim(tgt),
+    wanted = wanted == true,
+    active_confirmed = active_confirmed == true,
+    last_commanded_at = last_sent,
+    last_confirmed_at = last_success,
+    expires_at = expires_at,
+    stale = stale == true,
+    blocked_reason = &quot;&quot;,
+  }
+end
+
+function E.install_hooks()
+  if E.state.hooks_installed == true then return true end
+  if type(tempRegexTrigger) ~= &quot;function&quot; then return false end
+
+  E._hook_ids = E._hook_ids or {}
+  if E._hook_ids.worm_chew then pcall(killTrigger, E._hook_ids.worm_chew) end
+  E._hook_ids.worm_chew = tempRegexTrigger(
+    [[^Many somethings writhe beneath the skin of (.+), and the sickening sound of chewing can be heard\.$]],
+    function()
+      local who = matches[2] or &quot;&quot;
+      local ER = _er()
+      if who ~= &quot;&quot; and ER and type(ER.note_worm_proc) == &quot;function&quot; then
+        pcall(ER.note_worm_proc, who)
+      end
+    end
+  )
+
+  E.state.hooks_installed = true
+  return true
+end
+
+function E.collect(ctx)
+  pcall(E.install_hooks)
+  local payload = type(ctx) == &quot;table&quot; and ctx.payload or nil
+  local tgt = _trim((type(ctx) == &quot;table&quot; and ctx.target) or (type(payload) == &quot;table&quot; and payload.target) or &quot;&quot;)
+  local required = _required_map(ctx)
+  local snapshot = {
+    at = _now(),
+    target = tgt,
+    required = {},
+  }
+
+  for i = 1, #(E.cfg.order or {}) do
+    local entity = _lc(E.cfg.order[i])
+    snapshot.required[entity] = _collect_entity_state(entity, tgt, required[entity] == true)
+  end
+
+  E.state.last = snapshot
+  return snapshot
+end
+
+function E.classify(required_state, payload, ctx)
+  local out = {
+    required = {},
+    obligations = {},
+    blocked = {},
+    stale = {},
+    top = nil,
+  }
+
+  local lane_ready = not (type(ctx) == &quot;table&quot; and type(ctx.lane_ready) == &quot;table&quot;)
+    or ctx.lane_ready.entity ~= false
+  local hinder = type(ctx) == &quot;table&quot; and ctx.hinder_decision or nil
+  local hinder_block = nil
+  if type(hinder) == &quot;table&quot; and type(hinder.blocked_lanes) == &quot;table&quot;
+    and type(hinder.blocked_lanes.entity) == &quot;table&quot; and #hinder.blocked_lanes.entity &gt; 0 then
+    hinder_block = tostring(hinder.blocked_lanes.entity[1] or &quot;entity_blocked&quot;)
+  end
+
+  for i = 1, #(E.cfg.order or {}) do
+    local entity = _lc(E.cfg.order[i])
+    local row = type(required_state) == &quot;table&quot; and type(required_state.required) == &quot;table&quot; and required_state.required[entity] or nil
+    if type(row) == &quot;table&quot; then
+      local item = _clone(row)
+      out.required[entity] = item
+      if item.wanted == true and (item.active_confirmed ~= true or item.stale == true) then
+        item.reason = (item.last_confirmed_at or 0) &gt; 0 and &quot;stale&quot; or &quot;missing&quot;
+        if item.stale == true then
+          out.stale[entity] = _clone(item)
+        end
+        if hinder_block then
+          item.blocked_reason = hinder_block
+          out.blocked[entity] = _clone(item)
+        elseif lane_ready ~= true then
+          item.blocked_reason = &quot;entity_not_ready&quot;
+          out.blocked[entity] = _clone(item)
+        else
+          item.cmd = _entity_cmd(entity, item.target)
+          out.obligations[entity] = _clone(item)
+          if not out.top then
+            out.top = _clone(item)
+          end
+        end
+      end
+    end
+  end
+
+  return out
+end
+
+function E.apply(payload, obligations, ctx)
+  local out = _clone(payload)
+  out.lanes = type(out.lanes) == &quot;table&quot; and out.lanes or {}
+  out.meta = type(out.meta) == &quot;table&quot; and out.meta or {}
+
+  local top = type(obligations) == &quot;table&quot; and obligations.top or nil
+  if type(top) == &quot;table&quot; and _trim(top.cmd) ~= &quot;&quot; then
+    out.meta.original_entity_lane = out.lanes.entity or out.lanes.class
+    out.meta.original_entity_category = out.meta.entity_category
+    out.lanes.entity = top.cmd
+    out.lanes.class = top.cmd
+    out.meta.entity_category = &quot;required_entity_maintenance&quot;
+    out.meta.required_entity = top.entity
+  end
+
+  return out
+end
+
+return E
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>route_gate</name>
+					<packageName />
+					<script>-- DO NOT EDIT IN XML; edit this file instead.
+
+Yso = Yso or {}
+Yso.route_gate = Yso.route_gate or {}
+
+local RG = Yso.route_gate
+
+RG.state = RG.state or { last = nil }
+
+local function _trim(s)
+  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
+end
+
+local function _clone(value, seen)
+  if type(value) ~= &quot;table&quot; then return value end
+  seen = seen or {}
+  if seen[value] then return seen[value] end
+  local out = {}
+  seen[value] = out
+  for k, v in pairs(value) do
+    out[_clone(k, seen)] = _clone(v, seen)
+  end
+  return out
+end
+
+local function _command_sep()
+  local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;)
+  if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
+  return sep
+end
+
+local function _payload_line(payload)
+  local lanes = type(payload) == &quot;table&quot; and payload.lanes or nil
+  if type(lanes) ~= &quot;table&quot; then return &quot;&quot; end
+  local cmds = {}
+  for _, lane in ipairs({ &quot;free&quot;, &quot;eq&quot;, &quot;bal&quot; }) do
+    local cmd = _trim(lanes[lane])
+    if cmd ~= &quot;&quot; then cmds[#cmds + 1] = cmd end
+  end
+  local entity_cmd = _trim(lanes.entity or lanes.class or lanes.ent)
+  if entity_cmd ~= &quot;&quot; then cmds[#cmds + 1] = entity_cmd end
+  return table.concat(cmds, _command_sep())
+end
+
+local function _payload_snapshot(payload)
+  local lanes = type(payload) == &quot;table&quot; and payload.lanes or {}
+  local meta = type(payload) == &quot;table&quot; and payload.meta or {}
+  return {
+    route = type(payload) == &quot;table&quot; and payload.route or &quot;&quot;,
+    target = type(payload) == &quot;table&quot; and payload.target or &quot;&quot;,
+    lanes = {
+      free = lanes.free,
+      eq = lanes.eq,
+      bal = lanes.bal,
+      entity = lanes.entity or lanes.class or lanes.ent,
+    },
+    categories = {
+      free = meta.free_category,
+      eq = meta.eq_category,
+      bal = meta.bal_category,
+      entity = meta.entity_category,
+    },
+    required_entities = _clone(meta.required_entities or {}),
+    main_lane = meta.main_lane,
+    line = _payload_line(payload),
+  }
+end
+
+local function _normalize_payload(payload)
+  local out = _clone(payload)
+  out.lanes = type(out.lanes) == &quot;table&quot; and out.lanes or {}
+  out.meta = type(out.meta) == &quot;table&quot; and out.meta or {}
+  if out.lanes.pre ~= nil and out.lanes.free == nil then
+    out.lanes.free = out.lanes.pre
+  end
+  if out.lanes.entity == nil then
+    out.lanes.entity = out.lanes.class or out.lanes.ent
+  end
+  out.lanes.class = out.lanes.entity
+  return out
+end
+
+local function _clone_for_emit(payload)
+  local out = _normalize_payload(payload)
+  out._planned_payload = nil
+  out._route_gate = nil
+  if type(out.meta) == &quot;table&quot; then
+    out.meta.route_gate = nil
+  end
+  return out
+end
+
+local function _blocked_reasons(hinder, entities)
+  local out = {}
+  local function add(reason)
+    reason = _trim(reason)
+    if reason == &quot;&quot; then return end
+    for i = 1, #out do
+      if out[i] == reason then return end
+    end
+    out[#out + 1] = reason
+  end
+
+  if type(hinder) == &quot;table&quot; then
+    for i = 1, #(hinder.blocked_reasons or {}) do
+      add(hinder.blocked_reasons[i])
+    end
+  end
+  if type(entities) == &quot;table&quot; and type(entities.blocked) == &quot;table&quot; then
+    for _, row in pairs(entities.blocked) do
+      if type(row) == &quot;table&quot; then add(row.blocked_reason) end
+    end
+  end
+  return out
+end
+
+function RG.finalize(payload, ctx)
+  local planned = _normalize_payload(payload)
+  ctx = _clone(ctx or {})
+  ctx.payload = planned
+
+  local hinder_snapshot = Yso.hinder and Yso.hinder.collect and Yso.hinder.collect(ctx) or {}
+  local hinder_decision = Yso.hinder and Yso.hinder.classify and Yso.hinder.classify(hinder_snapshot, planned, ctx) or {}
+  ctx.hinder_decision = hinder_decision
+
+  local entity_state = Yso.entities and Yso.entities.collect and Yso.entities.collect(ctx) or {}
+  local entity_obligations = Yso.entities and Yso.entities.classify and Yso.entities.classify(entity_state, planned, ctx) or {}
+  local with_entities = Yso.entities and Yso.entities.apply and Yso.entities.apply(planned, entity_obligations, ctx) or planned
+  local gated = Yso.hinder and Yso.hinder.apply and Yso.hinder.apply(with_entities, hinder_decision, ctx) or with_entities
+  gated = _normalize_payload(gated)
+
+  local ledger = {
+    planned = _payload_snapshot(planned),
+    gated = _payload_snapshot(gated),
+    blocked_reasons = _blocked_reasons(hinder_decision, entity_obligations),
+    hinder = {
+      snapshot = _clone(hinder_snapshot),
+      decision = _clone(hinder_decision),
+    },
+    entities = {
+      required = _clone(entity_state.required or {}),
+      obligations = _clone(entity_obligations),
+    },
+    emitted = {
+      at = 0,
+      lanes = {},
+      line = &quot;&quot;,
+    },
+    confirmed = {
+      at = 0,
+      lanes = {},
+    },
+  }
+
+  gated.meta = gated.meta or {}
+  gated.meta.route_gate = ledger
+  gated._planned_payload = planned
+  gated._route_gate = ledger
+  RG.state.last = ledger
+  return gated, ledger
+end
+
+function RG.payload_for_emit(payload)
+  if type(payload) ~= &quot;table&quot; then return payload end
+  if Yso and Yso.cfg and Yso.cfg.route_gate_live == true then
+    return _clone_for_emit(payload)
+  end
+  if type(payload._planned_payload) == &quot;table&quot; then
+    return _clone_for_emit(payload._planned_payload)
+  end
+  return _clone_for_emit(payload)
+end
+
+function RG.note_emitted(payload, emitted_payload, ctx)
+  local ledger = type(payload) == &quot;table&quot; and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
+  if type(ledger) ~= &quot;table&quot; then return nil end
+  local snap = _payload_snapshot(_normalize_payload(emitted_payload))
+  ledger.emitted = type(ledger.emitted) == &quot;table&quot; and ledger.emitted or {}
+  ledger.emitted.at = (Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time()
+  ledger.emitted.lanes = snap.lanes
+  ledger.emitted.line = snap.line
+  return ledger
+end
+
+function RG.note_confirmed(payload, confirmed)
+  local ledger = type(payload) == &quot;table&quot; and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
+  if type(ledger) ~= &quot;table&quot; then return nil end
+  ledger.confirmed = type(ledger.confirmed) == &quot;table&quot; and ledger.confirmed or {}
+  ledger.confirmed.at = (Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time()
+  ledger.confirmed.lanes = _clone(confirmed or {})
+  return ledger
+end
+
+return RG
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>party_aff</name>
+					<packageName />
+					<script>--========================================================--
+-- party_aff.lua  (Achaea / Occultist / Yso)
+--  Party/group affliction pressure route for Occultist.
+--
+--  Strategy:
+--    Build kelp-line afflictions (asthma, clumsiness, sensitivity,
+--    healthleech) and layer mental pressure (whisperingmadness, attend)
+--    to support team kills.
+--
+--  Lanes:
+--    EQ  = instill / attend / enervate / cleanseaura / shieldbreak
+--    BAL = ruinate (manaleech / lovers / moon) / fling support
+--    ENT = entity commands (bubonis, storm, worm, slime, sycophant, chimera)
+--    FREE= loyals open / doppleganger coordination
+--
+--  Alias-controlled: the shared route-loop controller owns timer scheduling.
+--  This route provides payload planning, emit helpers, and lifecycle hooks.
+--========================================================--
+
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+
+Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
+local PA = Yso.off.oc.party_aff
+PA.alias_owned = true
+
+PA.route_contract = PA.route_contract or {
+  id = &quot;party_aff&quot;,
+  interface_version = 1,
+  shared_categories = { &quot;defense_break&quot;, &quot;anti_tumble&quot; },
+  route_local_categories = {
+    &quot;kelp_pressure&quot;,
+    &quot;mental_pressure&quot;,
+    &quot;mana_drain&quot;,
+    &quot;entity_support&quot;,
+    &quot;team_coordination&quot;,
+  },
+  capabilities = {
+    uses_eq = true,
+    uses_bal = true,
+    uses_entity = true,
+    supports_burst = false,
+    supports_bootstrap = true,
+    needs_target = true,
+    shares_defense_break = true,
+    shares_anti_tumble = true,
+  },
+  override_policy = {
+    mode = &quot;narrow_global_only&quot;,
+    allowed = {
+      reserved_burst       = true,
+      target_invalid       = true,
+      target_slain         = true,
+      route_off            = true,
+      pause                = true,
+      manual_suppression   = true,
+      target_swap_bootstrap= true,
+      defense_break        = true,
+      anti_tumble          = true,
+    },
+  },
+  lifecycle = {
+    on_enter          = true,
+    on_exit           = true,
+    on_target_swap    = true,
+    on_pause          = true,
+    on_resume         = true,
+    on_manual_success = true,
+    on_send_result    = true,
+    evaluate          = true,
+    explain           = true,
+  },
+}
+
+PA.cfg = PA.cfg or {
+  enabled = false,
+  echo = true,
+  loop_delay = 0.15,
+
+  kelp_target_count = 3,
+  mental_target = 3,
+  asthma_stable_count = 2,
+
+  attend_aff_floor = 3,
+  shieldbreak_lockout_s = 1.0,
+  attend_lockout_s = 2.3,
+  instill_lockout_s = 2.5,
+  enervate_lockout_s = 4.0,
+
+  loyals_on_cmd = &quot;order entourage kill %s&quot;,
+}
+
+local function _offense_state()
+  return Yso and Yso.off and Yso.off.state or nil
+end
+
+PA.state = PA.state or {
+  enabled = false,
+  loop_enabled = false,
+  timer_id = nil,
+  busy = false,
+  waiting = { queue = nil, main_lane = nil, lanes = nil, at = 0 },
+  last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil },
+  template = { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; },
+  last_target = &quot;&quot;,
+  loyals_sent_for = &quot;&quot;,
+  explain = {},
+}
+
+local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
+local function _lc(s) return _trim(s):lower() end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local v = tonumber(getEpoch()) or os.time()
+    if v &gt; 20000000000 then v = v / 1000 end
+    return v
+  end
+  return os.time()
+end
+
+local function _target()
+  if type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= &quot;&quot; then return _trim(v) end
+  end
+  local cur = rawget(_G, &quot;target&quot;)
+  if type(cur) == &quot;string&quot; and _trim(cur) ~= &quot;&quot; then return _trim(cur) end
+  local ak = rawget(_G, &quot;ak&quot;)
+  if type(ak) == &quot;table&quot; then
+    if type(ak.target) == &quot;string&quot; and _trim(ak.target) ~= &quot;&quot; then return _trim(ak.target) end
+    if type(ak.tgt) == &quot;string&quot; and _trim(ak.tgt) ~= &quot;&quot; then return _trim(ak.tgt) end
+  end
+  return &quot;&quot;
+end
+
+local function _eq_ready()
+  if Yso and Yso.locks and type(Yso.locks.eq_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.locks.eq_ready)
+    if ok then return v == true end
+  end
+  if Yso and Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then return v == true end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.eq or v.equilibrium or &quot;&quot;) == &quot;1&quot; or (v.eq == true or v.equilibrium == true)
+end
+
+local function _bal_ready()
+  if Yso and Yso.locks and type(Yso.locks.bal_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.locks.bal_ready)
+    if ok then return v == true end
+  end
+  if Yso and Yso.state and type(Yso.state.bal_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.bal_ready)
+    if ok then return v == true end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.bal or v.balance or &quot;&quot;) == &quot;1&quot; or (v.bal == true or v.balance == true)
+end
+
+local function _ent_ready()
+  if Yso and Yso.locks and type(Yso.locks.ent_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.locks.ent_ready)
+    if ok then return v == true end
+  end
+  if Yso and Yso.state and type(Yso.state.ent_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.ent_ready)
+    if ok then return v == true end
+  end
+  return true
+end
+
+local function _aff_score(tgt, aff)
+  aff = tostring(aff or &quot;&quot;)
+  if aff == &quot;&quot; then return 0 end
+  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == &quot;function&quot; then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local A = rawget(_G, &quot;affstrack&quot;)
+  if type(A) == &quot;table&quot; then
+    if type(A.score) == &quot;table&quot; and tonumber(A.score[aff]) then return tonumber(A.score[aff]) end
+    local row = A[aff]
+    if type(row) == &quot;table&quot; and tonumber(row.score) then return tonumber(row.score) end
+  end
+  if tgt ~= &quot;&quot; and Yso and Yso.tgt and type(Yso.tgt.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
+    if ok and v == true then return 100 end
+  end
+  return 0
+end
+
+local function _has_aff(tgt, aff) return _aff_score(tgt, aff) &gt;= 100 end
+
+local function _mental_score()
+  if Yso and Yso.oc and Yso.oc.ak and Yso.oc.ak.scores and type(Yso.oc.ak.scores.mental) == &quot;function&quot; then
+    local ok, v = pcall(Yso.oc.ak.scores.mental)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local A = rawget(_G, &quot;affstrack&quot;)
+  return (type(A) == &quot;table&quot; and tonumber(A.mentalscore)) or 0
+end
+
+local function _focus_lock_count(tgt)
+  local list = { &quot;asthma&quot;, &quot;haemophilia&quot;, &quot;addiction&quot;, &quot;clumsiness&quot;, &quot;healthleech&quot;, &quot;weariness&quot;, &quot;sensitivity&quot; }
+  local n = 0
+  for i = 1, #list do
+    if _has_aff(tgt, list[i]) then n = n + 1 end
+  end
+  return n
+end
+
+local function _lock_stable(tgt)
+  local need = tonumber(PA.cfg.lock_stable_count or 3) or 3
+  return _focus_lock_count(tgt) &gt;= need
+end
+
+local function _recent_sent(tag, within_s)
+  local S = _offense_state()
+  if not (S and type(S.recent) == &quot;function&quot;) then return false end
+  return S.recent(tag, within_s)
+end
+
+local function _tgt_valid(tgt)
+  tgt = _trim(tgt)
+  if tgt == &quot;&quot; then return false end
+  if type(Yso.target_is_valid) == &quot;function&quot; then
+    local ok, v = pcall(Yso.target_is_valid, tgt)
+    if ok then return v == true end
+  end
+  return true
+end
+
+local function _shield_is_up(tgt)
+  local ak = rawget(_G, &quot;ak&quot;)
+  if type(ak) == &quot;table&quot; then
+    if type(ak.shield) == &quot;function&quot; then
+      local ok, v = pcall(ak.shield, tgt)
+      if ok then
+        if type(v) == &quot;boolean&quot; then return v end
+        if tonumber(v) ~= nil then return tonumber(v) ~= 0 end
+      end
+    end
+    local defs = ak.defs
+    if type(defs) == &quot;table&quot; then
+      local s = defs.shield
+      if type(s) == &quot;boolean&quot; then return s end
+    end
+  end
+  if Yso and Yso.shield and type(Yso.shield.is_up) == &quot;function&quot; then
+    local ok, v = pcall(Yso.shield.is_up, tgt)
+    if ok and v == true then return true end
+  end
+  return false
+end
+
+local function _entity_refresh_state(tgt)
+  local ER = Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
+  local out = { registry = ER, worm_refresh = true, syc_refresh = true }
+  if ER and type(ER.worm_should_refresh) == &quot;function&quot; then
+    local ok, v = pcall(ER.worm_should_refresh, tgt)
+    if ok then out.worm_refresh = (v == true) end
+  end
+  if ER and type(ER.syc_should_refresh) == &quot;function&quot; then
+    local ok, v = pcall(ER.syc_should_refresh, tgt)
+    if ok then out.syc_refresh = (v == true) end
+  end
+  return out
+end
+
+local function _first_missing_lock_aff(tgt)
+  local order = { &quot;asthma&quot;, &quot;haemophilia&quot;, &quot;addiction&quot;, &quot;clumsiness&quot;, &quot;healthleech&quot;, &quot;weariness&quot;, &quot;sensitivity&quot; }
+  for i = 1, #order do
+    if not _has_aff(tgt, order[i]) then return order[i] end
+  end
+  return nil
+end
+
+local function _entity_cmd_for_aff(aff, tgt)
+  aff = tostring(aff or &quot;&quot;)
+  local Off = Yso and Yso.off and Yso.off.oc or nil
+  if Off and type(Off.sg_entity_cmd_for_aff) == &quot;function&quot; then
+    local ok, cmd = pcall(Off.sg_entity_cmd_for_aff, aff, tgt)
+    cmd = _trim(ok and cmd or &quot;&quot;)
+    if cmd ~= &quot;&quot; then return cmd end
+  end
+  if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == &quot;function&quot; then
+    local cmd = Yso.ent_cmd_for_aff(aff, tgt, _has_aff)
+    if cmd then return cmd end
+  end
+  if aff == &quot;asthma&quot; then return (&quot;command bubonis at %s&quot;):format(tgt) end
+  if aff == &quot;clumsiness&quot; then return (&quot;command storm at %s&quot;):format(tgt) end
+  if aff == &quot;healthleech&quot; then return (&quot;command worm at %s&quot;):format(tgt) end
+  return nil
+end
+
+local function _party_aff_context_active()
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= &quot;table&quot; then return true end
+  if type(M.is_party) == &quot;function&quot; then
+    local ok, v = pcall(M.is_party)
+    if ok then if v ~= true then return false end end
+  else
+    if _lc(M.state or &quot;&quot;) ~= &quot;party&quot; then return false end
+  end
+  local route = &quot;&quot;
+  if type(M.party_route) == &quot;function&quot; then
+    local ok, v = pcall(M.party_route)
+    if ok then route = _lc(v or &quot;&quot;) end
+  elseif M.party then
+    route = _lc(M.party.route or &quot;&quot;)
+  end
+  return route == &quot;&quot; or route == &quot;aff&quot;
+end
+
+local function _route_is_active()
+  if not _party_aff_context_active() then return false end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
+    return Yso.mode.route_loop_active(&quot;party_aff&quot;) == true
+  end
+  return PA.state and PA.state.loop_enabled == true
+end
+
+local function _automation_allowed()
+  return _route_is_active()
+end
+
+local function _echo(msg)
+  if PA.cfg.echo and type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;dark_orchid&gt;[Occultism] &lt;reset&gt;%s\n&quot;, tostring(msg)))
+  end
+end
+
+local function _command_sep()
+  local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;)
+  if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
+  return sep
+end
+
+local function _safe_send(cmd)
+  cmd = _trim(cmd)
+  if cmd == &quot;&quot; or type(send) ~= &quot;function&quot; then return false, &quot;send_unavailable&quot; end
+  local ok, err = pcall(send, cmd, false)
+  if not ok then return false, err end
+  return true
+end
+
+local _payload_line
+
+local function _waiting_lanes_from_payload(payload)
+  local lanes = {}
+  local seen = {}
+  local lane_tbl = type(payload) == &quot;table&quot; and payload.lanes or payload
+
+  local function add(name, cmd)
+    name = _lc(name)
+    if name == &quot;entity&quot; then name = &quot;class&quot; end
+    if name == &quot;&quot; or name == &quot;free&quot; or seen[name] then return end
+    if _trim(cmd) == &quot;&quot; then return end
+    seen[name] = true
+    lanes[#lanes + 1] = name
+  end
+
+  if type(lane_tbl) == &quot;table&quot; then
+    add(&quot;eq&quot;, lane_tbl.eq)
+    add(&quot;bal&quot;, lane_tbl.bal)
+    add(&quot;class&quot;, lane_tbl.class or lane_tbl.ent or lane_tbl.entity)
+  end
+  if #lanes == 0 and type(payload) == &quot;table&quot; and type(payload.meta) == &quot;table&quot; then
+    add(payload.meta.main_lane, &quot;__fallback__&quot;)
+  end
+
+  return lanes
+end
+
+local function _lane_ready(lane)
+  lane = _lc(lane)
+  if lane == &quot;eq&quot; then return _eq_ready() end
+  if lane == &quot;bal&quot; then return _bal_ready() end
+  if lane == &quot;entity&quot; or lane == &quot;class&quot; then return _ent_ready() end
+  return true
+end
+
+local function _emit_payload(payload)
+  local lane_tbl = type(payload) == &quot;table&quot; and payload.lanes or payload
+  if type(lane_tbl) ~= &quot;table&quot; then return false, &quot;invalid_payload&quot; end
+
+  local emit_payload = {
+    free = lane_tbl.free or lane_tbl.pre,
+    eq = lane_tbl.eq,
+    bal = lane_tbl.bal,
+    class = lane_tbl.class or lane_tbl.ent or lane_tbl.entity,
+  }
+  local cmd = _payload_line({ lanes = emit_payload })
+  if _trim(cmd) == &quot;&quot; then return false, &quot;empty&quot; end
+
+  local Q = Yso and Yso.queue or nil
+  local used_queue = false
+  if Q and type(Q.emit) == &quot;function&quot; then
+    local ok, res = pcall(Q.emit, emit_payload)
+    if not ok then return false, res end
+    if res ~= true then return false, &quot;queue_emit_failed&quot; end
+    used_queue = true
+  else
+    local sent, err = _safe_send(cmd)
+    if not sent then return false, err end
+  end
+
+  if Yso and Yso.locks and type(Yso.locks.note_send) == &quot;function&quot; then
+    if _trim(emit_payload.eq) ~= &quot;&quot; then pcall(Yso.locks.note_send, &quot;eq&quot;) end
+    if _trim(emit_payload.bal) ~= &quot;&quot; then pcall(Yso.locks.note_send, &quot;bal&quot;) end
+    if not used_queue and _trim(emit_payload.class) ~= &quot;&quot; then
+      pcall(Yso.locks.note_send, &quot;class&quot;)
+    end
+  end
+  if not used_queue and _trim(emit_payload.class) ~= &quot;&quot; and Yso and Yso.state and type(Yso.state.set_ent_ready) == &quot;function&quot; then
+    pcall(Yso.state.set_ent_ready, false, &quot;party_aff:fallback_emit&quot;)
+  end
+
+  return true, cmd
+end
+
+local function _set_loop_enabled(on)
+  local enabled = (on == true)
+  PA.state.enabled = enabled
+  PA.state.loop_enabled = enabled
+  PA.state.loop_delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
+  PA.state.waiting = PA.state.waiting or { queue = nil, main_lane = nil, lanes = nil, at = 0 }
+  PA.state.last_attack = PA.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil }
+  return enabled
+end
+
+local function _clear_waiting()
+  PA.state.waiting = PA.state.waiting or {}
+  PA.state.waiting.queue = nil
+  PA.state.waiting.main_lane = nil
+  PA.state.waiting.lanes = nil
+  PA.state.waiting.at = 0
+end
+
+local function _kill_loop_timer()
+  if PA.state and PA.state.timer_id then
+    pcall(killTimer, PA.state.timer_id)
+    PA.state.timer_id = nil
+  end
+end
+
+local function _eq_lane_score(cat)
+  cat = tostring(cat or &quot;&quot;)
+  if cat == &quot;defense_break&quot; then return 122 end
+  if cat == &quot;mental_pressure&quot; then return 40 end
+  if cat == &quot;mana_drain&quot; then return 38 end
+  return 36
+end
+
+local function _bal_lane_score(cat)
+  cat = tostring(cat or &quot;&quot;)
+  if cat == &quot;mental_pressure&quot; then return 22 end
+  return 16
+end
+
+local function _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
+  local pick_eq = { lane = &quot;eq&quot;, cmd = eq_cmd, category = eq_cat, score = _eq_lane_score(eq_cat) }
+  local pick_bal = { lane = &quot;bal&quot;, cmd = bal_cmd, category = bal_cat, score = _bal_lane_score(bal_cat) }
+  if _trim(eq_cmd) == &quot;&quot; and _trim(bal_cmd) == &quot;&quot; then
+    return { lane = &quot;&quot;, cmd = nil, category = nil, score = 0, alt = nil }
+  end
+  if _trim(eq_cmd) == &quot;&quot; then
+    return { lane = pick_bal.lane, cmd = pick_bal.cmd, category = pick_bal.category, score = pick_bal.score, alt = nil }
+  end
+  if _trim(bal_cmd) == &quot;&quot; then
+    return { lane = pick_eq.lane, cmd = pick_eq.cmd, category = pick_eq.category, score = pick_eq.score, alt = nil }
+  end
+  if pick_bal.score &gt; pick_eq.score then
+    pick_bal.alt = pick_eq
+    return pick_bal
+  end
+  pick_eq.alt = pick_bal
+  return pick_eq
+end
+
+_payload_line = function(payload)
+  if type(payload) ~= &quot;table&quot; or type(payload.lanes) ~= &quot;table&quot; then return &quot;&quot; end
+  local lanes = payload.lanes
+  local cmds = {}
+  if _trim(lanes.free) ~= &quot;&quot; then cmds[#cmds + 1] = _trim(lanes.free) end
+  if _trim(lanes.eq) ~= &quot;&quot; then cmds[#cmds + 1] = _trim(lanes.eq) end
+  if _trim(lanes.bal) ~= &quot;&quot; then cmds[#cmds + 1] = _trim(lanes.bal) end
+  local entity_cmd = _trim(lanes.entity or lanes.class)
+  if entity_cmd ~= &quot;&quot; then cmds[#cmds + 1] = entity_cmd end
+  return table.concat(cmds, _command_sep())
+end
+
+local function _route_gate_finalize(payload, ctx, tgt)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == &quot;function&quot;) then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = &quot;party_aff&quot;,
+    target = tgt,
+    lane_ready = {
+      eq = _eq_ready(),
+      bal = _bal_ready(),
+      entity = _ent_ready(),
+    },
+    required_entities = {
+      sycophant = _has_aff(tgt, &quot;manaleech&quot;) == true,
+    },
+    ctx = ctx,
+  })
+end
+
+local function _remember_attack(cmd, payload)
+  local meta = type(payload) == &quot;table&quot; and (payload.meta or {}) or {}
+  local main_lane = _lc(meta.main_lane or &quot;&quot;)
+  local lanes = _waiting_lanes_from_payload(payload)
+  PA.state.last_attack = PA.state.last_attack or {}
+  PA.state.last_attack.cmd = _trim(cmd)
+  PA.state.last_attack.at = _now()
+  PA.state.last_attack.target = _trim(type(payload) == &quot;table&quot; and payload.target or &quot;&quot;)
+  PA.state.last_attack.main_lane = main_lane
+  PA.state.last_attack.lanes = lanes
+  PA.state.waiting = PA.state.waiting or {}
+  PA.state.waiting.queue = PA.state.last_attack.cmd
+  PA.state.waiting.main_lane = main_lane
+  PA.state.waiting.lanes = lanes
+  PA.state.waiting.at = PA.state.last_attack.at
+end
+
+local function _waiting_blocks_tick()
+  local wait = PA.state.waiting or {}
+  local queued = _trim(wait.queue)
+  if queued == &quot;&quot; then return false end
+  if (_now() - (tonumber(wait.at) or 0)) &gt;= 3.0 then
+    _clear_waiting()
+    return false
+  end
+  local lanes = wait.lanes
+  if type(lanes) == &quot;table&quot; and #lanes &gt; 0 then
+    for i = 1, #lanes do
+      if not _lane_ready(lanes[i]) then
+        return true
+      end
+    end
+    _clear_waiting()
+    return false
+  end
+  local lane = _lc(wait.main_lane or &quot;&quot;)
+  if lane == &quot;eq&quot; then
+    if _eq_ready() then _clear_waiting(); return false end
+    return true
+  end
+  if lane == &quot;bal&quot; then
+    if _bal_ready() then _clear_waiting(); return false end
+    return true
+  end
+  if lane == &quot;entity&quot; or lane == &quot;class&quot; then
+    if _ent_ready() then _clear_waiting(); return false end
+    return true
+  end
+  _clear_waiting()
+  return false
+end
+
+local function _same_attack_is_hot(cmd)
+  cmd = _trim(cmd)
+  if cmd == &quot;&quot; then return false end
+  local last = PA.state.last_attack or {}
+  if _trim(last.cmd) ~= cmd then return false end
+  local hot_window = math.max(0.20, (tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15) + 0.05)
+  return (_now() - (tonumber(last.at) or 0)) &lt; hot_window
+end
+
+local function _plan_eq(tgt)
+  if not _eq_ready() then return nil, nil, nil, nil end
+
+  local tag_prefix = &quot;pa:eq:&quot;
+  local tkey = _lc(tgt)
+
+  if _shield_is_up(tgt) then
+    local tag = tag_prefix .. &quot;shieldbreak:&quot; .. tkey
+    local lock = tonumber(PA.cfg.shieldbreak_lockout_s or 1.0)
+    if not _recent_sent(tag, lock) then
+      local cmd = (&quot;command gremlin at %s&quot;):format(tgt)
+      if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == &quot;function&quot; then
+        local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
+        local c = _trim(ok and v or &quot;&quot;)
+        if c ~= &quot;&quot; then cmd = c end
+      end
+      return cmd, &quot;defense_break&quot;, tag, lock
+    end
+  end
+
+  local lock_count = _focus_lock_count(tgt)
+  local stable = _lock_stable(tgt)
+
+  if stable and _has_aff(tgt, &quot;manaleech&quot;) then
+    local snap = nil
+    if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == &quot;function&quot; then
+      local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
+      if ok then snap = s end
+    end
+    local needs_readaura = not snap or not snap.fresh or not snap.read_complete
+    if needs_readaura and Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot; then
+      local ok, ready = pcall(Yso.occ.readaura_is_ready)
+      if ok and ready == true then
+        local tag = tag_prefix .. &quot;readaura:&quot; .. tkey
+        if not _recent_sent(tag, 8) then
+          return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, 1.0
+        end
+      end
+    end
+  end
+
+  if lock_count &gt;= tonumber(PA.cfg.attend_aff_floor or 3) then
+    local tag = tag_prefix .. &quot;attend:&quot; .. tkey
+    local lock = tonumber(PA.cfg.attend_lockout_s or 2.3)
+    if not _recent_sent(tag, lock) then
+      return (&quot;attend %s&quot;):format(tgt), &quot;mental_pressure&quot;, tag, lock
+    end
+  end
+
+  if not _has_aff(tgt, &quot;manaleech&quot;) and _lock_stable(tgt) then
+    local tag = tag_prefix .. &quot;enervate:&quot; .. tkey
+    local lock = tonumber(PA.cfg.enervate_lockout_s or 4.0)
+    if not _recent_sent(tag, lock) then
+      return (&quot;enervate %s&quot;):format(tgt), &quot;mana_drain&quot;, tag, lock
+    end
+  end
+
+  local missing = _first_missing_lock_aff(tgt)
+  if missing then
+    local tag = tag_prefix .. &quot;instill:&quot; .. tkey .. &quot;:&quot; .. missing
+    local lock = tonumber(PA.cfg.instill_lockout_s or 2.5)
+    if not _recent_sent(tag, lock) then
+      return (&quot;instill %s with %s&quot;):format(tgt, missing), &quot;lock_pressure&quot;, tag, lock
+    end
+  end
+
+  return nil, nil, nil, nil
+end
+
+local function _plan_bal(tgt)
+  if not _bal_ready() then return nil, nil end
+
+  if not _lock_stable(tgt) then return nil, nil end
+
+  if not _has_aff(tgt, &quot;manaleech&quot;) then
+    return (&quot;ruinate lovers at %s&quot;):format(tgt), &quot;mana_drain&quot;
+  end
+
+  if _mental_score() &lt; tonumber(PA.cfg.mental_target or 3) then
+    return (&quot;outd moon&amp;&amp;fling moon at %s&quot;):format(tgt), &quot;mental_pressure&quot;
+  end
+
+  return nil, nil
+end
+
+local function _plan_entity(tgt)
+  if not _ent_ready() then return nil, nil end
+
+  local ES = _entity_refresh_state(tgt)
+  local ER = ES.registry
+  if ER and type(ER.target_swap) == &quot;function&quot; then pcall(ER.target_swap, tgt) end
+
+  local missing = _first_missing_lock_aff(tgt)
+  if missing then
+    local cmd = _entity_cmd_for_aff(missing, tgt)
+    if cmd then return cmd, &quot;lock_pressure&quot; end
+  end
+
+  if _has_aff(tgt, &quot;manaleech&quot;) and ES.syc_refresh then
+    return (&quot;command sycophant at %s&quot;):format(tgt), &quot;mana_drain&quot;
+  end
+
+  local ER2 = Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
+  if ER2 and type(ER2.pick) == &quot;function&quot; then
+    local ctx = {
+      route = &quot;party_aff&quot;,
+      target = tgt,
+      target_valid = _tgt_valid(tgt),
+      ent_ready = true,
+      eq_ready = _eq_ready(),
+      bal_ready = _bal_ready(),
+      has_aff = function(a) return _has_aff(tgt, a) end,
+      category = &quot;entity_support&quot;,
+      need = {},
+    }
+    local ok, cand = pcall(ER2.pick, ctx)
+    if ok and type(cand) == &quot;table&quot; and cand.cmd then
+      return cand.cmd, cand.category or &quot;entity_support&quot;
+    end
+  end
+
+  return nil, nil
+end
+
+local function _plan_free(tgt)
+  if _lc(PA.state.loyals_sent_for or &quot;&quot;) == _lc(tgt) then return nil, nil end
+  local cmd = (tostring(PA.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
+  return cmd, &quot;team_coordination&quot;
+end
+
+function PA.schedule_loop(delay)
+  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == &quot;function&quot; then
+    return Yso.mode.schedule_route_loop(&quot;party_aff&quot;, delay)
+  end
+  return false
+end
+
+PA.alias_loop_stop_details = PA.alias_loop_stop_details or {
+  inactive = true,
+  disabled = true,
+  policy = true,
+}
+
+function PA.alias_loop_prepare_start(ctx)
+  PA.init()
+  return ctx or {}
+end
+
+function PA.alias_loop_on_started(ctx)
+  PA.state.busy = false
+  _clear_waiting()
+  _echo(&quot;Party aff loop ON.&quot;)
+  local tgt = _target()
+  if tgt == &quot;&quot; then
+    _echo(&quot;No target yet; holding.&quot;)
+  elseif not _tgt_valid(tgt) then
+    _echo(string.format(&quot;%s is not in room; holding.&quot;, tgt))
+  end
+end
+
+function PA.alias_loop_on_stopped(ctx)
+  PA.init()
+  ctx = ctx or {}
+  local reason = tostring(ctx.reason or &quot;manual&quot;)
+  if ctx.silent ~= true then
+    _echo(string.format(&quot;Party aff loop OFF (%s).&quot;, reason))
+  end
+end
+
+function PA.alias_loop_clear_waiting()
+  return _clear_waiting()
+end
+
+function PA.alias_loop_waiting_blocks()
+  return _waiting_blocks_tick()
+end
+
+function PA.alias_loop_on_error(err)
+  _echo(&quot;Party aff loop error: &quot; .. tostring(err))
+end
+
+function PA.tick(reasons)
+  return false
+end
+
+function PA.init()
+  PA.cfg = PA.cfg or {}
+  PA.state = PA.state or {}
+  PA.state.loyals_sent_for = _trim(PA.state.loyals_sent_for or &quot;&quot;)
+  PA.state.template = PA.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; }
+  PA.state.waiting = PA.state.waiting or { queue = nil, main_lane = nil, lanes = nil, at = 0 }
+  PA.state.last_attack = PA.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil }
+  PA.state.busy = (PA.state.busy == true)
+  PA.state.loop_delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
+  _set_loop_enabled((PA.state.loop_enabled == true) or (PA.state.enabled == true))
+  return true
+end
+
+function PA.reset(reason)
+  PA.init()
+  PA.state.explain = {}
+  PA.state.last_target = &quot;&quot;
+  PA.state.loyals_sent_for = &quot;&quot;
+  PA.state.busy = false
+  _clear_waiting()
+  PA.state.last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil }
+  PA.state.template.last_reason = tostring(reason or &quot;manual&quot;)
+  PA.state.template.last_payload = nil
+  return true
+end
+
+function PA.is_enabled() return PA.state and (PA.state.enabled == true or PA.state.loop_enabled == true) end
+function PA.is_active()  return _route_is_active() end
+
+function PA.can_run(ctx)
+  PA.init()
+  if not PA.is_enabled() then return false, &quot;disabled&quot; end
+  if not PA.is_active() then return false, &quot;inactive&quot; end
+  if not _automation_allowed() then return false, &quot;policy&quot; end
+  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return false, &quot;paused&quot; end
+  if Yso and Yso.mode and type(Yso.mode.is_hunt) == &quot;function&quot; and Yso.mode.is_hunt() then return false, &quot;hunt_mode&quot; end
+  local tgt = _trim((ctx and ctx.target) or _target())
+  if tgt == &quot;&quot; then return false, &quot;no_target&quot; end
+  if not _tgt_valid(tgt) then return false, &quot;invalid_target&quot; end
+  return true, tgt
+end
+
+local function _attack_opts(arg)
+  if type(arg) == &quot;table&quot; and (arg.preview ~= nil or arg.ctx ~= nil) then
+    return arg.ctx, (arg.preview == true)
+  end
+  return arg, false
+end
+
+function PA.attack_function(arg)
+  local ctx, preview = _attack_opts(arg)
+  local ok, info = PA.can_run(ctx)
+  if not ok then
+    if preview then return nil, info end
+    return false, info
+  end
+  local tgt = info
+  local free_cmd, free_cat = _plan_free(tgt)
+  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt)
+  local bal_cmd, bal_cat = _plan_bal(tgt)
+  local class_cmd, class_cat = _plan_entity(tgt)
+  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
+  local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
+  local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
+  local main_lane = main.lane
+  if main_lane == &quot;&quot; and _trim(class_cmd) ~= &quot;&quot; then main_lane = &quot;entity&quot; end
+  if main_lane == &quot;&quot; and _trim(free_cmd) ~= &quot;&quot; then main_lane = &quot;free&quot; end
+  local payload = {
+    route = &quot;party_aff&quot;,
+    target = tgt,
+    lanes = { free = free_cmd, eq = selected_eq, bal = selected_bal, entity = class_cmd },
+    meta = {
+      free_category = free_cat,
+      eq_category = (main.lane == &quot;eq&quot;) and main.category or nil,
+      bal_category = (main.lane == &quot;bal&quot;) and main.category or nil,
+      entity_category = class_cat,
+      main_lane = main_lane,
+      main_category = main.category,
+      free_parts = (_trim(free_cmd) ~= &quot;&quot;) and {
+        { cmd = free_cmd, offense = true },
+      } or nil,
+    },
+  }
+  payload, _ = _route_gate_finalize(payload, ctx, tgt)
+  PA.state.last_target = tgt
+  local gate = type(payload) == &quot;table&quot; and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
+  PA.state.explain = {
+    route = &quot;party_aff&quot;,
+    target = tgt,
+    focus_lock_count = _focus_lock_count(tgt),
+    lock_stable = _lock_stable(tgt),
+    manaleech = _has_aff(tgt, &quot;manaleech&quot;),
+    mental_score = _mental_score(),
+    planned = gate and gate.planned and gate.planned.lanes or { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = class_cmd },
+    gated = gate and gate.gated and gate.gated.lanes or (payload and payload.lanes) or {},
+    categories = { free = free_cat, eq = eq_cat, bal = bal_cat, entity = class_cat },
+    blocked_reasons = gate and gate.blocked_reasons or {},
+    hindrance = gate and gate.hinder or {},
+    required_entities = gate and gate.entities and gate.entities.required or {},
+    entity_obligations = gate and gate.entities and gate.entities.obligations or {},
+    emitted = gate and gate.emitted or {},
+    confirmed = gate and gate.confirmed or {},
+  }
+  PA.state.template.last_payload = payload
+  PA.state.template.last_target = tgt
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == &quot;function&quot;)
+    and Yso.route_gate.payload_for_emit(payload)
+    or payload
+  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
+  if preview then
+    if planner_empty then return nil, &quot;empty&quot; end
+    return payload
+  end
+  if emit_empty then return false, &quot;empty&quot; end
+  local cmd = _payload_line(emit_payload)
+  if _trim(cmd) == &quot;&quot; then return false, &quot;empty&quot; end
+  if _same_attack_is_hot(cmd) then return false, &quot;hot_attack&quot; end
+  local sent, err = _emit_payload(emit_payload)
+  if not sent then return false, err end
+  PA.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == &quot;function&quot; then
+    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
+  end
+  PA.on_sent(emit_payload, ctx)
+  _remember_attack(cmd, emit_payload)
+  return true, cmd, payload
+end
+
+function PA.on_sent(payload, ctx)
+  PA.init()
+  if type(payload) ~= &quot;table&quot; then return true end
+  local tgt = _trim(payload.target or (ctx and ctx.target) or &quot;&quot;)
+  if tgt ~= &quot;&quot; then
+    local loyals_cmd = (tostring(PA.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
+    local free = payload.lanes and payload.lanes.free or payload.free
+    if type(free) == &quot;string&quot; and free == loyals_cmd then
+      PA.state.loyals_sent_for = tgt
+    end
+  end
+  local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity
+  if class_lane and Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry
+    and type(Yso.off.oc.entity_registry.note_payload_sent) == &quot;function&quot; then
+    pcall(Yso.off.oc.entity_registry.note_payload_sent, { class = class_lane })
+  end
+  return true
+end
+
+function PA.build_payload(ctx)
+  return PA.attack_function({ ctx = ctx, preview = true })
+end
+
+function PA.evaluate(ctx)
+  local payload, why = PA.build_payload(ctx)
+  if not payload then return { ok = false, reason = why } end
+  return { ok = true, payload = payload }
+end
+
+function PA.explain()
+  local ex = PA.state and PA.state.explain or {}
+  ex.route = ex.route or &quot;party_aff&quot;
+  ex.route_enabled = PA.is_enabled()
+  ex.active = PA.is_active()
+  return ex
+end
+
+function PA.status()
+  local snapshot = {
+    route = &quot;party_aff&quot;,
+    enabled = PA.is_enabled(),
+    active = PA.is_active(),
+    target = _target(),
+    focus_lock_count = _focus_lock_count(_target()),
+    explain = PA.explain(),
+  }
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;dark_orchid&gt;[Occultism] &lt;reset&gt;party aff enabled=%s active=%s target=%s lock=%d\n&quot;,
+      tostring(snapshot.enabled), tostring(snapshot.active), tostring(snapshot.target), snapshot.focus_lock_count))
+  end
+  return snapshot
+end
+
+function PA.on_enter(ctx)   PA.init(); return true end
+function PA.on_exit(ctx)
+  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == &quot;function&quot; then
+    Yso.mode.stop_route_loop(&quot;party_aff&quot;, &quot;exit&quot;, true)
+  end
+  PA.reset(&quot;exit&quot;)
+  return true
+end
+function PA.on_pause(ctx)   return true end
+function PA.on_resume(ctx)
+  if PA.state and PA.state.loop_enabled == true then
+    PA.schedule_loop(0)
+  end
+  return true
+end
+function PA.on_manual_success(ctx) return true end
+function PA.on_send_result(payload, ctx) return PA.on_sent(payload, ctx) end
+
+function PA.on_target_swap(old_target, new_target)
+  if _lc(old_target) ~= _lc(new_target) then
+    PA.reset(&quot;target_swap&quot;)
+    PA.state.last_target = _trim(new_target)
+    if PA.state.loop_enabled == true then
+      PA.schedule_loop(0)
+    end
+  end
+  return true
+end
+
+do
+  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+  if RI and type(RI.ensure_hooks) == &quot;function&quot; then
+    RI.ensure_hooks(PA, PA.route_contract)
+  end
+end
+
+return PA
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
 					<name>group_damage.lua</name>
 					<packageName></packageName>
 					<script>--Group damage offense logic
@@ -7041,19 +8740,6 @@ function GD.note_worm_proc(tgt)
   if _tkey(tgt) == &quot;&quot; then return end
   local ER = _ER()
   if ER and type(ER.note_worm_proc) == &quot;function&quot; then pcall(ER.note_worm_proc, tgt) end
-end
-
--- Runtime trigger for worm chew-proc backup.
-GD._trig = GD._trig or {}
-if type(tempRegexTrigger) == &quot;function&quot; then
-  if GD._trig.worm_chew then killTrigger(GD._trig.worm_chew) end
-  GD._trig.worm_chew = tempRegexTrigger(
-    [[^Many somethings writhe beneath the skin of (.+), and the sickening sound of chewing can be heard\.$]],
-    function()
-      local who = matches[2] or &quot;&quot;
-      if who ~= &quot;&quot; and GD.note_worm_proc then GD.note_worm_proc(who) end
-    end
-  )
 end
 
 local function _syc_reset()
@@ -7394,6 +9080,26 @@ local function _payload_line(payload)
   local entity_cmd = _trim(lanes.entity or lanes.class)
   if entity_cmd ~= &quot;&quot; then cmds[#cmds + 1] = entity_cmd end
   return table.concat(cmds, _command_sep())
+end
+
+local function _route_gate_finalize(payload, ctx)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == &quot;function&quot;) then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = &quot;group_damage&quot;,
+    target = type(payload) == &quot;table&quot; and payload.target or &quot;&quot;,
+    lane_ready = {
+      eq = _eq_ready(),
+      bal = _bal_ready(),
+      entity = _ent_ready(),
+    },
+    required_entities = {
+      worm = true,
+      sycophant = true,
+    },
+    ctx = ctx,
+  })
 end
 
 ------------------------------------------------------------
@@ -7834,6 +9540,7 @@ function GD.attack_function(arg)
     route = &quot;group_damage&quot;,
     target = tgt,
     lanes = {
+      free = nil,
       eq = selected_eq,
       bal = selected_bal,
       entity = entity_cmd,
@@ -7850,27 +9557,36 @@ function GD.attack_function(arg)
       rescue_tag = rescue and rescue.tag or nil,
     },
   }
+  payload, _ = _route_gate_finalize(payload, ctx)
   GD.state.template.last_payload = payload
   GD.state.template.last_target = tgt
 
-  if not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity then
-    if preview then return nil, &quot;empty&quot; end
-    return false, &quot;empty&quot;
-  end
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == &quot;function&quot;)
+    and Yso.route_gate.payload_for_emit(payload)
+    or payload
+  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
 
   if preview then
+    if planner_empty then return nil, &quot;empty&quot; end
     return payload
   end
 
-  local cmd = _payload_line(payload)
+  if emit_empty then return false, &quot;empty&quot; end
+  local cmd = _payload_line(emit_payload)
   if _trim(cmd) == &quot;&quot; then return false, &quot;empty&quot; end
   if _same_attack_is_hot(cmd) then return false, &quot;hot_attack&quot; end
 
   local sent, err = _safe_send(cmd)
   if not sent then return false, err end
 
-  GD.on_sent(payload, ctx)
-  _remember_attack(cmd, payload)
+  GD.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == &quot;function&quot; then
+    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
+  end
+
+  GD.on_sent(emit_payload, ctx)
+  _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
 
@@ -7888,7 +9604,12 @@ function GD.on_sent(payload, ctx)
       free = payload.lanes.free,
     }
   end
-  GD.state.template.last_payload = payload
+  GD.state.template.last_emitted_payload = payload
+  local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity
+  if class_lane and Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry
+    and type(Yso.off.oc.entity_registry.note_payload_sent) == &quot;function&quot; then
+    pcall(Yso.off.oc.entity_registry.note_payload_sent, { class = class_lane })
+  end
   return GD.on_payload_sent(legacy)
 end
 
@@ -7900,6 +9621,8 @@ end
 
 function GD.explain()
   local st = _core_state()
+  local last_payload = GD.state and GD.state.template and GD.state.template.last_payload or nil
+  local gate = type(last_payload) == &quot;table&quot; and (last_payload._route_gate or (last_payload.meta and last_payload.meta.route_gate)) or nil
   return {
     route = &quot;group_damage&quot;,
     enabled = GD.is_enabled(),
@@ -7908,7 +9631,15 @@ function GD.explain()
     core = st,
     last_reason = GD.state and GD.state.template and GD.state.template.last_reason or &quot;&quot;,
     last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or &quot;&quot;,
-    last_payload = GD.state and GD.state.template and GD.state.template.last_payload or nil,
+    planned = gate and gate.planned and gate.planned.lanes or {},
+    gated = gate and gate.gated and gate.gated.lanes or (last_payload and last_payload.lanes) or {},
+    blocked_reasons = gate and gate.blocked_reasons or {},
+    hindrance = gate and gate.hinder or {},
+    required_entities = gate and gate.entities and gate.entities.required or {},
+    entity_obligations = gate and gate.entities and gate.entities.obligations or {},
+    emitted = gate and gate.emitted or {},
+    confirmed = gate and gate.confirmed or {},
+    last_payload = last_payload,
   }
 end
 
@@ -18909,6 +20640,9 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.Core.wake_bus&quot;,
   &quot;Yso.Combat.route_registry&quot;,
   &quot;Yso.Combat.route_interface&quot;,
+  &quot;Yso.Combat.hinder&quot;,
+  &quot;Yso.Combat.entities&quot;,
+  &quot;Yso.Combat.route_gate&quot;,
   &quot;Yso.Combat.parry&quot;,
   &quot;Yso.Combat.offense_driver&quot;,
   &quot;Yso.Combat.occultist.entity_registry&quot;,
@@ -23534,7 +25268,7 @@ local function _tstate(tgt, create)
       invalid_since = {},
       reservation = nil,
       effects = {
-        worm = { target = &quot;&quot;, until_t = 0, proc_count = 0, proc_window_until = 0 },
+        worm = { target = &quot;&quot;, until_t = 0, proc_count = 0, proc_window_until = 0, last_proc_at = 0 },
         sycophant = { target = &quot;&quot;, until_t = 0 },
       },
       last_sent_at = {},
@@ -23714,6 +25448,7 @@ function ER.note_sent(entity, tgt, meta)
     T.effects.worm.until_t = now + (tonumber(ER.cfg.worm_duration_s) or 20)
     T.effects.worm.proc_count = 0
     T.effects.worm.proc_window_until = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
+    T.effects.worm.last_proc_at = 0
   elseif entity == &quot;sycophant&quot; then
     T.established.sycophant = true
     T.effects.sycophant.target = tgt
@@ -23755,6 +25490,8 @@ function ER.note_worm_proc(tgt)
     W.proc_count = 0
     W.proc_window_until = now + ((tonumber(ER.cfg.worm_duration_s) or 20) + 15)
   end
+  W.last_proc_at = now
+  T.last_success_at.worm = math.max(tonumber(T.last_success_at.worm or 0) or 0, now)
   W.proc_count = (tonumber(W.proc_count or 0) or 0) + 1
   if W.proc_count &gt;= 2 then
     W.until_t = 0
@@ -25577,7 +27314,7 @@ end
 
 local function _record_checkpoint(cat)
   cat = tostring(cat or &quot;&quot;)
-  if cat == &quot;&quot; or _is_truename_category(cat) then return end
+  if cat == &quot;&quot; or cat == &quot;required_entity_maintenance&quot; or _is_truename_category(cat) then return end
   AB.state.resume_checkpoint = cat
   AB.state.resume_checkpoint_at = _now()
 end
@@ -26380,6 +28117,15 @@ local function _chain_cmds(...)
   return table.concat(out, _command_sep())
 end
 
+local function _append_free_part(parts, cmd, offense)
+  cmd = _trim(cmd)
+  if cmd == &quot;&quot; then return end
+  parts[#parts + 1] = {
+    cmd = cmd,
+    offense = (offense == true),
+  }
+end
+
 local function _queue_free_recovery(cmd)
   cmd = _trim(cmd)
   if cmd == &quot;&quot; then return false end
@@ -26482,6 +28228,40 @@ local function _emit_payload(payload)
   return true, cmd
 end
 
+local function _route_gate_finalize(payload, ctx, tgt, required_entities)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == &quot;function&quot;) then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = &quot;occ_aff_burst&quot;,
+    target = tgt,
+    lane_ready = {
+      eq = _eq_ready(),
+      bal = _bal_ready(),
+      entity = _ent_ready(),
+    },
+    required_entities = required_entities or {},
+    ctx = ctx,
+  })
+end
+
+local function _record_payload_checkpoint(payload)
+  if type(payload) ~= &quot;table&quot; then return false end
+  local meta = type(payload.meta) == &quot;table&quot; and payload.meta or {}
+  local eq_cat = tostring(meta.eq_category or &quot;&quot;)
+  local raw_eq_cat = tostring(meta.raw_eq_category or &quot;&quot;)
+  local bal_cat = tostring(meta.bal_category or &quot;&quot;)
+  local entity_cat = tostring(meta.entity_category or &quot;&quot;)
+  if eq_cat == &quot;defense_break&quot; then
+    _record_checkpoint(raw_eq_cat)
+  else
+    _record_checkpoint(eq_cat)
+  end
+  _record_checkpoint(bal_cat)
+  _record_checkpoint(entity_cat)
+  return true
+end
+
 local function _self_gate_state()
   AB.state.self_gate = AB.state.self_gate or {
     retry_until = 0,
@@ -26494,16 +28274,6 @@ local function _self_gate_state()
   local SG = AB.state.self_gate
   local now = _now()
   local reasons = {}
-  local blockers = nil
-  if Yso and Yso.self and type(Yso.self.eq_blockers) == &quot;function&quot; then
-    local ok, res = pcall(Yso.self.eq_blockers)
-    if ok and type(res) == &quot;table&quot; then blockers = res end
-  end
-  blockers = blockers or { eq_blocked = false, reasons = {} }
-
-  for i = 1, #(blockers.reasons or {}) do
-    _push_unique(reasons, blockers.reasons[i])
-  end
   if now &lt; tonumber(SG.not_standing_until or 0) then _push_unique(reasons, &quot;not standing&quot;) end
   if now &lt; tonumber(SG.arms_until or 0) then _push_unique(reasons, &quot;arms unusable&quot;) end
   if now &lt; tonumber(SG.bound_until or 0) then _push_unique(reasons, &quot;bound&quot;) end
@@ -27813,9 +29583,6 @@ function AB.attack_function(arg)
   local raw_eq_cmd, raw_eq_cat, raw_eq_tag, raw_eq_lock = nil, nil, nil, nil
   local pair = nil
   if anti.active ~= true then
-    if plan.needs_mana_bury == true then
-      _record_checkpoint(&quot;mana_bury&quot;)
-    end
     gate = _truename_gate(tgt, plan)
     free_cmd, free_cat = _loyals_open_cmd(tgt)
     free_tag = free_cmd and (&quot;ab:free:loyals:&quot; .. _lc(tgt)) or nil
@@ -27843,10 +29610,6 @@ function AB.attack_function(arg)
     end
 
     bal_cmd, bal_cat, bal_tag, bal_lock = _bal_plan(tgt, plan)
-
-    _record_checkpoint((eq_cat == &quot;defense_break&quot;) and raw_eq_cat or eq_cat)
-    _record_checkpoint(bal_cat)
-    _record_checkpoint(entity_cat)
   end
 
   if Yso and Yso.parry and type(Yso.parry.next_command) == &quot;function&quot; then
@@ -27857,7 +29620,13 @@ function AB.attack_function(arg)
     end
   end
 
-  free_cmd = _chain_cmds((legality.queue_stand == true) and &quot;stand&quot; or &quot;&quot;, parry_cmd, _take_free_recovery(), free_cmd)
+  local free_recovery_cmd = _take_free_recovery()
+  local free_parts = {}
+  _append_free_part(free_parts, (legality.queue_stand == true) and &quot;stand&quot; or &quot;&quot;, false)
+  _append_free_part(free_parts, parry_cmd, false)
+  _append_free_part(free_parts, free_recovery_cmd, false)
+  _append_free_part(free_parts, free_cmd, true)
+  free_cmd = _chain_cmds((legality.queue_stand == true) and &quot;stand&quot; or &quot;&quot;, parry_cmd, free_recovery_cmd, free_cmd)
   if legality.queue_stand == true or _trim(parry_cmd) ~= &quot;&quot; then
     free_cat = free_cat or &quot;self_legality&quot;
   end
@@ -27871,6 +29640,13 @@ function AB.attack_function(arg)
 
   -- D. Bookkeeping.
   AB.state.last_target = tgt
+  local has_wm = _has_aff(tgt, &quot;whisperingmadness&quot;) or _has_aff(tgt, &quot;whispering_madness&quot;)
+  local required_entities = {
+    sycophant = (pair and pair.entity_aff == &quot;sycophant&quot;)
+      or (entity_cmd == (&quot;command sycophant at %s&quot;):format(tgt))
+      or (plan and plan.needs_mana_bury == true and has_wm ~= true)
+      or (_has_aff(tgt, &quot;manaleech&quot;) and has_wm ~= true and plan and plan.cleanseaura_ready ~= true),
+  }
   local unnamable = _unnamable_candidate(tgt, plan)
   local US = _unnamable_state(tgt)
   AB.state.explain = {
@@ -27899,7 +29675,7 @@ function AB.attack_function(arg)
     truename_entry_stable_pulses = gate.stable_pulses,
     truename_entry_required = gate.required,
     resume_checkpoint = AB.state.resume_checkpoint,
-    whisperingmadness = _has_aff(tgt, &quot;whisperingmadness&quot;) or _has_aff(tgt, &quot;whispering_madness&quot;),
+    whisperingmadness = has_wm,
     mental_score = _mental_score(),
     enlighten_score = _enlighten_score(),
     burst_ready = _burst_ready(tgt),
@@ -27994,7 +29770,9 @@ function AB.attack_function(arg)
     meta = {
       free_category = free_cat,
       free_tag = free_tag,
+      free_parts = (#free_parts &gt; 0) and free_parts or nil,
       eq_category = eq_cat,
+      raw_eq_category = raw_eq_cat,
       eq_tag = eq_tag,
       eq_lockout = eq_lock,
       bal_category = bal_cat,
@@ -28006,19 +29784,36 @@ function AB.attack_function(arg)
       main_lane = main_lane,
       parry_cmd = parry_cmd,
       parry_limb = parry_limb,
+      required_entities = required_entities,
     },
   }
+  payload, _ = _route_gate_finalize(payload, ctx, tgt, required_entities)
+  local gate_state = type(payload) == &quot;table&quot; and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
+  AB.state.explain.planned = gate_state and gate_state.planned and gate_state.planned.lanes or AB.state.explain.planned
+  AB.state.explain.gated = gate_state and gate_state.gated and gate_state.gated.lanes or payload.lanes
+  AB.state.explain.blocked_reasons = gate_state and gate_state.blocked_reasons or {}
+  AB.state.explain.hindrance = gate_state and gate_state.hinder or {}
+  AB.state.explain.required_entities = gate_state and gate_state.entities and gate_state.entities.required or {}
+  AB.state.explain.entity_obligations = gate_state and gate_state.entities and gate_state.entities.obligations or {}
+  AB.state.explain.emitted = gate_state and gate_state.emitted or {}
+  AB.state.explain.confirmed = gate_state and gate_state.confirmed or {}
   AB.state.template.last_payload = payload
 
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == &quot;function&quot;)
+    and Yso.route_gate.payload_for_emit(payload)
+    or payload
+  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
   if preview then
+    if planner_empty then return nil, &quot;empty&quot; end
     return payload
   end
-
-  local cmd = _payload_line(payload)
+  if emit_empty then return false, &quot;empty&quot; end
+  local cmd = _payload_line(emit_payload)
   if _trim(cmd) == &quot;&quot; then return false, &quot;empty&quot; end
   if _same_attack_is_hot(cmd) then return false, &quot;hot_attack&quot; end
 
-  local sent, err = _emit_payload(payload)
+  local sent, err = _emit_payload(emit_payload)
   if not sent then
     if eq_cat == &quot;defense_break&quot; then
       local SB = _shieldbreak_state(tgt)
@@ -28032,9 +29827,13 @@ function AB.attack_function(arg)
     return false, err
   end
 
-  _note_payload_tags(payload)
-  AB.on_sent(payload, ctx)
-  _remember_attack(cmd, payload)
+  AB.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == &quot;function&quot; then
+    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
+  end
+  _note_payload_tags(emit_payload)
+  AB.on_sent(emit_payload, ctx)
+  _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
 
@@ -28043,7 +29842,11 @@ function AB.build_payload(ctx)
 end
 function AB.on_sent(payload, ctx)
   AB.init()
-  AB.state.template.last_payload = payload
+  AB.state.template.last_emitted_payload = payload
+  _record_payload_checkpoint(payload)
+  if type(AB.state.explain) == &quot;table&quot; then
+    AB.state.explain.resume_checkpoint = AB.state.resume_checkpoint
+  end
 
   local tgt = &quot;&quot;
   local free_lane = nil

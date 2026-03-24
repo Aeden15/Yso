@@ -1,4 +1,8 @@
 local legacy_name_map = {
+  ["entities.lua"] = { "entities" },
+  ["hinder.lua"] = { "hinder" },
+  ["party_aff.lua"] = { "party_aff" },
+  ["route_gate.lua"] = { "route_gate" },
   ["yso_ak_score_exports.lua"] = { "Yso_AK_Score_Exports.lua" },
   ["yso_mode_autoswitch.lua"] = { "Yso_mode_autoswitch.lua" },
   ["yso_modes.lua"] = { "Yso_modes.lua" },
@@ -17,6 +21,10 @@ local body_signature_map = {
 
 local insert_before_name_map = {
   ["bash_vitals_swap.lua"] = "Bootstrap",
+  ["entities.lua"] = "group_damage.lua",
+  ["hinder.lua"] = "entities",
+  ["party_aff.lua"] = "group_damage.lua",
+  ["route_gate.lua"] = "group_damage.lua",
   ["yso_targeting.lua"] = "Yso.target",
 }
 
@@ -26,7 +34,6 @@ local retired_script_name_map = {
 }
 
 local expected_no_slot = {
-  ["party_aff.lua"] = true,
   ["route_interface.lua"] = true,
   ["route_registry.lua"] = true,
   ["skillset_reference_chart.lua"] = true,

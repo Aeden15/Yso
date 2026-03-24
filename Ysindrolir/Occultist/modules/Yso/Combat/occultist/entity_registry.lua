@@ -106,7 +106,7 @@ local function _tstate(tgt, create)
       invalid_since = {},
       reservation = nil,
       effects = {
-        worm = { target = "", until_t = 0, proc_count = 0, proc_window_until = 0 },
+        worm = { target = "", until_t = 0, proc_count = 0, proc_window_until = 0, last_proc_at = 0 },
         sycophant = { target = "", until_t = 0 },
       },
       last_sent_at = {},
@@ -286,6 +286,7 @@ function ER.note_sent(entity, tgt, meta)
     T.effects.worm.until_t = now + (tonumber(ER.cfg.worm_duration_s) or 20)
     T.effects.worm.proc_count = 0
     T.effects.worm.proc_window_until = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
+    T.effects.worm.last_proc_at = 0
   elseif entity == "sycophant" then
     T.established.sycophant = true
     T.effects.sycophant.target = tgt
@@ -327,6 +328,8 @@ function ER.note_worm_proc(tgt)
     W.proc_count = 0
     W.proc_window_until = now + ((tonumber(ER.cfg.worm_duration_s) or 20) + 15)
   end
+  W.last_proc_at = now
+  T.last_success_at.worm = math.max(tonumber(T.last_success_at.worm or 0) or 0, now)
   W.proc_count = (tonumber(W.proc_count or 0) or 0) + 1
   if W.proc_count >= 2 then
     W.until_t = 0

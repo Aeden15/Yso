@@ -985,18 +985,84 @@ function RD.show(route)
     local t = tostring(v)
     return (t == "" and "-") or t
   end
+  local function _lane(tbl, key)
+    if type(tbl) ~= "table" then return "-" end
+    if key == "entity" then
+      return _s(tbl.entity or tbl.class)
+    end
+    return _s(tbl[key])
+  end
+  local function _list(values)
+    if type(values) ~= "table" then return "-" end
+    local out = {}
+    for i = 1, #values do
+      if tostring(values[i] or "") ~= "" then out[#out + 1] = tostring(values[i]) end
+    end
+    return (#out > 0) and table.concat(out, ",") or "-"
+  end
+  local function _keys(values)
+    if type(values) ~= "table" then return "-" end
+    local out = {}
+    for k, v in pairs(values) do
+      if v then out[#out + 1] = tostring(k) end
+    end
+    table.sort(out)
+    return (#out > 0) and table.concat(out, ",") or "-"
+  end
+  local function _hindrance_active(snapshot)
+    if type(snapshot) ~= "table" then return "-" end
+    local order = { "paralysis", "clumsiness", "webbed", "entangled", "prone", "fallen", "sleeping", "transfixed", "impaled" }
+    local out = {}
+    for i = 1, #order do
+      if snapshot[order[i]] == true then out[#out + 1] = order[i] end
+    end
+    return (#out > 0) and table.concat(out, ",") or "-"
+  end
+  local function _entity_state(row)
+    if type(row) ~= "table" then return "-" end
+    return string.format("want=%s active=%s stale=%s cmd=%.1f conf=%.1f exp=%.1f block=%s",
+      _b(row.wanted == true), _b(row.active_confirmed == true), _b(row.stale == true),
+      tonumber(row.last_commanded_at or 0) or 0, tonumber(row.last_confirmed_at or 0) or 0,
+      tonumber(row.expires_at or 0) or 0, _s(row.blocked_reason))
+  end
+  local function _top_obligation(ob)
+    local top = type(ob) == "table" and ob.top or nil
+    if type(top) ~= "table" then return "-" end
+    return string.format("%s:%s:%s", _s(top.entity), _s(top.reason), _s(top.cmd))
+  end
 
   local planned = type(ex.planned) == "table" and ex.planned or {}
+  local gated = type(ex.gated) == "table" and ex.gated or {}
   local finish = type(ex.finish_transition) == "table" and ex.finish_transition or {}
   local para = type(ex.para) == "table" and ex.para or {}
   local bm = type(ex.bm_snapshot) == "table" and ex.bm_snapshot or {}
   local waiting = type(ex.waiting) == "table" and ex.waiting or {}
+  local hindrance = type(ex.hindrance) == "table" and ex.hindrance or {}
+  local hinder_snapshot = type(hindrance.snapshot) == "table" and hindrance.snapshot or {}
+  local required = type(ex.required_entities) == "table" and ex.required_entities or {}
+  local obligations = type(ex.entity_obligations) == "table" and ex.entity_obligations or {}
+  local emitted = type(ex.emitted) == "table" and ex.emitted or {}
+  local confirmed = type(ex.confirmed) == "table" and ex.confirmed or {}
   local debug_enabled = ((type(mod) == "table" and type(mod.debug) == "table" and mod.debug.enabled == true) or ex.debug == true)
 
   _tprint(string.format("%s | target=%s active=%s debug=%s",
     route, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(debug_enabled)))
-  _tprint(string.format(" plan | eq=%s class=%s bal=%s free=%s",
-    _s(planned.eq), _s(planned.class), _s(planned.bal), _s(planned.free)))
+  _tprint(string.format(" plan | eq=%s ent=%s bal=%s free=%s",
+    _lane(planned, "eq"), _lane(planned, "entity"), _lane(planned, "bal"), _lane(planned, "free")))
+  _tprint(string.format(" gate | eq=%s ent=%s bal=%s free=%s blocked=%s",
+    _lane(gated, "eq"), _lane(gated, "entity"), _lane(gated, "bal"), _lane(gated, "free"),
+    _list(ex.blocked_reasons)))
+  _tprint(string.format(" hind | active=%s all=%s entblk=%s eqblk=%s",
+    _hindrance_active(hinder_snapshot), _b(hinder_snapshot.all_offense_blocked == true),
+    _list(hinder_snapshot.entity_blockers), _list(hinder_snapshot.eq_bal_blockers)))
+  _tprint(string.format(" ent  | top=%s blocked=%s stale=%s",
+    _top_obligation(obligations), _keys(obligations.blocked), _keys(obligations.stale)))
+  _tprint(string.format(" worm | %s", _entity_state(required.worm)))
+  _tprint(string.format(" syc  | %s", _entity_state(required.sycophant)))
+  _tprint(string.format(" send | eq=%s ent=%s bal=%s free=%s",
+    _lane(emitted.lanes, "eq"), _lane(emitted.lanes, "entity"), _lane(emitted.lanes, "bal"), _lane(emitted.lanes, "free")))
+  _tprint(string.format(" conf | eq=%s ent=%s bal=%s free=%s",
+    _lane(confirmed.lanes, "eq"), _lane(confirmed.lanes, "entity"), _lane(confirmed.lanes, "bal"), _lane(confirmed.lanes, "free")))
 
   if route == "aff" then
     _tprint(string.format(" aff  | stage=%s next=%s blocker=%s focus=%s mana=%s",

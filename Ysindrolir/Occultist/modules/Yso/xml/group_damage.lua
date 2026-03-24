@@ -235,19 +235,6 @@ function GD.note_worm_proc(tgt)
   if ER and type(ER.note_worm_proc) == "function" then pcall(ER.note_worm_proc, tgt) end
 end
 
--- Runtime trigger for worm chew-proc backup.
-GD._trig = GD._trig or {}
-if type(tempRegexTrigger) == "function" then
-  if GD._trig.worm_chew then killTrigger(GD._trig.worm_chew) end
-  GD._trig.worm_chew = tempRegexTrigger(
-    [[^Many somethings writhe beneath the skin of (.+), and the sickening sound of chewing can be heard\.$]],
-    function()
-      local who = matches[2] or ""
-      if who ~= "" and GD.note_worm_proc then GD.note_worm_proc(who) end
-    end
-  )
-end
-
 local function _syc_reset()
   GD.state.syc = GD.state.syc or { target = "", until_t = 0 }
   GD.state.syc.target, GD.state.syc.until_t = "", 0
@@ -586,6 +573,26 @@ local function _payload_line(payload)
   local entity_cmd = _trim(lanes.entity or lanes.class)
   if entity_cmd ~= "" then cmds[#cmds + 1] = entity_cmd end
   return table.concat(cmds, _command_sep())
+end
+
+local function _route_gate_finalize(payload, ctx)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == "function") then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = "group_damage",
+    target = type(payload) == "table" and payload.target or "",
+    lane_ready = {
+      eq = _eq_ready(),
+      bal = _bal_ready(),
+      entity = _ent_ready(),
+    },
+    required_entities = {
+      worm = true,
+      sycophant = true,
+    },
+    ctx = ctx,
+  })
 end
 
 ------------------------------------------------------------
@@ -1026,6 +1033,7 @@ function GD.attack_function(arg)
     route = "group_damage",
     target = tgt,
     lanes = {
+      free = nil,
       eq = selected_eq,
       bal = selected_bal,
       entity = entity_cmd,
@@ -1042,27 +1050,36 @@ function GD.attack_function(arg)
       rescue_tag = rescue and rescue.tag or nil,
     },
   }
+  payload, _ = _route_gate_finalize(payload, ctx)
   GD.state.template.last_payload = payload
   GD.state.template.last_target = tgt
 
-  if not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity then
-    if preview then return nil, "empty" end
-    return false, "empty"
-  end
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == "function")
+    and Yso.route_gate.payload_for_emit(payload)
+    or payload
+  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
 
   if preview then
+    if planner_empty then return nil, "empty" end
     return payload
   end
 
-  local cmd = _payload_line(payload)
+  if emit_empty then return false, "empty" end
+  local cmd = _payload_line(emit_payload)
   if _trim(cmd) == "" then return false, "empty" end
   if _same_attack_is_hot(cmd) then return false, "hot_attack" end
 
   local sent, err = _safe_send(cmd)
   if not sent then return false, err end
 
-  GD.on_sent(payload, ctx)
-  _remember_attack(cmd, payload)
+  GD.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == "function" then
+    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
+  end
+
+  GD.on_sent(emit_payload, ctx)
+  _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
 
@@ -1080,7 +1097,12 @@ function GD.on_sent(payload, ctx)
       free = payload.lanes.free,
     }
   end
-  GD.state.template.last_payload = payload
+  GD.state.template.last_emitted_payload = payload
+  local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity
+  if class_lane and Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry
+    and type(Yso.off.oc.entity_registry.note_payload_sent) == "function" then
+    pcall(Yso.off.oc.entity_registry.note_payload_sent, { class = class_lane })
+  end
   return GD.on_payload_sent(legacy)
 end
 
@@ -1092,6 +1114,8 @@ end
 
 function GD.explain()
   local st = _core_state()
+  local last_payload = GD.state and GD.state.template and GD.state.template.last_payload or nil
+  local gate = type(last_payload) == "table" and (last_payload._route_gate or (last_payload.meta and last_payload.meta.route_gate)) or nil
   return {
     route = "group_damage",
     enabled = GD.is_enabled(),
@@ -1100,7 +1124,15 @@ function GD.explain()
     core = st,
     last_reason = GD.state and GD.state.template and GD.state.template.last_reason or "",
     last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or "",
-    last_payload = GD.state and GD.state.template and GD.state.template.last_payload or nil,
+    planned = gate and gate.planned and gate.planned.lanes or {},
+    gated = gate and gate.gated and gate.gated.lanes or (last_payload and last_payload.lanes) or {},
+    blocked_reasons = gate and gate.blocked_reasons or {},
+    hindrance = gate and gate.hinder or {},
+    required_entities = gate and gate.entities and gate.entities.required or {},
+    entity_obligations = gate and gate.entities and gate.entities.obligations or {},
+    emitted = gate and gate.emitted or {},
+    confirmed = gate and gate.confirmed or {},
+    last_payload = last_payload,
   }
 end
 

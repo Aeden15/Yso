@@ -38,6 +38,7 @@ Yso.net.cfg.dry_run = false
 -- User preference: "&&" (override by setting Yso.cfg.pipe_sep before load).
 Yso.cfg.pipe_sep = Yso.cfg.pipe_sep or "&&"
 Yso.cfg.cmd_sep  = Yso.cfg.cmd_sep  or Yso.cfg.pipe_sep
+Yso.cfg.route_gate_live = (Yso.cfg.route_gate_live == true)
 Yso.sep      = Yso.sep or Yso.cfg.pipe_sep      -- used for multi-command sends
 
 

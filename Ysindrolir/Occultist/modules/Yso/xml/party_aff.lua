@@ -498,6 +498,25 @@ _payload_line = function(payload)
   return table.concat(cmds, _command_sep())
 end
 
+local function _route_gate_finalize(payload, ctx, tgt)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == "function") then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = "party_aff",
+    target = tgt,
+    lane_ready = {
+      eq = _eq_ready(),
+      bal = _bal_ready(),
+      entity = _ent_ready(),
+    },
+    required_entities = {
+      sycophant = _has_aff(tgt, "manaleech") == true,
+    },
+    ctx = ctx,
+  })
+end
+
 local function _remember_attack(cmd, payload)
   local meta = type(payload) == "table" and (payload.meta or {}) or {}
   local main_lane = _lc(meta.main_lane or "")
@@ -816,14 +835,20 @@ function PA.attack_function(arg)
     target = tgt,
     lanes = { free = free_cmd, eq = selected_eq, bal = selected_bal, entity = class_cmd },
     meta = {
+      free_category = free_cat,
       eq_category = (main.lane == "eq") and main.category or nil,
       bal_category = (main.lane == "bal") and main.category or nil,
       entity_category = class_cat,
       main_lane = main_lane,
       main_category = main.category,
+      free_parts = (_trim(free_cmd) ~= "") and {
+        { cmd = free_cmd, offense = true },
+      } or nil,
     },
   }
+  payload, _ = _route_gate_finalize(payload, ctx, tgt)
   PA.state.last_target = tgt
+  local gate = type(payload) == "table" and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
   PA.state.explain = {
     route = "party_aff",
     target = tgt,
@@ -831,23 +856,39 @@ function PA.attack_function(arg)
     lock_stable = _lock_stable(tgt),
     manaleech = _has_aff(tgt, "manaleech"),
     mental_score = _mental_score(),
-    planned = { free = free_cmd, eq = eq_cmd, bal = bal_cmd, class = class_cmd },
-    categories = { free = free_cat, eq = eq_cat, bal = bal_cat, class = class_cat },
+    planned = gate and gate.planned and gate.planned.lanes or { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = class_cmd },
+    gated = gate and gate.gated and gate.gated.lanes or (payload and payload.lanes) or {},
+    categories = { free = free_cat, eq = eq_cat, bal = bal_cat, entity = class_cat },
+    blocked_reasons = gate and gate.blocked_reasons or {},
+    hindrance = gate and gate.hinder or {},
+    required_entities = gate and gate.entities and gate.entities.required or {},
+    entity_obligations = gate and gate.entities and gate.entities.obligations or {},
+    emitted = gate and gate.emitted or {},
+    confirmed = gate and gate.confirmed or {},
   }
   PA.state.template.last_payload = payload
   PA.state.template.last_target = tgt
-  if not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity then
-    if preview then return nil, "empty" end
-    return false, "empty"
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == "function")
+    and Yso.route_gate.payload_for_emit(payload)
+    or payload
+  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
+  if preview then
+    if planner_empty then return nil, "empty" end
+    return payload
   end
-  if preview then return payload end
-  local cmd = _payload_line(payload)
+  if emit_empty then return false, "empty" end
+  local cmd = _payload_line(emit_payload)
   if _trim(cmd) == "" then return false, "empty" end
   if _same_attack_is_hot(cmd) then return false, "hot_attack" end
-  local sent, err = _emit_payload(payload)
+  local sent, err = _emit_payload(emit_payload)
   if not sent then return false, err end
-  PA.on_sent(payload, ctx)
-  _remember_attack(cmd, payload)
+  PA.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == "function" then
+    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
+  end
+  PA.on_sent(emit_payload, ctx)
+  _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
 
@@ -881,7 +922,11 @@ function PA.evaluate(ctx)
 end
 
 function PA.explain()
-  return PA.state and PA.state.explain or {}
+  local ex = PA.state and PA.state.explain or {}
+  ex.route = ex.route or "party_aff"
+  ex.route_enabled = PA.is_enabled()
+  ex.active = PA.is_active()
+  return ex
 end
 
 function PA.status()
