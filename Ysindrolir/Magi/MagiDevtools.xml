@@ -4,7 +4,7 @@
 	<TriggerPackage />
 	<TimerPackage />
 	<AliasPackage>
-		<AliasGroup isActive="yes" isFolder="yes">
+		<AliasGroup isActive="no" isFolder="yes">
 			<name>MagiDevtools</name>
 			<script />
 			<command />

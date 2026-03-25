@@ -68,32 +68,38 @@ local function _echo(color, msg)
   cecho(string.format("%s%s%s\n", O.cfg.prefix or "", color or "", msg or ""))
 end
 
+local function _send_cmd(cmd)
+  cmd = tostring(cmd or "")
+  if cmd == "" then return false end
+  if type(send) == "function" then
+    send(cmd, false)
+    return true
+  end
+  if type(expandAlias) == "function" then
+    expandAlias(cmd)
+    return true
+  end
+  return false
+end
+
 local function _q(mode, qtype, cmd)
   mode  = tostring(mode  or "addclear"):lower()
   qtype = tostring(qtype or "free")
   cmd   = tostring(cmd   or "")
   if cmd == "" then return false end
-
-  local Q = Yso and Yso.queue
-  local resolved = mode
-  local fn = Q and Q[resolved]
-
-  if type(fn) ~= "function" and resolved == "add" then
-    resolved = "addclear"
-    fn = Q and Q[resolved]
+  local verb = "ADDCLEAR"
+  if mode == "addclearfull" then
+    verb = "ADDCLEARFULL"
+  elseif mode == "add" then
+    verb = "ADD"
+  elseif mode == "prepend" then
+    verb = "PREPEND"
+  elseif mode == "insert" then
+    verb = "INSERT"
+  elseif mode == "replace" then
+    verb = "REPLACE"
   end
-
-  if type(fn) ~= "function" then
-    _echo(O.cfg.warn_color, ("Yso.queue mode '%s' unavailable; cannot queue orb command."):format(resolved))
-    return false
-  end
-
-  local ok, err = pcall(fn, qtype, cmd)
-  if not ok then
-    _echo(O.cfg.warn_color, ("Orb queue failed: %s"):format(tostring(err)))
-    return false
-  end
-
+  _send_cmd(("QUEUE %s %s %s"):format(verb, qtype, cmd))
   return true
 end
 

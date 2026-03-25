@@ -2486,6 +2486,12 @@ local function _readaura_tag(tgt)
   return "ab:eq:readaura:" .. _lc(tgt)
 end
 
+local function _aura_txn_active_for(tgt)
+  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function") then return false end
+  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
+  return ok and type(status) == "table" and status.active == true and status.matched == true
+end
+
 local function _missing_key(list, key)
   if type(list) ~= "table" then return false end
   key = _lc(key)
@@ -2525,12 +2531,26 @@ local function _readaura_plan(tgt, plan, burst_ready)
   return nil, nil, nil, nil
 end
 
+local function _bootstrap_readaura_plan(tgt, plan)
+  if not (plan and plan.loyals_bootstrap_pending == true and plan.readaura_via_loyals == true) then
+    return nil, nil, nil, nil
+  end
+  local tag = _readaura_tag(tgt)
+  if _recent_sent(tag, tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return nil, nil, nil, nil end
+  if _aura_txn_active_for(tgt) then return nil, nil, nil, nil end
+  return ("readaura %s"):format(tgt), "cleanseaura_window", tag, tonumber(AB.cfg.readaura_lockout_s or 1.0)
+end
+
 local function _eq_plan(tgt, plan, gate)
   if not _eq_ready() then return nil, nil, nil, nil end
 
   local burst_ready = _burst_ready(tgt)
   local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
   local has_manaleech = _has_aff(tgt, "manaleech")
+  local bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock = _bootstrap_readaura_plan(tgt, plan)
+  if bootstrap_cmd then
+    return bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock
+  end
   local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = _readaura_plan(tgt, plan, burst_ready)
 
   if readaura_cmd then
@@ -2915,6 +2935,7 @@ function AB.attack_function(arg)
   local tgt = info
   local loyals_bootstrap_pending = (_trim(select(1, _loyals_open_cmd(tgt))) ~= "")
   local plan = CS.plan_aff(tgt)
+  plan.loyals_bootstrap_pending = (loyals_bootstrap_pending == true)
   if loyals_bootstrap_pending then
     plan.needs_readaura = true
     plan.readaura_via_loyals = true
@@ -3029,6 +3050,7 @@ function AB.attack_function(arg)
     aura_deaf = plan.deaf,
     needs_readaura = plan.needs_readaura,
     readaura_via_loyals = plan.readaura_via_loyals == true,
+    loyals_bootstrap_pending = plan.loyals_bootstrap_pending == true,
     snapshot_complete = plan.snapshot_complete,
     snapshot_read_complete = plan.snapshot_read_complete,
     snapshot_had_counts = plan.snapshot_had_counts,
