@@ -56,3 +56,39 @@ Notes
   AK.xml is maintained separately and may also carry compatibility patches.
   Root-level docs should stay class-agnostic now that this workspace supports
   more than one class.
+
+Syncing with OneDrive Desktop
+-----------------------------
+  The "Yso systems" folder on your Desktop is synced by OneDrive.
+  sync_workspace.ps1 mirrors files between the git clone and that
+  Desktop folder so changes flow in both directions.
+
+  First-time setup:
+    1. Clone the repo OUTSIDE OneDrive (e.g. C:\repos\Yso).
+       OneDrive lock-file conflicts can corrupt .git internals.
+
+         git clone https://github.com/Aeden15/Yso.git C:\repos\Yso
+
+    2. Make sure "Yso systems" exists on your Desktop.  The script
+       auto-detects common OneDrive Desktop paths such as:
+         %USERPROFILE%\OneDrive\Desktop\Yso systems
+         %USERPROFILE%\Desktop\Yso systems
+       Pass -DesktopPath explicitly if yours differs.
+
+  Push repo changes to the Desktop:
+    cd C:\repos\Yso
+    .\sync_workspace.ps1 push            # repo -> Desktop
+    .\sync_workspace.ps1 push -DryRun    # preview only
+
+  Pull Desktop edits back into the repo:
+    cd C:\repos\Yso
+    .\sync_workspace.ps1 pull            # Desktop -> repo
+    git diff                             # review
+    git add -A && git commit -m "sync from desktop"
+    git push
+
+  What gets synced:
+    Repo  Ysindrolir/         <->  Desktop  Yso systems/Ysindrolir/
+    Repo  README.md/.txt      <->  Desktop  Yso systems/README.md/.txt
+
+  Git-only files (.git/, .gitignore, etc.) are excluded automatically.
