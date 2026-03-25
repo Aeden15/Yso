@@ -106,6 +106,7 @@ local function assert_false(label, val) assert_eq(label, (val == true), false) e
 
 -- Setup: global Yso with mode table
 _G.Yso = {
+  class = "Occultist",
   mode = {
     state = "bash",
     is_bash = function() return _G.Yso.mode.state == "bash" end,
@@ -234,7 +235,7 @@ for _, s in ipairs(_sends) do
 end
 assert_true("11: mode→bash sent ent", has_ent)
 
-print("\n=== Test 12: no gmcp.Char.Vitals handler exists ===")
+print("\n=== Test 12: gmcp.Char.Vitals handler exists for class-change detection ===")
 local has_vitals = false
 for _, e in pairs(_events) do
   if e.event == "gmcp.Char.Vitals" then
@@ -242,7 +243,7 @@ for _, e in pairs(_events) do
     break
   end
 end
-assert_false("12: no vitals handler", has_vitals)
+assert_true("12: vitals handler exists", has_vitals)
 
 print("\n=== Test 13: stress — fire summon triggers 1000x, count sends ===")
 _G.Yso.mode.state = "bash"

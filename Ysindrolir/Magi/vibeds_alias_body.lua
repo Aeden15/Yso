@@ -2,7 +2,15 @@
 -- Paste this into the alias command box if you want the alias to load the
 -- workspace helper automatically and then run the default embed sequence.
 
-local mod_path = [[C:\Users\shuji\OneDrive\Desktop\Yso systems\Ysindrolir\Magi\magi_vibes.lua]]
+local mod_path
+if type(Yso) == "table" and type(Yso.bootstrap) == "table" and type(Yso.bootstrap.root) == "string" then
+  local root = Yso.bootstrap.root:gsub("/Occultist/modules$", "")
+  mod_path = root .. "/Magi/magi_vibes.lua"
+else
+  local home = os.getenv("USERPROFILE") or os.getenv("HOME") or ""
+  home = tostring(home):gsub("\\", "/"):gsub("/+$", "")
+  mod_path = home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/Magi/magi_vibes.lua"
+end
 
 if not (Yso and Yso.magi and Yso.magi.vibes and type(Yso.magi.vibes.run) == "function") then
   local ok, err = pcall(dofile, mod_path)
