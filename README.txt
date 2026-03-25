@@ -50,6 +50,17 @@ Workspace layout
       Yso offense aliases.xml
       limb.1.2.xml
 
+Offline workflow
+----------------
+  Yes. Normal repository work can continue while you are away from GitHub:
+    edit canonical files
+    refresh mirrors
+    rebuild exported Mudlet packages
+    verify changes locally in Mudlet
+
+  The only part that waits on GitHub availability is publishing the finished
+  work back to the remote branch/PR.
+
 Notes
 -----
   Yso system.xml is rebuilt from the Occultist source tree.

@@ -44,6 +44,12 @@ Current workspace snapshot: March 21, 2026.
 4. Test in Mudlet.
 5. Commit and push the synced files.
 
+## Offline workflow
+
+- Yes — repository edits, mirror refreshes, package rebuilds, and local Mudlet verification can all be done while you are away from GitHub.
+- The workspace is self-contained for normal source changes, so you can keep working against the checked-out files even if GitHub is unavailable.
+- The only step that still requires GitHub connectivity is publishing progress back to the remote branch or PR after the local work is ready.
+
 ## Notes
 
 - The Occultist stack is the primary active development target.
