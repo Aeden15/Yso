@@ -44,6 +44,58 @@ Current workspace snapshot: March 21, 2026.
 4. Test in Mudlet.
 5. Commit and push the synced files.
 
+## Syncing with OneDrive Desktop
+
+The `Yso systems` folder on your Desktop is synced by OneDrive.  The
+`sync_workspace.ps1` script in this repo mirrors files between the git
+clone and that Desktop folder so changes flow in both directions.
+
+### First-time setup
+
+1. Clone this repo somewhere **outside** OneDrive (e.g. `C:\repos\Yso`).
+   OneDrive lock-file conflicts can corrupt `.git` internals, so keep the
+   clone on a plain local drive.
+
+   ```powershell
+   git clone https://github.com/Aeden15/Yso.git C:\repos\Yso
+   ```
+
+2. Make sure `Yso systems` already exists on your Desktop.  The script
+   auto-detects common OneDrive Desktop paths:
+   - `%USERPROFILE%\OneDrive\Desktop\Yso systems`
+   - `%USERPROFILE%\Desktop\Yso systems`
+
+   If yours is somewhere else, pass `-DesktopPath` explicitly.
+
+### Push repo changes to the Desktop
+
+```powershell
+cd C:\repos\Yso
+.\sync_workspace.ps1 push            # copies repo → Desktop
+.\sync_workspace.ps1 push -DryRun    # preview without copying
+```
+
+OneDrive picks up the updated files automatically.
+
+### Pull Desktop edits back into the repo
+
+```powershell
+cd C:\repos\Yso
+.\sync_workspace.ps1 pull            # copies Desktop → repo
+git diff                             # review what changed
+git add -A && git commit -m "sync from desktop"
+git push
+```
+
+### What gets synced
+
+| Repo path | Desktop path |
+|-----------|-------------|
+| `Ysindrolir/` | `Yso systems/Ysindrolir/` |
+| `README.md`, `README.txt` | `Yso systems/README.md`, `Yso systems/README.txt` |
+
+Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
+
 ## Notes
 
 - The Occultist stack is the primary active development target.
