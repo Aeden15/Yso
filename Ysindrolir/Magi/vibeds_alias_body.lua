@@ -5,8 +5,11 @@
 local mod_path
 if type(Yso) == "table" and type(Yso.bootstrap) == "table" and type(Yso.bootstrap.root) == "string" then
   local root = Yso.bootstrap.root:gsub("/Occultist/modules$", "")
-  mod_path = root .. "/Magi/magi_vibes.lua"
-else
+  if root ~= Yso.bootstrap.root then
+    mod_path = root .. "/Magi/magi_vibes.lua"
+  end
+end
+if not mod_path then
   local home = os.getenv("USERPROFILE") or os.getenv("HOME") or ""
   home = tostring(home):gsub("\\", "/"):gsub("/+$", "")
   mod_path = home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/Magi/magi_vibes.lua"
