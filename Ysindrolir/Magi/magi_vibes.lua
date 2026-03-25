@@ -41,6 +41,7 @@ V.cfg = V.cfg or {
     "embed dissonance",
     "embed plague",
     "embed lullaby",
+    "embed revelation",
   },
 }
 
