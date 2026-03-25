@@ -22,10 +22,17 @@ Current fixes
   has been retired. Split devtools sources now live at:
     Ysindrolir/Occultist/Occultist Devtools.xml
     Ysindrolir/Magi/MagiDevtools.xml
+  Both split devtools packages now import with their top-level alias groups
+  disabled by default.
 
   Export artifacts were refreshed from the canonical source tree, including:
     modules/Yso/xml/yso_pulse_wake_bus.lua
     mudlet packages/Yso system.xml
+
+  The first hostile loyals bootstrap in both aff-burst and party-aff now pairs
+  an immediate `readaura <target>` snapshot on the same outbound line when EQ
+  is available. If EQ is down, the next eligible EQ tick still handles the
+  read through the normal planner path.
 
   `hunt` / `bash` now behave as pure mode switches when you are already in bash,
   so stable entourage state is preserved instead of forcing a fresh `ent` /
@@ -182,3 +189,5 @@ Working notes
   Use the split source-side devtools files instead:
     Occultist Devtools.xml
     ../Magi/MagiDevtools.xml
+  Both now default to off until you manually enable their top-level alias
+  group in Mudlet.

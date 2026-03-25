@@ -578,11 +578,24 @@ local function _same_attack_is_hot(cmd)
   return (_now() - (tonumber(last.at) or 0)) < hot_window
 end
 
-local function _plan_eq(tgt)
+local function _plan_eq(tgt, opts)
   if not _eq_ready() then return nil, nil, nil, nil end
 
   local tag_prefix = "pa:eq:"
   local tkey = _lc(tgt)
+  local bootstrap_pending = (type(opts) == "table" and opts.loyals_bootstrap_pending == true)
+
+  if bootstrap_pending then
+    local tag = tag_prefix .. "readaura:" .. tkey
+    local txn_active = false
+    if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function" then
+      local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
+      txn_active = ok and type(status) == "table" and status.active == true and status.matched == true
+    end
+    if not txn_active and not _recent_sent(tag, 8) then
+      return ("readaura %s"):format(tgt), "team_coordination", tag, 1.0
+    end
+  end
 
   if _shield_is_up(tgt) then
     local tag = tag_prefix .. "shieldbreak:" .. tkey
@@ -821,7 +834,10 @@ function PA.attack_function(arg)
   end
   local tgt = info
   local free_cmd, free_cat = _plan_free(tgt)
-  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt)
+  local loyals_bootstrap_pending = (_trim(free_cmd) ~= "")
+  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt, {
+    loyals_bootstrap_pending = loyals_bootstrap_pending,
+  })
   local bal_cmd, bal_cat = _plan_bal(tgt)
   local class_cmd, class_cat = _plan_entity(tgt)
   local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
@@ -855,6 +871,7 @@ function PA.attack_function(arg)
     focus_lock_count = _focus_lock_count(tgt),
     lock_stable = _lock_stable(tgt),
     manaleech = _has_aff(tgt, "manaleech"),
+    loyals_bootstrap_pending = loyals_bootstrap_pending,
     mental_score = _mental_score(),
     planned = gate and gate.planned and gate.planned.lanes or { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = class_cmd },
     gated = gate and gate.gated and gate.gated.lanes or (payload and payload.lanes) or {},
@@ -901,6 +918,16 @@ function PA.on_sent(payload, ctx)
     local free = payload.lanes and payload.lanes.free or payload.free
     if type(free) == "string" and free == loyals_cmd then
       PA.state.loyals_sent_for = tgt
+    end
+    local eq_lane = payload.lanes and payload.lanes.eq or payload.eq
+    local readaura_cmd = ("readaura %s"):format(tgt)
+    if type(eq_lane) == "string" and eq_lane == readaura_cmd and Yso and Yso.occ then
+      if type(Yso.occ.aura_begin) == "function" then
+        pcall(Yso.occ.aura_begin, tgt, "party_aff_send")
+      end
+      if type(Yso.occ.set_readaura_ready) == "function" then
+        pcall(Yso.occ.set_readaura_ready, false, "sent")
+      end
     end
   end
   local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity

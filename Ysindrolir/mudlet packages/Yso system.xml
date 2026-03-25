@@ -8095,11 +8095,24 @@ local function _same_attack_is_hot(cmd)
   return (_now() - (tonumber(last.at) or 0)) &lt; hot_window
 end
 
-local function _plan_eq(tgt)
+local function _plan_eq(tgt, opts)
   if not _eq_ready() then return nil, nil, nil, nil end
 
   local tag_prefix = &quot;pa:eq:&quot;
   local tkey = _lc(tgt)
+  local bootstrap_pending = (type(opts) == &quot;table&quot; and opts.loyals_bootstrap_pending == true)
+
+  if bootstrap_pending then
+    local tag = tag_prefix .. &quot;readaura:&quot; .. tkey
+    local txn_active = false
+    if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot; then
+      local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
+      txn_active = ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
+    end
+    if not txn_active and not _recent_sent(tag, 8) then
+      return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, 1.0
+    end
+  end
 
   if _shield_is_up(tgt) then
     local tag = tag_prefix .. &quot;shieldbreak:&quot; .. tkey
@@ -8338,7 +8351,10 @@ function PA.attack_function(arg)
   end
   local tgt = info
   local free_cmd, free_cat = _plan_free(tgt)
-  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt)
+  local loyals_bootstrap_pending = (_trim(free_cmd) ~= &quot;&quot;)
+  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt, {
+    loyals_bootstrap_pending = loyals_bootstrap_pending,
+  })
   local bal_cmd, bal_cat = _plan_bal(tgt)
   local class_cmd, class_cat = _plan_entity(tgt)
   local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
@@ -8372,6 +8388,7 @@ function PA.attack_function(arg)
     focus_lock_count = _focus_lock_count(tgt),
     lock_stable = _lock_stable(tgt),
     manaleech = _has_aff(tgt, &quot;manaleech&quot;),
+    loyals_bootstrap_pending = loyals_bootstrap_pending,
     mental_score = _mental_score(),
     planned = gate and gate.planned and gate.planned.lanes or { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = class_cmd },
     gated = gate and gate.gated and gate.gated.lanes or (payload and payload.lanes) or {},
@@ -8418,6 +8435,16 @@ function PA.on_sent(payload, ctx)
     local free = payload.lanes and payload.lanes.free or payload.free
     if type(free) == &quot;string&quot; and free == loyals_cmd then
       PA.state.loyals_sent_for = tgt
+    end
+    local eq_lane = payload.lanes and payload.lanes.eq or payload.eq
+    local readaura_cmd = (&quot;readaura %s&quot;):format(tgt)
+    if type(eq_lane) == &quot;string&quot; and eq_lane == readaura_cmd and Yso and Yso.occ then
+      if type(Yso.occ.aura_begin) == &quot;function&quot; then
+        pcall(Yso.occ.aura_begin, tgt, &quot;party_aff_send&quot;)
+      end
+      if type(Yso.occ.set_readaura_ready) == &quot;function&quot; then
+        pcall(Yso.occ.set_readaura_ready, false, &quot;sent&quot;)
+      end
     end
   end
   local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity
@@ -29119,6 +29146,12 @@ local function _readaura_tag(tgt)
   return &quot;ab:eq:readaura:&quot; .. _lc(tgt)
 end
 
+local function _aura_txn_active_for(tgt)
+  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot;) then return false end
+  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
+  return ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
+end
+
 local function _missing_key(list, key)
   if type(list) ~= &quot;table&quot; then return false end
   key = _lc(key)
@@ -29158,12 +29191,26 @@ local function _readaura_plan(tgt, plan, burst_ready)
   return nil, nil, nil, nil
 end
 
+local function _bootstrap_readaura_plan(tgt, plan)
+  if not (plan and plan.loyals_bootstrap_pending == true and plan.readaura_via_loyals == true) then
+    return nil, nil, nil, nil
+  end
+  local tag = _readaura_tag(tgt)
+  if _recent_sent(tag, tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return nil, nil, nil, nil end
+  if _aura_txn_active_for(tgt) then return nil, nil, nil, nil end
+  return (&quot;readaura %s&quot;):format(tgt), &quot;cleanseaura_window&quot;, tag, tonumber(AB.cfg.readaura_lockout_s or 1.0)
+end
+
 local function _eq_plan(tgt, plan, gate)
   if not _eq_ready() then return nil, nil, nil, nil end
 
   local burst_ready = _burst_ready(tgt)
   local has_wm = _has_aff(tgt, &quot;whisperingmadness&quot;) or _has_aff(tgt, &quot;whispering_madness&quot;)
   local has_manaleech = _has_aff(tgt, &quot;manaleech&quot;)
+  local bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock = _bootstrap_readaura_plan(tgt, plan)
+  if bootstrap_cmd then
+    return bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock
+  end
   local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = _readaura_plan(tgt, plan, burst_ready)
 
   if readaura_cmd then
@@ -29548,6 +29595,7 @@ function AB.attack_function(arg)
   local tgt = info
   local loyals_bootstrap_pending = (_trim(select(1, _loyals_open_cmd(tgt))) ~= &quot;&quot;)
   local plan = CS.plan_aff(tgt)
+  plan.loyals_bootstrap_pending = (loyals_bootstrap_pending == true)
   if loyals_bootstrap_pending then
     plan.needs_readaura = true
     plan.readaura_via_loyals = true
@@ -29662,6 +29710,7 @@ function AB.attack_function(arg)
     aura_deaf = plan.deaf,
     needs_readaura = plan.needs_readaura,
     readaura_via_loyals = plan.readaura_via_loyals == true,
+    loyals_bootstrap_pending = plan.loyals_bootstrap_pending == true,
     snapshot_complete = plan.snapshot_complete,
     snapshot_read_complete = plan.snapshot_read_complete,
     snapshot_had_counts = plan.snapshot_had_counts,
