@@ -10,7 +10,6 @@ Legacy.Fool = Legacy.Fool or {}
 Yso = Yso or {}
 Yso.fool = Yso.fool or { cfg = {} }
 
-Legacy.Fool.min_affs = 6
 Legacy.Fool.queue_mode = "addclearfull"
 Legacy.Fool.queue_type = "bal"
 

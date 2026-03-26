@@ -184,19 +184,25 @@ local function _queue_fool()
   local qtype = tostring(Legacy.Fool.queue_type or "bal")
   local cmd   = "fling fool at me"
 
-  -- mark cooldown at queue time
-  F.state.last_used = _now()
-
   if Yso.queue and type(Yso.queue.addclearfull) == "function"
      and mode:lower() == "addclearfull" then
     -- Yso queue helper path
-    Yso.queue.addclearfull(qtype, cmd)
+    local queued = (Yso.queue.addclearfull(qtype, cmd) == true)
+    if queued then
+      F.state.last_used = _now()
+      _fool_echo(string.format("Queued Fool via %s %s.", mode, qtype))
+    end
+    return queued
   else
     -- raw queue path
-    send(string.format("queue %s %s %s", mode, qtype, cmd))
+    local ok = pcall(send, string.format("queue %s %s %s", mode, qtype, cmd), false)
+    if not ok then
+      return false
+    end
+    F.state.last_used = _now()
+    _fool_echo(string.format("Queued Fool via %s %s.", mode, qtype))
+    return true
   end
-
-  _fool_echo(string.format("Queued Fool via %s %s.", mode, qtype))
 end
 
 --========================================================--
