@@ -3957,7 +3957,18 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Mass vibes</name>
-						<script>local mod_path = [[C:\Users\shuji\OneDrive\Desktop\Yso systems\Ysindrolir\Magi\magi_vibes.lua]]
+						<script>local mod_path
+if type(Yso) == "table" and type(Yso.bootstrap) == "table" and type(Yso.bootstrap.root) == "string" then
+  local root = Yso.bootstrap.root:gsub("/Occultist/modules$", "")
+  if root ~= Yso.bootstrap.root then
+    mod_path = root .. "/Magi/magi_vibes.lua"
+  end
+end
+if not mod_path then
+  local home = os.getenv("USERPROFILE") or os.getenv("HOME") or ""
+  home = tostring(home):gsub("\\", "/"):gsub("/+$", "")
+  mod_path = home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/Magi/magi_vibes.lua"
+end
 
 if not (Yso and Yso.magi and Yso.magi.vibes and type(Yso.magi.vibes.run) == "function") then
   local ok, err = pcall(dofile, mod_path)
