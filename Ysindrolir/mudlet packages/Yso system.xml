@@ -26383,11 +26383,7 @@ local function _is_lock_state()
     return false
   end
 
-  local soft_lock  = core and not _has(&quot;paralysis&quot;)
-  local true_lock  = core and _has(&quot;paralysis&quot;)
-  local aeon_lock  = core and _has(&quot;aeon&quot;)
-
-  return soft_lock or true_lock or aeon_lock
+  return true
 end
 
 -- Resolve min_affs and whether &quot;lock&quot; is allowed to override the threshold
@@ -26424,11 +26420,12 @@ local function _queue_fool()
   local mode  = tostring(Legacy.Fool.queue_mode or &quot;addclearfull&quot;)
   local qtype = tostring(Legacy.Fool.queue_type or &quot;bal&quot;)
   local cmd   = &quot;fling fool at me&quot;
+  local queue_fn_name = mode:lower()
+  local queue_fn = Yso.queue and Yso.queue[queue_fn_name]
 
-  if Yso.queue and type(Yso.queue.addclearfull) == &quot;function&quot;
-     and mode:lower() == &quot;addclearfull&quot; then
+  if type(queue_fn) == &quot;function&quot; then
     -- Yso queue helper path
-    local queued = (Yso.queue.addclearfull(qtype, cmd) == true)
+    local queued = (queue_fn(qtype, cmd) == true)
     if queued then
       F.state.last_used = _now()
       _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
