@@ -1,6 +1,6 @@
 Magi workspace notes
 ====================
-Last updated: March 22, 2026
+Last updated: March 26, 2026
 
 This folder is the class-specific home for Magi work.
 
@@ -12,7 +12,6 @@ Current fixes
 
   The split Magi-side debug package now lives here as:
     MagiDevtools.xml
-    MagiDevtools.mpackage
 
   This file set is currently the Magi-side home for debug tooling while the
   Occultist-side copy remains at:
@@ -41,6 +40,7 @@ Default vibes notes
     dissonance
     plague
     lullaby
+    revelation
 
 Notes
 -----
@@ -52,6 +52,7 @@ Current Magi follow-up
   The local skill reference chart was corrected against live helpfile output for:
     retardation
     cataclysm
+    revelation
 
   The shared Yso package now keeps elemental tracking as:
     Yso.elemental            current summoned elemental or false

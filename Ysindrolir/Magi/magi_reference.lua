@@ -14,12 +14,14 @@
 Yso = Yso or {}
 Yso.ref = Yso.ref or {}
 Yso.ref.magi = Yso.ref.magi or {}
+Yso.magi = Yso.magi or {}
 
 local M = Yso.ref.magi
+local runtime_resonance = type(Yso.magi.resonance) == "table" and Yso.magi.resonance or nil
 
 M.meta = {
   class = "Magi",
-  updated = "2026-03-06",
+  updated = "2026-03-26",
   notes = {
     "Resonance is a core Magi mechanic. Resonant spells build elemental resonance (air/fire/earth/water).",
     "AK Magi triggers/affs may be out-of-date due to a recent class overhaul; treat as advisory until audited.",
@@ -29,14 +31,22 @@ M.meta = {
 --========================================================--
 -- Resonance
 --========================================================--
-M.resonance = M.resonance or {}
+M.resonance = M.resonance or runtime_resonance or {}
+if runtime_resonance and runtime_resonance ~= M.resonance then
+  for k, v in pairs(runtime_resonance) do
+    if M.resonance[k] == nil then
+      M.resonance[k] = v
+    end
+  end
+end
+Yso.magi.resonance = M.resonance
 M.resonance.levels = { none = 0, minor = 1, moderate = 2, major = 3 }
 M.resonance.word_to_level = { minorly = "minor", moderately = "moderate", majorly = "major" }
 M.resonance.state = M.resonance.state or { air = 0, earth = 0, fire = 0, water = 0 }
 
 -- Example line:
 --   You are now minorly resonant with the Elemental Plane of Fire.
-M.resonance.line_pat = [[^You are now (minorly|moderately|majorly) resonant with the Elemental Plane of ([A-Za-z]+)%.$]]
+M.resonance.line_pat = [[^You are now (%a+) resonant with the Elemental Plane of (%a+)%.$]]
 --^You are now (minorly|moderately|majorly) resonant with the Elemental Planes of (\w+) and (\w+)\.$
 function M.resonance.clear()
   for k in pairs(M.resonance.state) do M.resonance.state[k] = 0 end
@@ -68,8 +78,8 @@ end
 function M.resonance.parse_line(line)
   line = tostring(line or "")
   local w, el = line:match(M.resonance.line_pat)
-  if not w or not el then return nil end
   local level_name = M.resonance.word_to_level[w]
+  if not level_name or not el then return nil end
   local level = M.resonance.levels[level_name] or 0
   return el:lower(), level, level_name
 end
@@ -83,10 +93,7 @@ end
 --   Water: minor->frostbite (if already present -> damage), moderate->stuttering (+cold dmg), major->anorexia (AK also tracked nausea+anorexia)
 --
 -- Structured form (for routes):
-Yso = Yso or {}
-Yso.magi = Yso.magi or {}
-Yso.magi.resonance = Yso.magi.resonance or {}
-Yso.magi.resonance.effects = Yso.magi.resonance.effects or {
+M.resonance.effects = M.resonance.effects or {
   air   = { minor={"asthma"},      moderate={"sensitivity"}, major={"healthleech"} },
   earth = { minor={"random_limb_break"}, moderate={"paralysis","stun_short"}, major={"cracked_ribs"} },
   fire  = { minor={"notemper"},    moderate={"scalded"},     major={"blisters","ablaze"} },
@@ -94,10 +101,10 @@ Yso.magi.resonance.effects = Yso.magi.resonance.effects or {
 }
 
 -- helper
-function Yso.magi.resonance.stage_affs(element, stage)
+function M.resonance.stage_affs(element, stage)
   element = tostring(element or ""):lower()
   stage   = tostring(stage   or ""):lower()
-  local e = Yso.magi.resonance.effects[element]
+  local e = M.resonance.effects[element]
   return (e and e[stage]) or {}
 end
 
@@ -225,8 +232,8 @@ M.elementalism = {
     resource_mana = 150,
     notes = {
       "Higher order fire spell: periodic damage until extinguished.",
-      "Requires target has 2+ stacks of the abaze affliction.",
-      "Extinguish by removing all traces of abaze from the target.",
+      "Requires target has 2+ stacks of the ablaze affliction.",
+      "Extinguish by removing all traces of ablaze from the target.",
     },
   },
 
@@ -243,7 +250,7 @@ M.elementalism = {
       "Unleashes accumulated power in a single strike; clears your resonance for that Plane.",
       "AIR: paralysis + dizziness + short stun.",
       "EARTH: torso calcified; additionally slays outright if target has serious internal trauma.",
-      "FIRE: applies 2 stacks of abaze.",
+      "FIRE: applies 2 stacks of ablaze.",
       "WATER: applies a level of freeze (or strips insulation defence) and disrupts.",
     },
   },
@@ -459,6 +466,18 @@ M.crystalism = {
     resource_mana = 300,
     notes = {
       "Creates a shrill screech in the area, disrupting concentration and increasing the chance enemies are afflicted with stupidity.",
+    },
+  },
+
+  revelation = {
+    name = "Revelation",
+    syntax = "EMBED REVELATION",
+    shapes = { "cube", "diamond" },
+    works_on = "room",
+    cooldown_s = 4.00,
+    resource_mana = 300,
+    notes = {
+      "Causes concealed adventurers in your location to be revealed.",
     },
   },
 
@@ -763,3 +782,4 @@ function M.get(skillset, key)
 end
 
 --========================================================--
+return M

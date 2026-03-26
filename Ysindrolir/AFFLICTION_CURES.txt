@@ -44,7 +44,7 @@ Indifference:     Eat           Bellwort      Cuprum
 Internal Trauma:  Apply         Restoration   Restoration
 Justice:          Eat           Bellwort      Cuprum
 Lethargy:         Eat           Ginseng       Ferrum
-Loneliness:      Eat           Lobelia       Argentum
+Loneliness:       Eat           Lobelia       Argentum
 Lover's Effect:   Eat           Bellwort      Cuprum
 Masochism:        Eat           Lobelia       Argentum
 Mana Leech:       Smoke         Valerian      Realgar

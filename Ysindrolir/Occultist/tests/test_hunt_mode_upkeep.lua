@@ -115,7 +115,13 @@ _G.Yso = {
 _G.yso = _G.Yso
 
 -- Load the module
-dofile("../modules/Yso/xml/yso_hunt_mode_upkeep.lua")
+local function _this_dir()
+  local source = debug.getinfo(1, "S").source or ""
+  source = tostring(source):gsub("^@", ""):gsub("\\", "/")
+  return source:match("^(.*)/[^/]+$") or "."
+end
+
+dofile(_this_dir() .. "/../modules/Yso/xml/yso_hunt_mode_upkeep.lua")
 local M = Yso.huntmode
 
 -- enable debug for trace

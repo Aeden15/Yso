@@ -3957,17 +3957,61 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Mass vibes</name>
-						<script>local mod_path
-if type(Yso) == "table" and type(Yso.bootstrap) == "table" and type(Yso.bootstrap.root) == "string" then
-  local root = Yso.bootstrap.root:gsub("/Occultist/modules$", "")
-  if root ~= Yso.bootstrap.root then
-    mod_path = root .. "/Magi/magi_vibes.lua"
+						<script>local function _norm(path)
+  return tostring(path or ""):gsub("\\", "/"):gsub("/+$", "")
+end
+
+local function _exists(path)
+  local fh = io.open(path, "rb")
+  if not fh then return false end
+  fh:close()
+  return true
+end
+
+local function _candidate_paths()
+  local out = {}
+  local seen = {}
+  local function push(root)
+    root = _norm(root)
+    if root == "" then return end
+    local path = root .. "/Ysindrolir/Magi/magi_vibes.lua"
+    if seen[path] then return end
+    seen[path] = true
+    out[#out + 1] = path
+  end
+
+  if type(Yso) == "table" and type(Yso.bootstrap) == "table" and type(Yso.bootstrap.root) == "string" then
+    local root = _norm(Yso.bootstrap.root)
+    local sibling = root:gsub("/Occultist/modules$", "")
+    if sibling ~= root then
+      push(sibling)
+    end
+  end
+
+  local home = _norm(os.getenv("USERPROFILE") or os.getenv("HOME") or "")
+  if home ~= "" then
+    push(home .. "/OneDrive/Desktop/Yso systems")
+    push(home .. "/OneDrive - Personal/Desktop/Yso systems")
+    push(home .. "/Desktop/Yso systems")
+    push(home .. "/OneDrive/Yso systems")
+  end
+
+  return out
+end
+
+local mod_path
+for _, candidate in ipairs(_candidate_paths()) do
+  if _exists(candidate) then
+    mod_path = candidate
+    break
   end
 end
+
 if not mod_path then
-  local home = os.getenv("USERPROFILE") or os.getenv("HOME") or ""
-  home = tostring(home):gsub("\\", "/"):gsub("/+$", "")
-  mod_path = home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/Magi/magi_vibes.lua"
+  if type(cecho) == "function" then
+    cecho("&lt;red&gt;[Yso:Magi:Vibes] load failed: magi_vibes.lua not found&lt;reset&gt;\n")
+  end
+  return
 end
 
 if not (Yso and Yso.magi and Yso.magi.vibes and type(Yso.magi.vibes.run) == "function") then
