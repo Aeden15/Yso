@@ -27,7 +27,6 @@ return {
   { source = "modules/Yso/Combat/routes/party_aff.lua",                mirror = "modules/Yso/xml/party_aff.lua" },
   { source = "modules/Yso/Combat/occultist/offense_helpers.lua",       mirror = "modules/Yso/xml/yso_occultist_offense.lua" },
   { source = "modules/Yso/Combat/occultist/entity_registry.lua",       mirror = "modules/Yso/xml/entity_registry.lua" },
-  { source = "modules/Yso/Combat/occultist/domination_reference.lua",  mirror = "modules/Yso/xml/domination_reference.lua" },
   { source = "modules/Yso/Combat/occultist/aeon.lua",                  mirror = "modules/Yso/xml/yso_aeon.lua" },
   { source = "modules/Yso/Combat/occultist/softlock_gate.lua",         mirror = "modules/Yso/xml/softlock_gate.lua" },
 

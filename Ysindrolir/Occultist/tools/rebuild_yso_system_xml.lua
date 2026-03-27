@@ -3,6 +3,7 @@ local legacy_name_map = {
   ["hinder.lua"] = { "hinder" },
   ["party_aff.lua"] = { "party_aff" },
   ["route_gate.lua"] = { "route_gate" },
+  ["shieldbreak.lua"] = { "Hunt - Primebond Shieldbreak Selector" },
   ["yso_ak_score_exports.lua"] = { "Yso_AK_Score_Exports.lua" },
   ["yso_mode_autoswitch.lua"] = { "Yso_mode_autoswitch.lua" },
   ["yso_modes.lua"] = { "Yso_modes.lua" },
@@ -16,7 +17,7 @@ local legacy_name_map = {
 }
 
 local body_signature_map = {
-  ["hunt_primebond_shieldbreak_selector.lua"] = "yso_hunt_primebond_selector%.lua %(DROP%-IN%)",
+  ["shieldbreak.lua"] = "yso_hunt_primebond_selector%.lua %(DROP%-IN%)",
 }
 
 local insert_before_name_map = {
@@ -29,6 +30,9 @@ local insert_before_name_map = {
 }
 
 local retired_script_name_map = {
+  ["domination_reference.lua"] = { "Domination reference" },
+  ["occultism_reference.lua"] = { "Occultism reference" },
+  ["tarot_reference.lua"] = { "Tarot reference" },
   ["yso_travel_router.lua"] = { "yso_travel_router.lua" },
   ["yso_travel_universe.lua"] = { "yso_travel_universe.lua" },
 }
@@ -200,7 +204,7 @@ end
 
 local function list_lua_files(dir)
   local win_dir = path_normalize(dir):gsub("/", "\\")
-  local cmd = string.format('cmd /C dir /B /A-D "%s\\*.lua"', win_dir)
+  local cmd = string.format('cmd /C dir /B /S /A-D "%s\\*.lua"', win_dir)
   local pipe = io.popen(cmd, "r")
   if not pipe then
     fail("unable to list Lua files in " .. dir)
@@ -210,7 +214,7 @@ local function list_lua_files(dir)
   for line in pipe:lines() do
     line = tostring(line or ""):gsub("\r", "")
     if line ~= "" then
-      out[#out + 1] = path_join(dir, line)
+      out[#out + 1] = path_normalize(line)
     end
   end
   pipe:close()

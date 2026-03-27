@@ -166,6 +166,7 @@ local function _push_unique(tbl, value)
   end
   tbl[#tbl + 1] = value
 end
+local _entity_aff_cmd
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
@@ -573,17 +574,29 @@ function CS.plan_aff(tgt)
   local needs_defs = fresh and ((snap.read_complete ~= true) or missing.defs == true)
   local needs_counts = fresh and ((snap.had_counts ~= true) or missing.counts == true)
   local needs_mana_snapshot = fresh and (mana == nil and ((snap.had_mana ~= true) or missing.mana == true))
-  local needs_readaura = (not fresh)
-    or (fresh and snap.parse_window_open ~= true and (needs_defs or needs_counts or needs_mana_snapshot))
-  if loyals_readaura == true then
-    needs_readaura = true
-  end
+  local needs_readaura = false
+  local readaura_reason = ""
   if fresh and snap.parse_window_open == true then
     needs_readaura = false
+    readaura_reason = "parse_window_open"
+  elseif not fresh then
+    needs_readaura = true
+    readaura_reason = "snapshot_stale"
+  elseif needs_defs then
+    needs_readaura = true
+    readaura_reason = "defs_incomplete"
+  elseif needs_counts then
+    needs_readaura = true
+    readaura_reason = "counts_incomplete"
+  elseif needs_mana_snapshot then
+    needs_readaura = true
+    readaura_reason = "mana_unknown"
   end
   local bm_entry = (bm.active == true and _has_aff(tgt, "asthma"))
   local bm_branch_active = bm_entry and bm.state == "complete_enough" and (_has_aff(tgt, "paralysis") or _has_aff(tgt, "weariness"))
   local bm_branch_provisional = bm_entry and not bm_branch_active
+  local sensory_stage = ((mana ~= nil and mana <= mana_cap) or false) and "cleanseaura_window" or "pressure"
+  local sensory_mode = (sensory_stage == "cleanseaura_window") and "burst_first_deaf_only" or "maintain_blind_deaf_deaf_bias"
 
   local out = {
     route = "aff",
@@ -617,11 +630,15 @@ function CS.plan_aff(tgt)
     needs_mana_bury = (mana == nil) or (mana > mana_cap),
     mana_bury_ready = mana_bury_ready,
     needs_readaura = needs_readaura,
+    readaura_reason = readaura_reason,
     readaura_via_loyals = loyals_readaura,
     needs_speed_strip = (speed == true) or false,
     cleanseaura_ready = (mana ~= nil and mana <= mana_cap) or false,
     needs_attend = needs_attend,
     needs_chimera = needs_chimera,
+    sensory_stage = sensory_stage,
+    sensory_mode = sensory_mode,
+    sensory_deaf_priority = (sensory_stage == "pressure"),
     focus_lock_count = focus_count,
     bm_snapshot = bm,
     bm_snapshot_state = bm.state,
@@ -771,6 +788,13 @@ local _FOCUS_LOCK_ENLIGHTEN_FALLBACK = {
   "addiction",
   "recklessness",
   "masochism",
+}
+local _ENTITY_FILLER_ORDER = {
+  "clumsiness",
+  "healthleech",
+  "weariness",
+  "haemophilia",
+  "addiction",
 }
 
 local function _normalized_aff_list(src)
@@ -982,6 +1006,28 @@ local function _focus_lock_prediction_set()
   return set
 end
 
+local function _chimera_roar_complete(tgt)
+  for i = 1, #_FOCUS_LOCK_ROAR_POOL do
+    if not _has_aff(tgt, _FOCUS_LOCK_ROAR_POOL[i]) then
+      return false
+    end
+  end
+  return true
+end
+
+local function _entity_filler_plan(tgt, ES)
+  for i = 1, #_ENTITY_FILLER_ORDER do
+    local aff = _ENTITY_FILLER_ORDER[i]
+    if not _has_aff(tgt, aff) then
+      local cmd, cat = _entity_aff_cmd(aff, tgt, ES)
+      if _trim(cmd) ~= "" then
+        return aff, cmd, cat or "mana_bury"
+      end
+    end
+  end
+  return nil, nil, nil
+end
+
 local function _predict_mana_bury_aff(tgt, plan)
   return _predict_cured_aff_in_family(tgt, _mana_bury_prediction_set())
 end
@@ -1030,7 +1076,7 @@ local function _entity_candidates(tgt, plan)
   return out, predicted and "predict" or "focus_lock"
 end
 
-local function _entity_aff_cmd(aff, tgt, ES)
+_entity_aff_cmd = function(aff, tgt, ES)
   if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == "function" then
     return Yso.ent_cmd_for_aff(_lc(aff), tgt, _has_aff)
   end
@@ -2505,10 +2551,8 @@ local function _should_probe_readaura(tgt, plan, burst_ready)
   if _recent_sent(_readaura_tag(tgt), tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return false end
   if plan and plan.snapshot_parse_window_open == true then return false end
 
+  if plan and plan.needs_readaura == true then return true end
   if plan and (plan.snapshot_confidence_state == "stale" or plan.snapshot_complete ~= true) then return true end
-
-  -- Once loyals are committed to the target, refresh aura on the normal requery cadence.
-  if plan and plan.readaura_via_loyals == true then return true end
 
   local need_defs = plan and ((plan.snapshot_read_complete ~= true) or _missing_key(plan.snapshot_missing_keys, "defs"))
   local need_counts = plan and ((plan.snapshot_had_counts ~= true) or _missing_key(plan.snapshot_missing_keys, "counts"))
@@ -2700,11 +2744,29 @@ local function _route_pair_plan(tgt, plan)
     and not (plan and (plan.finish_stage == "transition" or plan.finish_stage == "burst"))
     and not _class_defense_gates(plan)
   then
-    if _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted_focus) then
+    if plan and plan.needs_attend == true then
       out.entity_cmd = ("command chimera at %s"):format(tgt)
       out.entity_cat = "mental_build"
       out.entity_aff = "chimera_roar"
-      out.reason = _focus_lock_in_roar_pool(predicted_focus) and ("focus_lock_predict:" .. predicted_focus) or "focus_lock_roar"
+      out.reason = "attend_deaf_chimera"
+    elseif (plan and plan.needs_chimera == true) or _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted_focus) then
+      local hearing_target = not (plan and plan.deaf == true)
+      local roar_complete = hearing_target and _chimera_roar_complete(tgt)
+      if roar_complete then
+        local filler_aff, filler_cmd, filler_cat = _entity_filler_plan(tgt, ES)
+        if _trim(filler_cmd) ~= "" then
+          out.entity_cmd = filler_cmd
+          out.entity_cat = filler_cat
+          out.entity_aff = filler_aff
+          out.reason = "chimera_filler:" .. tostring(filler_aff)
+        end
+      end
+      if out.entity_cmd == nil then
+        out.entity_cmd = ("command chimera at %s"):format(tgt)
+        out.entity_cat = "mental_build"
+        out.entity_aff = "chimera_roar"
+        out.reason = _focus_lock_in_roar_pool(predicted_focus) and ("focus_lock_predict:" .. predicted_focus) or "focus_lock_roar"
+      end
     elseif ES.syc_refresh == true and has_wm ~= true and plan and plan.cleanseaura_ready ~= true then
       out.entity_cmd = ("command sycophant at %s"):format(tgt)
       out.entity_cat = "mental_build"
@@ -3049,6 +3111,7 @@ function AB.attack_function(arg)
     aura_blind = plan.blind,
     aura_deaf = plan.deaf,
     needs_readaura = plan.needs_readaura,
+    readaura_reason = plan.readaura_reason or "",
     readaura_via_loyals = plan.readaura_via_loyals == true,
     loyals_bootstrap_pending = plan.loyals_bootstrap_pending == true,
     snapshot_complete = plan.snapshot_complete,
@@ -3058,6 +3121,9 @@ function AB.attack_function(arg)
     needs_mana_bury = plan.needs_mana_bury,
     mana_bury_ready = plan.mana_bury_ready == true,
     cleanseaura_ready = plan.cleanseaura_ready,
+    sensory_stage = plan.sensory_stage or "",
+    sensory_mode = plan.sensory_mode or "",
+    sensory_deaf_priority = plan.sensory_deaf_priority == true,
     truename_ready = _truebook_can_utter(tgt),
     truename_entry_eligible = gate.eligible,
     truename_entry_stable = gate.stable,
@@ -3073,6 +3139,7 @@ function AB.attack_function(arg)
     lock_stable = _lock_stable(tgt),
     focus_lock_sources = _focus_lock_giving_sources(tgt, plan),
     manaleech = _has_aff(tgt, "manaleech"),
+    chimera_roar_complete = (plan and plan.deaf ~= true) and _chimera_roar_complete(tgt) or false,
     eq_aff = pair and pair.eq_aff or "",
     entity_aff = pair and pair.entity_aff or "",
     pair_reason = pair and pair.reason or "",
