@@ -1,0 +1,141 @@
+BUG AUDIT FIXES — Yso Shared Pipeline (mode ownership → wake intake → queue staging → queue commit/flush)
+Generated: 2026-03-27
+Bugs 8–14 (follow-up to prior PR fixing Bugs 1–7)
+================================================================================
+
+--------------------------------------------------------------------------------
+BUG 8 (High)
+File: Ysindrolir/Occultist/modules/Yso/Core/offense_state.lua
+Problem:
+  The _now() function called _G._now (a global anyone can set) without applying
+  the ms→s normalization guard (> 20000000000). Every other file uses the
+  canonical Yso.util.now() path. If any module or user script replaces _G._now
+  with a raw getEpoch() wrapper, offense_state will operate in milliseconds —
+  lockout times would be ~1000x longer than intended, and S.recent() would
+  always return false.
+
+Fix — replace the _now() function (lines 17–28) with:
+
+  local function _now()
+    if Yso and Yso.util and type(Yso.util.now) == "function" then
+      local ok, v = pcall(Yso.util.now)
+      if ok and tonumber(v) then return tonumber(v) end
+    end
+    if type(getEpoch) == "function" then
+      local t = tonumber(getEpoch()) or os.time()
+      if t > 20000000000 then t = t / 1000 end
+      return t
+    end
+    return os.time()
+  end
+
+--------------------------------------------------------------------------------
+BUG 9 (High)
+File: Ysindrolir/Occultist/modules/Yso/Core/target_intel.lua
+Problem:
+  The _now() on lines 16–18 is:
+    local function _now()
+      return (type(getEpoch) == "function" and getEpoch()) or os.time()
+    end
+  No ms→s normalization. Timestamps stored in r.last_seen, r.meta.last_herb_at,
+  etc. will be in milliseconds on affected Mudlet versions, while anything
+  comparing against them (from modules using Yso.util.now() which returns
+  seconds) will get wildly wrong deltas.
+
+Fix — replace the _now() function with:
+
+  local function _now()
+    if type(getEpoch) == "function" then
+      local t = tonumber(getEpoch()) or os.time()
+      if t > 20000000000 then t = t / 1000 end
+      return t
+    end
+    return os.time()
+  end
+
+--------------------------------------------------------------------------------
+BUG 10 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/offense_driver.lua
+Problem:
+  Line 42: if Yso and type(Yso.now) == "function" then return tonumber(Yso.now()) or os.time() end
+  The canonical time helper is Yso.util.now(), not Yso.now(). Yso.now is never
+  defined anywhere. The check silently fails and falls through to getEpoch, so
+  it works accidentally — but is fragile.
+
+Fix — change line 42 to:
+
+  if Yso and Yso.util and type(Yso.util.now) == "function" then return tonumber(Yso.util.now()) or os.time() end
+
+--------------------------------------------------------------------------------
+BUG 11 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/offense_driver.lua
+Problem:
+  Line 172: _note_target_herb(who, "kelp") inside on_enemy_aurum_eat()
+  When the enemy eats aurum, the cure-inference pipeline is told they ate kelp.
+  This means target_intel.lua's note_target_herb() clears afflictions from the
+  kelp cure bucket instead of the aurum bucket. The affliction tracking desyncs
+  from reality.
+
+Fix — change line 172 from "kelp" to "aurum":
+
+  _note_target_herb(who, "aurum")
+
+--------------------------------------------------------------------------------
+BUG 12 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Core/queue.lua
+Problem:
+  Line 93: or cmd:match("^order%s+") in _infer_lane_from_payload catches ALL
+  order commands as "free" lane — including "order soulmaster attack ..." which
+  should go through EQ. If a soulmaster order is staged through Q.stage()
+  instead of P.queue(), it goes into the free lane instead of EQ, bypassing
+  EQ-solo handling.
+
+Fix — replace line 93 with:
+
+  or (cmd:match("^order%s+") and not cmd:match("^order%s+soulmaster%s+"))
+
+--------------------------------------------------------------------------------
+BUG 13 (Low)
+File: Ysindrolir/Occultist/modules/Yso/Core/mode_autoswitch.lua
+Problem:
+  Line 23: Yso.sep = Yso.sep or ";;"
+  If mode_autoswitch.lua loads before api.lua, Yso.sep gets locked to ";;".
+  When api.lua loads later, its Yso.sep = Yso.sep or Yso.cfg.pipe_sep is a
+  no-op. Commands would be split/joined on the wrong separator in route_gate.lua,
+  hinder.lua, and wake_bus.lua.
+
+Fix — remove the line entirely from mode_autoswitch.lua. It doesn't use
+separators and should not set Yso.sep.
+
+  -- Remove: Yso.sep = Yso.sep or ";;"
+
+--------------------------------------------------------------------------------
+BUG 14 (Low)
+File: Ysindrolir/Occultist/modules/Yso/Combat/hinder.lua
+Problem:
+  H.collected() returns the cached snapshot without any age check. If a route
+  calls H.collected() and the snapshot was from 5+ seconds ago (e.g. before
+  paralysis was cured), the route sees stale hinder data and continues blocking
+  offense lanes that should be open.
+
+Fix — add a _now() helper and replace H.collected() with an age-guarded version:
+
+  local function _now()
+    if type(getEpoch) == "function" then
+      local t = tonumber(getEpoch()) or os.time()
+      if t > 20000000000 then t = t / 1000 end
+      return t
+    end
+    return os.time()
+  end
+
+  function H.collected(ctx)
+    local snap = H.state.snapshot
+    if type(snap) ~= "table" then return H.collect(ctx) end
+    local age = (_now() - (snap.at or 0))
+    if age > 0.15 then return H.collect(ctx) end
+    return snap
+  end
+
+================================================================================
+END OF BUG AUDIT FIXES

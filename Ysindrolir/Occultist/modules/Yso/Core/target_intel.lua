@@ -14,7 +14,12 @@ local T = Yso.tgt
 
 -- ---------- tiny helpers ----------
 local function _now()
-  return (type(getEpoch) == "function" and getEpoch()) or os.time()
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
 end
 
 local function _key(name)

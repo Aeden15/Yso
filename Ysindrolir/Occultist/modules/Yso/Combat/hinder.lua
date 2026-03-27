@@ -5,6 +5,15 @@ Yso.hinder = Yso.hinder or {}
 
 local H = Yso.hinder
 
+local function _now()
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
 H.cfg = H.cfg or {}
 H.state = H.state or { snapshot = nil }
 
@@ -111,10 +120,11 @@ function H.collect(ctx)
 end
 
 function H.collected(ctx)
-  if type(H.state.snapshot) ~= "table" then
-    return H.collect(ctx)
-  end
-  return H.state.snapshot
+  local snap = H.state.snapshot
+  if type(snap) ~= "table" then return H.collect(ctx) end
+  local age = (_now() - (snap.at or 0))
+  if age > 0.15 then return H.collect(ctx) end
+  return snap
 end
 
 function H.classify(snapshot, payload, ctx)
