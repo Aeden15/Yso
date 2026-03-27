@@ -20,7 +20,6 @@ Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
 local Off = Yso.off.oc
-local Q   = Yso.queue
 
 -- ----------------------------
 -- Config (safe defaults)
@@ -44,11 +43,21 @@ Off.cfg.softlock_gate = Off.cfg.softlock_gate or {
 }
 
 Off._softlock_done = Off._softlock_done or {}
+Off._softlock_done_target = Off._softlock_done_target or ""
 
 -- ----------------------------
 -- Minimal helpers (self-contained)
 -- ----------------------------
 local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
+
+local function _warn(msg)
+  msg = tostring(msg or "")
+  if type(cecho) == "function" then
+    cecho(string.format("<yellow>[Yso:Softlock] <reset>%s\n", msg))
+  elseif type(echo) == "function" then
+    echo("[Yso:Softlock] " .. msg .. "\n")
+  end
+end
 
 local function _vit_eqbal()
   local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
@@ -66,6 +75,7 @@ end
 
 local function _queue_addclear(qtype, piped)
   if not piped or piped == "" then return false end
+  local Q = Yso and Yso.queue or nil
   if Q and type(Q.addclear) == "function" then
     Q.addclear(qtype, piped)
     return true
@@ -102,9 +112,7 @@ local function _stuck(aff, afftbl)
 end
 
 local function _softscore(afftbl)
-  -- Prefer AK global softscore if it exists (computed in ak.scoreup/oscore),
-  -- otherwise compute from aff presence (same formula).
-  if type(_G.softscore) == "number" then return _G.softscore end
+  -- Compute from the local tracked soft-lock affs only.
   local stuck = Off.cfg.stuck_score or 100
   local n = 0
   if _score("asthma", afftbl)   >= stuck then n = n + 1 end
@@ -120,6 +128,35 @@ local function _softlock_ready(t, afftbl)
   return ss >= need
 end
 
+local function _softlock_track_target(t)
+  t = _trim(t)
+  if t == "" then return "" end
+
+  local current = _trim(Off._softlock_done_target or "")
+  if current ~= "" and current ~= t then
+    Off._softlock_done[current] = nil
+  end
+
+  Off._softlock_done_target = t
+  if Off._softlock_done[t] == nil then
+    Off._softlock_done[t] = false
+  end
+  return t
+end
+
+local function _instill_cmd(t, aff)
+  aff = _trim(aff):lower()
+  if aff == "" then return nil end
+  return ("instill %s with %s"):format(t, aff)
+end
+
+local function _support_instill(t, cfg, aff)
+  if cfg.keep_paralysis == false then
+    return _instill_cmd(t, aff)
+  end
+  return _instill_cmd(t, "paralysis")
+end
+
 -- ----------------------------
 -- Soft-lock setup routine
 -- ----------------------------
@@ -127,7 +164,7 @@ function Off.try_softlock_setup(t, afftbl)
   local cfg = Off.cfg.softlock_gate or {}
   if cfg.enabled == false then return false end
   if not _vit_eqbal() then return false end
-  t = _trim(t)
+  t = _softlock_track_target(t)
   if t == "" then return false end
 
   local stuck = Off.cfg.stuck_score or 100
@@ -151,13 +188,12 @@ function Off.try_softlock_setup(t, afftbl)
 
   -- Build commands: keep it simple and deterministic.
   -- One instill per cycle: if we need anorexia specifically, instill anorexia; otherwise keep paralysis pressure.
-  local instill_cmd = nil
-  if cfg.keep_paralysis then instill_cmd = ("instill %s with paralysis"):format(t) end
+  local paralysis_cmd = cfg.keep_paralysis ~= false and _instill_cmd(t, "paralysis") or nil
 
   -- 1) Ensure asthma first (required for your gate AND for Bubonis slickness follow-up).
   if asthma < stuck then
     return _queue_eqbal_clear(
-      instill_cmd or ("instill %s with paralysis"):format(t),
+      _support_instill(t, cfg, "asthma"),
       ("command %s at %s"):format(ent_asthma, t)
     )
   end
@@ -166,12 +202,12 @@ function Off.try_softlock_setup(t, afftbl)
   if slick < stuck and (cfg.prefer == "slickness") then
     if cfg.slickness_via_bubonis_followup then
       return _queue_eqbal_clear(
-        instill_cmd or ("instill %s with paralysis"):format(t),
+        _support_instill(t, cfg, "slickness"),
         ("command %s at %s"):format(ent_asthma, t) -- asthma already present => bubonis follow-up slickness (per your affmap)
       )
     end
     return _queue_eqbal_clear(
-      instill_cmd or ("instill %s with paralysis"):format(t),
+      paralysis_cmd,
       ("instill %s with slickness"):format(t)
     )
   end
@@ -180,7 +216,7 @@ function Off.try_softlock_setup(t, afftbl)
   local need_three = cfg.push_three == true
   local need_second = (not need_three) and (_softscore(afftbl) < 2) -- asthma already present => missing either slickness or anorexia
   if (anorexia < stuck) and (need_three or need_second or cfg.prefer == "anorexia") then
-    -- Instill anorexia takes priority over paralysis for this cycle (single-instll reality).
+    -- Instill anorexia takes priority over paralysis for this cycle (single-instill reality).
     return _queue_eqbal_clear(
       ("instill %s with anorexia"):format(t)
     )
@@ -190,19 +226,19 @@ function Off.try_softlock_setup(t, afftbl)
   if slick < stuck then
     if cfg.slickness_via_bubonis_followup then
       return _queue_eqbal_clear(
-        instill_cmd or ("instill %s with paralysis"):format(t),
+        _support_instill(t, cfg, "slickness"),
         ("command %s at %s"):format(ent_asthma, t)
       )
     end
     return _queue_eqbal_clear(
-      instill_cmd or ("instill %s with paralysis"):format(t),
+      paralysis_cmd,
       ("instill %s with slickness"):format(t)
     )
   end
 
   -- Fallback: keep paralysis pressure rather than doing nothing.
-  if instill_cmd then
-    return _queue_eqbal_clear(instill_cmd)
+  if paralysis_cmd then
+    return _queue_eqbal_clear(paralysis_cmd)
   end
   return false
 end
@@ -210,19 +246,27 @@ end
 -- ----------------------------
 -- Wrap kelp-bury: soft-lock runs first, then original kelp-bury.
 -- ----------------------------
-if not Off._softlock_gate_wrapped and type(Off.try_kelp_bury) == "function" then
-  Off._softlock_gate_wrapped = true
-  Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
+if not Off._softlock_gate_wrapped then
+  if type(Off.try_kelp_bury) == "function" then
+    Off._softlock_gate_wrapped = true
+    Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
 
-  Off.try_kelp_bury = function(t, afftbl)
-    local cfg = Off.cfg.softlock_gate or {}
-    if cfg.enabled ~= false then
-      if not _softlock_ready(t, afftbl) then
-        -- Run soft-lock setup instead of entering kelp-bury.
-        return Off.try_softlock_setup(t, afftbl) == true
+    Off.try_kelp_bury = function(t, afftbl)
+      local cfg = Off.cfg.softlock_gate or {}
+      local tracked_t = _softlock_track_target(t)
+      if cfg.enabled ~= false and tracked_t ~= "" then
+        local ready = _softlock_ready(tracked_t, afftbl)
+        Off._softlock_done[tracked_t] = ready == true
+        if not ready then
+          -- Run soft-lock setup instead of entering kelp-bury.
+          return Off.try_softlock_setup(tracked_t, afftbl) == true
+        end
       end
+      return Off._try_kelp_bury_orig(t, afftbl)
     end
-    return Off._try_kelp_bury_orig(t, afftbl)
+  elseif Off._softlock_gate_warned ~= true then
+    Off._softlock_gate_warned = true
+    _warn("Off.try_kelp_bury not found; softlock gate not installed. Check load order.")
   end
 end
 
