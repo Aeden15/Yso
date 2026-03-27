@@ -122,7 +122,7 @@ Off.state = Off.state or {
 ------------------------------------------------------------
 
 local function _trim(s)
-  return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$",""))
+  return (tostring(s or ""):gsub("^%s+","":gsub("%s+$",""))
 end
 
 local function _lc(s) return _trim(s):lower() end
@@ -132,6 +132,12 @@ local function _vitals()
 end
 
 local function _eq_ready()
+  -- 3-tier check: Yso.locks -> Yso.state -> GMCP fallback
+  -- Consistent with occ_aff_burst.lua / party_aff.lua pattern.
+  if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
+    local ok, v = pcall(Yso.locks.eq_ready)
+    if ok then return v == true end
+  end
   if Yso.state and type(Yso.state.eq_ready) == "function" then
     local ok, v = pcall(Yso.state.eq_ready)
     if ok then return v == true end
@@ -142,11 +148,19 @@ local function _eq_ready()
 end
 
 local function _ent_ready()
+  -- 3-tier check: Yso.locks -> Yso.state -> conservative default
+  -- Previously defaulted to true, which allowed entity commands to fire
+  -- before entity readiness was confirmed (e.g. during startup/reload race).
+  if Yso and Yso.locks and type(Yso.locks.ent_ready) == "function" then
+    local ok, v = pcall(Yso.locks.ent_ready)
+    if ok then return v == true end
+  end
   if Yso.state and type(Yso.state.ent_ready) == "function" then
     local ok, v = pcall(Yso.state.ent_ready)
     if ok then return v == true end
   end
-  return true
+  -- Conservative default: block entity lane until explicitly confirmed ready.
+  return false
 end
 
 local function _current_target()
@@ -559,6 +573,3 @@ local function _ensure_pulse()
 end
 
 _ensure_pulse()
-
---========================================================--
-
