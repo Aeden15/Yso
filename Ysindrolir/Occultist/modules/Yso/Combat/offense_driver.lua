@@ -72,6 +72,7 @@ local function _clear(reason)
 end
 
 C._tm = C._tm or {}
+C._st.dead = C._st.dead or { pending = "", at = 0 }
 
 local function _cancel_dead_clear()
   if C._tm.dead_clear then pcall(killTimer, C._tm.dead_clear) end
