@@ -90,7 +90,7 @@ local function _infer_lane_from_payload(payload)
      or cmd == "diagnose"
      or cmd:match("^writhe%s+")
      or cmd:match("^contemplate%s+")
-     or cmd:match("^order%s+")
+     or (cmd:match("^order%s+") and not cmd:match("^order%s+soulmaster%s+"))
      or cmd:match("^out[dc]%s+")
   then
     return "free"

@@ -442,7 +442,7 @@ local function _wire_offense_events()
     oc.on_enemy_aurum_eat = function(who)
       _orig_aurum(who)
       local tgt = _current_target()
-      if tgt ~= "" then C.observe(tgt, "eat", { bucket = "kelp" }) end
+      if tgt ~= "" then C.observe(tgt, "eat", { bucket = "aurum" }) end
     end
   end
 

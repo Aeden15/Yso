@@ -144,10 +144,10 @@ Write-Host "--- Files ---" -ForegroundColor DarkGray
 & robocopy @roboArgs
 $rc = $LASTEXITCODE
 
-# Also sync root-level docs (README.md, README.txt) on push.
+# Also sync root-level docs and sync scripts on push.
 if ($Direction -eq 'push') {
-  $docFiles = @('README.md', 'README.txt')
-  foreach ($f in $docFiles) {
+  $rootFiles = @('README.md', 'README.txt', 'bug_audit_fixes.txt', 'sync.cmd', 'sync_workspace.ps1')
+  foreach ($f in $rootFiles) {
     $src = Join-Path $RepoRoot $f
     $dst = Join-Path $Workspace $f
     if (Test-Path $src) {
@@ -163,8 +163,8 @@ if ($Direction -eq 'push') {
 
 # On pull, copy root-level docs back into the repo if they exist on desktop.
 if ($Direction -eq 'pull') {
-  $docFiles = @('README.md', 'README.txt')
-  foreach ($f in $docFiles) {
+  $rootFiles = @('README.md', 'README.txt')
+  foreach ($f in $rootFiles) {
     $src = Join-Path $Workspace $f
     $dst = Join-Path $RepoRoot $f
     if (Test-Path $src) {

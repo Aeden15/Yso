@@ -1,12 +1,17 @@
 Yso Systems Workspace
 =====================
-Last updated: March 21, 2026
+Last updated: March 27, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  XML mirrors synced with canonical sources — all bug fixes from the canonical
+  Lua modules (Bugs 3, 6, 8, 10-13 + aurum bucket) are now applied to the
+  Mudlet-facing XML mirror copies under xml/. Both canonical and XML surfaces
+  match.
+
   Occultist offense is now alias-owned end to end. Shared send memory lives in
   offense_state.lua, and the old orchestrator is no longer part of the active
   route pipeline.
@@ -77,15 +82,22 @@ Syncing with OneDrive Desktop
 
   Push repo changes to the Desktop:
     cd C:\repos\Yso
-    .\sync_workspace.ps1 push            # repo -> Desktop
-    .\sync_workspace.ps1 push -DryRun    # preview only
+    .\sync.cmd push            # repo -> Desktop
+    .\sync.cmd push -DryRun    # preview only
 
   Pull Desktop edits back into the repo:
     cd C:\repos\Yso
-    .\sync_workspace.ps1 pull            # Desktop -> repo
-    git diff                             # review
+    .\sync.cmd pull            # Desktop -> repo
+    git diff                   # review
     git add -A && git commit -m "sync from desktop"
     git push
+
+  Execution policy note:
+    If calling sync_workspace.ps1 directly gives a "running scripts is
+    disabled" error, use sync.cmd instead — it passes -ExecutionPolicy
+    Bypass automatically.  Or unlock .ps1 scripts for your user once:
+
+      Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
   What gets synced:
     Repo  Ysindrolir/         <->  Desktop  Yso systems/Ysindrolir/
