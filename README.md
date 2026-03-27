@@ -1,9 +1,10 @@
 # Yso
 
-Current workspace snapshot: March 21, 2026.
+Current workspace snapshot: March 27, 2026.
 
 ## Current fixes
 
+- **XML mirrors synced with canonical sources** — all bug fixes from the canonical Lua modules (Bugs 3, 6, 8, 10–13 + aurum bucket) are now applied to the Mudlet-facing XML mirror copies under `xml/`. Both canonical and XML surfaces match.
 - Occultist offense is now fully alias-owned. Shared send memory lives in `offense_state.lua`, and the removed orchestrator is no longer part of the active offense path.
 - The wake bus now retries staged queue commits on lane wakes. Manual lane aliases such as `cleanse` can stage while EQ is down and flush on reopen.
 - The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Split devtools sources now live at `Ysindrolir/Occultist/Occultist Devtools.xml` and `Ysindrolir/Magi/MagiDevtools.xml`.
