@@ -146,7 +146,7 @@ $rc = $LASTEXITCODE
 
 # Also sync root-level docs and sync scripts on push.
 if ($Direction -eq 'push') {
-  $rootFiles = @('README.md', 'README.txt', 'sync.cmd', 'sync_workspace.ps1')
+  $rootFiles = @('README.md', 'README.txt', 'bug_audit_fixes.txt', 'sync.cmd', 'sync_workspace.ps1')
   foreach ($f in $rootFiles) {
     $src = Join-Path $RepoRoot $f
     $dst = Join-Path $Workspace $f
