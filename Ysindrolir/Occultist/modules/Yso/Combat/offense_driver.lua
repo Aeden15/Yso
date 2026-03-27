@@ -32,7 +32,7 @@ C.cfg.pause_on_leap_out = true
 
 C._ev = C._ev or {}
 C._tr = C._tr or {}
-C._st = C._st or { tumble_react = { last = {} } }
+C._st = C._st or { tumble_react = { last = {} }, dead = { pending = "", at = 0 } }
 
 local function _pkill(fn, id) if id then pcall(fn, id) end end
 local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
@@ -72,7 +72,6 @@ local function _clear(reason)
 end
 
 C._tm = C._tm or {}
-C._st = C._st or {}
 C._st.dead = C._st.dead or { pending = "", at = 0 }
 
 local function _cancel_dead_clear()

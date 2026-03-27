@@ -326,7 +326,11 @@ local function _flush_staged_queue()
 
   local opts = type(Q._commit_hint) == "table" and Q._commit_hint or {}
   local ok, sent = pcall(Q.commit, opts)
-  if not ok or sent ~= true then return false end
+  if not ok then
+    _dbg("queue.commit error: " .. tostring(sent))
+    return false
+  end
+  if sent ~= true then return false end
 
   Q._commit_hint = nil
   P.state._did_emit = true
