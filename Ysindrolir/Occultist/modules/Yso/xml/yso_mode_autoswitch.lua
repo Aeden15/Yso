@@ -20,8 +20,6 @@ _G.Yso = _G.Yso or _G.yso or {}
 _G.yso = _G.Yso
 Yso = _G.Yso
 
-Yso.sep = Yso.sep or ";;"
-
 local function _norm_mode(mode)
   mode = tostring(mode or ""):lower()
   if mode == "hunt" or mode == "pve" or mode == "hunting" or mode == "bashing" then return "bash" end
@@ -62,7 +60,12 @@ Yso.mode.auto = Yso.mode.auto or {}
 local A = Yso.mode.auto
 
 local function _now()
-  return (type(getEpoch) == "function" and getEpoch()) or os.time()
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
 end
 
 local function _echo(msg)
