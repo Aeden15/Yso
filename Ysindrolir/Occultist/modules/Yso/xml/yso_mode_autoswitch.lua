@@ -20,6 +20,7 @@ _G.Yso = _G.Yso or _G.yso or {}
 _G.yso = _G.Yso
 Yso = _G.Yso
 
+
 local function _norm_mode(mode)
   mode = tostring(mode or ""):lower()
   if mode == "hunt" or mode == "pve" or mode == "hunting" or mode == "bashing" then return "bash" end
@@ -28,6 +29,9 @@ local function _norm_mode(mode)
 end
 
 Yso.mode = Yso.mode or {}
+-- Only install stubs if modes.lua hasn't loaded yet (safe standalone fallback).
+-- These are intentionally minimal; the full API lives in modes.lua.
+if not Yso.mode.set then
 do
   local M = Yso.mode
   M.cfg = M.cfg or { echo = true }
@@ -54,6 +58,7 @@ do
     end
     return true
   end
+end
 end
 
 Yso.mode.auto = Yso.mode.auto or {}

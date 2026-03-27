@@ -5701,7 +5701,7 @@ local function _infer_lane_from_payload(payload)
      or cmd == &quot;diagnose&quot;
      or cmd:match(&quot;^writhe%s+&quot;)
      or cmd:match(&quot;^contemplate%s+&quot;)
-     or cmd:match(&quot;^order%s+&quot;)
+     or (cmd:match(&quot;^order%s+&quot;) and not cmd:match(&quot;^order%s+soulmaster%s+&quot;))
      or cmd:match(&quot;^out[dc]%s+&quot;)
   then
     return &quot;free&quot;
@@ -6512,7 +6512,11 @@ local function _flush_staged_queue()
 
   local opts = type(Q._commit_hint) == &quot;table&quot; and Q._commit_hint or {}
   local ok, sent = pcall(Q.commit, opts)
-  if not ok or sent ~= true then return false end
+  if not ok then
+    _dbg(&quot;queue.commit error: &quot; .. tostring(sent))
+    return false
+  end
+  if sent ~= true then return false end
 
   Q._commit_hint = nil
   P.state._did_emit = true
@@ -6869,6 +6873,15 @@ Yso.hinder = Yso.hinder or {}
 
 local H = Yso.hinder
 
+local function _now()
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
 H.cfg = H.cfg or {}
 H.state = H.state or { snapshot = nil }
 
@@ -6975,10 +6988,11 @@ function H.collect(ctx)
 end
 
 function H.collected(ctx)
-  if type(H.state.snapshot) ~= &quot;table&quot; then
-    return H.collect(ctx)
-  end
-  return H.state.snapshot
+  local snap = H.state.snapshot
+  if type(snap) ~= &quot;table&quot; then return H.collect(ctx) end
+  local age = (_now() - (snap.at or 0))
+  if age &gt; 0.15 then return H.collect(ctx) end
+  return snap
 end
 
 function H.classify(snapshot, payload, ctx)
@@ -10910,7 +10924,12 @@ local T = Yso.tgt
 
 -- ---------- tiny helpers ----------
 local function _now()
-  return (type(getEpoch) == &quot;function&quot; and getEpoch()) or os.time()
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
 end
 
 local function _key(name)
@@ -14231,14 +14250,14 @@ C.cfg.pause_on_leap_out = true
 
 C._ev = C._ev or {}
 C._tr = C._tr or {}
-C._st = C._st or { tumble_react = { last = {} } }
+C._st = C._st or { tumble_react = { last = {} }, dead = { pending = &quot;&quot;, at = 0 } }
 
 local function _pkill(fn, id) if id then pcall(fn, id) end end
 local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
 local function _lc(s) return _trim(s):lower() end
 
 local function _now()
-  if Yso and type(Yso.now) == &quot;function&quot; then return tonumber(Yso.now()) or os.time() end
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then return tonumber(Yso.util.now()) or os.time() end
   if type(getEpoch) == &quot;function&quot; then
     local t = tonumber(getEpoch()) or os.time()
     if t &gt; 20000000000 then t = t / 1000 end
@@ -14271,7 +14290,6 @@ local function _clear(reason)
 end
 
 C._tm = C._tm or {}
-C._st = C._st or {}
 C._st.dead = C._st.dead or { pending = &quot;&quot;, at = 0 }
 
 local function _cancel_dead_clear()
@@ -14369,7 +14387,7 @@ end
 function Yso.off.oc.on_enemy_aurum_eat(who)
   local E = Yso.off.oc.cure_events
   _mark(E.aurum_eat_at, E.aurum_eat_n, who)
-  _note_target_herb(who, &quot;kelp&quot;)
+  _note_target_herb(who, &quot;aurum&quot;)
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_aurum_eat)==&quot;function&quot; then
     pcall(Yso.off.oc.group_damage.on_enemy_aurum_eat, who)
   end
@@ -17959,10 +17977,6 @@ local function _route_norm(r)
   return r
 end
 
-local function _gd()
-  return (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.dmg or Yso.off.oc.group_damage)) or nil
-end
-
 local function _route_registry()
   local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
   if RR and type(RR.resolve) == &quot;function&quot; then return RR end
@@ -18619,7 +18633,7 @@ function M.toggle(reason)
 end
 
 function M.on_engage(reason)    return M.set(&quot;combat&quot;, reason or &quot;engage&quot;) end
-function M.on_disengage(reason) return M.set(&quot;combat&quot;, reason or &quot;disengage&quot;) end
+function M.on_disengage(reason) return M.set(&quot;bash&quot;,   reason or &quot;disengage&quot;) end
 
 local function _refresh_huntmode(reason)
   if Yso.huntmode and type(Yso.huntmode.refresh) == &quot;function&quot; then
@@ -18743,7 +18757,6 @@ _G.Yso = _G.Yso or _G.yso or {}
 _G.yso = _G.Yso
 Yso = _G.Yso
 
-Yso.sep = Yso.sep or &quot;;;&quot;
 
 local function _norm_mode(mode)
   mode = tostring(mode or &quot;&quot;):lower()
@@ -18753,6 +18766,9 @@ local function _norm_mode(mode)
 end
 
 Yso.mode = Yso.mode or {}
+-- Only install stubs if modes.lua hasn&apos;t loaded yet (safe standalone fallback).
+-- These are intentionally minimal; the full API lives in modes.lua.
+if not Yso.mode.set then
 do
   local M = Yso.mode
   M.cfg = M.cfg or { echo = true }
@@ -18780,12 +18796,18 @@ do
     return true
   end
 end
+end
 
 Yso.mode.auto = Yso.mode.auto or {}
 local A = Yso.mode.auto
 
 local function _now()
-  return (type(getEpoch) == &quot;function&quot; and getEpoch()) or os.time()
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
 end
 
 local function _echo(msg)

@@ -125,10 +125,6 @@ local function _route_norm(r)
   return r
 end
 
-local function _gd()
-  return (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.dmg or Yso.off.oc.group_damage)) or nil
-end
-
 local function _route_registry()
   local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
   if RR and type(RR.resolve) == "function" then return RR end
@@ -785,7 +781,7 @@ function M.toggle(reason)
 end
 
 function M.on_engage(reason)    return M.set("combat", reason or "engage") end
-function M.on_disengage(reason) return M.set("combat", reason or "disengage") end
+function M.on_disengage(reason) return M.set("bash",   reason or "disengage") end
 
 local function _refresh_huntmode(reason)
   if Yso.huntmode and type(Yso.huntmode.refresh) == "function" then
