@@ -15,9 +15,9 @@ local function _trim(s)
 end
 
 local function _now()
-  if type(_G._now) == "function" then
-    local ok, v = pcall(_G._now)
-    if ok then return tonumber(v) or os.time() end
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
   end
   if type(getEpoch) == "function" then
     local t = tonumber(getEpoch()) or os.time()

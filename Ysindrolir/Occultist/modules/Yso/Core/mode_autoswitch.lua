@@ -20,7 +20,6 @@ _G.Yso = _G.Yso or _G.yso or {}
 _G.yso = _G.Yso
 Yso = _G.Yso
 
-Yso.sep = Yso.sep or ";;"
 
 local function _norm_mode(mode)
   mode = tostring(mode or ""):lower()

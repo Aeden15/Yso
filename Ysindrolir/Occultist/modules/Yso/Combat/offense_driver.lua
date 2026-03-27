@@ -39,7 +39,7 @@ local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$",""
 local function _lc(s) return _trim(s):lower() end
 
 local function _now()
-  if Yso and type(Yso.now) == "function" then return tonumber(Yso.now()) or os.time() end
+  if Yso and Yso.util and type(Yso.util.now) == "function" then return tonumber(Yso.util.now()) or os.time() end
   if type(getEpoch) == "function" then
     local t = tonumber(getEpoch()) or os.time()
     if t > 20000000000 then t = t / 1000 end
@@ -169,7 +169,7 @@ end
 function Yso.off.oc.on_enemy_aurum_eat(who)
   local E = Yso.off.oc.cure_events
   _mark(E.aurum_eat_at, E.aurum_eat_n, who)
-  _note_target_herb(who, "kelp")
+  _note_target_herb(who, "aurum")
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_aurum_eat)=="function" then
     pcall(Yso.off.oc.group_damage.on_enemy_aurum_eat, who)
   end
