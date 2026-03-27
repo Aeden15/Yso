@@ -72,8 +72,8 @@ clone and that Desktop folder so changes flow in both directions.
 
 ```powershell
 cd C:\repos\Yso
-.\sync_workspace.ps1 push            # copies repo → Desktop
-.\sync_workspace.ps1 push -DryRun    # preview without copying
+.\sync.cmd push            # copies repo → Desktop
+.\sync.cmd push -DryRun    # preview without copying
 ```
 
 OneDrive picks up the updated files automatically.
@@ -82,10 +82,20 @@ OneDrive picks up the updated files automatically.
 
 ```powershell
 cd C:\repos\Yso
-.\sync_workspace.ps1 pull            # copies Desktop → repo
-git diff                             # review what changed
+.\sync.cmd pull            # copies Desktop → repo
+git diff                   # review what changed
 git add -A && git commit -m "sync from desktop"
 git push
+```
+
+### Execution policy note
+
+If you call `.\sync_workspace.ps1` directly and get a **"running scripts is
+disabled"** error, use `sync.cmd` instead — it passes `-ExecutionPolicy Bypass`
+automatically.  Alternatively, you can unlock `.ps1` scripts for your user once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
 ### What gets synced

@@ -82,15 +82,22 @@ Syncing with OneDrive Desktop
 
   Push repo changes to the Desktop:
     cd C:\repos\Yso
-    .\sync_workspace.ps1 push            # repo -> Desktop
-    .\sync_workspace.ps1 push -DryRun    # preview only
+    .\sync.cmd push            # repo -> Desktop
+    .\sync.cmd push -DryRun    # preview only
 
   Pull Desktop edits back into the repo:
     cd C:\repos\Yso
-    .\sync_workspace.ps1 pull            # Desktop -> repo
-    git diff                             # review
+    .\sync.cmd pull            # Desktop -> repo
+    git diff                   # review
     git add -A && git commit -m "sync from desktop"
     git push
+
+  Execution policy note:
+    If calling sync_workspace.ps1 directly gives a "running scripts is
+    disabled" error, use sync.cmd instead — it passes -ExecutionPolicy
+    Bypass automatically.  Or unlock .ps1 scripts for your user once:
+
+      Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
   What gets synced:
     Repo  Ysindrolir/         <->  Desktop  Yso systems/Ysindrolir/

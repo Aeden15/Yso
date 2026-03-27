@@ -144,9 +144,9 @@ Write-Host "--- Files ---" -ForegroundColor DarkGray
 & robocopy @roboArgs
 $rc = $LASTEXITCODE
 
-# Also sync root-level docs (README.md, README.txt) on push.
+# Also sync root-level docs and the sync wrapper on push.
 if ($Direction -eq 'push') {
-  $docFiles = @('README.md', 'README.txt')
+  $docFiles = @('README.md', 'README.txt', 'sync.cmd', 'sync_workspace.ps1')
   foreach ($f in $docFiles) {
     $src = Join-Path $RepoRoot $f
     $dst = Join-Path $Workspace $f
