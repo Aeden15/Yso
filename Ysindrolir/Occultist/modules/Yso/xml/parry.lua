@@ -224,7 +224,7 @@ local function _restore_override_candidate()
   end
   local limb, score = _arm_candidate_for_restore()
   if not limb then return nil end
-  return limb, math.max(1000, 1000 - (tonumber(score) or 0)), "bm_restore_override"
+  return limb, tonumber(score) or 0, "bm_restore_override"
 end
 
 ------------------------------------------------------------
@@ -262,7 +262,8 @@ function P.evaluate()
     end
   end
 
-  -- Primary kill-condition limbs
+  -- Check primary kill-condition limbs first, but still let the highest-score
+  -- qualifying limb win overall.
   if not candidate then
     local limb, score = _find_highest_unbroken(kc.primary or {})
     if limb and score >= P.cfg.threshold and score > candidate_score then
@@ -307,7 +308,7 @@ function P.next_command(opts)
 end
 
 function P.note_sent(limb_or_cmd)
-  local limb = tostring(limb_or_cmd or "")
+  local limb = tostring(limb_or_cmd or ""):lower()
   limb = limb:gsub("^parry%s+", "")
   limb = limb:gsub("%s+", "")
   if limb == "leftleg" or limb == "rightleg" or limb == "leftarm" or limb == "rightarm" or limb == "head" or limb == "torso" then

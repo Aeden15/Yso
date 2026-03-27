@@ -415,12 +415,6 @@ end
 ------------------------------------------------------------
 
 local function _build_eq_cmd(tgt, scores, phase)
-  -- Shieldbreak pre-emption.
-  if _eq_ready() then
-    local sb = _maybe_shieldbreak(tgt)
-    if sb then return sb end
-  end
-
   -- Keep pressure using healthleech/sensitivity/paralysis.
   if not _aff_stuck("healthleech", scores) then
     return string.format("instill %s with healthleech", tgt)
@@ -462,21 +456,20 @@ function Off.tick(reasons)
   -- Deprecated automated path: retained only for manual/helper compatibility.
   if not (reasons == "manual" or (type(reasons) == "table" and reasons._manual_helper == true)) then return false end
 
-  if not (Off.state and Off.state.enabled == true) then return end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return end
+  if not (Off.state and Off.state.enabled == true) then return false end
+  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false end
 
   local tgt = Off.resolve_target()
-  if tgt == "" then return end
+  if tgt == "" then return false end
 
--- Shieldbreak (Gremlin) is EQ-lane and must pre-empt all other offense (including entity pressure).
-if _eq_ready() then
-  local sb = _maybe_shieldbreak(tgt)
-  if sb and sb ~= "" then
-    _emit({ eq = sb }, { reason = "shieldbreak", solo = true, wake_lane = "eq" })
-    return
+  -- Shieldbreak (Gremlin) is EQ-lane and must pre-empt all other offense (including entity pressure).
+  if _eq_ready() then
+    local sb = _maybe_shieldbreak(tgt)
+    if sb and sb ~= "" then
+      _emit({ eq = sb }, { reason = "shieldbreak", solo = true, wake_lane = "eq" })
+      return
+    end
   end
-end
-
 
   local scores = _aff_scores()
 
@@ -523,7 +516,7 @@ end
   end
 
   if not payload.eq and not payload.class then
-    return
+    return false
   end
 
   -- Freestyle/as_available: emit ONLY the lane that woke this tick when possible.
