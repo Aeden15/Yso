@@ -54,10 +54,49 @@ function Yso.util.now()
   return os.time()
 end
 
-function Yso.util.echo(msg, color)
+Yso.util.aff_aliases = Yso.util.aff_aliases or {
+  prefarar = "sensitivity",
+}
+
+function Yso.util.normalize_aff_name(name)
+  name = tostring(name or ""):lower()
+  if name == "" then return "" end
+  local aliases = Yso.util.aff_aliases or {}
+  return tostring(aliases[name] or name)
+end
+
+function Yso.util.display_aff_name(name)
+  return Yso.util.normalize_aff_name(name)
+end
+
+function Yso.util.cecho_line(text)
   if type(cecho) ~= "function" then return end
+  text = tostring(text or "")
+  if text == "" then return end
+
+  local prefix = ""
+  if type(getCurrentLine) == "function" then
+    local ok, line = pcall(getCurrentLine)
+    line = ok and tostring(line or "") or ""
+    if line:match("%S") then
+      prefix = "\n"
+    end
+  end
+
+  if not text:match("\n$") then
+    text = text .. "\n"
+  end
+  cecho(prefix .. text)
+end
+
+function Yso.util.echo(msg, color)
   local p = (Yso.cfg and Yso.cfg.echo_prefix) or "[Yso] "
   local c = color or "<cyan>"
+  if type(Yso.util.cecho_line) == "function" then
+    Yso.util.cecho_line(string.format("%s%s%s<reset>", p, c, tostring(msg)))
+    return
+  end
+  if type(cecho) ~= "function" then return end
   cecho(string.format("%s%s%s<reset>\n", p, c, tostring(msg)))
 end
 

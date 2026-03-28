@@ -5,7 +5,7 @@
 -- RadianceAlert_Helper_Event
 --  • Provides: Yso.radianceAlert.fire(stage, who, msg)
 --  • Raises:   raiseEvent("YsoRadiance", stage, who, msg)
---  • Plays:    C:/Windows/Media/Alarm01.wav (all stages 1-4)
+--  • Trigger sound: C:/Windows/Media/Alarm01.wav (set on the stage triggers)
 --  • Prints:   HASH banner (deferred)
 --========================================================--
 
@@ -21,7 +21,6 @@ RA.cfg = RA.cfg or {
   PAD_AFTER  = 1,
 
   -- Toggle these if needed
-  do_sound  = true,
   do_banner = true,
   do_event  = true,
 }
@@ -33,18 +32,6 @@ local function center(line)
   local pad = math.floor((w - #line) / 2)
   if pad < 0 then pad = 0 end
   return string.rep(" ", pad) .. line
-end
-
-local function playSound()
-  if not RA.cfg.do_sound then return end
-  local file = RA.cfg.SOUND or ""
-  if file == "" then return end
-
-  if type(playSoundFile) == "function" then
-    pcall(playSoundFile, file)
-  elseif type(playSound) == "function" then
-    pcall(playSound, file)
-  end
 end
 
 local function hashBanner(stage)
@@ -107,9 +94,8 @@ function RA.fire(stage, who, msg)
     raiseEvent("YsoRadiance", stage, who, msg)
   end
 
-  -- Only stage 1-4 are the kill-telegraph lines you want loud.
+  -- Only stage 1-4 receive the standard staged banner.
   if stage >= 1 and stage <= 4 then
-    playSound()
     banner(stage)
   end
 end

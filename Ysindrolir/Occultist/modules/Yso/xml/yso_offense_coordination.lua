@@ -19,7 +19,12 @@ if type(Yso.off.oc.toggle) ~= "function" then
     if Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
       Yso.pulse.wake("oc:toggle")
     end
-    cecho(string.format("<orange>[Yso] Occultist offense %s.\n", Yso.off.oc.enabled and "ON" or "OFF"))
+    local msg = string.format("<orange>[Yso] Occultist offense %s.", Yso.off.oc.enabled and "ON" or "OFF")
+    if Yso.util and type(Yso.util.cecho_line) == "function" then
+      Yso.util.cecho_line(msg)
+    else
+      cecho(msg .. "\n")
+    end
   end
 end
 
@@ -50,7 +55,12 @@ end
 
 local function _hotpink(msg)
   if type(cecho) == "function" then
-    cecho(string.format("<HotPink>[OFFENSE:] %s\n", msg))
+    local text = string.format("<HotPink>[OFFENSE:] %s", msg)
+    if Yso.util and type(Yso.util.cecho_line) == "function" then
+      Yso.util.cecho_line(text)
+    else
+      cecho(text .. "\n")
+    end
   else
     echo(string.format("[OFFENSE:] %s\n", msg))
   end
@@ -141,6 +151,11 @@ Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
   tree_touch_n  = {},
 }
 
+Yso.off.oc.party_observe = Yso.off.oc.party_observe or {
+  max_events = 30,
+  rows = {},
+}
+
 local function _mark(tbl_at, tbl_n, who)
   who = tostring(who or ""):gsub("^%s+",""):gsub("%s+$","")
   if who == "" then return end
@@ -157,10 +172,63 @@ local function _note_target_herb(who, herb_key)
   end
 end
 
+local function _party_observe_note(who, event, meta)
+  who = _trim(who)
+  event = _trim(event)
+  if who == "" or event == "" then return end
+
+  local O = Yso.off.oc.party_observe or {}
+  O.rows = O.rows or {}
+  Yso.off.oc.party_observe = O
+
+  local key = _lc(who)
+  local row = O.rows[key]
+  if type(row) ~= "table" then
+    row = {
+      name = who,
+      count = 0,
+      last_at = 0,
+      last_event = "",
+      events = {},
+    }
+    O.rows[key] = row
+  end
+
+  row.name = who
+  row.count = tonumber(row.count or 0) + 1
+  row.last_at = _now()
+  row.last_event = event
+  row.events = row.events or {}
+  row.events[#row.events + 1] = {
+    at = row.last_at,
+    event = event,
+    meta = type(meta) == "table" and meta or {},
+    active_target = _is_current(who),
+  }
+
+  local max_events = tonumber(O.max_events or 30) or 30
+  while #row.events > max_events do
+    table.remove(row.events, 1)
+  end
+end
+
+function Yso.off.oc.party_observe_get(who)
+  who = _trim(who)
+  if who == "" then return nil end
+  local O = Yso.off.oc.party_observe or {}
+  return O.rows and O.rows[_lc(who)] or nil
+end
+
+function Yso.off.oc.party_observe_snapshot()
+  local O = Yso.off.oc.party_observe or {}
+  return O.rows or {}
+end
+
 function Yso.off.oc.on_enemy_kelp_eat(who)
   local E = Yso.off.oc.cure_events
   _mark(E.kelp_eat_at, E.kelp_eat_n, who)
   _note_target_herb(who, "kelp")
+  _party_observe_note(who, "kelp", { bucket = "kelp" })
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_kelp_eat)=="function" then
     pcall(Yso.off.oc.group_damage.on_enemy_kelp_eat, who)
   end
@@ -170,6 +238,7 @@ function Yso.off.oc.on_enemy_aurum_eat(who)
   local E = Yso.off.oc.cure_events
   _mark(E.aurum_eat_at, E.aurum_eat_n, who)
   _note_target_herb(who, "aurum")
+  _party_observe_note(who, "aurum", { bucket = "aurum" })
   if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_aurum_eat)=="function" then
     pcall(Yso.off.oc.group_damage.on_enemy_aurum_eat, who)
   end
@@ -178,6 +247,7 @@ end
 function Yso.off.oc.on_enemy_tree_touch(who)
   local E = Yso.off.oc.cure_events
   _mark(E.tree_touch_at, E.tree_touch_n, who)
+  _party_observe_note(who, "tree", {})
   if Yso and Yso.tgt and type(Yso.tgt.get)=="function" then
     local ok,r = pcall(Yso.tgt.get, who)
     if ok and type(r)=="table" then
@@ -213,7 +283,12 @@ D.state = D.state or {
 local function _v(msg)
   if not (D.cfg.verbose == true) then return end
   if type(cecho) == "function" then
-    cecho(("<dim_grey>[Yso.driver] <reset>%s\n"):format(tostring(msg)))
+    local text = ("<dim_grey>[Yso.driver] <reset>%s"):format(tostring(msg))
+    if Yso.util and type(Yso.util.cecho_line) == "function" then
+      Yso.util.cecho_line(text)
+    else
+      cecho(text .. "\n")
+    end
   end
 end
 

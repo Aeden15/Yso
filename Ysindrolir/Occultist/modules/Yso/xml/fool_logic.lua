@@ -83,6 +83,10 @@ local function _Aff()
   return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
 end
 
+local function _trim(s)
+  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
 local function _has(aff)
   local A = _Aff()
   return A[aff] == true
@@ -94,13 +98,51 @@ end
 
 -- current cureset name from Legacy (e.g. "legacy", "hunt", "group")
 local function _current_cureset()
-  local set = Legacy
-          and Legacy.Curing
-          and Legacy.Curing.ActiveServerSet
-  if type(set) == "string" then
-    return set:lower()
+  local function _norm_set(v)
+    v = _trim(v):lower()
+    if v == "" then return nil end
+    if v == "bash" or v == "bashing" or v == "hunting" or v == "pve" then
+      return "hunt"
+    end
+    return v
   end
-  return nil
+
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  local cur = _norm_set(set)
+  if cur then
+    return cur
+  end
+
+  local global_cur = rawget(_G, "CurrentCureset")
+  cur = _norm_set(global_cur)
+  if cur then
+    return cur
+  end
+
+  if Yso and Yso.mode and type(Yso.mode.is_hunt) == "function" then
+    local ok, in_hunt = pcall(Yso.mode.is_hunt)
+    if ok and in_hunt == true then
+      return "hunt"
+    end
+  end
+
+  return "legacy"
+end
+
+local function _is_tendon_key(k)
+  k = tostring(k or ""):lower()
+  return (k == "torntendons" or k == "tendons" or k == "torn_tendons")
+end
+
+local function _tendon_severity()
+  local ak = rawget(_G, "ak") or rawget(_G, "AK")
+  if type(ak) == "table" and type(ak.twoh) == "table" then
+    local n = tonumber(ak.twoh.tendons)
+    if n and n >= 1 then
+      return math.floor(n + 0.00001)
+    end
+  end
+  return 1
 end
 
 -- Aff count, optionally ignoring blind/deaf
@@ -108,10 +150,16 @@ local function _aff_count()
   local A = _Aff()
   local n = 0
   local ignore_bd = Legacy.Fool.ignore_blind_deaf
+  local counted_tendon = false
 
   for k, v in pairs(A) do
     if v == true and k ~= "softlocked" and k ~= "truelocked" then
-      if ignore_bd then
+      if _is_tendon_key(k) then
+        if not counted_tendon then
+          n = n + _tendon_severity()
+          counted_tendon = true
+        end
+      elseif ignore_bd then
         local kk = tostring(k):lower()
         if kk ~= "blind" and kk ~= "blindness"
            and kk ~= "deaf" and kk ~= "deafness" then
@@ -125,8 +173,80 @@ local function _aff_count()
   return n
 end
 
+local function _cooldown_remaining()
+  local cd = tonumber(F.cfg.cd or 35) or 35
+  local last = tonumber(F.state.last_used or 0) or 0
+  local rem = cd - (_now() - last)
+  if rem < 0 then rem = 0 end
+  return rem
+end
+
+local function _emit_status(msg)
+  if type(cecho) == "function" then
+    cecho("<cyan>[Fool] "..tostring(msg).."\n")
+  else
+    print("[Fool] "..tostring(msg))
+  end
+end
+
+local function _bool_word(v)
+  return (v == true) and "true" or "false"
+end
+
+local _is_lock_state
+local _min_affs_for_current_set
+
+function F.status()
+  local curset = _current_cureset() or "legacy"
+  local count = _aff_count()
+  local is_locked = _is_lock_state()
+  local min_affs, allow_lock = _min_affs_for_current_set()
+  local qmode = tostring(Legacy.Fool.queue_mode or "addclearfull")
+  local qtype = tostring(Legacy.Fool.queue_type or "bal")
+  local auto = (F.cfg.enabled == true) and "on" or "off"
+
+  _emit_status(string.format(
+    "auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s",
+    auto,
+    curset,
+    count,
+    min_affs,
+    _bool_word(allow_lock),
+    _bool_word(is_locked),
+    _cooldown_remaining(),
+    qmode,
+    qtype
+  ))
+end
+
+function F.set_auto(v)
+  local on = nil
+  local t = type(v)
+  if t == "boolean" then
+    on = v
+  elseif t == "number" then
+    on = (v ~= 0)
+  elseif t == "string" then
+    local s = _trim(v):lower()
+    if s == "on" or s == "1" or s == "true" then
+      on = true
+    elseif s == "off" or s == "0" or s == "false" then
+      on = false
+    end
+  end
+
+  if on == nil then
+    _emit_status("Usage: lua Yso.fool.set_auto(true|false)")
+    return false
+  end
+
+  F.cfg.enabled = on
+  _emit_status("Auto-Fool is now "..(on and "ON." or "OFF."))
+  return true
+end
+
 -- Lock detector (still used for non-hunt curesets)
-local function _is_lock_state()
+_is_lock_state = function()
   local A = _Aff()
 
   if A.softlocked or A.truelocked then
@@ -149,7 +269,7 @@ end
 -- • HUNT cureset: min_affs_hunt, lock does NOT override (pure threshold)
 -- • Other curesets: min_affs_default, lock CAN override (for PvP)
 -- • Global Legacy.Fool.min_affs override (if set) always uses lock override.
-local function _min_affs_for_current_set()
+_min_affs_for_current_set = function()
   -- explicit global override wins
   if Legacy.Fool.min_affs ~= nil then
     local v = tonumber(Legacy.Fool.min_affs)
@@ -347,9 +467,7 @@ Yso._trig.fool_eq = tempRegexTrigger(
 --  User-facing toggles
 --========================================================--
 function F.toggle_auto()
-  F.cfg.enabled = not F.cfg.enabled
-  local state = F.cfg.enabled and "ON" or "OFF"
-  cecho(string.format("<cyan>[Fool] Auto-Fool is now %s.\n", state))
+  F.set_auto(not (F.cfg.enabled == true))
 end
 
 function F.set_cd(seconds)
@@ -408,6 +526,18 @@ if type(tempAlias) == "function" then
     if not _queue_diag() then
       _fool_echo("Failed to queue diagnose from dv alias.")
     end
+  end))
+  _kill_alias(Yso._alias.fool_status)
+  Yso._alias.fool_status = tempAlias([[^fool status$]], _safe(function()
+    F.status()
+  end))
+  _kill_alias(Yso._alias.fool_auto_on)
+  Yso._alias.fool_auto_on = tempAlias([[^fool auto on$]], _safe(function()
+    F.set_auto(true)
+  end))
+  _kill_alias(Yso._alias.fool_auto_off)
+  Yso._alias.fool_auto_off = tempAlias([[^fool auto off$]], _safe(function()
+    F.set_auto(false)
   end))
 end
 

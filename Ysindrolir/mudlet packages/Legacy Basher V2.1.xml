@@ -872,6 +872,22 @@ local used = false
 send("cq freestand")
 Legacy.Settings.Basher.shield = true
 
+local function _is_denizen_target()
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info or nil
+  if type(info) ~= "table" then return false end
+  local npc = info.npc
+  if npc == true or npc == 1 or tostring(npc) == "1" or tostring(npc):lower() == "true" then return true end
+  local t = tostring(info.type or ""):lower()
+  return (t == "denizen" or t == "npc")
+end
+
+local function _lycantha_primebond_active()
+  if not (Yso and Yso.primebond and type(Yso.primebond.bonds) == "table") then
+    return false
+  end
+  return (Yso.primebond.bonds.lycantha == true)
+end
+
 if Legacy.Settings.Basher.useRage == true then
   for _, v in pairs(class_cfg) do
     if type(v) == "table" and v.desc == "Shieldbreak" then
@@ -895,12 +911,10 @@ if Legacy.Settings.Basher.useRage == true then
       used = true
     end
   end
-elseif class == "Occultist" then
-  local has_lycantha = (Legacy.Settings.Basher.hasLycantha == true)
-  if not has_lycantha and Yso and Yso.primebond and type(Yso.primebond.bonds) == "table" then
-    has_lycantha = (Yso.primebond.bonds.lycantha == true)
-  end
-  if has_lycantha then
+elseif class == "Occultist" and _is_denizen_target() and _lycantha_primebond_active() then
+  -- Legacy-basher local path only:
+  -- hound shieldbreak here intentionally does not read or mutate AK state.
+  do
     local tgt = tostring((gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Set) or Legacy.Settings.Basher.currentTar or "")
     tgt = tgt:gsub("^%s+", ""):gsub("%s+$", "")
     if tgt ~= "" then
