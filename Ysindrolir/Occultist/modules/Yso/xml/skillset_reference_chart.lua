@@ -502,6 +502,15 @@ O.chaosrays = {
   role       = {"offense", "aoe"},
   summary    = "Transmute karma into Seven Rays that blast everyone in the room except you with random rays of chaos.",
   tags       = {"room-aoe", "damage"},
+  observations = {
+    { color = "red", line = "You are hit by a red ray.", confirmed_effect = "damage", damage_type = "fire", confidence = "confirmed", notes = "Confirmed seed entry from conquest logs." },
+    { color = "blue", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+    { color = "orange", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+    { color = "yellow", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+    { color = "green", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+    { color = "indigo", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+    { color = "violet", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+  },
 }
 
 O.interlink = {

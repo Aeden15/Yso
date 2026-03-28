@@ -96,6 +96,10 @@ local function _ER()
   return Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
 end
 
+local function _offense_state()
+  return Yso and Yso.off and Yso.off.state or nil
+end
+
 GD.cfg = GD.cfg or {
   enabled = false,
   echo = true,
@@ -144,8 +148,10 @@ GD.state = GD.state or {
   loop_enabled = false,
   timer_id = nil,
   busy = false,
-  waiting = { queue = nil, main_lane = nil, at = 0 },
-  last_attack = { cmd = "", at = 0, target = "", main_lane = "" },
+  waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 },
+  last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" },
+  in_flight = { fingerprint = "", target = "", route = "group_damage", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" },
+  debug = { last_no_send_reason = "", last_retry_reason = "", entity_no_send_reasons = {}, last_shield_target = "" },
   loop_delay = tonumber(GD.cfg.loop_delay or 0.15) or 0.15,
   opener_sent_for = "",
   rr_idx = 0,
@@ -372,33 +378,44 @@ local function _ent_ready()
   return true
 end
 
--- Prefer AK score exports if present, then raw affstrack.score, then Yso.tgt.has_aff
-local function _aff_score(aff)
+local function _target_matches_active(tgt)
+  tgt = _trim(tgt)
+  return tgt ~= "" and _lc(tgt) == _lc(_target())
+end
+
+-- Prefer AK score exports for the active designated target only.
+-- For non-target observations, fall back to target-scoped tracking.
+local function _aff_score(tgt, aff)
   aff = _lc(aff)
+  tgt = _trim(tgt)
   if aff == "" then return 0 end
-  if Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
-    local ok,v = pcall(Yso.oc.ak.get_aff_score, aff)
-    if ok then return tonumber(v or 0) or 0 end
+
+  if _target_matches_active(tgt) then
+    if Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
+      local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
+      if ok and tonumber(v) then return tonumber(v) end
+    end
+    if type(affstrack) == "table" and type(affstrack.score) == "table" then
+      return tonumber(affstrack.score[aff] or 0) or 0
+    end
   end
-  if type(affstrack) == "table" and type(affstrack.score) == "table" then
-    return tonumber(affstrack.score[aff] or 0) or 0
-  end
-  local tgt = _target()
+
   if tgt ~= "" and Yso.tgt and type(Yso.tgt.has_aff) == "function" then
-    return Yso.tgt.has_aff(tgt, aff) and 100 or 0
+    local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
+    if ok and v == true then return 100 end
   end
   return 0
 end
 
-local function _has_aff(aff) return _aff_score(aff) >= 100 end
+local function _has_aff(tgt, aff) return _aff_score(tgt, aff) >= 100 end
 
 local function _ak_speed_is_down()
   local A = rawget(_G, "ak")
   return type(A) == "table" and type(A.defs) == "table" and A.defs.speed == false
 end
 
-local function _prone_is_forced()
-  return _aff_score("prone") >= 100
+local function _prone_is_forced(tgt)
+  return _aff_score(tgt, "prone") >= 100
 end
 
 local function _random_crone_arm(tgt)
@@ -411,10 +428,10 @@ local JUSTICE_CONVERSION_AFFS = {
   "haemophilia", "weariness", "asthma", "clumsiness",
 }
 
-local function _justice_conversion_count()
+local function _justice_conversion_count(tgt)
   local n = 0
   for i = 1, #JUSTICE_CONVERSION_AFFS do
-    if _aff_score(JUSTICE_CONVERSION_AFFS[i]) >= 100 then
+    if _aff_score(tgt, JUSTICE_CONVERSION_AFFS[i]) >= 100 then
       n = n + 1
     end
   end
@@ -439,9 +456,12 @@ local function _payload_mode()
 end
 
 local function _echo(msg)
-  if GD.cfg.echo and type(cecho) == "function" then
-    -- NOTE: avoid "\\n" escape sequences; use a literal LF via string.char(10).
-    cecho(string.format("<orange>[Yso:GD] <reset>%s%s", tostring(msg), string.char(10)))
+  if not GD.cfg.echo then return end
+  local line = string.format("<orange>[Yso:GD] <reset>%s", tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == "function" then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == "function" then
+    cecho(line .. string.char(10))
   end
 end
 
@@ -459,6 +479,101 @@ local function _safe_send(cmd)
   return true
 end
 
+local function _set_debug_field(key, value)
+  GD.state.debug = GD.state.debug or { last_no_send_reason = "", last_retry_reason = "", entity_no_send_reasons = {}, last_shield_target = "" }
+  GD.state.debug[key] = value
+  return value
+end
+
+local function _note_no_send_reason(reason)
+  return _set_debug_field("last_no_send_reason", _trim(reason))
+end
+
+local function _note_retry_reason(reason)
+  return _set_debug_field("last_retry_reason", _trim(reason))
+end
+
+local function _reset_entity_no_send_reasons()
+  GD.state.debug = GD.state.debug or {}
+  GD.state.debug.entity_no_send_reasons = {}
+end
+
+local function _note_entity_no_send(reason)
+  reason = _trim(reason)
+  if reason == "" then return end
+  GD.state.debug = GD.state.debug or {}
+  local rows = GD.state.debug.entity_no_send_reasons
+  if type(rows) ~= "table" then
+    rows = {}
+    GD.state.debug.entity_no_send_reasons = rows
+  end
+  for i = 1, #rows do
+    if rows[i] == reason then return end
+  end
+  rows[#rows + 1] = reason
+end
+
+local function _locks_class_reason()
+  local L = Yso and Yso.locks or nil
+  local lane = L and L._lane and L._lane.class or nil
+  if type(lane) ~= "table" then return nil end
+  local now = _now()
+  if tonumber(lane.pending_until or 0) > now then return "blocked_by_pending" end
+  if tonumber(lane.backoff_until or 0) > now then return "blocked_by_backoff" end
+  return nil
+end
+
+local function _waiting_lanes_from_payload(payload)
+  local lanes, seen = {}, {}
+  local lane_tbl = type(payload) == "table" and payload.lanes or payload
+
+  local function add(name, cmd)
+    name = _lc(name)
+    if name == "entity" then name = "class" end
+    if name == "" or name == "free" or seen[name] then return end
+    if _trim(cmd) == "" then return end
+    seen[name] = true
+    lanes[#lanes + 1] = name
+  end
+
+  if type(lane_tbl) == "table" then
+    add("eq", lane_tbl.eq)
+    add("bal", lane_tbl.bal)
+    add("class", lane_tbl.class or lane_tbl.ent or lane_tbl.entity)
+  end
+  if #lanes == 0 and type(payload) == "table" and type(payload.meta) == "table" then
+    add(payload.meta.main_lane, "__fallback__")
+  end
+
+  return lanes
+end
+
+local function _lane_ready(lane)
+  lane = _lc(lane)
+  if lane == "eq" then return _eq_ready() end
+  if lane == "bal" then return _bal_ready() end
+  if lane == "entity" or lane == "class" then return _ent_ready() end
+  return true
+end
+
+local function _action_fingerprint(payload)
+  if type(payload) ~= "table" then return "" end
+  local lanes = payload.lanes or payload
+  if type(lanes) ~= "table" then return "" end
+  local eq = _trim(lanes.eq)
+  local entity = _trim(lanes.entity or lanes.class or lanes.ent)
+  local bal = _trim(lanes.bal)
+  local free = _trim(lanes.free)
+  return table.concat({
+    "group_damage",
+    _lc(payload.target or ""),
+    eq,
+    entity,
+    bal,
+    free,
+  }, "|")
+end
+
 local function _set_loop_enabled(on)
   local enabled = (on == true)
   GD.state.enabled = enabled
@@ -466,8 +581,10 @@ local function _set_loop_enabled(on)
   GD.loop_enabled = enabled
   GD.cfg.enabled = enabled
   GD.state.loop_delay = tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15
-  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, at = 0 }
-  GD.state.last_attack = GD.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "" }
+  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
+  GD.state.last_attack = GD.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
+  GD.state.in_flight = GD.state.in_flight or { fingerprint = "", target = "", route = "group_damage", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  GD.state.debug = GD.state.debug or { last_no_send_reason = "", last_retry_reason = "", entity_no_send_reasons = {}, last_shield_target = "" }
   return enabled
 end
 
@@ -475,21 +592,56 @@ local function _clear_waiting()
   GD.state.waiting = GD.state.waiting or {}
   GD.state.waiting.queue = nil
   GD.state.waiting.main_lane = nil
+  GD.state.waiting.lanes = nil
+  GD.state.waiting.fingerprint = ""
+  GD.state.waiting.reason = ""
   GD.state.waiting.at = 0
+  GD.state.in_flight = GD.state.in_flight or {}
+  GD.state.in_flight.resolved_at = _now()
+  GD.state.in_flight.fingerprint = ""
+  GD.state.in_flight.target = ""
+  GD.state.in_flight.lanes = nil
+  GD.state.in_flight.eq = ""
+  GD.state.in_flight.entity = ""
+  GD.state.in_flight.reason = ""
 end
 
 local function _remember_attack(cmd, payload)
   local meta = type(payload) == "table" and (payload.meta or {}) or {}
   local main_lane = _lc(meta.main_lane or "")
+  local lanes = _waiting_lanes_from_payload(payload)
+  local fingerprint = _action_fingerprint(payload)
+  local wait_reason = "waiting_outcome"
+  if #lanes == 1 then
+    if lanes[1] == "eq" then
+      wait_reason = "waiting_eq"
+    elseif lanes[1] == "class" then
+      wait_reason = "waiting_ent"
+    end
+  end
   GD.state.last_attack = GD.state.last_attack or {}
   GD.state.last_attack.cmd = _trim(cmd)
   GD.state.last_attack.at = _now()
   GD.state.last_attack.target = _trim(type(payload) == "table" and payload.target or "")
   GD.state.last_attack.main_lane = main_lane
+  GD.state.last_attack.lanes = lanes
+  GD.state.last_attack.fingerprint = fingerprint
   GD.state.waiting = GD.state.waiting or {}
   GD.state.waiting.queue = GD.state.last_attack.cmd
   GD.state.waiting.main_lane = main_lane
+  GD.state.waiting.lanes = lanes
+  GD.state.waiting.fingerprint = fingerprint
+  GD.state.waiting.reason = wait_reason
   GD.state.waiting.at = GD.state.last_attack.at
+  GD.state.in_flight = GD.state.in_flight or {}
+  GD.state.in_flight.fingerprint = fingerprint
+  GD.state.in_flight.target = GD.state.last_attack.target
+  GD.state.in_flight.route = "group_damage"
+  GD.state.in_flight.at = GD.state.last_attack.at
+  GD.state.in_flight.lanes = lanes
+  GD.state.in_flight.eq = _trim(type(payload) == "table" and payload.lanes and payload.lanes.eq or "")
+  GD.state.in_flight.entity = _trim(type(payload) == "table" and payload.lanes and (payload.lanes.entity or payload.lanes.class) or "")
+  GD.state.in_flight.reason = wait_reason
 end
 
 local function _waiting_blocks_tick()
@@ -501,17 +653,59 @@ local function _waiting_blocks_tick()
     return false
   end
 
+  local lanes = wait.lanes
+  if type(lanes) == "table" and #lanes > 0 then
+    local blocked_eq, blocked_ent, blocked = false, false, false
+    for i = 1, #lanes do
+      if not _lane_ready(lanes[i]) then
+        blocked = true
+        if lanes[i] == "eq" then blocked_eq = true end
+        if lanes[i] == "class" then blocked_ent = true end
+      end
+    end
+    if blocked then
+      local reason = "waiting_outcome"
+      if blocked_ent and not blocked_eq and #lanes == 1 then
+        reason = "waiting_ent"
+      elseif blocked_eq and not blocked_ent and #lanes == 1 then
+        reason = "waiting_eq"
+      end
+      wait.reason = reason
+      if GD.state.in_flight then GD.state.in_flight.reason = reason end
+      _note_no_send_reason(reason)
+      return true
+    end
+    if blocked_ent or (#lanes > 1 and wait.reason == "waiting_outcome") or table.concat(lanes, ","):find("class", 1, true) then
+      _note_retry_reason("retry_entity_ready")
+    end
+    _clear_waiting()
+    return false
+  end
+
   local lane = _lc(wait.main_lane or "")
   if lane == "eq" then
     if _eq_ready() then _clear_waiting(); return false end
+    wait.reason = "waiting_eq"
+    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
+    _note_no_send_reason(wait.reason)
     return true
   end
   if lane == "bal" then
     if _bal_ready() then _clear_waiting(); return false end
+    wait.reason = "waiting_outcome"
+    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
+    _note_no_send_reason(wait.reason)
     return true
   end
   if lane == "entity" or lane == "class" then
-    if _ent_ready() then _clear_waiting(); return false end
+    if _ent_ready() then
+      _note_retry_reason("retry_entity_ready")
+      _clear_waiting()
+      return false
+    end
+    wait.reason = "waiting_ent"
+    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
+    _note_no_send_reason(wait.reason)
     return true
   end
 
@@ -563,14 +757,29 @@ local function _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
   return pick_eq
 end
 
+local function _tarot_entity_payload(bal_cmd, entity_cmd, tgt)
+  bal_cmd = _trim(bal_cmd)
+  entity_cmd = _trim(entity_cmd)
+  tgt = _trim(tgt)
+  if bal_cmd == "" or entity_cmd == "" or tgt == "" then return nil end
+  local card_a, card_b, card_tgt = bal_cmd:match("^outd%s+([%w_%-]+)%s*&&%s*fling%s+([%w_%-]+)%s+at%s+(.+)$")
+  if _trim(card_a) == "" or card_a ~= card_b or _lc(card_tgt or "") ~= _lc(tgt) then return nil end
+  return ("outd %s&&%s&&fling %s at %s"):format(card_a, entity_cmd, card_a, tgt)
+end
+
 local function _payload_line(payload)
   if type(payload) ~= "table" or type(payload.lanes) ~= "table" then return "" end
   local lanes = payload.lanes
+  local entity_cmd = _trim(lanes.entity or lanes.class)
+  local compound = _tarot_entity_payload(lanes.bal, entity_cmd, payload.target)
   local cmds = {}
   if _trim(lanes.free) ~= "" then cmds[#cmds + 1] = _trim(lanes.free) end
   if _trim(lanes.eq) ~= "" then cmds[#cmds + 1] = _trim(lanes.eq) end
+  if compound then
+    cmds[#cmds + 1] = compound
+    return table.concat(cmds, _command_sep())
+  end
   if _trim(lanes.bal) ~= "" then cmds[#cmds + 1] = _trim(lanes.bal) end
-  local entity_cmd = _trim(lanes.entity or lanes.class)
   if entity_cmd ~= "" then cmds[#cmds + 1] = entity_cmd end
   return table.concat(cmds, _command_sep())
 end
@@ -595,6 +804,164 @@ local function _route_gate_finalize(payload, ctx)
   })
 end
 
+local _core_state
+local _entity_pick
+local _primebonded
+
+local function _shield_is_up(tgt)
+  if Yso and Yso.shield and type(Yso.shield.is_up) == "function" then
+    local ok, v = pcall(Yso.shield.is_up, tgt)
+    if ok then return v == true end
+  end
+  return false
+end
+
+local function _shieldbreak_tag(tgt)
+  return "gd:eq:shieldbreak:" .. _lc(tgt)
+end
+
+local function _shieldbreak_pending(tgt)
+  local S = _offense_state()
+  if not S then return false end
+  local tag = _shieldbreak_tag(tgt)
+  if type(S.locked) == "function" then
+    local ok, locked = pcall(S.locked, tag)
+    if ok and locked == true then return true end
+  end
+  if type(S.recent) == "function" then
+    local window = math.max(1.0, (tonumber(GD.cfg.dupe_window_ms or 120) or 120) / 1000)
+    local ok, seen = pcall(S.recent, tag, window)
+    if ok and seen == true then return true end
+  end
+  return false
+end
+
+local function _note_shieldbreak_sent(tgt, cmd)
+  local S = _offense_state()
+  if not (S and type(S.note) == "function") then return end
+  local window = math.max(1.0, (tonumber(GD.cfg.dupe_window_ms or 120) or 120) / 1000)
+  pcall(S.note, _shieldbreak_tag(tgt), cmd, { lockout = window, state_sig = "group_damage:shieldbreak" })
+end
+
+local function _entity_need_flags(tgt, st)
+  st = type(st) == "table" and st or _core_state(tgt)
+  return {
+    healthleech = not (st.healthleech == true),
+    sensitivity = not (st.sensitivity == true),
+    clumsiness = not (st.clumsiness == true),
+    slickness = not (st.slickness == true),
+    addiction = _primebonded("humbug") and not _has_aff(tgt, "addiction"),
+  }
+end
+
+local function _entity_need_any(need)
+  if type(need) ~= "table" then return false end
+  for _, v in pairs(need) do
+    if v == true then return true end
+  end
+  return false
+end
+
+local function _entity_debug_reason_from_pick(need, dbg)
+  if not _entity_need_any(need) then return "target_not_missing" end
+  local lock_reason = _locks_class_reason()
+  if lock_reason then return lock_reason end
+  if not _ent_ready() then return "precommit_ent_not_ready" end
+  if type(dbg) == "table" and dbg.global == "target_invalid" then return "target_not_missing" end
+  return "no_valid_pick"
+end
+
+local function _same_fingerprint_in_flight(payload)
+  local fingerprint = _action_fingerprint(payload)
+  local flight = GD.state and GD.state.in_flight or nil
+  if fingerprint == "" or type(flight) ~= "table" then return false end
+  if _trim(flight.fingerprint) == "" or _trim(flight.target) == "" then return false end
+  if _lc(payload.target or "") ~= _lc(flight.target) then return false end
+  if fingerprint ~= _trim(flight.fingerprint) then return false end
+  return (_now() - (tonumber(flight.at) or 0)) < 3.0
+end
+
+local function _final_pre_emit_payload(payload)
+  if type(payload) ~= "table" or type(payload.lanes) ~= "table" then return payload, nil end
+  local tgt = _trim(payload.target)
+  if tgt == "" then return payload, nil end
+
+  payload.meta = payload.meta or {}
+  local lanes = payload.lanes
+
+  if _shield_is_up(tgt) then
+    _set_debug_field("last_shield_target", tgt)
+    _note_entity_no_send("shieldbreak_override")
+    _note_no_send_reason("shieldbreak_override")
+    if _shieldbreak_pending(tgt) then
+      _note_no_send_reason("duplicate_action_suppressed")
+      return nil, "duplicate_action_suppressed"
+    end
+
+    local cmd = ("command gremlin at %s"):format(tgt)
+    if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == "function" then
+      local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
+      local alt = _trim(ok and v or "")
+      if alt ~= "" then cmd = alt end
+    end
+
+    lanes.eq = cmd
+    lanes.bal = nil
+    lanes.entity = nil
+    lanes.class = nil
+    payload.meta.eq_category = "defense_break"
+    payload.meta.bal_category = nil
+    payload.meta.entity_category = nil
+    payload.meta.main_lane = "eq"
+    payload.meta.main_category = "defense_break"
+    payload.meta.shieldbreak_override = true
+    _note_retry_reason("retry_shieldbreak")
+    return payload, nil
+  end
+
+  if _trim(lanes.eq) ~= "" and _trim(lanes.entity or lanes.class) == "" then
+    local st = payload.meta.core_state or _core_state(tgt)
+    local need = _entity_need_flags(tgt, st)
+    if not _entity_need_any(need) then
+      _note_entity_no_send("target_not_missing")
+      return payload, nil
+    end
+
+    local lock_reason = _locks_class_reason()
+    if lock_reason then
+      _note_entity_no_send(lock_reason)
+      _note_entity_no_send("degraded_to_eq_only")
+      return payload, nil
+    end
+
+    if not _ent_ready() then
+      _note_entity_no_send("precommit_ent_not_ready")
+      _note_entity_no_send("degraded_to_eq_only")
+      return payload, nil
+    end
+
+    local category = (need.healthleech or need.clumsiness) and "required_core_refresh" or "fallback_support"
+    local entity_cmd, entity_cat, dbg = _entity_pick(tgt, st, category, {
+      need_healthleech = need.healthleech == true,
+      need_sensitivity = need.sensitivity == true,
+      need_clumsiness = need.clumsiness == true,
+      need_slickness = need.slickness == true,
+      need_addiction = need.addiction == true,
+    })
+    if _trim(entity_cmd) ~= "" then
+      lanes.entity = entity_cmd
+      payload.meta.entity_category = entity_cat or category
+      _note_retry_reason("retry_entity_ready")
+      return payload, nil
+    end
+
+    _note_entity_no_send(_entity_debug_reason_from_pick(need, dbg))
+    _note_entity_no_send("degraded_to_eq_only")
+  end
+
+  return payload, nil
+end
+
 ------------------------------------------------------------
 -- Opener helper disabled for this route
 -- NOTE: retained as no-op helpers for compatibility.
@@ -611,15 +978,15 @@ end
 ------------------------------------------------------------
 -- Route helpers
 ------------------------------------------------------------
-local function _core_state()
+_core_state = function(tgt)
   local st = {
-    healthleech = _has_aff("healthleech"),
-    sensitivity = _has_aff("sensitivity"),
-    clumsiness  = _has_aff("clumsiness"),
-    slickness   = _has_aff("slickness"),
-    asthma      = _has_aff("asthma"),
-    aeon        = _has_aff("aeon"),
-    entangled   = _has_aff("entangled"),
+    healthleech = _has_aff(tgt, "healthleech"),
+    sensitivity = _has_aff(tgt, "sensitivity"),
+    clumsiness  = _has_aff(tgt, "clumsiness"),
+    slickness   = _has_aff(tgt, "slickness"),
+    asthma      = _has_aff(tgt, "asthma"),
+    aeon        = _has_aff(tgt, "aeon"),
+    entangled   = _has_aff(tgt, "entangled"),
   }
   local n = 0
   if st.healthleech then n = n + 1 end
@@ -629,8 +996,8 @@ local function _core_state()
   return st
 end
 
-local function _count_core_affs()
-  return _core_state().count
+local function _count_core_affs(tgt)
+  return _core_state(tgt).count
 end
 
 local function _cmd_entity(ent, tgt, extra)
@@ -644,7 +1011,7 @@ local function _cmd_entity(ent, tgt, extra)
 end
 
 
-local function _primebonded(ent)
+_primebonded = function(ent)
   local ER = _ER()
   if ER and type(ER.is_primebonded) == "function" then
     local ok, v = pcall(ER.is_primebonded, ent)
@@ -653,7 +1020,7 @@ local function _primebonded(ent)
   return false
 end
 
-local function _entity_pick(tgt, st, category, opts)
+_entity_pick = function(tgt, st, category, opts)
   local ER = _ER()
   if not (ER and type(ER.pick) == "function") then return nil, nil, nil end
   opts = opts or {}
@@ -664,7 +1031,7 @@ local function _entity_pick(tgt, st, category, opts)
     ent_ready = _ent_ready(),
     eq_ready = _eq_ready(),
     bal_ready = _bal_ready(),
-    has_aff = _has_aff,
+    has_aff = function(aff_name) return _has_aff(tgt, aff_name) end,
     route_state = st,
     category = category,
     need = {
@@ -683,7 +1050,10 @@ end
 
 local function _pick_entity_cmd(tgt, st, opts)
   opts = opts or {}
-  if not _ent_ready() then return nil, nil end
+  if not _ent_ready() then
+    _note_entity_no_send("snapshot_ent_not_ready")
+    return nil, nil
+  end
   return _entity_pick(tgt, st, tostring(opts.category or "fallback_support"), opts)
 end
 
@@ -706,7 +1076,7 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
         return ("outd aeon&&fling aeon at %s"):format(tgt), filler_cmd, filler_category or "fallback_support"
       end
     end
-  elseif not st.entangled and _prone_is_forced() then
+  elseif not st.entangled and _prone_is_forced(tgt) then
     if _ent_ready() then
       return ("outd hangedman&&fling hangedman at %s"):format(tgt),
         ("command crone at %s %s"):format(tgt, _random_crone_arm(tgt)),
@@ -714,7 +1084,7 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
     end
   end
 
-  if _justice_conversion_count() >= 2 and not _justice_already_sent(tgt) then
+  if _justice_conversion_count(tgt) >= 2 and not _justice_already_sent(tgt) then
     return ("ruinate justice %s"):format(tgt), nil, nil
   end
 
@@ -722,14 +1092,14 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
 end
 
 local function _plan_route(tgt)
-  local st = _core_state()
+  local st = _core_state(tgt)
   local p = { eq = nil, bal = nil, class = nil, st = st, eq_category = nil, bal_category = nil, class_category = nil }
 
   local miss_hl = not st.healthleech
   local miss_sens = not st.sensitivity
   local miss_clum = not st.clumsiness
   local miss_slick = not st.slickness
-  local need_addiction = _primebonded("humbug") and (not _has_aff("addiction"))
+  local need_addiction = _primebonded("humbug") and (not _has_aff(tgt, "addiction"))
 
   local ER = _ER()
   local bootstrap_done = true
@@ -739,7 +1109,7 @@ local function _plan_route(tgt)
       target_valid = _tgt_valid(tgt),
       ent_ready = _ent_ready(),
       eq_ready = _eq_ready(),
-      has_aff = _has_aff,
+      has_aff = function(aff_name) return _has_aff(tgt, aff_name) end,
       route_state = st,
       need = { healthleech = miss_hl, clumsiness = miss_clum },
     })
@@ -902,8 +1272,10 @@ function GD.init()
   GD.state = GD.state or {}
   GD.state.justice_once = GD.state.justice_once or {}
   GD.state.template = GD.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = GD.state.last_target or "" }
-  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, at = 0 }
-  GD.state.last_attack = GD.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "" }
+  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
+  GD.state.last_attack = GD.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
+  GD.state.in_flight = GD.state.in_flight or { fingerprint = "", target = "", route = "group_damage", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  GD.state.debug = GD.state.debug or { last_no_send_reason = "", last_retry_reason = "", entity_no_send_reasons = {}, last_shield_target = "" }
   GD.state.busy = (GD.state.busy == true)
   GD.state.loop_delay = tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15
   _set_loop_enabled((GD.state.loop_enabled == true) or (GD.state.enabled == true))
@@ -919,7 +1291,9 @@ function GD.reset(reason)
   GD.state.entity_target = ""
   GD.state.busy = false
   _clear_waiting()
-  GD.state.last_attack = { cmd = "", at = 0, target = "", main_lane = "" }
+  GD.state.last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
+  GD.state.in_flight = { fingerprint = "", target = "", route = "group_damage", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  GD.state.debug = { last_no_send_reason = "", last_retry_reason = "", entity_no_send_reasons = {}, last_shield_target = "" }
   GD.state.template.last_reason = tostring(reason or "manual")
   GD.state.template.last_payload = nil
   _worm_reset()
@@ -967,11 +1341,15 @@ function GD.attack_function(arg)
   local tgt = info
   local now = (ctx and tonumber(ctx.now)) or _now()
   _reset_entity_gates_on_target_change(tgt)
+  if not preview and _waiting_blocks_tick() then
+    return false, GD.state and GD.state.waiting and GD.state.waiting.reason or "waiting_outcome"
+  end
+  _reset_entity_no_send_reasons()
 
   local eq_cmd, eq_cat = nil, nil
   local bal_cmd, bal_cat = nil, nil
   local entity_cmd, entity_cat = nil, nil
-  local st = _core_state()
+  local st = _core_state(tgt)
   local p = nil
   local rescue = nil
 
@@ -1066,12 +1444,31 @@ function GD.attack_function(arg)
   end
 
   if emit_empty then return false, "empty" end
+  local emit_err = nil
+  emit_payload, emit_err = _final_pre_emit_payload(emit_payload)
+  if not emit_payload then
+    _note_no_send_reason(emit_err or "empty")
+    return false, emit_err or "empty"
+  end
   local cmd = _payload_line(emit_payload)
   if _trim(cmd) == "" then return false, "empty" end
-  if _same_attack_is_hot(cmd) then return false, "hot_attack" end
+  if _same_fingerprint_in_flight(emit_payload) then
+    _note_no_send_reason("duplicate_action_suppressed")
+    return false, "duplicate_action_suppressed"
+  end
+  if _same_attack_is_hot(cmd) then
+    _note_no_send_reason("duplicate_action_suppressed")
+    return false, "duplicate_action_suppressed"
+  end
 
   local sent, err = _safe_send(cmd)
-  if not sent then return false, err end
+  if not sent then
+    _note_retry_reason("retry_hard_fail")
+    return false, err
+  end
+  if emit_payload.meta and emit_payload.meta.shieldbreak_override == true then
+    _note_shieldbreak_sent(tgt, cmd)
+  end
 
   GD.state.template.last_emitted_payload = emit_payload
   if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == "function" then
@@ -1113,17 +1510,24 @@ function GD.evaluate(ctx)
 end
 
 function GD.explain()
-  local st = _core_state()
+  local tgt = _target()
+  local st = _core_state(tgt)
   local last_payload = GD.state and GD.state.template and GD.state.template.last_payload or nil
   local gate = type(last_payload) == "table" and (last_payload._route_gate or (last_payload.meta and last_payload.meta.route_gate)) or nil
   return {
     route = "group_damage",
     enabled = GD.is_enabled(),
     active = GD.is_active(),
-    target = _target(),
+    target = tgt,
     core = st,
     last_reason = GD.state and GD.state.template and GD.state.template.last_reason or "",
     last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or "",
+    last_no_send_reason = GD.state and GD.state.debug and GD.state.debug.last_no_send_reason or "",
+    last_retry_reason = GD.state and GD.state.debug and GD.state.debug.last_retry_reason or "",
+    entity_no_send_reasons = GD.state and GD.state.debug and GD.state.debug.entity_no_send_reasons or {},
+    waiting = GD.state and GD.state.waiting or {},
+    in_flight = GD.state and GD.state.in_flight or {},
+    last_entity_debug = GD.state and GD.state.last_entity_debug or nil,
     planned = gate and gate.planned and gate.planned.lanes or {},
     gated = gate and gate.gated and gate.gated.lanes or (last_payload and last_payload.lanes) or {},
     blocked_reasons = gate and gate.blocked_reasons or {},
@@ -1594,7 +1998,7 @@ end
 -- Mudlet/party-mode friendly surface:
 function GD.status()
   local tgt = _target()
-  local st = _core_state()
+  local st = _core_state(tgt)
   local snapshot = {
     route = "group_damage",
     enabled = tostring(GD.state and GD.state.loop_enabled == true),
@@ -1605,13 +2009,16 @@ function GD.status()
     sensitivity = st.sensitivity,
     clumsiness = st.clumsiness,
     slickness = st.slickness,
-    addiction = _has_aff("addiction"),
+    addiction = _has_aff(tgt, "addiction"),
     last_reason = GD.state and GD.state.template and GD.state.template.last_reason or "",
     last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or "",
+    last_no_send_reason = GD.state and GD.state.debug and GD.state.debug.last_no_send_reason or "",
+    last_retry_reason = GD.state and GD.state.debug and GD.state.debug.last_retry_reason or "",
   }
-  _echo(string.format("loop=%s active=%s target=%s core=%d/3 (hl=%s sens=%s clumsy=%s slick=%s addiction=%s)",
+  _echo(string.format("loop=%s active=%s target=%s core=%d/3 (hl=%s sens=%s clumsy=%s slick=%s addiction=%s) last_no_send=%s retry=%s",
     snapshot.enabled, snapshot.active, snapshot.target, snapshot.core_count,
-    tostring(snapshot.healthleech), tostring(snapshot.sensitivity), tostring(snapshot.clumsiness), tostring(snapshot.slickness), tostring(snapshot.addiction)
+    tostring(snapshot.healthleech), tostring(snapshot.sensitivity), tostring(snapshot.clumsiness), tostring(snapshot.slickness), tostring(snapshot.addiction),
+    tostring(snapshot.last_no_send_reason), tostring(snapshot.last_retry_reason)
   ))
   return snapshot
 end

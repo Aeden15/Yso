@@ -1094,12 +1094,34 @@ local function _yso_norm_tgt(tgt)
   return (tgt ~= "" and tgt) or nil
 end
 
+local function _yso_lc(tgt)
+  tgt = _yso_norm_tgt(tgt)
+  return tgt and tgt:lower() or nil
+end
+
+local function _yso_cur_target()
+  if type(Yso.get_target) == "function" then
+    local ok, v = pcall(Yso.get_target)
+    v = ok and _yso_norm_tgt(v) or nil
+    if v then return v end
+  end
+  local akr = rawget(_G, "ak")
+  if type(akr) == "table" then
+    local cur = _yso_norm_tgt(akr.target or akr.tgt or akr.Target)
+    if cur then return cur end
+  end
+  return nil
+end
+
 local function _yso_mirror_to_ak(tgt, state)
   if not rawget(_G, "ak") or not ak.defs then return end
-  -- AK shield can be a table (per-target) or a single boolean. Avoid clobbering functions.
-  if type(ak.defs.shield) == "table" then
-    ak.defs.shield[tgt] = state and true or false
-  elseif type(ak.defs.shield) == "boolean" then
+  ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+  ak.defs.shield_by_target[_yso_lc(tgt)] = state and true or false
+
+  -- Preserve AK's legacy boolean for its own compatibility paths, but only
+  -- drive it from the currently designated target.
+  local cur = _yso_cur_target()
+  if cur and _yso_lc(cur) == _yso_lc(tgt) and type(ak.defs.shield) == "boolean" then
     ak.defs.shield = state and true or false
   end
 end
@@ -1116,7 +1138,12 @@ function Yso.shield.set(tgt, state, why)
 
   -- Optional debug (silent by default)
   if Yso.cfg and Yso.cfg.debug_shield and type(cecho) == "function" then
-    cecho(string.format("<gray>[Yso:shield] %s -> %s (%s)<reset>\n", tgt, tostring(state), tostring(why or "")))
+    local msg = string.format("<gray>[Yso:shield] %s -> %s (%s)<reset>", tgt, tostring(state), tostring(why or ""))
+    if Yso.util and type(Yso.util.cecho_line) == "function" then
+      Yso.util.cecho_line(msg)
+    else
+      cecho(msg .. "\n")
+    end
   end
   return true
 end
@@ -1125,16 +1152,28 @@ function Yso.shield.is_up(tgt)
   tgt = _yso_norm_tgt(tgt)
   if not tgt then return false end
 
-  -- Prefer AK as source-of-truth when it has an explicit value.
+  -- Prefer AK as source-of-truth when it has an explicit target-scoped value.
   local akr = rawget(_G, "ak")
   if akr and akr.defs then
+    local tl = _yso_lc(tgt)
+    local by_target = akr.defs.shield_by_target
+    if type(by_target) == "table" then
+      if by_target[tgt] ~= nil then return by_target[tgt] == true end
+      if tl and by_target[tl] ~= nil then return by_target[tl] == true end
+    end
+
+    if type(akr.shield) == "function" then
+      local ok, v = pcall(akr.shield, tgt)
+      if ok and v ~= nil then
+        if type(v) == "boolean" then return v == true end
+        if tonumber(v) ~= nil then return tonumber(v) ~= 0 end
+      end
+    end
+
+    local cur = _yso_cur_target()
     local s = akr.defs.shield
-    if type(s) == "boolean" then
+    if cur and tl and _yso_lc(cur) == tl and type(s) == "boolean" then
       return s == true
-    elseif type(s) == "table" then
-      if s[tgt] ~= nil then return s[tgt] == true end
-      local tl = tgt:lower()
-      if s[tl] ~= nil then return s[tl] == true end
     end
   end
 

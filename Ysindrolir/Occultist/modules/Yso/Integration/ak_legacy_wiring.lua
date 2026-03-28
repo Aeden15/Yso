@@ -151,6 +151,17 @@ local function _akwire_now()
   return os.time()
 end
 
+local function _canon_aff(aff)
+  aff = tostring(aff or ""):lower()
+  if aff == "" then return "" end
+  if Yso and Yso.util and type(Yso.util.normalize_aff_name) == "function" then
+    aff = Yso.util.normalize_aff_name(aff)
+  elseif aff == "prefarar" then
+    aff = "sensitivity"
+  end
+  return aff
+end
+
 -- Build a { aff_name = true } map from AK's affstrack.score.
 local function _aff_map_from_ak()
   local map = {}
@@ -164,7 +175,7 @@ local function _aff_map_from_ak()
   for name, score in pairs(affstrack.score) do
     if type(name) == "string" and type(score) == "number" then
       if score >= threshold then
-        map[name:lower()] = true
+        map[_canon_aff(name)] = true
       end
     end
   end
@@ -212,16 +223,21 @@ end
 
 function Yso.ak.has(aff)
   if not aff or aff == "" then return false end
-  aff = tostring(aff):lower()
+  aff = _canon_aff(aff)
 
   -- Prefer AK's check helper if it exists (handles venom->aff mapping).
   if ak and type(ak.check) == "function" then
-    return ak.check(aff, Yso.ak.threshold or 100) and true or false
+    if ak.check(aff, Yso.ak.threshold or 100) then return true end
+    if aff == "sensitivity" and ak.check("prefarar", Yso.ak.threshold or 100) then return true end
+    return false
   end
 
   -- Fallback: direct inspect affstrack.score.
   if affstrack and affstrack.score and type(affstrack.score[aff]) == "number" then
     return affstrack.score[aff] >= (Yso.ak.threshold or 100)
+  end
+  if aff == "sensitivity" and affstrack and affstrack.score and type(affstrack.score.prefarar) == "number" then
+    return affstrack.score.prefarar >= (Yso.ak.threshold or 100)
   end
 
   return false
@@ -275,8 +291,9 @@ function Yso.ak.sync_from_ak()
   Yso.ak.enemy.affs = {}
 
   for aff,_ in pairs(state) do
-    Yso.ak.enemy.affs[aff]      = true
-    Yso.ak.enemy.last_gain[aff] = Yso.ak.enemy.last_gain[aff] or _akwire_now()
+    local canon = _canon_aff(aff)
+    Yso.ak.enemy.affs[canon]      = true
+    Yso.ak.enemy.last_gain[canon] = Yso.ak.enemy.last_gain[canon] or _akwire_now()
   end
 _akwire_echo("sync_from_ak(): "..tostring(#Yso.ak.list_affs()).." affs synced from AK")
 end

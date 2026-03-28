@@ -17513,6 +17513,11 @@ if ak.ai() then return end
 ak.shieldwhore = true
 tempTimer(5,[[ak.shieldwhore = false]])
 ak.defs.shield = true
+ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+ak.defs.shield_by_target[string.lower(shield_target)] = true
+if Yso and Yso.shield and type(Yso.shield.set) == "function" then
+  pcall(Yso.shield.set, shield_target, true, "ak:shielded")
+end
 ak.scoreup(shield_target)
 cecho("\n&lt;yellow&gt;[DEFENSIVE] &lt;aquamarine&gt;(COMMAND GREMLIN!).&lt;reset&gt;\n")</script>
 						<triggerType>0</triggerType>
@@ -17532,8 +17537,10 @@ cecho("\n&lt;yellow&gt;[DEFENSIVE] &lt;aquamarine&gt;(COMMAND GREMLIN!).&lt;rese
 							<string>^A shimmering barrier of crystal forms about ([\w'\-]+)\.$</string>
 							<string>^A guardian angel surrounds ([\w'\-]+) with a protective shield\.$</string>
 							<string>^A gentle hum arises from (\w+)\'s angel, as it raises a shield to protect \w+\.$</string>
+							<string>^A hulking stoneback makes a deep rumbling sound from deep within itself, and a magical shield flares into being surrounding ([\w'\-]+)\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
@@ -17546,13 +17553,18 @@ cecho("\n&lt;yellow&gt;[DEFENSIVE] &lt;aquamarine&gt;(COMMAND GREMLIN!).&lt;rese
 						<name>Shield Down</name>
 						<script>if ak.ai() then return end
 if matches[2] then
-  if IsTargetted(matches[2]) then
+  local shield_target = matches[2]
+  if IsTargetted(shield_target) then
+   ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+   ak.defs.shield_by_target[string.lower(shield_target)] = false
+   if Yso and Yso.shield and type(Yso.shield.set) == "function" then
+     pcall(Yso.shield.set, shield_target, false, "ak:shield_down")
+   end
    ak.defs.shield = false
-   ak.scoreup(matches[2])
+   ak.scoreup(shield_target)
   end
 else
    ak.defs.shield = false
-   ak.scoreup(matches[2])
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -17651,9 +17663,15 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Shield Illusion</name>
-						<script>if IsTargetted(multimatches[2][2]) then
+						<script>local shield_target = multimatches[2][2]
+if IsTargetted(shield_target) then
+   ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+   ak.defs.shield_by_target[string.lower(shield_target)] = false
+   if Yso and Yso.shield and type(Yso.shield.set) == "function" then
+     pcall(Yso.shield.set, shield_target, false, "ak:shield_illusion")
+   end
    ak.defs.shield = false
-   ak.scoreup(multimatches[2][2])
+   ak.scoreup(shield_target)
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>1</conditonLineDelta>
@@ -17667,7 +17685,7 @@ end</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>** Illusion **</string>
-							<string>^A nearly invisible magical shield forms around ([\w'\-]+).$</string>
+							<string>^(?:A nearly invisible magical shield forms around|A hulking stoneback makes a deep rumbling sound from deep within itself, and a magical shield flares into being surrounding) ([\w'\-]+)\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>3</integer>
@@ -17676,9 +17694,15 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Shield Illusion 2</name>
-						<script>if IsTargetted(multimatches[1][2]) then
+						<script>local shield_target = multimatches[1][2]
+if IsTargetted(shield_target) then
+   ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+   ak.defs.shield_by_target[string.lower(shield_target)] = false
+   if Yso and Yso.shield and type(Yso.shield.set) == "function" then
+     pcall(Yso.shield.set, shield_target, false, "ak:shield_illusion")
+   end
    ak.defs.shield = false
-   ak.scoreup(multimatches[2][2])
+   ak.scoreup(multimatches[1][2])
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>1</conditonLineDelta>
@@ -17691,7 +17715,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^A nearly invisible magical shield forms around ([\w'\-]+).$</string>
+							<string>^(?:A nearly invisible magical shield forms around|A hulking stoneback makes a deep rumbling sound from deep within itself, and a magical shield flares into being surrounding) ([\w'\-]+)\.$</string>
 							<string>** Illusion **</string>
 						</regexCodeList>
 						<regexCodePropertyList>
@@ -17706,6 +17730,11 @@ end</script>
 if IsTargetted(matches[3]) then
   if ak.ai() then return end
   if defstrip == "magical shield defence" then
+    ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+    ak.defs.shield_by_target[string.lower(matches[3])] = false
+    if Yso and Yso.shield and type(Yso.shield.set) == "function" then
+      pcall(Yso.shield.set, matches[3], false, "ak:lemming_shield_pop")
+    end
     ak.defs.shield = false
     ak.scoreup(matches[3])
   elseif defstrip == "aura of rebounding defence" then
@@ -23810,7 +23839,7 @@ elseif ak.bals.salve then
 else
 	if ak.timers.apply then 
 		ak.bals.salve = true
-		cecho("&lt;cyan&gt;Ignored Cures")
+		cecho("\n&lt;cyan&gt;Ignored Cures")
 	end
 end
 </script>
@@ -23858,7 +23887,7 @@ affstrack.score.rixil = 0
 if not ak.timers.focus then
   if not ak.bals.focus then
     ak.bals.focus = true
-    cecho("&lt;cyan&gt;Ignored Cures")
+    cecho("\n&lt;cyan&gt;Ignored Cures")
     if ak.thoughtIhad then ak.thoughtIhad("impatience") else affstrack.score.impatience = 0 end
   end
 end
@@ -24158,7 +24187,7 @@ elseif affstrack.score.flushings == 100 and (ated == "ginseng root" or ated == "
 else
   if opponenteat == 1 then
     if timerherb == 1 then
-      cecho("&lt;cyan&gt;-Ignored Cures")
+      cecho("\n&lt;cyan&gt;-Ignored Cures")
     end
     if timerherb == 0 then
       cecho("&lt;cyan&gt;Something is Fucked")
@@ -24256,7 +24285,7 @@ else
   if timertree == 0 then
     if opponenttree == 1 then
       opponenttree = 0
-      cecho("&lt;cyan&gt;Ignored Cures")
+      cecho("\n&lt;cyan&gt;Ignored Cures")
     end
   end
 end
@@ -24587,7 +24616,7 @@ ocured.kelp = ocured.kelp or {}
 ocured.treed = ocured.treed or {}
 ocured.cureall = ocured.cureall or {}
 if IsTargetted(matches[2]) then
-   cecho("&lt;cyan&gt;Processed Cures")
+   cecho("\n&lt;cyan&gt;Processed Cures")
    ocured.kelp.asthma = nil
    ocured.treed.asthma = nil
    ocured.cureall.asthma = nil

@@ -6726,11 +6726,22 @@ end</script>
   Legacy.echo("Gathering information for NDB...")
 tempTimer(3,function()  
   local f, s = io.open(getMudletHomeDir() .. "/Legacy/NDB/who.json")
-    if f then 
-      s = f:read("*l"):trim()
+    local raw = ""
+    if f then
+      raw = f:read("*a") or ""
       io.close(f)
     end
-    local t = yajl.to_value(s)
+    s = tostring(raw or ""):gsub("^\239\187\191", ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local head = s:sub(1, 1)
+    if s == "" or (head ~= "{" and head ~= "[") then
+      cecho("\n&lt;red&gt;NDB update skipped: invalid who.json payload.")
+      return
+    end
+    local ok, t = pcall(yajl.to_value, s)
+    if not ok or type(t) ~= "table" or type(t.characters) ~= "table" then
+      cecho("\n&lt;red&gt;NDB update skipped: invalid who.json payload.")
+      return
+    end
     for _, v in pairs(t.characters) do
         Legacy.NDB.lookup(v.name)
         if not table.contains(Legacy.NDB.awake, v.name) then
@@ -9054,15 +9065,25 @@ tempTimer(3, function()
 filepath = getMudletHomeDir().. "/Legacy/NDB/Characters/"..person..".json"
     
     local f, s = io.open(filepath)
-    if f then s = f:read("*l"); io.close(f) end
+    if f then s = f:read("*a"); io.close(f) end
+    s = tostring(s or ""):gsub("^\239\187\191", ""):gsub("^%s+", ""):gsub("%s+$", "")
 
 	-- didn't get JSON data? 
-	if s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) then
+	if s == "" or s:find("Internal error", 1, true) or s:find("DOCTYPE html PUBLIC", 1, true) or s:find("&lt;html", 1, true) then
 		cecho("\n&lt;red&gt;Data Acquisition Failed!") 
 		return 
 	end
+  local head = s:sub(1, 1)
+  if head ~= "{" and head ~= "[" then
+    cecho("\n&lt;red&gt;Data Acquisition Failed!")
+    return
+  end
 
-	local t = yajl.to_value(s)
+	local ok, t = pcall(yajl.to_value, s)
+  if not ok or type(t) ~= "table" then
+    cecho("\n&lt;red&gt;Data Acquisition Failed!")
+    return
+  end
 	local name = t.name
 	local title = t.fullname
 	local house = t.house:title()

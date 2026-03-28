@@ -39,6 +39,15 @@ M.skills = M.skills or {
 
     chaosrays = {
       affs  = { "random_ray" },
+      observations = {
+        { color = "red", line = "You are hit by a red ray.", confirmed_effect = "damage", damage_type = "fire", confidence = "confirmed", notes = "Confirmed seed entry from conquest logs." },
+        { color = "blue", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+        { color = "orange", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+        { color = "yellow", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+        { color = "green", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+        { color = "indigo", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+        { color = "violet", line = nil, confirmed_effect = nil, damage_type = nil, confidence = "pending", notes = "Observation hook only; effect not yet confirmed." },
+      },
       notes = "Seven Rays: random ray effects to everyone in-room except caster.",
     },
 

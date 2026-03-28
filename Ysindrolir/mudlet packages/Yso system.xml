@@ -6672,6 +6672,15 @@ M.skills = M.skills or {
 
     chaosrays = {
       affs  = { &quot;random_ray&quot; },
+      observations = {
+        { color = &quot;red&quot;, line = &quot;You are hit by a red ray.&quot;, confirmed_effect = &quot;damage&quot;, damage_type = &quot;fire&quot;, confidence = &quot;confirmed&quot;, notes = &quot;Confirmed seed entry from conquest logs.&quot; },
+        { color = &quot;blue&quot;, line = nil, confirmed_effect = nil, damage_type = nil, confidence = &quot;pending&quot;, notes = &quot;Observation hook only; effect not yet confirmed.&quot; },
+        { color = &quot;orange&quot;, line = nil, confirmed_effect = nil, damage_type = nil, confidence = &quot;pending&quot;, notes = &quot;Observation hook only; effect not yet confirmed.&quot; },
+        { color = &quot;yellow&quot;, line = nil, confirmed_effect = nil, damage_type = nil, confidence = &quot;pending&quot;, notes = &quot;Observation hook only; effect not yet confirmed.&quot; },
+        { color = &quot;green&quot;, line = nil, confirmed_effect = nil, damage_type = nil, confidence = &quot;pending&quot;, notes = &quot;Observation hook only; effect not yet confirmed.&quot; },
+        { color = &quot;indigo&quot;, line = nil, confirmed_effect = nil, damage_type = nil, confidence = &quot;pending&quot;, notes = &quot;Observation hook only; effect not yet confirmed.&quot; },
+        { color = &quot;violet&quot;, line = nil, confirmed_effect = nil, damage_type = nil, confidence = &quot;pending&quot;, notes = &quot;Observation hook only; effect not yet confirmed.&quot; },
+      },
       notes = &quot;Seven Rays: random ray effects to everyone in-room except caster.&quot;,
     },
 
@@ -12875,12 +12884,34 @@ local function _yso_norm_tgt(tgt)
   return (tgt ~= &quot;&quot; and tgt) or nil
 end
 
+local function _yso_lc(tgt)
+  tgt = _yso_norm_tgt(tgt)
+  return tgt and tgt:lower() or nil
+end
+
+local function _yso_cur_target()
+  if type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    v = ok and _yso_norm_tgt(v) or nil
+    if v then return v end
+  end
+  local akr = rawget(_G, &quot;ak&quot;)
+  if type(akr) == &quot;table&quot; then
+    local cur = _yso_norm_tgt(akr.target or akr.tgt or akr.Target)
+    if cur then return cur end
+  end
+  return nil
+end
+
 local function _yso_mirror_to_ak(tgt, state)
   if not rawget(_G, &quot;ak&quot;) or not ak.defs then return end
-  -- AK shield can be a table (per-target) or a single boolean. Avoid clobbering functions.
-  if type(ak.defs.shield) == &quot;table&quot; then
-    ak.defs.shield[tgt] = state and true or false
-  elseif type(ak.defs.shield) == &quot;boolean&quot; then
+  ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+  ak.defs.shield_by_target[_yso_lc(tgt)] = state and true or false
+
+  -- Preserve AK&apos;s legacy boolean for its own compatibility paths, but only
+  -- drive it from the currently designated target.
+  local cur = _yso_cur_target()
+  if cur and _yso_lc(cur) == _yso_lc(tgt) and type(ak.defs.shield) == &quot;boolean&quot; then
     ak.defs.shield = state and true or false
   end
 end
@@ -12897,7 +12928,12 @@ function Yso.shield.set(tgt, state, why)
 
   -- Optional debug (silent by default)
   if Yso.cfg and Yso.cfg.debug_shield and type(cecho) == &quot;function&quot; then
-    cecho(string.format(&quot;&lt;gray&gt;[Yso:shield] %s -&gt; %s (%s)&lt;reset&gt;\n&quot;, tgt, tostring(state), tostring(why or &quot;&quot;)))
+    local msg = string.format(&quot;&lt;gray&gt;[Yso:shield] %s -&gt; %s (%s)&lt;reset&gt;&quot;, tgt, tostring(state), tostring(why or &quot;&quot;))
+    if Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+      Yso.util.cecho_line(msg)
+    else
+      cecho(msg .. &quot;\n&quot;)
+    end
   end
   return true
 end
@@ -12906,16 +12942,28 @@ function Yso.shield.is_up(tgt)
   tgt = _yso_norm_tgt(tgt)
   if not tgt then return false end
 
-  -- Prefer AK as source-of-truth when it has an explicit value.
+  -- Prefer AK as source-of-truth when it has an explicit target-scoped value.
   local akr = rawget(_G, &quot;ak&quot;)
   if akr and akr.defs then
+    local tl = _yso_lc(tgt)
+    local by_target = akr.defs.shield_by_target
+    if type(by_target) == &quot;table&quot; then
+      if by_target[tgt] ~= nil then return by_target[tgt] == true end
+      if tl and by_target[tl] ~= nil then return by_target[tl] == true end
+    end
+
+    if type(akr.shield) == &quot;function&quot; then
+      local ok, v = pcall(akr.shield, tgt)
+      if ok and v ~= nil then
+        if type(v) == &quot;boolean&quot; then return v == true end
+        if tonumber(v) ~= nil then return tonumber(v) ~= 0 end
+      end
+    end
+
+    local cur = _yso_cur_target()
     local s = akr.defs.shield
-    if type(s) == &quot;boolean&quot; then
+    if cur and tl and _yso_lc(cur) == tl and type(s) == &quot;boolean&quot; then
       return s == true
-    elseif type(s) == &quot;table&quot; then
-      if s[tgt] ~= nil then return s[tgt] == true end
-      local tl = tgt:lower()
-      if s[tl] ~= nil then return s[tl] == true end
     end
   end
 
@@ -20340,6 +20388,17 @@ local function _A()
   return (type(A) == &quot;table&quot;) and A or nil
 end
 
+local function _canon_aff(aff)
+  aff = tostring(aff or &quot;&quot;):lower()
+  if aff == &quot;&quot; then return &quot;&quot; end
+  if Yso and Yso.util and type(Yso.util.normalize_aff_name) == &quot;function&quot; then
+    aff = Yso.util.normalize_aff_name(aff)
+  elseif aff == &quot;prefarar&quot; then
+    aff = &quot;sensitivity&quot;
+  end
+  return aff
+end
+
 local function _score(field)
   local A = _A()
   if not A then return 0 end
@@ -20356,13 +20415,16 @@ function B.scores.whisper()   return _score(&quot;whisperscore&quot;) end
 function B.scores.trample()   return _score(&quot;tramplescore&quot;) end
 
 function B.get_aff_score(aff)
-  aff = tostring(aff or &quot;&quot;):lower()
+  aff = _canon_aff(aff)
   if aff == &quot;&quot; then return 0 end
 
   local A = _A()
   if not (A and type(A.score) == &quot;table&quot;) then return 0 end
 
   local row = A.score[aff]
+  if row == nil and aff == &quot;sensitivity&quot; then
+    row = A.score.prefarar
+  end
   if type(row) == &quot;number&quot; then
     return tonumber(row) or 0
   end
@@ -20371,6 +20433,9 @@ function B.get_aff_score(aff)
   end
 
   local alt = A[aff]
+  if alt == nil and aff == &quot;sensitivity&quot; then
+    alt = A.prefarar
+  end
   if type(alt) == &quot;table&quot; then
     return tonumber(alt.current or alt.score or alt.value or 0) or 0
   end

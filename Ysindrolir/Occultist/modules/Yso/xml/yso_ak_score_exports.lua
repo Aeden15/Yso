@@ -24,6 +24,17 @@ local function _A()
   return (type(A) == "table") and A or nil
 end
 
+local function _canon_aff(aff)
+  aff = tostring(aff or ""):lower()
+  if aff == "" then return "" end
+  if Yso and Yso.util and type(Yso.util.normalize_aff_name) == "function" then
+    aff = Yso.util.normalize_aff_name(aff)
+  elseif aff == "prefarar" then
+    aff = "sensitivity"
+  end
+  return aff
+end
+
 local function _score(field)
   local A = _A()
   if not A then return 0 end
@@ -40,13 +51,16 @@ function B.scores.whisper()   return _score("whisperscore") end
 function B.scores.trample()   return _score("tramplescore") end
 
 function B.get_aff_score(aff)
-  aff = tostring(aff or ""):lower()
+  aff = _canon_aff(aff)
   if aff == "" then return 0 end
 
   local A = _A()
   if not (A and type(A.score) == "table") then return 0 end
 
   local row = A.score[aff]
+  if row == nil and aff == "sensitivity" then
+    row = A.score.prefarar
+  end
   if type(row) == "number" then
     return tonumber(row) or 0
   end
@@ -55,6 +69,9 @@ function B.get_aff_score(aff)
   end
 
   local alt = A[aff]
+  if alt == nil and aff == "sensitivity" then
+    alt = A.prefarar
+  end
   if type(alt) == "table" then
     return tonumber(alt.current or alt.score or alt.value or 0) or 0
   end
