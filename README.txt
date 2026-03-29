@@ -1,6 +1,6 @@
 Yso Systems Workspace
 =====================
-Last updated: March 27, 2026
+Last updated: March 29, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
@@ -11,6 +11,11 @@ Current fixes
   Lua modules (Bugs 3, 6, 8, 10-13 + aurum bucket) are now applied to the
   Mudlet-facing XML mirror copies under xml/. Both canonical and XML surfaces
   match.
+
+  Escape button separator ownership fixed — yso_escape_button.lua no longer
+  initializes global Yso.sep to ";;". It now inherits Yso.sep/Yso.cfg and
+  falls back to "&&", so load order cannot override the canonical separator.
+  Its _now() helper also normalizes millisecond getEpoch() values.
 
   Occultist offense is now alias-owned end to end. Shared send memory lives in
   offense_state.lua, and the old orchestrator is no longer part of the active
