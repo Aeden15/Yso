@@ -17,8 +17,8 @@
 -- Runtime aliases (tempAlias, auto-registered if available):
 --   ^hunt$    -> switch to bash mode without forcing a huntmode reset on noop
 --   ^mbash$   -> if already in bash, force a huntmode refresh/reset
---   ^par...$  -> party mode / route toggle (see implementation)
---   ^partyroute\s+(\S+)$ -> Yso.mode.set_party_route(matches[2], "alias")
+--   ^team...$  -> party mode / route toggle (see implementation)
+--   ^teamroute\s+(\S+)$ -> Yso.mode.set_party_route(matches[2], "alias")
 --
 -- Back-compat:
 --   * "hunt" normalizes to "bash"
@@ -820,9 +820,12 @@ if type(tempAlias) == "function" then
   _kill_alias(M._alias.mbash)
   _kill_alias(M._alias.mhunt)
   _kill_alias(M._alias.combat)
+  _kill_alias(M._alias.team)
+  _kill_alias(M._alias.teamroute)
   _kill_alias(M._alias.party)
   _kill_alias(M._alias.par)
-  M._alias.par = tempAlias([[^par(?:\s+(\S+))?$]], function()
+  _kill_alias(M._alias.partyroute)
+  M._alias.team = tempAlias([[^team(?:\s+(\S+))?$]], function()
     local r = matches[2]
     if r and r ~= "" then
       local route = _route_norm(r)
@@ -831,19 +834,14 @@ if type(tempAlias) == "function" then
           Yso.mode.toggle_route_loop(route, "alias")
         end
       else
-        _set_party_mode(r, "alias:par")
+        _set_party_mode(r, "alias:team")
       end
     else
-      _set_party_mode(nil, "alias:par")
+      _set_party_mode(nil, "alias:team")
     end
   end)
 
-  M._alias.party = tempAlias([[^party(?:\s+(\S+))?$]], function()
-    _set_party_mode(matches[2], "alias:party")
-  end)
-
-  _kill_alias(M._alias.partyroute)
-  M._alias.partyroute = tempAlias([[^partyroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], "alias:partyroute") end)
+  M._alias.teamroute = tempAlias([[^teamroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], "alias:teamroute") end)
 
   M._alias.mode = tempAlias([[^mode$]], function() M.echo() end)
   M._alias.mode_set = tempAlias([[^mode\s+(\S+)(?:\s+(\S+))?$]], function()
@@ -873,7 +871,7 @@ end
 M._tip_shown = M._tip_shown or false
 if (not M._tip_shown) and type(cecho) == "function" then
   M._tip_shown = true
-  cecho("<aquamarine>[Yso] <reset>Tip: type <white>party<reset> to use the group-damage route (default: <white>party dam<reset>)."..string.char(10))
+  cecho("<aquamarine>[Yso] <reset>Tip: type <white>team<reset> to use the group-damage route (default: <white>team dam<reset>)."..string.char(10))
 end
 
 --========================================================--

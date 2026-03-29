@@ -57,22 +57,22 @@ Key components:
   Queue / Emit    - lane-aware command staging (eq, bal, class/entity, free)
   Pulse / Wake    - event bus for balance regain and timed triggers
   Curing Adapters - policy layer over Legacy serverside curing
-  Mode System     - bash | combat | party (with party sub-routes: dam | aff)
+  Mode System     - bash | combat | party (team syntax: team | teamroute; sub-routes: dam | aff)
 
 
 Active routes
 -------------
   occ_aff_burst   - duel affliction loop (combat mode)
                     mana bury -> cleanseaura -> truename -> utter
-  group_damage    - group/party damage loop (party dam)
+  group_damage    - group/team damage loop (team dam)
                     healthleech + sensitivity + clumsiness + warp/firelord burst
-  party_aff       - group/party affliction pressure (party aff)
+  party_aff       - group/team affliction pressure (team aff)
                     kelp bury + mental build + entity coordination
 
 Mode-to-route mapping:
   combat          -> occ_aff_burst
-  party dam       -> group_damage
-  party aff       -> party_aff
+  team dam        -> group_damage
+  team aff        -> party_aff
   bash            -> Legacy bashing (not a Yso route)
 
 Inactive legacy route stubs:
@@ -103,8 +103,8 @@ File layout
         route_registry.lua          - route metadata registry
         routes/
           occ_aff_burst.lua         - duel aff route
-          group_damage.lua          - party damage route
-          party_aff.lua             - party aff route
+          group_damage.lua          - team damage route
+          party_aff.lua             - team aff route
         occultist/
           aeon.lua                  - AEON speed-strip module
           domination_reference.lua  - Domination entity reference data
@@ -167,11 +167,12 @@ Aliases
   ^mbash$       - switch to bash mode
   ^mhunt$       - manual bash refresh if already in bash
   ^mode (.+)$   - switch mode (bash | combat | party)
-  ^par (.+)$    - set party sub-route (aff | dam)
+  ^team (.+)$   - team mode / route toggle (aff | dam)
+  ^teamroute (.+)$ - set team route directly (aff | dam)
 
 Notes:
   ^aff$ owns occ_aff_burst directly.
-  ^par aff$ selects party_aff support pressure only.
+  ^team aff$ selects party_aff support pressure only.
   cleanse queues CLEANSEAURA through the shared queue path instead of bypassing
   lane staging.
 

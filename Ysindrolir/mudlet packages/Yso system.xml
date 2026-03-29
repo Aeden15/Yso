@@ -3753,14 +3753,14 @@ end</script>
 				</AliasGroup>
 				<Alias isActive="yes" isFolder="no">
 					<name>Flying and landing</name>
-					<script>local action = matches[2]
-local hasChimera = Yso and Yso.dom and type(Yso.dom.has_ent) == "function" and Yso.dom.has_ent("chimera")
-local mount = hasChimera and "chimera" or "gargoyle"
-
-if action == "f" then
-  send(("vault %s&amp;&amp;fly"):format(mount))
-elseif action == "l" then
-  local commands = { "land", "dismount" }
+						<script>local action = tostring(matches[1] or ""):lower()
+	local hasChimera = Yso and Yso.dom and type(Yso.dom.has_ent) == "function" and Yso.dom.has_ent("chimera")
+	local mount = hasChimera and "chimera" or "gargoyle"
+	
+	if action == "fl" then
+	  send(("vault %s&amp;&amp;fly"):format(mount))
+	elseif action == "ld" then
+	  local commands = { "land", "dismount" }
 
   if mount == "chimera" then
     commands[#commands + 1] = "call entities"
@@ -3774,8 +3774,8 @@ end
 </script>
 					<command></command>
 					<packageName></packageName>
-					<regex>^([fl])$
-</regex>
+						<regex>^fl$|^ld$
+	</regex>
 				</Alias>
 			</AliasGroup>
 			<AliasGroup isActive="yes" isFolder="yes">
@@ -18660,8 +18660,8 @@ Yso.fool.cfg.debug   = false
 -- Runtime aliases (tempAlias, auto-registered if available):
 --   ^hunt$    -&gt; switch to bash mode without forcing a huntmode reset on noop
 --   ^mbash$   -&gt; if already in bash, force a huntmode refresh/reset
---   ^par...$  -&gt; party mode / route toggle (see implementation)
---   ^partyroute\s+(\S+)$ -&gt; Yso.mode.set_party_route(matches[2], &quot;alias&quot;)
+--   ^team...$  -&gt; party mode / route toggle (see implementation)
+--   ^teamroute\s+(\S+)$ -&gt; Yso.mode.set_party_route(matches[2], &quot;alias&quot;)
 --
 -- Back-compat:
 --   * &quot;hunt&quot; normalizes to &quot;bash&quot;
@@ -19463,9 +19463,12 @@ if type(tempAlias) == &quot;function&quot; then
   _kill_alias(M._alias.mbash)
   _kill_alias(M._alias.mhunt)
   _kill_alias(M._alias.combat)
+  _kill_alias(M._alias.team)
+  _kill_alias(M._alias.teamroute)
   _kill_alias(M._alias.party)
   _kill_alias(M._alias.par)
-  M._alias.par = tempAlias([[^par(?:\s+(\S+))?$]], function()
+  _kill_alias(M._alias.partyroute)
+  M._alias.team = tempAlias([[^team(?:\s+(\S+))?$]], function()
     local r = matches[2]
     if r and r ~= &quot;&quot; then
       local route = _route_norm(r)
@@ -19474,19 +19477,14 @@ if type(tempAlias) == &quot;function&quot; then
           Yso.mode.toggle_route_loop(route, &quot;alias&quot;)
         end
       else
-        _set_party_mode(r, &quot;alias:par&quot;)
+        _set_party_mode(r, &quot;alias:team&quot;)
       end
     else
-      _set_party_mode(nil, &quot;alias:par&quot;)
+      _set_party_mode(nil, &quot;alias:team&quot;)
     end
   end)
 
-  M._alias.party = tempAlias([[^party(?:\s+(\S+))?$]], function()
-    _set_party_mode(matches[2], &quot;alias:party&quot;)
-  end)
-
-  _kill_alias(M._alias.partyroute)
-  M._alias.partyroute = tempAlias([[^partyroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], &quot;alias:partyroute&quot;) end)
+  M._alias.teamroute = tempAlias([[^teamroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], &quot;alias:teamroute&quot;) end)
 
   M._alias.mode = tempAlias([[^mode$]], function() M.echo() end)
   M._alias.mode_set = tempAlias([[^mode\s+(\S+)(?:\s+(\S+))?$]], function()
@@ -19516,7 +19514,7 @@ end
 M._tip_shown = M._tip_shown or false
 if (not M._tip_shown) and type(cecho) == &quot;function&quot; then
   M._tip_shown = true
-  cecho(&quot;&lt;aquamarine&gt;[Yso] &lt;reset&gt;Tip: type &lt;white&gt;party&lt;reset&gt; to use the group-damage route (default: &lt;white&gt;party dam&lt;reset&gt;).&quot;..string.char(10))
+  cecho(&quot;&lt;aquamarine&gt;[Yso] &lt;reset&gt;Tip: type &lt;white&gt;team&lt;reset&gt; to use the group-damage route (default: &lt;white&gt;team dam&lt;reset&gt;).&quot;..string.char(10))
 end
 
 --========================================================--
