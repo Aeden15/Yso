@@ -67,7 +67,9 @@ Active routes
   group_damage    - group/team damage loop (team dam)
                     healthleech + sensitivity + clumsiness + warp/firelord burst
   party_aff       - group/team affliction pressure (team aff)
-                    kelp bury + mental build + entity coordination
+                    loyals/readaura opener -> deaf gate (attend + chimera) -> unnamable
+                    chimera + moon pressure, then cleanseaura -> speed strip -> utter truename
+                    tarot-first rule: if bal is ready before entity, emit tarot-only this tick
 
 Mode-to-route mapping:
   combat          -> occ_aff_burst
@@ -172,7 +174,7 @@ Aliases
 
 Notes:
   ^aff$ owns occ_aff_burst directly.
-  ^team aff$ selects party_aff support pressure only.
+  ^team aff$ selects party_aff support pressure + chimera/tarot sequence.
   cleanse queues CLEANSEAURA through the shared queue path instead of bypassing
   lane staging.
 

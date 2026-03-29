@@ -7731,16 +7731,25 @@ PA.cfg = PA.cfg or {
   enabled = false,
   echo = true,
   loop_delay = 0.15,
+  sequence_enabled = true,
 
   kelp_target_count = 3,
   mental_target = 3,
   asthma_stable_count = 2,
+  cleanseaura_mana_pct = 40,
 
   attend_aff_floor = 3,
   shieldbreak_lockout_s = 1.0,
   attend_lockout_s = 2.3,
   instill_lockout_s = 2.5,
   enervate_lockout_s = 4.0,
+  readaura_requery_s = 8.0,
+  readaura_lockout_s = 1.0,
+  cleanseaura_lockout_s = 4.1,
+  pinchaura_lockout_s = 4.1,
+  speed_hold_s = 3.2,
+  utter_follow_s = 5.0,
+  unnamable_lockout_s = 4.0,
 
   loyals_on_cmd = &quot;order entourage kill %s&quot;,
 }
@@ -7761,6 +7770,7 @@ PA.state = PA.state or {
   template = { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; },
   last_target = &quot;&quot;,
   loyals_sent_for = &quot;&quot;,
+  unnamable_sent_for = &quot;&quot;,
   explain = {},
 }
 
@@ -7864,6 +7874,175 @@ local function _mental_score()
   return (type(A) == &quot;table&quot; and tonumber(A.mentalscore)) or 0
 end
 
+local function _bool_field(v)
+  if v == nil then return nil end
+  return v == true
+end
+
+local function _truebook_can_utter(tgt)
+  local TB = Yso and Yso.occ and Yso.occ.truebook or nil
+  if TB and type(TB.can_utter) == &quot;function&quot; then
+    local ok, v = pcall(TB.can_utter, tgt)
+    if ok then return v == true end
+  end
+  return false
+end
+
+local function _mana_pct(tgt, snap, fresh)
+  if Yso and Yso.tgt and type(Yso.tgt.get_mana_pct) == &quot;function&quot; then
+    local ok, v = pcall(Yso.tgt.get_mana_pct, tgt)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  if fresh and type(snap) == &quot;table&quot; and snap.had_mana == true and tonumber(snap.mana_pct) then
+    return tonumber(snap.mana_pct)
+  end
+  return nil
+end
+
+local function _cleanseaura_snapshot(tgt)
+  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == &quot;function&quot; then
+    local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
+    if ok and type(s) == &quot;table&quot; then return s end
+  end
+  return nil
+end
+
+local function _aura_txn_active_for(tgt)
+  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot;) then return false end
+  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
+  return ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
+end
+
+local function _snapshot_view(tgt)
+  local snap = _cleanseaura_snapshot(tgt) or {}
+  local fresh = (snap.fresh == true)
+  local read_complete = fresh and (snap.read_complete == true)
+  local parse_window_open = fresh and (snap.parse_window_open == true)
+  local deaf = nil
+  local speed = nil
+  if read_complete then
+    deaf = _bool_field(snap.deaf)
+    speed = _bool_field(snap.speed)
+  end
+  local mana = _mana_pct(tgt, snap, fresh)
+  local cap = tonumber(PA.cfg.cleanseaura_mana_pct or 40) or 40
+  local needs_readaura = false
+  local readaura_reason = &quot;&quot;
+
+  if parse_window_open then
+    needs_readaura = false
+    readaura_reason = &quot;parse_window_open&quot;
+  elseif not fresh then
+    needs_readaura = true
+    readaura_reason = &quot;snapshot_stale&quot;
+  elseif read_complete ~= true then
+    needs_readaura = true
+    readaura_reason = &quot;snapshot_incomplete&quot;
+  elseif deaf == nil then
+    needs_readaura = true
+    readaura_reason = &quot;deaf_unknown&quot;
+  end
+
+  return {
+    snapshot = snap,
+    snapshot_fresh = fresh,
+    snapshot_read_complete = read_complete,
+    parse_window_open = parse_window_open,
+    deaf = deaf,
+    speed = speed,
+    mana_pct = mana,
+    cleanseaura_ready = (mana ~= nil and mana &lt;= cap) or false,
+    needs_readaura = needs_readaura,
+    readaura_reason = readaura_reason,
+  }
+end
+
+local function _loyals_active_for(tgt)
+  tgt = _trim(tgt)
+  if tgt == &quot;&quot; then return false end
+  if type(Yso.loyals_attack) == &quot;function&quot; then
+    local ok, v = pcall(Yso.loyals_attack, tgt)
+    if ok and v == true then return true end
+  end
+  return _lc(PA.state.loyals_sent_for or &quot;&quot;) == _lc(tgt)
+end
+
+local function _set_loyals_hostile(v, tgt)
+  local hostile = (v == true)
+  tgt = _trim(tgt)
+  if type(Yso.set_loyals_attack) == &quot;function&quot; then
+    pcall(Yso.set_loyals_attack, hostile, tgt)
+    return
+  end
+  if Yso and Yso.state then
+    Yso.state.loyals_hostile = hostile
+    if hostile and tgt ~= &quot;&quot; then
+      Yso.state.loyals_target = tgt
+    elseif not hostile then
+      Yso.state.loyals_target = nil
+    end
+  end
+  rawset(_G, &quot;loyals_attack&quot;, hostile)
+end
+
+local function _loyals_any_active()
+  if type(Yso.loyals_attack) == &quot;function&quot; then
+    local ok, v = pcall(Yso.loyals_attack)
+    if ok and v == true then return true end
+  end
+  return _trim(PA.state.loyals_sent_for or &quot;&quot;) ~= &quot;&quot;
+end
+
+PA.S = PA.S or {}
+function PA.S.loyals_hostile(tgt)
+  tgt = _trim(tgt)
+  if tgt ~= &quot;&quot; then
+    return _loyals_active_for(tgt)
+  end
+  return _loyals_any_active()
+end
+
+local function _readaura_tag(tgt)
+  return &quot;pa:eq:readaura:&quot; .. _lc(tgt)
+end
+
+local function _cleanseaura_tag(tgt)
+  return &quot;pa:eq:cleanseaura:&quot; .. _lc(tgt)
+end
+
+local function _pin_tag(tgt)
+  return &quot;pa:eq:pinchaura:&quot; .. _lc(tgt)
+end
+
+local function _utter_tag(tgt)
+  return &quot;pa:eq:utter:&quot; .. _lc(tgt)
+end
+
+local function _sequence_plan(tgt, opts)
+  local cached = type(opts) == &quot;table&quot; and opts.sequence or nil
+  if type(cached) == &quot;table&quot; then return cached end
+
+  local snap = _snapshot_view(tgt)
+  local loyals_bootstrap_pending = (type(opts) == &quot;table&quot; and opts.loyals_bootstrap_pending == true)
+  local unnamable_pending = (snap.deaf == false) and (_lc(PA.state.unnamable_sent_for or &quot;&quot;) ~= _lc(tgt))
+
+  return {
+    enabled = (PA.cfg.sequence_enabled ~= false),
+    loyals_bootstrap_pending = loyals_bootstrap_pending,
+    deaf = snap.deaf,
+    speed = snap.speed,
+    mana_pct = snap.mana_pct,
+    can_utter = _truebook_can_utter(tgt),
+    cleanseaura_ready = (snap.cleanseaura_ready == true),
+    needs_readaura = (snap.needs_readaura == true),
+    readaura_reason = tostring(snap.readaura_reason or &quot;&quot;),
+    snapshot_fresh = (snap.snapshot_fresh == true),
+    snapshot_read_complete = (snap.snapshot_read_complete == true),
+    unnamable_pending = unnamable_pending,
+    bal_only_tick = (_bal_ready() and not _ent_ready()),
+  }
+end
+
 local function _focus_lock_count(tgt)
   local list = { &quot;asthma&quot;, &quot;haemophilia&quot;, &quot;addiction&quot;, &quot;clumsiness&quot;, &quot;healthleech&quot;, &quot;weariness&quot;, &quot;sensitivity&quot; }
   local n = 0
@@ -7917,7 +8096,7 @@ local function _entity_refresh_state(tgt)
 end
 
 local function _first_missing_lock_aff(tgt)
-  local order = { &quot;asthma&quot;, &quot;haemophilia&quot;, &quot;addiction&quot;, &quot;clumsiness&quot;, &quot;healthleech&quot;, &quot;weariness&quot;, &quot;sensitivity&quot; }
+  local order = { &quot;asthma&quot;, &quot;haemophilia&quot;, &quot;addiction&quot;, &quot;clumsiness&quot;, &quot;healthleech&quot;, &quot;weariness&quot;, &quot;sensitivity&quot;, &quot;agoraphobia&quot;, &quot;dementia&quot;, &quot;claustrophobia&quot;, &quot;confusion&quot;, &quot;hallucinations&quot;, }
   for i = 1, #order do
     if not _has_aff(tgt, order[i]) then return order[i] end
   end
@@ -8399,18 +8578,66 @@ local function _plan_eq(tgt, opts)
 
   local tag_prefix = &quot;pa:eq:&quot;
   local tkey = _lc(tgt)
+  local seq = _sequence_plan(tgt, opts)
   local bootstrap_pending = (type(opts) == &quot;table&quot; and opts.loyals_bootstrap_pending == true)
 
   if bootstrap_pending then
-    local tag = tag_prefix .. &quot;readaura:&quot; .. tkey
-    local txn_active = false
-    if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot; then
-      local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
-      txn_active = ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
+    local tag = _readaura_tag(tgt)
+    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
+      return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
     end
-    if not txn_active and not _recent_sent(tag, 8) then
-      return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, 1.0
+  end
+
+  if seq.enabled and seq.needs_readaura == true then
+    local tag = _readaura_tag(tgt)
+    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
+      if Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot; then
+        local ok, ready = pcall(Yso.occ.readaura_is_ready)
+        if ok and ready == true then
+          return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
+        end
+      end
     end
+    return nil, nil, nil, nil
+  end
+
+  if seq.enabled and seq.deaf == true then
+    local tag = tag_prefix .. &quot;attend:&quot; .. tkey
+    local lock = tonumber(PA.cfg.attend_lockout_s or 2.3) or 2.3
+    if not _recent_sent(tag, lock) then
+      return (&quot;attend %s&quot;):format(tgt), &quot;mental_pressure&quot;, tag, lock
+    end
+  end
+
+  if seq.enabled and seq.unnamable_pending == true then
+    local tag = tag_prefix .. &quot;unnamable:&quot; .. tkey
+    local lock = tonumber(PA.cfg.unnamable_lockout_s or 4.0) or 4.0
+    if not _recent_sent(tag, lock) then
+      return &quot;unnamable speak&quot;, &quot;mental_pressure&quot;, tag, lock
+    end
+  end
+
+  if seq.enabled and seq.cleanseaura_ready == true and _has_aff(tgt, &quot;manaleech&quot;) and seq.can_utter ~= true then
+    local tag = _cleanseaura_tag(tgt)
+    local lock = tonumber(PA.cfg.cleanseaura_lockout_s or 4.1) or 4.1
+    if not _recent_sent(tag, lock) then
+      return (&quot;cleanseaura %s&quot;):format(tgt), &quot;truename_acquire&quot;, tag, lock
+    end
+  end
+
+  if seq.enabled and seq.can_utter == true then
+    if seq.speed == true and not _recent_sent(_pin_tag(tgt), tonumber(PA.cfg.speed_hold_s or 3.2) or 3.2) then
+      return (&quot;pinchaura %s speed&quot;):format(tgt), &quot;speed_strip_window&quot;, _pin_tag(tgt), tonumber(PA.cfg.pinchaura_lockout_s or 4.1) or 4.1
+    end
+    local tag = _utter_tag(tgt)
+    local lock = tonumber(PA.cfg.utter_follow_s or 5.0) or 5.0
+    if not _recent_sent(tag, lock) then
+      return (&quot;utter truename %s&quot;):format(tgt), &quot;reserved_burst&quot;, tag, lock
+    end
+  end
+
+  if seq.enabled then
+    return nil, nil, nil, nil
   end
 
   if _shield_is_up(tgt) then
@@ -8476,8 +8703,16 @@ local function _plan_eq(tgt, opts)
   return nil, nil, nil, nil
 end
 
-local function _plan_bal(tgt)
+local function _plan_bal(tgt, opts)
   if not _bal_ready() then return nil, nil end
+  local seq = _sequence_plan(tgt, opts)
+
+  if seq.enabled then
+    if seq.deaf == false then
+      return (&quot;outd moon&amp;&amp;fling moon at %s&quot;):format(tgt), &quot;mental_pressure&quot;
+    end
+    return nil, nil
+  end
 
   if not _lock_stable(tgt) then return nil, nil end
 
@@ -8492,8 +8727,30 @@ local function _plan_bal(tgt)
   return nil, nil
 end
 
-_plan_entity = function(tgt)
+_plan_entity = function(tgt, opts)
   if not _ent_ready() then return nil, nil end
+  local seq = _sequence_plan(tgt, opts)
+
+  if seq.enabled then
+    local eq_tag = _trim(type(opts) == &quot;table&quot; and opts.eq_tag or &quot;&quot;)
+    local eq_cmd = _trim(type(opts) == &quot;table&quot; and opts.eq_cmd or &quot;&quot;)
+    local is_setup_eq = (eq_tag:find(&quot;:readaura:&quot;, 1, true) ~= nil)
+      or (eq_tag:find(&quot;:unnamable:&quot;, 1, true) ~= nil)
+      or (eq_tag:find(&quot;:cleanseaura:&quot;, 1, true) ~= nil)
+      or (eq_tag:find(&quot;:pinchaura:&quot;, 1, true) ~= nil)
+      or (eq_tag:find(&quot;:utter:&quot;, 1, true) ~= nil)
+      or (eq_cmd:find(&quot;^readaura%s+&quot;) ~= nil)
+      or (eq_cmd:find(&quot;^unnamable%s+&quot;) ~= nil)
+      or (eq_cmd:find(&quot;^cleanseaura%s+&quot;) ~= nil)
+      or (eq_cmd:find(&quot;^pinchaura%s+&quot;) ~= nil)
+      or (eq_cmd:find(&quot;^utter%s+truename%s+&quot;) ~= nil)
+    if is_setup_eq then return nil, nil end
+
+    if seq.deaf == true or seq.deaf == false then
+      return (&quot;command chimera at %s&quot;):format(tgt), &quot;mental_pressure&quot;
+    end
+    return nil, nil
+  end
 
   local ES = _entity_refresh_state(tgt)
   local ER = ES.registry
@@ -8532,7 +8789,7 @@ _plan_entity = function(tgt)
 end
 
 local function _plan_free(tgt)
-  if _lc(PA.state.loyals_sent_for or &quot;&quot;) == _lc(tgt) then return nil, nil end
+  if _loyals_active_for(tgt) then return nil, nil end
   local cmd = (tostring(PA.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
   return cmd, &quot;team_coordination&quot;
 end
@@ -8596,6 +8853,7 @@ function PA.init()
   PA.cfg = PA.cfg or {}
   PA.state = PA.state or {}
   PA.state.loyals_sent_for = _trim(PA.state.loyals_sent_for or &quot;&quot;)
+  PA.state.unnamable_sent_for = _trim(PA.state.unnamable_sent_for or &quot;&quot;)
   PA.state.template = PA.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; }
   PA.state.waiting = PA.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = &quot;&quot;, reason = &quot;&quot;, at = 0 }
   PA.state.last_attack = PA.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; }
@@ -8612,6 +8870,7 @@ function PA.reset(reason)
   PA.state.explain = {}
   PA.state.last_target = &quot;&quot;
   PA.state.loyals_sent_for = &quot;&quot;
+  PA.state.unnamable_sent_for = &quot;&quot;
   PA.state.busy = false
   _clear_waiting()
   PA.state.last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; }
@@ -8658,11 +8917,23 @@ function PA.attack_function(arg)
   local tgt = info
   local free_cmd, free_cat = _plan_free(tgt)
   local loyals_bootstrap_pending = (_trim(free_cmd) ~= &quot;&quot;)
+  local seq = _sequence_plan(tgt, { loyals_bootstrap_pending = loyals_bootstrap_pending })
   local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt, {
     loyals_bootstrap_pending = loyals_bootstrap_pending,
+    sequence = seq,
   })
-  local bal_cmd, bal_cat = _plan_bal(tgt)
-  local class_cmd, class_cat = _plan_entity(tgt)
+  local bal_cmd, bal_cat = _plan_bal(tgt, {
+    sequence = seq,
+  })
+  local class_cmd, class_cat = _plan_entity(tgt, {
+    sequence = seq,
+    eq_cmd = eq_cmd,
+    eq_tag = eq_tag,
+  })
+  local bal_only_tick = (seq.enabled == true and seq.bal_only_tick == true and _trim(bal_cmd) ~= &quot;&quot; and _trim(eq_cmd) == &quot;&quot; and _trim(free_cmd) == &quot;&quot;)
+  if bal_only_tick then
+    class_cmd, class_cat = nil, nil
+  end
   local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
   local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
   local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
@@ -8680,6 +8951,7 @@ function PA.attack_function(arg)
       entity_category = class_cat,
       main_lane = main_lane,
       main_category = main.category,
+      bal_only_tick = (bal_only_tick == true),
       free_parts = (_trim(free_cmd) ~= &quot;&quot;) and {
         { cmd = free_cmd, offense = true },
       } or nil,
@@ -8696,6 +8968,18 @@ function PA.attack_function(arg)
     manaleech = _has_aff(tgt, &quot;manaleech&quot;),
     loyals_bootstrap_pending = loyals_bootstrap_pending,
     mental_score = _mental_score(),
+    sequence = {
+      enabled = (seq.enabled == true),
+      needs_readaura = (seq.needs_readaura == true),
+      readaura_reason = tostring(seq.readaura_reason or &quot;&quot;),
+      deaf = seq.deaf,
+      speed = seq.speed,
+      mana_pct = seq.mana_pct,
+      can_utter = (seq.can_utter == true),
+      cleanseaura_ready = (seq.cleanseaura_ready == true),
+      unnamable_pending = (seq.unnamable_pending == true),
+      bal_only_tick = (bal_only_tick == true),
+    },
     planned = gate and gate.planned and gate.planned.lanes or { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = class_cmd },
     gated = gate and gate.gated and gate.gated.lanes or (payload and payload.lanes) or {},
     categories = { free = free_cat, eq = eq_cat, bal = bal_cat, entity = class_cat },
@@ -8763,6 +9047,7 @@ function PA.on_sent(payload, ctx)
     local free = payload.lanes and payload.lanes.free or payload.free
     if type(free) == &quot;string&quot; and free == loyals_cmd then
       PA.state.loyals_sent_for = tgt
+      _set_loyals_hostile(true, tgt)
     end
     local eq_lane = payload.lanes and payload.lanes.eq or payload.eq
     local readaura_cmd = (&quot;readaura %s&quot;):format(tgt)
@@ -8773,6 +9058,8 @@ function PA.on_sent(payload, ctx)
       if type(Yso.occ.set_readaura_ready) == &quot;function&quot; then
         pcall(Yso.occ.set_readaura_ready, false, &quot;sent&quot;)
       end
+    elseif type(eq_lane) == &quot;string&quot; and _trim(eq_lane) == &quot;unnamable speak&quot; then
+      PA.state.unnamable_sent_for = tgt
     end
   end
   local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity

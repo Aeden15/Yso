@@ -237,7 +237,10 @@ local function load_party_aff()
     PA = PA,
     payload_line = get_upvalue(PA.attack_function, "_payload_line"),
     plan_eq = get_upvalue(PA.attack_function, "_plan_eq"),
+    plan_bal = get_upvalue(PA.attack_function, "_plan_bal"),
+    plan_entity = get_upvalue(PA.attack_function, "_plan_entity"),
     plan_free = get_upvalue(PA.attack_function, "_plan_free"),
+    sequence_plan = get_upvalue(PA.attack_function, "_sequence_plan"),
   }
 end
 
@@ -309,11 +312,116 @@ do
     },
   }, { target = tgt })
   assert_eq("party on_sent marks loyals target", T.PA.state.loyals_sent_for, tgt)
+  assert_true("party on_sent marks loyals hostile", _G.Yso.state.loyals_hostile == true)
   assert_eq("party on_sent aura_begin count", #T.env.aura_begins, 1)
   assert_eq("party on_sent aura_begin reason", T.env.aura_begins[1].why, "party_aff_send")
   assert_eq("party on_sent readaura_ready count", #T.env.readaura_ready_calls, 1)
   assert_false("party on_sent marks readaura not ready", T.env.readaura_ready_calls[1].value)
   assert_eq("party on_sent readaura reason", T.env.readaura_ready_calls[1].why, "sent")
+end
+
+do
+  local T = load_party_aff()
+  local tgt = T.env.target
+  T.env.snapshot = { fresh = false, read_complete = false }
+  T.env.readaura_ready = true
+  assert_eq(
+    "party stale snapshot forces readaura",
+    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
+    ("readaura %s"):format(tgt)
+  )
+end
+
+do
+  local T = load_party_aff()
+  local tgt = T.env.target
+  T.env.snapshot = { fresh = true, read_complete = true, deaf = true, speed = false, had_mana = true, mana_pct = 70 }
+  T.env.readaura_ready = true
+
+  local eq_cmd, _, eq_tag = T.plan_eq(tgt, { loyals_bootstrap_pending = false })
+  assert_eq("party deaf branch attend", eq_cmd, ("attend %s"):format(tgt))
+  assert_eq(
+    "party deaf branch chimera pairing",
+    select(1, T.plan_entity(tgt, { eq_cmd = eq_cmd, eq_tag = eq_tag })),
+    ("command chimera at %s"):format(tgt)
+  )
+  assert_nil("party deaf branch suppresses moon", select(1, T.plan_bal(tgt, {})))
+end
+
+do
+  local T = load_party_aff()
+  local tgt = T.env.target
+  T.env.snapshot = { fresh = true, read_complete = true, deaf = false, speed = false, had_mana = true, mana_pct = 70 }
+  T.env.readaura_ready = true
+
+  local eq_cmd, _, eq_tag = T.plan_eq(tgt, { loyals_bootstrap_pending = false })
+  assert_eq("party hearing opener uses unnamable", eq_cmd, "unnamable speak")
+  assert_nil(
+    "party hearing opener suppresses entity during unnamable setup",
+    select(1, T.plan_entity(tgt, { eq_cmd = eq_cmd, eq_tag = eq_tag }))
+  )
+
+  T.PA.on_sent({
+    target = tgt,
+    lanes = { eq = "unnamable speak" },
+  }, { target = tgt })
+  assert_eq("party hearing opener marks unnamable sent", T.PA.state.unnamable_sent_for, tgt)
+  assert_nil("party hearing follow-up has no eq setup", select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })))
+  assert_eq("party hearing follow-up plans moon", select(1, T.plan_bal(tgt, {})), ("outd moon&&fling moon at %s"):format(tgt))
+  assert_eq("party hearing follow-up plans chimera", select(1, T.plan_entity(tgt, {})), ("command chimera at %s"):format(tgt))
+  assert_eq(
+    "party hearing follow-up combo order",
+    T.payload_line({ target = tgt, lanes = { bal = ("outd moon&&fling moon at %s"):format(tgt), entity = ("command chimera at %s"):format(tgt) } }),
+    ("outd moon&&command chimera at %s&&fling moon at %s"):format(tgt, tgt)
+  )
+end
+
+do
+  local T = load_party_aff()
+  local tgt = T.env.target
+  T.PA.state.unnamable_sent_for = tgt
+  T.env.snapshot = { fresh = true, read_complete = true, deaf = false, speed = true, had_mana = true, mana_pct = 35 }
+  T.env.readaura_ready = true
+
+  assert_eq(
+    "party cleanseaura branch command",
+    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
+    ("cleanseaura %s"):format(tgt)
+  )
+
+  _G.Yso.occ.truebook.can_utter = function() return true end
+  assert_eq(
+    "party truename branch speed strip first",
+    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
+    ("pinchaura %s speed"):format(tgt)
+  )
+
+  T.env.recent_tags["pa:eq:pinchaura:" .. tgt] = true
+  assert_eq(
+    "party truename branch utter follow-up",
+    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
+    ("utter truename %s"):format(tgt)
+  )
+end
+
+do
+  local T = load_party_aff()
+  local tgt = T.env.target
+  T.PA.state.unnamable_sent_for = tgt
+  _G.Yso.set_loyals_attack(true, tgt)
+  T.PA.state.loyals_sent_for = tgt
+  T.PA.state.enabled = true
+  T.PA.state.loop_enabled = true
+  T.env.snapshot = { fresh = true, read_complete = true, deaf = false, speed = false, had_mana = true, mana_pct = 70 }
+  _G.Yso.state.ent_ready = function() return false end
+
+  local payload = T.PA.build_payload({ target = tgt })
+  assert_true("party bal-only payload generated", type(payload) == "table")
+  assert_true("party bal-only meta flag", payload.meta and payload.meta.bal_only_tick == true)
+  assert_eq("party bal-only keeps tarot lane", payload.lanes.bal, ("outd moon&&fling moon at %s"):format(tgt))
+  assert_nil("party bal-only suppresses entity lane", payload.lanes.entity)
+  assert_nil("party bal-only suppresses eq lane", payload.lanes.eq)
+  assert_nil("party bal-only suppresses free lane", payload.lanes.free)
 end
 
 do
