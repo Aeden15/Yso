@@ -1,10 +1,11 @@
 # Yso
 
-Current workspace snapshot: March 27, 2026.
+Current workspace snapshot: March 29, 2026.
 
 ## Current fixes
 
 - **XML mirrors synced with canonical sources** — all bug fixes from the canonical Lua modules (Bugs 3, 6, 8, 10–13 + aurum bucket) are now applied to the Mudlet-facing XML mirror copies under `xml/`. Both canonical and XML surfaces match.
+- **Escape button separator ownership fixed** — `yso_escape_button.lua` no longer initializes global `Yso.sep` to `";;"`; it now inherits `Yso.sep`/`Yso.cfg` and falls back to `"&&"` so load order cannot override the canonical pipe separator. Its `_now()` helper also normalizes millisecond `getEpoch()` values.
 - **Fool hunt logic hardened for Occultist** — Fool now resolves cureset via a fallback chain (`ActiveServerSet` -> `CurrentCureset` -> hunt mode hint), supports tendon-severity weighting from `ak.twoh.tendons` (exact count), and exposes `fool status` / `fool auto on|off` runtime controls.
 - Occultist offense is now fully alias-owned. Shared send memory lives in `offense_state.lua`, and the removed orchestrator is no longer part of the active offense path.
 - Party command syntaxes were retired to avoid clashing with in-game `party ...` commands. Use `team` / `teamroute` syntax for Yso team-mode controls.

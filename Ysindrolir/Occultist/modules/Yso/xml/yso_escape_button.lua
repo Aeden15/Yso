@@ -2,7 +2,7 @@
 -- yso_escape_button.lua  (DROP-IN)  [REFRESHED for current Yso]
 -- Purpose:
 --   • F5 “escape” handler for Achaea (Yso namespace)
---   • Respects current Yso command separator (Yso.sep; default ";;")
+--   • Respects current Yso command separator (Yso.sep; default "&&")
 --   • Universe TOUCH defaults to Newthera
 --   • Uses Legacy affliction tracking (Legacy.Curing.Affs) when present
 --   • Uses Yso.queue.*_clear (or addclear) when available; otherwise sends directly
@@ -23,8 +23,6 @@ _G.Yso = _G.Yso or _G.yso or {}
 _G.yso = _G.Yso
 local Yso = _G.Yso
 
-Yso.sep = Yso.sep or ";;"
-
 Yso.escape = Yso.escape or {}
 local E = Yso.escape
 
@@ -32,7 +30,10 @@ local E = Yso.escape
 E.cfg = E.cfg or {}
 
 if E.cfg.sep == nil or E.cfg.sep == "" then
-  E.cfg.sep = (Yso and Yso.sep) or ";;"
+  E.cfg.sep =
+    (Yso and Yso.sep)
+    or (Yso and Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep))
+    or "&&"
 end
 
 if E.cfg.echo == nil then E.cfg.echo = true end
@@ -59,7 +60,12 @@ E.state = E.state or {
 
 -- ---------------- tiny helpers ----------------
 local function _now()
-  return (type(getEpoch) == "function" and getEpoch()) or os.time()
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
 end
 
 local function _vitals()
@@ -106,7 +112,11 @@ local function _send_compound(body)
   body = tostring(body or "")
   if body == "" then return end
 
-  local sep = (E.cfg and E.cfg.sep) or (Yso and Yso.sep) or ";;"
+  local sep =
+    (E.cfg and E.cfg.sep)
+    or (Yso and Yso.sep)
+    or (Yso and Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep))
+    or "&&"
   local parts = {}
   local idx = 1
 
@@ -294,7 +304,11 @@ function E.press()
   -- global blockers
   if _blocked_global() then return end
 
-  local sep = (E.cfg and E.cfg.sep) or (Yso and Yso.sep) or ";;"
+  local sep =
+    (E.cfg and E.cfg.sep)
+    or (Yso and Yso.sep)
+    or (Yso and Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep))
+    or "&&"
   local touch_to = tostring(E.cfg.universe_touch or "newthera")
   if touch_to == "" then touch_to = "newthera" end
 
