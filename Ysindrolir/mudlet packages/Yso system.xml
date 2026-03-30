@@ -4270,8 +4270,18 @@ end</script>
 						<script>Yso = Yso or {}
 Yso.magi = Yso.magi or {}
 
-if Yso.magi.energy then
-send("queue prepend egbal absorb energy")
+if Yso.magi.energy ~= true then return end
+
+local crystal = Yso.magi.crystalism or {}
+if type(crystal.consume_energise_resonance) ~= "function" then
+  if type(cecho) == "function" then
+    cecho("\n&lt;SteelBlue&gt;[Magi] &lt;ansi_yellow&gt;(Energise resonance helper unavailable.)\n")
+  end
+  return
+end
+
+if crystal.consume_energise_resonance() then
+  send("queue prepend egbal absorb energy")
 end</script>
 						<command></command>
 						<packageName></packageName>

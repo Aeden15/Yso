@@ -60,6 +60,9 @@ Notes
     Yso.magi.energy controls heal-burst readiness only.
     Yso.magi.crystalism.consume_energise_resonance() is for personal energise
     alias gating.
+  The packaged mheals alias now requires both:
+    Yso.magi.energy == true
+    Yso.magi.crystalism.consume_energise_resonance() == true
   Future Magi-only offense, defense, resonance, or debug helpers should live
   here rather than inside the Occultist tree.
 
