@@ -22,6 +22,13 @@ Current fixes
 
 Current Magi helpers
 --------------------
+  magi_group_damage.lua
+    Provides Yso.off.magi.group_damage for the Magi team-damage loop.
+
+  magi_reference.lua
+    Provides the Yso-side Magi resonance API, Crystalism resonance state
+    helpers, and AK sync helpers.
+
   magi_vibes.lua
     Provides Yso.magi.vibes.run() for the vibeds alias flow.
 
@@ -44,6 +51,15 @@ Default vibes notes
 
 Notes
 -----
+  Fresh-target Magi damage does not guess caloric. It always opens with
+  freeze, then promotes cold setup from AK frozen/frostbite evidence until the
+  target dies, swaps, or room context changes.
+  Crystalism resonance notice triggers live under:
+    Yso system.xml -> Yso Triggers/Magi/Crystalism
+  energise resonance is separate from the mheals absorb-energy flow:
+    Yso.magi.energy controls heal-burst readiness only.
+    Yso.magi.crystalism.consume_energise_resonance() is for personal energise
+    alias gating.
   Future Magi-only offense, defense, resonance, or debug helpers should live
   here rather than inside the Occultist tree.
 
