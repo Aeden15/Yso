@@ -118,4 +118,5 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - Magi team damage now opens with `freeze` on a fresh target, tracks cold progression locally from AK `frozen`/`frostbite`, and keeps `glaciate` strictly gated on live `frozen`.
 - Crystalism resonance notices now echo in the package `Yso Triggers -> Magi -> Crystalism` folder, and `energise` also exposes a separate consumable Crystalism state for personal aliases without reusing the heal-burst `Yso.magi.energy` flag.
 - The packaged `mheals` alias now requires both `Yso.magi.energy` and `Yso.magi.crystalism.consume_energise_resonance()` before it queues `absorb energy`.
+- The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.
 - If you are debugging automation, start with the shared pipeline first: mode ownership, wake intake, queue staging, then queue commit/flush.

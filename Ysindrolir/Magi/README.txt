@@ -63,6 +63,8 @@ Notes
   The packaged mheals alias now requires both:
     Yso.magi.energy == true
     Yso.magi.crystalism.consume_energise_resonance() == true
+  The package also bootstraps the Crystalism energise helper inline so the
+  alias does not depend on magi_reference.lua load order.
   Future Magi-only offense, defense, resonance, or debug helpers should live
   here rather than inside the Occultist tree.
 
