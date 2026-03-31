@@ -30,8 +30,18 @@ Current fixes
     Ysindrolir/Occultist/Occultist Devtools.xml
     Ysindrolir/Magi/MagiDevtools.xml
 
+  Split devtools now expose class-local self-cleanse testers:
+    Magi      ytest bloodboil snap|fire|debug|auto
+    Occultist ytest fool snap|fire|debug
+
   Export artifacts were refreshed from the canonical workspace sources,
   including Yso system.xml and the wake-bus/queue mirrors that feed it.
+
+  team dam is now class-sensitive. Occultist keeps the existing team-damage
+  route, while Magi uses a sibling Magi route that selects:
+    freeze -> mudslide -> emanation water -> glaciate
+  from AK scores, route-local cold progression (tracked from frozen/frostbite),
+  and Yso resonance synced from AK.
 
 Documentation map
 -----------------
@@ -63,6 +73,12 @@ Workspace layout
 Notes
 -----
   Yso system.xml is rebuilt from the Occultist source tree.
+  Magi team damage now opens with freeze on a fresh target, tracks cold
+  progression locally from AK frozen/frostbite, and keeps glaciate strictly
+  gated on live frozen.
+  Crystalism resonance notices now echo from the Magi trigger folder, and
+  energise also exposes a separate consumable state helper for personal aliases
+  without reusing the heal-burst Yso.magi.energy flag.
   AK.xml is maintained separately and may also carry compatibility patches.
   Root-level docs should stay class-agnostic now that this workspace supports
   more than one class.

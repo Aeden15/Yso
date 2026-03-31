@@ -20,8 +20,21 @@ Current fixes
   Magi aliases and triggers in Yso system.xml were corrected for the current
   Elementalism / Crystalism helpers.
 
+  MagiDevtools now includes a Bloodboil test surface:
+    ytest bloodboil snap
+    ytest bloodboil fire [secs] [force]
+    ytest bloodboil debug [on|off|toggle]
+    ytest bloodboil auto [on|off|toggle]
+
 Current Magi helpers
 --------------------
+  magi_group_damage.lua
+    Provides Yso.off.magi.group_damage for the Magi team-damage loop.
+
+  magi_reference.lua
+    Provides the Yso-side Magi resonance API, Crystalism resonance state
+    helpers, and AK sync helpers.
+
   magi_vibes.lua
     Provides Yso.magi.vibes.run() for the vibeds alias flow.
 
@@ -44,6 +57,20 @@ Default vibes notes
 
 Notes
 -----
+  Fresh-target Magi damage does not guess caloric. It always opens with
+  freeze, then promotes cold setup from AK frozen/frostbite evidence until the
+  target dies, swaps, or room context changes.
+  Crystalism resonance notice triggers live under:
+    Yso system.xml -> Yso Triggers/Magi/Crystalism
+  energise resonance is separate from the mheals absorb-energy flow:
+    Yso.magi.energy controls heal-burst readiness only.
+    Yso.magi.crystalism.consume_energise_resonance() is for personal energise
+    alias gating.
+  The packaged mheals alias now requires both:
+    Yso.magi.energy == true
+    Yso.magi.crystalism.consume_energise_resonance() == true
+  The package also bootstraps the Crystalism energise helper inline so the
+  alias does not depend on magi_reference.lua load order.
   Future Magi-only offense, defense, resonance, or debug helpers should live
   here rather than inside the Occultist tree.
 

@@ -12,7 +12,7 @@
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>yhelp</name>
-				<script>cecho("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|off [secs] [force] | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
+				<script>cecho("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|bloodboil snap|fire|debug|auto|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
 				<command />
 				<packageName />
 				<regex>^yhelp$</regex>
@@ -690,6 +690,7 @@ end
 --   ytest sens [secs] [force]
 --   ytest instill &lt;aff&gt; [secs] [force]
 --   ytest ent &lt;raw command...&gt; [secs]
+--   ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle]
 --   ytest off
 --========================================================--
 
@@ -801,10 +802,253 @@ function D.test.snap()
   _tprint("target="..tostring(D.test.get_target()))
 end
 
+local function _self_aff_list()
+  local A = (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+  local out = {}
+  for aff, present in pairs(A) do
+    if present == true and aff ~= "softlocked" and aff ~= "truelocked" then
+      out[#out + 1] = tostring(aff)
+    end
+  end
+  table.sort(out)
+  return out
+end
+
+local function _self_has_aff(aff)
+  local A = (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+  return A[tostring(aff or "")] == true
+end
+
+local function _current_class_name()
+  local cls = ""
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+    local ok, res = pcall(Yso.classinfo.get)
+    if ok and type(res) == "string" then cls = _trim(res) end
+  end
+  if cls == "" and gmcp and gmcp.Char and gmcp.Char.Status then
+    cls = _trim(gmcp.Char.Status.class or gmcp.Char.Status.classname)
+  end
+  if cls == "" and type(Yso and Yso.class) == "string" then
+    cls = _trim(Yso.class)
+  end
+  return cls
+end
+
+local function _current_cureset_name()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and _trim(set) ~= "" then
+    return _trim(set):lower()
+  end
+
+  local prof = Yso and Yso.curing and Yso.curing._active_profile
+  if type(prof) == "string" and _trim(prof) ~= "" then
+    return _trim(prof):lower()
+  end
+
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and _trim(cur) ~= "" then
+    return _trim(cur):lower()
+  end
+
+  return ""
+end
+
+local function _bloodboil_mod()
+  return Yso and Yso.magi and Yso.magi.elemental or nil
+end
+
+local function _bloodboil_res_value(element)
+  local R = Yso and Yso.magi and Yso.magi.resonance or nil
+  if type(R) == "table" and type(R.get) == "function" then
+    local ok, val = pcall(R.get, element)
+    if ok and tonumber(val) then
+      return tonumber(val) or 0
+    end
+  end
+  if type(R) == "table" and type(R.state) == "table" then
+    return tonumber(R.state[element] or 0) or 0
+  end
+  return 0
+end
+
+local function _bloodboil_res_label(level)
+  level = tonumber(level) or 0
+  if level &gt;= 3 then return "major" end
+  if level &gt;= 2 then return "moderate" end
+  if level &gt;= 1 then return "minor" end
+  return "none"
+end
+
+local function _bloodboil_reason_text(reason, count, min_affs)
+  reason = tostring(reason or "?")
+  if reason == "ok" then
+    return string.format("ok affs=%d/%d", tonumber(count or 0) or 0, tonumber(min_affs or 0) or 0)
+  end
+  if reason == "affs" then
+    return string.format("affs=%d/&lt;%d", tonumber(count or 0) or 0, tonumber(min_affs or 0) or 0)
+  end
+  return reason
+end
+
+function D.test.bloodboil_snap()
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  local ready, reason, count, min_affs = false, "unknown", nil, nil
+  if type(M.should_bloodboil) == "function" then
+    local ok, a, b, c, d = pcall(M.should_bloodboil)
+    if ok then
+      ready, reason, count, min_affs = (a == true), b, c, d
+    else
+      reason = "error:" .. tostring(a)
+    end
+  end
+
+  local now = _now_s()
+  local cd_left = (tonumber(M.state and M.state.cooldown_until or 0) or 0) - now
+  if cd_left &lt; 0 then cd_left = 0 end
+
+  local class_name = _current_class_name()
+  local cureset = _current_cureset_name()
+  local affs = _self_aff_list()
+  local fire = _bloodboil_res_value("fire")
+  local water = _bloodboil_res_value("water")
+
+  _tprint(string.format(
+    "bloodboil ready=%s reason=%s class=%s cureset=%s eq=%s auto=%s debug=%s cd=%s fire=%s(%d) water=%s(%d) dual_major=%s",
+    ready and "Y" or "N",
+    _bloodboil_reason_text(reason, count, min_affs),
+    (class_name ~= "" and class_name or "?"),
+    (cureset ~= "" and cureset or "?"),
+    _fmt_bool(_eq_now()),
+    _fmt_bool(M.cfg and M.cfg.auto_bloodboil == true),
+    _fmt_bool(M.cfg and M.cfg.debug == true),
+    _fmt_secs(cd_left),
+    _bloodboil_res_label(fire), fire,
+    _bloodboil_res_label(water), water,
+    _fmt_bool(fire &gt;= 3 and water &gt;= 3)
+  ))
+  _tprint(string.format("self affs=%d haemophilia=%s", #affs, _fmt_bool(_self_has_aff("haemophilia"))))
+  if #affs &gt; 0 then
+    _tprint("self aff list=" .. table.concat(affs, ", "))
+  end
+  return ready
+end
+
+local function _arm_bloodboil_triggers()
+  D.test._trigs.bb_any = tempRegexTrigger(
+    "(?i)(boil your blood|haemophilia|equilibrium|mana|may not do that|huh\\?|once again)",
+    function()
+      _tprint("bloodboil -&gt; " .. tostring(line or ""))
+    end
+  )
+end
+
+local function _queue_bloodboil_force(M)
+  local cfg = type(M.cfg) == "table" and M.cfg or {}
+  local cmd = tostring(cfg.command or "cast bloodboil")
+  local mode = tostring(cfg.queue_mode or "prepend")
+  local qtype = tostring(cfg.queue_type or "eq")
+
+  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
+    local ok, queued = pcall(Yso.queue.raw, mode, qtype, cmd)
+    if ok and queued == true then
+      return true, string.format("queue raw %s/%s", mode, qtype)
+    end
+  end
+
+  if type(send) == "function" then
+    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
+    return true, string.format("queue %s %s", mode, qtype)
+  end
+
+  return false, "send unavailable"
+end
+
+function D.test.bloodboil_fire(secs, force)
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  D.test.off()
+  _arm_bloodboil_triggers()
+  D.test.bloodboil_snap()
+
+  local used = false
+  if force == true then
+    local ok, via = _queue_bloodboil_force(M)
+    used = ok == true
+    if used then
+      if type(M.set_ready) == "function" then
+        pcall(M.set_ready, false, "ytest:force")
+      end
+      M.state = M.state or {}
+      M.state.last_attempt = _now_s()
+      _tprint("queued bloodboil via force (" .. tostring(via) .. ")")
+    else
+      _tprint("bloodboil force queue failed.")
+    end
+  elseif type(M.try_bloodboil) == "function" then
+    local ok, queued = pcall(M.try_bloodboil, "ytest")
+    if ok and queued == true then
+      used = true
+      _tprint("queued bloodboil via live helper.")
+    elseif ok then
+      _tprint("bloodboil not queued; see snapshot reason above.")
+    else
+      _tprint("bloodboil error: " .. tostring(queued))
+    end
+  else
+    _tprint("bloodboil helper missing try_bloodboil().")
+  end
+
+  _auto_off(secs)
+  return used
+end
+
+function D.test.bloodboil_debug(tok)
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  M.cfg = M.cfg or {}
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not (M.cfg.debug == true)
+  end
+  M.cfg.debug = (desired == true)
+  _tprint("bloodboil debug = " .. (M.cfg.debug and "ON" or "OFF"))
+  return M.cfg.debug
+end
+
+function D.test.bloodboil_auto(tok)
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  M.cfg = M.cfg or {}
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not (M.cfg.auto_bloodboil == true)
+  end
+  M.cfg.auto_bloodboil = (desired == true)
+  _tprint("bloodboil auto = " .. (M.cfg.auto_bloodboil and "ON" or "OFF"))
+  return M.cfg.auto_bloodboil
+end
+
 function D.test.run(argstr)
   argstr = _trim(argstr)
   if argstr == "" then
-    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest off")
+    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle] | ytest off")
     return
   end
 
@@ -841,6 +1085,29 @@ function D.test.run(argstr)
     local last = (#toks &gt;= 3 and secs) and (#toks - 1) or #toks
     local cmd = table.concat(toks, " ", 2, last)
     D.test.ent(cmd, secs or 12)
+    return
+  elseif sub == "bloodboil" or sub == "bb" then
+    local action = tostring(toks[2] or "snap"):lower()
+    if action == "snap" or action == "status" then
+      D.test.bloodboil_snap()
+      return
+    elseif action == "fire" or action == "try" then
+      local secs, force = nil, false
+      for i = 3, #toks do
+        local x = tostring(toks[i]):lower()
+        if x == "force" then force = true
+        elseif (not secs) and tonumber(x) then secs = tonumber(x) end
+      end
+      D.test.bloodboil_fire(secs or 12, force)
+      return
+    elseif action == "debug" then
+      D.test.bloodboil_debug(toks[3] or "toggle")
+      return
+    elseif action == "auto" then
+      D.test.bloodboil_auto(toks[3] or "toggle")
+      return
+    end
+    _tprint("usage: ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle]")
     return
   end
 

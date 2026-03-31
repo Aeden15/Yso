@@ -25,6 +25,11 @@ Current fixes
   Both split devtools packages now import with their top-level alias groups
   disabled by default.
 
+  Occultist Devtools now includes a Fool test surface:
+    ytest fool snap
+    ytest fool fire [manual|auto|diagnose] [force]
+    ytest fool debug [on|off|toggle]
+
   Export artifacts were refreshed from the canonical source tree, including:
     modules/Yso/xml/yso_pulse_wake_bus.lua
     mudlet packages/Yso system.xml

@@ -12,7 +12,7 @@
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>yhelp</name>
-				<script>cecho("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|off [secs] [force] | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
+				<script>cecho("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|fool snap|fire|debug|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
 				<command />
 				<packageName />
 				<regex>^yhelp$</regex>
@@ -690,6 +690,7 @@ end
 --   ytest sens [secs] [force]
 --   ytest instill &lt;aff&gt; [secs] [force]
 --   ytest ent &lt;raw command...&gt; [secs]
+--   ytest fool snap|fire [manual|auto|diagnose] [force]|debug [on|off|toggle]
 --   ytest off
 --========================================================--
 
@@ -801,10 +802,211 @@ function D.test.snap()
   _tprint("target="..tostring(D.test.get_target()))
 end
 
+local function _self_aff_list()
+  local A = (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+  local out = {}
+  for aff, present in pairs(A) do
+    if present == true and aff ~= "softlocked" and aff ~= "truelocked" then
+      out[#out + 1] = tostring(aff)
+    end
+  end
+  table.sort(out)
+  return out
+end
+
+local function _current_class_name()
+  local cls = ""
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+    local ok, res = pcall(Yso.classinfo.get)
+    if ok and type(res) == "string" then cls = _trim(res) end
+  end
+  if cls == "" and gmcp and gmcp.Char and gmcp.Char.Status then
+    cls = _trim(gmcp.Char.Status.class or gmcp.Char.Status.classname)
+  end
+  if cls == "" and type(Yso and Yso.class) == "string" then
+    cls = _trim(Yso.class)
+  end
+  return cls
+end
+
+local function _is_occultist_now()
+  local cls = _current_class_name()
+  return (cls ~= "" and cls:lower() == "occultist"), cls
+end
+
+local function _fool_mod()
+  return Yso and Yso.fool or nil
+end
+
+local function _fool_cd_left(F)
+  local cfg = type(F.cfg) == "table" and F.cfg or {}
+  local state = type(F.state) == "table" and F.state or {}
+  local cd = tonumber(cfg.cd or 35) or 35
+  local last = tonumber(state.last_used or 0) or 0
+  local rem = cd - (_now_s() - last)
+  if rem &lt; 0 then rem = 0 end
+  return rem
+end
+
+local function _fool_gcd_left(F)
+  local cfg = type(F.cfg) == "table" and F.cfg or {}
+  local state = type(F.state) == "table" and F.state or {}
+  local gcd = tonumber(cfg.gcd or 1) or 1
+  local last = tonumber(state.last_auto or 0) or 0
+  local rem = gcd - (_now_s() - last)
+  if rem &lt; 0 then rem = 0 end
+  return rem
+end
+
+local function _with_fool_debug(fn)
+  local F = _fool_mod()
+  local LF = Legacy and Legacy.Fool or nil
+  if type(F) ~= "table" then
+    return false, "fool module not loaded."
+  end
+
+  local prev_cfg = type(F.cfg) == "table" and F.cfg.debug or nil
+  local prev_legacy = type(LF) == "table" and LF.debug or nil
+
+  if type(F.cfg) == "table" then F.cfg.debug = true end
+  if type(LF) == "table" then LF.debug = true end
+
+  local ok, a, b, c = pcall(fn)
+
+  if type(F.cfg) == "table" and prev_cfg ~= nil then F.cfg.debug = prev_cfg end
+  if type(LF) == "table" and prev_legacy ~= nil then LF.debug = prev_legacy end
+
+  if not ok then
+    return false, tostring(a)
+  end
+
+  return a, b, c
+end
+
+function D.test.fool_snap()
+  local F = _fool_mod()
+  if type(F) ~= "table" or type(F.status) ~= "function" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  F.status()
+
+  local is_occultist, cls = _is_occultist_now()
+  local affs = _self_aff_list()
+  local LF = Legacy and Legacy.Fool or {}
+  local wait_diag = type(F.state) == "table" and F.state.await_diag == true
+  local debug_on = (type(F.cfg) == "table" and F.cfg.debug == true) or (type(LF) == "table" and LF.debug == true)
+
+  _tprint(string.format(
+    "fool class=%s(%s) enabled=%s debug=%s cd=%s gcd=%s await_diag=%s affs=%d",
+    _fmt_bool(is_occultist),
+    (cls ~= "" and cls or "?"),
+    _fmt_bool(F.cfg and F.cfg.enabled == true),
+    _fmt_bool(debug_on),
+    _fmt_secs(_fool_cd_left(F)),
+    _fmt_secs(_fool_gcd_left(F)),
+    _fmt_bool(wait_diag),
+    #affs
+  ))
+  if #affs &gt; 0 then
+    _tprint("self aff list=" .. table.concat(affs, ", "))
+  end
+  return true
+end
+
+function D.test.fool_debug(tok)
+  local F = _fool_mod()
+  if type(F) ~= "table" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  local LF = Legacy and Legacy.Fool or nil
+  F.cfg = F.cfg or {}
+  if type(LF) == "table" then
+    LF.debug = LF.debug or false
+  end
+
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not ((F.cfg.debug == true) or (type(LF) == "table" and LF.debug == true))
+  end
+
+  F.cfg.debug = (desired == true)
+  if type(LF) == "table" then
+    LF.debug = (desired == true)
+  end
+
+  _tprint("fool debug = " .. ((desired == true) and "ON" or "OFF"))
+  return desired == true
+end
+
+function D.test.fool_fire(source, force)
+  local F = _fool_mod()
+  if type(F) ~= "table" or type(Legacy) ~= "table" or type(Legacy.FoolSelfCleanse) ~= "function" then
+    _tprint("fool helper not loaded.")
+    return false
+  end
+
+  source = _trim(source):lower()
+  if source == "" or source == "self" then source = "manual" end
+  if source == "diag" then source = "diagnose" end
+  if source ~= "manual" and source ~= "auto" and source ~= "diagnose" then
+    _tprint("usage: ytest fool fire [manual|auto|diagnose] [force]")
+    return false
+  end
+
+  D.test.fool_snap()
+
+  local is_occultist = _is_occultist_now()
+  if not force and source ~= "manual" then
+    if is_occultist ~= true then
+      _tprint(source .. " blocked: current class is not Occultist.")
+      return false
+    end
+    if not (F.cfg and F.cfg.enabled == true) then
+      _tprint(source .. " blocked: auto-fool is disabled.")
+      return false
+    end
+    local cd_left = _fool_cd_left(F)
+    if cd_left &gt; 0 then
+      _tprint(source .. " blocked: cooldown " .. _fmt_secs(cd_left))
+      return false
+    end
+    local gcd_left = _fool_gcd_left(F)
+    if gcd_left &gt; 0 then
+      _tprint(source .. " blocked: gcd " .. _fmt_secs(gcd_left))
+      return false
+    end
+  elseif force then
+    _tprint("force bypass: top-level " .. source .. " gate checks")
+  end
+
+  local ok, err = _with_fool_debug(function()
+    if source == "auto" or source == "diagnose" then
+      F.state = F.state or {}
+      F.state.last_auto = _now_s()
+      if source == "diagnose" then
+        F.state.await_diag = false
+      end
+    end
+    return Legacy.FoolSelfCleanse("ytest:" .. source)
+  end)
+
+  if ok == false and err then
+    _tprint("fool error: " .. tostring(err))
+    return false
+  end
+
+  _tprint(((ok == true) and "queued" or "not queued") .. " fool via " .. source)
+  return ok == true
+end
+
 function D.test.run(argstr)
   argstr = _trim(argstr)
   if argstr == "" then
-    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest off")
+    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest fool snap|fire [manual|auto|diagnose] [force]|debug [on|off|toggle] | ytest off")
     return
   end
 
@@ -841,6 +1043,31 @@ function D.test.run(argstr)
     local last = (#toks &gt;= 3 and secs) and (#toks - 1) or #toks
     local cmd = table.concat(toks, " ", 2, last)
     D.test.ent(cmd, secs or 12)
+    return
+  elseif sub == "fool" then
+    local action = tostring(toks[2] or "snap"):lower()
+    if action == "snap" or action == "status" then
+      D.test.fool_snap()
+      return
+    elseif action == "fire" or action == "try" then
+      local source = tostring(toks[3] or "manual"):lower()
+      local force = false
+      if source == "force" then
+        source = "manual"
+        force = true
+      end
+      for i = 4, #toks do
+        if tostring(toks[i]):lower() == "force" then
+          force = true
+        end
+      end
+      D.test.fool_fire(source, force)
+      return
+    elseif action == "debug" then
+      D.test.fool_debug(toks[3] or "toggle")
+      return
+    end
+    _tprint("usage: ytest fool snap|fire [manual|auto|diagnose] [force]|debug [on|off|toggle]")
     return
   end
 

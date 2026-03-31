@@ -11,7 +11,9 @@ Current workspace snapshot: March 29, 2026.
 - Party command syntaxes were retired to avoid clashing with in-game `party ...` commands. Use `team` / `teamroute` syntax for Yso team-mode controls.
 - The wake bus now retries staged queue commits on lane wakes. Manual lane aliases such as `cleanse` can stage while EQ is down and flush on reopen.
 - The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Split devtools sources now live at `Ysindrolir/Occultist/Occultist Devtools.xml` and `Ysindrolir/Magi/MagiDevtools.xml`.
+- Split devtools now expose class-local self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
+- `team dam` is now class-sensitive: Occultist keeps the existing group-damage route, while Magi loads a sibling Magi route that drives `freeze -> mudslide -> water emanation -> glaciate` from AK scores, route-local cold progression (`frozen`/`frostbite`), and Yso resonance state synchronized from AK.
 
 ## What is here
 
@@ -114,4 +116,8 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 
 - The Occultist stack is the primary active development target.
 - Magi files are present, but they are a smaller secondary track right now.
+- Magi team damage now opens with `freeze` on a fresh target, tracks cold progression locally from AK `frozen`/`frostbite`, and keeps `glaciate` strictly gated on live `frozen`.
+- Crystalism resonance notices now echo in the package `Yso Triggers -> Magi -> Crystalism` folder, and `energise` also exposes a separate consumable Crystalism state for personal aliases without reusing the heal-burst `Yso.magi.energy` flag.
+- The packaged `mheals` alias now requires both `Yso.magi.energy` and `Yso.magi.crystalism.consume_energise_resonance()` before it queues `absorb energy`.
+- The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.
 - If you are debugging automation, start with the shared pipeline first: mode ownership, wake intake, queue staging, then queue commit/flush.
