@@ -1136,7 +1136,16 @@ local RD = D.route_debug
 
 RD.routes = {
   aff  = function() return Yso.off and Yso.off.oc and Yso.off.oc.occ_aff_burst end,
-  dam  = function() return Yso.off and Yso.off.oc and Yso.off.oc.group_damage end,
+  dam  = function()
+    local off = Yso and Yso.off or nil
+    if Yso and type(Yso.is_magi) == "function" then
+      local ok, is_magi = pcall(Yso.is_magi)
+      if ok and is_magi == true then
+        return off and off.magi and (off.magi.group_damage or off.magi.dmg)
+      end
+    end
+    return off and off.oc and off.oc.group_damage
+  end,
   par  = function() return Yso.off and Yso.off.oc and Yso.off.oc.party_aff end,
 }
 RD.aliases = RD.aliases or {}

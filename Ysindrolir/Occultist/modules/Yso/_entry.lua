@@ -156,6 +156,7 @@ do
 end
 
 safe_require("magi_reference")
+safe_require("magi_group_damage")
 
 local function _report_boot_status()
   local failures = Yso._entry_failures or {}
