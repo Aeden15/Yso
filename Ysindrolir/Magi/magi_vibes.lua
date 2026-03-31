@@ -17,6 +17,10 @@
 --   Yso.magi.vibes.stop()
 --   Yso.magi.vibes.set_delay(3.40)
 --   Yso.magi.vibes.run({ "embed creeps", "embed oscillate" })
+--
+-- Default sequence:
+--   Matches the current live vibeds room-state target, including the
+--   expanded tail after revelation.
 --========================================================--
 
 Yso = Yso or {}
@@ -42,6 +46,12 @@ V.cfg = V.cfg or {
     "embed plague",
     "embed lullaby",
     "embed revelation",
+    "embed tremors",
+    "embed heat",
+    "embed dissipate",
+    "embed reverberation",
+    "embed adduction",
+    "embed palpitation",
   },
 }
 

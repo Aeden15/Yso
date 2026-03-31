@@ -1,6 +1,6 @@
 Magi workspace notes
 ====================
-Last updated: March 26, 2026
+Last updated: March 31, 2026
 
 This folder is the class-specific home for Magi work.
 
@@ -54,6 +54,12 @@ Default vibes notes
     plague
     lullaby
     revelation
+    tremors
+    heat
+    dissipate
+    reverberation
+    adduction
+    palpitation
 
 Notes
 -----
