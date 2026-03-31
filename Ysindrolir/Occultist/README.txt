@@ -19,13 +19,13 @@ Current fixes
 
   The stale generic package:
     Ysindrolir/mudlet packages/Devtools.xml
-  has been retired. Split devtools sources now live at:
-    Ysindrolir/Occultist/Occultist Devtools.xml
+  has been retired. Class-local devtools now live at:
+    Ysindrolir/Occultist/Occultist Devtools.mpackage
     Ysindrolir/Magi/MagiDevtools.xml
-  Both split devtools packages now import with their top-level alias groups
-  disabled by default.
+  Occultist Devtools.mpackage now imports with its top-level alias group
+  enabled by default. MagiDevtools.xml remains disabled by default.
 
-  Occultist Devtools now includes a Fool test surface:
+  Occultist Devtools.mpackage now includes a Fool test surface:
     ytest fool snap
     ytest fool fire [manual|auto|diagnose] [force]
     ytest fool debug [on|off|toggle]
@@ -194,8 +194,9 @@ Working notes
     queue commit / lane reopen behavior
 
   The live generic Devtools package has been retired from mudlet packages.
-  Use the split source-side devtools files instead:
-    Occultist Devtools.xml
+  Use the class-local devtools packages instead:
+    Occultist Devtools.mpackage
     ../Magi/MagiDevtools.xml
-  Both now default to off until you manually enable their top-level alias
-  group in Mudlet.
+  Occultist Devtools.mpackage loads with aliases enabled by default.
+  MagiDevtools.xml still requires you to enable its top-level alias group
+  manually in Mudlet.

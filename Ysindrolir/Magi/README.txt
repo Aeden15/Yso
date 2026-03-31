@@ -15,7 +15,7 @@ Current fixes
 
   This file set is currently the Magi-side home for debug tooling while the
   Occultist-side copy remains at:
-    ../Occultist/Occultist Devtools.xml
+    ../Occultist/Occultist Devtools.mpackage
 
   Magi aliases and triggers in Yso system.xml were corrected for the current
   Elementalism / Crystalism helpers.

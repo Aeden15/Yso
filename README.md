@@ -10,7 +10,7 @@ Current workspace snapshot: March 29, 2026.
 - Occultist offense is now fully alias-owned. Shared send memory lives in `offense_state.lua`, and the removed orchestrator is no longer part of the active offense path.
 - Party command syntaxes were retired to avoid clashing with in-game `party ...` commands. Use `team` / `teamroute` syntax for Yso team-mode controls.
 - The wake bus now retries staged queue commits on lane wakes. Manual lane aliases such as `cleanse` can stage while EQ is down and flush on reopen.
-- The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Split devtools sources now live at `Ysindrolir/Occultist/Occultist Devtools.xml` and `Ysindrolir/Magi/MagiDevtools.xml`.
+- The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Class-local devtools now live at `Ysindrolir/Occultist/Occultist Devtools.mpackage` and `Ysindrolir/Magi/MagiDevtools.xml`.
 - Split devtools now expose class-local self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
 - `team dam` is now class-sensitive: Occultist keeps the existing group-damage route, while Magi loads a sibling Magi route that drives `freeze -> mudslide -> water emanation -> glaciate` from AK scores, route-local cold progression (`frozen`/`frostbite`), and Yso resonance state synchronized from AK.

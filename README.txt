@@ -26,8 +26,8 @@ Current fixes
 
   The stale generic package:
     Ysindrolir/mudlet packages/Devtools.xml
-  has been retired. Split devtools sources now live at:
-    Ysindrolir/Occultist/Occultist Devtools.xml
+  has been retired. Class-local devtools now live at:
+    Ysindrolir/Occultist/Occultist Devtools.mpackage
     Ysindrolir/Magi/MagiDevtools.xml
 
   Split devtools now expose class-local self-cleanse testers:
