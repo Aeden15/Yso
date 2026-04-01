@@ -105,6 +105,10 @@ automatically.  Alternatively, you can unlock `.ps1` scripts for your user once:
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
+`sync.cmd` now prefers PowerShell 7 (`pwsh`) when it is installed and falls
+back to Windows PowerShell otherwise. The script text is ASCII-safe so either
+shell can parse it cleanly.
+
 ### What gets synced
 
 | Repo path | Desktop path |

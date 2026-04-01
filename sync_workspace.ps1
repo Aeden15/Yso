@@ -7,8 +7,8 @@
   Desktop (which OneDrive keeps in sync across devices).
 
   Directions:
-    pull  — copy Desktop workspace INTO the repo   (Desktop → Git)
-    push  — copy repo content OUT to the Desktop    (Git → Desktop)
+    pull  - copy Desktop workspace INTO the repo   (Desktop -> Git)
+    push  - copy repo content OUT to the Desktop   (Git -> Desktop)
 
   The script auto-detects your Desktop path by checking common OneDrive
   layouts.  Override with -DesktopPath if detection fails.
@@ -41,13 +41,13 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Locate repo root (same directory as this script) ──────────────────
+# -- Locate repo root (same directory as this script) ------------------
 $RepoRoot = $PSScriptRoot
 if (-not (Test-Path (Join-Path $RepoRoot '.git'))) {
-  throw "Cannot find .git in $RepoRoot — run this script from the repo root."
+  throw "Cannot find .git in $RepoRoot - run this script from the repo root."
 }
 
-# ── Auto-detect the Desktop workspace ─────────────────────────────────
+# -- Auto-detect the Desktop workspace ---------------------------------
 function Find-DesktopWorkspace {
   $userHome = $env:USERPROFILE
   if (-not $userHome) { $userHome = $env:HOME }
@@ -93,10 +93,10 @@ Write-Host "`n=== Yso Workspace Sync ===" -ForegroundColor Cyan
 Write-Host "Repo root : $RepoRoot"
 Write-Host "Desktop   : $Workspace"
 Write-Host "Direction : $Direction"
-if ($DryRun) { Write-Host "** DRY RUN — no files will be changed **" -ForegroundColor Yellow }
+if ($DryRun) { Write-Host "** DRY RUN - no files will be changed **" -ForegroundColor Yellow }
 Write-Host ""
 
-# ── Build robocopy arguments ──────────────────────────────────────────
+# -- Build robocopy arguments ------------------------------------------
 # Shared content lives under Ysindrolir/ in the repo and the desktop.
 $RepoContent   = Join-Path $RepoRoot 'Ysindrolir'
 $DesktopContent = Join-Path $Workspace 'Ysindrolir'
@@ -116,12 +116,12 @@ if (-not (Test-Path $Source)) {
 }
 
 # Robocopy flags:
-#   /MIR    — mirror (add + delete to match source)
-#   /XD     — exclude directories
-#   /XF     — exclude files
-#   /NJH /NJS — suppress header/summary for cleaner output
-#   /NDL    — suppress directory listing
-#   /NP     — suppress progress percentage
+#   /MIR    - mirror (add + delete to match source)
+#   /XD     - exclude directories
+#   /XF     - exclude files
+#   /NJH /NJS - suppress header/summary for cleaner output
+#   /NDL    - suppress directory listing
+#   /NP     - suppress progress percentage
 $excludeDirs = @('.git', '.vscode', '.idea', '__pycache__', 'node_modules')
 $excludeFiles = @('.env', '.env.local', '*.log', '*.tmp', '*.temp', '*.bak',
                    'Thumbs.db', 'Desktop.ini', '.DS_Store', '.luarc.json')
@@ -181,7 +181,7 @@ if ($Direction -eq 'pull') {
 Write-Host ""
 if ($rc -lt 8) {
   if ($DryRun) {
-    Write-Host "Dry run complete — no files were changed." -ForegroundColor Yellow
+  Write-Host "Dry run complete - no files were changed." -ForegroundColor Yellow
   } else {
     Write-Host "Sync complete." -ForegroundColor Green
     if ($Direction -eq 'push') {

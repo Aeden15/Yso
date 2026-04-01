@@ -135,6 +135,10 @@ Syncing with OneDrive Desktop
 
       Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
+  sync.cmd now prefers PowerShell 7 (pwsh) when it is installed and falls back
+  to Windows PowerShell otherwise. The script text is ASCII-safe so either
+  shell can parse it cleanly.
+
   What gets synced:
     Repo  Ysindrolir/         <->  Desktop  Yso systems/Ysindrolir/
     Repo  README.md/.txt      <->  Desktop  Yso systems/README.md/.txt
