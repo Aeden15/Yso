@@ -273,6 +273,10 @@ do
       if GD and type(GD.on_payload_sent) == "function" then
         pcall(GD.on_payload_sent, payload)
       end
+      local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
+      if MGD and type(MGD.on_payload_sent) == "function" then
+        pcall(MGD.on_payload_sent, payload)
+      end
 
     end
 

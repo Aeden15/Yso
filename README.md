@@ -10,6 +10,8 @@ Current workspace snapshot: March 29, 2026.
 - Occultist offense is now fully alias-owned. Shared send memory lives in `offense_state.lua`, and the removed orchestrator is no longer part of the active offense path.
 - Party command syntaxes were retired to avoid clashing with in-game `party ...` commands. Use `team` / `teamroute` syntax for Yso team-mode controls.
 - The wake bus now retries staged queue commits on lane wakes. Manual lane aliases such as `cleanse` can stage while EQ is down and flush on reopen.
+- Queue-backed live DRY sends now acknowledge Magi group-damage emits through the shared `Yso.locks.note_payload()` callback path, so route state advances without manual hook simulation.
+- Shared `[Yso]` mode echoes now report only real mode/route changes, while class-owned loop toggles stay on `[Yso:Magi]` and `[Yso:Occultist]` without duplicate route-state spam.
 - The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Class-local devtools now live at `Ysindrolir/Occultist/Occultist Devtools.mpackage` and `Ysindrolir/Magi/MagiDevtools.xml`.
 - Split devtools now expose class-local self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
@@ -118,6 +120,7 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - Magi files are present, but they are a smaller secondary track right now.
 - Magi team damage now resets fresh targets through `horripilation -> freeze baseline -> branch reconsideration`, keeps `glaciate` gated on live `frozen`, and uses AK `scalded` / `aflame` / `conflagrate` state plus Yso fire-water resonance to mix salve pressure once `frozen` or `frostbite` is established.
 - AK scalded handling in this workspace now assumes 20s instead of 17s for the current Magi paths.
+- The packaged `Djinn present` trigger now immediately marks `Yso.elemental_lev_ready = true` so levitate readiness matches the live summoned elemental state.
 - Crystalism resonance notices now echo in the package `Yso Triggers -> Magi -> Crystalism` folder, and `energise` also exposes a separate consumable Crystalism state for personal aliases without reusing the heal-burst `Yso.magi.energy` flag.
 - The packaged `mheals` alias now requires both `Yso.magi.energy` and `Yso.magi.crystalism.consume_energise_resonance()` before it queues `absorb energy`.
 - The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.

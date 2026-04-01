@@ -2349,7 +2349,7 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Djinn present</name>
 							<script>Yso.elemental = "djinn"
-Yso.elemental_lev_ready = false
+Yso.elemental_lev_ready = true
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Djinn summoned!).\n")</script>
 							<triggerType>0</triggerType>

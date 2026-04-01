@@ -850,12 +850,9 @@ local function _emit_payload(payload, category)
   local Q = Yso and Yso.queue or nil
   if Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
     if payload.eq ~= nil then Q.stage("eq", payload.eq, opts) end
-    local ok, sent_payload = Q.commit(opts)
+    local ok = Q.commit(opts)
     if ok then
       Q._commit_hint = nil
-      if type(MGD.on_payload_sent) == "function" then
-        pcall(MGD.on_payload_sent, sent_payload)
-      end
       return true
     end
     Q._commit_hint = opts
@@ -923,6 +920,21 @@ local function _update_explain(tgt, st, category, reason, planned_cmd)
   }
 end
 
+local function _clear_runtime_state(reason)
+  MGD.state.busy = false
+  MGD.state.last_target = ""
+  MGD.state.last_cmd = ""
+  MGD.state.last_category = ""
+  MGD.state.last_sent_cmd = ""
+  MGD.state.last_sent_target = ""
+  MGD.state.last_sent_category = ""
+  MGD.state.last_sent_at = 0
+  MGD.state.explain = {}
+  MGD.state.template.last_reason = tostring(reason or "manual")
+  MGD.state.template.last_payload = nil
+  MGD.state.template.last_target = ""
+end
+
 function MGD.init()
   MGD.cfg = MGD.cfg or {}
   MGD.state = MGD.state or {}
@@ -951,18 +963,7 @@ function MGD.reset(reason)
   _clear_pending_all()
   _reset_cold(reason or "manual")
   _reset_route(reason or "manual")
-  MGD.state.busy = false
-  MGD.state.last_target = ""
-  MGD.state.last_cmd = ""
-  MGD.state.last_category = ""
-  MGD.state.last_sent_cmd = ""
-  MGD.state.last_sent_target = ""
-  MGD.state.last_sent_category = ""
-  MGD.state.last_sent_at = 0
-  MGD.state.explain = {}
-  MGD.state.template.last_reason = tostring(reason or "manual")
-  MGD.state.template.last_payload = nil
-  MGD.state.template.last_target = ""
+  _clear_runtime_state(reason or "manual")
   return true
 end
 
@@ -1197,13 +1198,7 @@ function MGD.on_target_swap(old_target, new_target)
     _reset_cold("target_swap")
     _reset_route("target_swap")
     _clear_eq_queue()
-    MGD.state.last_target = _trim(new_target)
-    MGD.state.last_cmd = ""
-    MGD.state.last_category = ""
-    MGD.state.last_sent_cmd = ""
-    MGD.state.last_sent_target = ""
-    MGD.state.last_sent_category = ""
-    MGD.state.last_sent_at = 0
+    _clear_runtime_state("target_swap")
     if MGD.state.loop_enabled == true then
       MGD.schedule_loop(0)
     end
@@ -1259,8 +1254,8 @@ function MGD.alias_loop_on_started(ctx)
   _reset_cold("loop_start")
   _reset_route("loop_start")
   _clear_eq_queue()
-  MGD.state.busy = false
-  _echo("Magi team damage loop ON.")
+  _clear_runtime_state("loop_start")
+  _echo("Group damage loop ON.")
   local tgt = _target()
   if tgt == "" then
     _echo("No target yet; holding.")
@@ -1277,10 +1272,10 @@ function MGD.alias_loop_on_stopped(ctx)
   _reset_cold(reason)
   _reset_route(reason)
   _clear_eq_queue()
-  MGD.state.busy = false
+  _clear_runtime_state(reason)
   MGD.state.template.last_disable_reason = reason
   if ctx.silent ~= true then
-    _echo(string.format("Magi team damage loop OFF (%s).", reason))
+    _echo(string.format("Group damage loop OFF (%s).", reason))
   end
 end
 

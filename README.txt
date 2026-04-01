@@ -24,6 +24,14 @@ Current fixes
   The wake bus now retries staged queue commits on lane wakes. Manual lane
   aliases such as cleanse can queue while EQ is down and flush on reopen.
 
+  Queue-backed live DRY sends now acknowledge Magi group-damage emits through
+  the shared Yso.locks.note_payload() callback path, so route state advances
+  without manual hook simulation.
+
+  Shared [Yso] mode echoes now report only real mode/route changes, while
+  class-owned loop toggles stay on [Yso:Magi] and [Yso:Occultist] without
+  duplicate route-state spam.
+
   The stale generic package:
     Ysindrolir/mudlet packages/Devtools.xml
   has been retired. Class-local devtools now live at:
@@ -80,6 +88,9 @@ Notes
   frostbite, scalded, aflame, and conflagrate state plus Yso resonance.
   AK scalded handling in this workspace now assumes 20s instead of 17s for the
   current Magi paths.
+  The packaged Djinn present trigger now immediately sets:
+    Yso.elemental_lev_ready = true
+  so levitate readiness matches the live summoned-elemental state.
   Crystalism resonance notices now echo from the Magi trigger folder, and
   energise also exposes a separate consumable state helper for personal aliases
   without reusing the heal-burst Yso.magi.energy flag.

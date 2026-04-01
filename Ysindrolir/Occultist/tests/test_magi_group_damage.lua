@@ -23,6 +23,8 @@ end
 
 local SCRIPT_DIR = script_dir()
 local ROUTE_PATH = join_path(SCRIPT_DIR, "..", "..", "Magi", "magi_group_damage.lua")
+local API_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Core", "api.lua")
+local QUEUE_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Core", "queue.lua")
 
 local pass_count = 0
 local fail_count = 0
@@ -49,6 +51,31 @@ local function defaulted_scores(src)
   return setmetatable(row, { __index = function() return 0 end })
 end
 
+local function install_mudlet_stubs(now_ref, dry_lines)
+  _G.setConsoleBufferSize = function() end
+  _G.registerAnonymousEventHandler = function() return 1 end
+  _G.killAnonymousEventHandler = function() end
+  _G.tempRegexTrigger = function() return 1 end
+  _G.killTrigger = function() end
+  _G.tempAlias = function() return 1 end
+  _G.killAlias = function() end
+  _G.tempTimer = function() return 1 end
+  _G.killTimer = function() end
+  _G.expandAlias = function() return true end
+  _G.raiseEvent = function() end
+  _G.getCurrentLine = function() return "" end
+  _G.matches = {}
+  _G.cecho = function(msg)
+    msg = tostring(msg or "")
+    if dry_lines and msg:find("[Yso.queue:DRY]", 1, true) then
+      dry_lines[#dry_lines + 1] = msg
+    end
+  end
+  _G.echo = function() end
+  _G.send = function() return true end
+  _G.getEpoch = function() return now_ref() * 1000 end
+end
+
 local function make_world(opts)
   opts = opts or {}
 
@@ -56,19 +83,19 @@ local function make_world(opts)
   local current_room = tostring(opts.room_id or "1001")
   local now_s = tonumber(opts.now_s or 1000) or 1000
   local emits = {}
+  local dry_lines = {}
   local aff_scores = defaulted_scores(opts.aff_scores)
   local resonance = {
     water = tonumber(opts.water_res or 0) or 0,
     fire = tonumber(opts.fire_res or 0) or 0,
   }
 
+  install_mudlet_stubs(function() return now_s end, dry_lines)
+
   _G.Yso = nil
+  _G.yso = nil
   _G.affstrack = { score = aff_scores }
   _G.target = current_target
-  _G.getEpoch = function() return now_s * 1000 end
-  _G.cecho = function() end
-  _G.echo = function() end
-  _G.send = function() return true end
   _G.gmcp = {
     Char = {
       Status = { class = "Magi" },
@@ -96,6 +123,7 @@ local function make_world(opts)
     },
     mode = {
       is_party = function() return true end,
+      is_combat = function() return false end,
       party_route = function() return "dam" end,
       route_loop_active = function(id) return id == "magi_group_damage" end,
       schedule_route_loop = function() return true end,
@@ -110,10 +138,6 @@ local function make_world(opts)
     offense_paused = function()
       return false
     end,
-    emit = function(payload)
-      emits[#emits + 1] = payload
-      return true
-    end,
     magi = {
       resonance = {
         state = resonance,
@@ -127,6 +151,37 @@ local function make_world(opts)
       clear = function() return true end,
     },
   }
+  _G.yso = _G.Yso
+
+  if opts.emit_mode == "queue" then
+    Yso.net = { cfg = { dry_run = true } }
+    dofile(API_PATH)
+    Yso.state.eq_ready = function() return opts.eq_ready ~= false end
+    Yso.mode.is_party = function() return true end
+    Yso.mode.is_combat = function() return false end
+    Yso.mode.party_route = function() return "dam" end
+    Yso.mode.route_loop_active = function(id) return id == "magi_group_damage" end
+    Yso.mode.schedule_route_loop = function() return true end
+    Yso.mode.stop_route_loop = function() return true end
+    Yso.get_target = function() return current_target end
+    Yso.target_is_valid = function(who) return tostring(who or "") ~= "" end
+    Yso.offense_paused = function() return false end
+    Yso.magi = Yso.magi or {}
+    Yso.magi.resonance = {
+      state = resonance,
+      sync_from_ak = function() return true end,
+      get = function(element)
+        return resonance[tostring(element or ""):lower()] or 0
+      end,
+    }
+    dofile(QUEUE_PATH)
+    Yso.net.cfg.dry_run = true
+  else
+    Yso.emit = function(payload)
+      emits[#emits + 1] = payload
+      return true
+    end
+  end
 
   dofile(ROUTE_PATH)
 
@@ -139,6 +194,7 @@ local function make_world(opts)
   return {
     MGD = MGD,
     emits = emits,
+    dry_lines = dry_lines,
     scores = aff_scores,
     set_target = function(who)
       current_target = tostring(who or "")
@@ -279,8 +335,29 @@ do
   local cmd = preview_eq(world)
   assert_eq("7a: opener is not resent while pending", cmd, "cast freeze at foe")
   world.advance(1.2)
-  local cmd = preview_eq(world)
+  cmd = preview_eq(world)
   assert_eq("7b: opener returns once the pending window expires without waterbonds", cmd, "staff cast horripilation foe")
+end
+
+print("\n=== Test 8: live queue acknowledgement advances route state ===")
+do
+  local world = make_world({ emit_mode = "queue" })
+
+  local ok, cmd = world.MGD.attack_function({})
+  assert_eq("8a: first queue-backed attack succeeds", ok, true)
+  assert_eq("8b: first live emit is horripilation", cmd, "staff cast horripilation foe")
+  assert_eq("8c: queue ack updates last_sent_cmd", world.MGD.state.last_sent_cmd, "staff cast horripilation foe")
+  assert_eq("8d: queue ack marks opener pending target", world.MGD.state.pending.horripilation.target, "foe")
+  assert_eq("8e: queue ack advances branch stage", world.MGD.explain().branch_stage, "opener_setup")
+
+  world.scores.waterbonds = 100
+  world.advance(0.5)
+  ok, cmd = world.MGD.attack_function({})
+  assert_eq("8f: second queue-backed attack succeeds", ok, true)
+  assert_eq("8g: second live emit advances to freeze", cmd, "cast freeze at foe")
+  assert_eq("8h: queue ack updates last_sent_cmd again", world.MGD.state.last_sent_cmd, "cast freeze at foe")
+  assert_eq("8i: queue ack records freeze setup", world.MGD.explain().branch_stage, "freeze_setup")
+  assert_eq("8j: queue ack marks freeze step done", world.MGD.explain().freeze_step_done, true)
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

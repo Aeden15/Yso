@@ -32,6 +32,14 @@ Current fixes
   mudslide / glaciate / water-emanation windows, and only then opens magma,
   firelash, conflagrate, and fire-emanation pressure from AK frozen/frostbite.
 
+  Live DRY EQ emits for the Magi team-damage loop now advance through the
+  shared Yso.locks.note_payload() acknowledgement path, so the route no longer
+  needs manual on_payload_sent() simulation to progress after horripilation,
+  freeze, magma, or later fire-side casts.
+
+  Shared [Yso] mode echoes now stay on real mode/route changes only. Magi loop
+  toggles remain class-owned and echo as [Yso:Magi] Group damage loop ON/OFF.
+
   Current AK scalded handling for the Magi-side route assumes 20s instead of
   the previous 17s.
 
@@ -101,6 +109,8 @@ Current Magi follow-up
   The shared Yso package now keeps elemental tracking as:
     Yso.elemental            current summoned elemental or false
     Yso.elemental_lev_ready  Djinn levitate readiness boolean
+  The packaged Djinn present trigger now sets elemental_lev_ready true
+  immediately on summon.
 
   Exact summon text is still needed before adding active-state triggers for:
     sandling
