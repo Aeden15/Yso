@@ -1284,8 +1284,16 @@ function RD.show(route)
     _tprint(string.format(" bm   | state=%s branch=%s/%s passive=%s",
       _s(bm.state), _b(ex.bm_branch_active == true), _b(ex.bm_branch_provisional == true), _b(bm.passive_allowed == true)))
   elseif route == "dam" then
-    _tprint(string.format(" dam  | mode=%s burst=%s aeon=%s sticky=%s",
-      _s(ex.mode), _b(ex.burst_window == true), _b(ex.aeon_ready == true), _b(ex.sticky == true)))
+    local st = type(ex.state) == "table" and ex.state or {}
+    local raw = type(st.raw) == "table" and st.raw or {}
+    local pend = type(st.pending) == "table" and st.pending or {}
+    _tprint(string.format(" dam  | stage=%s decision=%s freeze=%s fire=%s why=%s",
+      _s(ex.branch_stage), _s(ex.decision), _b(ex.freeze_step_done == true), _b(ex.fire_branch_eligible == true), _s(ex.reason or ex.last_reason)))
+    _tprint(string.format(" aff  | wb=%s frozen=%s frostbite=%s scalded=%s confl=%s aflame=%s",
+      _b(st.waterbonds == true), _b(st.frozen == true), _b(st.frostbite == true), _b(st.scalded == true), _b(st.conflagrate == true), _s(raw.aflame)))
+    _tprint(string.format(" res  | water=%s(%s) fire=%s(%s) pend h/f/m=%s/%s/%s",
+      _s(st.water_res), _b(st.water_res_major == true), _s(st.fire_res), _b(st.fire_res_major == true),
+      _b(pend.horripilation == true), _b(pend.freeze == true), _b(pend.magma == true)))
   elseif route == "par" then
     _tprint(string.format(" par  | need=%s mana=%s lock=%s",
       _s(ex.need_aff), _s(ex.mana_pct), _b(ex.lock_ready == true)))

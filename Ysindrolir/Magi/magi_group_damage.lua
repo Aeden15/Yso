@@ -2,11 +2,12 @@
 -- magi_group_damage.lua
 --  * Party damage route for Magi.
 --  * Strategy:
---      - CAST FREEZE until AK confirms frozen.
---      - CAST MUDSLIDE when frozen but slickness is missing.
---      - CAST EMANATION AT <target> WATER when frozen+slickness are present,
---        disrupt is missing, and water resonance is major.
---      - CAST GLACIATE as the steady frozen follow-up.
+--      - STAFF CAST HORRIPILATION while waterbonds are missing.
+--      - CAST FREEZE as the default baseline until freeze-side pressure exists.
+--      - Keep the existing mudslide / water-emanation / glaciate water line.
+--      - Once frozen or frostbite is established on the current target, branch
+--        into fire pressure without abandoning the water side.
+--      - Use MAGMA / FIRELASH / CONFLAGRATE / EMANATION FIRE conditionally.
 --  * Alias-controlled loop ownership lives in Yso.mode.
 --========================================================--
 
@@ -24,10 +25,14 @@ MGD.route_contract = MGD.route_contract or {
   interface_version = 1,
   shared_categories = { "defense_break", "anti_tumble" },
   route_local_categories = {
+    "opener_setup",
     "freeze_setup",
     "salve_pressure",
     "disrupt_setup",
     "glaciate_burst",
+    "fire_build",
+    "fire_payoff",
+    "fire_promotion",
   },
   capabilities = {
     uses_eq = true,
@@ -74,8 +79,16 @@ MGD.cfg = MGD.cfg or {
   enabled = false,
   echo = true,
   loop_delay = 0.15,
-  mudslide_pending_s = 0.8,
-  emanation_pending_s = 2.6,
+  same_target_repeat_s = 0.75,
+  horripilation_pending_s = 1.00,
+  freeze_pending_s = 1.00,
+  mudslide_pending_s = 0.80,
+  water_emanation_pending_s = 2.60,
+  magma_pending_s = 1.00,
+  firelash_pending_s = 1.00,
+  conflagrate_pending_s = 1.00,
+  fire_emanation_pending_s = 2.60,
+  glaciate_pending_s = 1.00,
 }
 
 MGD.state = MGD.state or {
@@ -87,22 +100,37 @@ MGD.state = MGD.state or {
   last_cmd = "",
   last_category = "",
   last_sent_cmd = "",
+  last_sent_target = "",
   last_sent_category = "",
   last_sent_at = 0,
   explain = {},
   template = { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" },
   pending = {
+    horripilation = { target = "", until_t = 0 },
+    freeze = { target = "", until_t = 0 },
     mudslide = { target = "", until_t = 0 },
-    emanation = { target = "", until_t = 0 },
+    emanation_water = { target = "", until_t = 0 },
+    magma = { target = "", until_t = 0 },
+    firelash = { target = "", until_t = 0 },
+    conflagrate = { target = "", until_t = 0 },
+    emanation_fire = { target = "", until_t = 0 },
+    glaciate = { target = "", until_t = 0 },
   },
   cold = {
     target = "",
     room_id = "",
-    phase = "unknown",
-    opened = false,
+    phase = "reset",
     seen_frostbite = false,
     seen_frozen = false,
     progressed_at = 0,
+    reason = "init",
+  },
+  route = {
+    target = "",
+    room_id = "",
+    freeze_step_done = false,
+    branch_stage = "reset",
+    last_reset_reason = "init",
   },
 }
 
@@ -299,36 +327,44 @@ local function _score_aff(aff)
   return 0
 end
 
-local function _has_aff(aff, threshold)
-  return _score_aff(aff) >= (tonumber(threshold or 100) or 100)
+local function _score_positive(aff)
+  return _score_aff(aff) > 0
 end
 
-local function _water_res_actual()
+local function _res_actual(element)
+  element = _lc(element)
+  if element == "" then return 0, false end
+
   local R = Yso and Yso.magi and Yso.magi.resonance or nil
   local synced = false
   if type(R) == "table" and type(R.sync_from_ak) == "function" then
-    local ok, v = pcall(R.sync_from_ak)
-    if ok then synced = (v == true) end
+    local ok, synced_ok = pcall(R.sync_from_ak)
+    if ok then synced = (synced_ok == true) end
   end
   if type(R) == "table" and type(R.get) == "function" then
-    local ok, v = pcall(R.get, "water")
+    local ok, v = pcall(R.get, element)
     if ok then return tonumber(v) or 0, synced end
   end
   if type(R) == "table" and type(R.state) == "table" then
-    return tonumber(R.state.water or 0) or 0, synced
+    return tonumber(R.state[element] or 0) or 0, synced
   end
   return 0, synced
+end
+
+local function _res_major(element)
+  local value, synced = _res_actual(element)
+  return value >= 3, value, synced
 end
 
 local function _cold_slot()
   MGD.state.cold = MGD.state.cold or {
     target = "",
     room_id = "",
-    phase = "unknown",
-    opened = false,
+    phase = "reset",
     seen_frostbite = false,
     seen_frozen = false,
     progressed_at = 0,
+    reason = "init",
   }
   return MGD.state.cold
 end
@@ -337,8 +373,7 @@ local function _reset_cold(reason)
   local cold = _cold_slot()
   cold.target = ""
   cold.room_id = ""
-  cold.phase = "unknown"
-  cold.opened = false
+  cold.phase = "reset"
   cold.seen_frostbite = false
   cold.seen_frozen = false
   cold.progressed_at = 0
@@ -346,30 +381,73 @@ local function _reset_cold(reason)
   return cold
 end
 
-local function _ensure_cold_context(tgt)
-  local cold = _cold_slot()
+local function _route_slot()
+  MGD.state.route = MGD.state.route or {
+    target = "",
+    room_id = "",
+    freeze_step_done = false,
+    branch_stage = "reset",
+    last_reset_reason = "init",
+  }
+  return MGD.state.route
+end
+
+local function _reset_route(reason)
+  local route = _route_slot()
+  route.target = ""
+  route.room_id = ""
+  route.freeze_step_done = false
+  route.branch_stage = "reset"
+  route.last_reset_reason = tostring(reason or "")
+  return route
+end
+
+local function _ensure_context(tgt)
   local room = _room_id()
-  local room_changed = cold.room_id ~= "" and room ~= "" and cold.room_id ~= room
-  local target_changed = cold.target ~= "" and tgt ~= "" and not _same_target(cold.target, tgt)
+  local cold = _cold_slot()
+  local route = _route_slot()
+
+  local room_changed = false
+  if cold.room_id ~= "" and room ~= "" and cold.room_id ~= room then room_changed = true end
+  if route.room_id ~= "" and room ~= "" and route.room_id ~= room then room_changed = true end
+
+  local target_changed = false
+  if cold.target ~= "" and tgt ~= "" and not _same_target(cold.target, tgt) then target_changed = true end
+  if route.target ~= "" and tgt ~= "" and not _same_target(route.target, tgt) then target_changed = true end
 
   if room_changed then
     cold = _reset_cold("room_change")
+    route = _reset_route("room_change")
   elseif target_changed then
     cold = _reset_cold("target_change")
+    route = _reset_route("target_change")
   end
 
   cold.target = _trim(tgt or "")
   cold.room_id = room
-  return cold
+  route.target = _trim(tgt or "")
+  route.room_id = room
+  return cold, route
+end
+
+local function _set_branch_stage(tgt, stage)
+  local _, route = _ensure_context(tgt)
+  route.branch_stage = tostring(stage or "")
+  return route
 end
 
 local function _refresh_cold_state(tgt, frozen, frostbite)
-  local cold = _ensure_cold_context(tgt)
-  if frostbite then cold.seen_frostbite = true end
-  if frozen then cold.seen_frozen = true end
-  if cold.phase == "unknown" and (cold.seen_frostbite or cold.seen_frozen) then
-    cold.phase = "progressed"
+  local cold = _ensure_context(tgt)
+  if frostbite == true then cold.seen_frostbite = true end
+  if frozen == true then cold.seen_frozen = true end
+
+  if (cold.seen_frozen or cold.seen_frostbite) and tonumber(cold.progressed_at or 0) <= 0 then
     cold.progressed_at = _now()
+  end
+  if cold.seen_frozen or cold.seen_frostbite then
+    cold.phase = "progressed"
+  else
+    cold.phase = "freeze_baseline"
   end
   return cold
 end
@@ -387,8 +465,15 @@ local function _clear_pending(name)
 end
 
 local function _clear_pending_all()
+  _clear_pending("horripilation")
+  _clear_pending("freeze")
   _clear_pending("mudslide")
-  _clear_pending("emanation")
+  _clear_pending("emanation_water")
+  _clear_pending("magma")
+  _clear_pending("firelash")
+  _clear_pending("conflagrate")
+  _clear_pending("emanation_fire")
+  _clear_pending("glaciate")
 end
 
 local function _mark_pending(name, tgt, seconds)
@@ -402,72 +487,347 @@ local function _pending_active(name, tgt)
   return _same_target(slot.target, tgt) and _now() < (tonumber(slot.until_t) or 0)
 end
 
+local function _same_target_repeat(cmd, tgt)
+  local state = MGD.state or {}
+  if not _same_target(state.last_sent_target or "", tgt) then return false end
+  if _lc(state.last_sent_cmd or "") ~= _lc(cmd or "") then return false end
+  local dt = _now() - (tonumber(state.last_sent_at) or 0)
+  return dt >= 0 and dt < (tonumber(MGD.cfg.same_target_repeat_s) or 0.75)
+end
+
+local function _spell_guard(slot_name, tgt, cmd)
+  if _trim(tgt) == "" then return false, "no_target" end
+  if not _tgt_valid(tgt) then return false, "invalid_target" end
+  if not _eq_ready() then return false, "eq_down" end
+  if _pending_active(slot_name, tgt) then return false, slot_name .. "_pending" end
+  if _same_target_repeat(cmd, tgt) then return false, slot_name .. "_repeat" end
+  return true, ""
+end
+
+local function _has_waterbonds(tgt)
+  return _score_positive("waterbonds") or _pending_active("horripilation", tgt)
+end
+
+local function _freeze_stable()
+  return _score_positive("frozen") or _score_positive("frostbite")
+end
+
+local function _has_scalded(tgt)
+  return _score_positive("scalded") or _pending_active("magma", tgt)
+end
+
+local function _has_conflagrate()
+  return _score_positive("conflagrate")
+end
+
+local function _has_ablaze()
+  return _score_positive("aflame")
+end
+
+local function _aflame_ready_for_conflagrate()
+  return _score_aff("aflame") >= 200
+end
+
+local function _fire_res_major()
+  return _res_major("fire")
+end
+
+local function _water_res_major()
+  return _res_major("water")
+end
+
+local function _can_cast_horripilation(tgt)
+  local cmd = ("staff cast horripilation %s"):format(tgt)
+  local ok, why = _spell_guard("horripilation", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_freeze(tgt)
+  local cmd = ("cast freeze at %s"):format(tgt)
+  local ok, why = _spell_guard("freeze", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_mudslide(tgt)
+  local cmd = ("cast mudslide at %s"):format(tgt)
+  local ok, why = _spell_guard("mudslide", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_glaciate(tgt)
+  local cmd = ("cast glaciate at %s"):format(tgt)
+  if not _score_positive("frozen") then return false, "frozen_required", cmd end
+  local ok, why = _spell_guard("glaciate", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_magma(tgt)
+  local cmd = ("cast magma at %s"):format(tgt)
+  local ok, why = _spell_guard("magma", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_firelash(tgt)
+  local cmd = ("cast firelash at %s"):format(tgt)
+  local ok, why = _spell_guard("firelash", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_conflagrate(tgt)
+  local cmd = ("cast conflagrate at %s"):format(tgt)
+  if not _has_ablaze() then return false, "ablaze_required", cmd end
+  if not _aflame_ready_for_conflagrate() then return false, "aflame_not_ready", cmd end
+  local ok, why = _spell_guard("conflagrate", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_water_emanation(tgt)
+  local major = _water_res_major()
+  local cmd = ("cast emanation at %s water"):format(tgt)
+  if major ~= true then return false, "water_not_major", cmd end
+  local ok, why = _spell_guard("emanation_water", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_fire_emanation(tgt)
+  local major = _fire_res_major()
+  local cmd = ("cast emanation at %s fire"):format(tgt)
+  if major ~= true then return false, "fire_not_major", cmd end
+  if not _has_conflagrate() then return false, "conflagrate_required", cmd end
+  if not _freeze_stable() then return false, "freeze_stable_required", cmd end
+  local ok, why = _spell_guard("emanation_fire", tgt, cmd)
+  return ok, why, cmd
+end
+
 local function _effective_state(tgt)
-  local frozen = _has_aff("frozen")
-  local frostbite = _has_aff("frostbite")
-  local stuttering = _has_aff("stuttering")
-  local anorexia = _has_aff("anorexia")
-  local slick_raw = _has_aff("slickness")
-  local disrupt_raw = _has_aff("disrupt")
+  local frozen = _score_positive("frozen")
+  local frostbite = _score_positive("frostbite")
+  local slick_actual = _score_positive("slickness")
+  local disrupt_actual = _score_positive("disrupt")
+  local waterbonds_actual = _score_positive("waterbonds")
+  local scalded_actual = _score_positive("scalded")
+  local conflagrate = _has_conflagrate()
+  local ablaze = _has_ablaze()
+  local aflame = _score_aff("aflame")
+  local water_major, water_res, water_synced = _water_res_major()
+  local fire_major, fire_res, fire_synced = _fire_res_major()
   local cold = _refresh_cold_state(tgt, frozen, frostbite)
-  local mudslide_pending = _pending_active("mudslide", tgt)
-  local emanation_pending = _pending_active("emanation", tgt)
-  local water_raw, resonance_synced = _water_res_actual()
-  local apply_count = 0
-  if frozen then apply_count = apply_count + 1 end
-  if stuttering then apply_count = apply_count + 1 end
-  if anorexia then apply_count = apply_count + 1 end
+  local _, route = _ensure_context(tgt)
+
+  local slickness = slick_actual or _pending_active("mudslide", tgt)
+  local disrupt = disrupt_actual or _pending_active("emanation_water", tgt)
+  local waterbonds = waterbonds_actual or _pending_active("horripilation", tgt)
+  local scalded = scalded_actual or _pending_active("magma", tgt)
+  local fire_branch_eligible = (route.freeze_step_done == true) and _freeze_stable()
 
   return {
+    target = _trim(tgt or ""),
+    target_valid = _tgt_valid(tgt),
+    waterbonds = waterbonds,
+    waterbonds_actual = waterbonds_actual,
     frozen = frozen,
     frostbite = frostbite,
-    stuttering = stuttering,
-    anorexia = anorexia,
-    apply_count = apply_count,
-    cold_phase = cold.phase or "unknown",
-    cold_opened = (cold.opened == true),
-    slickness = slick_raw or mudslide_pending,
-    disrupt = disrupt_raw or emanation_pending,
-    water_res = emanation_pending and 0 or water_raw,
-    resonance_synced = resonance_synced,
-    raw = {
-      frozen = _score_aff("frozen"),
-      frostbite = _score_aff("frostbite"),
-      stuttering = _score_aff("stuttering"),
-      anorexia = _score_aff("anorexia"),
-      slickness = _score_aff("slickness"),
-      disrupt = _score_aff("disrupt"),
-      water_res = water_raw,
-    },
-    pending = {
-      mudslide = mudslide_pending,
-      emanation = emanation_pending,
+    freeze_stable = _freeze_stable(),
+    slickness = slickness,
+    slickness_actual = slick_actual,
+    disrupt = disrupt,
+    disrupt_actual = disrupt_actual,
+    scalded = scalded,
+    scalded_actual = scalded_actual,
+    conflagrate = conflagrate,
+    ablaze = ablaze,
+    aflame = aflame,
+    aflame_ready = aflame >= 200,
+    water_res = water_res,
+    water_res_major = water_major,
+    fire_res = fire_res,
+    fire_res_major = fire_major,
+    resonance_synced = (water_synced == true or fire_synced == true),
+    freeze_step_done = (route.freeze_step_done == true),
+    fire_branch_eligible = fire_branch_eligible,
+    route = {
+      target = route.target,
+      room_id = route.room_id,
+      freeze_step_done = route.freeze_step_done,
+      branch_stage = route.branch_stage,
+      last_reset_reason = route.last_reset_reason,
     },
     cold = {
       target = cold.target,
       room_id = cold.room_id,
       phase = cold.phase,
-      opened = cold.opened,
       seen_frostbite = cold.seen_frostbite,
       seen_frozen = cold.seen_frozen,
       progressed_at = cold.progressed_at,
+      reason = cold.reason,
+    },
+    pending = {
+      horripilation = _pending_active("horripilation", tgt),
+      freeze = _pending_active("freeze", tgt),
+      mudslide = _pending_active("mudslide", tgt),
+      emanation_water = _pending_active("emanation_water", tgt),
+      magma = _pending_active("magma", tgt),
+      firelash = _pending_active("firelash", tgt),
+      conflagrate = _pending_active("conflagrate", tgt),
+      emanation_fire = _pending_active("emanation_fire", tgt),
+      glaciate = _pending_active("glaciate", tgt),
+    },
+    raw = {
+      waterbonds = _score_aff("waterbonds"),
+      frozen = _score_aff("frozen"),
+      frostbite = _score_aff("frostbite"),
+      slickness = _score_aff("slickness"),
+      disrupt = _score_aff("disrupt"),
+      scalded = _score_aff("scalded"),
+      conflagrate = _score_aff("conflagrate"),
+      aflame = aflame,
+      water_res = water_res,
+      fire_res = fire_res,
     },
   }
 end
 
+local function _should_mudslide(st)
+  return st.frozen == true and st.slickness ~= true
+end
+
+local function _should_water_emanation(st)
+  return st.frozen == true and st.slickness == true and st.disrupt ~= true and st.water_res_major == true
+end
+
+local function _should_glaciate(st, tgt)
+  if st.frozen ~= true then return false end
+  if st.slickness ~= true then return false end
+  if st.disrupt ~= true and st.water_res_major == true then return false end
+  if _same_target(MGD.state.last_sent_target or "", tgt) and MGD.state.last_sent_category == "glaciate_burst" then
+    return false
+  end
+  return true
+end
+
+local function _should_fire_emanation(st)
+  return st.conflagrate == true
+    and st.freeze_stable == true
+    and st.fire_res_major == true
+end
+
 local function _select_command(tgt)
   local st = _effective_state(tgt)
-  if not st.frozen then
-    local reason = (st.cold_phase == "progressed") and "refreeze_after_progress" or "initial_freeze"
-    return ("cast freeze at %s"):format(tgt), "freeze_setup", st, reason
+
+  if not st.target_valid then
+    _set_branch_stage(tgt, "invalid_target")
+    return nil, nil, st, "invalid_target"
   end
-  if not st.slickness then
-    return ("cast mudslide at %s"):format(tgt), "salve_pressure", st, "salve_pressure"
+
+  if not st.waterbonds then
+    local ok, why, cmd = _can_cast_horripilation(tgt)
+    _set_branch_stage(tgt, ok and "opener_setup" or "opener_wait")
+    if ok then
+      return cmd, "opener_setup", st, "waterbonds_missing"
+    end
+    return nil, nil, st, why ~= "" and why or "waterbonds_missing"
   end
-  if not st.disrupt and st.water_res >= 3 then
-    return ("cast emanation at %s water"):format(tgt), "disrupt_setup", st, "disrupt_setup"
+
+  if st.freeze_step_done ~= true then
+    local ok, why, cmd = _can_cast_freeze(tgt)
+    _set_branch_stage(tgt, ok and "freeze_setup" or "freeze_wait")
+    if ok then
+      return cmd, "freeze_setup", st, "freeze_step_gate"
+    end
+    return nil, nil, st, why ~= "" and why or "freeze_step_gate"
   end
-  return ("cast glaciate at %s"):format(tgt), "glaciate_burst", st, "glaciate_burst"
+
+  if _should_mudslide(st) then
+    local ok, why, cmd = _can_cast_mudslide(tgt)
+    _set_branch_stage(tgt, ok and "salve_pressure" or "mudslide_wait")
+    if ok then
+      return cmd, "salve_pressure", st, "mudslide_window"
+    end
+    return nil, nil, st, why ~= "" and why or "mudslide_window"
+  end
+
+  do
+    local ok, _, cmd = _can_cast_glaciate(tgt)
+    if ok and _should_glaciate(st, tgt) then
+      _set_branch_stage(tgt, "glaciate_burst")
+      return cmd, "glaciate_burst", st, "glaciate_window"
+    end
+  end
+
+  if st.freeze_stable ~= true then
+    local ok, why, cmd = _can_cast_freeze(tgt)
+    _set_branch_stage(tgt, ok and "freeze_setup" or "freeze_wait")
+    if ok then
+      return cmd, "freeze_setup", st, "freeze_baseline"
+    end
+    return nil, nil, st, why ~= "" and why or "freeze_baseline"
+  end
+
+  if _should_water_emanation(st) then
+    local ok, _, cmd = _can_cast_water_emanation(tgt)
+    if ok then
+      _set_branch_stage(tgt, "disrupt_setup")
+      return cmd, "disrupt_setup", st, "water_emanation_setup"
+    end
+  end
+
+  if st.fire_branch_eligible == true and st.conflagrate ~= true and st.aflame_ready == true and st.ablaze == true then
+    local ok, _, cmd = _can_cast_conflagrate(tgt)
+    if ok then
+      _set_branch_stage(tgt, "fire_payoff")
+      return cmd, "fire_payoff", st, "conflagrate_ready"
+    end
+  end
+
+  if st.fire_branch_eligible == true and _should_fire_emanation(st) then
+    local ok, _, cmd = _can_cast_fire_emanation(tgt)
+    if ok then
+      _set_branch_stage(tgt, "fire_promotion")
+      return cmd, "fire_promotion", st, "fire_emanation_promote"
+    end
+  end
+
+  if st.fire_branch_eligible == true and st.scalded ~= true then
+    local ok, _, cmd = _can_cast_magma(tgt)
+    if ok then
+      _set_branch_stage(tgt, "fire_build")
+      return cmd, "salve_pressure", st, "scalded_missing"
+    end
+  end
+
+  if st.fire_branch_eligible == true and st.conflagrate ~= true then
+    local ok, _, cmd = _can_cast_firelash(tgt)
+    if ok then
+      _set_branch_stage(tgt, "fire_build")
+      return cmd, "fire_build", st, "firelash_builder"
+    end
+  end
+
+  do
+    local ok, _, cmd = _can_cast_glaciate(tgt)
+    if ok and st.frozen == true then
+      _set_branch_stage(tgt, "glaciate_burst")
+      return cmd, "glaciate_burst", st, "glaciate_fallback"
+    end
+  end
+
+  if st.fire_branch_eligible == true then
+    local ok, _, cmd = _can_cast_firelash(tgt)
+    if ok then
+      _set_branch_stage(tgt, "fire_build")
+      return cmd, "fire_build", st, "maintain_fire_pressure"
+    end
+  end
+
+  do
+    local ok, why, cmd = _can_cast_freeze(tgt)
+    if ok then
+      _set_branch_stage(tgt, "freeze_setup")
+      return cmd, "freeze_setup", st, "freeze_refresh"
+    end
+    _set_branch_stage(tgt, "hold")
+    return nil, nil, st, why ~= "" and why or "no_legal_action"
+  end
 end
 
 local function _clear_eq_queue()
@@ -534,8 +894,7 @@ local function _payload_each_eq(payload, fn)
 end
 
 local function _capture_target(cmd, pat)
-  local who = _trim(_lc(cmd):match(pat) or "")
-  return who
+  return _trim(_lc(cmd):match(pat) or "")
 end
 
 local function _attack_opts(arg)
@@ -545,23 +904,42 @@ local function _attack_opts(arg)
   return arg, false
 end
 
+local function _update_explain(tgt, st, category, reason, planned_cmd)
+  MGD.state.explain = {
+    route = "magi_group_damage",
+    target = tgt,
+    decision = category or "",
+    reason = reason or "",
+    planned = { eq = planned_cmd or "" },
+    branch_stage = (_route_slot().branch_stage or (st and st.route and st.route.branch_stage) or ""),
+    freeze_step_done = st and st.freeze_step_done == true or false,
+    fire_branch_eligible = st and st.fire_branch_eligible == true or false,
+    state = st or {},
+    last_cmd = MGD.state and MGD.state.last_cmd or "",
+    last_sent_cmd = MGD.state and MGD.state.last_sent_cmd or "",
+    pending = MGD.state and MGD.state.pending or {},
+    route_enabled = MGD.is_enabled and MGD.is_enabled() or false,
+    active = MGD.is_active and MGD.is_active() or false,
+  }
+end
+
 function MGD.init()
   MGD.cfg = MGD.cfg or {}
   MGD.state = MGD.state or {}
   MGD.state.template = MGD.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   MGD.state.pending = MGD.state.pending or {
+    horripilation = { target = "", until_t = 0 },
+    freeze = { target = "", until_t = 0 },
     mudslide = { target = "", until_t = 0 },
-    emanation = { target = "", until_t = 0 },
+    emanation_water = { target = "", until_t = 0 },
+    magma = { target = "", until_t = 0 },
+    firelash = { target = "", until_t = 0 },
+    conflagrate = { target = "", until_t = 0 },
+    emanation_fire = { target = "", until_t = 0 },
+    glaciate = { target = "", until_t = 0 },
   }
-  MGD.state.cold = MGD.state.cold or {
-    target = "",
-    room_id = "",
-    phase = "unknown",
-    opened = false,
-    seen_frostbite = false,
-    seen_frozen = false,
-    progressed_at = 0,
-  }
+  _cold_slot()
+  _route_slot()
   MGD.state.loop_delay = tonumber(MGD.state.loop_delay or MGD.cfg.loop_delay or 0.15) or 0.15
   MGD.state.busy = (MGD.state.busy == true)
   _set_loop_enabled((MGD.state.loop_enabled == true) or (MGD.state.enabled == true))
@@ -572,11 +950,13 @@ function MGD.reset(reason)
   MGD.init()
   _clear_pending_all()
   _reset_cold(reason or "manual")
+  _reset_route(reason or "manual")
   MGD.state.busy = false
   MGD.state.last_target = ""
   MGD.state.last_cmd = ""
   MGD.state.last_category = ""
   MGD.state.last_sent_cmd = ""
+  MGD.state.last_sent_target = ""
   MGD.state.last_sent_category = ""
   MGD.state.last_sent_at = 0
   MGD.state.explain = {}
@@ -603,14 +983,16 @@ function MGD.can_run(ctx)
   local tgt = _trim((ctx and ctx.target) or _target())
   if tgt == "" then
     _reset_cold("no_target")
+    _reset_route("no_target")
     return false, "no_target"
   end
   if not _is_magi() then return false, "wrong_class" end
   if not _tgt_valid(tgt) then
     _reset_cold("invalid_target")
+    _reset_route("invalid_target")
     return false, "invalid_target"
   end
-  _ensure_cold_context(tgt)
+  _ensure_context(tgt)
   return true, tgt
 end
 
@@ -629,6 +1011,16 @@ function MGD.attack_function(arg)
   MGD.state.last_target = tgt
 
   local cmd, category, st, reason = _select_command(tgt)
+  MGD.state.template.last_reason = reason
+  MGD.state.template.last_target = tgt
+  _update_explain(tgt, st, category, reason, cmd)
+
+  if not cmd or cmd == "" then
+    MGD.state.template.last_payload = nil
+    if preview then return nil, reason end
+    return false, reason
+  end
+
   local payload = {
     route = "magi_group_damage",
     target = tgt,
@@ -638,19 +1030,11 @@ function MGD.attack_function(arg)
       main_category = category,
       main_reason = reason,
       state = st,
+      explain = MGD.state.explain,
     },
   }
 
-  MGD.state.template.last_reason = reason
   MGD.state.template.last_payload = payload
-  MGD.state.template.last_target = tgt
-  MGD.state.explain = {
-    route = "magi_group_damage",
-    target = tgt,
-    decision = category,
-    reason = reason,
-    state = st,
-  }
 
   if preview then return payload end
 
@@ -673,29 +1057,26 @@ function MGD.evaluate(ctx)
 end
 
 function MGD.explain()
+  MGD.init()
+  local ex = type(MGD.state.explain) == "table" and MGD.state.explain or {}
   local tgt = _target()
   local st = _effective_state(tgt)
-  local current_reason = ""
-  if not st.frozen then
-    current_reason = (st.cold_phase == "progressed") and "refreeze_after_progress" or "initial_freeze"
-  end
-  return {
-    route = "magi_group_damage",
-    enabled = MGD.is_enabled(),
-    active = MGD.is_active(),
-    target = tgt,
-    decision = MGD.state and MGD.state.last_category or "",
-    last_reason = MGD.state and MGD.state.template and MGD.state.template.last_reason or "",
-    current_reason = current_reason,
-    cold_phase = st.cold_phase,
-    apply_count = st.apply_count,
-    water_res = st.water_res,
-    resonance_synced = st.resonance_synced,
-    last_cmd = MGD.state and MGD.state.last_cmd or "",
-    last_disable_reason = MGD.state and MGD.state.template and MGD.state.template.last_disable_reason or "",
-    state = st,
-    pending = MGD.state and MGD.state.pending or {},
-  }
+  ex.route = "magi_group_damage"
+  ex.enabled = MGD.is_enabled()
+  ex.route_enabled = MGD.is_enabled()
+  ex.active = MGD.is_active()
+  ex.target = tgt
+  ex.last_reason = MGD.state and MGD.state.template and MGD.state.template.last_reason or ""
+  ex.last_disable_reason = MGD.state and MGD.state.template and MGD.state.template.last_disable_reason or ""
+  ex.last_cmd = MGD.state and MGD.state.last_cmd or ""
+  ex.last_sent_cmd = MGD.state and MGD.state.last_sent_cmd or ""
+  ex.decision = ex.decision or (MGD.state and MGD.state.last_category or "")
+  ex.branch_stage = (st.route and st.route.branch_stage) or ex.branch_stage or ""
+  ex.freeze_step_done = st.freeze_step_done == true
+  ex.fire_branch_eligible = st.fire_branch_eligible == true
+  ex.state = st
+  ex.pending = MGD.state and MGD.state.pending or {}
+  return ex
 end
 
 function MGD.status()
@@ -711,29 +1092,87 @@ function MGD.on_payload_sent(payload)
     MGD.state.last_sent_cmd = cmd
     MGD.state.last_sent_at = _now()
 
+    local horr_tgt = _capture_target(lc, "^staff%s+cast%s+horripilation%s+(.+)$")
+    if horr_tgt ~= "" then
+      MGD.state.last_sent_target = horr_tgt
+      MGD.state.last_sent_category = "opener_setup"
+      _mark_pending("horripilation", horr_tgt, MGD.cfg.horripilation_pending_s)
+      _set_branch_stage(horr_tgt, "opener_setup")
+      return
+    end
+
+    local freeze_tgt = _capture_target(lc, "^cast%s+freeze%s+at%s+(.+)$")
+    if freeze_tgt ~= "" then
+      local _, route = _ensure_context(freeze_tgt)
+      route.freeze_step_done = true
+      route.branch_stage = "freeze_setup"
+      MGD.state.last_sent_target = freeze_tgt
+      MGD.state.last_sent_category = "freeze_setup"
+      _mark_pending("freeze", freeze_tgt, MGD.cfg.freeze_pending_s)
+      return
+    end
+
     local mud_tgt = _capture_target(lc, "^cast%s+mudslide%s+at%s+(.+)$")
     if mud_tgt ~= "" then
+      MGD.state.last_sent_target = mud_tgt
       MGD.state.last_sent_category = "salve_pressure"
       _mark_pending("mudslide", mud_tgt, MGD.cfg.mudslide_pending_s)
+      _set_branch_stage(mud_tgt, "salve_pressure")
       return
     end
 
-    local ema_tgt = _capture_target(lc, "^cast%s+emanation%s+at%s+(.+)%s+water$")
-    if ema_tgt ~= "" then
+    local ema_water_tgt = _capture_target(lc, "^cast%s+emanation%s+at%s+(.+)%s+water$")
+    if ema_water_tgt ~= "" then
+      MGD.state.last_sent_target = ema_water_tgt
       MGD.state.last_sent_category = "disrupt_setup"
-      _mark_pending("emanation", ema_tgt, MGD.cfg.emanation_pending_s)
+      _mark_pending("emanation_water", ema_water_tgt, MGD.cfg.water_emanation_pending_s)
+      _set_branch_stage(ema_water_tgt, "disrupt_setup")
       return
     end
 
-    if lc:match("^cast%s+glaciate%s+at%s+") then
+    local magma_tgt = _capture_target(lc, "^cast%s+magma%s+at%s+(.+)$")
+    if magma_tgt ~= "" then
+      MGD.state.last_sent_target = magma_tgt
+      MGD.state.last_sent_category = "salve_pressure"
+      _mark_pending("magma", magma_tgt, MGD.cfg.magma_pending_s)
+      _set_branch_stage(magma_tgt, "fire_build")
+      return
+    end
+
+    local firelash_tgt = _capture_target(lc, "^cast%s+firelash%s+at%s+(.+)$")
+    if firelash_tgt ~= "" then
+      MGD.state.last_sent_target = firelash_tgt
+      MGD.state.last_sent_category = "fire_build"
+      _mark_pending("firelash", firelash_tgt, MGD.cfg.firelash_pending_s)
+      _set_branch_stage(firelash_tgt, "fire_build")
+      return
+    end
+
+    local conflagrate_tgt = _capture_target(lc, "^cast%s+conflagrate%s+at%s+(.+)$")
+    if conflagrate_tgt ~= "" then
+      MGD.state.last_sent_target = conflagrate_tgt
+      MGD.state.last_sent_category = "fire_payoff"
+      _mark_pending("conflagrate", conflagrate_tgt, MGD.cfg.conflagrate_pending_s)
+      _set_branch_stage(conflagrate_tgt, "fire_payoff")
+      return
+    end
+
+    local ema_fire_tgt = _capture_target(lc, "^cast%s+emanation%s+at%s+(.+)%s+fire$")
+    if ema_fire_tgt ~= "" then
+      MGD.state.last_sent_target = ema_fire_tgt
+      MGD.state.last_sent_category = "fire_promotion"
+      _mark_pending("emanation_fire", ema_fire_tgt, MGD.cfg.fire_emanation_pending_s)
+      _set_branch_stage(ema_fire_tgt, "fire_promotion")
+      return
+    end
+
+    local glaciate_tgt = _capture_target(lc, "^cast%s+glaciate%s+at%s+(.+)$")
+    if glaciate_tgt ~= "" then
+      MGD.state.last_sent_target = glaciate_tgt
       MGD.state.last_sent_category = "glaciate_burst"
-    elseif lc:match("^cast%s+freeze%s+at%s+") then
-      MGD.state.last_sent_category = "freeze_setup"
-      local freeze_tgt = _capture_target(lc, "^cast%s+freeze%s+at%s+(.+)$")
-      if freeze_tgt ~= "" then
-        local cold = _ensure_cold_context(freeze_tgt)
-        cold.opened = true
-      end
+      _mark_pending("glaciate", glaciate_tgt, MGD.cfg.glaciate_pending_s)
+      _set_branch_stage(glaciate_tgt, "glaciate_burst")
+      return
     end
   end)
 end
@@ -756,10 +1195,15 @@ function MGD.on_target_swap(old_target, new_target)
   if not _same_target(old_target, new_target) then
     _clear_pending_all()
     _reset_cold("target_swap")
+    _reset_route("target_swap")
     _clear_eq_queue()
     MGD.state.last_target = _trim(new_target)
     MGD.state.last_cmd = ""
     MGD.state.last_category = ""
+    MGD.state.last_sent_cmd = ""
+    MGD.state.last_sent_target = ""
+    MGD.state.last_sent_category = ""
+    MGD.state.last_sent_at = 0
     if MGD.state.loop_enabled == true then
       MGD.schedule_loop(0)
     end
@@ -813,6 +1257,7 @@ end
 function MGD.alias_loop_on_started(ctx)
   _clear_pending_all()
   _reset_cold("loop_start")
+  _reset_route("loop_start")
   _clear_eq_queue()
   MGD.state.busy = false
   _echo("Magi team damage loop ON.")
@@ -830,6 +1275,7 @@ function MGD.alias_loop_on_stopped(ctx)
   local reason = tostring(ctx.reason or "manual")
   _clear_pending_all()
   _reset_cold(reason)
+  _reset_route(reason)
   _clear_eq_queue()
   MGD.state.busy = false
   MGD.state.template.last_disable_reason = reason

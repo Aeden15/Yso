@@ -26,6 +26,15 @@ Current fixes
     ytest bloodboil debug [on|off|toggle]
     ytest bloodboil auto [on|off|toggle]
 
+  The Magi team-damage route now stays inside the same dam path while mixing
+  water and fire pressure. It opens with horripilation when waterbonds is
+  missing, forces one freeze-baseline decision on fresh targets, preserves
+  mudslide / glaciate / water-emanation windows, and only then opens magma,
+  firelash, conflagrate, and fire-emanation pressure from AK frozen/frostbite.
+
+  Current AK scalded handling for the Magi-side route assumes 20s instead of
+  the previous 17s.
+
 Current Magi helpers
 --------------------
   magi_group_damage.lua
@@ -63,9 +72,11 @@ Default vibes notes
 
 Notes
 -----
-  Fresh-target Magi damage does not guess caloric. It always opens with
-  freeze, then promotes cold setup from AK frozen/frostbite evidence until the
-  target dies, swaps, or room context changes.
+  Fresh-target Magi damage does not carry old-target branch assumptions. It
+  resets through:
+    horripilation -> freeze baseline -> branch reconsideration
+  and only then mixes fire-side pressure from AK frozen/frostbite/scalded/
+  aflame/conflagrate state.
   Crystalism resonance notice triggers live under:
     Yso system.xml -> Yso Triggers/Magi/Crystalism
   energise resonance is separate from the mheals absorb-energy flow:

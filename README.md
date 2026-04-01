@@ -13,7 +13,7 @@ Current workspace snapshot: March 29, 2026.
 - The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Class-local devtools now live at `Ysindrolir/Occultist/Occultist Devtools.mpackage` and `Ysindrolir/Magi/MagiDevtools.xml`.
 - Split devtools now expose class-local self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
-- `team dam` is now class-sensitive: Occultist keeps the existing group-damage route, while Magi loads a sibling Magi route that drives `freeze -> mudslide -> water emanation -> glaciate` from AK scores, route-local cold progression (`frozen`/`frostbite`), and Yso resonance state synchronized from AK.
+- `team dam` remains class-sensitive: Occultist keeps the existing group-damage route, while Magi now runs a freeze-first mixed route that opens with horripilation, forces an initial freeze step on fresh targets, keeps glaciate/windows on the water side, and branches into `magma` / `firelash` / `conflagrate` / fire emanation once `frozen` or `frostbite` is established.
 
 ## What is here
 
@@ -116,7 +116,8 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 
 - The Occultist stack is the primary active development target.
 - Magi files are present, but they are a smaller secondary track right now.
-- Magi team damage now opens with `freeze` on a fresh target, tracks cold progression locally from AK `frozen`/`frostbite`, and keeps `glaciate` strictly gated on live `frozen`.
+- Magi team damage now resets fresh targets through `horripilation -> freeze baseline -> branch reconsideration`, keeps `glaciate` gated on live `frozen`, and uses AK `scalded` / `aflame` / `conflagrate` state plus Yso fire-water resonance to mix salve pressure once `frozen` or `frostbite` is established.
+- AK scalded handling in this workspace now assumes 20s instead of 17s for the current Magi paths.
 - Crystalism resonance notices now echo in the package `Yso Triggers -> Magi -> Crystalism` folder, and `energise` also exposes a separate consumable Crystalism state for personal aliases without reusing the heal-burst `Yso.magi.energy` flag.
 - The packaged `mheals` alias now requires both `Yso.magi.energy` and `Yso.magi.crystalism.consume_energise_resonance()` before it queues `absorb energy`.
 - The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.

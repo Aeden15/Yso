@@ -38,10 +38,11 @@ Current fixes
   including Yso system.xml and the wake-bus/queue mirrors that feed it.
 
   team dam is now class-sensitive. Occultist keeps the existing team-damage
-  route, while Magi uses a sibling Magi route that selects:
-    freeze -> mudslide -> emanation water -> glaciate
-  from AK scores, route-local cold progression (tracked from frozen/frostbite),
-  and Yso resonance synced from AK.
+  route, while Magi uses a sibling Magi route that stays freeze-first:
+    horripilation -> freeze baseline -> mixed water/fire pressure
+  The Magi side still preserves mudslide / emanation water / glaciate windows,
+  but now opens a fire branch from AK frozen/frostbite state into magma,
+  firelash, conflagrate, and fire emanation pressure.
 
 Documentation map
 -----------------
@@ -73,9 +74,12 @@ Workspace layout
 Notes
 -----
   Yso system.xml is rebuilt from the Occultist source tree.
-  Magi team damage now opens with freeze on a fresh target, tracks cold
-  progression locally from AK frozen/frostbite, and keeps glaciate strictly
-  gated on live frozen.
+  Magi team damage now resets fresh targets through:
+    horripilation -> freeze baseline -> branch reconsideration
+  and then mixes water-side and fire-side salve pressure from AK frozen,
+  frostbite, scalded, aflame, and conflagrate state plus Yso resonance.
+  AK scalded handling in this workspace now assumes 20s instead of 17s for the
+  current Magi paths.
   Crystalism resonance notices now echo from the Magi trigger folder, and
   energise also exposes a separate consumable state helper for personal aliases
   without reusing the heal-burst Yso.magi.energy flag.
