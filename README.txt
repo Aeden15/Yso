@@ -7,6 +7,22 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Unified self-cleanse module -- Bloodboil (Magi), Fool (Occultist), and
+  Tree Tattoo (universal) now share a cureset-keyed PvP configuration
+  architecture. PvP is scaffolded with per-cureset thresholds but disabled
+  by default until tuned.
+
+  - Bloodboil hunt threshold lowered from 4 to 2.
+  - Bloodboil PvP path: no longer hard-gates on cureset=hunt; looks up
+    per-cureset thresholds with softlock override when PvP is enabled.
+  - Fool hunt threshold lowered from 3 to 2.
+  - Fool per-cureset PvP thresholds via Legacy.Fool.pvp.curesets table.
+  - New Tree Tattoo auto-touch module (Yso.tree): 14s cooldown tracking,
+    paralysis gate, cureset-keyed thresholds, auto-fires on GMCP vitals
+    and cooldown-ready line.
+  - Devtools: ytest sc/selfcleanse shows all three abilities. ytest tree
+    and ytest fool also available.
+
   Full workspace bug audit (Bugs 15-39) -- 25 new bugs found and fixed across
   canonical Lua, XML mirrors, standalone XML scripts, and Yso system.xml.
   See bug_audit_fixes.txt for the complete technical log.

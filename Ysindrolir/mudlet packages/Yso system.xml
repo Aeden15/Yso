@@ -26019,10 +26019,23 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 -- Queue behaviour + thresholds
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or &quot;addclearfull&quot;  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or &quot;bal&quot;           -- bal / eqbal / free / full / flags
-Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- HUNT cureset only
+Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- fallback for unlisted PvP curesets
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
+
+Legacy.Fool.pvp = Legacy.Fool.pvp or {
+  curesets = {
+    depthswalker = { min_affs = 2, notes = &quot;placeholder&quot; },
+    bard         = { min_affs = 2, notes = &quot;placeholder&quot; },
+    monk         = { min_affs = 2, notes = &quot;placeholder&quot; },
+    dwc          = { min_affs = 3, notes = &quot;dual wield cutting knights&quot; },
+    dwb          = { min_affs = 3, notes = &quot;dual wield blunt knights (future)&quot; },
+    blademaster  = { min_affs = 3, notes = &quot;placeholder&quot; },
+    shaman       = { min_affs = 2, notes = &quot;placeholder&quot; },
+    airlord      = { min_affs = 2, notes = &quot;elemental air spec&quot; },
+  },
+}
 
 Yso        = Yso        or {}
 Yso.queue  = Yso.queue  or {}
@@ -26274,14 +26287,24 @@ _min_affs_for_current_set = function()
 
   local cur = _current_cureset() or &quot;legacy&quot;
   if cur == &quot;hunt&quot; then
-    local v = tonumber(Legacy.Fool.min_affs_hunt or 3) or 3
+    local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
     if v &lt; 1 then v = 1 end
     return v, false  -- NO lock override in hunt
-  else
-    local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
-    if v &lt; 1 then v = 1 end
-    return v, true   -- lock override allowed
   end
+
+  local pvp = Legacy.Fool.pvp
+  if type(pvp) == &quot;table&quot; and type(pvp.curesets) == &quot;table&quot; then
+    local entry = pvp.curesets[cur]
+    if type(entry) == &quot;table&quot; and tonumber(entry.min_affs) then
+      local v = tonumber(entry.min_affs)
+      if v &lt; 1 then v = 1 end
+      return v, true  -- lock override allowed for PvP curesets
+    end
+  end
+
+  local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
+  if v &lt; 1 then v = 1 end
+  return v, true   -- lock override allowed
 end
 
 -- Queue helper
@@ -30246,7 +30269,7 @@ local M = Yso.magi.elemental
 
 M.cfg = M.cfg or {
   auto_bloodboil = true,
-  min_affs_hunt = 4,
+  min_affs_hunt = 2,
   cooldown_s = 4.0,
   queue_mode = "prepend",
   queue_type = "eq",
@@ -30259,6 +30282,22 @@ M.cfg.destroy = M.cfg.destroy or {
   require_conflagration = true,
   hp_threshold = 40,
   enforce_hp_gate = false,
+}
+
+M.cfg.pvp = M.cfg.pvp or {
+  enabled            = false,
+  min_affs_default   = 3,
+  allow_lock_override = true,
+  curesets = {
+    depthswalker = { min_affs = 2, notes = "placeholder" },
+    bard         = { min_affs = 2, notes = "placeholder" },
+    monk         = { min_affs = 2, notes = "placeholder" },
+    dwc          = { min_affs = 3, notes = "dual wield cutting knights" },
+    dwb          = { min_affs = 3, notes = "dual wield blunt knights (future)" },
+    blademaster  = { min_affs = 3, notes = "placeholder" },
+    shaman       = { min_affs = 2, notes = "placeholder" },
+    airlord      = { min_affs = 2, notes = "elemental air spec" },
+  },
 }
 
 M.state = M.state or {
@@ -30451,10 +30490,6 @@ function M.should_bloodboil()
     return false, "class"
   end
 
-  if _current_cureset() ~= "hunt" then
-    return false, "cureset"
-  end
-
   if not M.is_ready() then
     return false, "cooldown"
   end
@@ -30467,13 +30502,30 @@ function M.should_bloodboil()
     return false, "haemophilia"
   end
 
-  local count = _aff_count()
-  local min_affs = tonumber(M.cfg.min_affs_hunt or 4) or 4
-  if count &lt; min_affs then
-    return false, "affs", count, min_affs
+  local curset = _current_cureset()
+  local count  = _aff_count()
+
+  if curset == "hunt" then
+    local min_affs = tonumber(M.cfg.min_affs_hunt or 2) or 2
+    if count &lt; min_affs then return false, "affs", count, min_affs end
+    return true, "ok", count, min_affs
   end
 
-  return true, "ok", count, min_affs
+  local pvp = M.cfg.pvp
+  if not (type(pvp) == "table" and pvp.enabled == true) then
+    return false, "pvp_disabled"
+  end
+
+  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+                   or tonumber(pvp.min_affs_default or 3) or 3
+
+  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  if count &lt; min_affs and not lock_ok then
+    return false, "affs_pvp", count, min_affs
+  end
+
+  return true, "ok_pvp", count, min_affs
 end
 
 local function _queue_bloodboil(source)
@@ -30617,6 +30669,214 @@ end
 function M.cast_magmasphere(seconds)
   return _cast_timed_spell("magmasphere", seconds)
 end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Tree auto</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.tree = Yso.tree or {}
+Yso._trig = Yso._trig or {}
+Yso._eh = Yso._eh or {}
+
+local T = Yso.tree
+
+T.cfg = T.cfg or {
+  enabled = true,
+  min_affs_hunt = 1,
+  debug = false,
+}
+
+T.cfg.pvp = T.cfg.pvp or {
+  enabled = false,
+  min_affs_default = 2,
+  allow_lock_override = true,
+  curesets = {
+    depthswalker = { min_affs = 1, notes = "placeholder" },
+    bard         = { min_affs = 1, notes = "placeholder" },
+    monk         = { min_affs = 1, notes = "placeholder" },
+    dwc          = { min_affs = 2, notes = "dual wield cutting knights" },
+    dwb          = { min_affs = 2, notes = "dual wield blunt knights (future)" },
+    blademaster  = { min_affs = 2, notes = "placeholder" },
+    shaman       = { min_affs = 1, notes = "placeholder" },
+    airlord      = { min_affs = 1, notes = "elemental air spec" },
+  },
+}
+
+T.state = T.state or {
+  ready = true,
+  last_touch = 0,
+}
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 20000000000 then t = t / 1000 end
+  return t or os.time()
+end
+
+local function _debug(msg)
+  if T.cfg.debug and type(cecho) == "function" then
+    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _echo(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _Aff()
+  return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+end
+
+local function _has(aff)
+  return _Aff()[aff] == true
+end
+
+local function _aff_count()
+  local A = _Aff()
+  local n = 0
+  for k, v in pairs(A) do
+    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+      n = n + 1
+    end
+  end
+  return n
+end
+
+local function _current_cureset()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and set ~= "" then return set:lower() end
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and cur ~= "" then return cur:lower() end
+  return ""
+end
+
+function T.should_tree()
+  if T.cfg.enabled ~= true then return false, "disabled" end
+  if not T.state.ready then return false, "cooldown" end
+  if _has("paralysis") then return false, "paralysis" end
+
+  local curset = _current_cureset()
+  local count = _aff_count()
+
+  if curset == "hunt" then
+    local min_affs = tonumber(T.cfg.min_affs_hunt or 1) or 1
+    if count &lt; min_affs then return false, "affs", count, min_affs end
+    return true, "ok", count, min_affs
+  end
+
+  local pvp = T.cfg.pvp
+  if not (type(pvp) == "table" and pvp.enabled == true) then
+    return false, "pvp_disabled"
+  end
+
+  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+                   or tonumber(pvp.min_affs_default or 2) or 2
+
+  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  if count &lt; min_affs and not lock_ok then
+    return false, "affs_pvp", count, min_affs
+  end
+
+  return true, "ok_pvp", count, min_affs
+end
+
+function T.try_tree(source)
+  local ok, reason, count, min_affs = T.should_tree()
+  if not ok then
+    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
+    return false, reason
+  end
+
+  if type(send) == "function" then
+    send("touch tree", false)
+    _debug(string.format("touching tree src=%s affs=%d/%d", tostring(source or "?"), count or 0, min_affs or 0))
+    return true, reason
+  end
+
+  return false, "send_unavailable"
+end
+
+function T.on_touched()
+  T.state.ready = false
+  T.state.last_touch = _now()
+  _debug("tree touched, cooldown started")
+end
+
+function T.on_ready()
+  T.state.ready = true
+  _debug("tree ready")
+  T.try_tree("ready_line")
+end
+
+function T.on_vitals()
+  if not T.cfg.enabled then return end
+  if not T.state.ready then return end
+  T.try_tree("vitals")
+end
+
+function T.set_auto(v)
+  local on = nil
+  local t = type(v)
+  if t == "boolean" then on = v
+  elseif t == "number" then on = (v ~= 0)
+  elseif t == "string" then
+    local s = tostring(v):lower():gsub("^%s+", ""):gsub("%s+$", "")
+    if s == "on" or s == "1" or s == "true" then on = true
+    elseif s == "off" or s == "0" or s == "false" then on = false end
+  end
+  if on == nil then _echo("Usage: lua Yso.tree.set_auto(true|false)"); return end
+  T.cfg.enabled = on
+  _echo("Auto tree is now " .. (on and "ON." or "OFF."))
+end
+
+function T.status()
+  local ok, reason, count, min_affs = T.should_tree()
+  local curset = _current_cureset()
+  _echo(string.format(
+    "auto=%s ready=%s cureset=%s affs=%d min=%d reason=%s para=%s",
+    T.cfg.enabled and "on" or "off",
+    T.state.ready and "Y" or "N",
+    curset ~= "" and curset or "?",
+    count or _aff_count(),
+    min_affs or 0,
+    tostring(reason or "?"),
+    _has("paralysis") and "Y" or "N"
+  ))
+end
+
+local function _safe(fn)
+  return function(...)
+    local ok, err = pcall(fn, ...)
+    if not ok and T.cfg.debug then
+      _echo("ERROR: " .. tostring(err))
+    end
+  end
+end
+
+if Yso._trig.tree_touched then killTrigger(Yso._trig.tree_touched) end
+Yso._trig.tree_touched = tempRegexTrigger(
+  [[^You touch the tree of life tattoo\.$]],
+  _safe(function() T.on_touched() end)
+)
+
+if Yso._trig.tree_ready then killTrigger(Yso._trig.tree_ready) end
+Yso._trig.tree_ready = tempRegexTrigger(
+  [[^You may utilise the tree tattoo again\.]],
+  _safe(function() T.on_ready() end)
+)
+
+if Yso._eh.tree_vitals then pcall(killAnonymousEventHandler, Yso._eh.tree_vitals) end
+Yso._eh.tree_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+  T.on_vitals()
+end)</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>

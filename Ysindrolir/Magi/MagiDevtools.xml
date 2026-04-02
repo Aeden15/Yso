@@ -935,7 +935,64 @@ function D.test.bloodboil_snap()
   if #affs &gt; 0 then
     _tprint("self aff list=" .. table.concat(affs, ", "))
   end
+
+  local pvp = M.cfg and M.cfg.pvp
+  if type(pvp) == "table" then
+    local pvp_entry = type(pvp.curesets) == "table" and pvp.curesets[cureset:lower()] or nil
+    local pvp_min = (type(pvp_entry) == "table" and tonumber(pvp_entry.min_affs))
+                    or tonumber(pvp.min_affs_default or 3) or 3
+    _tprint(string.format("pvp enabled=%s cureset_min=%d default_min=%d lock_override=%s",
+      _fmt_bool(pvp.enabled == true),
+      pvp_min,
+      tonumber(pvp.min_affs_default or 3) or 3,
+      _fmt_bool(pvp.allow_lock_override == true)
+    ))
+  end
+
   return ready
+end
+
+function D.test.selfcleanse_snap()
+  local cureset = _current_cureset_name()
+  local class_name = _current_class_name()
+  local affs = _self_aff_list()
+
+  _tprint("=== Self-Cleanse Snapshot ===")
+  _tprint(string.format("class=%s cureset=%s affs=%d", class_name, cureset, #affs))
+  if #affs &gt; 0 then
+    _tprint("aff list=" .. table.concat(affs, ", "))
+  end
+
+  _tprint("--- Bloodboil (Magi) ---")
+  local M = _bloodboil_mod()
+  if type(M) == "table" and type(M.should_bloodboil) == "function" then
+    local ok, a, b, c, d = pcall(M.should_bloodboil)
+    if ok then
+      _tprint(string.format("  ready=%s reason=%s affs=%s/%s",
+        (a == true) and "Y" or "N", tostring(b),
+        tostring(c or "?"), tostring(d or "?")))
+    else
+      _tprint("  error: " .. tostring(a))
+    end
+  else
+    _tprint("  not loaded")
+  end
+
+  _tprint("--- Fool (Occultist) ---")
+  local F = Yso and Yso.fool
+  if type(F) == "table" and type(F.status) == "function" then
+    pcall(F.status)
+  else
+    _tprint("  not loaded")
+  end
+
+  _tprint("--- Tree Tattoo ---")
+  local T = Yso and Yso.tree
+  if type(T) == "table" and type(T.status) == "function" then
+    pcall(T.status)
+  else
+    _tprint("  not loaded")
+  end
 end
 
 local function _arm_bloodboil_triggers()
@@ -1108,6 +1165,25 @@ function D.test.run(argstr)
       return
     end
     _tprint("usage: ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle]")
+    return
+  elseif sub == "selfcleanse" or sub == "sc" then
+    D.test.selfcleanse_snap()
+    return
+  elseif sub == "tree" then
+    local T = Yso and Yso.tree
+    if type(T) == "table" and type(T.status) == "function" then
+      pcall(T.status)
+    else
+      _tprint("tree module not loaded.")
+    end
+    return
+  elseif sub == "fool" then
+    local F = Yso and Yso.fool
+    if type(F) == "table" and type(F.status) == "function" then
+      pcall(F.status)
+    else
+      _tprint("fool module not loaded.")
+    end
     return
   end
 

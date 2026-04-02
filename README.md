@@ -4,6 +4,13 @@ Current workspace snapshot: April 2, 2026.
 
 ## Current fixes
 
+- **Unified self-cleanse module** — Bloodboil (Magi), Fool (Occultist), and Tree Tattoo (universal) now share a cureset-keyed PvP configuration architecture. PvP is scaffolded with per-cureset thresholds (depthswalker, bard, monk, dwc, dwb, blademaster, shaman, airlord) but disabled by default until tuned.
+- **Bloodboil hunt threshold lowered** — `min_affs_hunt` reduced from 4 to 2 so bloodboil fires earlier during hunting.
+- **Bloodboil PvP path** — `should_bloodboil()` no longer hard-gates on `cureset == "hunt"`. When PvP is enabled, it looks up per-cureset thresholds with softlock override support.
+- **Fool hunt threshold lowered** — `min_affs_hunt` reduced from 3 to 2 for earlier defensive cleansing while hunting.
+- **Fool per-cureset PvP thresholds** — `_min_affs_for_current_set()` now checks `Legacy.Fool.pvp.curesets[curset]` before falling back to `min_affs_default`.
+- **Tree Tattoo auto-touch module** — New `Yso.tree` module: tracks 14s cooldown via game lines, gates on paralysis, resolves thresholds by cureset (hunt=1 aff, PvP configurable), auto-fires on GMCP vitals tick and cooldown-ready line. Commands: `lua Yso.tree.set_auto(true|false)`, `lua Yso.tree.status()`.
+- **Devtools selfcleanse snapshot** — `ytest sc` / `ytest selfcleanse` displays all three abilities. `ytest tree` and `ytest fool` also available as standalone status checks. `ytest bb snap` now shows PvP config state.
 - **Full workspace bug audit (Bugs 15–39)** — 25 new bugs found and fixed across canonical Lua, XML mirrors, standalone XML scripts, and `Yso system.xml`. All canonical-to-mirror pairs remain in sync. See `bug_audit_fixes.txt` for the complete technical log.
 - **Critical: Limb tracking event handler fixed** — `mudlet.lua` `registerAnonymousEventHandler` for `"limb hits updated"` was missing the leading `_event` parameter, shifting all arguments by one. The entire limb bridge was broken (name received the event string, limb received the player name, amount received the limb name, real amount was dropped).
 - **Critical: Entourage timestamp corrected** — `entourage_script.lua` divided `getEpoch()` by 1000, producing a 1970-era timestamp. Entity staleness checks always saw the entourage as stale. All three call sites fixed.
