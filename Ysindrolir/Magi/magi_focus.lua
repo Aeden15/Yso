@@ -209,7 +209,6 @@ local function _target() return RC.get_target() end
 local function _room_id() return RC.room_id() end
 local function _tgt_valid(tgt) return RC.target_valid(tgt) end
 local function _eq_ready() return RC.eq_ready() end
-local function _score_aff(aff) return RC.score_aff(aff) end
 local function _score_positive(aff) return RC.has_aff(aff) end
 
 local function _kelpscore()
@@ -314,10 +313,6 @@ local function _set_postconv(tgt, on)
     route.phase = "postconv"
   end
   return route
-end
-
-local function _has_waterbonds(tgt)
-  return _score_positive("waterbonds") or _pending_active("horripilation", tgt)
 end
 
 local function _freeze_package_intact(st)
@@ -484,7 +479,7 @@ local function _snapshot(tgt)
   }
 
   st.fulm_stage = _fulm_stage_from_state(st)
-  st.epilepsy_live = st.fulm_stage >= 2
+  st.epilepsy_live = st.epilepsy == true
   st.para_conversion_ready = st.fulm_stage == 2
   st.conv_missing = _conv_missing(st.res)
   st.conv_ready = (#st.conv_missing == 0) and st.dissonance_stage >= 4
@@ -737,7 +732,7 @@ local function _select_command(tgt)
     return nil, st, rejects, why ~= "" and why or "waterbonds_missing"
   end
 
-  if st.freeze_missing == true then
+  if st.freeze_missing == true and st.postconv ~= true then
     local ok, why, cmd = _can_cast_freeze(tgt)
     _set_route_stage(tgt, ok and "opener" or "hold", "freeze", "freeze_reopen")
     if ok then
@@ -821,6 +816,9 @@ local function _emit_payload(payload, category)
     if ok then
       Q._commit_hint = nil
       return true
+    end
+    if type(MF.on_payload_sent) == "function" then
+      pcall(MF.on_payload_sent, payload)
     end
     Q._commit_hint = opts
     if Yso and Yso.pulse and type(Yso.pulse.wake) == "function"

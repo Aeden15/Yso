@@ -113,6 +113,11 @@ function D.note(target, token, opts)
   elseif token == "clear" or token == "reset" then
     stage = 0
     confidence = (confidence ~= "" and confidence) or "low"
+    row.stage = 0
+    row.confidence = confidence
+    row.last_evidence = evidence
+    row.updated_at = _now()
+    return true, _copy(row)
   end
 
   if stage ~= nil then

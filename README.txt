@@ -23,6 +23,13 @@ Current fixes
   - Devtools: ytest sc/selfcleanse shows all three abilities. ytest tree
     and ytest fool also available.
 
+  Magi route bug sweep (16 bugs) -- Critical: on_send_result payload format
+  mismatch caused route to get stuck at freeze step. High: template.last_payload
+  shape normalized. Medium: explain() no longer mutates state, queue commit
+  failure now marks pending, freeze check no longer preempts postconv kill
+  window, dissonance confidence properly resets on clear/reset. Low: dead code
+  removed, eq_ready or-chain fixed, nil-slot guards added, gsub leaks fixed.
+
   Full workspace bug audit (Bugs 15-39) -- 25 new bugs found and fixed across
   canonical Lua, XML mirrors, standalone XML scripts, and Yso system.xml.
   See bug_audit_fixes.txt for the complete technical log.

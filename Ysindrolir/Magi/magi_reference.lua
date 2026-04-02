@@ -78,7 +78,7 @@ local function _res_norm_element(element)
 end
 
 local function _cry_trim(s)
-  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
 function M.resonance.clear()

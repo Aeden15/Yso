@@ -86,9 +86,10 @@ function RC.eq_ready()
 
   local vitals = (rawget(_G, "gmcp") or {}).Char
   vitals = vitals and vitals.Vitals or {}
-  return tostring(vitals.eq or vitals.equilibrium or "") == "1"
-    or vitals.eq == true
-    or vitals.equilibrium == true
+  local eq_val = vitals.eq
+  if eq_val == nil then eq_val = vitals.equilibrium end
+  if eq_val == nil then eq_val = "" end
+  return tostring(eq_val) == "1" or eq_val == true
 end
 
 function RC.score_aff(aff)
@@ -173,12 +174,15 @@ function RC.ensure_pending(state, slots)
 end
 
 function RC.pending_slot(state, slot)
+  slot = tostring(slot or "")
+  if slot == "" then return nil end
   RC.ensure_pending(state, { slot })
-  return state.pending[tostring(slot or "")]
+  return state.pending[slot]
 end
 
 function RC.clear_pending(state, slot)
   local row = RC.pending_slot(state, slot)
+  if not row then return nil end
   row.target = ""
   row.until_t = 0
   return row
@@ -194,6 +198,7 @@ end
 
 function RC.mark_pending(state, slot, target, duration)
   local row = RC.pending_slot(state, slot)
+  if not row then return nil end
   row.target = RC.trim(target)
   row.until_t = RC.now() + (tonumber(duration) or 0)
   return row
@@ -201,6 +206,7 @@ end
 
 function RC.pending_active(state, slot, target)
   local row = RC.pending_slot(state, slot)
+  if not row then return false end
   return RC.same_target(row.target, target) and RC.now() < (tonumber(row.until_t) or 0)
 end
 

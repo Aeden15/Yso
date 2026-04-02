@@ -422,10 +422,6 @@ local function _pending_active(name, tgt)
   return RC.pending_active(MGD.state, name, tgt)
 end
 
-local function _same_target_repeat(cmd, tgt)
-  return RC.same_target_repeat(MGD.state, cmd, tgt, MGD.cfg.same_target_repeat_s)
-end
-
 local function _spell_guard(slot_name, tgt, cmd)
   return RC.guard_spell({
     state = MGD.state,
@@ -438,16 +434,8 @@ local function _spell_guard(slot_name, tgt, cmd)
   })
 end
 
-local function _has_waterbonds(tgt)
-  return _score_positive("waterbonds") or _pending_active("horripilation", tgt)
-end
-
 local function _freeze_stable()
   return _score_positive("frozen") or _score_positive("frostbite")
-end
-
-local function _has_scalded(tgt)
-  return _score_positive("scalded") or _pending_active("magma", tgt)
 end
 
 local function _has_conflagrate()
@@ -829,7 +817,7 @@ end
 
 local function _payload_each_eq(payload, fn)
   if type(payload) ~= "table" or type(fn) ~= "function" then return end
-  local row = payload.eq
+  local row = payload.eq or (type(payload.lanes) == "table" and payload.lanes.eq)
   if type(row) == "string" then
     fn(row)
     return
@@ -965,7 +953,7 @@ function MGD.attack_function(arg)
     },
   }
 
-  MGD.state.template.last_payload = payload
+  MGD.state.template.last_payload = { eq = cmd, meta = payload.meta }
 
   if preview then return payload end
 
@@ -991,7 +979,11 @@ function MGD.explain()
   MGD.init()
   local ex = type(MGD.state.explain) == "table" and MGD.state.explain or {}
   local tgt = _target()
-  local st = _effective_state(tgt)
+  local st = RC.build_snapshot({
+    state = MGD.state, target = tgt,
+    affs = { "waterbonds","frozen","frostbite","slickness","disrupt","scalded","conflagrate","aflame" },
+    pending_slots = MGD.cfg and MGD.cfg.pending_slots or {},
+  })
   ex.route = "magi_group_damage"
   ex.enabled = MGD.is_enabled()
   ex.route_enabled = MGD.is_enabled()
