@@ -138,4 +138,306 @@ Fix — add a _now() helper and replace H.collected() with an age-guarded versio
   end
 
 ================================================================================
+
+BUG AUDIT FIXES — Full Workspace Scan (April 2, 2026)
+Bugs 15–39 (25 new bugs across canonical, XML mirrors, standalone scripts, Yso system.xml)
+================================================================================
+
+--------------------------------------------------------------------------------
+BUG 15 (Critical)
+File: Ysindrolir/Occultist/modules/Yso/Integration/mudlet.lua
+Problem:
+  registerAnonymousEventHandler("limb hits updated", function(name, limb, amount))
+  is missing the mandatory _event first parameter. Mudlet passes the event name
+  as arg 1, so: name = "limb hits updated", limb = actual player name,
+  amount = actual limb name, real amount is dropped. Entire limb bridge broken.
+
+Fix — add _event parameter:
+  function(_event, name, limb, amount)
+
+--------------------------------------------------------------------------------
+BUG 16 (Critical)
+File: Ysindrolir/Occultist/modules/Yso/xml/entourage_script.lua (3 sites)
+Problem:
+  Ent.last_ts = math.floor(getEpoch()/1000)
+  getEpoch() in Mudlet 4.20.0 returns seconds (float). Dividing by 1000
+  produces a value from January 1970. Entity staleness checks always report
+  the entourage as stale.
+
+Fix — remove the /1000:
+  Ent.last_ts = math.floor(getEpoch())
+
+--------------------------------------------------------------------------------
+BUG 17 (High)
+File: Ysindrolir/Occultist/modules/Yso/Core/api.lua (line 441)
+Problem:
+  P.at = (type(_now) == "function" and _now()) or os.time()
+  _now() is defined inside a do...end block (Yso.locks, lines 216-339).
+  At line 441 (Yso.pause_offense), _now is nil. Always falls through to
+  os.time() (integer seconds), mismatched with subsecond timestamps elsewhere.
+
+Fix:
+  P.at = (Yso.util and type(Yso.util.now) == "function" and Yso.util.now()) or os.time()
+
+--------------------------------------------------------------------------------
+BUG 18 (High)
+File: Ysindrolir/Occultist/modules/Yso/Core/api.lua (lines 903-906)
+Problem:
+  _ak_now() returns raw getEpoch() without tonumber() or ms→s normalization.
+  Timestamps written to Yso.ak.enemy.last_gain/last_cure are inconsistent
+  with Yso.util.now().
+
+Fix:
+  local function _ak_now()
+    if type(getEpoch) == "function" then
+      local t = tonumber(getEpoch()) or os.time()
+      if t > 20000000000 then t = t / 1000 end
+      return t
+    end
+    return os.time()
+  end
+
+--------------------------------------------------------------------------------
+BUG 19 (High)
+Files: Ysindrolir/Magi/magi_group_damage.lua (line 25),
+       Ysindrolir/Magi/magi_focus.lua (line 20)
+Problem:
+  _load_magi_peer() uses debug.getinfo(1,"S").source which returns "@/path".
+  Code checks for @ but never strips it. The constructed dofile path starts
+  with @ and always fails.
+
+Fix:
+  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
+
+--------------------------------------------------------------------------------
+BUG 20 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Core/wake_bus.lua (lines 239-243)
+Problem:
+  local ok = pcall(Yso.queue.emit, payload)
+  pcall returns (true/false, result). ok captures pcall success, not emit
+  result. _did_emit set true even when emit returns false (nothing staged).
+  Dispatch loop breaks early.
+
+Fix:
+  local ok, result = pcall(Yso.queue.emit, payload)
+  if ok and result then P.state._did_emit = true end
+  return ok and result
+
+--------------------------------------------------------------------------------
+BUG 21 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Core/mode_autoswitch.lua (lines 269-273)
+Problem:
+  Patterns "you challenge" and "you accept" use lowercase. Achaea outputs
+  "You challenge" / "You accept" with capital Y. Name extraction always fails
+  for outgoing challenges/accepts.
+
+Fix:
+  s:match("[Yy]ou challenge ...")
+  s:match("[Yy]ou accept ...")
+
+--------------------------------------------------------------------------------
+BUG 22 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/occultist/aeon.lua (lines 336-344)
+Problem:
+  Compel entropy block requires _bal_ready() which is guaranteed false after
+  the tarot path returned at line 331. Dead code — entropy aeon never fires.
+
+Fix:
+  if _eq_ready() then   -- compel uses free lane, not BAL
+
+--------------------------------------------------------------------------------
+BUG 23 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/offense_driver.lua (line 47)
+Problem:
+  _now() calls Yso.util.now() without pcall. Error propagation risk.
+
+Fix:
+  Wrap with pcall:
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+
+--------------------------------------------------------------------------------
+BUG 24 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/offense_driver.lua (line 142)
+Problem:
+  kelp entity pool maps sensitivity = "slime". Slime applies paralysis
+  (bloodroot cure), not sensitivity. Wrong entity commanded on kelp eat.
+
+Fix:
+  Remove sensitivity = "slime" from the kelp table.
+
+--------------------------------------------------------------------------------
+BUG 25 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/offense_driver.lua (line 163)
+Problem:
+  _mark() computes its own timestamp via inline getEpoch() instead of calling
+  the file's own _now() helper, bypassing Yso.util.now().
+
+Fix:
+  tbl_at[k] = _now()
+
+--------------------------------------------------------------------------------
+BUG 26 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/occultist/offense_helpers.lua (line 26)
+Problem:
+  Yso.ent_affs table uses key "worms" for the worm entity. Rest of codebase
+  uses "healthleech". Lookup for Yso.ent_affs["healthleech"] returns nil.
+
+Fix:
+  healthleech = "worm",
+
+--------------------------------------------------------------------------------
+BUG 27 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/occultist/entity_registry.lua (line 412)
+Problem:
+  local target_valid = (ctx.target_valid ~= nil) and (ctx.target_valid == true) or _target_valid(tgt)
+  Lua and/or precedence: explicit target_valid = false is silently overridden
+  by _target_valid() recheck.
+
+Fix:
+  local target_valid
+  if ctx.target_valid ~= nil then
+    target_valid = (ctx.target_valid == true)
+  else
+    target_valid = _target_valid(tgt)
+  end
+
+--------------------------------------------------------------------------------
+BUG 28 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Combat/hinder.lua (lines 8-15, 90)
+Problem:
+  _now() uses getEpoch() directly while H.collect() uses Yso.util.now()
+  inline without pcall. Clock source mismatch between snapshot creation and
+  age computation.
+
+Fix:
+  _now() now tries Yso.util.now() with pcall first.
+  H.collect() uses _now() instead of inline Yso.util.now().
+
+--------------------------------------------------------------------------------
+BUG 29 (Medium)
+File: Ysindrolir/Occultist/modules/Yso/Integration/ak_legacy_wiring.lua (lines 149-152)
+Problem:
+  _akwire_now() returns raw getEpoch() without tonumber() or ms→s guard.
+
+Fix:
+  local function _akwire_now()
+    if type(getEpoch) == "function" then
+      local t = tonumber(getEpoch()) or os.time()
+      if t > 20000000000 then t = t / 1000 end
+      return t
+    end
+    return os.time()
+  end
+
+--------------------------------------------------------------------------------
+BUG 30 (Medium)
+File: Ysindrolir/Magi/magi_route_core.lua (lines 251-252)
+Problem:
+  Same and/or ternary precedence bug as Bug 27. Explicit false for
+  target_valid/eq_ready is silently overridden.
+
+Fix:
+  Replaced with explicit if/else:
+    local tv = opts.target_valid
+    if tv == nil then tv = RC.target_valid(target) end
+
+--------------------------------------------------------------------------------
+BUG 31 (Low)
+File: Ysindrolir/Occultist/modules/Yso/xml/sightgate.lua (line 24)
+Problem:
+  local Q = Yso.queue captures at load time. If queue loads later, Q is
+  permanently nil; all sightgate commands silently fail.
+
+Fix:
+  local function _Q() return Yso and Yso.queue end
+  Then resolve dynamically: local Q = _Q()
+
+--------------------------------------------------------------------------------
+BUG 32 (Low)
+File: Ysindrolir/Occultist/modules/Yso/xml/pronecontroller.lua (lines 183, 189)
+Problem:
+  Chimera commands queued under EQ lane ("eq") instead of entity lane ("class").
+  Fires when EQ recovers, not when entity balance recovers.
+
+Fix:
+  Renamed _send_eq_clear to _send_clear(cmds, qtype).
+  Chimera calls use qtype "class"; regress calls keep "eq".
+
+--------------------------------------------------------------------------------
+BUG 33 (Low)
+File: Ysindrolir/Occultist/modules/Yso/xml/occ/aura_parser.lua (lines 22-69)
+Problem:
+  affstrack.score accessed without nil guard. Empty else branches for count=2
+  and count=1 cold starts do nothing — mental aff scores not set.
+
+Fix:
+  Added nil guard: local A = rawget(_G, "affstrack"); if not (A and A.score) then return end
+  Cold-start else: count=2 sets score 50, count=1 sets score 33.
+  ak.scoreup/ak.ProTrackingConfirmed wrapped with type checks.
+
+--------------------------------------------------------------------------------
+BUG 34 (Low)
+File: Ysindrolir/Occultist/modules/Yso/xml/yso_list_of_functions.lua (line 2192)
+Problem:
+  "Yso.target_flush_send_state" is a bare string outside any subtable.
+  Silently becomes F.static[1], invisible to F.walk().
+
+Fix:
+  Moved inside misc_clear_target subtable.
+
+--------------------------------------------------------------------------------
+BUG 35 (Low)
+File: Ysindrolir/Magi/magi_group_damage.lua (line 745)
+Problem:
+  Magma returns category "salve_pressure" but sets stage "fire_build".
+  Debug/explain output is misleading.
+
+Fix:
+  return cmd, "fire_build", st, "scalded_missing"
+
+--------------------------------------------------------------------------------
+BUG 36 (Low)
+File: Ysindrolir/Magi/magi_vibes.lua (lines 64-67)
+Problem:
+  _now() returns raw getEpoch() without ms→s normalization. Only Magi module
+  missing the guard.
+
+Fix:
+  Added tonumber() and > 20000000000 guard.
+
+--------------------------------------------------------------------------------
+BUG 37 (Low)
+File: Ysindrolir/Magi/magi_focus.lua (line 1144)
+Problem:
+  embed dissonance handler: MF.state.template.last_target or _target()
+  Empty string "" is truthy in Lua. When last_target is "", fallback never
+  fires and dissonance tracking is silently skipped.
+
+Fix:
+  local raw_tgt = MF.state.template and MF.state.template.last_target or ""
+  local diss_tgt = _trim(raw_tgt)
+  if diss_tgt == "" then diss_tgt = _trim(_target()) end
+
+--------------------------------------------------------------------------------
+BUG 38 (Trivial)
+File: Ysindrolir/Magi/magi_focus.lua (lines 796-799)
+Problem:
+  Second _pick_postconv_action() call is unreachable. The postconv == true
+  branch at lines 751-759 always returns, so st.postconv is never true here.
+
+Fix:
+  Removed dead code block.
+
+--------------------------------------------------------------------------------
+BUG 39 (Trivial)
+File: Ysindrolir/Magi/magi_reference.lua (lines 54-61)
+Problem:
+  _res_now() calls rawget(_G, "_now") — no such global exists anywhere.
+  Always falls through to os.time() (integer seconds).
+
+Fix:
+  Replaced with standard getEpoch() + tonumber() + ms→s guard.
+
+================================================================================
 END OF BUG AUDIT FIXES

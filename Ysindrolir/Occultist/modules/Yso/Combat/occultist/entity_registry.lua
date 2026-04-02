@@ -409,7 +409,12 @@ function ER.rank(ctx)
   local need = ctx.need or {}
   local has_aff = type(ctx.has_aff) == "function" and ctx.has_aff or function() return false end
   local ent_ready = _ent_ready(ctx)
-  local target_valid = (ctx.target_valid ~= nil) and (ctx.target_valid == true) or _target_valid(tgt)
+  local target_valid
+  if ctx.target_valid ~= nil then
+    target_valid = (ctx.target_valid == true)
+  else
+    target_valid = _target_valid(tgt)
+  end
   local ranked, skipped = {}, {}
   local now = _now()
 

@@ -2188,8 +2188,8 @@ do
     },
     misc_clear_target = {
       "Yso.clear_target",
-    },
       "Yso.target_flush_send_state",
+    },
     misc_core = {
       "Yso.core._req.try",
       "Yso.core.boot",

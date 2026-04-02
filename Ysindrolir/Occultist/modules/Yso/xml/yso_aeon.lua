@@ -332,8 +332,8 @@ function A.tick(tgt, reasons)
   end
 
   -- If BAL tarot is not available, try entropy via COMPEL (special/free).
-  -- Compel requires BOTH EQ+BAL ready but consumes neither.
-  if _eq_ready() and _bal_ready() then
+  -- Compel uses the free lane and does not consume EQ or BAL.
+  if _eq_ready() then
     local cd = tonumber(A.cfg.compel_cd_s or 1.5) or 1.5
     local last = tonumber(S.last_compel or 0) or 0
     if (now - last) >= cd then

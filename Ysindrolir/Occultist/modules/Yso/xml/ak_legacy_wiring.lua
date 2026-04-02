@@ -147,7 +147,11 @@ local function _akwire_echo(msg)
 end
 
 local function _akwire_now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 

@@ -438,7 +438,7 @@ function Yso.pause_offense(on, reason, quiet)
   if on then
     P.active = true
     P.reason = tostring(reason or P.reason or "paused")
-    P.at = (type(_now) == "function" and _now()) or os.time()
+    P.at = (Yso.util and type(Yso.util.now) == "function" and Yso.util.now()) or os.time()
   else
     P.active = false
     P.reason = ""
@@ -901,7 +901,11 @@ Yso.ak.threshold = Yso.ak.threshold or 100   -- used later for embellished statu
 
 -- ----------------- tiny helpers (AK) -----------------
 local function _ak_now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 

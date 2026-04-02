@@ -44,7 +44,10 @@ local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$",""
 local function _lc(s) return _trim(s):lower() end
 
 local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == "function" then return tonumber(Yso.util.now()) or os.time() end
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   if type(getEpoch) == "function" then
     local t = tonumber(getEpoch()) or os.time()
     if t > 20000000000 then t = t / 1000 end
@@ -139,7 +142,7 @@ end
 Yso.off.oc = Yso.off.oc or {}
 Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
   rotation = { "worm", "sycophant", "bubonis", "crone", "hound", "slime", "storm", "bloodleech", "firelord", "gremlin" },
-  kelp = { asthma = "bubonis", clumsiness = "storm", healthleech = "worm", sensitivity = "slime" },
+  kelp = { asthma = "bubonis", clumsiness = "storm", healthleech = "worm" },
 }
 
 Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
@@ -160,9 +163,7 @@ local function _mark(tbl_at, tbl_n, who)
   who = tostring(who or ""):gsub("^%s+",""):gsub("%s+$","")
   if who == "" then return end
   local k = who:lower()
-  local now = (type(getEpoch)=="function" and getEpoch()) or os.time()
-  if now > 20000000000 then now = now / 1000 end
-  tbl_at[k] = now
+  tbl_at[k] = _now()
   tbl_n[k]  = (tonumber(tbl_n[k] or 0) or 0) + 1
 end
 

@@ -17,7 +17,7 @@ local function _load_magi_peer(file_name)
   local info = debug.getinfo(1, "S")
   local source = info and info.source or ""
   if source:sub(1, 1) ~= "@" then return false end
-  local dir = source:match("^(.*)[/\\][^/\\]+$") or "."
+  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
   local path = dir .. "/" .. tostring(file_name or "")
   return pcall(dofile, path)
 end
@@ -793,12 +793,6 @@ local function _select_command(tgt)
     return diss, st, rejects, ""
   end
 
-  local postconv = _pick_postconv_action(st, rejects)
-  if postconv then
-    _set_route_stage(tgt, postconv.phase, postconv.subphase, postconv.bucket)
-    return postconv, st, rejects, ""
-  end
-
   _set_route_stage(tgt, "hold", "idle", "maintenance")
   return nil, st, rejects, "no_legal_action"
 end
@@ -1141,7 +1135,9 @@ function MF.on_payload_sent(payload)
     end
 
     if lc == "embed dissonance" then
-      local diss_tgt = _trim(MF.state.template and MF.state.template.last_target or _target())
+      local raw_tgt = MF.state.template and MF.state.template.last_target or ""
+      local diss_tgt = _trim(raw_tgt)
+      if diss_tgt == "" then diss_tgt = _trim(_target()) end
       if diss_tgt ~= "" then
         MF.state.last_sent_target = diss_tgt
         MF.state.last_sent_category = "dissonance_push"

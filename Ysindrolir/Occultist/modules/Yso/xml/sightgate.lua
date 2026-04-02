@@ -21,7 +21,7 @@ Yso.occ = Yso.occ or {}
 Yso.oc  = Yso.oc  or {}
 
 local Off = Yso.off.oc
-local Q   = Yso.queue
+local function _Q() return Yso and Yso.queue end
 
 Off.sg = Off.sg or {}
 local SG = Off.sg
@@ -94,6 +94,7 @@ local function _queue_eq_addclear(cmds)
   local qtype = (Off.qtype_eq or "eq")
   local piped = table.concat(out, (Yso and Yso.sep) or ";;")
 
+  local Q = _Q()
   if Q and type(Q.addclear) == "function" then
     Q.addclear(qtype, piped)
   else

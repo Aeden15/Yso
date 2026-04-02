@@ -4,7 +4,30 @@ Current workspace snapshot: April 2, 2026.
 
 ## Current fixes
 
-- **XML mirrors synced with canonical sources** — all bug fixes from the canonical Lua modules (Bugs 3, 6, 8, 10–13 + aurum bucket) are now applied to the Mudlet-facing XML mirror copies under `xml/`. Both canonical and XML surfaces match.
+- **Full workspace bug audit (Bugs 15–39)** — 25 new bugs found and fixed across canonical Lua, XML mirrors, standalone XML scripts, and `Yso system.xml`. All canonical-to-mirror pairs remain in sync. See `bug_audit_fixes.txt` for the complete technical log.
+- **Critical: Limb tracking event handler fixed** — `mudlet.lua` `registerAnonymousEventHandler` for `"limb hits updated"` was missing the leading `_event` parameter, shifting all arguments by one. The entire limb bridge was broken (name received the event string, limb received the player name, amount received the limb name, real amount was dropped).
+- **Critical: Entourage timestamp corrected** — `entourage_script.lua` divided `getEpoch()` by 1000, producing a 1970-era timestamp. Entity staleness checks always saw the entourage as stale. All three call sites fixed.
+- **High: `api.lua` scoping and normalization** — `Yso.pause_offense()` referenced `_now()` outside its `do...end` scope (always nil, fell through to integer `os.time()`). `_ak_now()` returned raw `getEpoch()` without ms-to-seconds normalization.
+- **High: Magi peer loader `@` prefix** — `_load_magi_peer()` in both `magi_group_damage.lua` and `magi_focus.lua` failed to strip the leading `@` from `debug.getinfo().source`, so `dofile` always received an invalid path.
+- **Medium: Wake bus emit result** — `pcall` status was confused with the emit return value; `_did_emit` was set even when nothing was actually emitted, causing the dispatch loop to break early.
+- **Medium: Duel challenge name extraction** — Patterns for `"you challenge"` and `"you accept"` used lowercase, but Achaea outputs `"You challenge"` / `"You accept"` with capital Y. Name extraction now uses `[Yy]ou`.
+- **Medium: Aeon entropy dead code** — Compel entropy block required `_bal_ready()` which was guaranteed false after the tarot path returned. Now correctly gates on `_eq_ready()` alone.
+- **Medium: Offense driver cleanup** — `_now()` now wraps `Yso.util.now()` with `pcall`; `sensitivity = "slime"` removed from kelp entity pool (slime applies paralysis); `_mark()` now uses `_now()` instead of inline `getEpoch()`.
+- **Medium: Entity affliction key fixed** — `offense_helpers.lua` used `"worms"` as the key for the worm entity's affliction; corrected to `"healthleech"`.
+- **Medium: Entity registry target override** — Lua `and`/`or` operator precedence silently ignored explicit `target_valid = false`; replaced with proper if/else.
+- **Medium: Hinder clock alignment** — `_now()` now tries `Yso.util.now()` first (with pcall) to match the clock source used by `H.collect()`.
+- **Medium: AK legacy wiring normalization** — `_akwire_now()` now applies `tonumber()` and the `> 20000000000` ms-to-seconds guard.
+- **Medium: Magi route core ternary** — `build_snapshot` `target_valid`/`eq_ready` replaced with explicit if/else to honor explicit `false`.
+- **Low: SightGate load-order fix** — `sightgate.lua` captured `Yso.queue` at load time; now resolves dynamically via `_Q()` so queue availability isn't locked to load order.
+- **Low: ProneController entity lane** — Chimera commands now queue under `"class"` (entity balance) instead of `"eq"` (equilibrium). Regress commands remain on `"eq"`.
+- **Low: Aura parser nil guard and cold-start** — `aura_parser.lua` now guards `affstrack` access and fills cold-start `else` branches for count=2 (score 50) and count=1 (score 33) instead of silently dropping.
+- **Low: Function list orphan** — `"Yso.target_flush_send_state"` was a bare string outside any subtable in `yso_list_of_functions.lua`; moved into `misc_clear_target`.
+- **Low: Magi magma category mismatch** — `magi_group_damage.lua` returned `"salve_pressure"` as the category for magma but set the stage to `"fire_build"`; category corrected to `"fire_build"`.
+- **Low: Magi vibes `_now()` normalization** — `magi_vibes.lua` was the only module missing the `> 20000000000` ms-to-seconds guard.
+- **Low: Magi focus dissonance fallback** — `embed dissonance` handler now properly falls back to `_target()` when `last_target` is empty string (truthy in Lua).
+- **Trivial: Dead postconv call removed** — Second `_pick_postconv_action` call in `magi_focus.lua` was unreachable.
+- **Trivial: `magi_reference.lua` `_res_now()`** — Replaced lookup for nonexistent global `_now` with standard `getEpoch()` + normalization.
+- **XML mirrors synced with canonical sources** — all bug fixes from the canonical Lua modules (Bugs 3, 6, 8, 10–13 + aurum bucket + Bugs 15–39) are now applied to the Mudlet-facing XML mirror copies under `xml/`. Both canonical and XML surfaces match.
 - **Escape button separator ownership fixed** — `yso_escape_button.lua` no longer initializes global `Yso.sep` to `";;"`; it now inherits `Yso.sep`/`Yso.cfg` and falls back to `"&&"` so load order cannot override the canonical pipe separator. Its `_now()` helper also normalizes millisecond `getEpoch()` values.
 - **Fool hunt logic hardened for Occultist** — Fool now resolves cureset via a fallback chain (`ActiveServerSet` -> `CurrentCureset` -> hunt mode hint), supports tendon-severity weighting from `ak.twoh.tendons` (exact count), and exposes `fool status` / `fool auto on|off` runtime controls.
 - Occultist offense is now fully alias-owned. Shared send memory lives in `offense_state.lua`, and the removed orchestrator is no longer part of the active offense path.

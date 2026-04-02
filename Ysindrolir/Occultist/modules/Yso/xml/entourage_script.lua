@@ -65,7 +65,7 @@ local function parse_entourage_block(block)
   Ent.current = present
 
   Ent.seen = true
-  Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()/1000) or os.time())
+  Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())
   if Yso then
     Yso.occ = Yso.occ or {}
     Yso.occ.entities_seen = true
@@ -130,7 +130,7 @@ Yso.dom._trig.no_entourage = tempRegexTrigger(
   function()
     Ent.current = {}
     Ent.seen = true
-    Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()/1000) or os.time())
+    Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())
     if Yso then
       Yso.occ = Yso.occ or {}
       Yso.occ.entities_seen = true
@@ -147,7 +147,7 @@ Yso.dom._trig.no_loyals = tempRegexTrigger(
   function()
     Ent.current = {}
     Ent.seen = true
-    Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()/1000) or os.time())
+    Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())
     if Yso then
       Yso.occ = Yso.occ or {}
       Yso.occ.entities_seen = true

@@ -7,12 +7,50 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
-  XML mirrors synced with canonical sources — all bug fixes from the canonical
-  Lua modules (Bugs 3, 6, 8, 10-13 + aurum bucket) are now applied to the
-  Mudlet-facing XML mirror copies under xml/. Both canonical and XML surfaces
-  match.
+  Full workspace bug audit (Bugs 15-39) -- 25 new bugs found and fixed across
+  canonical Lua, XML mirrors, standalone XML scripts, and Yso system.xml.
+  See bug_audit_fixes.txt for the complete technical log.
 
-  Escape button separator ownership fixed — yso_escape_button.lua no longer
+  Critical fixes:
+    - mudlet.lua limb-hits event handler was missing _event parameter;
+      all arguments were shifted by one, breaking the entire limb bridge.
+    - entourage_script.lua divided getEpoch() by 1000, producing a 1970-era
+      timestamp. Entity staleness checks always saw the entourage as stale.
+
+  High fixes:
+    - api.lua Yso.pause_offense() referenced _now() outside its scope.
+    - api.lua _ak_now() returned raw getEpoch() without ms normalization.
+    - Magi peer loader failed to strip @ prefix from debug.getinfo source.
+
+  Medium fixes:
+    - wake_bus pcall status confused with emit return value.
+    - Duel challenge name patterns used lowercase "you" (Achaea outputs "You").
+    - Aeon entropy compel path was dead code (required _bal_ready after return).
+    - offense_driver _now() lacked pcall; entity pool had wrong slime mapping;
+      _mark() used inline clock instead of _now().
+    - offense_helpers used "worms" key instead of "healthleech".
+    - entity_registry target_valid override silently ignored explicit false.
+    - hinder _now() clock source mismatched H.collect() clock.
+    - ak_legacy_wiring _akwire_now() returned raw getEpoch().
+    - magi_route_core build_snapshot ternary ignored explicit false.
+
+  Low fixes:
+    - sightgate captured Yso.queue at load time (nil if queue loads later).
+    - pronecontroller chimera commands queued under eq instead of entity lane.
+    - aura_parser unguarded affstrack access; empty else on cold-start.
+    - yso_list_of_functions orphaned string outside any subtable.
+    - magi_group_damage magma category/stage mismatch.
+    - magi_vibes _now() missing ms normalization.
+    - magi_focus embed dissonance fallback failed on empty last_target.
+
+  Trivial: dead postconv call removed; magi_reference _res_now() fixed.
+
+  XML mirrors synced with canonical sources -- all bug fixes from the canonical
+  Lua modules (Bugs 3, 6, 8, 10-13 + aurum bucket + Bugs 15-39) are now
+  applied to the Mudlet-facing XML mirror copies under xml/. Both canonical
+  and XML surfaces match.
+
+  Escape button separator ownership fixed -- yso_escape_button.lua no longer
   initializes global Yso.sep to ";;". It now inherits Yso.sep/Yso.cfg and
   falls back to "&&", so load order cannot override the canonical separator.
   Its _now() helper also normalizes millisecond getEpoch() values.

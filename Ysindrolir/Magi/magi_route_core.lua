@@ -245,11 +245,15 @@ end
 function RC.build_snapshot(opts)
   opts = type(opts) == "table" and opts or {}
   local target = RC.trim(opts.target or RC.get_target())
+  local tv = opts.target_valid
+  if tv == nil then tv = RC.target_valid(target) end
+  local eq = opts.eq_ready
+  if eq == nil then eq = RC.eq_ready() end
   local out = {
     target = target,
     room_id = tostring(opts.room_id or RC.room_id() or ""),
-    target_valid = (opts.target_valid ~= nil) and (opts.target_valid == true) or RC.target_valid(target),
-    eq_ready = (opts.eq_ready ~= nil) and (opts.eq_ready == true) or RC.eq_ready(),
+    target_valid = tv,
+    eq_ready = eq,
     raw = {},
     pending = {},
     res = RC.read_resonance(),

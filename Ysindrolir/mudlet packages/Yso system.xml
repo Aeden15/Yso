@@ -1918,7 +1918,7 @@ if Yso and type(Yso.dom) == "table" and type(Yso.dom.ents) == "table" then
   local Ent = Yso.dom.ents
   Ent.current = {}
   Ent.seen = true
-  Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()/1000) or os.time())
+  Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())
   Yso.occ = Yso.occ or {}
   Yso.occ.entities_seen = true
   Yso.occ.entities_present = Ent.current
@@ -6844,9 +6844,9 @@ local function _emit(payload, opts)
   end
   -- Fallback: route to raw queue emitter.
   if Yso.queue and type(Yso.queue.emit)==&quot;function&quot; then
-    local ok = pcall(Yso.queue.emit, payload)
-    if ok then P.state._did_emit = true end
-    return ok
+    local ok, result = pcall(Yso.queue.emit, payload)
+    if ok and result then P.state._did_emit = true end
+    return ok and result
   end
   return false
 end
@@ -15722,7 +15722,7 @@ end
 Yso.off.oc = Yso.off.oc or {}
 Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
   rotation = { &quot;worm&quot;, &quot;sycophant&quot;, &quot;bubonis&quot;, &quot;crone&quot;, &quot;hound&quot;, &quot;slime&quot;, &quot;storm&quot;, &quot;bloodleech&quot;, &quot;firelord&quot;, &quot;gremlin&quot; },
-  kelp = { asthma = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;, healthleech = &quot;worm&quot;, sensitivity = &quot;slime&quot; },
+  kelp = { asthma = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;, healthleech = &quot;worm&quot; },
 }
 
 Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
@@ -15743,9 +15743,7 @@ local function _mark(tbl_at, tbl_n, who)
   who = tostring(who or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)
   if who == &quot;&quot; then return end
   local k = who:lower()
-  local now = (type(getEpoch)==&quot;function&quot; and getEpoch()) or os.time()
-  if now &gt; 20000000000 then now = now / 1000 end
-  tbl_at[k] = now
+  tbl_at[k] = _now()
   tbl_n[k]  = (tonumber(tbl_n[k] or 0) or 0) + 1
 end
 
@@ -18218,7 +18216,11 @@ Yso.offense = Yso.offense or {}
 Yso.state = Yso.state or {}
 
 local function _now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 
@@ -18300,7 +18302,7 @@ Yso.ent_affs = {
     anorexia       = &quot;firelord&quot;,    -- *needs manaleech
     addiction      = &quot;humbug&quot;,
     haemophilia    = &quot;bloodleech&quot;,
-    worms          = &quot;worm&quot;,
+    healthleech    = &quot;worm&quot;,
     clumsiness     = &quot;storm&quot;,
     asthma         = &quot;bubonis&quot;,
     slickness      = &quot;bubonis&quot;,     -- *needs asthma
@@ -20434,11 +20436,11 @@ end
 local function _extract_name_near_you(s)
   local a = s:match(&quot;([A-Z][%w_%-&apos;]+) challenges you&quot;)
   if a then return a end
-  local b = s:match(&quot;you challenge ([A-Z][%w_%-&apos;]+)&quot;)
+  local b = s:match(&quot;[Yy]ou challenge ([A-Z][%w_%-&apos;]+)&quot;)
   if b then return b end
   local c = s:match(&quot;([A-Z][%w_%-&apos;]+) accepts your&quot;)
   if c then return c end
-  local d = s:match(&quot;you accept ([A-Z][%w_%-&apos;]+)&apos;s&quot;)
+  local d = s:match(&quot;[Yy]ou accept ([A-Z][%w_%-&apos;]+)&apos;s&quot;)
   if d then return d end
   return nil
 end
@@ -23826,7 +23828,7 @@ local function parse_entourage_block(block)
   Ent.current = present
 
   Ent.seen = true
-  Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()/1000) or os.time())
+  Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
   if Yso then
     Yso.occ = Yso.occ or {}
     Yso.occ.entities_seen = true
@@ -23891,7 +23893,7 @@ Yso.dom._trig.no_entourage = tempRegexTrigger(
   function()
     Ent.current = {}
     Ent.seen = true
-    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()/1000) or os.time())
+    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
     if Yso then
       Yso.occ = Yso.occ or {}
       Yso.occ.entities_seen = true
@@ -23908,7 +23910,7 @@ Yso.dom._trig.no_loyals = tempRegexTrigger(
   function()
     Ent.current = {}
     Ent.seen = true
-    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()/1000) or os.time())
+    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
     if Yso then
       Yso.occ = Yso.occ or {}
       Yso.occ.entities_seen = true
@@ -25354,7 +25356,12 @@ function ER.rank(ctx)
   local need = ctx.need or {}
   local has_aff = type(ctx.has_aff) == &quot;function&quot; and ctx.has_aff or function() return false end
   local ent_ready = _ent_ready(ctx)
-  local target_valid = (ctx.target_valid ~= nil) and (ctx.target_valid == true) or _target_valid(tgt)
+  local target_valid
+  if ctx.target_valid ~= nil then
+    target_valid = (ctx.target_valid == true)
+  else
+    target_valid = _target_valid(tgt)
+  end
   local ranked, skipped = {}, {}
   local now = _now()
 

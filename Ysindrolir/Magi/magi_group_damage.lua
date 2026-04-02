@@ -24,7 +24,7 @@ local function _load_magi_peer(file_name)
   local info = debug.getinfo(1, "S")
   local source = info and info.source or ""
   if source:sub(1, 1) ~= "@" then return false end
-  local dir = source:match("^(.*)[/\\][^/\\]+$") or "."
+  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
   local path = dir .. "/" .. tostring(file_name or "")
   local ok = pcall(dofile, path)
   return ok
@@ -742,7 +742,7 @@ local function _select_command(tgt)
     local ok, _, cmd = _can_cast_magma(tgt)
     if ok then
       _set_branch_stage(tgt, "fire_build")
-      return cmd, "salve_pressure", st, "scalded_missing"
+      return cmd, "fire_build", st, "scalded_missing"
     end
   end
 

@@ -392,7 +392,7 @@ local function _register_limb_hits_updated()
   if type(registerAnonymousEventHandler) ~= "function" then return end
 
   _kill_eh(M._eh.limb_hits_updated)
-  M._eh.limb_hits_updated = registerAnonymousEventHandler("limb hits updated", function(name, limb, amount)
+  M._eh.limb_hits_updated = registerAnonymousEventHandler("limb hits updated", function(_event, name, limb, amount)
     if type(name) ~= "string" then return end
     limb = tostring(limb or "")
     if limb == "" or limb:lower() == "all" then return end

@@ -62,7 +62,11 @@ V.state = V.state or {
 }
 
 local function _now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == "function" then
+    local v = tonumber(getEpoch()) or os.time()
+    if v > 20000000000 then v = v / 1000 end
+    return v
+  end
   return os.time()
 end
 

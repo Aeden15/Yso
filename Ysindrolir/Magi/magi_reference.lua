@@ -52,10 +52,10 @@ M.resonance.single_line_pat = [[^You are now (%a+) resonant with the Elemental P
 M.resonance.dual_line_pat = [[^You are now (%a+) resonant with the Elemental Planes of (%a+) and (%a+)%.$]]
 
 local function _res_now()
-  local nowf = rawget(_G, "_now")
-  if type(nowf) == "function" then
-    local ok, v = pcall(nowf)
-    if ok and tonumber(v) then return tonumber(v) end
+  if type(getEpoch) == "function" then
+    local v = tonumber(getEpoch()) or os.time()
+    if v > 20000000000 then v = v / 1000 end
+    return v
   end
   return os.time()
 end
