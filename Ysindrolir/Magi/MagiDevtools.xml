@@ -12,7 +12,7 @@
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>yhelp</name>
-				<script>cecho("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|bloodboil snap|fire|debug|auto|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
+				<script>cecho("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|bloodboil snap|fire|debug|auto|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par|focus&gt; | yrshow [aff|dam|par|focus] [full]\n")</script>
 				<command />
 				<packageName />
 				<regex>^yhelp$</regex>
@@ -194,7 +194,7 @@ local args = matches[2] or ""
 local toks = {}
 for w in args:gmatch("%S+") do toks[#toks+1] = w:lower() end
 if #toks == 0 then
-  cecho("&lt;CadetBlue&gt;[MagiDevtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par&gt;\n")
+  cecho("&lt;CadetBlue&gt;[MagiDevtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par|focus&gt;\n")
 elseif #toks == 1 then
   RD.debug_toggle(toks[1])
 else
@@ -1147,6 +1147,7 @@ RD.routes = {
     return off and off.oc and off.oc.group_damage
   end,
   par  = function() return Yso.off and Yso.off.oc and Yso.off.oc.party_aff end,
+  focus = function() return Yso.off and Yso.off.magi and Yso.off.magi.focus end,
 }
 RD.aliases = RD.aliases or {}
 
@@ -1182,7 +1183,7 @@ end
 function RD.debug_toggle(route, on_off)
   route = tostring(route or ""):lower()
   if route == "" or route == "on" or route == "off" then
-    _tprint("usage: yrdebug [on|off] [aff|dam|par]")
+    _tprint("usage: yrdebug [on|off] [aff|dam|par|focus]")
     return
   end
   local mod = _route_mod(route)
@@ -1237,21 +1238,33 @@ function RD.debug_toggle(route, on_off)
 end
 
 function RD.show(route)
-  route = tostring(route or ""):lower()
-  if route == "" then
-    for k, _ in pairs(RD.routes) do
-      RD.show(k)
+  local args = tostring(route or ""):lower()
+  local toks = {}
+  for w in args:gmatch("%S+") do toks[#toks + 1] = w end
+  local name = toks[1] or ""
+  local full = false
+  for i = 2, #toks do
+    if toks[i] == "full" then
+      full = true
     end
+  end
+
+  if name == "" then
+    RD.show("aff")
+    RD.show("dam")
+    RD.show("par")
+    RD.show("focus")
     return
   end
-  local mod = _route_mod(route)
-  local ex = _route_explain(route)
+
+  local mod = _route_mod(name)
+  local ex = _route_explain(name)
   if not ex then
-    local st = _route_state(route)
+    local st = _route_state(name)
     if st then
-      _tprint(route .. " state.enabled=" .. tostring(st.enabled) .. " loop=" .. tostring(st.loop_enabled))
+      _tprint(name .. " state.enabled=" .. tostring(st.enabled) .. " loop=" .. tostring(st.loop_enabled))
     else
-      _tprint(route .. ": no data")
+      _tprint(name .. ": no data")
     end
     return
   end
@@ -1260,6 +1273,17 @@ function RD.show(route)
     if v == nil then return "-" end
     local t = tostring(v)
     return (t == "" and "-") or t
+  end
+  local function _rejects(v)
+    if type(v) ~= "table" or #v == 0 then return "-" end
+    local out = {}
+    for i = 1, #v do
+      local row = v[i]
+      if type(row) == "table" then
+        out[#out + 1] = string.format("%s:%s", _s(row.decision), _s(row.reason))
+      end
+    end
+    return (#out > 0) and table.concat(out, ", ") or "-"
   end
 
   local planned = type(ex.planned) == "table" and ex.planned or {}
@@ -1270,11 +1294,11 @@ function RD.show(route)
   local debug_enabled = ((type(mod) == "table" and type(mod.debug) == "table" and mod.debug.enabled == true) or ex.debug == true)
 
   _tprint(string.format("%s | target=%s active=%s debug=%s",
-    route, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(debug_enabled)))
+    name, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(debug_enabled)))
   _tprint(string.format(" plan | eq=%s class=%s bal=%s free=%s",
     _s(planned.eq), _s(planned.class), _s(planned.bal), _s(planned.free)))
 
-  if route == "aff" then
+  if name == "aff" then
     _tprint(string.format(" aff  | stage=%s next=%s blocker=%s focus=%s mana=%s",
       _s(finish.stage), _s(finish.next_action), _s(finish.blocker), _s(ex.focus_lock_count), _s(ex.mana_pct)))
     _tprint(string.format(" wait | active=%s lane=%s age=%.2f q=%s",
@@ -1283,7 +1307,7 @@ function RD.show(route)
       _b(para.allowed == true), _s(para.lane), _s(para.predicted_next_cure), tonumber(para.confidence or 0) or 0, _s(para.block_reason)))
     _tprint(string.format(" bm   | state=%s branch=%s/%s passive=%s",
       _s(bm.state), _b(ex.bm_branch_active == true), _b(ex.bm_branch_provisional == true), _b(bm.passive_allowed == true)))
-  elseif route == "dam" then
+  elseif name == "dam" then
     local st = type(ex.state) == "table" and ex.state or {}
     local raw = type(st.raw) == "table" and st.raw or {}
     local pend = type(st.pending) == "table" and st.pending or {}
@@ -1294,9 +1318,52 @@ function RD.show(route)
     _tprint(string.format(" res  | water=%s(%s) fire=%s(%s) pend h/f/m=%s/%s/%s",
       _s(st.water_res), _b(st.water_res_major == true), _s(st.fire_res), _b(st.fire_res_major == true),
       _b(pend.horripilation == true), _b(pend.freeze == true), _b(pend.magma == true)))
-  elseif route == "par" then
+  elseif name == "par" then
     _tprint(string.format(" par  | need=%s mana=%s lock=%s",
       _s(ex.need_aff), _s(ex.mana_pct), _b(ex.lock_ready == true)))
+  elseif name == "focus" then
+    local st = type(ex.state) == "table" and ex.state or {}
+    local res = type(ex.resonance) == "table" and ex.resonance or {}
+    local diss = type(ex.dissonance) == "table" and ex.dissonance or {}
+    local pressure = type(ex.pressure) == "table" and ex.pressure or {}
+    local fulm = type(ex.fulminate) == "table" and ex.fulminate or {}
+    local conv = type(ex.convergence) == "table" and ex.convergence or {}
+    local destroy = type(ex.destroy) == "table" and ex.destroy or {}
+    _tprint(string.format(" focus | active=%s postconv=%s stage=%s decision=%s",
+      _b(ex.active == true), _b(ex.postconv == true), _s(ex.stage), _s(ex.decision)))
+    _tprint(string.format(" why  | reason=%s blocker=%s",
+      _s(ex.reason), _s(ex.blocker)))
+    _tprint(string.format(" res  | air=%s earth=%s fire=%s water=%s miss=%s",
+      _s(res.air), _s(res.earth), _s(res.fire), _s(res.water), _s(res.missing_moderate)))
+    _tprint(string.format(" diss | stage=%s conf=%s evidence=%s",
+      _s(diss.stage), _s(diss.confidence), _s(diss.last_evidence)))
+    _tprint(string.format(" press| kelp=%s rule=%s",
+      _s(pressure.kelpscore), _s(pressure.threshold_rule)))
+    _tprint(string.format(" fulm | focus=%s epilepsy=%s para_conv=%s",
+      _b(fulm.focus_punish_armed == true), _b(fulm.epilepsy_live == true), _b(fulm.para_conversion_ready == true)))
+    _tprint(string.format(" conv | ready=%s blocker=%s next=%s",
+      _b(conv.conv_ready == true), _s(conv.conv_blocker), _s(conv.next_gate)))
+    _tprint(string.format(" dest | ready=%s blocker=%s confl=%s hp=%s",
+      _b(destroy.destroy_ready == true), _s(destroy.destroy_blocker), _b(destroy.conflagration == true), _s(destroy.hp_window)))
+    _tprint(string.format(" rej  | chosen=%s rejects=%s",
+      _s(ex.decision), _rejects(ex.rejects)))
+    if full then
+      local pending = type(ex.pending) == "table" and ex.pending or {}
+      _tprint(string.format(" full | phase=%s subphase=%s bucket=%s target=%s",
+        _s(ex.phase), _s(ex.subphase), _s(ex.bucket), _s(ex.target)))
+      _tprint(string.format(" gate | threshold=%s next=%s conv_blocker=%s destroy_blocker=%s",
+        _s(ex.threshold_rule), _s(conv.next_gate), _s(conv.conv_blocker), _s(destroy.destroy_blocker)))
+      _tprint(string.format(" pend | horr=%s freeze=%s bomb=%s fulm=%s diss=%s conv=%s dest=%s",
+        _b(pending.horripilation == true), _b(pending.freeze == true), _b(pending.bombard == true),
+        _b(pending.fulminate == true), _b(pending.dissonance == true), _b(pending.convergence == true),
+        _b(pending.destroy == true)))
+      _tprint(string.format(" last | cmd=%s sent=%s last_reason=%s",
+        _s(ex.last_cmd), _s(ex.last_sent_cmd), _s(ex.last_reason)))
+      if type(st.route) == "table" then
+        _tprint(string.format(" flow | route_phase=%s/%s/%s postconv=%s",
+          _s(st.route.phase), _s(st.route.subphase), _s(st.route.bucket), _b(st.route.postconv == true)))
+      end
+    end
   end
 end
 </script>

@@ -16,6 +16,7 @@ Current workspace snapshot: March 29, 2026.
 - Split devtools now expose class-local self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
 - `team dam` remains class-sensitive: Occultist keeps the existing group-damage route, while Magi now runs a freeze-first mixed route that opens with horripilation, forces an initial freeze step on fresh targets, keeps glaciate/windows on the water side, and branches into `magma` / `firelash` / `conflagrate` / fire emanation once `frozen` or `frostbite` is established.
+- Magi routes now share a Magi-only chassis helper at `Yso.off.magi.route_core`, and Magi combat now includes a duel `focus` route that builds four-element moderate resonance plus Dissonance pressure into `convergence`, then overlays `destroy` / Fulminate / burst maintenance.
 
 ## What is here
 
@@ -23,6 +24,7 @@ Current workspace snapshot: March 29, 2026.
 - Occultist combat routes including `occ_aff_burst`, `group_damage`, `party_aff`, and the shared `parry` module.
 - XML mirror scripts and Mudlet package files used to keep the live package aligned with the disk workspace.
 - Supporting Magi files that live in the same broader suite.
+- Magi-only route helpers and duel-route state such as `magi_route_core.lua`, `magi_dissonance.lua`, and `magi_focus.lua`.
 
 ## Repository layout
 
@@ -123,6 +125,7 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - The Occultist stack is the primary active development target.
 - Magi files are present, but they are a smaller secondary track right now.
 - Magi team damage now resets fresh targets through `horripilation -> freeze baseline -> branch reconsideration`, keeps `glaciate` gated on live `frozen`, and uses AK `scalded` / `aflame` / `conflagrate` state plus Yso fire-water resonance to mix salve pressure once `frozen` or `frostbite` is established.
+- Magi combat also now has a direct `focus` route toggle that stays in the existing route family/debug flow, uses live Magi resonance plus Magi-local Dissonance tracking, reopens `freeze` when `frozen` or `frostbite` drops, revisits `bombard`, and converts immediately into `convergence` once all four elements are moderate and Dissonance reaches stage 4.
 - AK scalded handling in this workspace now assumes 20s instead of 17s for the current Magi paths.
 - The packaged `Djinn present` trigger now immediately marks `Yso.elemental_lev_ready = true` so levitate readiness matches the live summoned elemental state.
 - Crystalism resonance notices now echo in the package `Yso Triggers -> Magi -> Crystalism` folder, and `energise` also exposes a separate consumable Crystalism state for personal aliases without reusing the heal-burst `Yso.magi.energy` flag.

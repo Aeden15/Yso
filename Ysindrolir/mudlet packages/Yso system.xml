@@ -2589,7 +2589,10 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Crystal vibration focus</name>
-						<script>cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Crystal vibration focused on this location.)\n")</script>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_focus) == "function" then
+  pcall(Yso.magi.crystalism.note_focus)
+end
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Crystal vibration focused on this location.)\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2634,6 +2637,9 @@ cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Lullaby resonating with %s.
 						<name>Dissonance resonance</name>
 						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
   pcall(Yso.magi.crystalism.note_resonance, "dissonance", matches[2])
+end
+if Yso and Yso.magi and Yso.magi.dissonance and type(Yso.magi.dissonance.note) == "function" then
+  pcall(Yso.magi.dissonance.note, matches[2], "resonance", { confidence = "medium", evidence = "dissonance_resonance" })
 end
 cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Dissonance resonating with %s.)\n"):format(matches[2]))</script>
 						<triggerType>0</triggerType>
@@ -3253,6 +3259,35 @@ end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^cleanse\s*(.*)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Focus automation</name>
+						<script>Yso = Yso or {}
+local mode = Yso.mode or nil
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
+  end
+end
+
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if type(cecho) == "function" then
+    cecho("[YSO] focus loop controller unavailable.\n")
+  end
+  return
+end
+
+local ok, err = pcall(mode.toggle_route_loop, "focus", "alias")
+if not ok and type(cecho) == "function" then
+  cecho(string.format("[YSO] focus alias failed: %s\n", tostring(err)))
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^focus$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Readaura</name>
@@ -4776,6 +4811,10 @@ do
       local GD = (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.group_damage or Yso.off.oc.dmg)) or nil
       if GD and type(GD.on_payload_sent) == &quot;function&quot; then
         pcall(GD.on_payload_sent, payload)
+      end
+      local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
+      if MGD and type(MGD.on_payload_sent) == &quot;function&quot; then
+        pcall(MGD.on_payload_sent, payload)
       end
 
     end
@@ -9940,7 +9979,7 @@ end
 
 local function _echo(msg)
   if not GD.cfg.echo then return end
-  local line = string.format(&quot;&lt;orange&gt;[Yso:GD] &lt;reset&gt;%s&quot;, tostring(msg))
+  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;reset&gt;%s&quot;, tostring(msg))
   if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
     Yso.util.cecho_line(line)
   elseif type(cecho) == &quot;function&quot; then
@@ -19552,14 +19591,8 @@ local function _party_apply(reason)
     desired_owned = false
   end
 
-  local route_name = tostring(desired.party_route or route)
-  local label = (route_name == &quot;dam&quot; and &quot;group damage&quot;)
-    or (route_name == &quot;aff&quot; and &quot;party affliction&quot;)
-    or tostring(desired.description or desired.id or route_name)
-  local state_label = enabled and &quot;ON&quot;
-    or ((is_alias_owned and desired_owned) and &quot;arming&quot;
-    or (is_alias_owned and &quot;manual&quot; or &quot;requested&quot;))
-  _echo(string.format(&quot;Party route &lt;yellow&gt;%s&lt;reset&gt;: %s %s&quot;, route_name, label, state_label))
+  -- Shared status echo lives in M.echo() so a single action does not stack
+  -- a generic route line on top of the class-owned loop line.
 end
 
 function M.is_bash()   return M.state == &quot;bash&quot; end
@@ -19951,7 +19984,7 @@ function M.set_party_route(route, reason)
   local old = M.party_route()
   if old == route then
     if M.party then M.party.last_reason = reason or M.party.last_reason end
-    if M.is_party() then M.echo() end
+    _party_apply(&quot;route_noop&quot;)
     return true
   end
 
@@ -20003,7 +20036,6 @@ function M.set(mode, reason)
   if old == mode then
     M.last_reason = reason or M.last_reason
     if mode == &quot;party&quot; then _party_apply(&quot;mode_noop&quot;) end
-    M.echo()
     return true
   end
 

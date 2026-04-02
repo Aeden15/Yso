@@ -155,8 +155,11 @@ do
   end
 end
 
+safe_require("magi_route_core")
 safe_require("magi_reference")
+safe_require("magi_dissonance")
 safe_require("magi_group_damage")
+safe_require("magi_focus")
 
 local function _report_boot_status()
   local failures = Yso._entry_failures or {}

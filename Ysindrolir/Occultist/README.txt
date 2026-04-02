@@ -76,6 +76,10 @@ Active routes
                     chimera + moon pressure, then cleanseaura -> speed strip -> utter truename
                     tarot-first rule: if bal is ready before entity, emit tarot-only this tick
 
+  route_registry.lua also now carries class-scoped Magi routes such as:
+    focus            - Magi duel convergence route (combat mode, Magi only)
+    magi_group_damage - Magi team damage route (team dam, Magi only)
+
 Mode-to-route mapping:
   combat          -> occ_aff_burst
   team dam        -> group_damage
@@ -169,6 +173,7 @@ Aliases
 -------
   ^aff$         - toggle the duel affliction loop (occ_aff_burst)
   ^dam$         - toggle the group damage loop
+  ^focus$       - toggle the Magi duel focus route when playing Magi
   ^hunt$        - switch to bash mode without a noop entourage reset
   ^bash$        - same as hunt
   ^mbash$       - switch to bash mode

@@ -20,6 +20,38 @@ local MGD = Yso.off.magi.group_damage
 Yso.off.magi.dmg = MGD
 MGD.alias_owned = true
 
+local function _load_magi_peer(file_name)
+  local info = debug.getinfo(1, "S")
+  local source = info and info.source or ""
+  if source:sub(1, 1) ~= "@" then return false end
+  local dir = source:match("^(.*)[/\\][^/\\]+$") or "."
+  local path = dir .. "/" .. tostring(file_name or "")
+  local ok = pcall(dofile, path)
+  return ok
+end
+
+local RC = Yso.off.magi.route_core
+if type(RC) ~= "table" and type(require) == "function" then
+  pcall(require, "magi_route_core")
+  RC = Yso.off.magi.route_core
+end
+if type(RC) ~= "table" and _load_magi_peer("magi_route_core.lua") then
+  RC = Yso.off.magi.route_core
+end
+assert(type(RC) == "table", "Yso.off.magi.route_core unavailable")
+
+local PENDING_SLOTS = {
+  "horripilation",
+  "freeze",
+  "mudslide",
+  "emanation_water",
+  "magma",
+  "firelash",
+  "conflagrate",
+  "emanation_fire",
+  "glaciate",
+}
+
 MGD.route_contract = MGD.route_contract or {
   id = "magi_group_damage",
   interface_version = 1,
@@ -135,30 +167,19 @@ MGD.state = MGD.state or {
 }
 
 local function _trim(s)
-  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+  return RC.trim(s)
 end
 
 local function _lc(s)
-  return _trim(s):lower()
+  return RC.lc(s)
 end
 
 local function _same_target(a, b)
-  a = _lc(a)
-  b = _lc(b)
-  return a ~= "" and a == b
+  return RC.same_target(a, b)
 end
 
 local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == "function" then
-    local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  if type(getEpoch) == "function" then
-    local v = tonumber(getEpoch()) or os.time()
-    if v > 20000000000 then v = v / 1000 end
-    return v
-  end
-  return os.time()
+  return RC.now()
 end
 
 local function _echo(msg)
@@ -207,53 +228,19 @@ local function _is_magi()
 end
 
 local function _target()
-  if type(Yso.get_target) == "function" then
-    local ok, v = pcall(Yso.get_target)
-    if ok and _trim(v) ~= "" then return _trim(v) end
-  end
-
-  local cur = rawget(_G, "target")
-  if type(cur) == "string" and _trim(cur) ~= "" then return _trim(cur) end
-
-  local ak = rawget(_G, "ak")
-  if type(ak) == "table" then
-    if type(ak.target) == "string" and _trim(ak.target) ~= "" then return _trim(ak.target) end
-    if type(ak.tgt) == "string" and _trim(ak.tgt) ~= "" then return _trim(ak.tgt) end
-  end
-
-  return ""
+  return RC.get_target()
 end
 
 local function _room_id()
-  local g = rawget(_G, "gmcp")
-  local info = g and g.Room and g.Room.Info
-  if info and info.num ~= nil then return tostring(info.num) end
-  if info and info.id ~= nil then return tostring(info.id) end
-  return ""
+  return RC.room_id()
 end
 
 local function _tgt_valid(tgt)
-  tgt = _trim(tgt)
-  if tgt == "" then return false end
-  if type(Yso.target_is_valid) == "function" then
-    local ok, v = pcall(Yso.target_is_valid, tgt)
-    if ok then return v == true end
-  end
-  return true
+  return RC.target_valid(tgt)
 end
 
 local function _eq_ready()
-  if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
-    local ok, v = pcall(Yso.locks.eq_ready)
-    if ok then return v == true end
-  end
-  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
-    local ok, v = pcall(Yso.state.eq_ready)
-    if ok then return v == true end
-  end
-
-  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
-  return tostring(v.eq or v.equilibrium or "") == "1" or (v.eq == true or v.equilibrium == true)
+  return RC.eq_ready()
 end
 
 local function _party_damage_context_active()
@@ -300,55 +287,18 @@ local function _set_loop_enabled(on)
 end
 
 local function _score_aff(aff)
-  aff = _lc(aff)
-  if aff == "" then return 0 end
-
-  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
-    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-
-  local A = rawget(_G, "affstrack")
-  if type(A) == "table" and type(A.score) == "table" then
-    local row = A.score[aff]
-    if type(row) == "number" then
-      return tonumber(row) or 0
-    end
-    if type(row) == "table" then
-      return tonumber(row.current or row.score or row.value or 0) or 0
-    end
-  end
-
-  if Yso and Yso.ak and type(Yso.ak.has) == "function" then
-    local ok, v = pcall(Yso.ak.has, aff)
-    if ok and v == true then return 100 end
-  end
-
-  return 0
+  return RC.score_aff(aff)
 end
 
 local function _score_positive(aff)
-  return _score_aff(aff) > 0
+  return RC.has_aff(aff)
 end
 
 local function _res_actual(element)
+  local res = RC.read_resonance()
   element = _lc(element)
   if element == "" then return 0, false end
-
-  local R = Yso and Yso.magi and Yso.magi.resonance or nil
-  local synced = false
-  if type(R) == "table" and type(R.sync_from_ak) == "function" then
-    local ok, synced_ok = pcall(R.sync_from_ak)
-    if ok then synced = (synced_ok == true) end
-  end
-  if type(R) == "table" and type(R.get) == "function" then
-    local ok, v = pcall(R.get, element)
-    if ok then return tonumber(v) or 0, synced end
-  end
-  if type(R) == "table" and type(R.state) == "table" then
-    return tonumber(R.state[element] or 0) or 0, synced
-  end
-  return 0, synced
+  return tonumber(res[element] or 0) or 0, res.synced == true
 end
 
 local function _res_major(element)
@@ -453,55 +403,39 @@ local function _refresh_cold_state(tgt, frozen, frostbite)
 end
 
 local function _pending_slot(name)
-  MGD.state.pending = MGD.state.pending or {}
-  MGD.state.pending[name] = MGD.state.pending[name] or { target = "", until_t = 0 }
-  return MGD.state.pending[name]
+  return RC.pending_slot(MGD.state, name)
 end
 
 local function _clear_pending(name)
-  local slot = _pending_slot(name)
-  slot.target = ""
-  slot.until_t = 0
+  return RC.clear_pending(MGD.state, name)
 end
 
 local function _clear_pending_all()
-  _clear_pending("horripilation")
-  _clear_pending("freeze")
-  _clear_pending("mudslide")
-  _clear_pending("emanation_water")
-  _clear_pending("magma")
-  _clear_pending("firelash")
-  _clear_pending("conflagrate")
-  _clear_pending("emanation_fire")
-  _clear_pending("glaciate")
+  return RC.clear_pending_all(MGD.state, PENDING_SLOTS)
 end
 
 local function _mark_pending(name, tgt, seconds)
-  local slot = _pending_slot(name)
-  slot.target = _trim(tgt)
-  slot.until_t = _now() + (tonumber(seconds) or 0)
+  return RC.mark_pending(MGD.state, name, tgt, seconds)
 end
 
 local function _pending_active(name, tgt)
-  local slot = _pending_slot(name)
-  return _same_target(slot.target, tgt) and _now() < (tonumber(slot.until_t) or 0)
+  return RC.pending_active(MGD.state, name, tgt)
 end
 
 local function _same_target_repeat(cmd, tgt)
-  local state = MGD.state or {}
-  if not _same_target(state.last_sent_target or "", tgt) then return false end
-  if _lc(state.last_sent_cmd or "") ~= _lc(cmd or "") then return false end
-  local dt = _now() - (tonumber(state.last_sent_at) or 0)
-  return dt >= 0 and dt < (tonumber(MGD.cfg.same_target_repeat_s) or 0.75)
+  return RC.same_target_repeat(MGD.state, cmd, tgt, MGD.cfg.same_target_repeat_s)
 end
 
 local function _spell_guard(slot_name, tgt, cmd)
-  if _trim(tgt) == "" then return false, "no_target" end
-  if not _tgt_valid(tgt) then return false, "invalid_target" end
-  if not _eq_ready() then return false, "eq_down" end
-  if _pending_active(slot_name, tgt) then return false, slot_name .. "_pending" end
-  if _same_target_repeat(cmd, tgt) then return false, slot_name .. "_repeat" end
-  return true, ""
+  return RC.guard_spell({
+    state = MGD.state,
+    cfg = MGD.cfg,
+    slot = slot_name,
+    target = tgt,
+    cmd = cmd,
+    target_valid = _tgt_valid(tgt),
+    eq_ready = _eq_ready(),
+  })
 end
 
 local function _has_waterbonds(tgt)
@@ -600,17 +534,34 @@ local function _can_cast_fire_emanation(tgt)
 end
 
 local function _effective_state(tgt)
-  local frozen = _score_positive("frozen")
-  local frostbite = _score_positive("frostbite")
-  local slick_actual = _score_positive("slickness")
-  local disrupt_actual = _score_positive("disrupt")
-  local waterbonds_actual = _score_positive("waterbonds")
-  local scalded_actual = _score_positive("scalded")
-  local conflagrate = _has_conflagrate()
+  local base = RC.build_snapshot({
+    state = MGD.state,
+    target = tgt,
+    affs = {
+      "waterbonds",
+      "frozen",
+      "frostbite",
+      "slickness",
+      "disrupt",
+      "scalded",
+      "conflagrate",
+      "aflame",
+    },
+    pending_slots = PENDING_SLOTS,
+  })
+  local frozen = base.frozen == true
+  local frostbite = base.frostbite == true
+  local slick_actual = base.slickness == true
+  local disrupt_actual = base.disrupt == true
+  local waterbonds_actual = base.waterbonds == true
+  local scalded_actual = base.scalded == true
+  local conflagrate = base.conflagrate == true
   local ablaze = _has_ablaze()
-  local aflame = _score_aff("aflame")
-  local water_major, water_res, water_synced = _water_res_major()
-  local fire_major, fire_res, fire_synced = _fire_res_major()
+  local aflame = tonumber(base.raw.aflame or 0) or 0
+  local water_res = tonumber(base.res.water or 0) or 0
+  local fire_res = tonumber(base.res.fire or 0) or 0
+  local water_major = base.res.water_major == true
+  local fire_major = base.res.fire_major == true
   local cold = _refresh_cold_state(tgt, frozen, frostbite)
   local _, route = _ensure_context(tgt)
 
@@ -642,7 +593,7 @@ local function _effective_state(tgt)
     water_res_major = water_major,
     fire_res = fire_res,
     fire_res_major = fire_major,
-    resonance_synced = (water_synced == true or fire_synced == true),
+    resonance_synced = base.res.synced == true,
     freeze_step_done = (route.freeze_step_done == true),
     fire_branch_eligible = fire_branch_eligible,
     route = {
@@ -673,13 +624,13 @@ local function _effective_state(tgt)
       glaciate = _pending_active("glaciate", tgt),
     },
     raw = {
-      waterbonds = _score_aff("waterbonds"),
-      frozen = _score_aff("frozen"),
-      frostbite = _score_aff("frostbite"),
-      slickness = _score_aff("slickness"),
-      disrupt = _score_aff("disrupt"),
-      scalded = _score_aff("scalded"),
-      conflagrate = _score_aff("conflagrate"),
+      waterbonds = tonumber(base.raw.waterbonds or 0) or 0,
+      frozen = tonumber(base.raw.frozen or 0) or 0,
+      frostbite = tonumber(base.raw.frostbite or 0) or 0,
+      slickness = tonumber(base.raw.slickness or 0) or 0,
+      disrupt = tonumber(base.raw.disrupt or 0) or 0,
+      scalded = tonumber(base.raw.scalded or 0) or 0,
+      conflagrate = tonumber(base.raw.conflagrate or 0) or 0,
       aflame = aflame,
       water_res = water_res,
       fire_res = fire_res,
@@ -902,7 +853,7 @@ local function _attack_opts(arg)
 end
 
 local function _update_explain(tgt, st, category, reason, planned_cmd)
-  MGD.state.explain = {
+  MGD.state.explain = RC.build_explain({
     route = "magi_group_damage",
     target = tgt,
     decision = category or "",
@@ -917,39 +868,18 @@ local function _update_explain(tgt, st, category, reason, planned_cmd)
     pending = MGD.state and MGD.state.pending or {},
     route_enabled = MGD.is_enabled and MGD.is_enabled() or false,
     active = MGD.is_active and MGD.is_active() or false,
-  }
+  })
 end
 
 local function _clear_runtime_state(reason)
-  MGD.state.busy = false
-  MGD.state.last_target = ""
-  MGD.state.last_cmd = ""
-  MGD.state.last_category = ""
-  MGD.state.last_sent_cmd = ""
-  MGD.state.last_sent_target = ""
-  MGD.state.last_sent_category = ""
-  MGD.state.last_sent_at = 0
-  MGD.state.explain = {}
-  MGD.state.template.last_reason = tostring(reason or "manual")
-  MGD.state.template.last_payload = nil
-  MGD.state.template.last_target = ""
+  RC.reset_runtime_state(MGD.state, reason)
 end
 
 function MGD.init()
   MGD.cfg = MGD.cfg or {}
   MGD.state = MGD.state or {}
   MGD.state.template = MGD.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
-  MGD.state.pending = MGD.state.pending or {
-    horripilation = { target = "", until_t = 0 },
-    freeze = { target = "", until_t = 0 },
-    mudslide = { target = "", until_t = 0 },
-    emanation_water = { target = "", until_t = 0 },
-    magma = { target = "", until_t = 0 },
-    firelash = { target = "", until_t = 0 },
-    conflagrate = { target = "", until_t = 0 },
-    emanation_fire = { target = "", until_t = 0 },
-    glaciate = { target = "", until_t = 0 },
-  }
+  RC.ensure_pending(MGD.state, PENDING_SLOTS)
   _cold_slot()
   _route_slot()
   MGD.state.loop_delay = tonumber(MGD.state.loop_delay or MGD.cfg.loop_delay or 0.15) or 0.15

@@ -186,6 +186,8 @@ CState.state = CState.state or {
   energise_resonating = false,
   energise_target = "",
   energise_seen_at = 0,
+  focus_active = false,
+  focus_seen_at = 0,
 }
 
 function CState.reset()
@@ -196,6 +198,8 @@ function CState.reset()
   st.energise_resonating = false
   st.energise_target = ""
   st.energise_seen_at = 0
+  st.focus_active = false
+  st.focus_seen_at = 0
   CState.state = st
   return st
 end
@@ -234,6 +238,27 @@ function CState.consume_energise_resonance()
   if not CState.has_energise_resonance() then return false end
   CState.clear_energise_resonance()
   return true
+end
+
+function CState.note_focus()
+  local st = CState.state or {}
+  st.focus_active = true
+  st.focus_seen_at = _res_now()
+  CState.state = st
+  return true
+end
+
+function CState.clear_focus()
+  local st = CState.state or {}
+  st.focus_active = false
+  st.focus_seen_at = 0
+  CState.state = st
+  return true
+end
+
+function CState.has_focus()
+  local st = CState.state or {}
+  return st.focus_active == true
 end
 
 

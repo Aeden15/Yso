@@ -52,6 +52,13 @@ Current fixes
   but now opens a fire branch from AK frozen/frostbite state into magma,
   firelash, conflagrate, and fire emanation pressure.
 
+  Magi routes now also share a Magi-only chassis helper:
+    Yso.off.magi.route_core
+  and Magi combat includes a direct duel route:
+    focus
+  It builds four-element moderate resonance plus Dissonance pressure into
+  convergence, then shifts into a soft destroy / Fulminate / burst overlay.
+
 Documentation map
 -----------------
   Ysindrolir/Occultist/README.txt
@@ -86,6 +93,11 @@ Notes
     horripilation -> freeze baseline -> branch reconsideration
   and then mixes water-side and fire-side salve pressure from AK frozen,
   frostbite, scalded, aflame, and conflagrate state plus Yso resonance.
+  Magi focus now stays in the same route/debug family, uses live resonance
+  plus Magi-local Dissonance tracking, reopens freeze if frozen or frostbite
+  drops, revisits bombard when its outputs or Air/Earth progress are missing,
+  and casts convergence immediately once all four elements are moderate and
+  Dissonance reaches stage 4.
   AK scalded handling in this workspace now assumes 20s instead of 17s for the
   current Magi paths.
   The packaged Djinn present trigger now immediately sets:

@@ -43,10 +43,34 @@ Current fixes
   Current AK scalded handling for the Magi-side route assumes 20s instead of
   the previous 17s.
 
+  Magi offense routes now share a Magi-only chassis helper:
+    Yso.off.magi.route_core
+  This keeps target resolution, pending windows, repeat suppression,
+  resonance reads, and explain scaffolding aligned without flattening
+  route-local brains together.
+
+  Magi combat now also includes a duel affliction / convergence route:
+    Yso.off.magi.focus
+  The route key and debug key are both:
+    focus
+  It opens through horripilation / freeze, revisits bombard when needed,
+  swaps Fulminate continuation in on kelp pressure, drives Dissonance toward
+  stage 4 with live Magi-local tracking, then casts convergence immediately
+  once all four resonances are moderate.
+
 Current Magi helpers
 --------------------
   magi_group_damage.lua
     Provides Yso.off.magi.group_damage for the Magi team-damage loop.
+
+  magi_focus.lua
+    Provides Yso.off.magi.focus for the Magi duel convergence route.
+
+  magi_route_core.lua
+    Provides the shared Magi route chassis/runtime helpers.
+
+  magi_dissonance.lua
+    Provides Magi-local Dissonance stage/confidence/evidence tracking.
 
   magi_reference.lua
     Provides the Yso-side Magi resonance API, Crystalism resonance state
@@ -85,6 +109,13 @@ Notes
     horripilation -> freeze baseline -> branch reconsideration
   and only then mixes fire-side pressure from AK frozen/frostbite/scalded/
   aflame/conflagrate state.
+  Magi focus lives in the same route family and debug surface:
+    yrdebug on focus
+    yrshow focus
+    yrshow focus full
+  Focus uses live Yso.magi.resonance state, observes Crystalism focus without
+  auto-casting it, and exposes Dissonance stage/confidence/last evidence in
+  MagiDevtools rather than inventing a fixed timer.
   Crystalism resonance notice triggers live under:
     Yso system.xml -> Yso Triggers/Magi/Crystalism
   energise resonance is separate from the mheals absorb-energy flow:

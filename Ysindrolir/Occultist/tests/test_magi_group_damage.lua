@@ -22,6 +22,7 @@ local function join_path(...)
 end
 
 local SCRIPT_DIR = script_dir()
+local ROUTE_CORE_PATH = join_path(SCRIPT_DIR, "..", "..", "Magi", "magi_route_core.lua")
 local ROUTE_PATH = join_path(SCRIPT_DIR, "..", "..", "Magi", "magi_group_damage.lua")
 local API_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Core", "api.lua")
 local QUEUE_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Core", "queue.lua")
@@ -183,6 +184,7 @@ local function make_world(opts)
     end
   end
 
+  dofile(ROUTE_CORE_PATH)
   dofile(ROUTE_PATH)
 
   local MGD = Yso.off.magi.group_damage
