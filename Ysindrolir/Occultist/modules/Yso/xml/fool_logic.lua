@@ -26,7 +26,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or "addclearfull"  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or "bal"           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- HUNT cureset only
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -37,6 +37,7 @@ Yso._trig  = Yso._trig  or {}
 Yso.fool   = Yso.fool   or {}
 
 local F = Yso.fool
+local _dev_cureset_override = nil
 
 F.cfg = F.cfg or {
   enabled = true,   -- auto (GMCP + diagnose snapshot) on/off
@@ -87,6 +88,17 @@ local function _trim(s)
   return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
+local function _normalize_cureset_name(v)
+  v = _trim(v):lower()
+  if v == "" or v == "live" or v == "clear" then
+    return nil
+  end
+  if v == "bash" or v == "bashing" or v == "hunting" or v == "pve" then
+    return "hunt"
+  end
+  return v
+end
+
 local function _has(aff)
   local A = _Aff()
   return A[aff] == true
@@ -98,23 +110,7 @@ end
 
 -- current cureset name from Legacy (e.g. "legacy", "hunt", "group")
 local function _current_cureset()
-  local function _norm_set(v)
-    v = _trim(v):lower()
-    if v == "" then return nil end
-    if v == "bash" or v == "bashing" or v == "hunting" or v == "pve" then
-      return "hunt"
-    end
-    return v
-  end
-
-  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
-  local cur = _norm_set(set)
-  if cur then
-    return cur
-  end
-
-  local global_cur = rawget(_G, "CurrentCureset")
-  cur = _norm_set(global_cur)
+  local cur = _normalize_cureset_name(_dev_cureset_override)
   if cur then
     return cur
   end
@@ -126,7 +122,37 @@ local function _current_cureset()
     end
   end
 
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  cur = _normalize_cureset_name(set)
+  if cur then
+    return cur
+  end
+
+  local global_cur = rawget(_G, "CurrentCureset")
+  cur = _normalize_cureset_name(global_cur)
+  if cur then
+    return cur
+  end
+
   return "legacy"
+end
+
+-- Devtools/manual helper only: temporarily simulate a cureset for one call.
+function F.dev_with_cureset(name, fn, ...)
+  if type(fn) ~= "function" then
+    return false, "fn must be a function"
+  end
+
+  local prev = _dev_cureset_override
+  _dev_cureset_override = _normalize_cureset_name(name)
+
+  local ok, a, b, c, d, e = pcall(fn, ...)
+  _dev_cureset_override = prev
+
+  if not ok then
+    return false, a
+  end
+  return true, a, b, c, d, e
 end
 
 local function _is_tendon_key(k)
@@ -280,7 +306,7 @@ _min_affs_for_current_set = function()
 
   local cur = _current_cureset() or "legacy"
   if cur == "hunt" then
-    local v = tonumber(Legacy.Fool.min_affs_hunt or 3) or 3
+    local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
     if v < 1 then v = 1 end
     return v, false  -- NO lock override in hunt
   else

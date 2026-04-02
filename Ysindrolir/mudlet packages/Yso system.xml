@@ -4977,7 +4977,7 @@ function Yso.pause_offense(on, reason, quiet)
   if on then
     P.active = true
     P.reason = tostring(reason or P.reason or &quot;paused&quot;)
-    P.at = (type(_now) == &quot;function&quot; and _now()) or os.time()
+    P.at = (Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time()
   else
     P.active = false
     P.reason = &quot;&quot;
@@ -5440,7 +5440,11 @@ Yso.ak.threshold = Yso.ak.threshold or 100   -- used later for embellished statu
 
 -- ----------------- tiny helpers (AK) -----------------
 local function _ak_now()
-  if type(getEpoch) == &quot;function&quot; then return getEpoch() end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 
@@ -5871,7 +5875,11 @@ local function _akwire_echo(msg)
 end
 
 local function _akwire_now()
-  if type(getEpoch) == &quot;function&quot; then return getEpoch() end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 
@@ -7304,6 +7312,10 @@ Yso.hinder = Yso.hinder or {}
 local H = Yso.hinder
 
 local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   if type(getEpoch) == &quot;function&quot; then
     local t = tonumber(getEpoch()) or os.time()
     if t &gt; 20000000000 then t = t / 1000 end
@@ -7385,7 +7397,7 @@ end
 
 function H.collect(ctx)
   local snapshot = {
-    at = (Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time(),
+    at = _now(),
     eq_bal_blockers = {},
     entity_blockers = {},
     all_offense_blocked = false,
@@ -15295,8 +15307,8 @@ do
     },
     misc_clear_target = {
       &quot;Yso.clear_target&quot;,
-    },
       &quot;Yso.target_flush_send_state&quot;,
+    },
     misc_core = {
       &quot;Yso.core._req.try&quot;,
       &quot;Yso.core.boot&quot;,
@@ -15627,7 +15639,10 @@ local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot
 local function _lc(s) return _trim(s):lower() end
 
 local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then return tonumber(Yso.util.now()) or os.time() end
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   if type(getEpoch) == &quot;function&quot; then
     local t = tonumber(getEpoch()) or os.time()
     if t &gt; 20000000000 then t = t / 1000 end
@@ -21647,52 +21662,59 @@ local function _is_occultist()
 end
 
 function ak.occie.aura.parse_unnamable(count, who)
+	local A = rawget(_G, &quot;affstrack&quot;)
+	if not (A and A.score) then return end
+
 	ak.occie.aura.mental = ak.occie.aura.mental + count
 	local addaffs = {&quot;stupidity&quot;,&quot;dementia&quot;,&quot;confusion&quot;}
 	if count == 3 then
 		for i = 1, #addaffs do
-			if affstrack.score[addaffs[i]] &gt; 0 then
-				ak.ProTrackingConfirmed(addaffs[i])
-        affstrack.score.stupidity = 100
-        affstrack.score.dementia = 100
-				affstrack.score.confusion = 100
-				ak.scoreup(who or target)
+			if A.score[addaffs[i]] and A.score[addaffs[i]] &gt; 0 then
+				if type(ak.ProTrackingConfirmed) == &quot;function&quot; then ak.ProTrackingConfirmed(addaffs[i]) end
+				A.score.stupidity = 100
+				A.score.dementia = 100
+				A.score.confusion = 100
+				if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 				return
 			end
 		end
-    affstrack.score.stupidity = 100
-    affstrack.score.dementia = 100
-		affstrack.score.confusion = 100
-		ak.scoreup(who or target)
+		A.score.stupidity = 100
+		A.score.dementia = 100
+		A.score.confusion = 100
+		if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 		return
 	elseif count == 2 then
-		if affstrack.score.stupidity == 100 then
-			affstrack.score.confusion = 100
-			affstrack.score.dementia = 100
-		elseif affstrack.score.dementia == 100 then
-			affstrack.score.stupidity = 100
-			affstrack.score.confusion = 100
-		elseif affstrack.score.confusion == 100 then
-			affstrack.score.stupidity = 100
-			affstrack.score.dementia = 100
+		if A.score.stupidity == 100 then
+			A.score.confusion = 100
+			A.score.dementia = 100
+		elseif A.score.dementia == 100 then
+			A.score.stupidity = 100
+			A.score.confusion = 100
+		elseif A.score.confusion == 100 then
+			A.score.stupidity = 100
+			A.score.dementia = 100
 		else
-
+			A.score.stupidity = 50
+			A.score.dementia = 50
+			A.score.confusion = 50
 		end
-		ak.scoreup(who or target)
+		if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 		return
 	elseif count == 1 then
-		if affstrack.score.stupidity == 100 and affstrack.score.confusion == 100 then
-			affstrack.score.dementia = 100
-		elseif affstrack.score.stupidity == 100 and affstrack.score.dementia == 100 then
-			affstrack.score.confusion = 100
-		elseif affstrack.score.dementia == 100 and affstrack.score.confusion == 100 then
-			affstrack.score.stupidity = 100
+		if A.score.stupidity == 100 and A.score.confusion == 100 then
+			A.score.dementia = 100
+		elseif A.score.stupidity == 100 and A.score.dementia == 100 then
+			A.score.confusion = 100
+		elseif A.score.dementia == 100 and A.score.confusion == 100 then
+			A.score.stupidity = 100
 		else
-
+			A.score.stupidity = math.max(A.score.stupidity or 0, 33)
+			A.score.dementia = math.max(A.score.dementia or 0, 33)
+			A.score.confusion = math.max(A.score.confusion or 0, 33)
 		end
-		ak.scoreup(who or target)
+		if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 		return
- 	end
+	end
 end
 
 function ak.occie.aura.parsereduct(what)
@@ -22546,12 +22568,14 @@ local function _chimera_ready()
   return true
 end
 
-local function _send_eq_clear(cmds)
+local function _send_clear(cmds, qtype)
   if type(cmds) == &quot;string&quot; then cmds = {cmds} end
   if type(cmds) ~= &quot;table&quot; or #cmds == 0 then return false end
 
-  local qtype = &quot;eq&quot;
-  if Yso.off and Yso.off.oc and Yso.off.oc.qtype_eq then qtype = Yso.off.oc.qtype_eq end
+  qtype = qtype or &quot;eq&quot;
+  if Yso.off and Yso.off.oc and Yso.off.oc[&quot;qtype_&quot; .. qtype] then
+    qtype = Yso.off.oc[&quot;qtype_&quot; .. qtype]
+  end
 
   local joined = table.concat(cmds, (Yso and Yso.sep) or &quot;&amp;&amp;&quot;)
 
@@ -22604,7 +22628,7 @@ function P.step(t, aff)
     if P.cfg.use_regress and _eq_ready() and anore &lt; stuck then
       _echo(&quot;target prone -&gt; regress for anorexia&quot;)
       _mark()
-      return _send_eq_clear((&quot;regress %s&quot;):format(t))
+      return _send_clear((&quot;regress %s&quot;):format(t), &quot;eq&quot;)
     end
     return false
   end
@@ -22615,20 +22639,20 @@ function P.step(t, aff)
     if deaf &gt;= stuck then
       _echo(&quot;target deaf -&gt; command chimera to strip deafness (setup)&quot;)
       _mark()
-      return _send_eq_clear((&quot;command chimera at %s&quot;):format(t))
+      return _send_clear((&quot;command chimera at %s&quot;):format(t), &quot;class&quot;)
     end
 
     -- Not deaf: chimera command should stun/prone
     _echo(&quot;target not deaf -&gt; command chimera for stun/prone window&quot;)
     _mark()
-    return _send_eq_clear((&quot;command chimera at %s&quot;):format(t))
+    return _send_clear((&quot;command chimera at %s&quot;):format(t), &quot;class&quot;)
   end
 
   -- 3) Fallback: regress to force prone (setup); next tick can regress again for anorexia
   if P.cfg.use_regress and _eq_ready() then
     _echo(&quot;fallback -&gt; regress to force prone (setup)&quot;)
     _mark()
-    return _send_eq_clear((&quot;regress %s&quot;):format(t))
+    return _send_clear((&quot;regress %s&quot;):format(t), &quot;eq&quot;)
   end
 
   return false
@@ -23125,7 +23149,7 @@ Yso.occ = Yso.occ or {}
 Yso.oc  = Yso.oc  or {}
 
 local Off = Yso.off.oc
-local Q   = Yso.queue
+local function _Q() return Yso and Yso.queue end
 
 Off.sg = Off.sg or {}
 local SG = Off.sg
@@ -23198,6 +23222,7 @@ local function _queue_eq_addclear(cmds)
   local qtype = (Off.qtype_eq or &quot;eq&quot;)
   local piped = table.concat(out, (Yso and Yso.sep) or &quot;;;&quot;)
 
+  local Q = _Q()
   if Q and type(Q.addclear) == &quot;function&quot; then
     Q.addclear(qtype, piped)
   else
@@ -26019,23 +26044,10 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 -- Queue behaviour + thresholds
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or &quot;addclearfull&quot;  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or &quot;bal&quot;           -- bal / eqbal / free / full / flags
-Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- fallback for unlisted PvP curesets
+Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
 Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
-
-Legacy.Fool.pvp = Legacy.Fool.pvp or {
-  curesets = {
-    depthswalker = { min_affs = 2, notes = &quot;placeholder&quot; },
-    bard         = { min_affs = 2, notes = &quot;placeholder&quot; },
-    monk         = { min_affs = 2, notes = &quot;placeholder&quot; },
-    dwc          = { min_affs = 3, notes = &quot;dual wield cutting knights&quot; },
-    dwb          = { min_affs = 3, notes = &quot;dual wield blunt knights (future)&quot; },
-    blademaster  = { min_affs = 3, notes = &quot;placeholder&quot; },
-    shaman       = { min_affs = 2, notes = &quot;placeholder&quot; },
-    airlord      = { min_affs = 2, notes = &quot;elemental air spec&quot; },
-  },
-}
 
 Yso        = Yso        or {}
 Yso.queue  = Yso.queue  or {}
@@ -26044,6 +26056,7 @@ Yso._trig  = Yso._trig  or {}
 Yso.fool   = Yso.fool   or {}
 
 local F = Yso.fool
+local _dev_cureset_override = nil
 
 F.cfg = F.cfg or {
   enabled = true,   -- auto (GMCP + diagnose snapshot) on/off
@@ -26094,6 +26107,17 @@ local function _trim(s)
   return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
 end
 
+local function _normalize_cureset_name(v)
+  v = _trim(v):lower()
+  if v == &quot;&quot; or v == &quot;live&quot; or v == &quot;clear&quot; then
+    return nil
+  end
+  if v == &quot;bash&quot; or v == &quot;bashing&quot; or v == &quot;hunting&quot; or v == &quot;pve&quot; then
+    return &quot;hunt&quot;
+  end
+  return v
+end
+
 local function _has(aff)
   local A = _Aff()
   return A[aff] == true
@@ -26105,23 +26129,7 @@ end
 
 -- current cureset name from Legacy (e.g. &quot;legacy&quot;, &quot;hunt&quot;, &quot;group&quot;)
 local function _current_cureset()
-  local function _norm_set(v)
-    v = _trim(v):lower()
-    if v == &quot;&quot; then return nil end
-    if v == &quot;bash&quot; or v == &quot;bashing&quot; or v == &quot;hunting&quot; or v == &quot;pve&quot; then
-      return &quot;hunt&quot;
-    end
-    return v
-  end
-
-  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
-  local cur = _norm_set(set)
-  if cur then
-    return cur
-  end
-
-  local global_cur = rawget(_G, &quot;CurrentCureset&quot;)
-  cur = _norm_set(global_cur)
+  local cur = _normalize_cureset_name(_dev_cureset_override)
   if cur then
     return cur
   end
@@ -26133,7 +26141,37 @@ local function _current_cureset()
     end
   end
 
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  cur = _normalize_cureset_name(set)
+  if cur then
+    return cur
+  end
+
+  local global_cur = rawget(_G, &quot;CurrentCureset&quot;)
+  cur = _normalize_cureset_name(global_cur)
+  if cur then
+    return cur
+  end
+
   return &quot;legacy&quot;
+end
+
+-- Devtools/manual helper only: temporarily simulate a cureset for one call.
+function F.dev_with_cureset(name, fn, ...)
+  if type(fn) ~= &quot;function&quot; then
+    return false, &quot;fn must be a function&quot;
+  end
+
+  local prev = _dev_cureset_override
+  _dev_cureset_override = _normalize_cureset_name(name)
+
+  local ok, a, b, c, d, e = pcall(fn, ...)
+  _dev_cureset_override = prev
+
+  if not ok then
+    return false, a
+  end
+  return true, a, b, c, d, e
 end
 
 local function _is_tendon_key(k)
@@ -26290,21 +26328,11 @@ _min_affs_for_current_set = function()
     local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
     if v &lt; 1 then v = 1 end
     return v, false  -- NO lock override in hunt
+  else
+    local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
+    if v &lt; 1 then v = 1 end
+    return v, true   -- lock override allowed
   end
-
-  local pvp = Legacy.Fool.pvp
-  if type(pvp) == &quot;table&quot; and type(pvp.curesets) == &quot;table&quot; then
-    local entry = pvp.curesets[cur]
-    if type(entry) == &quot;table&quot; and tonumber(entry.min_affs) then
-      local v = tonumber(entry.min_affs)
-      if v &lt; 1 then v = 1 end
-      return v, true  -- lock override allowed for PvP curesets
-    end
-  end
-
-  local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
-  if v &lt; 1 then v = 1 end
-  return v, true   -- lock override allowed
 end
 
 -- Queue helper
