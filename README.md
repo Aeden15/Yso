@@ -1,6 +1,6 @@
 # Yso
 
-Current workspace snapshot: March 29, 2026.
+Current workspace snapshot: April 2, 2026.
 
 ## Current fixes
 
@@ -17,6 +17,8 @@ Current workspace snapshot: March 29, 2026.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
 - `team dam` remains class-sensitive: Occultist keeps the existing group-damage route, while Magi now runs a freeze-first mixed route that opens with horripilation, forces an initial freeze step on fresh targets, keeps glaciate/windows on the water side, and branches into `magma` / `firelash` / `conflagrate` / fire emanation once `frozen` or `frostbite` is established.
 - Magi routes now share a Magi-only chassis helper at `Yso.off.magi.route_core`, and Magi combat now includes a duel `focus` route that builds four-element moderate resonance plus Dissonance pressure into `convergence`, then overlays `destroy` / Fulminate / burst maintenance.
+- AK package remediation tightened several live compatibility surfaces in `AK.xml`: classlock selection is now AK-owned instead of branching on WSys/SVO, the Pariah heartbeat callback is live again, salve/additive bookkeeping was corrected, and the known `earworm` duplicate cure-line report remains intentionally deferred until the real line is confirmed.
+- Yso helper remediation fixed the non-`getEpoch()` inhibit fallback to use wall-clock time, corrected target hearing/vision gating to read `affstrack.score`, honored `ents.slickness` in SightGate, and removed self-`aeon` from the ProneController softscore list.
 
 ## What is here
 

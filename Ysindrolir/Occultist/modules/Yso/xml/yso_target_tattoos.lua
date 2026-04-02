@@ -61,9 +61,9 @@ end
 -- “Can hear/see” helpers: mindseye overrides deaf/blind gating.
 local function _score_from_affstrack(aff)
   if type(affstrack) ~= "table" then return 0 end
-  local t = affstrack[aff]
-  if type(t) == "table" and type(t.score) == "number" then return t.score end
-  return 0
+  local scores = affstrack.score
+  if type(scores) ~= "table" then return 0 end
+  return tonumber(scores[aff] or 0) or 0
 end
 
 function T.can_hear(name)

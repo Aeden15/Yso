@@ -42,7 +42,7 @@ P.cfg = P.cfg or {
 
   -- Softlock-ish trigger (matches your intent: "softscore >= 2 and asthma=100")
   softscore_threshold = 2,
-  softscore_affs = { "aeon", "asthma", "anorexia", "slickness", "impatience" },
+  softscore_affs = { "asthma", "anorexia", "slickness", "impatience" },
 
   -- Actions allowed:
   use_chimera = true,

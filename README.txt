@@ -1,6 +1,6 @@
 Yso Systems Workspace
 =====================
-Last updated: March 29, 2026
+Last updated: April 2, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
@@ -106,6 +106,15 @@ Notes
   Crystalism resonance notices now echo from the Magi trigger folder, and
   energise also exposes a separate consumable state helper for personal aliases
   without reusing the heal-burst Yso.magi.energy flag.
+  AK.xml package remediation now keeps classlock resolution inside AK instead
+  of branching on old WSys/SVO ownership, restores the live Pariah heartbeat
+  callback, and corrects several salve/additive bookkeeping bugs. The reported
+  earworm duplicate tree-cure line remains intentionally unchanged until the
+  real cure text is confirmed from logs.
+  Yso helper remediation now uses wall-clock inhibit fallback timing when
+  getEpoch is unavailable, reads target deaf/blind state from affstrack.score,
+  honors ents.slickness in SightGate, and no longer counts self-aeon in the
+  ProneController softscore list.
   AK.xml is maintained separately and may also carry compatibility patches.
   Root-level docs should stay class-agnostic now that this workspace supports
   more than one class.

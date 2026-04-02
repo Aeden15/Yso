@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: March 23, 2026
+Last updated: April 2, 2026
 
 
 Current fixes
@@ -46,6 +46,15 @@ Current fixes
   Truename persistence now validates the saved blob before calling Mudlet's
   JSON decoder, which suppresses startup spam from corrupted non-JSON files in
   the Mudlet home directory.
+
+  Package remediation updated the Yso helper surfaces that still live under
+  modules/Yso/xml:
+    yso_target_tattoos.lua now reads affstrack.score for deaf/blind gating
+    sightgate.lua now honors ents.slickness before falling back to bubonis
+    pronecontroller.lua no longer counts self-aeon in its softscore list
+  Core/api.lua also now uses wall-clock time for inhibit fallback timing when
+  getEpoch is unavailable, and the rebuilt Yso system.xml now carries those
+  fixes forward into the package artifact.
 
 
 Architecture overview

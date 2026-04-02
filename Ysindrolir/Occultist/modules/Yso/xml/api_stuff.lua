@@ -478,7 +478,7 @@ function Yso.inhibit.set(reason)
     now_ms = getEpoch()
     if now_ms < 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   Yso.inhibit._until = now_ms + (tonumber(Yso.inhibit.cfg.duration_ms) or 400)
   if Yso.inhibit.cfg.debug and type(cecho) == "function" then
@@ -492,7 +492,7 @@ function Yso.inhibit.active()
     now_ms = getEpoch()
     if now_ms < 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   return now_ms < (tonumber(Yso.inhibit._until) or 0)
 end

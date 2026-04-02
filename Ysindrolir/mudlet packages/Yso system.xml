@@ -5017,7 +5017,7 @@ function Yso.inhibit.set(reason)
     now_ms = getEpoch()
     if now_ms &lt; 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   Yso.inhibit._until = now_ms + (tonumber(Yso.inhibit.cfg.duration_ms) or 400)
   if Yso.inhibit.cfg.debug and type(cecho) == &quot;function&quot; then
@@ -5031,7 +5031,7 @@ function Yso.inhibit.active()
     now_ms = getEpoch()
     if now_ms &lt; 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   return now_ms &lt; (tonumber(Yso.inhibit._until) or 0)
 end
@@ -12472,9 +12472,9 @@ end
 -- “Can hear/see” helpers: mindseye overrides deaf/blind gating.
 local function _score_from_affstrack(aff)
   if type(affstrack) ~= &quot;table&quot; then return 0 end
-  local t = affstrack[aff]
-  if type(t) == &quot;table&quot; and type(t.score) == &quot;number&quot; then return t.score end
-  return 0
+  local scores = affstrack.score
+  if type(scores) ~= &quot;table&quot; then return 0 end
+  return tonumber(scores[aff] or 0) or 0
 end
 
 function T.can_hear(name)
@@ -22475,7 +22475,7 @@ P.cfg = P.cfg or {
 
   -- Softlock-ish trigger (matches your intent: &quot;softscore &gt;= 2 and asthma=100&quot;)
   softscore_threshold = 2,
-  softscore_affs = { &quot;aeon&quot;, &quot;asthma&quot;, &quot;anorexia&quot;, &quot;slickness&quot;, &quot;impatience&quot; },
+  softscore_affs = { &quot;asthma&quot;, &quot;anorexia&quot;, &quot;slickness&quot;, &quot;impatience&quot; },
 
   -- Actions allowed:
   use_chimera = true,
@@ -23318,7 +23318,7 @@ function Off.sg_entity_cmd_for_aff(aff, t)
 
   local ent
   if aff == &quot;asthma&quot; then ent = ents.asthma or &quot;bubonis&quot;
-  elseif aff == &quot;slickness&quot; then ent = ents.asthma or &quot;bubonis&quot;      -- assumes your bubonis route/followups
+  elseif aff == &quot;slickness&quot; then ent = ents.slickness or ents.asthma or &quot;bubonis&quot;      -- assumes your bubonis route/followups
   elseif aff == &quot;clumsiness&quot; then ent = ents.clumsiness or &quot;storm&quot;
   elseif aff == &quot;healthleech&quot; then ent = ents.healthleech or &quot;worm&quot;
   elseif aff == &quot;paralysis&quot; then ent = cfg.paralysis_followup or &quot;slime&quot;

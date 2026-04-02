@@ -216,7 +216,7 @@ function Off.sg_entity_cmd_for_aff(aff, t)
 
   local ent
   if aff == "asthma" then ent = ents.asthma or "bubonis"
-  elseif aff == "slickness" then ent = ents.asthma or "bubonis"      -- assumes your bubonis route/followups
+  elseif aff == "slickness" then ent = ents.slickness or ents.asthma or "bubonis"      -- assumes your bubonis route/followups
   elseif aff == "clumsiness" then ent = ents.clumsiness or "storm"
   elseif aff == "healthleech" then ent = ents.healthleech or "worm"
   elseif aff == "paralysis" then ent = cfg.paralysis_followup or "slime"
