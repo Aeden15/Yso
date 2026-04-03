@@ -26069,6 +26069,10 @@ F.state = F.state or {
   last_used  = 0,     -- when we last queued Fool
   last_auto  = 0,     -- when auto/diag last attempted Fool
   await_diag = false, -- set by dv alias; cleared on diag completion
+  basher_hold = false,
+  basher_hold_reason = nil,
+  basher_hold_at = 0,
+  basher_hold_timer = nil,
 }
 
 -- ---------- helpers ----------
@@ -26238,6 +26242,55 @@ local function _bool_word(v)
   return (v == true) and &quot;true&quot; or &quot;false&quot;
 end
 
+local function _release_basher_hold(reason)
+  local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
+  if F.state.basher_hold_timer and type(killTimer) == &quot;function&quot; then
+    pcall(killTimer, F.state.basher_hold_timer)
+  end
+  F.state.basher_hold_timer = nil
+  F.state.basher_hold = false
+  F.state.basher_hold_reason = nil
+  F.state.basher_hold_at = 0
+  if had_hold then
+    _fool_echo(&quot;Basher hold released (&quot;..tostring(reason or &quot;unknown&quot;)..&quot;).&quot;)
+  end
+end
+
+local function _arm_basher_hold(reason)
+  _release_basher_hold(&quot;refresh&quot;)
+
+  F.state.basher_hold = true
+  F.state.basher_hold_reason = tostring(reason or &quot;fool&quot;)
+  F.state.basher_hold_at = _now()
+  _fool_echo(&quot;Basher hold armed (&quot;..F.state.basher_hold_reason..&quot;).&quot;)
+
+  if type(tempTimer) == &quot;function&quot; then
+    F.state.basher_hold_timer = tempTimer(10, function()
+      _release_basher_hold(&quot;timeout&quot;)
+    end)
+  end
+end
+
+local function _clear_basher_queue()
+  local S = Legacy and Legacy.Settings and Legacy.Settings.Basher
+  if type(S) ~= &quot;table&quot; then
+    return false
+  end
+  if S.status ~= true then
+    return false
+  end
+
+  if type(send) == &quot;function&quot; then
+    send(&quot;cq freestand&quot;, false)
+  end
+  S.queued = false
+  return true
+end
+
+function F.blocks_basher()
+  return F.state.basher_hold == true
+end
+
 local _is_lock_state
 local _min_affs_for_current_set
 
@@ -26249,9 +26302,11 @@ function F.status()
   local qmode = tostring(Legacy.Fool.queue_mode or &quot;addclearfull&quot;)
   local qtype = tostring(Legacy.Fool.queue_type or &quot;bal&quot;)
   local auto = (F.cfg.enabled == true) and &quot;on&quot; or &quot;off&quot;
+  local hold = (F.blocks_basher() == true) and &quot;on&quot; or &quot;off&quot;
+  local hold_reason = tostring(F.state.basher_hold_reason or &quot;-&quot;)
 
   _emit_status(string.format(
-    &quot;auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s&quot;,
+    &quot;auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s basher_hold=%s(%s)&quot;,
     auto,
     curset,
     count,
@@ -26260,7 +26315,9 @@ function F.status()
     _bool_word(is_locked),
     _cooldown_remaining(),
     qmode,
-    qtype
+    qtype,
+    hold,
+    hold_reason
   ))
 end
 
@@ -26336,7 +26393,7 @@ _min_affs_for_current_set = function()
 end
 
 -- Queue helper
-local function _queue_fool()
+local function _queue_fool(source)
   if not _is_occultist() then
     _fool_echo(&quot;Not using Fool: current class is not Occultist.&quot;)
     return false
@@ -26346,22 +26403,30 @@ local function _queue_fool()
   local cmd   = &quot;fling fool at me&quot;
   local queue_fn_name = mode:lower()
   local queue_fn = Yso.queue and Yso.queue[queue_fn_name]
+  local hold_reason = &quot;fool:&quot; .. tostring(source or &quot;manual&quot;)
+
+  _clear_basher_queue()
 
   if type(queue_fn) == &quot;function&quot; then
     -- Yso queue helper path
     local queued = (queue_fn(qtype, cmd) == true)
     if queued then
       F.state.last_used = _now()
+      _arm_basher_hold(hold_reason)
       _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
+    else
+      _release_basher_hold(&quot;queue-failed&quot;)
     end
     return queued
   else
     -- raw queue path
     local ok = pcall(send, string.format(&quot;queue %s %s %s&quot;, mode, qtype, cmd), false)
     if not ok then
+      _release_basher_hold(&quot;queue-error&quot;)
       return false
     end
     F.state.last_used = _now()
+    _arm_basher_hold(hold_reason)
     _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
     return true
   end
@@ -26379,6 +26444,7 @@ function Legacy.FoolSelfCleanse(source)
   if not (Legacy and Legacy.Curing and Legacy.Curing.Affs) then
     return false
   end
+  source = tostring(source or &quot;manual&quot;)
 
   -- Mechanical gates
   if _has(&quot;prone&quot;) then
@@ -26414,11 +26480,11 @@ function Legacy.FoolSelfCleanse(source)
 
   _fool_echo(string.format(
     &quot;Using Fool (source=%s, cureset=%s, affs=%d, min=%d, allow_lock=%s, lock=%s).&quot;,
-    tostring(source or &quot;?&quot;), curset, count, min_affs,
+    source, curset, count, min_affs,
     tostring(allow_lock), tostring(is_locked)
   ))
 
-  local queued = _queue_fool()
+  local queued = _queue_fool(source)
   return queued == true
 end
 
@@ -26505,6 +26571,16 @@ Yso._trig.fool_eq = tempRegexTrigger(
     else
       _fool_echo(&quot;Diagnose snapshot: conditions failed, Fool not used.&quot;)
     end
+  end)
+)
+
+if Yso._trig.fool_success then
+  killTrigger(Yso._trig.fool_success)
+end
+Yso._trig.fool_success = tempRegexTrigger(
+  [[^You press the Fool tarot to your forehead\.$]],
+  _safe(function()
+    _release_basher_hold(&quot;success&quot;)
   end)
 )
 

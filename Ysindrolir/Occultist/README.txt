@@ -214,3 +214,9 @@ Working notes
   Occultist Devtools.mpackage loads with aliases enabled by default.
   MagiDevtools.xml still requires you to enable its top-level alias group
   manually in Mudlet.
+  Fool now hard-preempts Legacy basher freestand work only after it passes
+  its mechanical gates. If Fool is prone, it reports that reason and leaves
+  the basher queue untouched. When eligible, it clears freestand, queues
+  Fool, and suppresses new basher requeues until the Fool self-use line or a
+  timeout releases the hold.
+

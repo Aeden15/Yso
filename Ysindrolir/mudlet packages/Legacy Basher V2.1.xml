@@ -1811,6 +1811,7 @@ function Basher_Setup()
     end
 
     if Legacy.Settings.Basher.onlyTarget == true then return end
+    if Yso and Yso.fool and type(Yso.fool.blocks_basher) == "function" and Yso.fool.blocks_basher() then return end
     if sendCount &gt;= 20 then  Legacy.bigEcho("SOMETHING BROKE, TURNING HUNTING OFF", "red", "gold") Legacy.Settings.Basher.status = false return end 
     if targetSet == "" and not currentTargetKnown then Legacy.Settings.Basher.currentTar = "" end
 

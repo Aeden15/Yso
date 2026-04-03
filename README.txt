@@ -226,3 +226,7 @@ Syncing with OneDrive Desktop
     Repo  README.md/.txt      <->  Desktop  Yso systems/README.md/.txt
 
   Git-only files (.git/, .gitignore, etc.) are excluded automatically.
+  - Fool basher preemption: eligible Fool uses clear Legacy basher
+    freestand work before queueing and suppress fresh basher requeues
+    until the Fool self-use line or a timeout. Prone still blocks Fool
+    before any queue clearing and remains visible in debug/status output.
