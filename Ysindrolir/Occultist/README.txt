@@ -217,6 +217,7 @@ Working notes
   Fool now hard-preempts Legacy basher freestand work only after it passes
   its mechanical gates. If Fool is prone, it reports that reason and leaves
   the basher queue untouched. When eligible, it clears freestand, queues
-  Fool, and suppresses new basher requeues until the Fool self-use line or a
-  timeout releases the hold.
+  Fool, and suppresses new basher attack-package requeues until the Fool
+  self-use line or a timeout releases the hold.
+
 

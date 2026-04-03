@@ -227,6 +227,7 @@ Syncing with OneDrive Desktop
 
   Git-only files (.git/, .gitignore, etc.) are excluded automatically.
   - Fool basher preemption: eligible Fool uses clear Legacy basher
-    freestand work before queueing and suppress fresh basher requeues
-    until the Fool self-use line or a timeout. Prone still blocks Fool
+    freestand work before queueing and suppress fresh basher attack-package
+    requeues until the Fool self-use line or a timeout. Prone still blocks Fool
     before any queue clearing and remains visible in debug/status output.
+

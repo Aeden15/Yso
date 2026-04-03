@@ -894,11 +894,11 @@ if Legacy.Settings.Basher.useRage == true then
       local rage_state = Legacy[gmcp.Char.Status.name] or {}
       local rage = tonumber(rage_state.rage) or 0
       if rage &gt;= (tonumber(v.rage) or 0) and v.available == true then
-        send("queue add freestand "..v.cmd)
-        send("queue add freestand basher")
-        Legacy.Settings.Basher.shield = false
-        Legacy.Settings.Basher.queued = false
-        used = true
+        if Legacy.Basher.queueAttackPackage("add", v.cmd, true, "shieldbreak-rage") then
+          Legacy.Settings.Basher.shield = false
+          Legacy.Settings.Basher.queued = false
+          used = true
+        end
       end
       break
     end
@@ -906,9 +906,10 @@ if Legacy.Settings.Basher.useRage == true then
   if used ~= true then
     local nr_cmd = tostring((((class_cfg.nrshieldbreak or {}).cmd) or ""))
     if nr_cmd ~= "" then
-      send("queue addclear freestand "..nr_cmd)
-      Legacy.Settings.Basher.shield = false
-      used = true
+      if Legacy.Basher.queueAttackPackage("addclear", nr_cmd, false, "shieldbreak-fallback") then
+        Legacy.Settings.Basher.shield = false
+        used = true
+      end
     end
   end
 elseif class == "Occultist" and _is_denizen_target() and _lycantha_primebond_active() then
@@ -1699,6 +1700,44 @@ function Basher_Setup()
   end
   registerAnonymousEventHandler("gmcp.Char.Items", "Legacy.Basher.Target")
 
+  local function _fool_basher_hold_active()
+    return Yso and Yso.fool and type(Yso.fool.blocks_basher) == "function" and Yso.fool.blocks_basher() == true
+  end
+
+  local function _fool_hold_debug(msg)
+    local F = Yso and Yso.fool or nil
+    local debug_on = (type(F) == "table" and type(F.cfg) == "table" and F.cfg.debug == true)
+      or (type(Legacy and Legacy.Fool) == "table" and Legacy.Fool.debug == true)
+    if debug_on and type(cecho) == "function" then
+      cecho("&lt;cyan&gt;[Fool] "..tostring(msg).."\n")
+    end
+  end
+
+  function Legacy.Basher.queueAttackPackage(mode, cmd, requeue_basher, reason)
+    local S = Legacy.Settings.Basher or {}
+    local why = tostring(reason or "basher")
+    local queue_mode = tostring(mode or "add")
+    local queue_cmd = tostring(cmd or "")
+
+    if _fool_basher_hold_active() then
+      S.queued = false
+      if S._fool_hold_notice ~= why then
+        S._fool_hold_notice = why
+        _fool_hold_debug("Suppressed basher attack package ("..why..") during basher hold.")
+      end
+      return false
+    end
+
+    S._fool_hold_notice = nil
+    if queue_cmd ~= "" then
+      send("queue "..queue_mode.." freestand "..queue_cmd)
+    end
+    if requeue_basher == true then
+      send("queue add freestand basher")
+    end
+    return true
+  end
+
   function Legacy.Settings.Basher.failsafes()
     if Legacy.Settings.Basher.status == true then
       if Legacy.Settings.Basher.currentTar == "" and gmcp.IRE.Target.Set ~= "" then
@@ -1829,14 +1868,15 @@ function Basher_Setup()
             if v.desc == "Big Damage" then
               local rageCost = tonumber(v.rage) or 0
               if math.floor(rage_now - rageCost) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true and v.cmd ~= nil and v.cmd ~= "" then
-                send("queue add freestand "..v.cmd)
-                send("queue add freestand basher")
-                Legacy.Settings.Basher.queued = true
-                tempTimer(26, function() v.available = true end)
-                v.available = false
+                if Legacy.Basher.queueAttackPackage("add", v.cmd, true, "big-damage") then
+                  Legacy.Settings.Basher.queued = true
+                  tempTimer(26, function() v.available = true end)
+                  v.available = false
+                end
               elseif Legacy.Settings.Basher.queued == false then
-                send("queue add freestand basher")
-                Legacy.Settings.Basher.queued = true
+                if Legacy.Basher.queueAttackPackage(nil, nil, true, "big-damage-fallback") then
+                  Legacy.Settings.Basher.queued = true
+                end
               end
             end
           end
@@ -1845,20 +1885,22 @@ function Basher_Setup()
             if v.desc == "Small Damage" then
               local rageCost = tonumber(v.rage) or 0
               if math.floor(rage_now - rageCost) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true and v.cmd ~= nil and v.cmd ~= "" then
-                send("queue add freestand "..v.cmd)
-                send("queue add freestand basher")
-                Legacy.Settings.Basher.queued = true
-                tempTimer(19, function() v.available = true end)
-                v.available = false
+                if Legacy.Basher.queueAttackPackage("add", v.cmd, true, "small-damage") then
+                  Legacy.Settings.Basher.queued = true
+                  tempTimer(19, function() v.available = true end)
+                  v.available = false
+                end
               elseif Legacy.Settings.Basher.queued == false then
-                send("queue add freestand basher")
-                Legacy.Settings.Basher.queued = true
+                if Legacy.Basher.queueAttackPackage(nil, nil, true, "small-damage-fallback") then
+                  Legacy.Settings.Basher.queued = true
+                end
               end
             end
           end
         elseif Legacy.Settings.Basher.queued == false then
-          send("queue add freestand basher")
-          Legacy.Settings.Basher.queued = true
+          if Legacy.Basher.queueAttackPackage(nil, nil, true, "basher") then
+            Legacy.Settings.Basher.queued = true
+          end
         end
       end
       sendCount = sendCount + 1

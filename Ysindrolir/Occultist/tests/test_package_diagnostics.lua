@@ -65,6 +65,14 @@ local function assert_false(label, value)
   pass()
 end
 
+local function assert_eq(label, got, expected)
+  if got ~= expected then
+    fail(label, string.format("expected %s, got %s", tostring(expected), tostring(got)))
+    return
+  end
+  pass()
+end
+
 local function assert_contains(label, haystack, needle)
   if not tostring(haystack or ""):find(needle, 1, true) then
     fail(label, string.format("missing %s", needle))
@@ -79,6 +87,25 @@ local function assert_not_contains(label, haystack, needle)
     return
   end
   pass()
+end
+
+local function count_occurrences(haystack, needle)
+  local text = tostring(haystack or "")
+  local want = tostring(needle or "")
+  if want == "" then
+    return 0
+  end
+
+  local idx = 1
+  local count = 0
+  while true do
+    local s = text:find(want, idx, true)
+    if not s then
+      return count
+    end
+    count = count + 1
+    idx = s + #want
+  end
 end
 
 print("=== Test 1: static package remediation markers ===")
@@ -100,6 +127,10 @@ do
   assert_not_contains("1i: API fallback no longer uses os.clock", api, "os.clock() * 1000")
   assert_contains("1j: sightgate honors slickness entity", sightgate, "ents.slickness or ents.asthma or \"bubonis\"")
   assert_not_contains("1k: pronecontroller no longer softscores aeon", prone, "softscore_affs = { \"aeon\"")
+  assert_contains("1l: Legacy Basher has attack-package helper", basher, "function Legacy.Basher.queueAttackPackage(")
+  assert_eq("1m: raw basher requeue send collapsed to helper", count_occurrences(basher, "send(\"queue add freestand basher\")"), 1)
+  assert_eq("1n: raw big/small damage freestand sends collapsed", count_occurrences(basher, "send(\"queue add freestand \"..v.cmd)"), 0)
+  assert_eq("1o: raw shieldbreak fallback freestand send collapsed", count_occurrences(basher, "send(\"queue addclear freestand \"..nr_cmd)"), 0)
 end
 
 print("\n=== Test 2: target sensory helpers read affstrack.score ===")

@@ -60,6 +60,14 @@ local function assert_false(label, got)
   pass()
 end
 
+local function assert_count(label, got, expected)
+  if #got ~= expected then
+    fail(label, string.format("expected %d ops, got %d", expected, #got))
+    return
+  end
+  pass()
+end
+
 local function assert_ops(label, got, expected)
   if #got ~= #expected then
     fail(label, string.format("expected %d ops, got %d", #expected, #got))
@@ -256,6 +264,41 @@ do
   assert_true("4b: hold timer captured", world.F.state.basher_hold_timer ~= nil)
   world.run_timer(world.F.state.basher_hold_timer)
   assert_false("4c: timeout releases hold", world.F.blocks_basher())
+end
+
+print("\n=== Test 5: attack-package retry stays suppressed until Fool releases ===")
+do
+  local world = make_world({
+    affs = { brokenleftarm = true, clumsiness = true },
+  })
+
+  local function queue_attack_package(primary_cmd)
+    if world.F.blocks_basher() then
+      Legacy.Settings.Basher.queued = false
+      return false
+    end
+    if primary_cmd and primary_cmd ~= "" then
+      world.ops[#world.ops + 1] = "send:queue add freestand " .. tostring(primary_cmd)
+    end
+    world.ops[#world.ops + 1] = "send:queue add freestand basher"
+    Legacy.Settings.Basher.queued = true
+    return true
+  end
+
+  assert_true("5a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  assert_false("5b: hold suppresses attack-package requeue", queue_attack_package("command orb"))
+  assert_eq("5c: basher queued stays false while suppressed", Legacy.Settings.Basher.queued, false)
+  assert_count("5d: no extra ops while hold active", world.ops, 2)
+
+  world.run_trigger(Yso._trig.fool_success)
+  assert_true("5e: attack package resumes after success", queue_attack_package("command orb"))
+  assert_eq("5f: basher queued becomes true after release", Legacy.Settings.Basher.queued, true)
+  assert_ops("5g: resumed attack package queues paired work", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+    "send:queue add freestand command orb",
+    "send:queue add freestand basher",
+  })
 end
 
 io.write(string.format("PASS: %d\n", pass_count))
