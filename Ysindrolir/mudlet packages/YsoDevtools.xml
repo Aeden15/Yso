@@ -5,14 +5,14 @@
 	<TimerPackage />
 	<AliasPackage>
 		<AliasGroup isActive="no" isFolder="yes">
-			<name>MagiDevtools</name>
+			<name>YsoDevtools</name>
 			<script />
 			<command />
 			<packageName />
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>yhelp</name>
-				<script>cecho("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|bloodboil snap|fire|debug|auto|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par|focus&gt; | yrshow [aff|dam|par|focus] [full]\n")</script>
+				<script>cecho("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | magi: ytest bloodboil snap|fire|debug|auto | occultist: ytest fool snap|fire|debug | shared: ytest snap|sens|instill|ent|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par|focus&gt; | yrshow [aff|dam|par|focus] [full]\n")</script>
 				<command />
 				<packageName />
 				<regex>^yhelp$</regex>
@@ -28,7 +28,7 @@
 if Yso and Yso.devtools and Yso.devtools.test and type(Yso.devtools.test.run) == "function" then
   Yso.devtools.test.run(args)
 else
-  print("[MagiDevtools] ytest harness not loaded.")
+  print("[YsoDevtools] ytest harness not loaded.")
 end</script><command /><packageName /><regex>^ytest(?:\s+(.+))?$</regex></Alias><Alias isActive="yes" isFolder="no">
 				<name>yreset</name>
 				<script>if Yso and Yso.devtools and type(Yso.devtools.reset)=="function" then Yso.devtools.reset() end</script>
@@ -126,7 +126,7 @@ Yso.devtools.status()</script>
 			</Alias>
 			<Alias isActive="yes" isFolder="no">
 				<name>Reload</name>
-				<script>cecho("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; yreload -&gt; yreset (lane lab)\n")
+				<script>cecho("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; yreload -&gt; yreset (lane lab)\n")
 if Yso and Yso.devtools and type(Yso.devtools.reset)=="function" then Yso.devtools.reset() end</script>
 				<command />
 				<packageName />
@@ -189,12 +189,12 @@ cecho(string.format("&lt;red&gt;[Yso] &lt;white&gt;Target: %s  &lt;red&gt;Occult
 			<Alias isActive="yes" isFolder="no">
 				<name>yrdebug</name>
 				<script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
-if not RD then cecho("&lt;red&gt;[MagiDevtools] route_debug not loaded\n"); return end
+if not RD then cecho("&lt;red&gt;[YsoDevtools] route_debug not loaded\n"); return end
 local args = matches[2] or ""
 local toks = {}
 for w in args:gmatch("%S+") do toks[#toks+1] = w:lower() end
 if #toks == 0 then
-  cecho("&lt;CadetBlue&gt;[MagiDevtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par|focus&gt;\n")
+  cecho("&lt;CadetBlue&gt;[YsoDevtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par|focus&gt;\n")
 elseif #toks == 1 then
   RD.debug_toggle(toks[1])
 else
@@ -207,7 +207,7 @@ end</script>
 			<Alias isActive="yes" isFolder="no">
 				<name>yrshow</name>
 				<script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
-if not RD then cecho("&lt;red&gt;[MagiDevtools] route_debug not loaded\n"); return end
+if not RD then cecho("&lt;red&gt;[YsoDevtools] route_debug not loaded\n"); return end
 RD.show(matches[2] or "")</script>
 				<command />
 				<packageName />
@@ -218,10 +218,10 @@ RD.show(matches[2] or "")</script>
 	<ActionPackage />
 	<ScriptPackage>
 		<Script isActive="yes" isFolder="no">
-			<name>MagiDevtools: Lane Lab</name>
+			<name>YsoDevtools: Lane Lab</name>
 			<packageName />
 			<script>--========================================================--
--- MagiDevtools: Lane Lab (offline lane testing)
+-- YsoDevtools: Lane Lab (offline lane testing)
 --  • Safe offline harness for payload / lane logic.
 --  • Provides dry-run emission via Yso.net.cfg.dry_run.
 --
@@ -495,7 +495,7 @@ function D.set_eq(ready, src)
   if b and Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
     pcall(Yso.pulse.wake, "lane:eq")
   end
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; EQ = %s", b and "READY" or "DOWN")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; EQ = %s", b and "READY" or "DOWN")) end
 end
 
 function D.set_bal(ready, src)
@@ -506,7 +506,7 @@ function D.set_bal(ready, src)
   if b and Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
     pcall(Yso.pulse.wake, "lane:bal")
   end
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; BAL = %s", b and "READY" or "DOWN")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; BAL = %s", b and "READY" or "DOWN")) end
 end
 
 function D.set_ent(ready, src)
@@ -517,7 +517,7 @@ function D.set_ent(ready, src)
   elseif Yso and Yso.occ then
     Yso.occ.entity_ready = b
   end
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; ENT = %s", b and "READY" or "DOWN")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; ENT = %s", b and "READY" or "DOWN")) end
 end
 
 function D.set_dry(on)
@@ -525,7 +525,7 @@ function D.set_dry(on)
   Yso.net.cfg = Yso.net.cfg or {}
   local b = (on == true)
   Yso.net.cfg.dry_run = b
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; DRY = %s", b and "ON" or "OFF")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; DRY = %s", b and "ON" or "OFF")) end
   return b
 end
 
@@ -549,7 +549,7 @@ function D.status()
   local prefer = (Yso and Yso.cfg and Yso.cfg.emit_prefer) or "eq"
   local sep = (Yso and Yso.net and type(Yso.net.get_sep)=="function") and Yso.net.get_sep() or ((Yso and Yso.cfg and Yso.cfg.pipe_sep) or "&amp;&amp;")
 
-  _ce(string.format("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; EQ:%s  BAL:%s  ENT:%s  DRY:%s  MODE:%s  PREFER:%s  SEP:%s",
+  _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; EQ:%s  BAL:%s  ENT:%s  DRY:%s  MODE:%s  PREFER:%s  SEP:%s",
     eq and "READY" or "DOWN",
     bal and "READY" or "DOWN",
     ent and "READY" or "DOWN",
@@ -562,7 +562,7 @@ function D.status()
     local eq_s = st.eq and _trim(st.eq) or ""
     local bal_s = st.bal and _trim(st.bal) or ""
     local cl_s = st.class and _trim(st.class) or ""
-    _ce(string.format("&lt;dim_grey&gt;[MagiDevtools] staged free=%d eq=%s bal=%s class=%s&lt;reset&gt;",
+    _ce(string.format("&lt;dim_grey&gt;[YsoDevtools] staged free=%d eq=%s bal=%s class=%s&lt;reset&gt;",
       free_n,
       (eq_s~="" and "Y" or "-"),
       (bal_s~="" and "Y" or "-"),
@@ -584,7 +584,7 @@ function D.lane(lane, tok)
   elseif lane == "bal" then return D.set_bal(b, "devtools:lane")
   elseif lane == "class" then return D.set_ent(b, "devtools:lane")
   else
-    if D.cfg.echo then _ce("&lt;red&gt;[MagiDevtools]&lt;reset&gt; unknown lane: "..tostring(lane)) end
+    if D.cfg.echo then _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; unknown lane: "..tostring(lane)) end
   end
 end
 
@@ -593,17 +593,17 @@ function D.stage(lane, cmd)
   cmd = _trim(cmd)
   if cmd == "" then return false end
   if not (Yso and Yso.queue and type(Yso.queue.stage) == "function") then
-    _ce("&lt;red&gt;[MagiDevtools]&lt;reset&gt; Yso.queue.stage not available.")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; Yso.queue.stage not available.")
     return false
   end
   pcall(Yso.queue.stage, lane, cmd, { src = "devtools:stage" })
-  if D.cfg.echo then _ce(string.format("&lt;dim_grey&gt;[MagiDevtools] stage %s: %s&lt;reset&gt;", lane, cmd)) end
+  if D.cfg.echo then _ce(string.format("&lt;dim_grey&gt;[YsoDevtools] stage %s: %s&lt;reset&gt;", lane, cmd)) end
   return true
 end
 
 function D.commit(lane)
   if not (Yso and Yso.queue and type(Yso.queue.commit) == "function") then
-    _ce("&lt;red&gt;[MagiDevtools]&lt;reset&gt; Yso.queue.commit not available.")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; Yso.queue.commit not available.")
     return false
   end
   local opts = {}
@@ -614,7 +614,7 @@ function D.commit(lane)
   local ok,res = pcall(Yso.queue.commit, opts)
   local sent = (ok and res == true) or false
   if D.cfg.echo then
-    _ce(string.format("&lt;dim_grey&gt;[MagiDevtools] commit%s =&gt; %s&lt;reset&gt;", (opts.wake_lane and (" lane:"..opts.wake_lane) or ""), sent and "SENT" or "NOOP"))
+    _ce(string.format("&lt;dim_grey&gt;[YsoDevtools] commit%s =&gt; %s&lt;reset&gt;", (opts.wake_lane and (" lane:"..opts.wake_lane) or ""), sent and "SENT" or "NOOP"))
   end
   return sent
 end
@@ -623,7 +623,7 @@ end
 function D.clear(lane)
   if Yso and Yso.queue and type(Yso.queue.clear) == "function" then
     pcall(Yso.queue.clear, lane)
-    if D.cfg.echo then _ce("&lt;dim_grey&gt;[MagiDevtools] cleared "..(lane or "ALL").."&lt;reset&gt;") end
+    if D.cfg.echo then _ce("&lt;dim_grey&gt;[YsoDevtools] cleared "..(lane or "ALL").."&lt;reset&gt;") end
     return true
   end
   return false
@@ -634,37 +634,37 @@ function D.set_mode(mode)
   if mode == "freestyle" then mode = "as_available" end
   if mode == "combo" then mode = "paired" end
   if mode ~= "paired" and mode ~= "as_available" then
-    _ce("&lt;red&gt;[MagiDevtools]&lt;reset&gt; mode must be paired|as_available")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; mode must be paired|as_available")
     return false
   end
   Yso.cfg = Yso.cfg or {}
   Yso.cfg.payload_mode = mode
-  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; MODE = "..mode) end
+  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; MODE = "..mode) end
   return true
 end
 
 function D.set_prefer(p)
   p = _trim(p):lower()
   if p ~= "eq" and p ~= "bal" then
-    _ce("&lt;red&gt;[MagiDevtools]&lt;reset&gt; prefer must be eq|bal")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; prefer must be eq|bal")
     return false
   end
   Yso.cfg = Yso.cfg or {}
   Yso.cfg.emit_prefer = p
-  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[MagiDevtools]&lt;reset&gt; PREFER = "..p) end
+  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; PREFER = "..p) end
   return true
 end
 
 function D.ack(kind)
   kind = _trim(kind):lower()
   if not (Yso and Yso.pulse and type(Yso.pulse.entity_ack) == "function") then
-    _ce("&lt;red&gt;[MagiDevtools]&lt;reset&gt; Yso.pulse.entity_ack not available.")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; Yso.pulse.entity_ack not available.")
     return false
   end
   if kind == "" then kind = "fail" end
   if kind == "disregard" then kind = "fail" end
   pcall(Yso.pulse.entity_ack, kind, "devtools")
-  if D.cfg.echo then _ce("&lt;dim_grey&gt;[MagiDevtools] entity_ack "..kind.."&lt;reset&gt;") end
+  if D.cfg.echo then _ce("&lt;dim_grey&gt;[YsoDevtools] entity_ack "..kind.."&lt;reset&gt;") end
   return true
 end
 
@@ -680,8 +680,8 @@ end
 
 
 --========================================================--
--- MagiDevtools: ytest (debug harness)
---  • Lives in MagiDevtools only (no core Yso changes).
+-- YsoDevtools: ytest (debug harness)
+--  • Shared Magi/Occultist harness (no core Yso changes).
 --  • Purpose: reproducible, short commands for testing EQ/BAL/ENT output
 --    and capturing server feedback without fragile command-line Lua pastes.
 --
@@ -691,6 +691,9 @@ end
 --   ytest instill &lt;aff&gt; [secs] [force]
 --   ytest ent &lt;raw command...&gt; [secs]
 --   ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle]
+--   ytest fool snap [cureset]
+--   ytest fool fire [manual|auto|diagnose] [cureset] [force]
+--   ytest fool debug [on|off|toggle]
 --   ytest off
 --========================================================--
 
@@ -1102,10 +1105,144 @@ function D.test.bloodboil_auto(tok)
   return M.cfg.auto_bloodboil
 end
 
+local function _fool_mod()
+  return Yso and Yso.fool or nil
+end
+
+local function _with_fool_cureset(F, cureset, fn)
+  if type(fn) ~= "function" then
+    return false, "fn missing"
+  end
+  if type(F) == "table" and type(F.dev_with_cureset) == "function" then
+    return F.dev_with_cureset(cureset, fn)
+  end
+
+  local ok, a, b, c, d = pcall(fn)
+  if not ok then
+    return false, a
+  end
+  return true, a, b, c, d
+end
+
+local function _fool_parse_token(tok)
+  tok = tostring(tok or ""):lower()
+  if tok == "" then
+    return nil, nil
+  end
+  if tok == "manual" or tok == "auto" or tok == "diagnose" or tok == "ytest" then
+    return tok, nil
+  end
+  return nil, tok
+end
+
+local function _queue_fool_force(F)
+  local cfg = type(Legacy and Legacy.Fool) == "table" and Legacy.Fool or {}
+  local mode = tostring(cfg.queue_mode or "addclearfull")
+  local qtype = tostring(cfg.queue_type or "bal")
+  local cmd = "fling fool at me"
+
+  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
+    local ok, queued = pcall(Yso.queue.raw, mode, qtype, cmd)
+    if ok and queued == true then
+      if type(F) == "table" then
+        F.state = F.state or {}
+        F.state.last_used = _now_s()
+      end
+      return true, string.format("queue raw %s/%s", mode, qtype)
+    end
+  end
+
+  if type(send) == "function" then
+    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
+    if type(F) == "table" then
+      F.state = F.state or {}
+      F.state.last_used = _now_s()
+    end
+    return true, string.format("queue %s %s", mode, qtype)
+  end
+
+  return false, "send unavailable"
+end
+
+function D.test.fool_snap(cureset)
+  local F = _fool_mod()
+  if type(F) ~= "table" or type(F.status) ~= "function" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  local ok, res = _with_fool_cureset(F, cureset, F.status)
+  if not ok then
+    _tprint("fool status error: " .. tostring(res))
+    return false
+  end
+  return true
+end
+
+function D.test.fool_fire(source, cureset, force)
+  local F = _fool_mod()
+  if type(F) ~= "table" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  D.test.off()
+  D.test.fool_snap(cureset)
+
+  if force == true then
+    local ok, via = _queue_fool_force(F)
+    if ok then
+      _tprint("queued fool via force (" .. tostring(via) .. ")")
+      return true
+    end
+    _tprint("fool force queue failed: " .. tostring(via))
+    return false
+  end
+
+  if type(Legacy and Legacy.FoolSelfCleanse) ~= "function" then
+    _tprint("fool helper missing Legacy.FoolSelfCleanse().")
+    return false
+  end
+
+  local ok, queued = _with_fool_cureset(F, cureset, function()
+    return Legacy.FoolSelfCleanse(source or "ytest")
+  end)
+  if ok and queued == true then
+    _tprint("queued fool via live helper.")
+    return true
+  elseif ok then
+    _tprint("fool not queued; see snapshot reason above.")
+    return false
+  end
+
+  _tprint("fool error: " .. tostring(queued))
+  return false
+end
+
+function D.test.fool_debug(tok)
+  local F = _fool_mod()
+  if type(F) ~= "table" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  F.cfg = F.cfg or {}
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not (F.cfg.debug == true)
+  end
+  F.cfg.debug = (desired == true)
+  if type(Legacy and Legacy.Fool) == "table" then
+    Legacy.Fool.debug = (desired == true)
+  end
+  _tprint("fool debug = " .. (F.cfg.debug and "ON" or "OFF"))
+  return F.cfg.debug
+end
+
 function D.test.run(argstr)
   argstr = _trim(argstr)
   if argstr == "" then
-    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle] | ytest off")
+    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle] | ytest fool snap [cureset] | ytest fool fire [manual|auto|diagnose] [cureset] [force] | ytest fool debug [on|off|toggle] | ytest off")
     return
   end
 
@@ -1178,12 +1315,36 @@ function D.test.run(argstr)
     end
     return
   elseif sub == "fool" then
-    local F = Yso and Yso.fool
-    if type(F) == "table" and type(F.status) == "function" then
-      pcall(F.status)
-    else
-      _tprint("fool module not loaded.")
+    local action = tostring(toks[2] or "snap"):lower()
+    if action == "snap" or action == "status" then
+      local _, cureset = _fool_parse_token(toks[3])
+      if not cureset then
+        _, cureset = _fool_parse_token(toks[4])
+      end
+      D.test.fool_snap(cureset)
+      return
+    elseif action == "fire" or action == "try" then
+      local source, cureset, force = "ytest", nil, false
+      for i = 3, #toks do
+        local x = tostring(toks[i]):lower()
+        if x == "force" then
+          force = true
+        else
+          local src, set = _fool_parse_token(x)
+          if src and source == "ytest" then
+            source = src
+          elseif set and not cureset then
+            cureset = set
+          end
+        end
+      end
+      D.test.fool_fire(source, cureset, force)
+      return
+    elseif action == "debug" then
+      D.test.fool_debug(toks[3] or "toggle")
+      return
     end
+    _tprint("usage: ytest fool snap [cureset] | ytest fool fire [manual|auto|diagnose] [cureset] [force] | ytest fool debug [on|off|toggle]")
     return
   end
 
@@ -1201,7 +1362,7 @@ end
 		<Script isActive="yes" isFolder="no">
 			<name>Route Debug Helpers</name>
 			<packageName />
-			<script>-- Route-aware debug helpers for MagiDevtools.
+			<script>-- Route-aware debug helpers for YsoDevtools.
 -- Provides yrdebug, yrshow aliases.
 
 Yso = Yso or {}
@@ -1229,7 +1390,7 @@ RD.aliases = RD.aliases or {}
 
 local function _tprint(msg)
   if type(cecho) == "function" then
-    cecho(string.format("&lt;CadetBlue&gt;[MagiDevtools:Route]&lt;reset&gt; %s\n", tostring(msg)))
+    cecho(string.format("&lt;CadetBlue&gt;[YsoDevtools:Route]&lt;reset&gt; %s\n", tostring(msg)))
   end
 end
 

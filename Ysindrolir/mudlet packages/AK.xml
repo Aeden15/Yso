@@ -7489,6 +7489,32 @@ end</script>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Crone Wither</name>
+						<script>if ak.ai() then return end
+if IsTargetted(matches[4]) then
+   smashlimb = matches[2]..matches[3]
+   if affstrack.score[smashlimb] &lt; 100 then
+      OppGainedAff(smashlimb)
+   end
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^A withered crone reaches out to caress the (left|right) (arm|leg) of ([\w'\-]+), the limb withering away under \w+ gnarled grasp\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Attend</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -31844,6 +31870,7 @@ end</script>
 					<name>oapply</name>
 					<packageName></packageName>
 					<script>function ak.cure.apply(applied_aff) 
+local what = applied_aff
 	 if ak.timers.salvebackup then killTimer(ak.timers.salvebackup) end
    if aksalvechange then killTimer(aksalvechange) end
    if akrestoration then killTimer(akrestoration) end

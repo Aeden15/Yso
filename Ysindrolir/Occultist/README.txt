@@ -19,13 +19,12 @@ Current fixes
 
   The stale generic package:
     Ysindrolir/mudlet packages/Devtools.xml
-  has been retired. Class-local devtools now live at:
-    Ysindrolir/Occultist/Occultist Devtools.mpackage
-    Ysindrolir/Magi/MagiDevtools.xml
-  Occultist Devtools.mpackage now imports with its top-level alias group
-  enabled by default. MagiDevtools.xml remains disabled by default.
+  has been retired. Unified class devtools now live in one XML source:
+    Ysindrolir/mudlet packages/YsoDevtools.xml
+  This shared XML now carries both Magi and Occultist devtools, segregated by
+  class-specific command surfaces under the same package.
 
-  Occultist Devtools.mpackage now includes a Fool test surface:
+  The unified XML includes an Occultist Fool test surface:
     ytest fool snap
     ytest fool fire [manual|auto|diagnose] [force]
     ytest fool debug [on|off|toggle]
@@ -208,16 +207,15 @@ Working notes
     queue commit / lane reopen behavior
 
   The live generic Devtools package has been retired from mudlet packages.
-  Use the class-local devtools packages instead:
-    Occultist Devtools.mpackage
-    ../Magi/MagiDevtools.xml
-  Occultist Devtools.mpackage loads with aliases enabled by default.
-  MagiDevtools.xml still requires you to enable its top-level alias group
-  manually in Mudlet.
+  Use the unified shared XML instead:
+    ../mudlet packages/YsoDevtools.xml
+  That XML now contains both Magi and Occultist devtools. Enable its
+  top-level alias group in Mudlet before using the class-specific helpers.
   Fool now hard-preempts Legacy basher freestand work only after it passes
   its mechanical gates. If Fool is prone, it reports that reason and leaves
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
+
 
 

@@ -10,17 +10,16 @@ Current fixes
     Ysindrolir/mudlet packages/Devtools.xml
   has been retired.
 
-  The split Magi-side debug package now lives here as:
-    MagiDevtools.xml
+  Unified class devtools now live in one XML source:
+    ../mudlet packages/YsoDevtools.xml
 
-  This file set is currently the Magi-side home for debug tooling while the
-  Occultist-side copy remains at:
-    ../Occultist/Occultist Devtools.mpackage
+  This XML now contains both Magi and Occultist devtools, kept segregated by
+  class-specific command surfaces inside the same package.
 
   Magi aliases and triggers in Yso system.xml were corrected for the current
   Elementalism / Crystalism helpers.
 
-  MagiDevtools now includes a Bloodboil test surface:
+  The unified devtools XML includes a Bloodboil test surface:
     ytest bloodboil snap
     ytest bloodboil fire [secs] [force]
     ytest bloodboil debug [on|off|toggle]
@@ -115,7 +114,7 @@ Notes
     yrshow focus full
   Focus uses live Yso.magi.resonance state, observes Crystalism focus without
   auto-casting it, and exposes Dissonance stage/confidence/last evidence in
-  MagiDevtools rather than inventing a fixed timer.
+  the shared YsoDevtools package rather than inventing a fixed timer.
   Crystalism resonance notice triggers live under:
     Yso system.xml -> Yso Triggers/Magi/Crystalism
   energise resonance is separate from the mheals absorb-energy flow:

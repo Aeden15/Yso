@@ -43,8 +43,8 @@ Current workspace snapshot: April 2, 2026.
 - The wake bus now retries staged queue commits on lane wakes. Manual lane aliases such as `cleanse` can stage while EQ is down and flush on reopen.
 - Queue-backed live DRY sends now acknowledge Magi group-damage emits through the shared `Yso.locks.note_payload()` callback path, so route state advances without manual hook simulation.
 - Shared `[Yso]` mode echoes now report only real mode/route changes, while class-owned loop toggles stay on `[Yso:Magi]` and `[Yso:Occultist]` without duplicate route-state spam.
-- The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Class-local devtools now live at `Ysindrolir/Occultist/Occultist Devtools.mpackage` and `Ysindrolir/Magi/MagiDevtools.xml`.
-- Split devtools now expose class-local self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
+- The stale generic `Ysindrolir/mudlet packages/Devtools.xml` package has been retired. Unified class devtools now live in `Ysindrolir/mudlet packages/YsoDevtools.xml`.
+- The shared devtools XML exposes class-segregated self-cleanse testers: `ytest bloodboil snap|fire|debug|auto` for Magi, and `ytest fool snap|fire|debug` for Occultist.
 - Export artifacts were refreshed from the canonical workspace sources, including `Yso system.xml` and the queue/wake-bus mirrors that feed it.
 - `team dam` remains class-sensitive: Occultist keeps the existing group-damage route, while Magi now runs a freeze-first mixed route that opens with horripilation, forces an initial freeze step on fresh targets, keeps glaciate/windows on the water side, and branches into `magma` / `firelash` / `conflagrate` / fire emanation once `frozen` or `frostbite` is established.
 - Magi routes now share a Magi-only chassis helper at `Yso.off.magi.route_core`, and Magi combat now includes a duel `focus` route that builds four-element moderate resonance plus Dissonance pressure into `convergence`, then overlays `destroy` / Fulminate / burst maintenance.
@@ -166,4 +166,5 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.
 - If you are debugging automation, start with the shared pipeline first: mode ownership, wake intake, queue staging, then queue commit/flush.
 - **Fool basher preemption** — Eligible Fool uses now clear Legacy basher `freestand` work before queueing and temporarily suppress fresh basher attack-package requeues until the Fool self-use line or a timeout. The prone gate still blocks Fool before any queue clearing, and debug/status output reports the prone reason and basher-hold state.
+
 

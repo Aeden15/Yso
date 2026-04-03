@@ -95,11 +95,10 @@ Current fixes
 
   The stale generic package:
     Ysindrolir/mudlet packages/Devtools.xml
-  has been retired. Class-local devtools now live at:
-    Ysindrolir/Occultist/Occultist Devtools.mpackage
-    Ysindrolir/Magi/MagiDevtools.xml
+  has been retired. Unified class devtools now live at:
+    Ysindrolir/mudlet packages/YsoDevtools.xml
 
-  Split devtools now expose class-local self-cleanse testers:
+  The shared XML exposes class-segregated self-cleanse testers:
     Magi      ytest bloodboil snap|fire|debug|auto
     Occultist ytest fool snap|fire|debug
 
@@ -230,4 +229,5 @@ Syncing with OneDrive Desktop
     freestand work before queueing and suppress fresh basher attack-package
     requeues until the Fool self-use line or a timeout. Prone still blocks Fool
     before any queue clearing and remains visible in debug/status output.
+
 
