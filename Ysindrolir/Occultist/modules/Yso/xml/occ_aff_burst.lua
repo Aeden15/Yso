@@ -14,6 +14,7 @@ Yso.off.oc = Yso.off.oc or {}
 
 Yso.off.oc.occ_aff_burst = Yso.off.oc.occ_aff_burst or {}
 local AB = Yso.off.oc.occ_aff_burst
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 AB.alias_owned = true
 
 -- Shared cleanseaura planner surface. Limb-side remains available as a namespace;
@@ -944,7 +945,7 @@ end
 
 _entity_aff_cmd = function(aff, tgt, ES)
   if _lc(aff) == "chimera_command" then
-    return ("command chimera at %s"):format(tgt), "mental_build"
+    return _cmd("entity_at", "", { "chimera", tgt }), "mental_build"
   end
   if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == "function" then
     return Yso.ent_cmd_for_aff(_lc(aff), tgt, _has_aff)
@@ -1119,7 +1120,7 @@ local function _entity_pair(tgt, plan, ctx)
     and not _class_defense_gates(plan)
     and not (plan.finish_stage == "transition" or plan.finish_stage == "burst")
   then
-    out.entity_cmd = ("command chimera at %s"):format(tgt)
+    out.entity_cmd = _cmd("entity_at", "", { "chimera", tgt })
     out.entity_cat = "mental_build"
     out.attend_for_deaf = true
     out.reason = "attend_deaf_chimera"
@@ -1129,7 +1130,7 @@ local function _entity_pair(tgt, plan, ctx)
     and not _class_defense_gates(plan)
     and not (plan.finish_stage == "transition" or plan.finish_stage == "burst")
   then
-    out.entity_cmd = ("command chimera at %s"):format(tgt)
+    out.entity_cmd = _cmd("entity_at", "", { "chimera", tgt })
     out.entity_cat = "mental_build"
     out.reason = "chimera_setup"
     ent_ready = false
@@ -1175,7 +1176,7 @@ local function _entity_pair(tgt, plan, ctx)
   })
   if out.para.allowed == true then
     if out.para.lane == "entity" and ent_ready and not entity_reserved then
-      out.entity_cmd = ("command slime at %s"):format(tgt)
+      out.entity_cmd = _cmd("entity_at", "", { "slime", tgt })
       out.entity_cat = "mana_bury"
       entity_aff = "paralysis"
       out.reason = "paralysis_override_entity"
@@ -1186,7 +1187,7 @@ local function _entity_pair(tgt, plan, ctx)
   end
 
   if ent_ready and out.entity_cmd == nil and plan and plan.needs_mana_bury == true and ES.syc_refresh == true and has_wm ~= true then
-    out.entity_cmd = ("command sycophant at %s"):format(tgt)
+    out.entity_cmd = _cmd("entity_at", "", { "sycophant", tgt })
     out.entity_cat = "mana_bury"
     if out.reason == "" then out.reason = "sycophant_mana_support" end
   end
@@ -1214,12 +1215,12 @@ local function _soulmaster_order_cmd(tgt)
 
   if _has_aff(tgt, "haemophilia") then
     if syc_active then
-      return ("order %s focus mind"):format(tgt), tag
+      return _cmd("order_focus_mind", tgt), tag
     end
-    return ("order %s focus mind"):format(tgt), tag
+    return _cmd("order_focus_mind", tgt), tag
   end
 
-  return ("order %s clot"):format(tgt), tag
+  return _cmd("order_clot", tgt), tag
 end
 
 local function _finish_state(tgt)
@@ -1341,7 +1342,7 @@ end
 local function _loyals_open_cmd(tgt)
   tgt = _trim(tgt)
   if tgt == "" or _loyals_active_for(tgt) then return nil, nil end
-  return (tostring(AB.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt), "target_swap_bootstrap"
+  return (tostring(AB.cfg.loyals_on_cmd or COMMANDS.loyals_on_default.string)):format(tgt), "target_swap_bootstrap"
 end
 
 local function _set_loyals_hostile(v, tgt)
@@ -1388,6 +1389,143 @@ local function _command_sep()
   local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or "&&")
   if sep == "" then sep = "&&" end
   return sep
+end
+
+local COMMANDS = {
+  entity_at = {
+    id = "entity_at",
+    string = "command %s at %s",
+  },
+  gremlin_at = {
+    id = "gremlin_at",
+    string = "command gremlin at %s",
+    target_required = false,
+    format_target = true,
+  },
+  order_focus_mind = {
+    id = "order_focus_mind",
+    string = "order %s focus mind",
+    target_required = false,
+    format_target = true,
+  },
+  order_clot = {
+    id = "order_clot",
+    string = "order %s clot",
+    target_required = false,
+    format_target = true,
+  },
+  anti_tumble_remote_lust = {
+    id = "anti_tumble_remote_lust",
+    string = "outd lust&&order doppleganger seek %s&&order doppleganger channel fling lust at %s",
+  },
+  anti_tumble_followup_lust = {
+    id = "anti_tumble_followup_lust",
+    string = "fling lust at %s",
+    target_required = false,
+    format_target = true,
+  },
+  lovers_ruinate = {
+    id = "lovers_ruinate",
+    string = "outd lovers&&ruinate lovers at %s",
+    target_required = false,
+    format_target = true,
+  },
+  moon_fling = {
+    id = "moon_fling",
+    string = "outd moon&&fling moon at %s",
+    target_required = false,
+    format_target = true,
+  },
+  whisperingmadness = {
+    id = "whisperingmadness",
+    string = "whisperingmadness %s",
+    target_required = false,
+    format_target = true,
+  },
+  pinchaura_speed = {
+    id = "pinchaura_speed",
+    string = "pinchaura %s speed",
+    target_required = false,
+    format_target = true,
+  },
+  utter_truename = {
+    id = "utter_truename",
+    string = "utter truename %s",
+    target_required = false,
+    format_target = true,
+  },
+  devolve = {
+    id = "devolve",
+    string = "devolve %s",
+    target_required = false,
+    format_target = true,
+  },
+  regress = {
+    id = "regress",
+    string = "regress %s",
+    target_required = false,
+    format_target = true,
+  },
+  enervate = {
+    id = "enervate",
+    string = "enervate %s",
+    target_required = false,
+    format_target = true,
+  },
+  instill_with = {
+    id = "instill_with",
+    string = "instill %s with %s",
+    target_required = false,
+    format_target = true,
+  },
+  attend = {
+    id = "attend",
+    string = "attend %s",
+    target_required = false,
+    format_target = true,
+  },
+  readaura = {
+    id = "readaura",
+    string = "readaura %s",
+    target_required = false,
+    format_target = true,
+  },
+  loyals_on_default = {
+    id = "loyals_on_default",
+    string = "order entourage kill %s",
+    target_required = false,
+    format_target = true,
+  },
+}
+
+local _unpack = table.unpack or unpack
+local function _cmd(command_id, target, args)
+  local spec = COMMANDS[command_id]
+  if type(spec) ~= "table" then return nil end
+
+  if RI and type(RI.command_from_spec) == "function" then
+    local cmd = RI.command_from_spec(spec, target, args)
+    return cmd
+  end
+
+  local raw = _trim(spec.string)
+  if raw == "" then return nil end
+  local list = {}
+  if type(args) == "table" then
+    for i = 1, #args do list[#list + 1] = args[i] end
+  end
+
+  local ok, built
+  if spec.format_target == true then
+    list = { tostring(target or ""), _unpack(list) }
+    ok, built = pcall(string.format, raw, _unpack(list))
+  elseif #list > 0 then
+    ok, built = pcall(string.format, raw, _unpack(list))
+  else
+    return raw
+  end
+  if not ok then return nil end
+  return _trim(built)
 end
 
 local function _chain_cmds(...)
@@ -1841,7 +1979,7 @@ local function _unnamable_attend_plan(tgt, plan)
     tonumber(AB.cfg.attend_lockout_s or 0) or 0,
     tonumber(AB.cfg.unnamable_attend_debounce_s or 3.5) or 3.5
   )
-  return ("attend %s"):format(tgt), "mental_build", tag, lock
+  return _cmd("attend", tgt), "mental_build", tag, lock
 end
 
 local function _unnamable_candidate(tgt, plan)
@@ -2281,14 +2419,14 @@ local function _anti_tumble_plan(tgt)
   if tgt == "" or active ~= true then return out end
 
   if st.remote_lust_pending == true then
-    out.free_cmd = ("outd lust&&order doppleganger seek %s&&order doppleganger channel fling lust at %s"):format(tgt, tgt)
+    out.free_cmd = _cmd("anti_tumble_remote_lust", "", { tgt, tgt })
     out.free_cat = "anti_tumble"
     out.free_tag = "ab:free:anti:dop:" .. _lc(tgt)
     return out
   end
 
   if st.remote_lust_followup == true and st.ally == true and _bal_ready() then
-    out.bal_cmd = ("fling lust at %s"):format(tgt)
+    out.bal_cmd = _cmd("anti_tumble_followup_lust", tgt)
     out.bal_cat = "anti_tumble"
     out.bal_tag = "ab:bal:anti:lust:" .. _lc(tgt)
   end
@@ -2369,7 +2507,7 @@ local function _shieldbreak_plan(tgt, proposed_cat, proposed_cmd)
     cmd = _trim(ok and v or "")
   end
   if cmd == "" then
-    cmd = ("command gremlin at %s"):format(tgt)
+    cmd = _cmd("gremlin_at", tgt)
   end
 
   return cmd, "defense_break", tag, lock
@@ -2401,7 +2539,7 @@ local function _bal_plan(tgt, plan)
     if _mana_bury_ready(tgt) ~= true then
       return nil, nil
     end
-    return ("outd lovers&&ruinate lovers at %s"):format(tgt), "mana_bury",
+    return _cmd("lovers_ruinate", tgt), "mana_bury",
       "ab:bal:manaleech:" .. _lc(tgt), 3.0
   end
 
@@ -2419,7 +2557,7 @@ local function _bal_plan(tgt, plan)
   if _focus_lock_needs_moon(tgt) then
     local moon_tag = "ab:bal:moon:" .. _lc(tgt)
     if not _recent_sent(moon_tag, tonumber(AB.cfg.moon_lockout_s or 4.5) or 4.5) then
-      return ("outd moon&&fling moon at %s"):format(tgt), "mental_build", moon_tag, tonumber(AB.cfg.moon_lockout_s or 4.5)
+      return _cmd("moon_fling", tgt), "mental_build", moon_tag, tonumber(AB.cfg.moon_lockout_s or 4.5)
     end
   end
 
@@ -2477,29 +2615,29 @@ local function _eq_plan(tgt, plan, gate)
   end
 
   if _truebook_can_utter(tgt) and not has_wm and _has_any_required_insanity(tgt) then
-    return ("whisperingmadness %s"):format(tgt), "mental_build", "ab:eq:wm:" .. _lc(tgt), 2.3
+    return _cmd("whisperingmadness", tgt), "mental_build", "ab:eq:wm:" .. _lc(tgt), 2.3
   end
 
   if burst_ready then
     if plan.needs_speed_strip and not _recent_sent(_pin_tag(tgt), tonumber(AB.cfg.speed_hold_s or 3.2)) then
-      return ("pinchaura %s speed"):format(tgt), "speed_strip_window", _pin_tag(tgt), tonumber(AB.cfg.pinchaura_lockout_s or 4.1)
+      return _cmd("pinchaura_speed", tgt), "speed_strip_window", _pin_tag(tgt), tonumber(AB.cfg.pinchaura_lockout_s or 4.1)
     end
     if (plan.speed == false or _recent_sent(_pin_tag(tgt), tonumber(AB.cfg.speed_hold_s or 3.2))) then
-      return ("utter truename %s"):format(tgt), "reserved_burst", _utter_tag(tgt), tonumber(AB.cfg.utter_follow_s or 5.0)
+      return _cmd("utter_truename", tgt), "reserved_burst", _utter_tag(tgt), tonumber(AB.cfg.utter_follow_s or 5.0)
     end
   end
 
   if plan.needs_mana_bury and has_manaleech then
     if not _has_aff(tgt, "disloyalty") then
-      return ("devolve %s"):format(tgt), "mana_bury", "ab:eq:devolve:" .. _lc(tgt), 2.5
+      return _cmd("devolve", tgt), "mana_bury", "ab:eq:devolve:" .. _lc(tgt), 2.5
     end
     if _chimera_pressure_pair_active(tgt, plan) and _ent_ready() and not _class_defense_gates(plan) then
       return nil, nil, nil, nil
     end
     if _anorexia_fallback_due(tgt, plan) then
-      return ("regress %s"):format(tgt), "mana_bury", "ab:eq:regress:" .. _lc(tgt), 2.5
+      return _cmd("regress", tgt), "mana_bury", "ab:eq:regress:" .. _lc(tgt), 2.5
     end
-    return ("enervate %s"):format(tgt), "mana_bury", "ab:eq:enervate:" .. _lc(tgt), 4.0
+    return _cmd("enervate", tgt), "mana_bury", "ab:eq:enervate:" .. _lc(tgt), 4.0
   end
 
   local attend_cmd, attend_cat, attend_tag, attend_lock = _unnamable_attend_plan(tgt, plan)
@@ -2523,13 +2661,13 @@ end
 local function _mana_bury_eq_cmd(tgt, aff)
   aff = _lc(aff)
   if aff == "asthma" or aff == "slickness" or aff == "paralysis" or aff == "healthleech" or aff == "clumsiness" then
-    return ("instill %s with %s"):format(tgt, aff), "mana_bury", "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff, 2.5
+    return _cmd("instill_with", tgt, { aff }), "mana_bury", "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff, 2.5
   end
   if aff == "disloyalty" then
-    return ("devolve %s"):format(tgt), "mana_bury", "ab:eq:devolve:" .. _lc(tgt), 2.5
+    return _cmd("devolve", tgt), "mana_bury", "ab:eq:devolve:" .. _lc(tgt), 2.5
   end
   if aff == "anorexia" then
-    return ("regress %s"):format(tgt), "mana_bury", "ab:eq:regress:" .. _lc(tgt), 2.5
+    return _cmd("regress", tgt), "mana_bury", "ab:eq:regress:" .. _lc(tgt), 2.5
   end
   return nil, nil, nil, nil
 end
@@ -2643,12 +2781,12 @@ local function _route_pair_plan(tgt, plan)
     and not _class_defense_gates(plan)
   then
     if plan and plan.needs_attend == true then
-      out.entity_cmd = ("command chimera at %s"):format(tgt)
+      out.entity_cmd = _cmd("entity_at", "", { "chimera", tgt })
       out.entity_cat = "mental_build"
       out.entity_aff = "chimera_command"
       out.reason = "attend_deaf_chimera"
     elseif chimera_pair_pressure then
-      out.entity_cmd = ("command chimera at %s"):format(tgt)
+      out.entity_cmd = _cmd("entity_at", "", { "chimera", tgt })
       out.entity_cat = "mental_build"
       out.entity_aff = "chimera_command"
       out.reason = "chimera_pressure_pair"
@@ -2665,13 +2803,13 @@ local function _route_pair_plan(tgt, plan)
         end
       end
       if out.entity_cmd == nil then
-        out.entity_cmd = ("command chimera at %s"):format(tgt)
+        out.entity_cmd = _cmd("entity_at", "", { "chimera", tgt })
         out.entity_cat = "mental_build"
         out.entity_aff = "chimera_command"
         out.reason = _focus_lock_in_chimera_pool(predicted_focus) and ("focus_lock_predict:" .. predicted_focus) or "focus_lock_chimera"
       end
     elseif ES.syc_refresh == true and has_wm ~= true and plan and plan.cleanseaura_ready ~= true then
-      out.entity_cmd = ("command sycophant at %s"):format(tgt)
+      out.entity_cmd = _cmd("entity_at", "", { "sycophant", tgt })
       out.entity_cat = "mental_build"
       out.entity_aff = "sycophant"
       out.reason = "focus_lock_sycophant"
@@ -3021,7 +3159,7 @@ function AB.attack_function(arg)
   local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
   local required_entities = {
     sycophant = (pair and pair.entity_aff == "sycophant")
-      or (entity_cmd == ("command sycophant at %s"):format(tgt))
+      or (entity_cmd == _cmd("entity_at", "", { "sycophant", tgt }))
       or (plan and plan.needs_mana_bury == true and has_wm ~= true)
       or (_has_aff(tgt, "manaleech") and has_wm ~= true and plan and plan.cleanseaura_ready ~= true),
   }
@@ -3262,7 +3400,7 @@ function AB.on_sent(payload, ctx)
   end
 
   if tgt ~= "" then
-    local loyals_cmd = (tostring(AB.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
+    local loyals_cmd = (tostring(AB.cfg.loyals_on_cmd or COMMANDS.loyals_on_default.string)):format(tgt)
     if type(payload.meta) == "table" and _trim(payload.meta.parry_limb or "") ~= "" and Yso and Yso.parry and type(Yso.parry.note_sent) == "function" then
       pcall(Yso.parry.note_sent, payload.meta.parry_limb)
     end
@@ -3275,7 +3413,7 @@ function AB.on_sent(payload, ctx)
       _clear_loyals_hostile()
     end
 
-    local readaura_cmd = ("readaura %s"):format(tgt)
+    local readaura_cmd = _cmd("readaura", tgt)
     if _lane_contains_cmd(eq_lane, readaura_cmd) and Yso and Yso.occ then
       if type(Yso.occ.aura_begin) == "function" then
         pcall(Yso.occ.aura_begin, tgt, "occ_aff_burst_send")
@@ -3285,7 +3423,7 @@ function AB.on_sent(payload, ctx)
       end
     end
 
-    local attend_cmd = ("attend %s"):format(tgt)
+    local attend_cmd = _cmd("attend", tgt)
     if _lane_contains_cmd(eq_lane, attend_cmd) then
       local US = _unnamable_state(tgt)
       if US then
@@ -3322,7 +3460,7 @@ function AB.on_sent(payload, ctx)
       end
     end
 
-    local gremlin_cmd = ("command gremlin at %s"):format(tgt)
+    local gremlin_cmd = _cmd("gremlin_at", tgt)
     if _lane_contains_cmd(eq_lane, gremlin_cmd) then
       local SB = _shieldbreak_state(tgt)
       if SB then
@@ -3335,15 +3473,15 @@ function AB.on_sent(payload, ctx)
     local eq_aff = _lc(explain and explain.eq_aff or "")
     local entity_aff = _lc(explain and explain.entity_aff or "")
     local entity_cmd = _trim(explain and explain.planned and explain.planned.entity or "")
-    if para_lane == "eq" and _lane_contains_cmd(eq_lane, ("instill %s with paralysis"):format(tgt)) then
+    if para_lane == "eq" and _lane_contains_cmd(eq_lane, _cmd("instill_with", tgt, { "paralysis" })) then
       _note_refresh_sent(tgt, "eq", "paralysis")
-    elseif para_lane == "entity" and _lane_contains_cmd(class_lane, ("command slime at %s"):format(tgt)) then
+    elseif para_lane == "entity" and _lane_contains_cmd(class_lane, _cmd("entity_at", "", { "slime", tgt })) then
       _note_refresh_sent(tgt, "entity", "paralysis")
     else
       if eq_aff ~= "" and (
-        _lane_contains_cmd(eq_lane, ("instill %s with %s"):format(tgt, eq_aff))
-        or (eq_aff == "disloyalty" and _lane_contains_cmd(eq_lane, ("devolve %s"):format(tgt)))
-        or (eq_aff == "anorexia" and _lane_contains_cmd(eq_lane, ("regress %s"):format(tgt)))
+        _lane_contains_cmd(eq_lane, _cmd("instill_with", tgt, { eq_aff }))
+        or (eq_aff == "disloyalty" and _lane_contains_cmd(eq_lane, _cmd("devolve", tgt)))
+        or (eq_aff == "anorexia" and _lane_contains_cmd(eq_lane, _cmd("regress", tgt)))
       ) then
         _note_refresh_sent(tgt, "eq", eq_aff)
       elseif entity_aff ~= "" and entity_aff ~= "chimera_command" and entity_aff ~= "sycophant"
@@ -3353,13 +3491,13 @@ function AB.on_sent(payload, ctx)
       end
     end
 
-    local remote_lust_cmd = ("outd lust&&order doppleganger seek %s&&order doppleganger channel fling lust at %s"):format(tgt, tgt)
+    local remote_lust_cmd = _cmd("anti_tumble_remote_lust", "", { tgt, tgt })
     if _lane_contains_cmd(free_lane, remote_lust_cmd)
       and Yso and Yso.dop and type(Yso.dop.note_remote_lust_sent) == "function" then
       pcall(Yso.dop.note_remote_lust_sent, tgt)
     end
 
-    local followup_lust_cmd = ("fling lust at %s"):format(tgt)
+    local followup_lust_cmd = _cmd("anti_tumble_followup_lust", tgt)
     if _lane_contains_cmd(bal_lane, followup_lust_cmd)
       and Yso and Yso.dop and type(Yso.dop.consume_followup_lust) == "function" then
       pcall(Yso.dop.consume_followup_lust, tgt)
@@ -3466,7 +3604,6 @@ function AB.explain()
 end
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(AB, AB.route_contract)
   end

@@ -39,6 +39,7 @@ if type(RC) ~= "table" and _load_magi_peer("magi_route_core.lua") then
   RC = Yso.off.magi.route_core
 end
 assert(type(RC) == "table", "Yso.off.magi.route_core unavailable")
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 local PENDING_SLOTS = {
   "horripilation",
@@ -101,7 +102,6 @@ MGD.route_contract = MGD.route_contract or {
 }
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(MGD, MGD.route_contract)
   end
@@ -434,6 +434,136 @@ local function _spell_guard(slot_name, tgt, cmd)
   })
 end
 
+local COMMANDS = {
+  horripilation = {
+    id = "horripilation",
+    string = "staff cast horripilation %s",
+    slot = "horripilation",
+    target_required = false,
+    format_target = true,
+  },
+  freeze = {
+    id = "freeze",
+    string = "cast freeze at %s",
+    slot = "freeze",
+    target_required = false,
+    format_target = true,
+  },
+  mudslide = {
+    id = "mudslide",
+    string = "cast mudslide at %s",
+    slot = "mudslide",
+    target_required = false,
+    format_target = true,
+  },
+  glaciate = {
+    id = "glaciate",
+    string = "cast glaciate at %s",
+    slot = "glaciate",
+    target_required = false,
+    format_target = true,
+    guard = function()
+      if not _score_positive("frozen") then return false, "frozen_required" end
+      return true, ""
+    end,
+  },
+  magma = {
+    id = "magma",
+    string = "cast magma at %s",
+    slot = "magma",
+    target_required = false,
+    format_target = true,
+  },
+  firelash = {
+    id = "firelash",
+    string = "cast firelash at %s",
+    slot = "firelash",
+    target_required = false,
+    format_target = true,
+  },
+  conflagrate = {
+    id = "conflagrate",
+    string = "cast conflagrate at %s",
+    slot = "conflagrate",
+    target_required = false,
+    format_target = true,
+    guard = function()
+      if not _score_positive("aflame") then return false, "ablaze_required" end
+      if (_score_aff("aflame") < 200) then return false, "aflame_not_ready" end
+      return true, ""
+    end,
+  },
+  emanation_water = {
+    id = "emanation_water",
+    string = "cast emanation at %s water",
+    slot = "emanation_water",
+    target_required = false,
+    format_target = true,
+    guard = function()
+      local major = _res_major("water")
+      if major ~= true then return false, "water_not_major" end
+      return true, ""
+    end,
+  },
+  emanation_fire = {
+    id = "emanation_fire",
+    string = "cast emanation at %s fire",
+    slot = "emanation_fire",
+    target_required = false,
+    format_target = true,
+    guard = function()
+      local major = _res_major("fire")
+      if major ~= true then return false, "fire_not_major" end
+      if not _score_positive("conflagrate") then return false, "conflagrate_required" end
+      if not (_score_positive("frozen") or _score_positive("frostbite")) then return false, "freeze_stable_required" end
+      return true, ""
+    end,
+  },
+}
+
+local function _build_cmd(spec, tgt, args)
+  if RI and type(RI.command_from_spec) == "function" then
+    return RI.command_from_spec(spec, tgt, args)
+  end
+  local raw = _trim(spec and spec.string or "")
+  if raw == "" then return nil, "missing_string" end
+  if spec and spec.format_target == true then
+    local ok, built = pcall(string.format, raw, tostring(tgt or ""))
+    if not ok then return nil, "format_error" end
+    return _trim(built), ""
+  end
+  return raw, ""
+end
+
+local function _can_send(command_id, tgt, args)
+  local spec = COMMANDS[command_id]
+  if type(spec) ~= "table" then return false, "unknown_command", "" end
+
+  local function _combined_guard(slot, target, cmd, opts)
+    if type(spec.guard) == "function" then
+      local ok_pre, why_pre = spec.guard(target, args, cmd, opts)
+      if ok_pre ~= true then
+        return false, tostring(why_pre or "command_guard_blocked")
+      end
+    end
+    return _spell_guard(slot, target, cmd)
+  end
+
+  if RI and type(RI.guard_and_build_command) == "function" then
+    return RI.guard_and_build_command({
+      spec = spec,
+      target = tgt,
+      args = args,
+      guard = _combined_guard,
+    })
+  end
+
+  local cmd, why = _build_cmd(spec, tgt, args)
+  if not cmd then return false, tostring(why or "invalid_command"), "" end
+  local ok, gwhy = _combined_guard(spec.slot, tgt, cmd, {})
+  return ok, gwhy, cmd
+end
+
 local function _freeze_stable()
   return _score_positive("frozen") or _score_positive("frostbite")
 end
@@ -456,69 +586,6 @@ end
 
 local function _water_res_major()
   return _res_major("water")
-end
-
-local function _can_cast_horripilation(tgt)
-  local cmd = ("staff cast horripilation %s"):format(tgt)
-  local ok, why = _spell_guard("horripilation", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_freeze(tgt)
-  local cmd = ("cast freeze at %s"):format(tgt)
-  local ok, why = _spell_guard("freeze", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_mudslide(tgt)
-  local cmd = ("cast mudslide at %s"):format(tgt)
-  local ok, why = _spell_guard("mudslide", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_glaciate(tgt)
-  local cmd = ("cast glaciate at %s"):format(tgt)
-  if not _score_positive("frozen") then return false, "frozen_required", cmd end
-  local ok, why = _spell_guard("glaciate", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_magma(tgt)
-  local cmd = ("cast magma at %s"):format(tgt)
-  local ok, why = _spell_guard("magma", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_firelash(tgt)
-  local cmd = ("cast firelash at %s"):format(tgt)
-  local ok, why = _spell_guard("firelash", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_conflagrate(tgt)
-  local cmd = ("cast conflagrate at %s"):format(tgt)
-  if not _has_ablaze() then return false, "ablaze_required", cmd end
-  if not _aflame_ready_for_conflagrate() then return false, "aflame_not_ready", cmd end
-  local ok, why = _spell_guard("conflagrate", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_water_emanation(tgt)
-  local major = _water_res_major()
-  local cmd = ("cast emanation at %s water"):format(tgt)
-  if major ~= true then return false, "water_not_major", cmd end
-  local ok, why = _spell_guard("emanation_water", tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_fire_emanation(tgt)
-  local major = _fire_res_major()
-  local cmd = ("cast emanation at %s fire"):format(tgt)
-  if major ~= true then return false, "fire_not_major", cmd end
-  if not _has_conflagrate() then return false, "conflagrate_required", cmd end
-  if not _freeze_stable() then return false, "freeze_stable_required", cmd end
-  local ok, why = _spell_guard("emanation_fire", tgt, cmd)
-  return ok, why, cmd
 end
 
 local function _effective_state(tgt)
@@ -659,7 +726,7 @@ local function _select_command(tgt)
   end
 
   if not st.waterbonds then
-    local ok, why, cmd = _can_cast_horripilation(tgt)
+    local ok, why, cmd = _can_send("horripilation", tgt)
     _set_branch_stage(tgt, ok and "opener_setup" or "opener_wait")
     if ok then
       return cmd, "opener_setup", st, "waterbonds_missing"
@@ -668,7 +735,7 @@ local function _select_command(tgt)
   end
 
   if st.freeze_step_done ~= true then
-    local ok, why, cmd = _can_cast_freeze(tgt)
+    local ok, why, cmd = _can_send("freeze", tgt)
     _set_branch_stage(tgt, ok and "freeze_setup" or "freeze_wait")
     if ok then
       return cmd, "freeze_setup", st, "freeze_step_gate"
@@ -677,7 +744,7 @@ local function _select_command(tgt)
   end
 
   if _should_mudslide(st) then
-    local ok, why, cmd = _can_cast_mudslide(tgt)
+    local ok, why, cmd = _can_send("mudslide", tgt)
     _set_branch_stage(tgt, ok and "salve_pressure" or "mudslide_wait")
     if ok then
       return cmd, "salve_pressure", st, "mudslide_window"
@@ -686,7 +753,7 @@ local function _select_command(tgt)
   end
 
   do
-    local ok, _, cmd = _can_cast_glaciate(tgt)
+    local ok, _, cmd = _can_send("glaciate", tgt)
     if ok and _should_glaciate(st, tgt) then
       _set_branch_stage(tgt, "glaciate_burst")
       return cmd, "glaciate_burst", st, "glaciate_window"
@@ -694,7 +761,7 @@ local function _select_command(tgt)
   end
 
   if st.freeze_stable ~= true then
-    local ok, why, cmd = _can_cast_freeze(tgt)
+    local ok, why, cmd = _can_send("freeze", tgt)
     _set_branch_stage(tgt, ok and "freeze_setup" or "freeze_wait")
     if ok then
       return cmd, "freeze_setup", st, "freeze_baseline"
@@ -703,7 +770,7 @@ local function _select_command(tgt)
   end
 
   if _should_water_emanation(st) then
-    local ok, _, cmd = _can_cast_water_emanation(tgt)
+    local ok, _, cmd = _can_send("emanation_water", tgt)
     if ok then
       _set_branch_stage(tgt, "disrupt_setup")
       return cmd, "disrupt_setup", st, "water_emanation_setup"
@@ -711,7 +778,7 @@ local function _select_command(tgt)
   end
 
   if st.fire_branch_eligible == true and st.conflagrate ~= true and st.aflame_ready == true and st.ablaze == true then
-    local ok, _, cmd = _can_cast_conflagrate(tgt)
+    local ok, _, cmd = _can_send("conflagrate", tgt)
     if ok then
       _set_branch_stage(tgt, "fire_payoff")
       return cmd, "fire_payoff", st, "conflagrate_ready"
@@ -719,7 +786,7 @@ local function _select_command(tgt)
   end
 
   if st.fire_branch_eligible == true and _should_fire_emanation(st) then
-    local ok, _, cmd = _can_cast_fire_emanation(tgt)
+    local ok, _, cmd = _can_send("emanation_fire", tgt)
     if ok then
       _set_branch_stage(tgt, "fire_promotion")
       return cmd, "fire_promotion", st, "fire_emanation_promote"
@@ -727,7 +794,7 @@ local function _select_command(tgt)
   end
 
   if st.fire_branch_eligible == true and st.scalded ~= true then
-    local ok, _, cmd = _can_cast_magma(tgt)
+    local ok, _, cmd = _can_send("magma", tgt)
     if ok then
       _set_branch_stage(tgt, "fire_build")
       return cmd, "fire_build", st, "scalded_missing"
@@ -735,7 +802,7 @@ local function _select_command(tgt)
   end
 
   if st.fire_branch_eligible == true and st.conflagrate ~= true then
-    local ok, _, cmd = _can_cast_firelash(tgt)
+    local ok, _, cmd = _can_send("firelash", tgt)
     if ok then
       _set_branch_stage(tgt, "fire_build")
       return cmd, "fire_build", st, "firelash_builder"
@@ -743,7 +810,7 @@ local function _select_command(tgt)
   end
 
   do
-    local ok, _, cmd = _can_cast_glaciate(tgt)
+    local ok, _, cmd = _can_send("glaciate", tgt)
     if ok and st.frozen == true then
       _set_branch_stage(tgt, "glaciate_burst")
       return cmd, "glaciate_burst", st, "glaciate_fallback"
@@ -751,7 +818,7 @@ local function _select_command(tgt)
   end
 
   if st.fire_branch_eligible == true then
-    local ok, _, cmd = _can_cast_firelash(tgt)
+    local ok, _, cmd = _can_send("firelash", tgt)
     if ok then
       _set_branch_stage(tgt, "fire_build")
       return cmd, "fire_build", st, "maintain_fire_pressure"
@@ -759,7 +826,7 @@ local function _select_command(tgt)
   end
 
   do
-    local ok, why, cmd = _can_cast_freeze(tgt)
+    local ok, why, cmd = _can_send("freeze", tgt)
     if ok then
       _set_branch_stage(tgt, "freeze_setup")
       return cmd, "freeze_setup", st, "freeze_refresh"
@@ -995,7 +1062,9 @@ function MGD.explain()
   ex.last_sent_cmd = MGD.state and MGD.state.last_sent_cmd or ""
   ex.decision = ex.decision or (MGD.state and MGD.state.last_category or "")
   ex.branch_stage = (st.route and st.route.branch_stage) or ex.branch_stage or ""
-  ex.freeze_step_done = st.freeze_step_done == true
+  ex.freeze_step_done = (MGD.state and MGD.state.route and MGD.state.route.freeze_step_done == true)
+    or (st.freeze_step_done == true)
+    or (st.route and st.route.freeze_step_done == true)
   ex.fire_branch_eligible = st.fire_branch_eligible == true
   ex.state = st
   ex.pending = MGD.state and MGD.state.pending or {}

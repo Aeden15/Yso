@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: April 2, 2026
+Last updated: April 4, 2026
 
 
 Current fixes
@@ -98,6 +98,26 @@ Inactive legacy route stubs:
   lock, limb, limb_prep, finisher, bash, clock
   These remain on disk as placeholders or compatibility stubs, but they are
   not part of the active route set.
+
+
+Command table convention
+------------------------
+Active offense route modules now centralize outbound command text in a local
+`COMMANDS` table and use one helper pathway (`_cmd(...)`) for formatting.
+
+Required spec keys:
+  `id`      stable identifier used by route selectors/bookkeeping
+  `string`  command template text (for example `"instill %s with %s"`)
+
+Common optional keys:
+  `format_target = true` for target-first templates
+  `target_required = false` when target validation is handled elsewhere
+
+When adding a command:
+  1. Add/modify the entry in the route's `COMMANDS` table.
+  2. Use `_cmd("id", target, { ... })` in planners/selectors instead of
+     ad-hoc string literals.
+  3. Keep command text parity exact unless intentionally changing behavior.
 
 
 File layout
@@ -216,6 +236,5 @@ Working notes
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
-
 
 

@@ -21,6 +21,7 @@ Yso.off.oc = Yso.off.oc or {}
 -- Canonical group damage driver lives here:
 Yso.off.oc.group_damage = Yso.off.oc.group_damage or {}
 local GD = Yso.off.oc.group_damage
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 --========================================================--
 -- Occultist ENTITY pool (defaulted)
 --  * Shared across Occultist offense routes (duel / party / utilities).
@@ -86,7 +87,6 @@ GD.route_contract = GD.route_contract or {
 }
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(GD, GD.route_contract)
   end
@@ -471,6 +471,109 @@ local function _command_sep()
   return sep
 end
 
+local COMMANDS = {
+  tarot_entity_payload = {
+    id = "tarot_entity_payload",
+    string = "outd %s&&%s&&fling %s at %s",
+  },
+  entity_at = {
+    id = "entity_at",
+    string = "command %s at %s",
+  },
+  entity_at_extra = {
+    id = "entity_at_extra",
+    string = "command %s at %s %s",
+  },
+  gremlin_at = {
+    id = "gremlin_at",
+    string = "command gremlin at %s",
+    target_required = false,
+    format_target = true,
+  },
+  hangedman_fling = {
+    id = "hangedman_fling",
+    string = "outd hangedman&&fling hangedman at %s",
+    target_required = false,
+    format_target = true,
+  },
+  crone_at_arm = {
+    id = "crone_at_arm",
+    string = "command crone at %s %s",
+    target_required = false,
+    format_target = true,
+  },
+  ruinate_justice = {
+    id = "ruinate_justice",
+    string = "ruinate justice %s",
+    target_required = false,
+    format_target = true,
+  },
+  anti_tumble_empress = {
+    id = "anti_tumble_empress",
+    string = "outd empress%sfling empress %s",
+  },
+  warp = {
+    id = "warp",
+    string = "warp %s",
+    target_required = false,
+    format_target = true,
+  },
+  instill_with = {
+    id = "instill_with",
+    string = "instill %s with %s",
+    target_required = false,
+    format_target = true,
+  },
+  fling_lust = {
+    id = "fling_lust",
+    string = "fling lust at %s",
+    target_required = false,
+    format_target = true,
+  },
+  outd_empress_fling = {
+    id = "outd_empress_fling",
+    string = "outd empress&&fling empress %s",
+    target_required = false,
+    format_target = true,
+  },
+  loyals_on_default = {
+    id = "loyals_on_default",
+    string = "order entourage kill %s",
+    target_required = false,
+    format_target = true,
+  },
+}
+
+local _unpack = table.unpack or unpack
+local function _cmd(command_id, target, args)
+  local spec = COMMANDS[command_id]
+  if type(spec) ~= "table" then return nil end
+
+  if RI and type(RI.command_from_spec) == "function" then
+    local cmd = RI.command_from_spec(spec, target, args)
+    return cmd
+  end
+
+  local raw = _trim(spec.string)
+  if raw == "" then return nil end
+  local list = {}
+  if type(args) == "table" then
+    for i = 1, #args do list[#list + 1] = args[i] end
+  end
+
+  local ok, built
+  if spec.format_target == true then
+    list = { tostring(target or ""), _unpack(list) }
+    ok, built = pcall(string.format, raw, _unpack(list))
+  elseif #list > 0 then
+    ok, built = pcall(string.format, raw, _unpack(list))
+  else
+    return raw
+  end
+  if not ok then return nil end
+  return _trim(built)
+end
+
 local function _safe_send(cmd)
   cmd = _trim(cmd)
   if cmd == "" or type(send) ~= "function" then return false, "send_unavailable" end
@@ -764,7 +867,7 @@ local function _tarot_entity_payload(bal_cmd, entity_cmd, tgt)
   if bal_cmd == "" or entity_cmd == "" or tgt == "" then return nil end
   local card_a, card_b, card_tgt = bal_cmd:match("^outd%s+([%w_%-]+)%s*&&%s*fling%s+([%w_%-]+)%s+at%s+(.+)$")
   if _trim(card_a) == "" or card_a ~= card_b or _lc(card_tgt or "") ~= _lc(tgt) then return nil end
-  return ("outd %s&&%s&&fling %s at %s"):format(card_a, entity_cmd, card_a, tgt)
+  return _cmd("tarot_entity_payload", "", { card_a, entity_cmd, card_a, tgt })
 end
 
 local function _payload_line(payload)
@@ -898,7 +1001,7 @@ local function _final_pre_emit_payload(payload)
       return nil, "duplicate_action_suppressed"
     end
 
-    local cmd = ("command gremlin at %s"):format(tgt)
+    local cmd = _cmd("gremlin_at", tgt)
     if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == "function" then
       local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
       local alt = _trim(ok and v or "")
@@ -1005,9 +1108,9 @@ local function _cmd_entity(ent, tgt, extra)
   tgt = tostring(tgt or "")
   if ent == "" or tgt == "" then return nil end
   if ent == "firelord" and extra and extra ~= "" then
-    return ("command %s at %s %s"):format(ent, tgt, extra)
+    return _cmd("entity_at_extra", "", { ent, tgt, extra })
   end
-  return ("command %s at %s"):format(ent, tgt)
+  return _cmd("entity_at", "", { ent, tgt })
 end
 
 
@@ -1057,19 +1160,19 @@ local function _pick_entity_cmd(tgt, st, opts)
   end
   local skip_aff = _lc(opts.skip_aff)
   if skip_aff == "clumsiness" then
-    return ("command storm at %s"):format(tgt), tostring(opts.category or "required_core_refresh")
+    return _cmd("entity_at", "", { "storm", tgt }), tostring(opts.category or "required_core_refresh")
   end
   if skip_aff == "healthleech" then
-    return ("command worm at %s"):format(tgt), tostring(opts.category or "required_core_application")
+    return _cmd("entity_at", "", { "worm", tgt }), tostring(opts.category or "required_core_application")
   end
   if skip_aff == "slickness" and _has_aff(tgt, "asthma") then
-    return ("command bubonis at %s"):format(tgt), tostring(opts.category or "fallback_support")
+    return _cmd("entity_at", "", { "bubonis", tgt }), tostring(opts.category or "fallback_support")
   end
   if skip_aff == "asthma" then
-    return ("command bubonis at %s"):format(tgt), tostring(opts.category or "required_core_refresh")
+    return _cmd("entity_at", "", { "bubonis", tgt }), tostring(opts.category or "required_core_refresh")
   end
   if skip_aff == "paralysis" and _has_aff(tgt, "asthma") then
-    return ("command slime at %s"):format(tgt), tostring(opts.category or "fallback_support")
+    return _cmd("entity_at", "", { "slime", tgt }), tostring(opts.category or "fallback_support")
   end
   return _entity_pick(tgt, st, tostring(opts.category or "fallback_support"), opts)
 end
@@ -1089,7 +1192,7 @@ local function _plan_free(tgt)
     parts[#parts + 1] = "stand"
   end
   if not _loyals_active_for(tgt) then
-    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
+    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or COMMANDS.loyals_on_default.string)):format(tgt)
   end
   if #parts == 0 then return nil, nil end
   return table.concat(parts, _command_sep()), "team_coordination"
@@ -1136,14 +1239,14 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
     end
   elseif not st.entangled and _prone_is_forced(tgt) then
     if _ent_ready() then
-      return ("outd hangedman&&fling hangedman at %s"):format(tgt),
-        ("command crone at %s %s"):format(tgt, _random_crone_arm(tgt)),
+      return _cmd("hangedman_fling", tgt),
+        _cmd("crone_at_arm", tgt, { _random_crone_arm(tgt) }),
         "fallback_support"
     end
   end
 
   if _justice_conversion_count(tgt) >= 2 and not _justice_already_sent(tgt) then
-    return ("ruinate justice %s"):format(tgt), nil, nil
+    return _cmd("ruinate_justice", tgt), nil, nil
   end
 
   return nil, nil, nil
@@ -1222,7 +1325,7 @@ local function _plan_route(tgt)
       need_addiction = need_addiction,
     })
     if burst_cmd then
-      p.eq = ("warp %s"):format(tgt)
+      p.eq = _cmd("warp", tgt)
       p.eq_category = "reserved_paired_burst"
       p.class = burst_cmd
       p.class_category = solved or "reserved_paired_burst"
@@ -1237,7 +1340,7 @@ local function _plan_route(tgt)
   -- Core refresh/application wins after any reserved burst and bootstrap work.
   if miss_sens then
     if _eq_ready() then
-      p.eq = ("instill %s with sensitivity"):format(tgt)
+      p.eq = _cmd("instill_with", tgt, { "sensitivity" })
       p.eq_category = "required_core_refresh"
       p.eq_aff = "sensitivity"
     end
@@ -1251,7 +1354,7 @@ local function _plan_route(tgt)
     if not p.class then pick_class("required_core_refresh") end
     if not p.class then pick_class("required_core_application") end
     if not p.class and _eq_ready() then
-      p.eq = ("instill %s with clumsiness"):format(tgt)
+      p.eq = _cmd("instill_with", tgt, { "clumsiness" })
       p.eq_category = "required_core_refresh"
       p.eq_aff = "clumsiness"
     end
@@ -1261,10 +1364,10 @@ local function _plan_route(tgt)
 
   if miss_hl then
     if st.count >= 2 and _eq_ready() then
-      p.eq = ("warp %s"):format(tgt)
+      p.eq = _cmd("warp", tgt)
       p.eq_category = "required_core_application"
     elseif _eq_ready() and not _ent_ready() then
-      p.eq = ("instill %s with healthleech"):format(tgt)
+      p.eq = _cmd("instill_with", tgt, { "healthleech" })
       p.eq_category = "required_core_application"
       p.eq_aff = "healthleech"
     end
@@ -1287,7 +1390,7 @@ local function _plan_route(tgt)
 
   -- Optional slickness is lower than missing-core work, but higher than fallback BAL support when EQ is free.
   if miss_slick and _eq_ready() then
-    p.eq = ("instill %s with slickness"):format(tgt)
+    p.eq = _cmd("instill_with", tgt, { "slickness" })
     p.eq_category = "fallback_support"
     p.eq_aff = "slickness"
   end
@@ -1859,7 +1962,7 @@ local function _maybe_antitumble(now)
   -- fallback: Lust
   if not _bal_ready() then return false end
   _echo(("%s TUMBLE BEGIN -> Lust (SM not ready/usable)"):format(tgt))
-  if _emit_lane("bal", ("fling lust at %s"):format(tgt), "gd:antitumble") then
+  if _emit_lane("bal", _cmd("fling_lust", tgt), "gd:antitumble") then
     T.fired = true
     return true
   end
@@ -1892,7 +1995,7 @@ local function _maybe_empress(now)
   E.last_try = now
 
   _echo(("%s TUMBLED OUT -> Empress pull (%s)"):format(tgt, tostring(E.dir or "?")))
-  return (_safe_send(("outd empress%sfling empress %s"):format(_command_sep(), tgt)) == true)
+  return (_safe_send(_cmd("anti_tumble_empress", "", { _command_sep(), tgt })) == true)
 end
 
 local function _rescue_antitumble_action(now)
@@ -1935,7 +2038,7 @@ local function _rescue_antitumble_action(now)
 
   if not _bal_ready() then return nil end
   return {
-    cmd = ("fling lust at %s"):format(tgt),
+    cmd = _cmd("fling_lust", tgt),
     qtype = "bal",
     kind = "offense",
     score = 118,
@@ -1963,7 +2066,7 @@ local function _rescue_empress_action(now)
   if (now - (tonumber(E.last_try) or 0)) < 0.9 then return nil end
 
   return {
-    cmd = ("outd empress&&fling empress %s"):format(tgt),
+    cmd = _cmd("outd_empress_fling", tgt),
     qtype = "bal",
     kind = "offense",
     score = 116,

@@ -24,6 +24,7 @@ Yso.off.oc = Yso.off.oc or {}
 Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
 local PA = Yso.off.oc.party_aff
 local AP = Yso.off.oc.aura_planner or {}
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 PA.alias_owned = true
 
 PA.route_contract = PA.route_contract or {
@@ -440,9 +441,9 @@ local function _entity_cmd_for_aff(aff, tgt)
     local cmd = Yso.ent_cmd_for_aff(aff, tgt, _has_aff)
     if cmd then return cmd end
   end
-  if aff == "asthma" then return ("command bubonis at %s"):format(tgt) end
-  if aff == "clumsiness" then return ("command storm at %s"):format(tgt) end
-  if aff == "healthleech" then return ("command worm at %s"):format(tgt) end
+  if aff == "asthma" then return _cmd("entity_at", "", { "bubonis", tgt }) end
+  if aff == "clumsiness" then return _cmd("entity_at", "", { "storm", tgt }) end
+  if aff == "healthleech" then return _cmd("entity_at", "", { "worm", tgt }) end
   return nil
 end
 
@@ -491,6 +492,117 @@ local function _command_sep()
   local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or "&&")
   if sep == "" then sep = "&&" end
   return sep
+end
+
+local COMMANDS = {
+  tarot_entity_payload = {
+    id = "tarot_entity_payload",
+    string = "outd %s&&%s&&fling %s at %s",
+  },
+  entity_at = {
+    id = "entity_at",
+    string = "command %s at %s",
+  },
+  gremlin_at = {
+    id = "gremlin_at",
+    string = "command gremlin at %s",
+    target_required = false,
+    format_target = true,
+  },
+  attend = {
+    id = "attend",
+    string = "attend %s",
+    target_required = false,
+    format_target = true,
+  },
+  unnamable_speak = {
+    id = "unnamable_speak",
+    string = "unnamable speak",
+  },
+  cleanseaura = {
+    id = "cleanseaura",
+    string = "cleanseaura %s",
+    target_required = false,
+    format_target = true,
+  },
+  pinchaura_speed = {
+    id = "pinchaura_speed",
+    string = "pinchaura %s speed",
+    target_required = false,
+    format_target = true,
+  },
+  utter_truename = {
+    id = "utter_truename",
+    string = "utter truename %s",
+    target_required = false,
+    format_target = true,
+  },
+  enervate = {
+    id = "enervate",
+    string = "enervate %s",
+    target_required = false,
+    format_target = true,
+  },
+  instill_with = {
+    id = "instill_with",
+    string = "instill %s with %s",
+    target_required = false,
+    format_target = true,
+  },
+  moon_fling = {
+    id = "moon_fling",
+    string = "outd moon&&fling moon at %s",
+    target_required = false,
+    format_target = true,
+  },
+  ruinate_lovers = {
+    id = "ruinate_lovers",
+    string = "ruinate lovers at %s",
+    target_required = false,
+    format_target = true,
+  },
+  readaura = {
+    id = "readaura",
+    string = "readaura %s",
+    target_required = false,
+    format_target = true,
+  },
+  loyals_on_default = {
+    id = "loyals_on_default",
+    string = "order entourage kill %s",
+    target_required = false,
+    format_target = true,
+  },
+}
+
+local _unpack = table.unpack or unpack
+local function _cmd(command_id, target, args)
+  local spec = COMMANDS[command_id]
+  if type(spec) ~= "table" then return nil end
+
+  if RI and type(RI.command_from_spec) == "function" then
+    local cmd = RI.command_from_spec(spec, target, args)
+    return cmd
+  end
+
+  local raw = _trim(spec.string)
+  if raw == "" then return nil end
+  local list = {}
+  if type(args) == "table" then
+    for i = 1, #args do list[#list + 1] = args[i] end
+  end
+
+  local ok, built
+  if spec.format_target == true then
+    list = { tostring(target or ""), _unpack(list) }
+    ok, built = pcall(string.format, raw, _unpack(list))
+  elseif #list > 0 then
+    ok, built = pcall(string.format, raw, _unpack(list))
+  else
+    return raw
+  end
+  if not ok then return nil end
+  return _trim(built)
 end
 
 local function _safe_send(cmd)
@@ -700,7 +812,7 @@ _payload_line = function(payload)
   if _trim(lanes.free) ~= "" then cmds[#cmds + 1] = _trim(lanes.free) end
   if _trim(lanes.eq) ~= "" then cmds[#cmds + 1] = _trim(lanes.eq) end
   if _trim(card_a) ~= "" and card_a == card_b and _lc(card_tgt or "") == _lc(payload.target or "") and entity_cmd ~= "" then
-    cmds[#cmds + 1] = ("outd %s&&%s&&fling %s at %s"):format(card_a, entity_cmd, card_a, payload.target)
+    cmds[#cmds + 1] = _cmd("tarot_entity_payload", "", { card_a, entity_cmd, card_a, payload.target })
     return table.concat(cmds, _command_sep())
   end
   if _trim(lanes.bal) ~= "" then cmds[#cmds + 1] = _trim(lanes.bal) end
@@ -755,7 +867,7 @@ local function _final_pre_emit_payload(payload)
       end
     end
 
-    local cmd = ("command gremlin at %s"):format(tgt)
+    local cmd = _cmd("gremlin_at", tgt)
     if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == "function" then
       local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
       local alt = _trim(ok and v or "")
@@ -928,7 +1040,7 @@ local function _plan_eq(tgt, opts)
     local tag = tag_prefix .. "attend:" .. tkey
     local lock = tonumber(PA.cfg.attend_lockout_s or 2.3) or 2.3
     if not _recent_sent(tag, lock) then
-      return ("attend %s"):format(tgt), "mental_pressure", tag, lock
+      return _cmd("attend", tgt), "mental_pressure", tag, lock
     end
   end
 
@@ -936,7 +1048,7 @@ local function _plan_eq(tgt, opts)
     local tag = tag_prefix .. "unnamable:" .. tkey
     local lock = tonumber(PA.cfg.unnamable_lockout_s or 4.0) or 4.0
     if not _recent_sent(tag, lock) then
-      return "unnamable speak", "mental_pressure", tag, lock
+      return _cmd("unnamable_speak"), "mental_pressure", tag, lock
     end
   end
 
@@ -944,18 +1056,18 @@ local function _plan_eq(tgt, opts)
     local tag = _cleanseaura_tag(tgt)
     local lock = tonumber(PA.cfg.cleanseaura_lockout_s or 4.1) or 4.1
     if not _recent_sent(tag, lock) then
-      return ("cleanseaura %s"):format(tgt), "truename_acquire", tag, lock
+      return _cmd("cleanseaura", tgt), "truename_acquire", tag, lock
     end
   end
 
   if seq.enabled and seq.can_utter == true then
     if seq.speed == true and not _recent_sent(_pin_tag(tgt), tonumber(PA.cfg.speed_hold_s or 3.2) or 3.2) then
-      return ("pinchaura %s speed"):format(tgt), "speed_strip_window", _pin_tag(tgt), tonumber(PA.cfg.pinchaura_lockout_s or 4.1) or 4.1
+      return _cmd("pinchaura_speed", tgt), "speed_strip_window", _pin_tag(tgt), tonumber(PA.cfg.pinchaura_lockout_s or 4.1) or 4.1
     end
     local tag = _utter_tag(tgt)
     local lock = tonumber(PA.cfg.utter_follow_s or 5.0) or 5.0
     if not _recent_sent(tag, lock) then
-      return ("utter truename %s"):format(tgt), "reserved_burst", tag, lock
+      return _cmd("utter_truename", tgt), "reserved_burst", tag, lock
     end
   end
 
@@ -967,7 +1079,7 @@ local function _plan_eq(tgt, opts)
     local tag = tag_prefix .. "shieldbreak:" .. tkey
     local lock = tonumber(PA.cfg.shieldbreak_lockout_s or 1.0)
     if not _recent_sent(tag, lock) then
-      local cmd = ("command gremlin at %s"):format(tgt)
+      local cmd = _cmd("gremlin_at", tgt)
       if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == "function" then
         local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
         local c = _trim(ok and v or "")
@@ -994,7 +1106,7 @@ local function _plan_eq(tgt, opts)
     local tag = tag_prefix .. "attend:" .. tkey
     local lock = tonumber(PA.cfg.attend_lockout_s or 2.3)
     if not _recent_sent(tag, lock) then
-      return ("attend %s"):format(tgt), "mental_pressure", tag, lock
+      return _cmd("attend", tgt), "mental_pressure", tag, lock
     end
   end
 
@@ -1002,7 +1114,7 @@ local function _plan_eq(tgt, opts)
     local tag = tag_prefix .. "enervate:" .. tkey
     local lock = tonumber(PA.cfg.enervate_lockout_s or 4.0)
     if not _recent_sent(tag, lock) then
-      return ("enervate %s"):format(tgt), "mana_drain", tag, lock
+      return _cmd("enervate", tgt), "mana_drain", tag, lock
     end
   end
 
@@ -1012,7 +1124,7 @@ local function _plan_eq(tgt, opts)
     local tag = tag_prefix .. "instill:" .. tkey .. ":" .. missing
     local lock = tonumber(PA.cfg.instill_lockout_s or 2.5)
     if not _recent_sent(tag, lock) then
-      return ("instill %s with %s"):format(tgt, missing), "lock_pressure", tag, lock
+      return _cmd("instill_with", tgt, { missing }), "lock_pressure", tag, lock
     end
   end
 
@@ -1025,7 +1137,7 @@ local function _plan_bal(tgt, opts)
 
   if seq.enabled then
     if seq.deaf == false then
-      return ("outd moon&&fling moon at %s"):format(tgt), "mental_pressure"
+      return _cmd("moon_fling", tgt), "mental_pressure"
     end
     return nil, nil
   end
@@ -1033,11 +1145,11 @@ local function _plan_bal(tgt, opts)
   if not _lock_stable(tgt) then return nil, nil end
 
   if not _has_aff(tgt, "manaleech") then
-    return ("ruinate lovers at %s"):format(tgt), "mana_drain"
+    return _cmd("ruinate_lovers", tgt), "mana_drain"
   end
 
   if _mental_score() < tonumber(PA.cfg.mental_target or 3) then
-    return ("outd moon&&fling moon at %s"):format(tgt), "mental_pressure"
+    return _cmd("moon_fling", tgt), "mental_pressure"
   end
 
   return nil, nil
@@ -1063,7 +1175,7 @@ _plan_entity = function(tgt, opts)
     if is_setup_eq then return nil, nil end
 
     if seq.deaf == true or seq.deaf == false then
-      return ("command chimera at %s"):format(tgt), "mental_pressure"
+      return _cmd("entity_at", "", { "chimera", tgt }), "mental_pressure"
     end
     return nil, nil
   end
@@ -1080,7 +1192,7 @@ _plan_entity = function(tgt, opts)
   end
 
   if _has_aff(tgt, "manaleech") and ES.syc_refresh then
-    return ("command sycophant at %s"):format(tgt), "mana_drain"
+    return _cmd("entity_at", "", { "sycophant", tgt }), "mana_drain"
   end
 
   local ER2 = Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
@@ -1107,7 +1219,7 @@ end
 
 local function _plan_free(tgt)
   if _loyals_active_for(tgt) then return nil, nil end
-  local cmd = (tostring(PA.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
+  local cmd = (tostring(PA.cfg.loyals_on_cmd or COMMANDS.loyals_on_default.string)):format(tgt)
   return cmd, "team_coordination"
 end
 
@@ -1366,14 +1478,14 @@ function PA.on_sent(payload, ctx)
   if type(payload) ~= "table" then return true end
   local tgt = _trim(payload.target or (ctx and ctx.target) or "")
   if tgt ~= "" then
-    local loyals_cmd = (tostring(PA.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
+    local loyals_cmd = (tostring(PA.cfg.loyals_on_cmd or COMMANDS.loyals_on_default.string)):format(tgt)
     local free = payload.lanes and payload.lanes.free or payload.free
     if type(free) == "string" and free == loyals_cmd then
       PA.state.loyals_sent_for = tgt
       _set_loyals_hostile(true, tgt)
     end
     local eq_lane = payload.lanes and payload.lanes.eq or payload.eq
-    local readaura_cmd = ("readaura %s"):format(tgt)
+    local readaura_cmd = _cmd("readaura", tgt)
     if type(eq_lane) == "string" and eq_lane == readaura_cmd and Yso and Yso.occ then
       if type(Yso.occ.aura_begin) == "function" then
         pcall(Yso.occ.aura_begin, tgt, "party_aff_send")
@@ -1468,7 +1580,6 @@ function PA.on_target_swap(old_target, new_target)
 end
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(PA, PA.route_contract)
   end
