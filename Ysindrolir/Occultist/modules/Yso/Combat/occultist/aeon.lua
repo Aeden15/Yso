@@ -90,6 +90,27 @@ local function _tkey(tgt)
   return tgt:lower()
 end
 
+local function _active_target()
+  local tgt = ""
+  if type(Yso.get_target) == "function" then
+    tgt = _trim(Yso.get_target() or "")
+  end
+  if tgt == "" and type(Yso.target) == "string" then
+    tgt = _trim(Yso.target)
+  end
+  if tgt == "" and type(rawget(_G, "target")) == "string" then
+    tgt = _trim(rawget(_G, "target"))
+  end
+  return tgt
+end
+
+local function _target_matches_active(tgt)
+  local cur = _active_target()
+  tgt = _trim(tgt)
+  if cur == "" or tgt == "" then return false end
+  return _lc(cur) == _lc(tgt)
+end
+
 local function _get(tgt)
   local k = _tkey(tgt)
   if not k then return nil end
@@ -124,16 +145,31 @@ local function _bal_ready()
   return tostring(v.bal or v.balance or "") == "1" or v.bal == true or v.balance == true
 end
 
-local function _aff_score(aff)
-  if Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
-    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
-    if ok then return tonumber(v) or 0 end
+local function _aff_score(tgt, aff)
+  aff = _lc(aff)
+  tgt = _trim(tgt)
+  if aff == "" then return 0 end
+
+  if _target_matches_active(tgt) then
+    if Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
+      local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
+      if ok and tonumber(v) then return tonumber(v) end
+    end
+    if type(affstrack) == "table" and type(affstrack.score) == "table" then
+      return tonumber(affstrack.score[aff] or 0) or 0
+    end
   end
+
+  if Yso.tgt and type(Yso.tgt.has_aff) == "function" and tgt ~= "" then
+    local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
+    if ok and v == true then return 100 end
+  end
+
   return 0
 end
 
-local function _stuck(aff)
-  return _aff_score(aff) >= 100
+local function _stuck(tgt, aff)
+  return _aff_score(tgt, aff) >= 100
 end
 
 local MENTALS = {
@@ -145,18 +181,18 @@ local MENTALS = {
   "paranoia",
 }
 
-local function _has_any_mental()
+local function _has_any_mental(tgt)
   for i = 1, #MENTALS do
-    if _stuck(MENTALS[i]) then return true end
+    if _stuck(tgt, MENTALS[i]) then return true end
   end
   return false
 end
 
-local function _hold_ok()
-  if not _stuck("anorexia") then return false end
-  if not _stuck("slickness") then return false end
-  if _stuck("shyness") then return true end
-  return _has_any_mental()
+local function _hold_ok(tgt)
+  if not _stuck(tgt, "anorexia") then return false end
+  if not _stuck(tgt, "slickness") then return false end
+  if _stuck(tgt, "shyness") then return true end
+  return _has_any_mental(tgt)
 end
 
 local function _aura_snap(tgt)
@@ -203,11 +239,17 @@ function A.request(tgt, opts)
 end
 
 function A.cancel(tgt)
-  local S = _get(tgt)
+  local k = _tkey(tgt)
+  if not k then return false end
+  local S = A.state.by[k]
   if not S then return false end
   S.requested = false
   S.finisher = false
   S.last_action = ""
+  S.last_pinchaura = 0
+  S.last_compel = 0
+  S.speed_down_until = 0
+  A.state.by[k] = nil
   return true
 end
 
@@ -222,10 +264,8 @@ function A.on_sip(who)
   if who == "" then return false end
 
   -- Only react for the current combat target.
-  if type(oc_isCurrentTarget) == "function" then
-    local ok, cur = pcall(oc_isCurrentTarget, who)
-    if ok and not cur then return false end
-  end
+  local cur = _active_target()
+  if cur ~= "" and _lc(cur) ~= _lc(who) then return false end
 
   local S = _get(who)
   if not (S and S.requested) then return false end
@@ -251,7 +291,7 @@ function A.tick(tgt, reasons)
   if not (S and S.requested) then return false end
 
   -- If aeon is already on target, we're done.
-  if _stuck("aeon") then
+  if _stuck(tgt, "aeon") then
     S.requested = false
     S.finisher = false
     return false
@@ -260,7 +300,7 @@ function A.tick(tgt, reasons)
   local now = _now()
 
   -- 1) Build/maintain hold: anorexia + slickness + (shyness OR any mental)
-  if not _stuck("anorexia") then
+  if not _hold_ok(tgt) and not _stuck(tgt, "anorexia") then
     if _eq_ready() then
       _dbg("build: regress (anorexia)")
       return _emit({ eq = ("regress %s"):format(tgt) }, { reason = "aeon:build_anorexia" })
@@ -268,7 +308,7 @@ function A.tick(tgt, reasons)
     return false
   end
 
-  if not _stuck("slickness") then
+  if not _hold_ok(tgt) and not _stuck(tgt, "slickness") then
     if _eq_ready() then
       _dbg("build: instill slickness")
       return _emit({ eq = ("instill %s with slickness"):format(tgt) }, { reason = "aeon:build_slickness" })
@@ -276,7 +316,7 @@ function A.tick(tgt, reasons)
     return false
   end
 
-  if not (_stuck("shyness") or _has_any_mental()) then
+  if not _hold_ok(tgt) then
     -- Prefer devolve for shyness (EQ).
     if _eq_ready() then
       _dbg("build: devolve (shyness)")
@@ -332,18 +372,46 @@ function A.tick(tgt, reasons)
   end
 
   -- If BAL tarot is not available, try entropy via COMPEL (special/free).
-  -- Compel uses the free lane and does not consume EQ or BAL.
-  if _eq_ready() then
-    local cd = tonumber(A.cfg.compel_cd_s or 1.5) or 1.5
-    local last = tonumber(S.last_compel or 0) or 0
-    if (now - last) >= cd then
-      S.last_compel = now
-      _dbg("apply: compel entropy")
-      return _emit({ free = ("compel %s entropy"):format(tgt) }, { reason = "aeon:entropy" })
-    end
+  -- Compel is queued on the free lane and throttled by local cooldown.
+  local cd = tonumber(A.cfg.compel_cd_s or 1.5) or 1.5
+  local last = tonumber(S.last_compel or 0) or 0
+  if (now - last) >= cd then
+    S.last_compel = now
+    _dbg("apply: compel entropy")
+    return _emit({ free = ("compel %s entropy"):format(tgt) }, { reason = "aeon:entropy" })
   end
 
   return false
+end
+
+-- Planning helper for payload routes that cannot call A.tick() directly.
+-- Returns a BAL command string when centralized AEON checks pass.
+function A.bal_payload(tgt, opts)
+  opts = opts or {}
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+
+  local S = _get(tgt)
+  if not S then return nil end
+  if opts.request_if_needed == true and S.requested ~= true then
+    S.requested = true
+    S.finisher = false
+  end
+  if S.requested ~= true then return nil end
+  if _stuck(tgt, "aeon") then
+    S.requested = false
+    S.finisher = false
+    return nil
+  end
+  if _hold_ok(tgt) ~= true then return nil end
+
+  local now = _now()
+  local speed = _speed_fresh(tgt)
+  local assumed_down = (tonumber(S.speed_down_until or 0) or 0) > now
+  local speed_down = (speed == false) or assumed_down
+  if speed_down ~= true then return nil end
+
+  return ("outd aeon&&fling aeon at %s"):format(tgt)
 end
 
 -- Convenience: request+tick for current target.

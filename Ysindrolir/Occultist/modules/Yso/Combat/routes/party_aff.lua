@@ -23,6 +23,7 @@ Yso.off.oc = Yso.off.oc or {}
 
 Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
 local PA = Yso.off.oc.party_aff
+local AP = Yso.off.oc.aura_planner or {}
 PA.alias_owned = true
 
 PA.route_contract = PA.route_contract or {
@@ -245,22 +246,10 @@ local function _mana_pct(tgt, snap, fresh)
   return nil
 end
 
-local function _cleanseaura_snapshot(tgt)
-  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == "function" then
-    local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
-    if ok and type(s) == "table" then return s end
-  end
-  return nil
-end
-
-local function _aura_txn_active_for(tgt)
-  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function") then return false end
-  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
-  return ok and type(status) == "table" and status.active == true and status.matched == true
-end
+-- _cleanseaura_snapshot, _aura_txn_active_for moved to occ_aura_planner.lua (AP.*)
 
 local function _snapshot_view(tgt)
-  local snap = _cleanseaura_snapshot(tgt) or {}
+  local snap = AP.snapshot and AP.snapshot(tgt) or {}
   local fresh = (snap.fresh == true)
   local read_complete = fresh and (snap.read_complete == true)
   local parse_window_open = fresh and (snap.parse_window_open == true)
@@ -274,19 +263,8 @@ local function _snapshot_view(tgt)
   local cap = tonumber(PA.cfg.cleanseaura_mana_pct or 40) or 40
   local needs_readaura = false
   local readaura_reason = ""
-
-  if parse_window_open then
-    needs_readaura = false
-    readaura_reason = "parse_window_open"
-  elseif not fresh then
-    needs_readaura = true
-    readaura_reason = "snapshot_stale"
-  elseif read_complete ~= true then
-    needs_readaura = true
-    readaura_reason = "snapshot_incomplete"
-  elseif deaf == nil then
-    needs_readaura = true
-    readaura_reason = "deaf_unknown"
+  if type(AP.needs_readaura) == "function" then
+    needs_readaura, readaura_reason = AP.needs_readaura(tgt, snap)
   end
 
   return {
@@ -349,15 +327,15 @@ function PA.S.loyals_hostile(tgt)
 end
 
 local function _readaura_tag(tgt)
-  return "pa:eq:readaura:" .. _lc(tgt)
+  return AP.readaura_tag and AP.readaura_tag(tgt) or ("occ:eq:readaura:" .. _lc(tgt))
 end
 
 local function _cleanseaura_tag(tgt)
-  return "pa:eq:cleanseaura:" .. _lc(tgt)
+  return AP.cleanseaura_tag and AP.cleanseaura_tag(tgt) or ("occ:eq:cleanseaura:" .. _lc(tgt))
 end
 
 local function _pin_tag(tgt)
-  return "pa:eq:pinchaura:" .. _lc(tgt)
+  return AP.pinchaura_tag and AP.pinchaura_tag(tgt) or ("occ:eq:pinchaura:" .. _lc(tgt))
 end
 
 local function _utter_tag(tgt)
@@ -441,10 +419,11 @@ local function _entity_refresh_state(tgt)
   return out
 end
 
-local function _first_missing_lock_aff(tgt)
+local function _first_missing_lock_aff(tgt, skip_aff)
   local order = { "asthma", "haemophilia", "addiction", "clumsiness", "healthleech", "weariness", "sensitivity", "agoraphobia", "dementia", "claustrophobia", "confusion", "hallucinations", }
+  skip_aff = _lc(skip_aff)
   for i = 1, #order do
-    if not _has_aff(tgt, order[i]) then return order[i] end
+    if order[i] ~= skip_aff and not _has_aff(tgt, order[i]) then return order[i] end
   end
   return nil
 end
@@ -927,21 +906,19 @@ local function _plan_eq(tgt, opts)
   local seq = _sequence_plan(tgt, opts)
   local bootstrap_pending = (type(opts) == "table" and opts.loyals_bootstrap_pending == true)
 
-  if bootstrap_pending then
-    local tag = _readaura_tag(tgt)
-    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
-      return ("readaura %s"):format(tgt), "team_coordination", tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
+  if bootstrap_pending and type(AP.bootstrap_readaura_plan) == "function" then
+    local plan_tbl = { loyals_bootstrap_pending = true, readaura_via_loyals = true }
+    local ra_cmd, ra_cat, ra_tag, ra_lock = AP.bootstrap_readaura_plan(tgt, plan_tbl)
+    if ra_cmd then
+      return ra_cmd, "team_coordination", ra_tag, ra_lock
     end
   end
 
   if seq.enabled and seq.needs_readaura == true then
-    local tag = _readaura_tag(tgt)
-    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
-      if Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == "function" then
-        local ok, ready = pcall(Yso.occ.readaura_is_ready)
-        if ok and ready == true then
-          return ("readaura %s"):format(tgt), "team_coordination", tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
-        end
+    if type(AP.readaura_plan) == "function" then
+      local ra_cmd, ra_cat, ra_tag, ra_lock = AP.readaura_plan(tgt, seq, false)
+      if ra_cmd then
+        return ra_cmd, "team_coordination", ra_tag, ra_lock
       end
     end
     return nil, nil, nil, nil
@@ -1004,19 +981,11 @@ local function _plan_eq(tgt, opts)
   local stable = _lock_stable(tgt)
 
   if stable and _has_aff(tgt, "manaleech") then
-    local snap = nil
-    if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == "function" then
-      local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
-      if ok then snap = s end
-    end
-    local needs_readaura = not snap or not snap.fresh or not snap.read_complete
-    if needs_readaura and Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == "function" then
-      local ok, ready = pcall(Yso.occ.readaura_is_ready)
-      if ok and ready == true then
-        local tag = tag_prefix .. "readaura:" .. tkey
-        if not _recent_sent(tag, 8) then
-          return ("readaura %s"):format(tgt), "team_coordination", tag, 1.0
-        end
+    local needs_ra = type(AP.needs_readaura) == "function" and AP.needs_readaura(tgt) or false
+    if needs_ra and type(AP.readaura_plan) == "function" then
+      local ra_cmd, ra_cat, ra_tag, ra_lock = AP.readaura_plan(tgt, nil, false)
+      if ra_cmd then
+        return ra_cmd, "team_coordination", ra_tag, ra_lock
       end
     end
   end
@@ -1037,7 +1006,8 @@ local function _plan_eq(tgt, opts)
     end
   end
 
-  local missing = _first_missing_lock_aff(tgt)
+  local skip_aff = _trim(type(opts) == "table" and opts.skip_aff or "")
+  local missing = _first_missing_lock_aff(tgt, skip_aff)
   if missing then
     local tag = tag_prefix .. "instill:" .. tkey .. ":" .. missing
     local lock = tonumber(PA.cfg.instill_lockout_s or 2.5)
@@ -1102,7 +1072,8 @@ _plan_entity = function(tgt, opts)
   local ER = ES.registry
   if ER and type(ER.target_swap) == "function" then pcall(ER.target_swap, tgt) end
 
-  local missing = _first_missing_lock_aff(tgt)
+  local eq_aff = _trim(type(opts) == "table" and opts.eq_aff or "")
+  local missing = _first_missing_lock_aff(tgt, eq_aff)
   if missing then
     local cmd = _entity_cmd_for_aff(missing, tgt)
     if cmd then return cmd, "lock_pressure" end
@@ -1264,25 +1235,31 @@ function PA.attack_function(arg)
   local free_cmd, free_cat = _plan_free(tgt)
   local loyals_bootstrap_pending = (_trim(free_cmd) ~= "")
   local seq = _sequence_plan(tgt, { loyals_bootstrap_pending = loyals_bootstrap_pending })
-  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt, {
+  local preview_eq_cmd, preview_eq_cat, preview_eq_tag, preview_eq_lock = _plan_eq(tgt, {
     loyals_bootstrap_pending = loyals_bootstrap_pending,
     sequence = seq,
   })
   local bal_cmd, bal_cat = _plan_bal(tgt, {
     sequence = seq,
   })
+  local main = _choose_main_lane(preview_eq_cmd, preview_eq_cat, bal_cmd, bal_cat)
+  local selected_eq = (main.lane == "eq") and main.cmd or nil
+  local selected_bal = (main.lane == "bal") and main.cmd or nil
+  local eq_aff = _trim((selected_eq or ""):match("^instill%s+.-%s+with%s+([%w_%-]+)$"))
+  local eq_cmd, eq_cat, eq_tag, eq_lock = preview_eq_cmd, preview_eq_cat, preview_eq_tag, preview_eq_lock
+  if main.lane ~= "eq" then
+    eq_cmd, eq_cat, eq_tag, eq_lock = nil, nil, nil, nil
+  end
   local class_cmd, class_cat = _plan_entity(tgt, {
     sequence = seq,
-    eq_cmd = eq_cmd,
+    eq_cmd = selected_eq,
     eq_tag = eq_tag,
+    eq_aff = eq_aff,
   })
   local bal_only_tick = (seq.enabled == true and seq.bal_only_tick == true and _trim(bal_cmd) ~= "" and _trim(eq_cmd) == "" and _trim(free_cmd) == "")
   if bal_only_tick then
     class_cmd, class_cat = nil, nil
   end
-  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
-  local selected_eq = (main.lane == "eq") and main.cmd or nil
-  local selected_bal = (main.lane == "bal") and main.cmd or nil
   local main_lane = main.lane
   if main_lane == "" and _trim(class_cmd) ~= "" then main_lane = "entity" end
   if main_lane == "" and _trim(free_cmd) ~= "" then main_lane = "free" end

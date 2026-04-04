@@ -20,7 +20,7 @@ Yso.dop = Yso.dop or {}
 local Dop = Yso.dop
 
 Dop.cfg = Dop.cfg or {
-  sep               = ";;",
+  sep               = "&&",
   debug             = false,
   prepend_seeklook  = true,
 
@@ -103,26 +103,13 @@ local function _ak_target()
   return nil
 end
 
-local function _qsend(cmd)
-  local Q = Yso.queue
-  if Q and type(Q.push) == "function" then
-    -- Your Q.push appears to be: push(cmd, queueName)
-    local ok = pcall(Q.push, cmd, "free")
-    if not ok then
-      -- Fallback: if push only takes one arg, still send the command.
-      ok = pcall(Q.push, cmd)
-    end
-    if not ok then send(cmd) end
-  else
-    send(cmd)
-  end
-end
-
 local function _send_chain(cmds)
+  if #cmds == 0 then return end
   for _,c in ipairs(cmds) do
     _dbg("SEND: " .. c)
-    _qsend(c)
   end
+  local combined = table.concat(cmds, "&&")
+  send(combined)
 end
 
 -- parse optional "at"
@@ -153,6 +140,8 @@ function Dop.getTarget(explicit)
   end
 
   local g = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.target
+  g = _coerce_target(g)
+  if g then g = g:gsub("%s*%b()$", "") end
   g = _coerce_target(g)
   if g then Dop._last_target = g; return g end
 
@@ -247,7 +236,7 @@ function Dop.seek(who)
     rawset(_G, "target", who)
   end
 
-  local tgt = Dop.getTarget() or who
+  local tgt = Dop.getTarget(who) or who
   _send_chain({
     ("order doppleganger seek %s"):format(tgt),
     "order doppleganger look",
@@ -289,7 +278,7 @@ function Dop.setTarget(name)
     rawset(_G, "target", name)
   end
 
-  Dop._last_target = Dop.getTarget() or name
+  Dop._last_target = Dop.getTarget(name) or name
   _echo(("Target set: %s"):format(Dop._last_target))
 end
 
