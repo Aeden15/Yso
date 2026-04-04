@@ -237,9 +237,9 @@ local function _emit(payload, opts)
   end
   -- Fallback: route to raw queue emitter.
   if Yso.queue and type(Yso.queue.emit)=="function" then
-    local ok = pcall(Yso.queue.emit, payload)
-    if ok then P.state._did_emit = true end
-    return ok
+    local ok, result = pcall(Yso.queue.emit, payload)
+    if ok and result then P.state._did_emit = true end
+    return ok and result
   end
   return false
 end

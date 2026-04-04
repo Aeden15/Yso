@@ -6,6 +6,10 @@ Yso.hinder = Yso.hinder or {}
 local H = Yso.hinder
 
 local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   if type(getEpoch) == "function" then
     local t = tonumber(getEpoch()) or os.time()
     if t > 20000000000 then t = t / 1000 end
@@ -87,7 +91,7 @@ end
 
 function H.collect(ctx)
   local snapshot = {
-    at = (Yso and Yso.util and type(Yso.util.now) == "function" and Yso.util.now()) or os.time(),
+    at = _now(),
     eq_bal_blockers = {},
     entity_blockers = {},
     all_offense_blocked = false,

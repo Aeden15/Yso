@@ -15,16 +15,17 @@ Yso = Yso or {}
 Yso.ref = Yso.ref or {}
 Yso.ref.magi = Yso.ref.magi or {}
 Yso.magi = Yso.magi or {}
+Yso.magi.crystalism = Yso.magi.crystalism or {}
 
 local M = Yso.ref.magi
 local runtime_resonance = type(Yso.magi.resonance) == "table" and Yso.magi.resonance or nil
 
 M.meta = {
   class = "Magi",
-  updated = "2026-03-26",
+  updated = "2026-03-29",
   notes = {
     "Resonance is a core Magi mechanic. Resonant spells build elemental resonance (air/fire/earth/water).",
-    "AK Magi triggers/affs may be out-of-date due to a recent class overhaul; treat as advisory until audited.",
+    "Yso resonance keeps a lowercase state table and can sync from AK's live Magi resonance tracker.",
   },
 }
 
@@ -43,17 +44,50 @@ Yso.magi.resonance = M.resonance
 M.resonance.levels = { none = 0, minor = 1, moderate = 2, major = 3 }
 M.resonance.word_to_level = { minorly = "minor", moderately = "moderate", majorly = "major" }
 M.resonance.state = M.resonance.state or { air = 0, earth = 0, fire = 0, water = 0 }
+M.resonance.last_sync = M.resonance.last_sync or { source = "init", ok = false, at = 0, changed = false }
 
 -- Example line:
 --   You are now minorly resonant with the Elemental Plane of Fire.
-M.resonance.line_pat = [[^You are now (%a+) resonant with the Elemental Plane of (%a+)%.$]]
---^You are now (minorly|moderately|majorly) resonant with the Elemental Planes of (\w+) and (\w+)\.$
+M.resonance.single_line_pat = [[^You are now (%a+) resonant with the Elemental Plane of (%a+)%.$]]
+M.resonance.dual_line_pat = [[^You are now (%a+) resonant with the Elemental Planes of (%a+) and (%a+)%.$]]
+
+local function _res_now()
+  if type(getEpoch) == "function" then
+    local v = tonumber(getEpoch()) or os.time()
+    if v > 20000000000 then v = v / 1000 end
+    return v
+  end
+  return os.time()
+end
+
+local function _res_note_sync(source, ok, changed)
+  M.resonance.last_sync = {
+    source = tostring(source or ""),
+    ok = (ok == true),
+    at = _res_now(),
+    changed = (changed == true),
+  }
+end
+
+local function _res_norm_element(element)
+  element = tostring(element or ""):lower()
+  if element == "air" or element == "earth" or element == "fire" or element == "water" then
+    return element
+  end
+  return ""
+end
+
+local function _cry_trim(s)
+  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
 function M.resonance.clear()
   for k in pairs(M.resonance.state) do M.resonance.state[k] = 0 end
+  _res_note_sync("clear", true, true)
 end
 
 function M.resonance.set(element, level)
-  element = tostring(element or ""):lower()
+  element = _res_norm_element(element)
   if element == "" then return false end
 
   local lvl = level
@@ -65,23 +99,166 @@ function M.resonance.set(element, level)
   if lvl < 0 then lvl = 0 end
   if lvl > 3 then lvl = 3 end
 
+  local changed = (M.resonance.state[element] ~= lvl)
   M.resonance.state[element] = lvl
+  _res_note_sync("set", true, changed)
   return true
 end
 
 function M.resonance.get(element)
-  element = tostring(element or ""):lower()
+  element = _res_norm_element(element)
+  if element == "" then return 0 end
   return M.resonance.state[element] or 0
 end
 
--- Parse a resonance line; returns: element(lowercase), level(number), level_name(string)
+function M.resonance.sync_from_ak()
+  local ak = rawget(_G, "ak")
+  local row = ak and ak.magi and ak.magi.resonance or nil
+  if type(row) ~= "table" then
+    _res_note_sync("ak", false, false)
+    return false, false
+  end
+
+  local changed = false
+  local map = {
+    air = "Air",
+    earth = "Earth",
+    fire = "Fire",
+    water = "Water",
+  }
+
+  for lower, upper in pairs(map) do
+    local lvl = tonumber(row[upper] or row[lower] or 0) or 0
+    if lvl < 0 then lvl = 0 end
+    if lvl > 3 then lvl = 3 end
+    if M.resonance.state[lower] ~= lvl then changed = true end
+    M.resonance.state[lower] = lvl
+  end
+
+  _res_note_sync("ak", true, changed)
+  return true, changed
+end
+
+-- Parse a resonance line; returns: elements(lowercase table), level(number), level_name(string)
 function M.resonance.parse_line(line)
   line = tostring(line or "")
-  local w, el = line:match(M.resonance.line_pat)
+  local w, el1, el2 = line:match(M.resonance.dual_line_pat)
   local level_name = M.resonance.word_to_level[w]
-  if not level_name or not el then return nil end
+  if level_name and el1 and el2 then
+    local level = M.resonance.levels[level_name] or 0
+    return { _res_norm_element(el1), _res_norm_element(el2) }, level, level_name
+  end
+
+  w, el1 = line:match(M.resonance.single_line_pat)
+  level_name = M.resonance.word_to_level[w]
+  if not level_name or not el1 then return nil end
   local level = M.resonance.levels[level_name] or 0
-  return el:lower(), level, level_name
+  return { _res_norm_element(el1) }, level, level_name
+end
+
+function M.resonance.apply_line(line)
+  local elements, level, level_name = M.resonance.parse_line(line)
+  if type(elements) ~= "table" or type(level) ~= "number" then
+    return false
+  end
+
+  local changed = false
+  for i = 1, #elements do
+    local el = _res_norm_element(elements[i])
+    if el ~= "" then
+      if M.resonance.state[el] ~= level then changed = true end
+      M.resonance.state[el] = level
+    end
+  end
+
+  _res_note_sync("parse_line", true, changed)
+  return true, elements, level, level_name
+end
+
+--========================================================--
+-- Crystalism resonance notices
+--========================================================--
+local CState = Yso.magi.crystalism
+CState.state = CState.state or {
+  last_skill = "",
+  last_target = "",
+  last_seen_at = 0,
+  energise_resonating = false,
+  energise_target = "",
+  energise_seen_at = 0,
+  focus_active = false,
+  focus_seen_at = 0,
+}
+
+function CState.reset()
+  local st = CState.state or {}
+  st.last_skill = ""
+  st.last_target = ""
+  st.last_seen_at = 0
+  st.energise_resonating = false
+  st.energise_target = ""
+  st.energise_seen_at = 0
+  st.focus_active = false
+  st.focus_seen_at = 0
+  CState.state = st
+  return st
+end
+
+function CState.note_resonance(skill, target)
+  local st = CState.state or {}
+  skill = _cry_trim(skill):lower()
+  target = _cry_trim(target)
+  st.last_skill = skill
+  st.last_target = target
+  st.last_seen_at = _res_now()
+  if skill == "energise" then
+    st.energise_resonating = true
+    st.energise_target = target
+    st.energise_seen_at = st.last_seen_at
+  end
+  CState.state = st
+  return true
+end
+
+function CState.clear_energise_resonance()
+  local st = CState.state or {}
+  st.energise_resonating = false
+  st.energise_target = ""
+  st.energise_seen_at = 0
+  CState.state = st
+  return true
+end
+
+function CState.has_energise_resonance()
+  local st = CState.state or {}
+  return st.energise_resonating == true
+end
+
+function CState.consume_energise_resonance()
+  if not CState.has_energise_resonance() then return false end
+  CState.clear_energise_resonance()
+  return true
+end
+
+function CState.note_focus()
+  local st = CState.state or {}
+  st.focus_active = true
+  st.focus_seen_at = _res_now()
+  CState.state = st
+  return true
+end
+
+function CState.clear_focus()
+  local st = CState.state or {}
+  st.focus_active = false
+  st.focus_seen_at = 0
+  CState.state = st
+  return true
+end
+
+function CState.has_focus()
+  local st = CState.state or {}
+  return st.focus_active == true
 end
 
 

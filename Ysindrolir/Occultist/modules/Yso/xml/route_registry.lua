@@ -25,6 +25,56 @@ local function _copy(entry)
   return out
 end
 
+local function _current_class()
+  local C = Yso and Yso.classinfo or nil
+  if type(C) == "table" then
+    if type(C.get) == "function" then
+      local ok, v = pcall(C.get)
+      if ok and type(v) == "string" and _trim(v) ~= "" then return _norm(v) end
+    end
+    if type(C.current_class) == "function" then
+      local ok, v = pcall(C.current_class)
+      if ok and type(v) == "string" and _trim(v) ~= "" then return _norm(v) end
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local status = gmcp and gmcp.Char and gmcp.Char.Status or nil
+  local cls = status and (status.class or status.classname) or nil
+  if type(cls) == "string" and _trim(cls) ~= "" then return _norm(cls) end
+
+  if type(Yso.class) == "string" and _trim(Yso.class) ~= "" then
+    return _norm(Yso.class)
+  end
+
+  return ""
+end
+
+local function _entry_class(entry)
+  return type(entry) == "table" and _norm(entry.class or "") or ""
+end
+
+local function _class_rank(entry, cls)
+  local needed = _entry_class(entry)
+  if needed == "" then return 1 end
+  if cls ~= "" and needed == cls then return 2 end
+  return 0
+end
+
+local function _alias_target(value)
+  if type(value) == "string" then return value end
+  if type(value) ~= "table" then return nil end
+
+  local cls = _current_class()
+  local target = cls ~= "" and value[cls] or nil
+  if type(target) == "string" and target ~= "" then return target end
+
+  target = value.default or value.any or value["*"]
+  if type(target) == "string" and target ~= "" then return target end
+
+  return nil
+end
+
 local ROUTES = {
   occ_aff_burst = {
     id = "occ_aff_burst",
@@ -35,6 +85,16 @@ local ROUTES = {
     priority = 60,
     active = true,
   },
+  focus = {
+    id = "focus",
+    mode = "combat",
+    party_route = nil,
+    namespace = "Yso.off.magi.focus",
+    description = "Magi duel convergence",
+    priority = 61,
+    class = "magi",
+    active = true,
+  },
   group_damage = {
     id = "group_damage",
     mode = "party",
@@ -42,6 +102,16 @@ local ROUTES = {
     namespace = "Yso.off.oc.group_damage",
     description = "Party damage",
     priority = 55,
+    active = true,
+  },
+  magi_group_damage = {
+    id = "magi_group_damage",
+    mode = "party",
+    party_route = "dam",
+    namespace = "Yso.off.magi.group_damage",
+    description = "Magi party damage",
+    priority = 56,
+    class = "magi",
     active = true,
   },
   party_aff = {
@@ -61,11 +131,13 @@ local ALIASES = {
   occ_aff = "occ_aff_burst",
   occultist_offense = "occ_aff_burst",
   burst = "occ_aff_burst",
-  gd = "group_damage",
-  dmg = "group_damage",
-  dam = "group_damage",
-  party_dam = "group_damage",
-  party_damage = "group_damage",
+  focus = { magi = "focus" },
+  magi_focus = { magi = "focus" },
+  gd = { magi = "magi_group_damage", default = "group_damage" },
+  dmg = { magi = "magi_group_damage", default = "group_damage" },
+  dam = { magi = "magi_group_damage", default = "group_damage" },
+  party_dam = { magi = "magi_group_damage", default = "group_damage" },
+  party_damage = { magi = "magi_group_damage", default = "group_damage" },
   party_aff = "party_aff",
   team_aff = "party_aff",
 }
@@ -73,17 +145,24 @@ local ALIASES = {
 local function _route_id(name)
   name = _norm(name)
   if name == "" or name == "none" then return nil end
-  return ALIASES[name] or name
+  if ROUTES[name] then return name end
+  return _alias_target(ALIASES[name])
 end
 
 local function _sorted_rows(filter)
   local out = {}
+  local cls = _current_class()
   for _, entry in pairs(ROUTES) do
     if entry.active ~= false and (not filter or filter(entry)) then
       out[#out + 1] = _copy(entry)
     end
   end
   table.sort(out, function(a, b)
+    local ar = _class_rank(a, cls)
+    local br = _class_rank(b, cls)
+    if ar ~= br then
+      return ar > br
+    end
     if (a.priority or 0) ~= (b.priority or 0) then
       return (a.priority or 0) > (b.priority or 0)
     end
@@ -116,12 +195,19 @@ end
 function RR.for_party_route(route)
   route = _norm(route)
   if route == "dmg" then route = "dam" end
+  local cls = _current_class()
+  local best, best_rank, best_priority = nil, -1, -math.huge
   for _, entry in pairs(ROUTES) do
     if entry.active ~= false and _norm(entry.party_route) == route then
-      return _copy(entry)
+      local rank = _class_rank(entry, cls)
+      if rank > 0 and (not best or rank > best_rank or (rank == best_rank and (entry.priority or 0) > best_priority)) then
+        best = entry
+        best_rank = rank
+        best_priority = entry.priority or 0
+      end
     end
   end
-  return nil
+  return best and _copy(best) or nil
 end
 
 function RR.primary_for_mode(mode)

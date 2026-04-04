@@ -266,11 +266,11 @@ end
 local function _extract_name_near_you(s)
   local a = s:match("([A-Z][%w_%-']+) challenges you")
   if a then return a end
-  local b = s:match("you challenge ([A-Z][%w_%-']+)")
+  local b = s:match("[Yy]ou challenge ([A-Z][%w_%-']+)")
   if b then return b end
   local c = s:match("([A-Z][%w_%-']+) accepts your")
   if c then return c end
-  local d = s:match("you accept ([A-Z][%w_%-']+)'s")
+  local d = s:match("[Yy]ou accept ([A-Z][%w_%-']+)'s")
   if d then return d end
   return nil
 end

@@ -20,6 +20,7 @@ AB.alias_owned = true
 -- this pass adds the affliction / mana-burst branch used by combat-mode dueling.
 Yso.off.oc.cleanseaura = Yso.off.oc.cleanseaura or {}
 local CS = Yso.off.oc.cleanseaura
+local AP = Yso.off.oc.aura_planner or {}
 
 AB.route_contract = AB.route_contract or {
   id = "occ_aff_burst",
@@ -313,12 +314,7 @@ local function _has_any_required_insanity(tgt)
   return false
 end
 
-local function _snapshot(tgt)
-  if tgt == "" then return nil end
-  local A = Yso and Yso.occ and Yso.occ.aura or nil
-  if type(A) ~= "table" then return nil end
-  return A[tgt] or A[_lc(tgt)]
-end
+-- _snapshot() moved to occ_aura_planner.lua
 
 local function _target_meta(tgt)
   if tgt == "" or not (Yso and Yso.tgt and type(Yso.tgt.get) == "function") then return {} end
@@ -411,109 +407,7 @@ local function _bm_snapshot_view(tgt, snap, mana_pct)
   }
 end
 
-function CS.snapshot(tgt)
-  local a = _snapshot(tgt)
-  local txn = { active = false, matched = false, window_remaining = 0, status = "", close_reason = "" }
-  if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function" then
-    local ok, row = pcall(Yso.occ.aura_txn_status, tgt)
-    if ok and type(row) == "table" then
-      txn = row
-    end
-  end
-  local ttl = tonumber((Yso and Yso.occ and Yso.occ.aura_cfg and Yso.occ.aura_cfg.ttl) or AB.cfg.aura_ttl_s or 20) or 20
-  local parse_window_open = (txn.active == true and txn.matched == true)
-  local parse_window_remaining = parse_window_open and (tonumber(txn.window_remaining or 0) or 0) or 0
-  if not a then
-    return {
-      fresh = false,
-      complete = false,
-      read_complete = false,
-      had_counts = false,
-      had_mana = false,
-      physical = nil,
-      mental = nil,
-      aff_total = nil,
-      blind = nil,
-      deaf = nil,
-      speed = nil,
-      shield = nil,
-      mana_pct = nil,
-      mana_cur = nil,
-      mana_max = nil,
-      defs_state = "missing",
-      confidence_state = parse_window_open and "pending" or "missing",
-      confidence_score = 0,
-      missing_keys = { "defs", "counts", "mana" },
-      parse_window_open = parse_window_open,
-      parse_window_remaining = parse_window_remaining,
-      txn_status = tostring(txn.status or ""),
-      txn_reason = tostring(txn.close_reason or ""),
-      txn_started_at = tonumber(txn.started_at or 0) or 0,
-      txn_read_id = tonumber(txn.read_id or 0) or 0,
-    }
-  end
-  local fresh = true
-  if ttl > 0 then fresh = (_now() - tonumber(a.ts or 0)) <= ttl end
-  local missing_keys = {}
-  if fresh and type(a.missing_keys) == "table" then
-    for i = 1, #a.missing_keys do
-      missing_keys[#missing_keys + 1] = a.missing_keys[i]
-    end
-  end
-  local confidence_state = fresh and tostring(a.confidence_state or "") or "stale"
-  if confidence_state == "" then
-    confidence_state = fresh and ((a.complete == true and "complete") or "partial") or "stale"
-  end
-  if parse_window_open and confidence_state == "missing" then
-    confidence_state = "pending"
-  end
-  local function bool_field(key)
-    if not fresh then return nil end
-    if a[key] == true then return true end
-    if a[key] == false then return false end
-    return nil
-  end
-  local physical = fresh and tonumber(a.physical) or nil
-  local mental = fresh and tonumber(a.mental) or nil
-  local total = nil
-  if physical ~= nil or mental ~= nil then total = (physical or 0) + (mental or 0) end
-  return {
-    fresh = fresh,
-    complete = (fresh and a.complete == true) or false,
-    read_complete = (fresh and a.read_complete == true) or false,
-    had_counts = (fresh and a.had_counts == true) or false,
-    had_mana = (fresh and a.had_mana == true) or false,
-    physical = physical,
-    mental = mental,
-    aff_total = total,
-    blind = bool_field("blind"),
-    deaf = bool_field("deaf"),
-    speed = bool_field("speed"),
-    shield = bool_field("shield"),
-    caloric = bool_field("caloric"),
-    frost = bool_field("frost"),
-    levitation = bool_field("levitation"),
-    insomnia = bool_field("insomnia"),
-    kola = bool_field("kola"),
-    cloak = bool_field("cloak"),
-    mana_pct = fresh and tonumber(a.mana_pct) or nil,
-    mana_cur = fresh and tonumber(a.mana_cur) or nil,
-    mana_max = fresh and tonumber(a.mana_max) or nil,
-    raw = (fresh and type(a.raw) == "table") and a.raw or nil,
-    defs_state = fresh and tostring(a.defs_state or "missing") or "missing",
-    confidence_state = confidence_state,
-    confidence_score = fresh and (tonumber(a.confidence_score or 0) or 0) or 0,
-    missing_keys = missing_keys,
-    parse_window_open = parse_window_open,
-    parse_window_remaining = parse_window_remaining,
-    txn_status = tostring(txn.status or ""),
-    txn_reason = tostring(txn.close_reason or ""),
-    txn_started_at = tonumber(txn.started_at or 0) or 0,
-    txn_read_id = tonumber(txn.read_id or 0) or 0,
-    ts = tonumber(a.ts or 0) or 0,
-    read_id = tonumber(a.read_id or 0) or 0,
-  }
-end
+-- CS.snapshot now provided by occ_aura_planner.lua (AP.snapshot)
 
 function CS.plan_aff(tgt)
   local snap = CS.snapshot(tgt)
@@ -571,27 +465,7 @@ function CS.plan_aff(tgt)
     local ok, hostile = pcall(AB.S.loyals_hostile, tgt)
     loyals_readaura = (ok and hostile == true) or false
   end
-  local needs_defs = fresh and ((snap.read_complete ~= true) or missing.defs == true)
-  local needs_counts = fresh and ((snap.had_counts ~= true) or missing.counts == true)
-  local needs_mana_snapshot = fresh and (mana == nil and ((snap.had_mana ~= true) or missing.mana == true))
-  local needs_readaura = false
-  local readaura_reason = ""
-  if fresh and snap.parse_window_open == true then
-    needs_readaura = false
-    readaura_reason = "parse_window_open"
-  elseif not fresh then
-    needs_readaura = true
-    readaura_reason = "snapshot_stale"
-  elseif needs_defs then
-    needs_readaura = true
-    readaura_reason = "defs_incomplete"
-  elseif needs_counts then
-    needs_readaura = true
-    readaura_reason = "counts_incomplete"
-  elseif needs_mana_snapshot then
-    needs_readaura = true
-    readaura_reason = "mana_unknown"
-  end
+  local needs_readaura, readaura_reason = AP.needs_readaura(tgt, snap)
   local bm_entry = (bm.active == true and _has_aff(tgt, "asthma"))
   local bm_branch_active = bm_entry and bm.state == "complete_enough" and (_has_aff(tgt, "paralysis") or _has_aff(tgt, "weariness"))
   local bm_branch_provisional = bm_entry and not bm_branch_active
@@ -2528,62 +2402,8 @@ local function _burst_ready(tgt)
   return _enlighten_score() >= tonumber(AB.cfg.enlighten_target or 5)
 end
 
-local function _readaura_tag(tgt)
-  return "ab:eq:readaura:" .. _lc(tgt)
-end
-
-local function _aura_txn_active_for(tgt)
-  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function") then return false end
-  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
-  return ok and type(status) == "table" and status.active == true and status.matched == true
-end
-
-local function _missing_key(list, key)
-  if type(list) ~= "table" then return false end
-  key = _lc(key)
-  for i = 1, #list do
-    if _lc(list[i]) == key then return true end
-  end
-  return false
-end
-
-local function _should_probe_readaura(tgt, plan, burst_ready)
-  if _recent_sent(_readaura_tag(tgt), tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return false end
-  if plan and plan.snapshot_parse_window_open == true then return false end
-
-  if plan and plan.needs_readaura == true then return true end
-  if plan and (plan.snapshot_confidence_state == "stale" or plan.snapshot_complete ~= true) then return true end
-
-  local need_defs = plan and ((plan.snapshot_read_complete ~= true) or _missing_key(plan.snapshot_missing_keys, "defs"))
-  local need_counts = plan and ((plan.snapshot_had_counts ~= true) or _missing_key(plan.snapshot_missing_keys, "counts"))
-  local need_mana = plan and (plan.mana_pct == nil) and ((plan.snapshot_had_mana ~= true) or _missing_key(plan.snapshot_missing_keys, "mana"))
-
-  if need_defs or need_counts or need_mana then return true end
-
-  if burst_ready == true and plan and (plan.speed == nil or need_defs) then return true end
-
-  return false
-end
-
-local function _readaura_plan(tgt, plan, burst_ready)
-  if not _should_probe_readaura(tgt, plan, burst_ready) then return nil, nil, nil, nil end
-  if not (Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == "function") then return nil, nil, nil, nil end
-  local ok, ready = pcall(Yso.occ.readaura_is_ready)
-  if ok and ready == true then
-    return ("readaura %s"):format(tgt), "cleanseaura_window", _readaura_tag(tgt), tonumber(AB.cfg.readaura_lockout_s or 1.0)
-  end
-  return nil, nil, nil, nil
-end
-
-local function _bootstrap_readaura_plan(tgt, plan)
-  if not (plan and plan.loyals_bootstrap_pending == true and plan.readaura_via_loyals == true) then
-    return nil, nil, nil, nil
-  end
-  local tag = _readaura_tag(tgt)
-  if _recent_sent(tag, tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return nil, nil, nil, nil end
-  if _aura_txn_active_for(tgt) then return nil, nil, nil, nil end
-  return ("readaura %s"):format(tgt), "cleanseaura_window", tag, tonumber(AB.cfg.readaura_lockout_s or 1.0)
-end
+-- _readaura_tag, _aura_txn_active_for, _missing_key, _should_probe_readaura,
+-- _readaura_plan, _bootstrap_readaura_plan moved to occ_aura_planner.lua (AP.*)
 
 local function _eq_plan(tgt, plan, gate)
   if not _eq_ready() then return nil, nil, nil, nil end
@@ -2591,20 +2411,19 @@ local function _eq_plan(tgt, plan, gate)
   local burst_ready = _burst_ready(tgt)
   local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
   local has_manaleech = _has_aff(tgt, "manaleech")
-  local bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock = _bootstrap_readaura_plan(tgt, plan)
+  local bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock = AP.bootstrap_readaura_plan(tgt, plan)
   if bootstrap_cmd then
     return bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock
   end
-  local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = _readaura_plan(tgt, plan, burst_ready)
+  local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = AP.readaura_plan(tgt, plan, burst_ready)
 
   if readaura_cmd then
     return readaura_cmd, readaura_cat, readaura_tag, readaura_lock
   end
 
-  if plan.cleanseaura_ready and has_manaleech and not _truebook_can_utter(tgt) then
-    if not gate or gate.stable == true then
-      return ("cleanseaura %s"):format(tgt), "truename_acquire", "ab:eq:cleanseaura:" .. _lc(tgt), tonumber(AB.cfg.cleanseaura_lockout_s or 4.1)
-    end
+  local cs_cmd, cs_cat, cs_tag, cs_lock = AP.cleanseaura_plan(tgt, plan, gate)
+  if cs_cmd then
+    return cs_cmd, cs_cat, cs_tag, cs_lock
   end
 
   if _truebook_can_utter(tgt) and not has_wm and _has_any_required_insanity(tgt) then

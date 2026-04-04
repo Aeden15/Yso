@@ -26,7 +26,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or "addclearfull"  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or "bal"           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- HUNT cureset only
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -37,6 +37,7 @@ Yso._trig  = Yso._trig  or {}
 Yso.fool   = Yso.fool   or {}
 
 local F = Yso.fool
+local _dev_cureset_override = nil
 
 F.cfg = F.cfg or {
   enabled = true,   -- auto (GMCP + diagnose snapshot) on/off
@@ -49,6 +50,10 @@ F.state = F.state or {
   last_used  = 0,     -- when we last queued Fool
   last_auto  = 0,     -- when auto/diag last attempted Fool
   await_diag = false, -- set by dv alias; cleared on diag completion
+  basher_hold = false,
+  basher_hold_reason = nil,
+  basher_hold_at = 0,
+  basher_hold_timer = nil,
 }
 
 -- ---------- helpers ----------
@@ -87,6 +92,17 @@ local function _trim(s)
   return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
+local function _normalize_cureset_name(v)
+  v = _trim(v):lower()
+  if v == "" or v == "live" or v == "clear" then
+    return nil
+  end
+  if v == "bash" or v == "bashing" or v == "hunting" or v == "pve" then
+    return "hunt"
+  end
+  return v
+end
+
 local function _has(aff)
   local A = _Aff()
   return A[aff] == true
@@ -98,23 +114,7 @@ end
 
 -- current cureset name from Legacy (e.g. "legacy", "hunt", "group")
 local function _current_cureset()
-  local function _norm_set(v)
-    v = _trim(v):lower()
-    if v == "" then return nil end
-    if v == "bash" or v == "bashing" or v == "hunting" or v == "pve" then
-      return "hunt"
-    end
-    return v
-  end
-
-  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
-  local cur = _norm_set(set)
-  if cur then
-    return cur
-  end
-
-  local global_cur = rawget(_G, "CurrentCureset")
-  cur = _norm_set(global_cur)
+  local cur = _normalize_cureset_name(_dev_cureset_override)
   if cur then
     return cur
   end
@@ -126,7 +126,37 @@ local function _current_cureset()
     end
   end
 
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  cur = _normalize_cureset_name(set)
+  if cur then
+    return cur
+  end
+
+  local global_cur = rawget(_G, "CurrentCureset")
+  cur = _normalize_cureset_name(global_cur)
+  if cur then
+    return cur
+  end
+
   return "legacy"
+end
+
+-- Devtools/manual helper only: temporarily simulate a cureset for one call.
+function F.dev_with_cureset(name, fn, ...)
+  if type(fn) ~= "function" then
+    return false, "fn must be a function"
+  end
+
+  local prev = _dev_cureset_override
+  _dev_cureset_override = _normalize_cureset_name(name)
+
+  local ok, a, b, c, d, e = pcall(fn, ...)
+  _dev_cureset_override = prev
+
+  if not ok then
+    return false, a
+  end
+  return true, a, b, c, d, e
 end
 
 local function _is_tendon_key(k)
@@ -193,6 +223,55 @@ local function _bool_word(v)
   return (v == true) and "true" or "false"
 end
 
+local function _release_basher_hold(reason)
+  local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
+  if F.state.basher_hold_timer and type(killTimer) == "function" then
+    pcall(killTimer, F.state.basher_hold_timer)
+  end
+  F.state.basher_hold_timer = nil
+  F.state.basher_hold = false
+  F.state.basher_hold_reason = nil
+  F.state.basher_hold_at = 0
+  if had_hold then
+    _fool_echo("Basher hold released ("..tostring(reason or "unknown")..").")
+  end
+end
+
+local function _arm_basher_hold(reason)
+  _release_basher_hold("refresh")
+
+  F.state.basher_hold = true
+  F.state.basher_hold_reason = tostring(reason or "fool")
+  F.state.basher_hold_at = _now()
+  _fool_echo("Basher hold armed ("..F.state.basher_hold_reason..").")
+
+  if type(tempTimer) == "function" then
+    F.state.basher_hold_timer = tempTimer(10, function()
+      _release_basher_hold("timeout")
+    end)
+  end
+end
+
+local function _clear_basher_queue()
+  local S = Legacy and Legacy.Settings and Legacy.Settings.Basher
+  if type(S) ~= "table" then
+    return false
+  end
+  if S.status ~= true then
+    return false
+  end
+
+  if type(send) == "function" then
+    send("cq freestand", false)
+  end
+  S.queued = false
+  return true
+end
+
+function F.blocks_basher()
+  return F.state.basher_hold == true
+end
+
 local _is_lock_state
 local _min_affs_for_current_set
 
@@ -204,9 +283,11 @@ function F.status()
   local qmode = tostring(Legacy.Fool.queue_mode or "addclearfull")
   local qtype = tostring(Legacy.Fool.queue_type or "bal")
   local auto = (F.cfg.enabled == true) and "on" or "off"
+  local hold = (F.blocks_basher() == true) and "on" or "off"
+  local hold_reason = tostring(F.state.basher_hold_reason or "-")
 
   _emit_status(string.format(
-    "auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s",
+    "auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s basher_hold=%s(%s)",
     auto,
     curset,
     count,
@@ -215,7 +296,9 @@ function F.status()
     _bool_word(is_locked),
     _cooldown_remaining(),
     qmode,
-    qtype
+    qtype,
+    hold,
+    hold_reason
   ))
 end
 
@@ -280,7 +363,7 @@ _min_affs_for_current_set = function()
 
   local cur = _current_cureset() or "legacy"
   if cur == "hunt" then
-    local v = tonumber(Legacy.Fool.min_affs_hunt or 3) or 3
+    local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
     if v < 1 then v = 1 end
     return v, false  -- NO lock override in hunt
   else
@@ -291,7 +374,7 @@ _min_affs_for_current_set = function()
 end
 
 -- Queue helper
-local function _queue_fool()
+local function _queue_fool(source)
   if not _is_occultist() then
     _fool_echo("Not using Fool: current class is not Occultist.")
     return false
@@ -301,22 +384,30 @@ local function _queue_fool()
   local cmd   = "fling fool at me"
   local queue_fn_name = mode:lower()
   local queue_fn = Yso.queue and Yso.queue[queue_fn_name]
+  local hold_reason = "fool:" .. tostring(source or "manual")
+
+  _clear_basher_queue()
 
   if type(queue_fn) == "function" then
     -- Yso queue helper path
     local queued = (queue_fn(qtype, cmd) == true)
     if queued then
       F.state.last_used = _now()
+      _arm_basher_hold(hold_reason)
       _fool_echo(string.format("Queued Fool via %s %s.", mode, qtype))
+    else
+      _release_basher_hold("queue-failed")
     end
     return queued
   else
     -- raw queue path
     local ok = pcall(send, string.format("queue %s %s %s", mode, qtype, cmd), false)
     if not ok then
+      _release_basher_hold("queue-error")
       return false
     end
     F.state.last_used = _now()
+    _arm_basher_hold(hold_reason)
     _fool_echo(string.format("Queued Fool via %s %s.", mode, qtype))
     return true
   end
@@ -334,6 +425,7 @@ function Legacy.FoolSelfCleanse(source)
   if not (Legacy and Legacy.Curing and Legacy.Curing.Affs) then
     return false
   end
+  source = tostring(source or "manual")
 
   -- Mechanical gates
   if _has("prone") then
@@ -369,11 +461,11 @@ function Legacy.FoolSelfCleanse(source)
 
   _fool_echo(string.format(
     "Using Fool (source=%s, cureset=%s, affs=%d, min=%d, allow_lock=%s, lock=%s).",
-    tostring(source or "?"), curset, count, min_affs,
+    source, curset, count, min_affs,
     tostring(allow_lock), tostring(is_locked)
   ))
 
-  local queued = _queue_fool()
+  local queued = _queue_fool(source)
   return queued == true
 end
 
@@ -460,6 +552,16 @@ Yso._trig.fool_eq = tempRegexTrigger(
     else
       _fool_echo("Diagnose snapshot: conditions failed, Fool not used.")
     end
+  end)
+)
+
+if Yso._trig.fool_success then
+  killTrigger(Yso._trig.fool_success)
+end
+Yso._trig.fool_success = tempRegexTrigger(
+  [[^You press the Fool tarot to your forehead\.$]],
+  _safe(function()
+    _release_basher_hold("success")
   end)
 )
 

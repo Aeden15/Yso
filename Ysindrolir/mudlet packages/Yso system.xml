@@ -1918,7 +1918,7 @@ if Yso and type(Yso.dom) == "table" and type(Yso.dom.ents) == "table" then
   local Ent = Yso.dom.ents
   Ent.current = {}
   Ent.seen = true
-  Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()/1000) or os.time())
+  Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())
   Yso.occ = Yso.occ or {}
   Yso.occ.entities_seen = true
   Yso.occ.entities_present = Ent.current
@@ -2349,7 +2349,7 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Djinn present</name>
 							<script>Yso.elemental = "djinn"
-Yso.elemental_lev_ready = false
+Yso.elemental_lev_ready = true
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Djinn summoned!).\n")</script>
 							<triggerType>0</triggerType>
@@ -2589,7 +2589,10 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Crystal vibration focus</name>
-						<script>cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Crystal vibration focused on this location.)\n")</script>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_focus) == "function" then
+  pcall(Yso.magi.crystalism.note_focus)
+end
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Crystal vibration focused on this location.)\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2605,6 +2608,293 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Lullaby resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "lullaby", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Lullaby resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your lullaby resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Dissonance resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "dissonance", matches[2])
+end
+if Yso and Yso.magi and Yso.magi.dissonance and type(Yso.magi.dissonance.note) == "function" then
+  pcall(Yso.magi.dissonance.note, matches[2], "resonance", { confidence = "medium", evidence = "dissonance_resonance" })
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Dissonance resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your dissonance resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Tremors resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "tremors", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Tremors resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your tremors resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Disorientation resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "disorientation", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Disorientation resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your disorientation resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Palpitation resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "palpitation", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Palpitation resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your palpitation resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Creeps resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "creeps", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Creeps resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your creeps resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Plague resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "plague", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Plague resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your plague resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Oscillate resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "oscillate", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Oscillate resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your oscillate resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Energise resonance</name>
+						<script>Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+Yso.magi.crystalism = Yso.magi.crystalism or {}
+
+local crystal = Yso.magi.crystalism
+crystal.state = crystal.state or {
+  last_skill = "",
+  last_target = "",
+  last_seen_at = 0,
+  energise_resonating = false,
+  energise_target = "",
+  energise_seen_at = 0,
+}
+
+if type(crystal.clear_energise_resonance) ~= "function" then
+  crystal.clear_energise_resonance = function()
+    local st = crystal.state or {}
+    st.energise_resonating = false
+    st.energise_target = ""
+    st.energise_seen_at = 0
+    crystal.state = st
+    return true
+  end
+end
+
+if type(crystal.has_energise_resonance) ~= "function" then
+  crystal.has_energise_resonance = function()
+    local st = crystal.state or {}
+    return st.energise_resonating == true
+  end
+end
+
+if type(crystal.consume_energise_resonance) ~= "function" then
+  crystal.consume_energise_resonance = function()
+    if not crystal.has_energise_resonance() then return false end
+    crystal.clear_energise_resonance()
+    return true
+  end
+end
+
+if type(crystal.note_resonance) ~= "function" then
+  crystal.note_resonance = function(skill, target)
+    local st = crystal.state or {}
+    st.last_skill = tostring(skill or ""):lower()
+    st.last_target = tostring(target or "")
+    st.last_seen_at = (type(getEpoch) == "function" and getEpoch() or os.time())
+    if st.last_skill == "energise" then
+      st.energise_resonating = true
+      st.energise_target = st.last_target
+      st.energise_seen_at = st.last_seen_at
+    end
+    crystal.state = st
+    return true
+  end
+end
+
+pcall(crystal.note_resonance, "energise", matches[2])
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Energise resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your energise resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Revelation resonance</name>
+						<script>if Yso and Yso.magi and Yso.magi.crystalism and type(Yso.magi.crystalism.note_resonance) == "function" then
+  pcall(Yso.magi.crystalism.note_resonance, "revelation", matches[2])
+end
+cecho(("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Revelation resonating with %s.)\n"):format(matches[2]))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You sense your revelation resonating with (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -2969,6 +3259,35 @@ end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^cleanse\s*(.*)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Focus automation</name>
+						<script>Yso = Yso or {}
+local mode = Yso.mode or nil
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
+  end
+end
+
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if type(cecho) == "function" then
+    cecho("[YSO] focus loop controller unavailable.\n")
+  end
+  return
+end
+
+local ok, err = pcall(mode.toggle_route_loop, "focus", "alias")
+if not ok and type(cecho) == "function" then
+  cecho(string.format("[YSO] focus alias failed: %s\n", tostring(err)))
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^focus$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Readaura</name>
@@ -4039,9 +4358,48 @@ end</script>
 						<name>Energise</name>
 						<script>Yso = Yso or {}
 Yso.magi = Yso.magi or {}
+Yso.magi.crystalism = Yso.magi.crystalism or {}
 
-if Yso.magi.energy then
-send("queue prepend egbal absorb energy")
+if Yso.magi.energy ~= true then return end
+
+local crystal = Yso.magi.crystalism
+crystal.state = crystal.state or {
+  last_skill = "",
+  last_target = "",
+  last_seen_at = 0,
+  energise_resonating = false,
+  energise_target = "",
+  energise_seen_at = 0,
+}
+
+if type(crystal.clear_energise_resonance) ~= "function" then
+  crystal.clear_energise_resonance = function()
+    local st = crystal.state or {}
+    st.energise_resonating = false
+    st.energise_target = ""
+    st.energise_seen_at = 0
+    crystal.state = st
+    return true
+  end
+end
+
+if type(crystal.has_energise_resonance) ~= "function" then
+  crystal.has_energise_resonance = function()
+    local st = crystal.state or {}
+    return st.energise_resonating == true
+  end
+end
+
+if type(crystal.consume_energise_resonance) ~= "function" then
+  crystal.consume_energise_resonance = function()
+    if not crystal.has_energise_resonance() then return false end
+    crystal.clear_energise_resonance()
+    return true
+  end
+end
+
+if crystal.consume_energise_resonance() then
+  send("queue prepend egbal absorb energy")
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4454,6 +4812,10 @@ do
       if GD and type(GD.on_payload_sent) == &quot;function&quot; then
         pcall(GD.on_payload_sent, payload)
       end
+      local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
+      if MGD and type(MGD.on_payload_sent) == &quot;function&quot; then
+        pcall(MGD.on_payload_sent, payload)
+      end
 
     end
 
@@ -4615,7 +4977,7 @@ function Yso.pause_offense(on, reason, quiet)
   if on then
     P.active = true
     P.reason = tostring(reason or P.reason or &quot;paused&quot;)
-    P.at = (type(_now) == &quot;function&quot; and _now()) or os.time()
+    P.at = (Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time()
   else
     P.active = false
     P.reason = &quot;&quot;
@@ -4655,7 +5017,7 @@ function Yso.inhibit.set(reason)
     now_ms = getEpoch()
     if now_ms &lt; 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   Yso.inhibit._until = now_ms + (tonumber(Yso.inhibit.cfg.duration_ms) or 400)
   if Yso.inhibit.cfg.debug and type(cecho) == &quot;function&quot; then
@@ -4669,7 +5031,7 @@ function Yso.inhibit.active()
     now_ms = getEpoch()
     if now_ms &lt; 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   return now_ms &lt; (tonumber(Yso.inhibit._until) or 0)
 end
@@ -5078,7 +5440,11 @@ Yso.ak.threshold = Yso.ak.threshold or 100   -- used later for embellished statu
 
 -- ----------------- tiny helpers (AK) -----------------
 local function _ak_now()
-  if type(getEpoch) == &quot;function&quot; then return getEpoch() end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 
@@ -5509,7 +5875,11 @@ local function _akwire_echo(msg)
 end
 
 local function _akwire_now()
-  if type(getEpoch) == &quot;function&quot; then return getEpoch() end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 
@@ -6482,9 +6852,9 @@ local function _emit(payload, opts)
   end
   -- Fallback: route to raw queue emitter.
   if Yso.queue and type(Yso.queue.emit)==&quot;function&quot; then
-    local ok = pcall(Yso.queue.emit, payload)
-    if ok then P.state._did_emit = true end
-    return ok
+    local ok, result = pcall(Yso.queue.emit, payload)
+    if ok and result then P.state._did_emit = true end
+    return ok and result
   end
   return false
 end
@@ -6942,6 +7312,10 @@ Yso.hinder = Yso.hinder or {}
 local H = Yso.hinder
 
 local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   if type(getEpoch) == &quot;function&quot; then
     local t = tonumber(getEpoch()) or os.time()
     if t &gt; 20000000000 then t = t / 1000 end
@@ -7023,7 +7397,7 @@ end
 
 function H.collect(ctx)
   local snapshot = {
-    at = (Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; and Yso.util.now()) or os.time(),
+    at = _now(),
     eq_bal_blockers = {},
     entity_blockers = {},
     all_offense_blocked = false,
@@ -7677,6 +8051,7 @@ Yso.off.oc = Yso.off.oc or {}
 
 Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
 local PA = Yso.off.oc.party_aff
+local AP = Yso.off.oc.aura_planner or {}
 PA.alias_owned = true
 
 PA.route_contract = PA.route_contract or {
@@ -7899,22 +8274,10 @@ local function _mana_pct(tgt, snap, fresh)
   return nil
 end
 
-local function _cleanseaura_snapshot(tgt)
-  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == &quot;function&quot; then
-    local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
-    if ok and type(s) == &quot;table&quot; then return s end
-  end
-  return nil
-end
-
-local function _aura_txn_active_for(tgt)
-  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot;) then return false end
-  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
-  return ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
-end
+-- _cleanseaura_snapshot, _aura_txn_active_for moved to occ_aura_planner.lua (AP.*)
 
 local function _snapshot_view(tgt)
-  local snap = _cleanseaura_snapshot(tgt) or {}
+  local snap = AP.snapshot and AP.snapshot(tgt) or {}
   local fresh = (snap.fresh == true)
   local read_complete = fresh and (snap.read_complete == true)
   local parse_window_open = fresh and (snap.parse_window_open == true)
@@ -7928,19 +8291,8 @@ local function _snapshot_view(tgt)
   local cap = tonumber(PA.cfg.cleanseaura_mana_pct or 40) or 40
   local needs_readaura = false
   local readaura_reason = &quot;&quot;
-
-  if parse_window_open then
-    needs_readaura = false
-    readaura_reason = &quot;parse_window_open&quot;
-  elseif not fresh then
-    needs_readaura = true
-    readaura_reason = &quot;snapshot_stale&quot;
-  elseif read_complete ~= true then
-    needs_readaura = true
-    readaura_reason = &quot;snapshot_incomplete&quot;
-  elseif deaf == nil then
-    needs_readaura = true
-    readaura_reason = &quot;deaf_unknown&quot;
+  if type(AP.needs_readaura) == &quot;function&quot; then
+    needs_readaura, readaura_reason = AP.needs_readaura(tgt, snap)
   end
 
   return {
@@ -8003,15 +8355,15 @@ function PA.S.loyals_hostile(tgt)
 end
 
 local function _readaura_tag(tgt)
-  return &quot;pa:eq:readaura:&quot; .. _lc(tgt)
+  return AP.readaura_tag and AP.readaura_tag(tgt) or (&quot;occ:eq:readaura:&quot; .. _lc(tgt))
 end
 
 local function _cleanseaura_tag(tgt)
-  return &quot;pa:eq:cleanseaura:&quot; .. _lc(tgt)
+  return AP.cleanseaura_tag and AP.cleanseaura_tag(tgt) or (&quot;occ:eq:cleanseaura:&quot; .. _lc(tgt))
 end
 
 local function _pin_tag(tgt)
-  return &quot;pa:eq:pinchaura:&quot; .. _lc(tgt)
+  return AP.pinchaura_tag and AP.pinchaura_tag(tgt) or (&quot;occ:eq:pinchaura:&quot; .. _lc(tgt))
 end
 
 local function _utter_tag(tgt)
@@ -8581,21 +8933,19 @@ local function _plan_eq(tgt, opts)
   local seq = _sequence_plan(tgt, opts)
   local bootstrap_pending = (type(opts) == &quot;table&quot; and opts.loyals_bootstrap_pending == true)
 
-  if bootstrap_pending then
-    local tag = _readaura_tag(tgt)
-    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
-      return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
+  if bootstrap_pending and type(AP.bootstrap_readaura_plan) == &quot;function&quot; then
+    local plan_tbl = { loyals_bootstrap_pending = true, readaura_via_loyals = true }
+    local ra_cmd, ra_cat, ra_tag, ra_lock = AP.bootstrap_readaura_plan(tgt, plan_tbl)
+    if ra_cmd then
+      return ra_cmd, &quot;team_coordination&quot;, ra_tag, ra_lock
     end
   end
 
   if seq.enabled and seq.needs_readaura == true then
-    local tag = _readaura_tag(tgt)
-    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
-      if Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot; then
-        local ok, ready = pcall(Yso.occ.readaura_is_ready)
-        if ok and ready == true then
-          return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
-        end
+    if type(AP.readaura_plan) == &quot;function&quot; then
+      local ra_cmd, ra_cat, ra_tag, ra_lock = AP.readaura_plan(tgt, seq, false)
+      if ra_cmd then
+        return ra_cmd, &quot;team_coordination&quot;, ra_tag, ra_lock
       end
     end
     return nil, nil, nil, nil
@@ -8658,19 +9008,11 @@ local function _plan_eq(tgt, opts)
   local stable = _lock_stable(tgt)
 
   if stable and _has_aff(tgt, &quot;manaleech&quot;) then
-    local snap = nil
-    if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == &quot;function&quot; then
-      local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
-      if ok then snap = s end
-    end
-    local needs_readaura = not snap or not snap.fresh or not snap.read_complete
-    if needs_readaura and Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot; then
-      local ok, ready = pcall(Yso.occ.readaura_is_ready)
-      if ok and ready == true then
-        local tag = tag_prefix .. &quot;readaura:&quot; .. tkey
-        if not _recent_sent(tag, 8) then
-          return (&quot;readaura %s&quot;):format(tgt), &quot;team_coordination&quot;, tag, 1.0
-        end
+    local needs_ra = type(AP.needs_readaura) == &quot;function&quot; and AP.needs_readaura(tgt) or false
+    if needs_ra and type(AP.readaura_plan) == &quot;function&quot; then
+      local ra_cmd, ra_cat, ra_tag, ra_lock = AP.readaura_plan(tgt, nil, false)
+      if ra_cmd then
+        return ra_cmd, &quot;team_coordination&quot;, ra_tag, ra_lock
       end
     end
   end
@@ -9617,7 +9959,7 @@ end
 
 local function _echo(msg)
   if not GD.cfg.echo then return end
-  local line = string.format(&quot;&lt;orange&gt;[Yso:GD] &lt;reset&gt;%s&quot;, tostring(msg))
+  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;reset&gt;%s&quot;, tostring(msg))
   if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
     Yso.util.cecho_line(line)
   elseif type(cecho) == &quot;function&quot; then
@@ -12110,9 +12452,9 @@ end
 -- “Can hear/see” helpers: mindseye overrides deaf/blind gating.
 local function _score_from_affstrack(aff)
   if type(affstrack) ~= &quot;table&quot; then return 0 end
-  local t = affstrack[aff]
-  if type(t) == &quot;table&quot; and type(t.score) == &quot;number&quot; then return t.score end
-  return 0
+  local scores = affstrack.score
+  if type(scores) ~= &quot;table&quot; then return 0 end
+  return tonumber(scores[aff] or 0) or 0
 end
 
 function T.can_hear(name)
@@ -14933,8 +15275,8 @@ do
     },
     misc_clear_target = {
       &quot;Yso.clear_target&quot;,
-    },
       &quot;Yso.target_flush_send_state&quot;,
+    },
     misc_core = {
       &quot;Yso.core._req.try&quot;,
       &quot;Yso.core.boot&quot;,
@@ -15265,7 +15607,10 @@ local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot
 local function _lc(s) return _trim(s):lower() end
 
 local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then return tonumber(Yso.util.now()) or os.time() end
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   if type(getEpoch) == &quot;function&quot; then
     local t = tonumber(getEpoch()) or os.time()
     if t &gt; 20000000000 then t = t / 1000 end
@@ -15360,7 +15705,7 @@ end
 Yso.off.oc = Yso.off.oc or {}
 Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
   rotation = { &quot;worm&quot;, &quot;sycophant&quot;, &quot;bubonis&quot;, &quot;crone&quot;, &quot;hound&quot;, &quot;slime&quot;, &quot;storm&quot;, &quot;bloodleech&quot;, &quot;firelord&quot;, &quot;gremlin&quot; },
-  kelp = { asthma = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;, healthleech = &quot;worm&quot;, sensitivity = &quot;slime&quot; },
+  kelp = { asthma = &quot;bubonis&quot;, clumsiness = &quot;storm&quot;, healthleech = &quot;worm&quot; },
 }
 
 Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
@@ -15381,9 +15726,7 @@ local function _mark(tbl_at, tbl_n, who)
   who = tostring(who or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)
   if who == &quot;&quot; then return end
   local k = who:lower()
-  local now = (type(getEpoch)==&quot;function&quot; and getEpoch()) or os.time()
-  if now &gt; 20000000000 then now = now / 1000 end
-  tbl_at[k] = now
+  tbl_at[k] = _now()
   tbl_n[k]  = (tonumber(tbl_n[k] or 0) or 0) + 1
 end
 
@@ -17856,7 +18199,11 @@ Yso.offense = Yso.offense or {}
 Yso.state = Yso.state or {}
 
 local function _now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 
@@ -17938,7 +18285,7 @@ Yso.ent_affs = {
     anorexia       = &quot;firelord&quot;,    -- *needs manaleech
     addiction      = &quot;humbug&quot;,
     haemophilia    = &quot;bloodleech&quot;,
-    worms          = &quot;worm&quot;,
+    healthleech    = &quot;worm&quot;,
     clumsiness     = &quot;storm&quot;,
     asthma         = &quot;bubonis&quot;,
     slickness      = &quot;bubonis&quot;,     -- *needs asthma
@@ -19229,14 +19576,8 @@ local function _party_apply(reason)
     desired_owned = false
   end
 
-  local route_name = tostring(desired.party_route or route)
-  local label = (route_name == &quot;dam&quot; and &quot;group damage&quot;)
-    or (route_name == &quot;aff&quot; and &quot;party affliction&quot;)
-    or tostring(desired.description or desired.id or route_name)
-  local state_label = enabled and &quot;ON&quot;
-    or ((is_alias_owned and desired_owned) and &quot;arming&quot;
-    or (is_alias_owned and &quot;manual&quot; or &quot;requested&quot;))
-  _echo(string.format(&quot;Party route &lt;yellow&gt;%s&lt;reset&gt;: %s %s&quot;, route_name, label, state_label))
+  -- Shared status echo lives in M.echo() so a single action does not stack
+  -- a generic route line on top of the class-owned loop line.
 end
 
 function M.is_bash()   return M.state == &quot;bash&quot; end
@@ -19628,7 +19969,7 @@ function M.set_party_route(route, reason)
   local old = M.party_route()
   if old == route then
     if M.party then M.party.last_reason = reason or M.party.last_reason end
-    if M.is_party() then M.echo() end
+    _party_apply(&quot;route_noop&quot;)
     return true
   end
 
@@ -19680,7 +20021,6 @@ function M.set(mode, reason)
   if old == mode then
     M.last_reason = reason or M.last_reason
     if mode == &quot;party&quot; then _party_apply(&quot;mode_noop&quot;) end
-    M.echo()
     return true
   end
 
@@ -20079,11 +20419,11 @@ end
 local function _extract_name_near_you(s)
   local a = s:match(&quot;([A-Z][%w_%-&apos;]+) challenges you&quot;)
   if a then return a end
-  local b = s:match(&quot;you challenge ([A-Z][%w_%-&apos;]+)&quot;)
+  local b = s:match(&quot;[Yy]ou challenge ([A-Z][%w_%-&apos;]+)&quot;)
   if b then return b end
   local c = s:match(&quot;([A-Z][%w_%-&apos;]+) accepts your&quot;)
   if c then return c end
-  local d = s:match(&quot;you accept ([A-Z][%w_%-&apos;]+)&apos;s&quot;)
+  local d = s:match(&quot;[Yy]ou accept ([A-Z][%w_%-&apos;]+)&apos;s&quot;)
   if d then return d end
   return nil
 end
@@ -21290,52 +21630,59 @@ local function _is_occultist()
 end
 
 function ak.occie.aura.parse_unnamable(count, who)
+	local A = rawget(_G, &quot;affstrack&quot;)
+	if not (A and A.score) then return end
+
 	ak.occie.aura.mental = ak.occie.aura.mental + count
 	local addaffs = {&quot;stupidity&quot;,&quot;dementia&quot;,&quot;confusion&quot;}
 	if count == 3 then
 		for i = 1, #addaffs do
-			if affstrack.score[addaffs[i]] &gt; 0 then
-				ak.ProTrackingConfirmed(addaffs[i])
-        affstrack.score.stupidity = 100
-        affstrack.score.dementia = 100
-				affstrack.score.confusion = 100
-				ak.scoreup(who or target)
+			if A.score[addaffs[i]] and A.score[addaffs[i]] &gt; 0 then
+				if type(ak.ProTrackingConfirmed) == &quot;function&quot; then ak.ProTrackingConfirmed(addaffs[i]) end
+				A.score.stupidity = 100
+				A.score.dementia = 100
+				A.score.confusion = 100
+				if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 				return
 			end
 		end
-    affstrack.score.stupidity = 100
-    affstrack.score.dementia = 100
-		affstrack.score.confusion = 100
-		ak.scoreup(who or target)
+		A.score.stupidity = 100
+		A.score.dementia = 100
+		A.score.confusion = 100
+		if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 		return
 	elseif count == 2 then
-		if affstrack.score.stupidity == 100 then
-			affstrack.score.confusion = 100
-			affstrack.score.dementia = 100
-		elseif affstrack.score.dementia == 100 then
-			affstrack.score.stupidity = 100
-			affstrack.score.confusion = 100
-		elseif affstrack.score.confusion == 100 then
-			affstrack.score.stupidity = 100
-			affstrack.score.dementia = 100
+		if A.score.stupidity == 100 then
+			A.score.confusion = 100
+			A.score.dementia = 100
+		elseif A.score.dementia == 100 then
+			A.score.stupidity = 100
+			A.score.confusion = 100
+		elseif A.score.confusion == 100 then
+			A.score.stupidity = 100
+			A.score.dementia = 100
 		else
-
+			A.score.stupidity = 50
+			A.score.dementia = 50
+			A.score.confusion = 50
 		end
-		ak.scoreup(who or target)
+		if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 		return
 	elseif count == 1 then
-		if affstrack.score.stupidity == 100 and affstrack.score.confusion == 100 then
-			affstrack.score.dementia = 100
-		elseif affstrack.score.stupidity == 100 and affstrack.score.dementia == 100 then
-			affstrack.score.confusion = 100
-		elseif affstrack.score.dementia == 100 and affstrack.score.confusion == 100 then
-			affstrack.score.stupidity = 100
+		if A.score.stupidity == 100 and A.score.confusion == 100 then
+			A.score.dementia = 100
+		elseif A.score.stupidity == 100 and A.score.dementia == 100 then
+			A.score.confusion = 100
+		elseif A.score.dementia == 100 and A.score.confusion == 100 then
+			A.score.stupidity = 100
 		else
-
+			A.score.stupidity = math.max(A.score.stupidity or 0, 33)
+			A.score.dementia = math.max(A.score.dementia or 0, 33)
+			A.score.confusion = math.max(A.score.confusion or 0, 33)
 		end
-		ak.scoreup(who or target)
+		if type(ak.scoreup) == &quot;function&quot; then ak.scoreup(who or target) end
 		return
- 	end
+	end
 end
 
 function ak.occie.aura.parsereduct(what)
@@ -21883,6 +22230,7 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.xml.yso_occultist_affmap&quot;,
   &quot;Yso.Combat.occultist.aeon&quot;,
   &quot;Yso.Combat.routes.group_damage&quot;,
+  &quot;Yso.xml.occ_aura_planner&quot;,
   &quot;Yso.Combat.routes.occ_aff_burst&quot;,
   &quot;Yso.Combat.routes.party_aff&quot;,
   &quot;Yso.Combat.occultist.offense_helpers&quot;,
@@ -22120,7 +22468,7 @@ P.cfg = P.cfg or {
 
   -- Softlock-ish trigger (matches your intent: &quot;softscore &gt;= 2 and asthma=100&quot;)
   softscore_threshold = 2,
-  softscore_affs = { &quot;aeon&quot;, &quot;asthma&quot;, &quot;anorexia&quot;, &quot;slickness&quot;, &quot;impatience&quot; },
+  softscore_affs = { &quot;asthma&quot;, &quot;anorexia&quot;, &quot;slickness&quot;, &quot;impatience&quot; },
 
   -- Actions allowed:
   use_chimera = true,
@@ -22189,12 +22537,14 @@ local function _chimera_ready()
   return true
 end
 
-local function _send_eq_clear(cmds)
+local function _send_clear(cmds, qtype)
   if type(cmds) == &quot;string&quot; then cmds = {cmds} end
   if type(cmds) ~= &quot;table&quot; or #cmds == 0 then return false end
 
-  local qtype = &quot;eq&quot;
-  if Yso.off and Yso.off.oc and Yso.off.oc.qtype_eq then qtype = Yso.off.oc.qtype_eq end
+  qtype = qtype or &quot;eq&quot;
+  if Yso.off and Yso.off.oc and Yso.off.oc[&quot;qtype_&quot; .. qtype] then
+    qtype = Yso.off.oc[&quot;qtype_&quot; .. qtype]
+  end
 
   local joined = table.concat(cmds, (Yso and Yso.sep) or &quot;&amp;&amp;&quot;)
 
@@ -22247,7 +22597,7 @@ function P.step(t, aff)
     if P.cfg.use_regress and _eq_ready() and anore &lt; stuck then
       _echo(&quot;target prone -&gt; regress for anorexia&quot;)
       _mark()
-      return _send_eq_clear((&quot;regress %s&quot;):format(t))
+      return _send_clear((&quot;regress %s&quot;):format(t), &quot;eq&quot;)
     end
     return false
   end
@@ -22258,20 +22608,20 @@ function P.step(t, aff)
     if deaf &gt;= stuck then
       _echo(&quot;target deaf -&gt; command chimera to strip deafness (setup)&quot;)
       _mark()
-      return _send_eq_clear((&quot;command chimera at %s&quot;):format(t))
+      return _send_clear((&quot;command chimera at %s&quot;):format(t), &quot;class&quot;)
     end
 
     -- Not deaf: chimera command should stun/prone
     _echo(&quot;target not deaf -&gt; command chimera for stun/prone window&quot;)
     _mark()
-    return _send_eq_clear((&quot;command chimera at %s&quot;):format(t))
+    return _send_clear((&quot;command chimera at %s&quot;):format(t), &quot;class&quot;)
   end
 
   -- 3) Fallback: regress to force prone (setup); next tick can regress again for anorexia
   if P.cfg.use_regress and _eq_ready() then
     _echo(&quot;fallback -&gt; regress to force prone (setup)&quot;)
     _mark()
-    return _send_eq_clear((&quot;regress %s&quot;):format(t))
+    return _send_clear((&quot;regress %s&quot;):format(t), &quot;eq&quot;)
   end
 
   return false
@@ -22768,7 +23118,7 @@ Yso.occ = Yso.occ or {}
 Yso.oc  = Yso.oc  or {}
 
 local Off = Yso.off.oc
-local Q   = Yso.queue
+local function _Q() return Yso and Yso.queue end
 
 Off.sg = Off.sg or {}
 local SG = Off.sg
@@ -22841,6 +23191,7 @@ local function _queue_eq_addclear(cmds)
   local qtype = (Off.qtype_eq or &quot;eq&quot;)
   local piped = table.concat(out, (Yso and Yso.sep) or &quot;;;&quot;)
 
+  local Q = _Q()
   if Q and type(Q.addclear) == &quot;function&quot; then
     Q.addclear(qtype, piped)
   else
@@ -22963,7 +23314,7 @@ function Off.sg_entity_cmd_for_aff(aff, t)
 
   local ent
   if aff == &quot;asthma&quot; then ent = ents.asthma or &quot;bubonis&quot;
-  elseif aff == &quot;slickness&quot; then ent = ents.asthma or &quot;bubonis&quot;      -- assumes your bubonis route/followups
+  elseif aff == &quot;slickness&quot; then ent = ents.slickness or ents.asthma or &quot;bubonis&quot;      -- assumes your bubonis route/followups
   elseif aff == &quot;clumsiness&quot; then ent = ents.clumsiness or &quot;storm&quot;
   elseif aff == &quot;healthleech&quot; then ent = ents.healthleech or &quot;worm&quot;
   elseif aff == &quot;paralysis&quot; then ent = cfg.paralysis_followup or &quot;slime&quot;
@@ -23471,7 +23822,7 @@ local function parse_entourage_block(block)
   Ent.current = present
 
   Ent.seen = true
-  Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()/1000) or os.time())
+  Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
   if Yso then
     Yso.occ = Yso.occ or {}
     Yso.occ.entities_seen = true
@@ -23536,7 +23887,7 @@ Yso.dom._trig.no_entourage = tempRegexTrigger(
   function()
     Ent.current = {}
     Ent.seen = true
-    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()/1000) or os.time())
+    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
     if Yso then
       Yso.occ = Yso.occ or {}
       Yso.occ.entities_seen = true
@@ -23553,7 +23904,7 @@ Yso.dom._trig.no_loyals = tempRegexTrigger(
   function()
     Ent.current = {}
     Ent.seen = true
-    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()/1000) or os.time())
+    Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
     if Yso then
       Yso.occ = Yso.occ or {}
       Yso.occ.entities_seen = true
@@ -23689,26 +24040,13 @@ local function _ak_target()
   return nil
 end
 
-local function _qsend(cmd)
-  local Q = Yso.queue
-  if Q and type(Q.push) == &quot;function&quot; then
-    -- Your Q.push appears to be: push(cmd, queueName)
-    local ok = pcall(Q.push, cmd, &quot;free&quot;)
-    if not ok then
-      -- Fallback: if push only takes one arg, still send the command.
-      ok = pcall(Q.push, cmd)
-    end
-    if not ok then send(cmd) end
-  else
-    send(cmd)
-  end
-end
-
 local function _send_chain(cmds)
+  if #cmds == 0 then return end
   for _,c in ipairs(cmds) do
     _dbg(&quot;SEND: &quot; .. c)
-    _qsend(c)
   end
+  local combined = table.concat(cmds, &quot;&amp;&amp;&quot;)
+  send(combined)
 end
 
 -- parse optional &quot;at&quot;
@@ -23739,6 +24077,8 @@ function Dop.getTarget(explicit)
   end
 
   local g = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.target
+  g = _coerce_target(g)
+  if g then g = g:gsub(&quot;%s*%b()$&quot;, &quot;&quot;) end
   g = _coerce_target(g)
   if g then Dop._last_target = g; return g end
 
@@ -23833,7 +24173,7 @@ function Dop.seek(who)
     rawset(_G, &quot;target&quot;, who)
   end
 
-  local tgt = Dop.getTarget() or who
+  local tgt = Dop.getTarget(who) or who
   _send_chain({
     (&quot;order doppleganger seek %s&quot;):format(tgt),
     &quot;order doppleganger look&quot;,
@@ -23875,7 +24215,7 @@ function Dop.setTarget(name)
     rawset(_G, &quot;target&quot;, name)
   end
 
-  Dop._last_target = Dop.getTarget() or name
+  Dop._last_target = Dop.getTarget(name) or name
   _echo((&quot;Target set: %s&quot;):format(Dop._last_target))
 end
 
@@ -24999,7 +25339,12 @@ function ER.rank(ctx)
   local need = ctx.need or {}
   local has_aff = type(ctx.has_aff) == &quot;function&quot; and ctx.has_aff or function() return false end
   local ent_ready = _ent_ready(ctx)
-  local target_valid = (ctx.target_valid ~= nil) and (ctx.target_valid == true) or _target_valid(tgt)
+  local target_valid
+  if ctx.target_valid ~= nil then
+    target_valid = (ctx.target_valid == true)
+  else
+    target_valid = _target_valid(tgt)
+  end
   local ranked, skipped = {}, {}
   local now = _now()
 
@@ -25658,7 +26003,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or &quot;addclearfull&quot;  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or &quot;bal&quot;           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- HUNT cureset only
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -25669,6 +26014,7 @@ Yso._trig  = Yso._trig  or {}
 Yso.fool   = Yso.fool   or {}
 
 local F = Yso.fool
+local _dev_cureset_override = nil
 
 F.cfg = F.cfg or {
   enabled = true,   -- auto (GMCP + diagnose snapshot) on/off
@@ -25681,6 +26027,10 @@ F.state = F.state or {
   last_used  = 0,     -- when we last queued Fool
   last_auto  = 0,     -- when auto/diag last attempted Fool
   await_diag = false, -- set by dv alias; cleared on diag completion
+  basher_hold = false,
+  basher_hold_reason = nil,
+  basher_hold_at = 0,
+  basher_hold_timer = nil,
 }
 
 -- ---------- helpers ----------
@@ -25719,6 +26069,17 @@ local function _trim(s)
   return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
 end
 
+local function _normalize_cureset_name(v)
+  v = _trim(v):lower()
+  if v == &quot;&quot; or v == &quot;live&quot; or v == &quot;clear&quot; then
+    return nil
+  end
+  if v == &quot;bash&quot; or v == &quot;bashing&quot; or v == &quot;hunting&quot; or v == &quot;pve&quot; then
+    return &quot;hunt&quot;
+  end
+  return v
+end
+
 local function _has(aff)
   local A = _Aff()
   return A[aff] == true
@@ -25730,23 +26091,7 @@ end
 
 -- current cureset name from Legacy (e.g. &quot;legacy&quot;, &quot;hunt&quot;, &quot;group&quot;)
 local function _current_cureset()
-  local function _norm_set(v)
-    v = _trim(v):lower()
-    if v == &quot;&quot; then return nil end
-    if v == &quot;bash&quot; or v == &quot;bashing&quot; or v == &quot;hunting&quot; or v == &quot;pve&quot; then
-      return &quot;hunt&quot;
-    end
-    return v
-  end
-
-  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
-  local cur = _norm_set(set)
-  if cur then
-    return cur
-  end
-
-  local global_cur = rawget(_G, &quot;CurrentCureset&quot;)
-  cur = _norm_set(global_cur)
+  local cur = _normalize_cureset_name(_dev_cureset_override)
   if cur then
     return cur
   end
@@ -25758,7 +26103,37 @@ local function _current_cureset()
     end
   end
 
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  cur = _normalize_cureset_name(set)
+  if cur then
+    return cur
+  end
+
+  local global_cur = rawget(_G, &quot;CurrentCureset&quot;)
+  cur = _normalize_cureset_name(global_cur)
+  if cur then
+    return cur
+  end
+
   return &quot;legacy&quot;
+end
+
+-- Devtools/manual helper only: temporarily simulate a cureset for one call.
+function F.dev_with_cureset(name, fn, ...)
+  if type(fn) ~= &quot;function&quot; then
+    return false, &quot;fn must be a function&quot;
+  end
+
+  local prev = _dev_cureset_override
+  _dev_cureset_override = _normalize_cureset_name(name)
+
+  local ok, a, b, c, d, e = pcall(fn, ...)
+  _dev_cureset_override = prev
+
+  if not ok then
+    return false, a
+  end
+  return true, a, b, c, d, e
 end
 
 local function _is_tendon_key(k)
@@ -25825,6 +26200,55 @@ local function _bool_word(v)
   return (v == true) and &quot;true&quot; or &quot;false&quot;
 end
 
+local function _release_basher_hold(reason)
+  local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
+  if F.state.basher_hold_timer and type(killTimer) == &quot;function&quot; then
+    pcall(killTimer, F.state.basher_hold_timer)
+  end
+  F.state.basher_hold_timer = nil
+  F.state.basher_hold = false
+  F.state.basher_hold_reason = nil
+  F.state.basher_hold_at = 0
+  if had_hold then
+    _fool_echo(&quot;Basher hold released (&quot;..tostring(reason or &quot;unknown&quot;)..&quot;).&quot;)
+  end
+end
+
+local function _arm_basher_hold(reason)
+  _release_basher_hold(&quot;refresh&quot;)
+
+  F.state.basher_hold = true
+  F.state.basher_hold_reason = tostring(reason or &quot;fool&quot;)
+  F.state.basher_hold_at = _now()
+  _fool_echo(&quot;Basher hold armed (&quot;..F.state.basher_hold_reason..&quot;).&quot;)
+
+  if type(tempTimer) == &quot;function&quot; then
+    F.state.basher_hold_timer = tempTimer(10, function()
+      _release_basher_hold(&quot;timeout&quot;)
+    end)
+  end
+end
+
+local function _clear_basher_queue()
+  local S = Legacy and Legacy.Settings and Legacy.Settings.Basher
+  if type(S) ~= &quot;table&quot; then
+    return false
+  end
+  if S.status ~= true then
+    return false
+  end
+
+  if type(send) == &quot;function&quot; then
+    send(&quot;cq freestand&quot;, false)
+  end
+  S.queued = false
+  return true
+end
+
+function F.blocks_basher()
+  return F.state.basher_hold == true
+end
+
 local _is_lock_state
 local _min_affs_for_current_set
 
@@ -25836,9 +26260,11 @@ function F.status()
   local qmode = tostring(Legacy.Fool.queue_mode or &quot;addclearfull&quot;)
   local qtype = tostring(Legacy.Fool.queue_type or &quot;bal&quot;)
   local auto = (F.cfg.enabled == true) and &quot;on&quot; or &quot;off&quot;
+  local hold = (F.blocks_basher() == true) and &quot;on&quot; or &quot;off&quot;
+  local hold_reason = tostring(F.state.basher_hold_reason or &quot;-&quot;)
 
   _emit_status(string.format(
-    &quot;auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s&quot;,
+    &quot;auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s basher_hold=%s(%s)&quot;,
     auto,
     curset,
     count,
@@ -25847,7 +26273,9 @@ function F.status()
     _bool_word(is_locked),
     _cooldown_remaining(),
     qmode,
-    qtype
+    qtype,
+    hold,
+    hold_reason
   ))
 end
 
@@ -25912,7 +26340,7 @@ _min_affs_for_current_set = function()
 
   local cur = _current_cureset() or &quot;legacy&quot;
   if cur == &quot;hunt&quot; then
-    local v = tonumber(Legacy.Fool.min_affs_hunt or 3) or 3
+    local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
     if v &lt; 1 then v = 1 end
     return v, false  -- NO lock override in hunt
   else
@@ -25923,7 +26351,7 @@ _min_affs_for_current_set = function()
 end
 
 -- Queue helper
-local function _queue_fool()
+local function _queue_fool(source)
   if not _is_occultist() then
     _fool_echo(&quot;Not using Fool: current class is not Occultist.&quot;)
     return false
@@ -25933,22 +26361,30 @@ local function _queue_fool()
   local cmd   = &quot;fling fool at me&quot;
   local queue_fn_name = mode:lower()
   local queue_fn = Yso.queue and Yso.queue[queue_fn_name]
+  local hold_reason = &quot;fool:&quot; .. tostring(source or &quot;manual&quot;)
+
+  _clear_basher_queue()
 
   if type(queue_fn) == &quot;function&quot; then
     -- Yso queue helper path
     local queued = (queue_fn(qtype, cmd) == true)
     if queued then
       F.state.last_used = _now()
+      _arm_basher_hold(hold_reason)
       _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
+    else
+      _release_basher_hold(&quot;queue-failed&quot;)
     end
     return queued
   else
     -- raw queue path
     local ok = pcall(send, string.format(&quot;queue %s %s %s&quot;, mode, qtype, cmd), false)
     if not ok then
+      _release_basher_hold(&quot;queue-error&quot;)
       return false
     end
     F.state.last_used = _now()
+    _arm_basher_hold(hold_reason)
     _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
     return true
   end
@@ -25966,6 +26402,7 @@ function Legacy.FoolSelfCleanse(source)
   if not (Legacy and Legacy.Curing and Legacy.Curing.Affs) then
     return false
   end
+  source = tostring(source or &quot;manual&quot;)
 
   -- Mechanical gates
   if _has(&quot;prone&quot;) then
@@ -26001,11 +26438,11 @@ function Legacy.FoolSelfCleanse(source)
 
   _fool_echo(string.format(
     &quot;Using Fool (source=%s, cureset=%s, affs=%d, min=%d, allow_lock=%s, lock=%s).&quot;,
-    tostring(source or &quot;?&quot;), curset, count, min_affs,
+    source, curset, count, min_affs,
     tostring(allow_lock), tostring(is_locked)
   ))
 
-  local queued = _queue_fool()
+  local queued = _queue_fool(source)
   return queued == true
 end
 
@@ -26092,6 +26529,16 @@ Yso._trig.fool_eq = tempRegexTrigger(
     else
       _fool_echo(&quot;Diagnose snapshot: conditions failed, Fool not used.&quot;)
     end
+  end)
+)
+
+if Yso._trig.fool_success then
+  killTrigger(Yso._trig.fool_success)
+end
+Yso._trig.fool_success = tempRegexTrigger(
+  [[^You press the Fool tarot to your forehead\.$]],
+  _safe(function()
+    _release_basher_hold(&quot;success&quot;)
   end)
 )
 
@@ -26190,6 +26637,358 @@ _fool_echo(&quot;Yso Fool auto module loaded (GMCP+diagnose hooks active).&quot;
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
+						<name>occ_aura_planner</name>
+						<packageName></packageName>
+						<script>--========================================================--
+-- Yso.occ.aura_planner — Centralized Readaura / Cleanseaura Planner
+--
+--  Shared surface for all Occultist offense routes (occ_aff_burst, party_aff,
+--  group_damage, etc.) to plan readaura and cleanseaura EQ actions.
+--
+--  Fixes:
+--    • Unified lockout tags prevent cross-route double-sends (Bug #1, #2)
+--    • Single _aura_txn_active_for() definition (Bug #3)
+--    • Unified needs_readaura logic (Bug #4, #6)
+--    • CS.snapshot() lives here — no fragile cross-module dep (Bug #5)
+--
+--  Pattern: Sunder-style shared planner surface.
+--  Routes call AP.readaura_plan() / AP.cleanseaura_plan() instead of
+--  maintaining local copies.
+--========================================================--
+
+Yso = Yso or {}
+Yso.occ = Yso.occ or {}
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+
+Yso.off.oc.aura_planner = Yso.off.oc.aura_planner or {}
+local AP = Yso.off.oc.aura_planner
+
+Yso.off.oc.cleanseaura = Yso.off.oc.cleanseaura or {}
+local CS = Yso.off.oc.cleanseaura
+
+AP.cfg = AP.cfg or {
+  aura_ttl_s              = 20,
+  readaura_requery_s      = 8.0,
+  readaura_lockout_s      = 1.0,
+  cleanseaura_lockout_s   = 4.1,
+  pinchaura_lockout_s     = 4.1,
+  mana_burst_pct          = 40,
+}
+
+CS.cfg = CS.cfg or {
+  mana_burst_pct = tonumber(AP.cfg.mana_burst_pct or 40) or 40,
+}
+
+local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
+local function _lc(s)   return _trim(s):lower() end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 20000000000 then t = t / 1000 end
+  return t or os.time()
+end
+
+local function _offense_state()
+  return Yso and Yso.off and Yso.off.state or nil
+end
+
+local function _recent_sent(tag, within_s)
+  local S = _offense_state()
+  if not (S and type(S.recent) == &quot;function&quot;) then return false end
+  return S.recent(tag, within_s)
+end
+
+local function _has_aff(tgt, aff)
+  if Yso and Yso.occ and type(Yso.occ.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(Yso.occ.has_aff, tgt, aff)
+    if ok then return v == true end
+  end
+  local ak = rawget(_G, &quot;ak&quot;)
+  if type(ak) == &quot;table&quot; and type(ak.isafflicted) == &quot;function&quot; then
+    local ok, v = pcall(ak.isafflicted, aff)
+    if ok then return v == true end
+  end
+  return false
+end
+
+local function _bool_field(v)
+  if v == true then return true end
+  if v == false then return false end
+  return nil
+end
+
+function AP.readaura_tag(tgt)
+  return &quot;occ:eq:readaura:&quot; .. _lc(tgt)
+end
+
+function AP.cleanseaura_tag(tgt)
+  return &quot;occ:eq:cleanseaura:&quot; .. _lc(tgt)
+end
+
+function AP.pinchaura_tag(tgt)
+  return &quot;occ:eq:pinchaura:&quot; .. _lc(tgt)
+end
+
+function AP.aura_txn_active_for(tgt)
+  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot;) then return false end
+  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
+  return ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
+end
+
+local function _raw_snapshot(tgt)
+  if _trim(tgt) == &quot;&quot; then return nil end
+  local A = Yso and Yso.occ and Yso.occ.aura or nil
+  if type(A) ~= &quot;table&quot; then return nil end
+  return A[tgt] or A[_lc(tgt)]
+end
+
+function AP.snapshot(tgt)
+  local a = _raw_snapshot(tgt)
+  local txn = { active = false, matched = false, window_remaining = 0, status = &quot;&quot;, close_reason = &quot;&quot; }
+  if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot; then
+    local ok, row = pcall(Yso.occ.aura_txn_status, tgt)
+    if ok and type(row) == &quot;table&quot; then
+      txn = row
+    end
+  end
+  local ttl = tonumber((Yso and Yso.occ and Yso.occ.aura_cfg and Yso.occ.aura_cfg.ttl) or AP.cfg.aura_ttl_s or 20) or 20
+  local parse_window_open = (txn.active == true and txn.matched == true)
+  local parse_window_remaining = parse_window_open and (tonumber(txn.window_remaining or 0) or 0) or 0
+  if not a then
+    return {
+      fresh = false,
+      complete = false,
+      read_complete = false,
+      had_counts = false,
+      had_mana = false,
+      physical = nil,
+      mental = nil,
+      aff_total = nil,
+      blind = nil,
+      deaf = nil,
+      speed = nil,
+      shield = nil,
+      mana_pct = nil,
+      mana_cur = nil,
+      mana_max = nil,
+      defs_state = &quot;missing&quot;,
+      confidence_state = parse_window_open and &quot;pending&quot; or &quot;missing&quot;,
+      confidence_score = 0,
+      missing_keys = { &quot;defs&quot;, &quot;counts&quot;, &quot;mana&quot; },
+      parse_window_open = parse_window_open,
+      parse_window_remaining = parse_window_remaining,
+      txn_status = tostring(txn.status or &quot;&quot;),
+      txn_reason = tostring(txn.close_reason or &quot;&quot;),
+      txn_started_at = tonumber(txn.started_at or 0) or 0,
+      txn_read_id = tonumber(txn.read_id or 0) or 0,
+    }
+  end
+  local fresh = true
+  if ttl &gt; 0 then fresh = (_now() - tonumber(a.ts or 0)) &lt;= ttl end
+  local missing_keys = {}
+  if fresh and type(a.missing_keys) == &quot;table&quot; then
+    for i = 1, #a.missing_keys do
+      missing_keys[#missing_keys + 1] = a.missing_keys[i]
+    end
+  end
+  local confidence_state = fresh and tostring(a.confidence_state or &quot;&quot;) or &quot;stale&quot;
+  if confidence_state == &quot;&quot; then
+    confidence_state = fresh and ((a.complete == true and &quot;complete&quot;) or &quot;partial&quot;) or &quot;stale&quot;
+  end
+  if parse_window_open and confidence_state == &quot;missing&quot; then
+    confidence_state = &quot;pending&quot;
+  end
+  local function bf(key)
+    if not fresh then return nil end
+    if a[key] == true then return true end
+    if a[key] == false then return false end
+    return nil
+  end
+  local physical = fresh and tonumber(a.physical) or nil
+  local mental = fresh and tonumber(a.mental) or nil
+  local total = nil
+  if physical ~= nil or mental ~= nil then total = (physical or 0) + (mental or 0) end
+  return {
+    fresh = fresh,
+    complete = (fresh and a.complete == true) or false,
+    read_complete = (fresh and a.read_complete == true) or false,
+    had_counts = (fresh and a.had_counts == true) or false,
+    had_mana = (fresh and a.had_mana == true) or false,
+    physical = physical,
+    mental = mental,
+    aff_total = total,
+    blind = bf(&quot;blind&quot;),
+    deaf = bf(&quot;deaf&quot;),
+    speed = bf(&quot;speed&quot;),
+    shield = bf(&quot;shield&quot;),
+    caloric = bf(&quot;caloric&quot;),
+    frost = bf(&quot;frost&quot;),
+    levitation = bf(&quot;levitation&quot;),
+    insomnia = bf(&quot;insomnia&quot;),
+    kola = bf(&quot;kola&quot;),
+    cloak = bf(&quot;cloak&quot;),
+    mana_pct = fresh and tonumber(a.mana_pct) or nil,
+    mana_cur = fresh and tonumber(a.mana_cur) or nil,
+    mana_max = fresh and tonumber(a.mana_max) or nil,
+    raw = (fresh and type(a.raw) == &quot;table&quot;) and a.raw or nil,
+    defs_state = fresh and tostring(a.defs_state or &quot;missing&quot;) or &quot;missing&quot;,
+    confidence_state = confidence_state,
+    confidence_score = fresh and (tonumber(a.confidence_score or 0) or 0) or 0,
+    missing_keys = missing_keys,
+    parse_window_open = parse_window_open,
+    parse_window_remaining = parse_window_remaining,
+    txn_status = tostring(txn.status or &quot;&quot;),
+    txn_reason = tostring(txn.close_reason or &quot;&quot;),
+    txn_started_at = tonumber(txn.started_at or 0) or 0,
+    txn_read_id = tonumber(txn.read_id or 0) or 0,
+    ts = tonumber(a.ts or 0) or 0,
+    read_id = tonumber(a.read_id or 0) or 0,
+  }
+end
+
+CS.snapshot = AP.snapshot
+
+function AP.needs_readaura(tgt, snap)
+  snap = snap or AP.snapshot(tgt)
+  local fresh = (snap.fresh == true)
+
+  if fresh and snap.parse_window_open == true then
+    return false, &quot;parse_window_open&quot;
+  end
+  if not fresh then
+    return true, &quot;snapshot_stale&quot;
+  end
+  if snap.read_complete ~= true then
+    return true, &quot;snapshot_incomplete&quot;
+  end
+  local needs_defs = (snap.defs_state == &quot;missing&quot;)
+  if needs_defs then
+    return true, &quot;defs_incomplete&quot;
+  end
+  if snap.had_counts ~= true then
+    return true, &quot;counts_incomplete&quot;
+  end
+  if snap.deaf == nil then
+    return true, &quot;deaf_unknown&quot;
+  end
+  if snap.had_mana ~= true and snap.mana_pct == nil then
+    return true, &quot;mana_unknown&quot;
+  end
+  return false, &quot;&quot;
+end
+
+local function _missing_key(list, key)
+  if type(list) ~= &quot;table&quot; then return false end
+  key = _lc(key)
+  for i = 1, #list do
+    if _lc(list[i]) == key then return true end
+  end
+  return false
+end
+
+function AP.should_probe_readaura(tgt, plan, burst_ready)
+  local tag = AP.readaura_tag(tgt)
+  if _recent_sent(tag, tonumber(AP.cfg.readaura_requery_s or 8.0) or 8.0) then return false end
+  if AP.aura_txn_active_for(tgt) then return false end
+  if plan and plan.snapshot_parse_window_open == true then return false end
+
+  if plan and plan.needs_readaura == true then return true end
+  if plan and (plan.snapshot_confidence_state == &quot;stale&quot; or plan.snapshot_complete ~= true) then return true end
+
+  local need_defs = plan and ((plan.snapshot_read_complete ~= true) or _missing_key(plan.snapshot_missing_keys, &quot;defs&quot;))
+  local need_counts = plan and ((plan.snapshot_had_counts ~= true) or _missing_key(plan.snapshot_missing_keys, &quot;counts&quot;))
+  local need_mana = plan and (plan.mana_pct == nil) and ((plan.snapshot_had_mana ~= true) or _missing_key(plan.snapshot_missing_keys, &quot;mana&quot;))
+  if need_defs or need_counts or need_mana then return true end
+
+  if burst_ready == true and plan and (plan.speed == nil or need_defs) then return true end
+
+  return false
+end
+
+function AP.readaura_plan(tgt, plan, burst_ready)
+  if not AP.should_probe_readaura(tgt, plan, burst_ready) then return nil, nil, nil, nil end
+  if not (Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot;) then return nil, nil, nil, nil end
+  local ok, ready = pcall(Yso.occ.readaura_is_ready)
+  if ok and ready == true then
+    return (&quot;readaura %s&quot;):format(tgt),
+           &quot;cleanseaura_window&quot;,
+           AP.readaura_tag(tgt),
+           tonumber(AP.cfg.readaura_lockout_s or 1.0)
+  end
+  return nil, nil, nil, nil
+end
+
+function AP.bootstrap_readaura_plan(tgt, plan)
+  if not (plan and plan.loyals_bootstrap_pending == true and plan.readaura_via_loyals == true) then
+    return nil, nil, nil, nil
+  end
+  local tag = AP.readaura_tag(tgt)
+  if _recent_sent(tag, tonumber(AP.cfg.readaura_requery_s or 8.0) or 8.0) then return nil, nil, nil, nil end
+  if AP.aura_txn_active_for(tgt) then return nil, nil, nil, nil end
+  return (&quot;readaura %s&quot;):format(tgt),
+         &quot;cleanseaura_window&quot;,
+         tag,
+         tonumber(AP.cfg.readaura_lockout_s or 1.0)
+end
+
+function AP.cleanseaura_plan(tgt, plan, gate)
+  if not (plan and plan.cleanseaura_ready == true) then return nil, nil, nil, nil end
+  if not _has_aff(tgt, &quot;manaleech&quot;) then return nil, nil, nil, nil end
+
+  if Yso and Yso.occ and Yso.occ.truebook and type(Yso.occ.truebook.can_utter) == &quot;function&quot; then
+    local ok, can = pcall(Yso.occ.truebook.can_utter, tgt)
+    if ok and can == true then return nil, nil, nil, nil end
+  end
+
+  if gate and gate.stable ~= true then return nil, nil, nil, nil end
+
+  local tag = AP.cleanseaura_tag(tgt)
+  local lock = tonumber(AP.cfg.cleanseaura_lockout_s or 4.1) or 4.1
+  if _recent_sent(tag, lock) then return nil, nil, nil, nil end
+
+  return (&quot;cleanseaura %s&quot;):format(tgt),
+         &quot;truename_acquire&quot;,
+         tag,
+         lock
+end
+
+function AP.readaura_is_ready()
+  if Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.occ.readaura_is_ready)
+    return ok and v == true
+  end
+  return false
+end
+
+function AP.set_readaura_ready(val, reason)
+  if Yso and Yso.occ and type(Yso.occ.set_readaura_ready) == &quot;function&quot; then
+    return Yso.occ.set_readaura_ready(val, reason)
+  end
+end
+
+function AP.cleanseaura_ready(tgt, snap)
+  snap = snap or AP.snapshot(tgt)
+  local mana = snap.mana_pct
+  if Yso and Yso.tgt and type(Yso.tgt.get_mana_pct) == &quot;function&quot; then
+    local ok, v = pcall(Yso.tgt.get_mana_pct, tgt)
+    if ok and tonumber(v) then mana = tonumber(v) end
+  end
+  local cap = tonumber(AP.cfg.mana_burst_pct or CS.cfg.mana_burst_pct or 40) or 40
+  return (mana ~= nil and mana &lt;= cap) or false, mana
+end
+
+cecho(&quot;&lt;cyan&gt;[Yso] aura planner loaded.&lt;reset&gt;\n&quot;)
+--========================================================--
+</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
 						<name>occ_aff_burst.lua</name>
 						<packageName></packageName>
 						<script>--========================================================--
@@ -26214,6 +27013,7 @@ AB.alias_owned = true
 -- this pass adds the affliction / mana-burst branch used by combat-mode dueling.
 Yso.off.oc.cleanseaura = Yso.off.oc.cleanseaura or {}
 local CS = Yso.off.oc.cleanseaura
+local AP = Yso.off.oc.aura_planner or {}
 
 AB.route_contract = AB.route_contract or {
   id = &quot;occ_aff_burst&quot;,
@@ -26507,12 +27307,7 @@ local function _has_any_required_insanity(tgt)
   return false
 end
 
-local function _snapshot(tgt)
-  if tgt == &quot;&quot; then return nil end
-  local A = Yso and Yso.occ and Yso.occ.aura or nil
-  if type(A) ~= &quot;table&quot; then return nil end
-  return A[tgt] or A[_lc(tgt)]
-end
+-- _snapshot() moved to occ_aura_planner.lua
 
 local function _target_meta(tgt)
   if tgt == &quot;&quot; or not (Yso and Yso.tgt and type(Yso.tgt.get) == &quot;function&quot;) then return {} end
@@ -26605,109 +27400,7 @@ local function _bm_snapshot_view(tgt, snap, mana_pct)
   }
 end
 
-function CS.snapshot(tgt)
-  local a = _snapshot(tgt)
-  local txn = { active = false, matched = false, window_remaining = 0, status = &quot;&quot;, close_reason = &quot;&quot; }
-  if Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot; then
-    local ok, row = pcall(Yso.occ.aura_txn_status, tgt)
-    if ok and type(row) == &quot;table&quot; then
-      txn = row
-    end
-  end
-  local ttl = tonumber((Yso and Yso.occ and Yso.occ.aura_cfg and Yso.occ.aura_cfg.ttl) or AB.cfg.aura_ttl_s or 20) or 20
-  local parse_window_open = (txn.active == true and txn.matched == true)
-  local parse_window_remaining = parse_window_open and (tonumber(txn.window_remaining or 0) or 0) or 0
-  if not a then
-    return {
-      fresh = false,
-      complete = false,
-      read_complete = false,
-      had_counts = false,
-      had_mana = false,
-      physical = nil,
-      mental = nil,
-      aff_total = nil,
-      blind = nil,
-      deaf = nil,
-      speed = nil,
-      shield = nil,
-      mana_pct = nil,
-      mana_cur = nil,
-      mana_max = nil,
-      defs_state = &quot;missing&quot;,
-      confidence_state = parse_window_open and &quot;pending&quot; or &quot;missing&quot;,
-      confidence_score = 0,
-      missing_keys = { &quot;defs&quot;, &quot;counts&quot;, &quot;mana&quot; },
-      parse_window_open = parse_window_open,
-      parse_window_remaining = parse_window_remaining,
-      txn_status = tostring(txn.status or &quot;&quot;),
-      txn_reason = tostring(txn.close_reason or &quot;&quot;),
-      txn_started_at = tonumber(txn.started_at or 0) or 0,
-      txn_read_id = tonumber(txn.read_id or 0) or 0,
-    }
-  end
-  local fresh = true
-  if ttl &gt; 0 then fresh = (_now() - tonumber(a.ts or 0)) &lt;= ttl end
-  local missing_keys = {}
-  if fresh and type(a.missing_keys) == &quot;table&quot; then
-    for i = 1, #a.missing_keys do
-      missing_keys[#missing_keys + 1] = a.missing_keys[i]
-    end
-  end
-  local confidence_state = fresh and tostring(a.confidence_state or &quot;&quot;) or &quot;stale&quot;
-  if confidence_state == &quot;&quot; then
-    confidence_state = fresh and ((a.complete == true and &quot;complete&quot;) or &quot;partial&quot;) or &quot;stale&quot;
-  end
-  if parse_window_open and confidence_state == &quot;missing&quot; then
-    confidence_state = &quot;pending&quot;
-  end
-  local function bool_field(key)
-    if not fresh then return nil end
-    if a[key] == true then return true end
-    if a[key] == false then return false end
-    return nil
-  end
-  local physical = fresh and tonumber(a.physical) or nil
-  local mental = fresh and tonumber(a.mental) or nil
-  local total = nil
-  if physical ~= nil or mental ~= nil then total = (physical or 0) + (mental or 0) end
-  return {
-    fresh = fresh,
-    complete = (fresh and a.complete == true) or false,
-    read_complete = (fresh and a.read_complete == true) or false,
-    had_counts = (fresh and a.had_counts == true) or false,
-    had_mana = (fresh and a.had_mana == true) or false,
-    physical = physical,
-    mental = mental,
-    aff_total = total,
-    blind = bool_field(&quot;blind&quot;),
-    deaf = bool_field(&quot;deaf&quot;),
-    speed = bool_field(&quot;speed&quot;),
-    shield = bool_field(&quot;shield&quot;),
-    caloric = bool_field(&quot;caloric&quot;),
-    frost = bool_field(&quot;frost&quot;),
-    levitation = bool_field(&quot;levitation&quot;),
-    insomnia = bool_field(&quot;insomnia&quot;),
-    kola = bool_field(&quot;kola&quot;),
-    cloak = bool_field(&quot;cloak&quot;),
-    mana_pct = fresh and tonumber(a.mana_pct) or nil,
-    mana_cur = fresh and tonumber(a.mana_cur) or nil,
-    mana_max = fresh and tonumber(a.mana_max) or nil,
-    raw = (fresh and type(a.raw) == &quot;table&quot;) and a.raw or nil,
-    defs_state = fresh and tostring(a.defs_state or &quot;missing&quot;) or &quot;missing&quot;,
-    confidence_state = confidence_state,
-    confidence_score = fresh and (tonumber(a.confidence_score or 0) or 0) or 0,
-    missing_keys = missing_keys,
-    parse_window_open = parse_window_open,
-    parse_window_remaining = parse_window_remaining,
-    txn_status = tostring(txn.status or &quot;&quot;),
-    txn_reason = tostring(txn.close_reason or &quot;&quot;),
-    txn_started_at = tonumber(txn.started_at or 0) or 0,
-    txn_read_id = tonumber(txn.read_id or 0) or 0,
-    ts = tonumber(a.ts or 0) or 0,
-    read_id = tonumber(a.read_id or 0) or 0,
-  }
-end
+-- CS.snapshot now provided by occ_aura_planner.lua (AP.snapshot)
 
 function CS.plan_aff(tgt)
   local snap = CS.snapshot(tgt)
@@ -26765,27 +27458,7 @@ function CS.plan_aff(tgt)
     local ok, hostile = pcall(AB.S.loyals_hostile, tgt)
     loyals_readaura = (ok and hostile == true) or false
   end
-  local needs_defs = fresh and ((snap.read_complete ~= true) or missing.defs == true)
-  local needs_counts = fresh and ((snap.had_counts ~= true) or missing.counts == true)
-  local needs_mana_snapshot = fresh and (mana == nil and ((snap.had_mana ~= true) or missing.mana == true))
-  local needs_readaura = false
-  local readaura_reason = &quot;&quot;
-  if fresh and snap.parse_window_open == true then
-    needs_readaura = false
-    readaura_reason = &quot;parse_window_open&quot;
-  elseif not fresh then
-    needs_readaura = true
-    readaura_reason = &quot;snapshot_stale&quot;
-  elseif needs_defs then
-    needs_readaura = true
-    readaura_reason = &quot;defs_incomplete&quot;
-  elseif needs_counts then
-    needs_readaura = true
-    readaura_reason = &quot;counts_incomplete&quot;
-  elseif needs_mana_snapshot then
-    needs_readaura = true
-    readaura_reason = &quot;mana_unknown&quot;
-  end
+  local needs_readaura, readaura_reason = AP.needs_readaura(tgt, snap)
   local bm_entry = (bm.active == true and _has_aff(tgt, &quot;asthma&quot;))
   local bm_branch_active = bm_entry and bm.state == &quot;complete_enough&quot; and (_has_aff(tgt, &quot;paralysis&quot;) or _has_aff(tgt, &quot;weariness&quot;))
   local bm_branch_provisional = bm_entry and not bm_branch_active
@@ -28722,62 +29395,8 @@ local function _burst_ready(tgt)
   return _enlighten_score() &gt;= tonumber(AB.cfg.enlighten_target or 5)
 end
 
-local function _readaura_tag(tgt)
-  return &quot;ab:eq:readaura:&quot; .. _lc(tgt)
-end
-
-local function _aura_txn_active_for(tgt)
-  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == &quot;function&quot;) then return false end
-  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
-  return ok and type(status) == &quot;table&quot; and status.active == true and status.matched == true
-end
-
-local function _missing_key(list, key)
-  if type(list) ~= &quot;table&quot; then return false end
-  key = _lc(key)
-  for i = 1, #list do
-    if _lc(list[i]) == key then return true end
-  end
-  return false
-end
-
-local function _should_probe_readaura(tgt, plan, burst_ready)
-  if _recent_sent(_readaura_tag(tgt), tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return false end
-  if plan and plan.snapshot_parse_window_open == true then return false end
-
-  if plan and plan.needs_readaura == true then return true end
-  if plan and (plan.snapshot_confidence_state == &quot;stale&quot; or plan.snapshot_complete ~= true) then return true end
-
-  local need_defs = plan and ((plan.snapshot_read_complete ~= true) or _missing_key(plan.snapshot_missing_keys, &quot;defs&quot;))
-  local need_counts = plan and ((plan.snapshot_had_counts ~= true) or _missing_key(plan.snapshot_missing_keys, &quot;counts&quot;))
-  local need_mana = plan and (plan.mana_pct == nil) and ((plan.snapshot_had_mana ~= true) or _missing_key(plan.snapshot_missing_keys, &quot;mana&quot;))
-
-  if need_defs or need_counts or need_mana then return true end
-
-  if burst_ready == true and plan and (plan.speed == nil or need_defs) then return true end
-
-  return false
-end
-
-local function _readaura_plan(tgt, plan, burst_ready)
-  if not _should_probe_readaura(tgt, plan, burst_ready) then return nil, nil, nil, nil end
-  if not (Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == &quot;function&quot;) then return nil, nil, nil, nil end
-  local ok, ready = pcall(Yso.occ.readaura_is_ready)
-  if ok and ready == true then
-    return (&quot;readaura %s&quot;):format(tgt), &quot;cleanseaura_window&quot;, _readaura_tag(tgt), tonumber(AB.cfg.readaura_lockout_s or 1.0)
-  end
-  return nil, nil, nil, nil
-end
-
-local function _bootstrap_readaura_plan(tgt, plan)
-  if not (plan and plan.loyals_bootstrap_pending == true and plan.readaura_via_loyals == true) then
-    return nil, nil, nil, nil
-  end
-  local tag = _readaura_tag(tgt)
-  if _recent_sent(tag, tonumber(AB.cfg.readaura_requery_s or 8) or 8) then return nil, nil, nil, nil end
-  if _aura_txn_active_for(tgt) then return nil, nil, nil, nil end
-  return (&quot;readaura %s&quot;):format(tgt), &quot;cleanseaura_window&quot;, tag, tonumber(AB.cfg.readaura_lockout_s or 1.0)
-end
+-- _readaura_tag, _aura_txn_active_for, _missing_key, _should_probe_readaura,
+-- _readaura_plan, _bootstrap_readaura_plan moved to occ_aura_planner.lua (AP.*)
 
 local function _eq_plan(tgt, plan, gate)
   if not _eq_ready() then return nil, nil, nil, nil end
@@ -28785,20 +29404,19 @@ local function _eq_plan(tgt, plan, gate)
   local burst_ready = _burst_ready(tgt)
   local has_wm = _has_aff(tgt, &quot;whisperingmadness&quot;) or _has_aff(tgt, &quot;whispering_madness&quot;)
   local has_manaleech = _has_aff(tgt, &quot;manaleech&quot;)
-  local bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock = _bootstrap_readaura_plan(tgt, plan)
+  local bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock = AP.bootstrap_readaura_plan(tgt, plan)
   if bootstrap_cmd then
     return bootstrap_cmd, bootstrap_cat, bootstrap_tag, bootstrap_lock
   end
-  local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = _readaura_plan(tgt, plan, burst_ready)
+  local readaura_cmd, readaura_cat, readaura_tag, readaura_lock = AP.readaura_plan(tgt, plan, burst_ready)
 
   if readaura_cmd then
     return readaura_cmd, readaura_cat, readaura_tag, readaura_lock
   end
 
-  if plan.cleanseaura_ready and has_manaleech and not _truebook_can_utter(tgt) then
-    if not gate or gate.stable == true then
-      return (&quot;cleanseaura %s&quot;):format(tgt), &quot;truename_acquire&quot;, &quot;ab:eq:cleanseaura:&quot; .. _lc(tgt), tonumber(AB.cfg.cleanseaura_lockout_s or 4.1)
-    end
+  local cs_cmd, cs_cat, cs_tag, cs_lock = AP.cleanseaura_plan(tgt, plan, gate)
+  if cs_cmd then
+    return cs_cmd, cs_cat, cs_tag, cs_lock
   end
 
   if _truebook_can_utter(tgt) and not has_wm and _has_any_required_insanity(tgt) then
@@ -29884,7 +30502,7 @@ local M = Yso.magi.elemental
 
 M.cfg = M.cfg or {
   auto_bloodboil = true,
-  min_affs_hunt = 4,
+  min_affs_hunt = 2,
   cooldown_s = 4.0,
   queue_mode = "prepend",
   queue_type = "eq",
@@ -29897,6 +30515,22 @@ M.cfg.destroy = M.cfg.destroy or {
   require_conflagration = true,
   hp_threshold = 40,
   enforce_hp_gate = false,
+}
+
+M.cfg.pvp = M.cfg.pvp or {
+  enabled            = false,
+  min_affs_default   = 3,
+  allow_lock_override = true,
+  curesets = {
+    depthswalker = { min_affs = 2, notes = "placeholder" },
+    bard         = { min_affs = 2, notes = "placeholder" },
+    monk         = { min_affs = 2, notes = "placeholder" },
+    dwc          = { min_affs = 3, notes = "dual wield cutting knights" },
+    dwb          = { min_affs = 3, notes = "dual wield blunt knights (future)" },
+    blademaster  = { min_affs = 3, notes = "placeholder" },
+    shaman       = { min_affs = 2, notes = "placeholder" },
+    airlord      = { min_affs = 2, notes = "elemental air spec" },
+  },
 }
 
 M.state = M.state or {
@@ -30089,10 +30723,6 @@ function M.should_bloodboil()
     return false, "class"
   end
 
-  if _current_cureset() ~= "hunt" then
-    return false, "cureset"
-  end
-
   if not M.is_ready() then
     return false, "cooldown"
   end
@@ -30105,13 +30735,30 @@ function M.should_bloodboil()
     return false, "haemophilia"
   end
 
-  local count = _aff_count()
-  local min_affs = tonumber(M.cfg.min_affs_hunt or 4) or 4
-  if count &lt; min_affs then
-    return false, "affs", count, min_affs
+  local curset = _current_cureset()
+  local count  = _aff_count()
+
+  if curset == "hunt" then
+    local min_affs = tonumber(M.cfg.min_affs_hunt or 2) or 2
+    if count &lt; min_affs then return false, "affs", count, min_affs end
+    return true, "ok", count, min_affs
   end
 
-  return true, "ok", count, min_affs
+  local pvp = M.cfg.pvp
+  if not (type(pvp) == "table" and pvp.enabled == true) then
+    return false, "pvp_disabled"
+  end
+
+  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+                   or tonumber(pvp.min_affs_default or 3) or 3
+
+  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  if count &lt; min_affs and not lock_ok then
+    return false, "affs_pvp", count, min_affs
+  end
+
+  return true, "ok_pvp", count, min_affs
 end
 
 local function _queue_bloodboil(source)
@@ -30255,6 +30902,214 @@ end
 function M.cast_magmasphere(seconds)
   return _cast_timed_spell("magmasphere", seconds)
 end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Tree auto</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.tree = Yso.tree or {}
+Yso._trig = Yso._trig or {}
+Yso._eh = Yso._eh or {}
+
+local T = Yso.tree
+
+T.cfg = T.cfg or {
+  enabled = true,
+  min_affs_hunt = 1,
+  debug = false,
+}
+
+T.cfg.pvp = T.cfg.pvp or {
+  enabled = false,
+  min_affs_default = 2,
+  allow_lock_override = true,
+  curesets = {
+    depthswalker = { min_affs = 1, notes = "placeholder" },
+    bard         = { min_affs = 1, notes = "placeholder" },
+    monk         = { min_affs = 1, notes = "placeholder" },
+    dwc          = { min_affs = 2, notes = "dual wield cutting knights" },
+    dwb          = { min_affs = 2, notes = "dual wield blunt knights (future)" },
+    blademaster  = { min_affs = 2, notes = "placeholder" },
+    shaman       = { min_affs = 1, notes = "placeholder" },
+    airlord      = { min_affs = 1, notes = "elemental air spec" },
+  },
+}
+
+T.state = T.state or {
+  ready = true,
+  last_touch = 0,
+}
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 20000000000 then t = t / 1000 end
+  return t or os.time()
+end
+
+local function _debug(msg)
+  if T.cfg.debug and type(cecho) == "function" then
+    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _echo(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _Aff()
+  return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+end
+
+local function _has(aff)
+  return _Aff()[aff] == true
+end
+
+local function _aff_count()
+  local A = _Aff()
+  local n = 0
+  for k, v in pairs(A) do
+    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+      n = n + 1
+    end
+  end
+  return n
+end
+
+local function _current_cureset()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and set ~= "" then return set:lower() end
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and cur ~= "" then return cur:lower() end
+  return ""
+end
+
+function T.should_tree()
+  if T.cfg.enabled ~= true then return false, "disabled" end
+  if not T.state.ready then return false, "cooldown" end
+  if _has("paralysis") then return false, "paralysis" end
+
+  local curset = _current_cureset()
+  local count = _aff_count()
+
+  if curset == "hunt" then
+    local min_affs = tonumber(T.cfg.min_affs_hunt or 1) or 1
+    if count &lt; min_affs then return false, "affs", count, min_affs end
+    return true, "ok", count, min_affs
+  end
+
+  local pvp = T.cfg.pvp
+  if not (type(pvp) == "table" and pvp.enabled == true) then
+    return false, "pvp_disabled"
+  end
+
+  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+                   or tonumber(pvp.min_affs_default or 2) or 2
+
+  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  if count &lt; min_affs and not lock_ok then
+    return false, "affs_pvp", count, min_affs
+  end
+
+  return true, "ok_pvp", count, min_affs
+end
+
+function T.try_tree(source)
+  local ok, reason, count, min_affs = T.should_tree()
+  if not ok then
+    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
+    return false, reason
+  end
+
+  if type(send) == "function" then
+    send("touch tree", false)
+    _debug(string.format("touching tree src=%s affs=%d/%d", tostring(source or "?"), count or 0, min_affs or 0))
+    return true, reason
+  end
+
+  return false, "send_unavailable"
+end
+
+function T.on_touched()
+  T.state.ready = false
+  T.state.last_touch = _now()
+  _debug("tree touched, cooldown started")
+end
+
+function T.on_ready()
+  T.state.ready = true
+  _debug("tree ready")
+  T.try_tree("ready_line")
+end
+
+function T.on_vitals()
+  if not T.cfg.enabled then return end
+  if not T.state.ready then return end
+  T.try_tree("vitals")
+end
+
+function T.set_auto(v)
+  local on = nil
+  local t = type(v)
+  if t == "boolean" then on = v
+  elseif t == "number" then on = (v ~= 0)
+  elseif t == "string" then
+    local s = tostring(v):lower():gsub("^%s+", ""):gsub("%s+$", "")
+    if s == "on" or s == "1" or s == "true" then on = true
+    elseif s == "off" or s == "0" or s == "false" then on = false end
+  end
+  if on == nil then _echo("Usage: lua Yso.tree.set_auto(true|false)"); return end
+  T.cfg.enabled = on
+  _echo("Auto tree is now " .. (on and "ON." or "OFF."))
+end
+
+function T.status()
+  local ok, reason, count, min_affs = T.should_tree()
+  local curset = _current_cureset()
+  _echo(string.format(
+    "auto=%s ready=%s cureset=%s affs=%d min=%d reason=%s para=%s",
+    T.cfg.enabled and "on" or "off",
+    T.state.ready and "Y" or "N",
+    curset ~= "" and curset or "?",
+    count or _aff_count(),
+    min_affs or 0,
+    tostring(reason or "?"),
+    _has("paralysis") and "Y" or "N"
+  ))
+end
+
+local function _safe(fn)
+  return function(...)
+    local ok, err = pcall(fn, ...)
+    if not ok and T.cfg.debug then
+      _echo("ERROR: " .. tostring(err))
+    end
+  end
+end
+
+if Yso._trig.tree_touched then killTrigger(Yso._trig.tree_touched) end
+Yso._trig.tree_touched = tempRegexTrigger(
+  [[^You touch the tree of life tattoo\.$]],
+  _safe(function() T.on_touched() end)
+)
+
+if Yso._trig.tree_ready then killTrigger(Yso._trig.tree_ready) end
+Yso._trig.tree_ready = tempRegexTrigger(
+  [[^You may utilise the tree tattoo again\.]],
+  _safe(function() T.on_ready() end)
+)
+
+if Yso._eh.tree_vitals then pcall(killAnonymousEventHandler, Yso._eh.tree_vitals) end
+Yso._eh.tree_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+  T.on_vitals()
+end)</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>

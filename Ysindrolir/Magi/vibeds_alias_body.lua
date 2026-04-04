@@ -3,7 +3,7 @@
 -- workspace helper automatically and then run the default embed sequence.
 
 local function _norm(path)
-  return tostring(path or ""):gsub("\\", "/"):gsub("/+$", "")
+  return (tostring(path or ""):gsub("\\", "/"):gsub("/+$", ""))
 end
 
 local function _exists(path)

@@ -1,6 +1,6 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: March 23, 2026
+Last updated: April 2, 2026
 
 
 Current fixes
@@ -19,11 +19,15 @@ Current fixes
 
   The stale generic package:
     Ysindrolir/mudlet packages/Devtools.xml
-  has been retired. Split devtools sources now live at:
-    Ysindrolir/Occultist/Occultist Devtools.xml
-    Ysindrolir/Magi/MagiDevtools.xml
-  Both split devtools packages now import with their top-level alias groups
-  disabled by default.
+  has been retired. Unified class devtools now live in one XML source:
+    Ysindrolir/mudlet packages/YsoDevtools.xml
+  This shared XML now carries both Magi and Occultist devtools, segregated by
+  class-specific command surfaces under the same package.
+
+  The unified XML includes an Occultist Fool test surface:
+    ytest fool snap
+    ytest fool fire [manual|auto|diagnose] [force]
+    ytest fool debug [on|off|toggle]
 
   Export artifacts were refreshed from the canonical source tree, including:
     modules/Yso/xml/yso_pulse_wake_bus.lua
@@ -41,6 +45,15 @@ Current fixes
   Truename persistence now validates the saved blob before calling Mudlet's
   JSON decoder, which suppresses startup spam from corrupted non-JSON files in
   the Mudlet home directory.
+
+  Package remediation updated the Yso helper surfaces that still live under
+  modules/Yso/xml:
+    yso_target_tattoos.lua now reads affstrack.score for deaf/blind gating
+    sightgate.lua now honors ents.slickness before falling back to bubonis
+    pronecontroller.lua no longer counts self-aeon in its softscore list
+  Core/api.lua also now uses wall-clock time for inhibit fallback timing when
+  getEpoch is unavailable, and the rebuilt Yso system.xml now carries those
+  fixes forward into the package artifact.
 
 
 Architecture overview
@@ -70,6 +83,10 @@ Active routes
                     loyals/readaura opener -> deaf gate (attend + chimera) -> unnamable
                     chimera + moon pressure, then cleanseaura -> speed strip -> utter truename
                     tarot-first rule: if bal is ready before entity, emit tarot-only this tick
+
+  route_registry.lua also now carries class-scoped Magi routes such as:
+    focus            - Magi duel convergence route (combat mode, Magi only)
+    magi_group_damage - Magi team damage route (team dam, Magi only)
 
 Mode-to-route mapping:
   combat          -> occ_aff_burst
@@ -164,6 +181,7 @@ Aliases
 -------
   ^aff$         - toggle the duel affliction loop (occ_aff_burst)
   ^dam$         - toggle the group damage loop
+  ^focus$       - toggle the Magi duel focus route when playing Magi
   ^hunt$        - switch to bash mode without a noop entourage reset
   ^bash$        - same as hunt
   ^mbash$       - switch to bash mode
@@ -189,8 +207,15 @@ Working notes
     queue commit / lane reopen behavior
 
   The live generic Devtools package has been retired from mudlet packages.
-  Use the split source-side devtools files instead:
-    Occultist Devtools.xml
-    ../Magi/MagiDevtools.xml
-  Both now default to off until you manually enable their top-level alias
-  group in Mudlet.
+  Use the unified shared XML instead:
+    ../mudlet packages/YsoDevtools.xml
+  That XML now contains both Magi and Occultist devtools. Enable its
+  top-level alias group in Mudlet before using the class-specific helpers.
+  Fool now hard-preempts Legacy basher freestand work only after it passes
+  its mechanical gates. If Fool is prone, it reports that reason and leaves
+  the basher queue untouched. When eligible, it clears freestand, queues
+  Fool, and suppresses new basher attack-package requeues until the Fool
+  self-use line or a timeout releases the hold.
+
+
+

@@ -110,6 +110,7 @@ safe_require("Yso.Combat.occultist.entity_registry")
 safe_require("Yso.xml.yso_occultist_affmap")
 safe_require_any("Yso.Combat.occultist.aeon", "Yso.xml.yso_aeon")
 safe_require("Yso.Combat.routes.group_damage")
+safe_require("Yso.xml.occ_aura_planner")
 safe_require("Yso.Combat.routes.occ_aff_burst")
 safe_require("Yso.Combat.routes.party_aff")
 safe_require("Yso.Combat.occultist.offense_helpers")
@@ -155,7 +156,11 @@ do
   end
 end
 
+safe_require("magi_route_core")
 safe_require("magi_reference")
+safe_require("magi_dissonance")
+safe_require("magi_group_damage")
+safe_require("magi_focus")
 
 local function _report_boot_status()
   local failures = Yso._entry_failures or {}

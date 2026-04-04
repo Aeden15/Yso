@@ -273,6 +273,10 @@ do
       if GD and type(GD.on_payload_sent) == "function" then
         pcall(GD.on_payload_sent, payload)
       end
+      local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
+      if MGD and type(MGD.on_payload_sent) == "function" then
+        pcall(MGD.on_payload_sent, payload)
+      end
 
     end
 
@@ -434,7 +438,7 @@ function Yso.pause_offense(on, reason, quiet)
   if on then
     P.active = true
     P.reason = tostring(reason or P.reason or "paused")
-    P.at = (type(_now) == "function" and _now()) or os.time()
+    P.at = (Yso.util and type(Yso.util.now) == "function" and Yso.util.now()) or os.time()
   else
     P.active = false
     P.reason = ""
@@ -474,7 +478,7 @@ function Yso.inhibit.set(reason)
     now_ms = getEpoch()
     if now_ms < 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   Yso.inhibit._until = now_ms + (tonumber(Yso.inhibit.cfg.duration_ms) or 400)
   if Yso.inhibit.cfg.debug and type(cecho) == "function" then
@@ -488,7 +492,7 @@ function Yso.inhibit.active()
     now_ms = getEpoch()
     if now_ms < 1e10 then now_ms = now_ms * 1000 end
   else
-    now_ms = os.clock() * 1000
+    now_ms = os.time() * 1000
   end
   return now_ms < (tonumber(Yso.inhibit._until) or 0)
 end
@@ -897,7 +901,11 @@ Yso.ak.threshold = Yso.ak.threshold or 100   -- used later for embellished statu
 
 -- ----------------- tiny helpers (AK) -----------------
 local function _ak_now()
-  if type(getEpoch) == "function" then return getEpoch() end
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 20000000000 then t = t / 1000 end
+    return t
+  end
   return os.time()
 end
 

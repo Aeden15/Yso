@@ -5,14 +5,14 @@
 	<TimerPackage />
 	<AliasPackage>
 		<AliasGroup isActive="no" isFolder="yes">
-			<name>Devtools</name>
+			<name>YsoDevtools</name>
 			<script />
 			<command />
 			<packageName />
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>yhelp</name>
-				<script>cecho("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | ytest snap|sens|instill AFF|ent CMD|off [secs] [force] | ra status [target] | yrdebug [on|off] &lt;aff|dam|par&gt; | yrshow [aff|dam|par]\n")</script>
+				<script>cecho("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal|ent&gt; [on|off|toggle] | ylanes | ystage &lt;lane&gt; &lt;cmd&gt; | ycommit [eq|bal|class] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | yack [sent|fail|cooldown] | magi: ytest bloodboil snap|fire|debug|auto | occultist: ytest fool snap|fire|debug | shared: ytest snap|sens|instill|ent|off | ra status [target] | yrdebug [on|off] &lt;aff|dam|par|focus&gt; | yrshow [aff|dam|par|focus] [full]\n")</script>
 				<command />
 				<packageName />
 				<regex>^yhelp$</regex>
@@ -28,7 +28,7 @@
 if Yso and Yso.devtools and Yso.devtools.test and type(Yso.devtools.test.run) == "function" then
   Yso.devtools.test.run(args)
 else
-  print("[Devtools] ytest harness not loaded.")
+  print("[YsoDevtools] ytest harness not loaded.")
 end</script><command /><packageName /><regex>^ytest(?:\s+(.+))?$</regex></Alias><Alias isActive="yes" isFolder="no">
 				<name>yreset</name>
 				<script>if Yso and Yso.devtools and type(Yso.devtools.reset)=="function" then Yso.devtools.reset() end</script>
@@ -126,7 +126,7 @@ Yso.devtools.status()</script>
 			</Alias>
 			<Alias isActive="yes" isFolder="no">
 				<name>Reload</name>
-				<script>cecho("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; yreload -&gt; yreset (lane lab)\n")
+				<script>cecho("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; yreload -&gt; yreset (lane lab)\n")
 if Yso and Yso.devtools and type(Yso.devtools.reset)=="function" then Yso.devtools.reset() end</script>
 				<command />
 				<packageName />
@@ -189,12 +189,12 @@ cecho(string.format("&lt;red&gt;[Yso] &lt;white&gt;Target: %s  &lt;red&gt;Occult
 			<Alias isActive="yes" isFolder="no">
 				<name>yrdebug</name>
 				<script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
-if not RD then cecho("&lt;red&gt;[Devtools] route_debug not loaded\n"); return end
+if not RD then cecho("&lt;red&gt;[YsoDevtools] route_debug not loaded\n"); return end
 local args = matches[2] or ""
 local toks = {}
 for w in args:gmatch("%S+") do toks[#toks+1] = w:lower() end
 if #toks == 0 then
-  cecho("&lt;CadetBlue&gt;[Devtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par&gt;\n")
+  cecho("&lt;CadetBlue&gt;[YsoDevtools]&lt;reset&gt; yrdebug [on|off] &lt;aff|dam|par|focus&gt;\n")
 elseif #toks == 1 then
   RD.debug_toggle(toks[1])
 else
@@ -207,7 +207,7 @@ end</script>
 			<Alias isActive="yes" isFolder="no">
 				<name>yrshow</name>
 				<script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
-if not RD then cecho("&lt;red&gt;[Devtools] route_debug not loaded\n"); return end
+if not RD then cecho("&lt;red&gt;[YsoDevtools] route_debug not loaded\n"); return end
 RD.show(matches[2] or "")</script>
 				<command />
 				<packageName />
@@ -218,10 +218,10 @@ RD.show(matches[2] or "")</script>
 	<ActionPackage />
 	<ScriptPackage>
 		<Script isActive="yes" isFolder="no">
-			<name>Devtools: Lane Lab</name>
+			<name>YsoDevtools: Lane Lab</name>
 			<packageName />
 			<script>--========================================================--
--- Devtools: Lane Lab (offline lane testing)
+-- YsoDevtools: Lane Lab (offline lane testing)
 --  • Safe offline harness for payload / lane logic.
 --  • Provides dry-run emission via Yso.net.cfg.dry_run.
 --
@@ -495,7 +495,7 @@ function D.set_eq(ready, src)
   if b and Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
     pcall(Yso.pulse.wake, "lane:eq")
   end
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; EQ = %s", b and "READY" or "DOWN")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; EQ = %s", b and "READY" or "DOWN")) end
 end
 
 function D.set_bal(ready, src)
@@ -506,7 +506,7 @@ function D.set_bal(ready, src)
   if b and Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
     pcall(Yso.pulse.wake, "lane:bal")
   end
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; BAL = %s", b and "READY" or "DOWN")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; BAL = %s", b and "READY" or "DOWN")) end
 end
 
 function D.set_ent(ready, src)
@@ -517,7 +517,7 @@ function D.set_ent(ready, src)
   elseif Yso and Yso.occ then
     Yso.occ.entity_ready = b
   end
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; ENT = %s", b and "READY" or "DOWN")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; ENT = %s", b and "READY" or "DOWN")) end
 end
 
 function D.set_dry(on)
@@ -525,7 +525,7 @@ function D.set_dry(on)
   Yso.net.cfg = Yso.net.cfg or {}
   local b = (on == true)
   Yso.net.cfg.dry_run = b
-  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; DRY = %s", b and "ON" or "OFF")) end
+  if D.cfg.echo then _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; DRY = %s", b and "ON" or "OFF")) end
   return b
 end
 
@@ -549,7 +549,7 @@ function D.status()
   local prefer = (Yso and Yso.cfg and Yso.cfg.emit_prefer) or "eq"
   local sep = (Yso and Yso.net and type(Yso.net.get_sep)=="function") and Yso.net.get_sep() or ((Yso and Yso.cfg and Yso.cfg.pipe_sep) or "&amp;&amp;")
 
-  _ce(string.format("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; EQ:%s  BAL:%s  ENT:%s  DRY:%s  MODE:%s  PREFER:%s  SEP:%s",
+  _ce(string.format("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; EQ:%s  BAL:%s  ENT:%s  DRY:%s  MODE:%s  PREFER:%s  SEP:%s",
     eq and "READY" or "DOWN",
     bal and "READY" or "DOWN",
     ent and "READY" or "DOWN",
@@ -562,7 +562,7 @@ function D.status()
     local eq_s = st.eq and _trim(st.eq) or ""
     local bal_s = st.bal and _trim(st.bal) or ""
     local cl_s = st.class and _trim(st.class) or ""
-    _ce(string.format("&lt;dim_grey&gt;[Devtools] staged free=%d eq=%s bal=%s class=%s&lt;reset&gt;",
+    _ce(string.format("&lt;dim_grey&gt;[YsoDevtools] staged free=%d eq=%s bal=%s class=%s&lt;reset&gt;",
       free_n,
       (eq_s~="" and "Y" or "-"),
       (bal_s~="" and "Y" or "-"),
@@ -584,7 +584,7 @@ function D.lane(lane, tok)
   elseif lane == "bal" then return D.set_bal(b, "devtools:lane")
   elseif lane == "class" then return D.set_ent(b, "devtools:lane")
   else
-    if D.cfg.echo then _ce("&lt;red&gt;[Devtools]&lt;reset&gt; unknown lane: "..tostring(lane)) end
+    if D.cfg.echo then _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; unknown lane: "..tostring(lane)) end
   end
 end
 
@@ -593,17 +593,17 @@ function D.stage(lane, cmd)
   cmd = _trim(cmd)
   if cmd == "" then return false end
   if not (Yso and Yso.queue and type(Yso.queue.stage) == "function") then
-    _ce("&lt;red&gt;[Devtools]&lt;reset&gt; Yso.queue.stage not available.")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; Yso.queue.stage not available.")
     return false
   end
   pcall(Yso.queue.stage, lane, cmd, { src = "devtools:stage" })
-  if D.cfg.echo then _ce(string.format("&lt;dim_grey&gt;[Devtools] stage %s: %s&lt;reset&gt;", lane, cmd)) end
+  if D.cfg.echo then _ce(string.format("&lt;dim_grey&gt;[YsoDevtools] stage %s: %s&lt;reset&gt;", lane, cmd)) end
   return true
 end
 
 function D.commit(lane)
   if not (Yso and Yso.queue and type(Yso.queue.commit) == "function") then
-    _ce("&lt;red&gt;[Devtools]&lt;reset&gt; Yso.queue.commit not available.")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; Yso.queue.commit not available.")
     return false
   end
   local opts = {}
@@ -614,7 +614,7 @@ function D.commit(lane)
   local ok,res = pcall(Yso.queue.commit, opts)
   local sent = (ok and res == true) or false
   if D.cfg.echo then
-    _ce(string.format("&lt;dim_grey&gt;[Devtools] commit%s =&gt; %s&lt;reset&gt;", (opts.wake_lane and (" lane:"..opts.wake_lane) or ""), sent and "SENT" or "NOOP"))
+    _ce(string.format("&lt;dim_grey&gt;[YsoDevtools] commit%s =&gt; %s&lt;reset&gt;", (opts.wake_lane and (" lane:"..opts.wake_lane) or ""), sent and "SENT" or "NOOP"))
   end
   return sent
 end
@@ -623,7 +623,7 @@ end
 function D.clear(lane)
   if Yso and Yso.queue and type(Yso.queue.clear) == "function" then
     pcall(Yso.queue.clear, lane)
-    if D.cfg.echo then _ce("&lt;dim_grey&gt;[Devtools] cleared "..(lane or "ALL").."&lt;reset&gt;") end
+    if D.cfg.echo then _ce("&lt;dim_grey&gt;[YsoDevtools] cleared "..(lane or "ALL").."&lt;reset&gt;") end
     return true
   end
   return false
@@ -634,37 +634,37 @@ function D.set_mode(mode)
   if mode == "freestyle" then mode = "as_available" end
   if mode == "combo" then mode = "paired" end
   if mode ~= "paired" and mode ~= "as_available" then
-    _ce("&lt;red&gt;[Devtools]&lt;reset&gt; mode must be paired|as_available")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; mode must be paired|as_available")
     return false
   end
   Yso.cfg = Yso.cfg or {}
   Yso.cfg.payload_mode = mode
-  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; MODE = "..mode) end
+  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; MODE = "..mode) end
   return true
 end
 
 function D.set_prefer(p)
   p = _trim(p):lower()
   if p ~= "eq" and p ~= "bal" then
-    _ce("&lt;red&gt;[Devtools]&lt;reset&gt; prefer must be eq|bal")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; prefer must be eq|bal")
     return false
   end
   Yso.cfg = Yso.cfg or {}
   Yso.cfg.emit_prefer = p
-  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[Devtools]&lt;reset&gt; PREFER = "..p) end
+  if D.cfg.echo then _ce("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; PREFER = "..p) end
   return true
 end
 
 function D.ack(kind)
   kind = _trim(kind):lower()
   if not (Yso and Yso.pulse and type(Yso.pulse.entity_ack) == "function") then
-    _ce("&lt;red&gt;[Devtools]&lt;reset&gt; Yso.pulse.entity_ack not available.")
+    _ce("&lt;red&gt;[YsoDevtools]&lt;reset&gt; Yso.pulse.entity_ack not available.")
     return false
   end
   if kind == "" then kind = "fail" end
   if kind == "disregard" then kind = "fail" end
   pcall(Yso.pulse.entity_ack, kind, "devtools")
-  if D.cfg.echo then _ce("&lt;dim_grey&gt;[Devtools] entity_ack "..kind.."&lt;reset&gt;") end
+  if D.cfg.echo then _ce("&lt;dim_grey&gt;[YsoDevtools] entity_ack "..kind.."&lt;reset&gt;") end
   return true
 end
 
@@ -680,8 +680,8 @@ end
 
 
 --========================================================--
--- Devtools: ytest (debug harness)
---  • Lives in Devtools only (no core Yso changes).
+-- YsoDevtools: ytest (debug harness)
+--  • Shared Magi/Occultist harness (no core Yso changes).
 --  • Purpose: reproducible, short commands for testing EQ/BAL/ENT output
 --    and capturing server feedback without fragile command-line Lua pastes.
 --
@@ -690,6 +690,10 @@ end
 --   ytest sens [secs] [force]
 --   ytest instill &lt;aff&gt; [secs] [force]
 --   ytest ent &lt;raw command...&gt; [secs]
+--   ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle]
+--   ytest fool snap [cureset]
+--   ytest fool fire [manual|auto|diagnose] [cureset] [force]
+--   ytest fool debug [on|off|toggle]
 --   ytest off
 --========================================================--
 
@@ -801,10 +805,444 @@ function D.test.snap()
   _tprint("target="..tostring(D.test.get_target()))
 end
 
+local function _self_aff_list()
+  local A = (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+  local out = {}
+  for aff, present in pairs(A) do
+    if present == true and aff ~= "softlocked" and aff ~= "truelocked" then
+      out[#out + 1] = tostring(aff)
+    end
+  end
+  table.sort(out)
+  return out
+end
+
+local function _self_has_aff(aff)
+  local A = (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+  return A[tostring(aff or "")] == true
+end
+
+local function _current_class_name()
+  local cls = ""
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+    local ok, res = pcall(Yso.classinfo.get)
+    if ok and type(res) == "string" then cls = _trim(res) end
+  end
+  if cls == "" and gmcp and gmcp.Char and gmcp.Char.Status then
+    cls = _trim(gmcp.Char.Status.class or gmcp.Char.Status.classname)
+  end
+  if cls == "" and type(Yso and Yso.class) == "string" then
+    cls = _trim(Yso.class)
+  end
+  return cls
+end
+
+local function _current_cureset_name()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and _trim(set) ~= "" then
+    return _trim(set):lower()
+  end
+
+  local prof = Yso and Yso.curing and Yso.curing._active_profile
+  if type(prof) == "string" and _trim(prof) ~= "" then
+    return _trim(prof):lower()
+  end
+
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and _trim(cur) ~= "" then
+    return _trim(cur):lower()
+  end
+
+  return ""
+end
+
+local function _bloodboil_mod()
+  return Yso and Yso.magi and Yso.magi.elemental or nil
+end
+
+local function _bloodboil_res_value(element)
+  local R = Yso and Yso.magi and Yso.magi.resonance or nil
+  if type(R) == "table" and type(R.get) == "function" then
+    local ok, val = pcall(R.get, element)
+    if ok and tonumber(val) then
+      return tonumber(val) or 0
+    end
+  end
+  if type(R) == "table" and type(R.state) == "table" then
+    return tonumber(R.state[element] or 0) or 0
+  end
+  return 0
+end
+
+local function _bloodboil_res_label(level)
+  level = tonumber(level) or 0
+  if level &gt;= 3 then return "major" end
+  if level &gt;= 2 then return "moderate" end
+  if level &gt;= 1 then return "minor" end
+  return "none"
+end
+
+local function _bloodboil_reason_text(reason, count, min_affs)
+  reason = tostring(reason or "?")
+  if reason == "ok" then
+    return string.format("ok affs=%d/%d", tonumber(count or 0) or 0, tonumber(min_affs or 0) or 0)
+  end
+  if reason == "affs" then
+    return string.format("affs=%d/&lt;%d", tonumber(count or 0) or 0, tonumber(min_affs or 0) or 0)
+  end
+  return reason
+end
+
+function D.test.bloodboil_snap()
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  local ready, reason, count, min_affs = false, "unknown", nil, nil
+  if type(M.should_bloodboil) == "function" then
+    local ok, a, b, c, d = pcall(M.should_bloodboil)
+    if ok then
+      ready, reason, count, min_affs = (a == true), b, c, d
+    else
+      reason = "error:" .. tostring(a)
+    end
+  end
+
+  local now = _now_s()
+  local cd_left = (tonumber(M.state and M.state.cooldown_until or 0) or 0) - now
+  if cd_left &lt; 0 then cd_left = 0 end
+
+  local class_name = _current_class_name()
+  local cureset = _current_cureset_name()
+  local affs = _self_aff_list()
+  local fire = _bloodboil_res_value("fire")
+  local water = _bloodboil_res_value("water")
+
+  _tprint(string.format(
+    "bloodboil ready=%s reason=%s class=%s cureset=%s eq=%s auto=%s debug=%s cd=%s fire=%s(%d) water=%s(%d) dual_major=%s",
+    ready and "Y" or "N",
+    _bloodboil_reason_text(reason, count, min_affs),
+    (class_name ~= "" and class_name or "?"),
+    (cureset ~= "" and cureset or "?"),
+    _fmt_bool(_eq_now()),
+    _fmt_bool(M.cfg and M.cfg.auto_bloodboil == true),
+    _fmt_bool(M.cfg and M.cfg.debug == true),
+    _fmt_secs(cd_left),
+    _bloodboil_res_label(fire), fire,
+    _bloodboil_res_label(water), water,
+    _fmt_bool(fire &gt;= 3 and water &gt;= 3)
+  ))
+  _tprint(string.format("self affs=%d haemophilia=%s", #affs, _fmt_bool(_self_has_aff("haemophilia"))))
+  if #affs &gt; 0 then
+    _tprint("self aff list=" .. table.concat(affs, ", "))
+  end
+
+  local pvp = M.cfg and M.cfg.pvp
+  if type(pvp) == "table" then
+    local pvp_entry = type(pvp.curesets) == "table" and pvp.curesets[cureset:lower()] or nil
+    local pvp_min = (type(pvp_entry) == "table" and tonumber(pvp_entry.min_affs))
+                    or tonumber(pvp.min_affs_default or 3) or 3
+    _tprint(string.format("pvp enabled=%s cureset_min=%d default_min=%d lock_override=%s",
+      _fmt_bool(pvp.enabled == true),
+      pvp_min,
+      tonumber(pvp.min_affs_default or 3) or 3,
+      _fmt_bool(pvp.allow_lock_override == true)
+    ))
+  end
+
+  return ready
+end
+
+function D.test.selfcleanse_snap()
+  local cureset = _current_cureset_name()
+  local class_name = _current_class_name()
+  local affs = _self_aff_list()
+
+  _tprint("=== Self-Cleanse Snapshot ===")
+  _tprint(string.format("class=%s cureset=%s affs=%d", class_name, cureset, #affs))
+  if #affs &gt; 0 then
+    _tprint("aff list=" .. table.concat(affs, ", "))
+  end
+
+  _tprint("--- Bloodboil (Magi) ---")
+  local M = _bloodboil_mod()
+  if type(M) == "table" and type(M.should_bloodboil) == "function" then
+    local ok, a, b, c, d = pcall(M.should_bloodboil)
+    if ok then
+      _tprint(string.format("  ready=%s reason=%s affs=%s/%s",
+        (a == true) and "Y" or "N", tostring(b),
+        tostring(c or "?"), tostring(d or "?")))
+    else
+      _tprint("  error: " .. tostring(a))
+    end
+  else
+    _tprint("  not loaded")
+  end
+
+  _tprint("--- Fool (Occultist) ---")
+  local F = Yso and Yso.fool
+  if type(F) == "table" and type(F.status) == "function" then
+    pcall(F.status)
+  else
+    _tprint("  not loaded")
+  end
+
+  _tprint("--- Tree Tattoo ---")
+  local T = Yso and Yso.tree
+  if type(T) == "table" and type(T.status) == "function" then
+    pcall(T.status)
+  else
+    _tprint("  not loaded")
+  end
+end
+
+local function _arm_bloodboil_triggers()
+  D.test._trigs.bb_any = tempRegexTrigger(
+    "(?i)(boil your blood|haemophilia|equilibrium|mana|may not do that|huh\\?|once again)",
+    function()
+      _tprint("bloodboil -&gt; " .. tostring(line or ""))
+    end
+  )
+end
+
+local function _queue_bloodboil_force(M)
+  local cfg = type(M.cfg) == "table" and M.cfg or {}
+  local cmd = tostring(cfg.command or "cast bloodboil")
+  local mode = tostring(cfg.queue_mode or "prepend")
+  local qtype = tostring(cfg.queue_type or "eq")
+
+  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
+    local ok, queued = pcall(Yso.queue.raw, mode, qtype, cmd)
+    if ok and queued == true then
+      return true, string.format("queue raw %s/%s", mode, qtype)
+    end
+  end
+
+  if type(send) == "function" then
+    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
+    return true, string.format("queue %s %s", mode, qtype)
+  end
+
+  return false, "send unavailable"
+end
+
+function D.test.bloodboil_fire(secs, force)
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  D.test.off()
+  _arm_bloodboil_triggers()
+  D.test.bloodboil_snap()
+
+  local used = false
+  if force == true then
+    local ok, via = _queue_bloodboil_force(M)
+    used = ok == true
+    if used then
+      if type(M.set_ready) == "function" then
+        pcall(M.set_ready, false, "ytest:force")
+      end
+      M.state = M.state or {}
+      M.state.last_attempt = _now_s()
+      _tprint("queued bloodboil via force (" .. tostring(via) .. ")")
+    else
+      _tprint("bloodboil force queue failed.")
+    end
+  elseif type(M.try_bloodboil) == "function" then
+    local ok, queued = pcall(M.try_bloodboil, "ytest")
+    if ok and queued == true then
+      used = true
+      _tprint("queued bloodboil via live helper.")
+    elseif ok then
+      _tprint("bloodboil not queued; see snapshot reason above.")
+    else
+      _tprint("bloodboil error: " .. tostring(queued))
+    end
+  else
+    _tprint("bloodboil helper missing try_bloodboil().")
+  end
+
+  _auto_off(secs)
+  return used
+end
+
+function D.test.bloodboil_debug(tok)
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  M.cfg = M.cfg or {}
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not (M.cfg.debug == true)
+  end
+  M.cfg.debug = (desired == true)
+  _tprint("bloodboil debug = " .. (M.cfg.debug and "ON" or "OFF"))
+  return M.cfg.debug
+end
+
+function D.test.bloodboil_auto(tok)
+  local M = _bloodboil_mod()
+  if type(M) ~= "table" then
+    _tprint("bloodboil module not loaded.")
+    return false
+  end
+
+  M.cfg = M.cfg or {}
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not (M.cfg.auto_bloodboil == true)
+  end
+  M.cfg.auto_bloodboil = (desired == true)
+  _tprint("bloodboil auto = " .. (M.cfg.auto_bloodboil and "ON" or "OFF"))
+  return M.cfg.auto_bloodboil
+end
+
+local function _fool_mod()
+  return Yso and Yso.fool or nil
+end
+
+local function _with_fool_cureset(F, cureset, fn)
+  if type(fn) ~= "function" then
+    return false, "fn missing"
+  end
+  if type(F) == "table" and type(F.dev_with_cureset) == "function" then
+    return F.dev_with_cureset(cureset, fn)
+  end
+
+  local ok, a, b, c, d = pcall(fn)
+  if not ok then
+    return false, a
+  end
+  return true, a, b, c, d
+end
+
+local function _fool_parse_token(tok)
+  tok = tostring(tok or ""):lower()
+  if tok == "" then
+    return nil, nil
+  end
+  if tok == "manual" or tok == "auto" or tok == "diagnose" or tok == "ytest" then
+    return tok, nil
+  end
+  return nil, tok
+end
+
+local function _queue_fool_force(F)
+  local cfg = type(Legacy and Legacy.Fool) == "table" and Legacy.Fool or {}
+  local mode = tostring(cfg.queue_mode or "addclearfull")
+  local qtype = tostring(cfg.queue_type or "bal")
+  local cmd = "fling fool at me"
+
+  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
+    local ok, queued = pcall(Yso.queue.raw, mode, qtype, cmd)
+    if ok and queued == true then
+      if type(F) == "table" then
+        F.state = F.state or {}
+        F.state.last_used = _now_s()
+      end
+      return true, string.format("queue raw %s/%s", mode, qtype)
+    end
+  end
+
+  if type(send) == "function" then
+    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
+    if type(F) == "table" then
+      F.state = F.state or {}
+      F.state.last_used = _now_s()
+    end
+    return true, string.format("queue %s %s", mode, qtype)
+  end
+
+  return false, "send unavailable"
+end
+
+function D.test.fool_snap(cureset)
+  local F = _fool_mod()
+  if type(F) ~= "table" or type(F.status) ~= "function" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  local ok, res = _with_fool_cureset(F, cureset, F.status)
+  if not ok then
+    _tprint("fool status error: " .. tostring(res))
+    return false
+  end
+  return true
+end
+
+function D.test.fool_fire(source, cureset, force)
+  local F = _fool_mod()
+  if type(F) ~= "table" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  D.test.off()
+  D.test.fool_snap(cureset)
+
+  if force == true then
+    local ok, via = _queue_fool_force(F)
+    if ok then
+      _tprint("queued fool via force (" .. tostring(via) .. ")")
+      return true
+    end
+    _tprint("fool force queue failed: " .. tostring(via))
+    return false
+  end
+
+  if type(Legacy and Legacy.FoolSelfCleanse) ~= "function" then
+    _tprint("fool helper missing Legacy.FoolSelfCleanse().")
+    return false
+  end
+
+  local ok, queued = _with_fool_cureset(F, cureset, function()
+    return Legacy.FoolSelfCleanse(source or "ytest")
+  end)
+  if ok and queued == true then
+    _tprint("queued fool via live helper.")
+    return true
+  elseif ok then
+    _tprint("fool not queued; see snapshot reason above.")
+    return false
+  end
+
+  _tprint("fool error: " .. tostring(queued))
+  return false
+end
+
+function D.test.fool_debug(tok)
+  local F = _fool_mod()
+  if type(F) ~= "table" then
+    _tprint("fool module not loaded.")
+    return false
+  end
+
+  F.cfg = F.cfg or {}
+  local desired = _boolish(tok)
+  if desired == nil or desired == "toggle" then
+    desired = not (F.cfg.debug == true)
+  end
+  F.cfg.debug = (desired == true)
+  if type(Legacy and Legacy.Fool) == "table" then
+    Legacy.Fool.debug = (desired == true)
+  end
+  _tprint("fool debug = " .. (F.cfg.debug and "ON" or "OFF"))
+  return F.cfg.debug
+end
+
 function D.test.run(argstr)
   argstr = _trim(argstr)
   if argstr == "" then
-    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest off")
+    _tprint("usage: ytest snap | ytest sens [secs] [force] | ytest instill &lt;aff&gt; [secs] [force] | ytest ent &lt;raw cmd...&gt; [secs] | ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle] | ytest fool snap [cureset] | ytest fool fire [manual|auto|diagnose] [cureset] [force] | ytest fool debug [on|off|toggle] | ytest off")
     return
   end
 
@@ -842,6 +1280,72 @@ function D.test.run(argstr)
     local cmd = table.concat(toks, " ", 2, last)
     D.test.ent(cmd, secs or 12)
     return
+  elseif sub == "bloodboil" or sub == "bb" then
+    local action = tostring(toks[2] or "snap"):lower()
+    if action == "snap" or action == "status" then
+      D.test.bloodboil_snap()
+      return
+    elseif action == "fire" or action == "try" then
+      local secs, force = nil, false
+      for i = 3, #toks do
+        local x = tostring(toks[i]):lower()
+        if x == "force" then force = true
+        elseif (not secs) and tonumber(x) then secs = tonumber(x) end
+      end
+      D.test.bloodboil_fire(secs or 12, force)
+      return
+    elseif action == "debug" then
+      D.test.bloodboil_debug(toks[3] or "toggle")
+      return
+    elseif action == "auto" then
+      D.test.bloodboil_auto(toks[3] or "toggle")
+      return
+    end
+    _tprint("usage: ytest bloodboil snap|fire [secs] [force]|debug [on|off|toggle]|auto [on|off|toggle]")
+    return
+  elseif sub == "selfcleanse" or sub == "sc" then
+    D.test.selfcleanse_snap()
+    return
+  elseif sub == "tree" then
+    local T = Yso and Yso.tree
+    if type(T) == "table" and type(T.status) == "function" then
+      pcall(T.status)
+    else
+      _tprint("tree module not loaded.")
+    end
+    return
+  elseif sub == "fool" then
+    local action = tostring(toks[2] or "snap"):lower()
+    if action == "snap" or action == "status" then
+      local _, cureset = _fool_parse_token(toks[3])
+      if not cureset then
+        _, cureset = _fool_parse_token(toks[4])
+      end
+      D.test.fool_snap(cureset)
+      return
+    elseif action == "fire" or action == "try" then
+      local source, cureset, force = "ytest", nil, false
+      for i = 3, #toks do
+        local x = tostring(toks[i]):lower()
+        if x == "force" then
+          force = true
+        else
+          local src, set = _fool_parse_token(x)
+          if src and source == "ytest" then
+            source = src
+          elseif set and not cureset then
+            cureset = set
+          end
+        end
+      end
+      D.test.fool_fire(source, cureset, force)
+      return
+    elseif action == "debug" then
+      D.test.fool_debug(toks[3] or "toggle")
+      return
+    end
+    _tprint("usage: ytest fool snap [cureset] | ytest fool fire [manual|auto|diagnose] [cureset] [force] | ytest fool debug [on|off|toggle]")
+    return
   end
 
   _tprint("unknown subcommand: "..sub)
@@ -858,7 +1362,7 @@ end
 		<Script isActive="yes" isFolder="no">
 			<name>Route Debug Helpers</name>
 			<packageName />
-			<script>-- Route-aware debug helpers for Devtools.
+			<script>-- Route-aware debug helpers for YsoDevtools.
 -- Provides yrdebug, yrshow aliases.
 
 Yso = Yso or {}
@@ -869,14 +1373,24 @@ local RD = D.route_debug
 
 RD.routes = {
   aff  = function() return Yso.off and Yso.off.oc and Yso.off.oc.occ_aff_burst end,
-  dam  = function() return Yso.off and Yso.off.oc and Yso.off.oc.group_damage end,
+  dam  = function()
+    local off = Yso and Yso.off or nil
+    if Yso and type(Yso.is_magi) == "function" then
+      local ok, is_magi = pcall(Yso.is_magi)
+      if ok and is_magi == true then
+        return off and off.magi and (off.magi.group_damage or off.magi.dmg)
+      end
+    end
+    return off and off.oc and off.oc.group_damage
+  end,
   par  = function() return Yso.off and Yso.off.oc and Yso.off.oc.party_aff end,
+  focus = function() return Yso.off and Yso.off.magi and Yso.off.magi.focus end,
 }
 RD.aliases = RD.aliases or {}
 
 local function _tprint(msg)
   if type(cecho) == "function" then
-    cecho(string.format("&lt;CadetBlue&gt;[Devtools:Route]&lt;reset&gt; %s\n", tostring(msg)))
+    cecho(string.format("&lt;CadetBlue&gt;[YsoDevtools:Route]&lt;reset&gt; %s\n", tostring(msg)))
   end
 end
 
@@ -906,7 +1420,7 @@ end
 function RD.debug_toggle(route, on_off)
   route = tostring(route or ""):lower()
   if route == "" or route == "on" or route == "off" then
-    _tprint("usage: yrdebug [on|off] [aff|dam|par]")
+    _tprint("usage: yrdebug [on|off] [aff|dam|par|focus]")
     return
   end
   local mod = _route_mod(route)
@@ -961,21 +1475,33 @@ function RD.debug_toggle(route, on_off)
 end
 
 function RD.show(route)
-  route = tostring(route or ""):lower()
-  if route == "" then
-    for k, _ in pairs(RD.routes) do
-      RD.show(k)
+  local args = tostring(route or ""):lower()
+  local toks = {}
+  for w in args:gmatch("%S+") do toks[#toks + 1] = w end
+  local name = toks[1] or ""
+  local full = false
+  for i = 2, #toks do
+    if toks[i] == "full" then
+      full = true
     end
+  end
+
+  if name == "" then
+    RD.show("aff")
+    RD.show("dam")
+    RD.show("par")
+    RD.show("focus")
     return
   end
-  local mod = _route_mod(route)
-  local ex = _route_explain(route)
+
+  local mod = _route_mod(name)
+  local ex = _route_explain(name)
   if not ex then
-    local st = _route_state(route)
+    local st = _route_state(name)
     if st then
-      _tprint(route .. " state.enabled=" .. tostring(st.enabled) .. " loop=" .. tostring(st.loop_enabled))
+      _tprint(name .. " state.enabled=" .. tostring(st.enabled) .. " loop=" .. tostring(st.loop_enabled))
     else
-      _tprint(route .. ": no data")
+      _tprint(name .. ": no data")
     end
     return
   end
@@ -985,86 +1511,31 @@ function RD.show(route)
     local t = tostring(v)
     return (t == "" and "-") or t
   end
-  local function _lane(tbl, key)
-    if type(tbl) ~= "table" then return "-" end
-    if key == "entity" then
-      return _s(tbl.entity or tbl.class)
-    end
-    return _s(tbl[key])
-  end
-  local function _list(values)
-    if type(values) ~= "table" then return "-" end
+  local function _rejects(v)
+    if type(v) ~= "table" or #v == 0 then return "-" end
     local out = {}
-    for i = 1, #values do
-      if tostring(values[i] or "") ~= "" then out[#out + 1] = tostring(values[i]) end
+    for i = 1, #v do
+      local row = v[i]
+      if type(row) == "table" then
+        out[#out + 1] = string.format("%s:%s", _s(row.decision), _s(row.reason))
+      end
     end
-    return (#out > 0) and table.concat(out, ",") or "-"
-  end
-  local function _keys(values)
-    if type(values) ~= "table" then return "-" end
-    local out = {}
-    for k, v in pairs(values) do
-      if v then out[#out + 1] = tostring(k) end
-    end
-    table.sort(out)
-    return (#out > 0) and table.concat(out, ",") or "-"
-  end
-  local function _hindrance_active(snapshot)
-    if type(snapshot) ~= "table" then return "-" end
-    local order = { "paralysis", "clumsiness", "webbed", "entangled", "prone", "fallen", "sleeping", "transfixed", "impaled" }
-    local out = {}
-    for i = 1, #order do
-      if snapshot[order[i]] == true then out[#out + 1] = order[i] end
-    end
-    return (#out > 0) and table.concat(out, ",") or "-"
-  end
-  local function _entity_state(row)
-    if type(row) ~= "table" then return "-" end
-    return string.format("want=%s active=%s stale=%s cmd=%.1f conf=%.1f exp=%.1f block=%s",
-      _b(row.wanted == true), _b(row.active_confirmed == true), _b(row.stale == true),
-      tonumber(row.last_commanded_at or 0) or 0, tonumber(row.last_confirmed_at or 0) or 0,
-      tonumber(row.expires_at or 0) or 0, _s(row.blocked_reason))
-  end
-  local function _top_obligation(ob)
-    local top = type(ob) == "table" and ob.top or nil
-    if type(top) ~= "table" then return "-" end
-    return string.format("%s:%s:%s", _s(top.entity), _s(top.reason), _s(top.cmd))
+    return (#out > 0) and table.concat(out, ", ") or "-"
   end
 
   local planned = type(ex.planned) == "table" and ex.planned or {}
-  local gated = type(ex.gated) == "table" and ex.gated or {}
   local finish = type(ex.finish_transition) == "table" and ex.finish_transition or {}
   local para = type(ex.para) == "table" and ex.para or {}
   local bm = type(ex.bm_snapshot) == "table" and ex.bm_snapshot or {}
   local waiting = type(ex.waiting) == "table" and ex.waiting or {}
-  local hindrance = type(ex.hindrance) == "table" and ex.hindrance or {}
-  local hinder_snapshot = type(hindrance.snapshot) == "table" and hindrance.snapshot or {}
-  local required = type(ex.required_entities) == "table" and ex.required_entities or {}
-  local obligations = type(ex.entity_obligations) == "table" and ex.entity_obligations or {}
-  local emitted = type(ex.emitted) == "table" and ex.emitted or {}
-  local confirmed = type(ex.confirmed) == "table" and ex.confirmed or {}
   local debug_enabled = ((type(mod) == "table" and type(mod.debug) == "table" and mod.debug.enabled == true) or ex.debug == true)
 
   _tprint(string.format("%s | target=%s active=%s debug=%s",
-    route, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(debug_enabled)))
-  _tprint(string.format(" plan | eq=%s ent=%s bal=%s free=%s",
-    _lane(planned, "eq"), _lane(planned, "entity"), _lane(planned, "bal"), _lane(planned, "free")))
-  _tprint(string.format(" gate | eq=%s ent=%s bal=%s free=%s blocked=%s",
-    _lane(gated, "eq"), _lane(gated, "entity"), _lane(gated, "bal"), _lane(gated, "free"),
-    _list(ex.blocked_reasons)))
-  _tprint(string.format(" hind | active=%s all=%s entblk=%s eqblk=%s",
-    _hindrance_active(hinder_snapshot), _b(hinder_snapshot.all_offense_blocked == true),
-    _list(hinder_snapshot.entity_blockers), _list(hinder_snapshot.eq_bal_blockers)))
-  _tprint(string.format(" ent  | top=%s blocked=%s stale=%s",
-    _top_obligation(obligations), _keys(obligations.blocked), _keys(obligations.stale)))
-  _tprint(string.format(" worm | %s", _entity_state(required.worm)))
-  _tprint(string.format(" syc  | %s", _entity_state(required.sycophant)))
-  _tprint(string.format(" send | eq=%s ent=%s bal=%s free=%s",
-    _lane(emitted.lanes, "eq"), _lane(emitted.lanes, "entity"), _lane(emitted.lanes, "bal"), _lane(emitted.lanes, "free")))
-  _tprint(string.format(" conf | eq=%s ent=%s bal=%s free=%s",
-    _lane(confirmed.lanes, "eq"), _lane(confirmed.lanes, "entity"), _lane(confirmed.lanes, "bal"), _lane(confirmed.lanes, "free")))
+    name, _s(ex.target), _b(ex.route_enabled == true or ex.active == true), _b(debug_enabled)))
+  _tprint(string.format(" plan | eq=%s class=%s bal=%s free=%s",
+    _s(planned.eq), _s(planned.class), _s(planned.bal), _s(planned.free)))
 
-  if route == "aff" then
+  if name == "aff" then
     _tprint(string.format(" aff  | stage=%s next=%s blocker=%s focus=%s mana=%s",
       _s(finish.stage), _s(finish.next_action), _s(finish.blocker), _s(ex.focus_lock_count), _s(ex.mana_pct)))
     _tprint(string.format(" wait | active=%s lane=%s age=%.2f q=%s",
@@ -1073,12 +1544,63 @@ function RD.show(route)
       _b(para.allowed == true), _s(para.lane), _s(para.predicted_next_cure), tonumber(para.confidence or 0) or 0, _s(para.block_reason)))
     _tprint(string.format(" bm   | state=%s branch=%s/%s passive=%s",
       _s(bm.state), _b(ex.bm_branch_active == true), _b(ex.bm_branch_provisional == true), _b(bm.passive_allowed == true)))
-  elseif route == "dam" then
-    _tprint(string.format(" dam  | mode=%s burst=%s aeon=%s sticky=%s",
-      _s(ex.mode), _b(ex.burst_window == true), _b(ex.aeon_ready == true), _b(ex.sticky == true)))
-  elseif route == "par" then
+  elseif name == "dam" then
+    local st = type(ex.state) == "table" and ex.state or {}
+    local raw = type(st.raw) == "table" and st.raw or {}
+    local pend = type(st.pending) == "table" and st.pending or {}
+    _tprint(string.format(" dam  | stage=%s decision=%s freeze=%s fire=%s why=%s",
+      _s(ex.branch_stage), _s(ex.decision), _b(ex.freeze_step_done == true), _b(ex.fire_branch_eligible == true), _s(ex.reason or ex.last_reason)))
+    _tprint(string.format(" aff  | wb=%s frozen=%s frostbite=%s scalded=%s confl=%s aflame=%s",
+      _b(st.waterbonds == true), _b(st.frozen == true), _b(st.frostbite == true), _b(st.scalded == true), _b(st.conflagrate == true), _s(raw.aflame)))
+    _tprint(string.format(" res  | water=%s(%s) fire=%s(%s) pend h/f/m=%s/%s/%s",
+      _s(st.water_res), _b(st.water_res_major == true), _s(st.fire_res), _b(st.fire_res_major == true),
+      _b(pend.horripilation == true), _b(pend.freeze == true), _b(pend.magma == true)))
+  elseif name == "par" then
     _tprint(string.format(" par  | need=%s mana=%s lock=%s",
       _s(ex.need_aff), _s(ex.mana_pct), _b(ex.lock_ready == true)))
+  elseif name == "focus" then
+    local st = type(ex.state) == "table" and ex.state or {}
+    local res = type(ex.resonance) == "table" and ex.resonance or {}
+    local diss = type(ex.dissonance) == "table" and ex.dissonance or {}
+    local pressure = type(ex.pressure) == "table" and ex.pressure or {}
+    local fulm = type(ex.fulminate) == "table" and ex.fulminate or {}
+    local conv = type(ex.convergence) == "table" and ex.convergence or {}
+    local destroy = type(ex.destroy) == "table" and ex.destroy or {}
+    _tprint(string.format(" focus | active=%s postconv=%s stage=%s decision=%s",
+      _b(ex.active == true), _b(ex.postconv == true), _s(ex.stage), _s(ex.decision)))
+    _tprint(string.format(" why  | reason=%s blocker=%s",
+      _s(ex.reason), _s(ex.blocker)))
+    _tprint(string.format(" res  | air=%s earth=%s fire=%s water=%s miss=%s",
+      _s(res.air), _s(res.earth), _s(res.fire), _s(res.water), _s(res.missing_moderate)))
+    _tprint(string.format(" diss | stage=%s conf=%s evidence=%s",
+      _s(diss.stage), _s(diss.confidence), _s(diss.last_evidence)))
+    _tprint(string.format(" press| kelp=%s rule=%s",
+      _s(pressure.kelpscore), _s(pressure.threshold_rule)))
+    _tprint(string.format(" fulm | focus=%s epilepsy=%s para_conv=%s",
+      _b(fulm.focus_punish_armed == true), _b(fulm.epilepsy_live == true), _b(fulm.para_conversion_ready == true)))
+    _tprint(string.format(" conv | ready=%s blocker=%s next=%s",
+      _b(conv.conv_ready == true), _s(conv.conv_blocker), _s(conv.next_gate)))
+    _tprint(string.format(" dest | ready=%s blocker=%s confl=%s hp=%s",
+      _b(destroy.destroy_ready == true), _s(destroy.destroy_blocker), _b(destroy.conflagration == true), _s(destroy.hp_window)))
+    _tprint(string.format(" rej  | chosen=%s rejects=%s",
+      _s(ex.decision), _rejects(ex.rejects)))
+    if full then
+      local pending = type(ex.pending) == "table" and ex.pending or {}
+      _tprint(string.format(" full | phase=%s subphase=%s bucket=%s target=%s",
+        _s(ex.phase), _s(ex.subphase), _s(ex.bucket), _s(ex.target)))
+      _tprint(string.format(" gate | threshold=%s next=%s conv_blocker=%s destroy_blocker=%s",
+        _s(ex.threshold_rule), _s(conv.next_gate), _s(conv.conv_blocker), _s(destroy.destroy_blocker)))
+      _tprint(string.format(" pend | horr=%s freeze=%s bomb=%s fulm=%s diss=%s conv=%s dest=%s",
+        _b(pending.horripilation == true), _b(pending.freeze == true), _b(pending.bombard == true),
+        _b(pending.fulminate == true), _b(pending.dissonance == true), _b(pending.convergence == true),
+        _b(pending.destroy == true)))
+      _tprint(string.format(" last | cmd=%s sent=%s last_reason=%s",
+        _s(ex.last_cmd), _s(ex.last_sent_cmd), _s(ex.last_reason)))
+      if type(st.route) == "table" then
+        _tprint(string.format(" flow | route_phase=%s/%s/%s postconv=%s",
+          _s(st.route.phase), _s(st.route.subphase), _s(st.route.bucket), _b(st.route.postconv == true)))
+      end
+    end
   end
 end
 </script>

@@ -42,7 +42,7 @@ P.cfg = P.cfg or {
 
   -- Softlock-ish trigger (matches your intent: "softscore >= 2 and asthma=100")
   softscore_threshold = 2,
-  softscore_affs = { "aeon", "asthma", "anorexia", "slickness", "impatience" },
+  softscore_affs = { "asthma", "anorexia", "slickness", "impatience" },
 
   -- Actions allowed:
   use_chimera = true,
@@ -111,12 +111,14 @@ local function _chimera_ready()
   return true
 end
 
-local function _send_eq_clear(cmds)
+local function _send_clear(cmds, qtype)
   if type(cmds) == "string" then cmds = {cmds} end
   if type(cmds) ~= "table" or #cmds == 0 then return false end
 
-  local qtype = "eq"
-  if Yso.off and Yso.off.oc and Yso.off.oc.qtype_eq then qtype = Yso.off.oc.qtype_eq end
+  qtype = qtype or "eq"
+  if Yso.off and Yso.off.oc and Yso.off.oc["qtype_" .. qtype] then
+    qtype = Yso.off.oc["qtype_" .. qtype]
+  end
 
   local joined = table.concat(cmds, (Yso and Yso.sep) or "&&")
 
@@ -169,7 +171,7 @@ function P.step(t, aff)
     if P.cfg.use_regress and _eq_ready() and anore < stuck then
       _echo("target prone -> regress for anorexia")
       _mark()
-      return _send_eq_clear(("regress %s"):format(t))
+      return _send_clear(("regress %s"):format(t), "eq")
     end
     return false
   end
@@ -180,20 +182,20 @@ function P.step(t, aff)
     if deaf >= stuck then
       _echo("target deaf -> command chimera to strip deafness (setup)")
       _mark()
-      return _send_eq_clear(("command chimera at %s"):format(t))
+      return _send_clear(("command chimera at %s"):format(t), "class")
     end
 
     -- Not deaf: chimera command should stun/prone
     _echo("target not deaf -> command chimera for stun/prone window")
     _mark()
-    return _send_eq_clear(("command chimera at %s"):format(t))
+    return _send_clear(("command chimera at %s"):format(t), "class")
   end
 
   -- 3) Fallback: regress to force prone (setup); next tick can regress again for anorexia
   if P.cfg.use_regress and _eq_ready() then
     _echo("fallback -> regress to force prone (setup)")
     _mark()
-    return _send_eq_clear(("regress %s"):format(t))
+    return _send_clear(("regress %s"):format(t), "eq")
   end
 
   return false

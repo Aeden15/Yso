@@ -457,7 +457,7 @@ end
 
 local function _echo(msg)
   if not GD.cfg.echo then return end
-  local line = string.format("<orange>[Yso:GD] <reset>%s", tostring(msg))
+  local line = string.format("<orange>[Yso:Occultist] <reset>%s", tostring(msg))
   if Yso and Yso.util and type(Yso.util.cecho_line) == "function" then
     Yso.util.cecho_line(line)
   elseif type(cecho) == "function" then

@@ -20,52 +20,59 @@ local function _is_occultist()
 end
 
 function ak.occie.aura.parse_unnamable(count, who)
+	local A = rawget(_G, "affstrack")
+	if not (A and A.score) then return end
+
 	ak.occie.aura.mental = ak.occie.aura.mental + count
 	local addaffs = {"stupidity","dementia","confusion"}
 	if count == 3 then
 		for i = 1, #addaffs do
-			if affstrack.score[addaffs[i]] > 0 then
-				ak.ProTrackingConfirmed(addaffs[i])
-        affstrack.score.stupidity = 100
-        affstrack.score.dementia = 100
-				affstrack.score.confusion = 100
-				ak.scoreup(who or target)
+			if A.score[addaffs[i]] and A.score[addaffs[i]] > 0 then
+				if type(ak.ProTrackingConfirmed) == "function" then ak.ProTrackingConfirmed(addaffs[i]) end
+				A.score.stupidity = 100
+				A.score.dementia = 100
+				A.score.confusion = 100
+				if type(ak.scoreup) == "function" then ak.scoreup(who or target) end
 				return
 			end
 		end
-    affstrack.score.stupidity = 100
-    affstrack.score.dementia = 100
-		affstrack.score.confusion = 100
-		ak.scoreup(who or target)
+		A.score.stupidity = 100
+		A.score.dementia = 100
+		A.score.confusion = 100
+		if type(ak.scoreup) == "function" then ak.scoreup(who or target) end
 		return
 	elseif count == 2 then
-		if affstrack.score.stupidity == 100 then
-			affstrack.score.confusion = 100
-			affstrack.score.dementia = 100
-		elseif affstrack.score.dementia == 100 then
-			affstrack.score.stupidity = 100
-			affstrack.score.confusion = 100
-		elseif affstrack.score.confusion == 100 then
-			affstrack.score.stupidity = 100
-			affstrack.score.dementia = 100
+		if A.score.stupidity == 100 then
+			A.score.confusion = 100
+			A.score.dementia = 100
+		elseif A.score.dementia == 100 then
+			A.score.stupidity = 100
+			A.score.confusion = 100
+		elseif A.score.confusion == 100 then
+			A.score.stupidity = 100
+			A.score.dementia = 100
 		else
-
+			A.score.stupidity = 50
+			A.score.dementia = 50
+			A.score.confusion = 50
 		end
-		ak.scoreup(who or target)
+		if type(ak.scoreup) == "function" then ak.scoreup(who or target) end
 		return
 	elseif count == 1 then
-		if affstrack.score.stupidity == 100 and affstrack.score.confusion == 100 then
-			affstrack.score.dementia = 100
-		elseif affstrack.score.stupidity == 100 and affstrack.score.dementia == 100 then
-			affstrack.score.confusion = 100
-		elseif affstrack.score.dementia == 100 and affstrack.score.confusion == 100 then
-			affstrack.score.stupidity = 100
+		if A.score.stupidity == 100 and A.score.confusion == 100 then
+			A.score.dementia = 100
+		elseif A.score.stupidity == 100 and A.score.dementia == 100 then
+			A.score.confusion = 100
+		elseif A.score.dementia == 100 and A.score.confusion == 100 then
+			A.score.stupidity = 100
 		else
-
+			A.score.stupidity = math.max(A.score.stupidity or 0, 33)
+			A.score.dementia = math.max(A.score.dementia or 0, 33)
+			A.score.confusion = math.max(A.score.confusion or 0, 33)
 		end
-		ak.scoreup(who or target)
+		if type(ak.scoreup) == "function" then ak.scoreup(who or target) end
 		return
- 	end
+	end
 end
 
 function ak.occie.aura.parsereduct(what)

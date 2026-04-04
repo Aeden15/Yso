@@ -21,7 +21,7 @@ Yso.occ = Yso.occ or {}
 Yso.oc  = Yso.oc  or {}
 
 local Off = Yso.off.oc
-local Q   = Yso.queue
+local function _Q() return Yso and Yso.queue end
 
 Off.sg = Off.sg or {}
 local SG = Off.sg
@@ -94,6 +94,7 @@ local function _queue_eq_addclear(cmds)
   local qtype = (Off.qtype_eq or "eq")
   local piped = table.concat(out, (Yso and Yso.sep) or ";;")
 
+  local Q = _Q()
   if Q and type(Q.addclear) == "function" then
     Q.addclear(qtype, piped)
   else
@@ -216,7 +217,7 @@ function Off.sg_entity_cmd_for_aff(aff, t)
 
   local ent
   if aff == "asthma" then ent = ents.asthma or "bubonis"
-  elseif aff == "slickness" then ent = ents.asthma or "bubonis"      -- assumes your bubonis route/followups
+  elseif aff == "slickness" then ent = ents.slickness or ents.asthma or "bubonis"      -- assumes your bubonis route/followups
   elseif aff == "clumsiness" then ent = ents.clumsiness or "storm"
   elseif aff == "healthleech" then ent = ents.healthleech or "worm"
   elseif aff == "paralysis" then ent = cfg.paralysis_followup or "slime"

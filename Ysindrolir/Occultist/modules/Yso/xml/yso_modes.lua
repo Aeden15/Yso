@@ -299,14 +299,8 @@ local function _party_apply(reason)
     desired_owned = false
   end
 
-  local route_name = tostring(desired.party_route or route)
-  local label = (route_name == "dam" and "group damage")
-    or (route_name == "aff" and "party affliction")
-    or tostring(desired.description or desired.id or route_name)
-  local state_label = enabled and "ON"
-    or ((is_alias_owned and desired_owned) and "arming"
-    or (is_alias_owned and "manual" or "requested"))
-  _echo(string.format("Party route <yellow>%s<reset>: %s %s", route_name, label, state_label))
+  -- Shared status echo lives in M.echo() so a single action does not stack
+  -- a generic route line on top of the class-owned loop line.
 end
 
 function M.is_bash()   return M.state == "bash" end
@@ -698,7 +692,7 @@ function M.set_party_route(route, reason)
   local old = M.party_route()
   if old == route then
     if M.party then M.party.last_reason = reason or M.party.last_reason end
-    if M.is_party() then M.echo() end
+    _party_apply("route_noop")
     return true
   end
 
@@ -750,7 +744,6 @@ function M.set(mode, reason)
   if old == mode then
     M.last_reason = reason or M.last_reason
     if mode == "party" then _party_apply("mode_noop") end
-    M.echo()
     return true
   end
 

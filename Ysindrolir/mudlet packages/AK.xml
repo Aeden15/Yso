@@ -6315,7 +6315,7 @@ if IsTargetted(matches[2]) then
   if affstrack.score.scalded == 0 then
     OppGainedAff("scalded")
     if ak.scaldTimer then killTimer(ak.scaldTimer) end
-    ak.scaldTimer = tempTimer(17,[[
+    ak.scaldTimer = tempTimer(20,[[
      	affstrack.score.scalded = 0
      	ak.scoreup(]]..matches[2]..[[)
     ]])
@@ -6651,7 +6651,7 @@ end</script>
 if IsTargetted(matches[2]) then
   OppGainedAff("scalded")
   if ak.scaldTimer then killTimer(ak.scaldTimer) end
-  ak.scaldTimer = tempTimer(17,[[
+  ak.scaldTimer = tempTimer(20,[[
    	affstrack.score.scalded = 0
    	ak.scoreup(]]..matches[2]..[[)
   ]])
@@ -7485,6 +7485,32 @@ end</script>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Crone Wither</name>
+						<script>if ak.ai() then return end
+if IsTargetted(matches[4]) then
+   smashlimb = matches[2]..matches[3]
+   if affstrack.score[smashlimb] &lt; 100 then
+      OppGainedAff(smashlimb)
+   end
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^A withered crone reaches out to caress the (left|right) (arm|leg) of ([\w'\-]+), the limb withering away under \w+ gnarled grasp\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
@@ -21869,7 +21895,7 @@ ak.limbs.ParseonLine()
 if IsTargetted(matches[2]) then
    OppGainedAff("scalded")
    if ak.scaldTimer then killTimer(ak.scaldTimer) end
-   ak.scaldTimer = tempTimer(17,[[
+   ak.scaldTimer = tempTimer(20,[[
    	affstrack.score.scalded = 0
    	ak.scoreup(]]..matches[2]..[[)
    ]])
@@ -28327,40 +28353,25 @@ end</script>
 --                                             --
 -- Note that you can also use external Scripts --
 -------------------------------------------------
-function ak.syspause()
-   if svo then 
-      if svo.affl.retardation then 
-         return true
-      else
-         return false
-      end
-   elseif wsys then
-      if wsys.paused or wsys.softpaused then 
-         return true
-      else
-         return false
-      end
-   else
-       return false
+local function _ak_retardation_state(mode)
+   if svo and svo.affl and svo.affl.retardation then
+      return true
    end
+   if not wsys then
+      return false
+   end
+   if mode == "isslowed" then
+      return type(wsys.isslowed) == "function" and wsys.isslowed() or false
+   end
+   return wsys.paused == true or wsys.softpaused == true
+end
+
+function ak.syspause()
+   return _ak_retardation_state("paused")
 end
 
 function inretardation()
-   if svo then 
-      if svo.affl.retardation then 
-         return true
-      else
-         return false
-      end
-   elseif wsys then
-      if wsys.isslowed() then 
-         return true
-      else
-         return false
-      end
-   else
-       return false
-   end
+   return _ak_retardation_state("isslowed")
 end
 
 function inaeon()
@@ -28828,7 +28839,7 @@ function OppGainedAdditive(affliction,incata,capata,minca)
   local inc = incata or 100
   local min = minca or 0
   if affstrack.score[affliction] then
-    affstrack.score[affliction] = affstrack.score[affliction] + incata
+    affstrack.score[affliction] = affstrack.score[affliction] + inc
     if affstrack.score[affliction] &gt; cap then
       affstrack.score[affliction] = cap 
     end
@@ -29409,7 +29420,7 @@ end
 function ak.pyreon(typer)
    if typer == "additive" and affstrack.score.pyre + 100 &lt; 300 then
       affstrack.score.pyre = affstrack.score.pyre + 100      
-   elseif typer == "additive" and affstrack.score.pyre == 300 then
+   elseif typer == "additive" then
       affstrack.score.pyre = 300
    elseif affstrack.score.pyre &lt; 100 then
       affstrack.score.pyre = 100
@@ -29821,7 +29832,6 @@ end</script>
 					<script>ak.pariah.hearttable = ak.pariah.hearttable or {}
 
 function ak.pariah.parseEpitaph(epitaph)
-  local ven = false
   local venco = {
     ["nest"] = "weariness",
     ["scales"] = "clumsiness",
@@ -29851,7 +29861,7 @@ end
 function ak.pariah.heartbeatit(aff)
   if not ak.pariah.heartbeats then return end
   ak.pariah.hearttable[aff] = tempTimer(ak.pariah.heartbeats-1,[[
-   -- OppGainedAff("]]..aff..[[")
+   OppGainedAff("]]..aff..[[")
   ]])
 end</script>
 					<eventHandlerList />
@@ -29919,6 +29929,7 @@ end</script>
 -- Note that you can also use external Scripts --
 -------------------------------------------------
 function ak.dragon.default.dragoncurser() 
+    dragoncurse = nil
     if affstrack.score.paralysis&lt;100 and vcombo[1] ~= "curare" then
        dragoncurse = "paralysis"
     elseif affstrack.score.asthma&lt;100 and vcombo[1] ~= "kalmia" then
@@ -29976,147 +29987,110 @@ function ak.elementalfied(what)
 	end
 end
 
-function ak.classlockadd()
-   if ndba and wsys then
-      ak.classlockwsys()
-   elseif svo and ndb then
-      ak.classlocksvo()
-	 else 
-	    classlock = {}
-      table.insert( classlock, "voyria" )
-      table.insert( classlock, "weariness" )
-      table.insert( classlock, "reckless" )
+ak.classlock_map = ak.classlock_map or {
+   alchemist    = {"stupidity"},
+   apostate     = {"voyria"},
+   bard         = {"voyria"},
+   blademaster  = {"paralysis", "weariness", "prone"},
+   druid        = {"weariness", "prone"},
+   infernal     = {"weariness"},
+   jester       = {"voyria"},
+   pariah       = {"voyria"},
+   magi         = {"haemophilia"},
+   monk         = {"weariness"},
+   occultist    = {"paralysis", "voyria"},
+   paladin      = {"weariness", "voyria"},
+   priest       = {"weariness", "voyria"},
+   runewarden   = {"weariness", "voyria"},
+   sentinel     = {"weariness", "prone"},
+   serpent      = {"weariness"},
+   shaman       = {"selarnia"},
+   sylvan       = {"voyria"},
+   depthswalker = {"recklessness"},
+   psion        = {"confusion"},
+}
+
+local function _classlock_trim(s)
+   return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+local function _classlock_assign(list)
+   classlock = {}
+   for i = 1, #list do
+      table.insert(classlock, list[i])
    end
+   return classlock
+end
+
+function ak.classlockresolveclass(tgt)
+   local who = _classlock_trim(tgt or target or "")
+   if who == "" then return "" end
+
+   local function _class_from_source(src)
+      if type(src) ~= "table" then return "" end
+      if type(src.getclass) == "function" then
+         local ok, cls = pcall(src.getclass, who)
+         if ok then
+            cls = _classlock_trim(cls):lower()
+            if cls ~= "" and cls ~= "unknown" then
+               return cls
+            end
+         end
+      end
+      if type(src.names) == "table" then
+         local row = src.names[who] or src.names[who:lower()]
+         if type(row) == "table" then
+            local cls = _classlock_trim(row.class or row.Class or row.profession or row.prof or ""):lower()
+            if cls ~= "" and cls ~= "unknown" then
+               return cls
+            end
+         end
+      end
+      return ""
+   end
+
+   local cls = _class_from_source(ndba)
+   if cls == "" then
+      cls = _class_from_source(ndb)
+   end
+   return cls
+end
+
+function ak.classlockresolve()
+   local elemental = _classlock_trim(ak and ak.elementalTarget or ""):lower()
+   if elemental == "earth" then
+      return _classlock_assign({"weariness"})
+   elseif elemental == "air" then
+      return _classlock_assign({"voyria"})
+   elseif elemental == "water" then
+      return _classlock_assign({"weariness"})
+   elseif elemental == "fire" then
+      return _classlock_assign({"weariness"})
+   end
+
+   if ak and ak.dragonTarget then
+      return _classlock_assign({"weariness", "recklessness"})
+   end
+
+   local cls = ak.classlockresolveclass(target)
+   local row = ak.classlock_map[cls]
+   if type(row) == "table" then
+      return _classlock_assign(row)
+   end
+
+   return _classlock_assign({"voyria", "weariness", "recklessness"})
+end
+
+function ak.classlockadd()
+   return ak.classlockresolve()
 end
 
 function ak.classlockwsys()
- classlock = {}
- if ak.elementalTarget then
- 	if ak.elementalTarget == "Earth" then
-		table.insert( classlock, "weariness" )	
-	elseif ak.elementalTarget == "Air" then
-		table.insert( classlock, "voyria" )	
-	elseif ak.elementalTarget == "Water" then
-		table.insert( classlock, "weariness" )		
-	elseif ak.elementalTarget == "Fire" then
-		table.insert( classlock, "weariness" )
-	end 
- elseif ak.dragonTarget then
-   table.insert( classlock, "weariness" )
-   table.insert( classlock, "recklessness" )
- elseif ndba.isperson(target) and ndba.getclass(target) ~= "unknown" then
-   if ndba.getclass(target) == "Alchemist" then    --
-      table.insert( classlock, "stupidity" )
-   elseif ndba.getclass(target) == "Apostate" then --
-      table.insert( classlock, "voyria")
-   elseif ndba.getclass(target) == "Bard" then
-      table.insert( classlock, "voyria" )
-	 elseif ndba.getclass(target) == "Blademaster" then
-      table.insert( classlock, "paralysis" )
-      table.insert( classlock, "weariness" )
-		  table.insert( classlock, "prone" )
-   elseif ndba.getclass(target) == "Druid" then    --
-      table.insert( classlock, "weariness" )
-		  table.insert( classlock, "prone" )
-   elseif ndba.getclass(target) == "Infernal" then
-      table.insert( classlock, "weariness" )
-   elseif ndba.getclass(target) == "Jester" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndba.getclass(target) == "Pariah" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndba.getclass(target) == "Magi" then
-      table.insert( classlock, "haemophilia" )
-   elseif ndba.getclass(target) == "Monk" then
-      table.insert( classlock, "weariness" )
-   elseif ndba.getclass(target) == "Occultist" then   --
-      table.insert( classlock, "paralysis" )
-      table.insert( classlock, "voyria" )
-   elseif ndba.getclass(target) == "Paladin" then  
-      table.insert( classlock, "weariness" )
-      table.insert( classlock, "voyria" )
-   elseif ndba.getclass(target) == "Priest" then   --
-      table.insert( classlock, "weariness" )
-      table.insert( classlock, "voyria" )
-   elseif ndba.getclass(target) == "Runewarden" then
-      table.insert( classlock, "weariness" )
-      table.insert( classlock, "voyria")
-   elseif ndba.getclass(target) == "Sentinel" then   
-      table.insert( classlock, "weariness" )
-		  table.insert( classlock, "prone" )
-   elseif ndba.getclass(target) == "Serpent" then   
-      table.insert( classlock, "weariness" )
-   elseif ndba.getclass(target) == "Shaman" then   --
-      table.insert( classlock, "selarnia" )
-   elseif ndba.getclass(target) == "Sylvan" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndba.getclass(target) == "Depthswalker" then   --
-      table.insert( classlock, "recklessness" )
-   elseif ndba.getclass(target) == "Psion" then   --
-      table.insert( classlock, "confusion" )
-   end
- else
-    table.insert( classlock, "voyria" )
-    table.insert( classlock, "weariness" )
-    table.insert( classlock, "reckless" )
- end
+   return ak.classlockresolve()
 end
 
 function ak.classlocksvo()
- classlock = {}
- if ak.dragonTarget then
-   table.insert( classlock, "weariness" )
-   table.insert( classlock, "recklessness" )
- elseif ndb.isperson(target) and ndb.getclass(target) ~= "unknown" then
-   if ndb.getclass(target) == "Alchemist" then    --
-      table.insert( classlock, "stupidity" )
-   elseif ndb.getclass(target) == "Apostate" then --
-      table.insert( classlock, "voyria")
-   elseif ndb.getclass(target) == "Bard" then
-      table.insert( classlock, "voyria" )
-	 elseif ndb.getclass(target) == "Blademaster" then
-      table.insert( classlock, "weariness" )
-		  table.insert( classlock, "prone" )
-   elseif ndb.getclass(target) == "Druid" then    --
-      table.insert( classlock, "weariness" )
-		  table.insert( classlock, "prone" )
-   elseif ndb.getclass(target) == "Infernal" then
-      table.insert( classlock, "weariness" )
-   elseif ndb.getclass(target) == "Jester" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndb.getclass(target) == "Jester" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndb.getclass(target) == "Magi" then
-      table.insert( classlock, "haemophilia" )
-   elseif ndb.getclass(target) == "Monk" then
-      table.insert( classlock, "weariness" )
-   elseif ndb.getclass(target) == "Occultist" then   --
-      table.insert( classlock, "paralysis" )
-      table.insert( classlock, "voyria" )
-   elseif ndb.getclass(target) == "Paladin" then  
-      table.insert( classlock, "weariness" )
-      table.insert( classlock, "voyria" )
-   elseif ndb.getclass(target) == "Priest" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndb.getclass(target) == "Runewarden" then
-      table.insert( classlock, "weariness" )
-      table.insert( classlock, "voyria")
-   elseif ndb.getclass(target) == "Sentinel" then   
-      table.insert( classlock, "weariness" )
-		  table.insert( classlock, "prone" )
-   elseif ndb.getclass(target) == "Serpent" then   
-      table.insert( classlock, "weariness" )
-   elseif ndb.getclass(target) == "Shaman" then   --
-      table.insert( classlock, "selarnia" )
-   elseif ndb.getclass(target) == "Sylvan" then   --
-      table.insert( classlock, "voyria" )
-   elseif ndb.getclass(target) == "Depthswalker" then   --
-      table.insert( classlock, "recklessness" )
-   end
- else
-    table.insert( classlock, "voyria" )
-    table.insert( classlock, "weariness" )
-    table.insert( classlock, "reckless" )
- end
+   return ak.classlockresolve()
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -30626,7 +30600,7 @@ end
 function targetrelay ()
 				if not target then return end
         cecho("aff_display","\n&lt;blue&gt;****************\n")
-        cecho("aff_display","\n0Targets: "..target.."\n\n")
+        cecho("aff_display","\nTargets: "..target.."\n\n")
         if target1 ~= nil then cecho("aff_display","\nTarget1:&lt;yellow&gt; "..target1.."\n\n") end
         if target2 ~= nil then cecho("aff_display","Target2:&lt;yellow&gt; "..target2.."\n\n") end
         if target3 ~= nil then cecho("aff_display","Target3:&lt;yellow&gt; "..target3.."\n\n") end
@@ -31462,7 +31436,7 @@ end
 					<packageName></packageName>
 					<script>function ak.cure.tree()
 	 ak.occie.aura.parsereduct("treed")
-   affs = {}
+   local affs = {}
    ocured = ocured or {}
    ocured.treed = {}
    ak.randomaffs = ak.randomaffs or 0
@@ -31476,16 +31450,6 @@ end
    if ak.treeableSalve() and applycure.lastapplied and applycure.lastapplied ~= "head" and applycure.lastapplied ~= "torso" and applycure.aknextsalve ~= "mending" then
       --AKcalculateSalve()
    end
-   affs = {}
-   ocured = ocured or {}
-   ocured.treed = {}
-   ak.randomaffs = ak.randomaffs or 0
-   affoverone = {}
-   affovertwo = {}
-   affoverthree = {}
-   affoverfour = {}
-   affoverfive = {}
-   affoversix = {}
    if affstrack.score.paralysis &gt; 0 then
       if ak.thoughtIhad then ak.thoughtIhad("paralysis") else affstrack.score.paralysis = 0 end
       ocured.bloodroot = {}
@@ -31905,7 +31869,8 @@ end</script>
 				<Script isActive="yes" isFolder="no">
 					<name>oapply</name>
 					<packageName></packageName>
-					<script>function ak.cure.apply(what) 
+					<script>function ak.cure.apply(applied_aff) 
+local what = applied_aff
 	 if ak.timers.salvebackup then killTimer(ak.timers.salvebackup) end
    if aksalvechange then killTimer(aksalvechange) end
    if akrestoration then killTimer(akrestoration) end
@@ -31913,13 +31878,13 @@ end</script>
    if applycure.lastapplied then
       AKcalculateSalve()
    end
-	 if what ~= "none" then
-	 		ak.enemyprio.applied(what)
-      ak.cure.lastapplied = what
+	 if applied_aff ~= "none" then
+	 		ak.enemyprio.applied(applied_aff)
+      ak.cure.lastapplied = applied_aff
       ak.randomaffs = ak.randomaffs or 0
       applycure = {}
       applycure.aknextsalve = false
-      applycure.lastapplied = what
+      applycure.lastapplied = applied_aff
       applycure.affoverone = {}
       applycure.affovertwo = {}
       applycure.affoverthree = {}
@@ -32062,9 +32027,9 @@ function AKcalculateSalve()
 		display(applycure)
 	 end
    local affs = {}
-   ak.cure.lastapplied = what
    ak.randomaffs = ak.randomaffs or 0
    applycure = applycure or {}
+   ak.cure.lastapplied = applycure.lastapplied
    applycure.aknextsalve = applycure.aknextsalve or "restoration"
    applycure.lastapplied = applycure.lastapplied or "torso"
    applycure.affoverone = {}
@@ -32280,9 +32245,8 @@ ak = ak or {}
 ak.NoPreApply = false
 
 ak.whyapply = function(location)
-
-
-
+   -- Intentional no-op placeholder for local apply diagnostics overrides.
+   return nil
 end</script>
 					<eventHandlerList />
 				</Script>
@@ -32560,7 +32524,7 @@ function ak.enemyprio.applied(salve)
 	end
 	ak.enemyprio.salve[target] = ak.enemyprio.salve[target] or {}
 	local maxinteger = 0
-	local compsplit = ""
+	local compsplit
 	local fuck = ak.enemyprio.salve[target]
 	local aff = {}
 	local insertpoint = false
@@ -32622,11 +32586,9 @@ function ak.enemyprio.applied(salve)
 end
 
 function ak.enemyprio.notHigherAff(aff, aff2)
-	local compslit = ""
-	local compslit2 = ""
-	compsplit = string.split(aff, " ")
-	compsplit2 = string.split(aff2, " ")
-	if compsplit[1] == compslit[2] then
+	local compsplit = string.split(aff, " ")
+	local compsplit2 = string.split(aff2, " ")
+	if compsplit[1] == compsplit2[1] then
 		return false
 	else
 		return true
@@ -32734,7 +32696,7 @@ function ak.AddedAffReset(affliction)
    if ocured then
       for k,v in pairs(ocured) do
          --display(ocured[k]) 
-         if table.contains(ocured[k], affliction) then
+         if type(v) == "table" and table.contains(v, affliction) then
             ocured[k] = nil
          end   
       end

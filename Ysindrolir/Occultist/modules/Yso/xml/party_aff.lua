@@ -23,6 +23,7 @@ Yso.off.oc = Yso.off.oc or {}
 
 Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
 local PA = Yso.off.oc.party_aff
+local AP = Yso.off.oc.aura_planner or {}
 PA.alias_owned = true
 
 PA.route_contract = PA.route_contract or {
@@ -245,22 +246,10 @@ local function _mana_pct(tgt, snap, fresh)
   return nil
 end
 
-local function _cleanseaura_snapshot(tgt)
-  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == "function" then
-    local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
-    if ok and type(s) == "table" then return s end
-  end
-  return nil
-end
-
-local function _aura_txn_active_for(tgt)
-  if not (Yso and Yso.occ and type(Yso.occ.aura_txn_status) == "function") then return false end
-  local ok, status = pcall(Yso.occ.aura_txn_status, tgt)
-  return ok and type(status) == "table" and status.active == true and status.matched == true
-end
+-- _cleanseaura_snapshot, _aura_txn_active_for moved to occ_aura_planner.lua (AP.*)
 
 local function _snapshot_view(tgt)
-  local snap = _cleanseaura_snapshot(tgt) or {}
+  local snap = AP.snapshot and AP.snapshot(tgt) or {}
   local fresh = (snap.fresh == true)
   local read_complete = fresh and (snap.read_complete == true)
   local parse_window_open = fresh and (snap.parse_window_open == true)
@@ -274,19 +263,8 @@ local function _snapshot_view(tgt)
   local cap = tonumber(PA.cfg.cleanseaura_mana_pct or 40) or 40
   local needs_readaura = false
   local readaura_reason = ""
-
-  if parse_window_open then
-    needs_readaura = false
-    readaura_reason = "parse_window_open"
-  elseif not fresh then
-    needs_readaura = true
-    readaura_reason = "snapshot_stale"
-  elseif read_complete ~= true then
-    needs_readaura = true
-    readaura_reason = "snapshot_incomplete"
-  elseif deaf == nil then
-    needs_readaura = true
-    readaura_reason = "deaf_unknown"
+  if type(AP.needs_readaura) == "function" then
+    needs_readaura, readaura_reason = AP.needs_readaura(tgt, snap)
   end
 
   return {
@@ -349,15 +327,15 @@ function PA.S.loyals_hostile(tgt)
 end
 
 local function _readaura_tag(tgt)
-  return "pa:eq:readaura:" .. _lc(tgt)
+  return AP.readaura_tag and AP.readaura_tag(tgt) or ("occ:eq:readaura:" .. _lc(tgt))
 end
 
 local function _cleanseaura_tag(tgt)
-  return "pa:eq:cleanseaura:" .. _lc(tgt)
+  return AP.cleanseaura_tag and AP.cleanseaura_tag(tgt) or ("occ:eq:cleanseaura:" .. _lc(tgt))
 end
 
 local function _pin_tag(tgt)
-  return "pa:eq:pinchaura:" .. _lc(tgt)
+  return AP.pinchaura_tag and AP.pinchaura_tag(tgt) or ("occ:eq:pinchaura:" .. _lc(tgt))
 end
 
 local function _utter_tag(tgt)
@@ -927,21 +905,19 @@ local function _plan_eq(tgt, opts)
   local seq = _sequence_plan(tgt, opts)
   local bootstrap_pending = (type(opts) == "table" and opts.loyals_bootstrap_pending == true)
 
-  if bootstrap_pending then
-    local tag = _readaura_tag(tgt)
-    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
-      return ("readaura %s"):format(tgt), "team_coordination", tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
+  if bootstrap_pending and type(AP.bootstrap_readaura_plan) == "function" then
+    local plan_tbl = { loyals_bootstrap_pending = true, readaura_via_loyals = true }
+    local ra_cmd, ra_cat, ra_tag, ra_lock = AP.bootstrap_readaura_plan(tgt, plan_tbl)
+    if ra_cmd then
+      return ra_cmd, "team_coordination", ra_tag, ra_lock
     end
   end
 
   if seq.enabled and seq.needs_readaura == true then
-    local tag = _readaura_tag(tgt)
-    if not _aura_txn_active_for(tgt) and not _recent_sent(tag, tonumber(PA.cfg.readaura_requery_s or 8.0) or 8.0) then
-      if Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == "function" then
-        local ok, ready = pcall(Yso.occ.readaura_is_ready)
-        if ok and ready == true then
-          return ("readaura %s"):format(tgt), "team_coordination", tag, tonumber(PA.cfg.readaura_lockout_s or 1.0) or 1.0
-        end
+    if type(AP.readaura_plan) == "function" then
+      local ra_cmd, ra_cat, ra_tag, ra_lock = AP.readaura_plan(tgt, seq, false)
+      if ra_cmd then
+        return ra_cmd, "team_coordination", ra_tag, ra_lock
       end
     end
     return nil, nil, nil, nil
@@ -1004,19 +980,11 @@ local function _plan_eq(tgt, opts)
   local stable = _lock_stable(tgt)
 
   if stable and _has_aff(tgt, "manaleech") then
-    local snap = nil
-    if Yso and Yso.off and Yso.off.oc and Yso.off.oc.cleanseaura and type(Yso.off.oc.cleanseaura.snapshot) == "function" then
-      local ok, s = pcall(Yso.off.oc.cleanseaura.snapshot, tgt)
-      if ok then snap = s end
-    end
-    local needs_readaura = not snap or not snap.fresh or not snap.read_complete
-    if needs_readaura and Yso and Yso.occ and type(Yso.occ.readaura_is_ready) == "function" then
-      local ok, ready = pcall(Yso.occ.readaura_is_ready)
-      if ok and ready == true then
-        local tag = tag_prefix .. "readaura:" .. tkey
-        if not _recent_sent(tag, 8) then
-          return ("readaura %s"):format(tgt), "team_coordination", tag, 1.0
-        end
+    local needs_ra = type(AP.needs_readaura) == "function" and AP.needs_readaura(tgt) or false
+    if needs_ra and type(AP.readaura_plan) == "function" then
+      local ra_cmd, ra_cat, ra_tag, ra_lock = AP.readaura_plan(tgt, nil, false)
+      if ra_cmd then
+        return ra_cmd, "team_coordination", ra_tag, ra_lock
       end
     end
   end
