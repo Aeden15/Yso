@@ -2071,9 +2071,38 @@ deleteLine()</script>
 						<script>local who = matches[2] or ""
 if who == "" then return end
 
+local function _trim(s)
+  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
 affstrack = affstrack or {}
 affstrack.score = affstrack.score or {}
 affstrack.score.deaf = 100
+
+-- Feed Sunder-style route planning: mark deaf as fresh in aura cache
+-- so route logic can schedule ATTEND on its own next balance window.
+if Yso and Yso.occ then
+  Yso.occ.aura = Yso.occ.aura or {}
+  local key = _trim(who):lower()
+  local snap = Yso.occ.aura[who] or Yso.occ.aura[key] or {}
+  local now = os.time()
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or now
+    if t and t &gt; 20000000000 then t = t / 1000 end
+    now = t or now
+  end
+  snap.deaf = true
+  snap.ts = now
+  snap.read_complete = true
+  snap.had_counts = (snap.had_counts == true) or (snap.physical ~= nil) or (snap.mental ~= nil)
+  snap.defs_state = snap.defs_state or "partial"
+  snap.confidence_state = "partial"
+  Yso.occ.aura[who] = snap
+  Yso.occ.aura[key] = snap
+  if Yso.pulse and type(Yso.pulse.wake) == "function" then
+    pcall(Yso.pulse.wake, "chimera:deaf_blocked")
+  end
+end
 
 cecho("&lt;HotPink&gt;[Domination] &lt;orange&gt;(CHIMERA BLOCKED - TARGET IS DEAF! ATTEND FIRST).\n")</script>
 						<triggerType>0</triggerType>
@@ -10622,7 +10651,27 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
         need_addiction = opts.need_addiction == true,
       })
       if filler_cmd then
-        return (&quot;outd aeon&amp;&amp;fling aeon at %s&quot;):format(tgt), filler_cmd, filler_category or &quot;fallback_support&quot;
+        local A = Yso and Yso.occ and Yso.occ.aeon or nil
+        local aeon_bal = nil
+        if A and type(A.bal_payload) == &quot;function&quot; then
+          local ok, cmd = pcall(A.bal_payload, tgt, { request_if_needed = true })
+          if ok and type(cmd) == &quot;string&quot; and _trim(cmd) ~= &quot;&quot; then
+            aeon_bal = cmd
+          end
+        elseif A and type(A.request) == &quot;function&quot; and type(A.tick) == &quot;function&quot; and Yso and type(Yso.emit_capture) == &quot;function&quot; then
+          -- Fallback path if bal_payload is unavailable: attempt centralized tick via payload capture.
+          pcall(A.request, tgt, { finisher = false })
+          local ok_tick, payload = pcall(Yso.emit_capture, function()
+            return A.tick(tgt, &quot;group_damage_bal_support&quot;)
+          end)
+          if ok_tick and type(payload) == &quot;table&quot; then
+            local bal = _trim(payload.bal)
+            if bal ~= &quot;&quot; then aeon_bal = bal end
+          end
+        end
+        if aeon_bal then
+          return aeon_bal, filler_cmd, filler_category or &quot;fallback_support&quot;
+        end
       end
     end
   elseif not st.entangled and _prone_is_forced(tgt) then

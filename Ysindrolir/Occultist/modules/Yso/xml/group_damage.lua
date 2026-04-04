@@ -1111,7 +1111,27 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
         need_addiction = opts.need_addiction == true,
       })
       if filler_cmd then
-        return ("outd aeon&&fling aeon at %s"):format(tgt), filler_cmd, filler_category or "fallback_support"
+        local A = Yso and Yso.occ and Yso.occ.aeon or nil
+        local aeon_bal = nil
+        if A and type(A.bal_payload) == "function" then
+          local ok, cmd = pcall(A.bal_payload, tgt, { request_if_needed = true })
+          if ok and type(cmd) == "string" and _trim(cmd) ~= "" then
+            aeon_bal = cmd
+          end
+        elseif A and type(A.request) == "function" and type(A.tick) == "function" and Yso and type(Yso.emit_capture) == "function" then
+          -- Fallback path if bal_payload is unavailable: attempt centralized tick via payload capture.
+          pcall(A.request, tgt, { finisher = false })
+          local ok_tick, payload = pcall(Yso.emit_capture, function()
+            return A.tick(tgt, "group_damage_bal_support")
+          end)
+          if ok_tick and type(payload) == "table" then
+            local bal = _trim(payload.bal)
+            if bal ~= "" then aeon_bal = bal end
+          end
+        end
+        if aeon_bal then
+          return aeon_bal, filler_cmd, filler_category or "fallback_support"
+        end
       end
     end
   elseif not st.entangled and _prone_is_forced(tgt) then
