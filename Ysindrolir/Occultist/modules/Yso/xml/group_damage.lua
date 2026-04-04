@@ -1024,21 +1024,22 @@ _entity_pick = function(tgt, st, category, opts)
   local ER = _ER()
   if not (ER and type(ER.pick) == "function") then return nil, nil, nil end
   opts = opts or {}
+  local skip_aff = _lc(opts.skip_aff)
   local ctx = {
     route = "group_damage",
     target = tgt,
     target_valid = _tgt_valid(tgt),
     ent_ready = _ent_ready(),
-    eq_ready = _eq_ready(),
+    eq_ready = (_eq_ready() and skip_aff == ""),
     bal_ready = _bal_ready(),
     has_aff = function(aff_name) return _has_aff(tgt, aff_name) end,
     route_state = st,
     category = category,
     need = {
-      healthleech = opts.need_healthleech == true,
+      healthleech = opts.need_healthleech == true and skip_aff ~= "healthleech",
       sensitivity = opts.need_sensitivity == true,
-      clumsiness = opts.need_clumsiness == true,
-      slickness = opts.need_slickness == true,
+      clumsiness = opts.need_clumsiness == true and skip_aff ~= "clumsiness",
+      slickness = opts.need_slickness == true and skip_aff ~= "slickness",
       addiction = opts.need_addiction == true,
     },
   }
@@ -1054,7 +1055,44 @@ local function _pick_entity_cmd(tgt, st, opts)
     _note_entity_no_send("snapshot_ent_not_ready")
     return nil, nil
   end
+  local skip_aff = _lc(opts.skip_aff)
+  if skip_aff == "clumsiness" then
+    return ("command storm at %s"):format(tgt), tostring(opts.category or "required_core_refresh")
+  end
+  if skip_aff == "healthleech" then
+    return ("command worm at %s"):format(tgt), tostring(opts.category or "required_core_application")
+  end
+  if skip_aff == "slickness" and _has_aff(tgt, "asthma") then
+    return ("command bubonis at %s"):format(tgt), tostring(opts.category or "fallback_support")
+  end
+  if skip_aff == "asthma" then
+    return ("command bubonis at %s"):format(tgt), tostring(opts.category or "required_core_refresh")
+  end
+  if skip_aff == "paralysis" and _has_aff(tgt, "asthma") then
+    return ("command slime at %s"):format(tgt), tostring(opts.category or "fallback_support")
+  end
   return _entity_pick(tgt, st, tostring(opts.category or "fallback_support"), opts)
+end
+
+local function _loyals_active_for(tgt)
+  local Off = Yso and Yso.off and Yso.off.oc or nil
+  if Off and type(Off.loyals_active_for) == "function" then
+    local ok, v = pcall(Off.loyals_active_for, tgt)
+    if ok then return v == true end
+  end
+  return false
+end
+
+local function _plan_free(tgt)
+  local parts = {}
+  if Yso and Yso.legality and Yso.legality.queue_stand == true then
+    parts[#parts + 1] = "stand"
+  end
+  if not _loyals_active_for(tgt) then
+    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
+  end
+  if #parts == 0 then return nil, nil end
+  return table.concat(parts, _command_sep()), "team_coordination"
 end
 
 local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
@@ -1093,7 +1131,11 @@ end
 
 local function _plan_route(tgt)
   local st = _core_state(tgt)
-  local p = { eq = nil, bal = nil, class = nil, st = st, eq_category = nil, bal_category = nil, class_category = nil }
+  local p = {
+    eq = nil, bal = nil, class = nil, st = st,
+    eq_category = nil, bal_category = nil, class_category = nil,
+    eq_aff = nil,
+  }
 
   local miss_hl = not st.healthleech
   local miss_sens = not st.sensitivity
@@ -1124,6 +1166,7 @@ local function _plan_route(tgt)
       need_clumsiness = miss_clum,
       need_slickness = miss_slick,
       need_addiction = need_addiction,
+      skip_aff = p.eq_aff,
     })
     if cmd and not p.class then
       p.class = cmd
@@ -1173,7 +1216,11 @@ local function _plan_route(tgt)
 
   -- Core refresh/application wins after any reserved burst and bootstrap work.
   if miss_sens then
-    if _eq_ready() then p.eq = ("instill %s with sensitivity"):format(tgt); p.eq_category = "required_core_refresh" end
+    if _eq_ready() then
+      p.eq = ("instill %s with sensitivity"):format(tgt)
+      p.eq_category = "required_core_refresh"
+      p.eq_aff = "sensitivity"
+    end
     if not p.class then pick_class("required_core_refresh") end
     if not p.class then pick_class("required_core_application") end
     apply_bal_support()
@@ -1183,7 +1230,11 @@ local function _plan_route(tgt)
   if miss_clum then
     if not p.class then pick_class("required_core_refresh") end
     if not p.class then pick_class("required_core_application") end
-    if not p.class and _eq_ready() then p.eq = ("instill %s with clumsiness"):format(tgt); p.eq_category = "required_core_refresh" end
+    if not p.class and _eq_ready() then
+      p.eq = ("instill %s with clumsiness"):format(tgt)
+      p.eq_category = "required_core_refresh"
+      p.eq_aff = "clumsiness"
+    end
     apply_bal_support()
     return p
   end
@@ -1195,6 +1246,7 @@ local function _plan_route(tgt)
     elseif _eq_ready() and not _ent_ready() then
       p.eq = ("instill %s with healthleech"):format(tgt)
       p.eq_category = "required_core_application"
+      p.eq_aff = "healthleech"
     end
     if not p.class then pick_class("required_core_refresh") end
     if not p.class then pick_class("required_core_application") end
@@ -1217,6 +1269,7 @@ local function _plan_route(tgt)
   if miss_slick and _eq_ready() then
     p.eq = ("instill %s with slickness"):format(tgt)
     p.eq_category = "fallback_support"
+    p.eq_aff = "slickness"
   end
 
   apply_bal_support()
@@ -1349,6 +1402,7 @@ function GD.attack_function(arg)
   local eq_cmd, eq_cat = nil, nil
   local bal_cmd, bal_cat = nil, nil
   local entity_cmd, entity_cat = nil, nil
+  local free_cmd, free_cat = _plan_free(tgt)
   local st = _core_state(tgt)
   local p = nil
   local rescue = nil
@@ -1401,9 +1455,22 @@ function GD.attack_function(arg)
   local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
   local selected_eq = (main.lane == "eq") and main.cmd or nil
   local selected_bal = (main.lane == "bal") and main.cmd or nil
+  if main.lane == "bal" and _trim(entity_cmd) == "" and p and _trim(p.eq_aff) ~= "" then
+    local compensate_cmd, compensate_cat = _pick_entity_cmd(tgt, st, {
+      category = p.class_category or "fallback_support",
+      skip_aff = p.eq_aff,
+    })
+    if _trim(compensate_cmd) ~= "" then
+      entity_cmd = compensate_cmd
+      entity_cat = compensate_cat or entity_cat
+    end
+  end
   local main_lane = main.lane
   if main_lane == "" and _trim(entity_cmd) ~= "" then
     main_lane = "entity"
+  end
+  if main_lane == "" and _trim(free_cmd) ~= "" then
+    main_lane = "free"
   end
 
   -- E. Misc / bookkeeping / optional echoes.
@@ -1411,12 +1478,13 @@ function GD.attack_function(arg)
     route = "group_damage",
     target = tgt,
     lanes = {
-      free = nil,
+      free = free_cmd,
       eq = selected_eq,
       bal = selected_bal,
       entity = entity_cmd,
     },
     meta = {
+      free_category = free_cat,
       eq_category = (main.lane == "eq") and main.category or nil,
       bal_category = (main.lane == "bal") and main.category or nil,
       entity_category = entity_cat,

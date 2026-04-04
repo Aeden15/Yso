@@ -1476,6 +1476,44 @@ local function _lane_ready(lane)
   return true
 end
 
+local function _eq_lane_score(cat)
+  cat = tostring(cat or "")
+  if cat == "reserved_burst" then return 130 end
+  if cat == "defense_break" then return 122 end
+  if cat == "team_coordination" then return 110 end
+  if cat == "truename_acquire" then return 108 end
+  if cat == "speed_strip_window" then return 104 end
+  if cat == "mana_bury" then return 42 end
+  if cat == "mental_build" then return 40 end
+  return 36
+end
+
+local function _bal_lane_score(cat)
+  cat = tostring(cat or "")
+  if cat == "mental_build" then return 22 end
+  return 16
+end
+
+local function _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
+  local pick_eq = { lane = "eq", cmd = eq_cmd, category = eq_cat, score = _eq_lane_score(eq_cat) }
+  local pick_bal = { lane = "bal", cmd = bal_cmd, category = bal_cat, score = _bal_lane_score(bal_cat) }
+  if _trim(eq_cmd) == "" and _trim(bal_cmd) == "" then
+    return { lane = "", cmd = nil, category = nil, score = 0, alt = nil }
+  end
+  if _trim(eq_cmd) == "" then
+    return { lane = pick_bal.lane, cmd = pick_bal.cmd, category = pick_bal.category, score = pick_bal.score, alt = nil }
+  end
+  if _trim(bal_cmd) == "" then
+    return { lane = pick_eq.lane, cmd = pick_eq.cmd, category = pick_eq.category, score = pick_eq.score, alt = nil }
+  end
+  if pick_bal.score > pick_eq.score then
+    pick_bal.alt = pick_eq
+    return pick_bal
+  end
+  pick_eq.alt = pick_bal
+  return pick_eq
+end
+
 local function _emit_payload(payload)
   local lane_tbl = type(payload) == "table" and payload.lanes or payload
   if type(lane_tbl) ~= "table" then return false, "invalid_payload" end
@@ -2523,6 +2561,7 @@ local function _route_pair_plan(tgt, plan)
     eq_aff = nil,
     entity_cmd = nil, entity_cat = nil,
     entity_aff = nil,
+    compensate_aff = nil,
     reason = "",
   }
 
@@ -2548,6 +2587,7 @@ local function _route_pair_plan(tgt, plan)
       if eq_aff then
         out.eq_cmd, out.eq_cat, out.eq_tag, out.eq_lock = _mana_bury_eq_cmd(tgt, eq_aff)
         out.eq_aff = eq_aff
+        out.compensate_aff = eq_aff
       end
     end
 
@@ -2900,11 +2940,27 @@ function AB.attack_function(arg)
     free_cat = free_cat or "self_legality"
   end
 
+  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
+  local selected_eq = (main.lane == "eq") and main.cmd or nil
+  local selected_bal = (main.lane == "bal") and main.cmd or nil
+
+  if anti.active ~= true and main.lane == "bal" and _trim(selected_eq) == "" and pair and _trim(entity_cmd) == "" then
+    local compensate_aff = _lc(pair.compensate_aff or pair.eq_aff)
+    if compensate_aff ~= "" and not _has_aff(tgt, compensate_aff) then
+      local compensate_cmd, compensate_cat = _entity_aff_cmd(compensate_aff, tgt, _entity_refresh_state(tgt))
+      if _trim(compensate_cmd) ~= "" then
+        entity_cmd = compensate_cmd
+        entity_cat = compensate_cat or pair.entity_cat or "mana_bury"
+        pair.entity_aff = compensate_aff
+        pair.reason = "bal_compensate:" .. compensate_aff
+      end
+    end
+  end
+
   -- C. Main lane for wait tracking (EQ is bottleneck in Sunder style).
-  local main_lane = ""
-  if _trim(eq_cmd) ~= "" then main_lane = "eq"
-  elseif _trim(bal_cmd) ~= "" then main_lane = "bal"
-  elseif _trim(entity_cmd) ~= "" then main_lane = "entity"
+  local main_lane = main.lane
+  if main_lane == "" and _trim(entity_cmd) ~= "" then
+    main_lane = "entity"
   end
 
   -- D. Bookkeeping.
@@ -3017,8 +3073,13 @@ function AB.attack_function(arg)
       lanes = {},
       age = 0,
     },
-    planned = { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = entity_cmd },
-    categories = { free = free_cat, eq = eq_cat, bal = bal_cat, entity = entity_cat },
+    planned = { free = free_cmd, eq = selected_eq, bal = selected_bal, entity = entity_cmd },
+    categories = {
+      free = free_cat,
+      eq = (main.lane == "eq") and main.category or nil,
+      bal = (main.lane == "bal") and main.category or nil,
+      entity = entity_cat,
+    },
     main_lane = main_lane,
   }
 
@@ -3037,8 +3098,8 @@ function AB.attack_function(arg)
     target = tgt,
     lanes = {
       free = free_cmd,
-      eq = eq_cmd,
-      bal = bal_cmd,
+      eq = selected_eq,
+      bal = selected_bal,
       class = entity_cmd,
       entity = entity_cmd,
     },
@@ -3046,17 +3107,18 @@ function AB.attack_function(arg)
       free_category = free_cat,
       free_tag = free_tag,
       free_parts = (#free_parts > 0) and free_parts or nil,
-      eq_category = eq_cat,
+      eq_category = (main.lane == "eq") and main.category or nil,
       raw_eq_category = raw_eq_cat,
       eq_tag = eq_tag,
       eq_lockout = eq_lock,
-      bal_category = bal_cat,
+      bal_category = (main.lane == "bal") and main.category or nil,
       bal_tag = bal_tag,
       bal_lockout = bal_lock,
       entity_category = entity_cat,
       checkpoint = AB.state.resume_checkpoint,
       explain = AB.state.explain,
       main_lane = main_lane,
+      main_category = main.category,
       parry_cmd = parry_cmd,
       parry_limb = parry_limb,
       required_entities = required_entities,

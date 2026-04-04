@@ -8447,10 +8447,11 @@ local function _entity_refresh_state(tgt)
   return out
 end
 
-local function _first_missing_lock_aff(tgt)
+local function _first_missing_lock_aff(tgt, skip_aff)
   local order = { &quot;asthma&quot;, &quot;haemophilia&quot;, &quot;addiction&quot;, &quot;clumsiness&quot;, &quot;healthleech&quot;, &quot;weariness&quot;, &quot;sensitivity&quot;, &quot;agoraphobia&quot;, &quot;dementia&quot;, &quot;claustrophobia&quot;, &quot;confusion&quot;, &quot;hallucinations&quot;, }
+  skip_aff = _lc(skip_aff)
   for i = 1, #order do
-    if not _has_aff(tgt, order[i]) then return order[i] end
+    if order[i] ~= skip_aff and not _has_aff(tgt, order[i]) then return order[i] end
   end
   return nil
 end
@@ -9033,7 +9034,8 @@ local function _plan_eq(tgt, opts)
     end
   end
 
-  local missing = _first_missing_lock_aff(tgt)
+  local skip_aff = _trim(type(opts) == &quot;table&quot; and opts.skip_aff or &quot;&quot;)
+  local missing = _first_missing_lock_aff(tgt, skip_aff)
   if missing then
     local tag = tag_prefix .. &quot;instill:&quot; .. tkey .. &quot;:&quot; .. missing
     local lock = tonumber(PA.cfg.instill_lockout_s or 2.5)
@@ -9098,7 +9100,8 @@ _plan_entity = function(tgt, opts)
   local ER = ES.registry
   if ER and type(ER.target_swap) == &quot;function&quot; then pcall(ER.target_swap, tgt) end
 
-  local missing = _first_missing_lock_aff(tgt)
+  local eq_aff = _trim(type(opts) == &quot;table&quot; and opts.eq_aff or &quot;&quot;)
+  local missing = _first_missing_lock_aff(tgt, eq_aff)
   if missing then
     local cmd = _entity_cmd_for_aff(missing, tgt)
     if cmd then return cmd, &quot;lock_pressure&quot; end
@@ -9260,25 +9263,31 @@ function PA.attack_function(arg)
   local free_cmd, free_cat = _plan_free(tgt)
   local loyals_bootstrap_pending = (_trim(free_cmd) ~= &quot;&quot;)
   local seq = _sequence_plan(tgt, { loyals_bootstrap_pending = loyals_bootstrap_pending })
-  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt, {
+  local preview_eq_cmd, preview_eq_cat, preview_eq_tag, preview_eq_lock = _plan_eq(tgt, {
     loyals_bootstrap_pending = loyals_bootstrap_pending,
     sequence = seq,
   })
   local bal_cmd, bal_cat = _plan_bal(tgt, {
     sequence = seq,
   })
+  local main = _choose_main_lane(preview_eq_cmd, preview_eq_cat, bal_cmd, bal_cat)
+  local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
+  local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
+  local eq_aff = _trim((selected_eq or &quot;&quot;):match(&quot;^instill%s+.-%s+with%s+([%w_%-]+)$&quot;))
+  local eq_cmd, eq_cat, eq_tag, eq_lock = preview_eq_cmd, preview_eq_cat, preview_eq_tag, preview_eq_lock
+  if main.lane ~= &quot;eq&quot; then
+    eq_cmd, eq_cat, eq_tag, eq_lock = nil, nil, nil, nil
+  end
   local class_cmd, class_cat = _plan_entity(tgt, {
     sequence = seq,
-    eq_cmd = eq_cmd,
+    eq_cmd = selected_eq,
     eq_tag = eq_tag,
+    eq_aff = eq_aff,
   })
   local bal_only_tick = (seq.enabled == true and seq.bal_only_tick == true and _trim(bal_cmd) ~= &quot;&quot; and _trim(eq_cmd) == &quot;&quot; and _trim(free_cmd) == &quot;&quot;)
   if bal_only_tick then
     class_cmd, class_cat = nil, nil
   end
-  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
-  local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
-  local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
   local main_lane = main.lane
   if main_lane == &quot;&quot; and _trim(class_cmd) ~= &quot;&quot; then main_lane = &quot;entity&quot; end
   if main_lane == &quot;&quot; and _trim(free_cmd) ~= &quot;&quot; then main_lane = &quot;free&quot; end
@@ -10526,21 +10535,22 @@ _entity_pick = function(tgt, st, category, opts)
   local ER = _ER()
   if not (ER and type(ER.pick) == &quot;function&quot;) then return nil, nil, nil end
   opts = opts or {}
+  local skip_aff = _lc(opts.skip_aff)
   local ctx = {
     route = &quot;group_damage&quot;,
     target = tgt,
     target_valid = _tgt_valid(tgt),
     ent_ready = _ent_ready(),
-    eq_ready = _eq_ready(),
+    eq_ready = (_eq_ready() and skip_aff == &quot;&quot;),
     bal_ready = _bal_ready(),
     has_aff = function(aff_name) return _has_aff(tgt, aff_name) end,
     route_state = st,
     category = category,
     need = {
-      healthleech = opts.need_healthleech == true,
+      healthleech = opts.need_healthleech == true and skip_aff ~= &quot;healthleech&quot;,
       sensitivity = opts.need_sensitivity == true,
-      clumsiness = opts.need_clumsiness == true,
-      slickness = opts.need_slickness == true,
+      clumsiness = opts.need_clumsiness == true and skip_aff ~= &quot;clumsiness&quot;,
+      slickness = opts.need_slickness == true and skip_aff ~= &quot;slickness&quot;,
       addiction = opts.need_addiction == true,
     },
   }
@@ -10556,7 +10566,44 @@ local function _pick_entity_cmd(tgt, st, opts)
     _note_entity_no_send(&quot;snapshot_ent_not_ready&quot;)
     return nil, nil
   end
+  local skip_aff = _lc(opts.skip_aff)
+  if skip_aff == &quot;clumsiness&quot; then
+    return (&quot;command storm at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_refresh&quot;)
+  end
+  if skip_aff == &quot;healthleech&quot; then
+    return (&quot;command worm at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
+  end
+  if skip_aff == &quot;slickness&quot; and _has_aff(tgt, &quot;asthma&quot;) then
+    return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;fallback_support&quot;)
+  end
+  if skip_aff == &quot;asthma&quot; then
+    return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_refresh&quot;)
+  end
+  if skip_aff == &quot;paralysis&quot; and _has_aff(tgt, &quot;asthma&quot;) then
+    return (&quot;command slime at %s&quot;):format(tgt), tostring(opts.category or &quot;fallback_support&quot;)
+  end
   return _entity_pick(tgt, st, tostring(opts.category or &quot;fallback_support&quot;), opts)
+end
+
+local function _loyals_active_for(tgt)
+  local Off = Yso and Yso.off and Yso.off.oc or nil
+  if Off and type(Off.loyals_active_for) == &quot;function&quot; then
+    local ok, v = pcall(Off.loyals_active_for, tgt)
+    if ok then return v == true end
+  end
+  return false
+end
+
+local function _plan_free(tgt)
+  local parts = {}
+  if Yso and Yso.legality and Yso.legality.queue_stand == true then
+    parts[#parts + 1] = &quot;stand&quot;
+  end
+  if not _loyals_active_for(tgt) then
+    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
+  end
+  if #parts == 0 then return nil, nil end
+  return table.concat(parts, _command_sep()), &quot;team_coordination&quot;
 end
 
 local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
@@ -10595,7 +10642,11 @@ end
 
 local function _plan_route(tgt)
   local st = _core_state(tgt)
-  local p = { eq = nil, bal = nil, class = nil, st = st, eq_category = nil, bal_category = nil, class_category = nil }
+  local p = {
+    eq = nil, bal = nil, class = nil, st = st,
+    eq_category = nil, bal_category = nil, class_category = nil,
+    eq_aff = nil,
+  }
 
   local miss_hl = not st.healthleech
   local miss_sens = not st.sensitivity
@@ -10626,6 +10677,7 @@ local function _plan_route(tgt)
       need_clumsiness = miss_clum,
       need_slickness = miss_slick,
       need_addiction = need_addiction,
+      skip_aff = p.eq_aff,
     })
     if cmd and not p.class then
       p.class = cmd
@@ -10675,7 +10727,11 @@ local function _plan_route(tgt)
 
   -- Core refresh/application wins after any reserved burst and bootstrap work.
   if miss_sens then
-    if _eq_ready() then p.eq = (&quot;instill %s with sensitivity&quot;):format(tgt); p.eq_category = &quot;required_core_refresh&quot; end
+    if _eq_ready() then
+      p.eq = (&quot;instill %s with sensitivity&quot;):format(tgt)
+      p.eq_category = &quot;required_core_refresh&quot;
+      p.eq_aff = &quot;sensitivity&quot;
+    end
     if not p.class then pick_class(&quot;required_core_refresh&quot;) end
     if not p.class then pick_class(&quot;required_core_application&quot;) end
     apply_bal_support()
@@ -10685,7 +10741,11 @@ local function _plan_route(tgt)
   if miss_clum then
     if not p.class then pick_class(&quot;required_core_refresh&quot;) end
     if not p.class then pick_class(&quot;required_core_application&quot;) end
-    if not p.class and _eq_ready() then p.eq = (&quot;instill %s with clumsiness&quot;):format(tgt); p.eq_category = &quot;required_core_refresh&quot; end
+    if not p.class and _eq_ready() then
+      p.eq = (&quot;instill %s with clumsiness&quot;):format(tgt)
+      p.eq_category = &quot;required_core_refresh&quot;
+      p.eq_aff = &quot;clumsiness&quot;
+    end
     apply_bal_support()
     return p
   end
@@ -10697,6 +10757,7 @@ local function _plan_route(tgt)
     elseif _eq_ready() and not _ent_ready() then
       p.eq = (&quot;instill %s with healthleech&quot;):format(tgt)
       p.eq_category = &quot;required_core_application&quot;
+      p.eq_aff = &quot;healthleech&quot;
     end
     if not p.class then pick_class(&quot;required_core_refresh&quot;) end
     if not p.class then pick_class(&quot;required_core_application&quot;) end
@@ -10719,6 +10780,7 @@ local function _plan_route(tgt)
   if miss_slick and _eq_ready() then
     p.eq = (&quot;instill %s with slickness&quot;):format(tgt)
     p.eq_category = &quot;fallback_support&quot;
+    p.eq_aff = &quot;slickness&quot;
   end
 
   apply_bal_support()
@@ -10851,6 +10913,7 @@ function GD.attack_function(arg)
   local eq_cmd, eq_cat = nil, nil
   local bal_cmd, bal_cat = nil, nil
   local entity_cmd, entity_cat = nil, nil
+  local free_cmd, free_cat = _plan_free(tgt)
   local st = _core_state(tgt)
   local p = nil
   local rescue = nil
@@ -10903,9 +10966,22 @@ function GD.attack_function(arg)
   local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
   local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
   local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
+  if main.lane == &quot;bal&quot; and _trim(entity_cmd) == &quot;&quot; and p and _trim(p.eq_aff) ~= &quot;&quot; then
+    local compensate_cmd, compensate_cat = _pick_entity_cmd(tgt, st, {
+      category = p.class_category or &quot;fallback_support&quot;,
+      skip_aff = p.eq_aff,
+    })
+    if _trim(compensate_cmd) ~= &quot;&quot; then
+      entity_cmd = compensate_cmd
+      entity_cat = compensate_cat or entity_cat
+    end
+  end
   local main_lane = main.lane
   if main_lane == &quot;&quot; and _trim(entity_cmd) ~= &quot;&quot; then
     main_lane = &quot;entity&quot;
+  end
+  if main_lane == &quot;&quot; and _trim(free_cmd) ~= &quot;&quot; then
+    main_lane = &quot;free&quot;
   end
 
   -- E. Misc / bookkeeping / optional echoes.
@@ -10913,12 +10989,13 @@ function GD.attack_function(arg)
     route = &quot;group_damage&quot;,
     target = tgt,
     lanes = {
-      free = nil,
+      free = free_cmd,
       eq = selected_eq,
       bal = selected_bal,
       entity = entity_cmd,
     },
     meta = {
+      free_category = free_cat,
       eq_category = (main.lane == &quot;eq&quot;) and main.category or nil,
       bal_category = (main.lane == &quot;bal&quot;) and main.category or nil,
       entity_category = entity_cat,
@@ -28469,6 +28546,44 @@ local function _lane_ready(lane)
   return true
 end
 
+local function _eq_lane_score(cat)
+  cat = tostring(cat or &quot;&quot;)
+  if cat == &quot;reserved_burst&quot; then return 130 end
+  if cat == &quot;defense_break&quot; then return 122 end
+  if cat == &quot;team_coordination&quot; then return 110 end
+  if cat == &quot;truename_acquire&quot; then return 108 end
+  if cat == &quot;speed_strip_window&quot; then return 104 end
+  if cat == &quot;mana_bury&quot; then return 42 end
+  if cat == &quot;mental_build&quot; then return 40 end
+  return 36
+end
+
+local function _bal_lane_score(cat)
+  cat = tostring(cat or &quot;&quot;)
+  if cat == &quot;mental_build&quot; then return 22 end
+  return 16
+end
+
+local function _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
+  local pick_eq = { lane = &quot;eq&quot;, cmd = eq_cmd, category = eq_cat, score = _eq_lane_score(eq_cat) }
+  local pick_bal = { lane = &quot;bal&quot;, cmd = bal_cmd, category = bal_cat, score = _bal_lane_score(bal_cat) }
+  if _trim(eq_cmd) == &quot;&quot; and _trim(bal_cmd) == &quot;&quot; then
+    return { lane = &quot;&quot;, cmd = nil, category = nil, score = 0, alt = nil }
+  end
+  if _trim(eq_cmd) == &quot;&quot; then
+    return { lane = pick_bal.lane, cmd = pick_bal.cmd, category = pick_bal.category, score = pick_bal.score, alt = nil }
+  end
+  if _trim(bal_cmd) == &quot;&quot; then
+    return { lane = pick_eq.lane, cmd = pick_eq.cmd, category = pick_eq.category, score = pick_eq.score, alt = nil }
+  end
+  if pick_bal.score &gt; pick_eq.score then
+    pick_bal.alt = pick_eq
+    return pick_bal
+  end
+  pick_eq.alt = pick_bal
+  return pick_eq
+end
+
 local function _emit_payload(payload)
   local lane_tbl = type(payload) == &quot;table&quot; and payload.lanes or payload
   if type(lane_tbl) ~= &quot;table&quot; then return false, &quot;invalid_payload&quot; end
@@ -29516,6 +29631,7 @@ local function _route_pair_plan(tgt, plan)
     eq_aff = nil,
     entity_cmd = nil, entity_cat = nil,
     entity_aff = nil,
+    compensate_aff = nil,
     reason = &quot;&quot;,
   }
 
@@ -29541,6 +29657,7 @@ local function _route_pair_plan(tgt, plan)
       if eq_aff then
         out.eq_cmd, out.eq_cat, out.eq_tag, out.eq_lock = _mana_bury_eq_cmd(tgt, eq_aff)
         out.eq_aff = eq_aff
+        out.compensate_aff = eq_aff
       end
     end
 
@@ -29893,11 +30010,27 @@ function AB.attack_function(arg)
     free_cat = free_cat or &quot;self_legality&quot;
   end
 
+  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
+  local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
+  local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
+
+  if anti.active ~= true and main.lane == &quot;bal&quot; and _trim(selected_eq) == &quot;&quot; and pair and _trim(entity_cmd) == &quot;&quot; then
+    local compensate_aff = _lc(pair.compensate_aff or pair.eq_aff)
+    if compensate_aff ~= &quot;&quot; and not _has_aff(tgt, compensate_aff) then
+      local compensate_cmd, compensate_cat = _entity_aff_cmd(compensate_aff, tgt, _entity_refresh_state(tgt))
+      if _trim(compensate_cmd) ~= &quot;&quot; then
+        entity_cmd = compensate_cmd
+        entity_cat = compensate_cat or pair.entity_cat or &quot;mana_bury&quot;
+        pair.entity_aff = compensate_aff
+        pair.reason = &quot;bal_compensate:&quot; .. compensate_aff
+      end
+    end
+  end
+
   -- C. Main lane for wait tracking (EQ is bottleneck in Sunder style).
-  local main_lane = &quot;&quot;
-  if _trim(eq_cmd) ~= &quot;&quot; then main_lane = &quot;eq&quot;
-  elseif _trim(bal_cmd) ~= &quot;&quot; then main_lane = &quot;bal&quot;
-  elseif _trim(entity_cmd) ~= &quot;&quot; then main_lane = &quot;entity&quot;
+  local main_lane = main.lane
+  if main_lane == &quot;&quot; and _trim(entity_cmd) ~= &quot;&quot; then
+    main_lane = &quot;entity&quot;
   end
 
   -- D. Bookkeeping.
@@ -30010,8 +30143,13 @@ function AB.attack_function(arg)
       lanes = {},
       age = 0,
     },
-    planned = { free = free_cmd, eq = eq_cmd, bal = bal_cmd, entity = entity_cmd },
-    categories = { free = free_cat, eq = eq_cat, bal = bal_cat, entity = entity_cat },
+    planned = { free = free_cmd, eq = selected_eq, bal = selected_bal, entity = entity_cmd },
+    categories = {
+      free = free_cat,
+      eq = (main.lane == &quot;eq&quot;) and main.category or nil,
+      bal = (main.lane == &quot;bal&quot;) and main.category or nil,
+      entity = entity_cat,
+    },
     main_lane = main_lane,
   }
 
@@ -30030,8 +30168,8 @@ function AB.attack_function(arg)
     target = tgt,
     lanes = {
       free = free_cmd,
-      eq = eq_cmd,
-      bal = bal_cmd,
+      eq = selected_eq,
+      bal = selected_bal,
       class = entity_cmd,
       entity = entity_cmd,
     },
@@ -30039,17 +30177,18 @@ function AB.attack_function(arg)
       free_category = free_cat,
       free_tag = free_tag,
       free_parts = (#free_parts &gt; 0) and free_parts or nil,
-      eq_category = eq_cat,
+      eq_category = (main.lane == &quot;eq&quot;) and main.category or nil,
       raw_eq_category = raw_eq_cat,
       eq_tag = eq_tag,
       eq_lockout = eq_lock,
-      bal_category = bal_cat,
+      bal_category = (main.lane == &quot;bal&quot;) and main.category or nil,
       bal_tag = bal_tag,
       bal_lockout = bal_lock,
       entity_category = entity_cat,
       checkpoint = AB.state.resume_checkpoint,
       explain = AB.state.explain,
       main_lane = main_lane,
+      main_category = main.category,
       parry_cmd = parry_cmd,
       parry_limb = parry_limb,
       required_entities = required_entities,

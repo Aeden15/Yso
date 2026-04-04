@@ -419,10 +419,11 @@ local function _entity_refresh_state(tgt)
   return out
 end
 
-local function _first_missing_lock_aff(tgt)
+local function _first_missing_lock_aff(tgt, skip_aff)
   local order = { "asthma", "haemophilia", "addiction", "clumsiness", "healthleech", "weariness", "sensitivity", "agoraphobia", "dementia", "claustrophobia", "confusion", "hallucinations", }
+  skip_aff = _lc(skip_aff)
   for i = 1, #order do
-    if not _has_aff(tgt, order[i]) then return order[i] end
+    if order[i] ~= skip_aff and not _has_aff(tgt, order[i]) then return order[i] end
   end
   return nil
 end
@@ -1005,7 +1006,8 @@ local function _plan_eq(tgt, opts)
     end
   end
 
-  local missing = _first_missing_lock_aff(tgt)
+  local skip_aff = _trim(type(opts) == "table" and opts.skip_aff or "")
+  local missing = _first_missing_lock_aff(tgt, skip_aff)
   if missing then
     local tag = tag_prefix .. "instill:" .. tkey .. ":" .. missing
     local lock = tonumber(PA.cfg.instill_lockout_s or 2.5)
@@ -1070,7 +1072,8 @@ _plan_entity = function(tgt, opts)
   local ER = ES.registry
   if ER and type(ER.target_swap) == "function" then pcall(ER.target_swap, tgt) end
 
-  local missing = _first_missing_lock_aff(tgt)
+  local eq_aff = _trim(type(opts) == "table" and opts.eq_aff or "")
+  local missing = _first_missing_lock_aff(tgt, eq_aff)
   if missing then
     local cmd = _entity_cmd_for_aff(missing, tgt)
     if cmd then return cmd, "lock_pressure" end
@@ -1232,25 +1235,31 @@ function PA.attack_function(arg)
   local free_cmd, free_cat = _plan_free(tgt)
   local loyals_bootstrap_pending = (_trim(free_cmd) ~= "")
   local seq = _sequence_plan(tgt, { loyals_bootstrap_pending = loyals_bootstrap_pending })
-  local eq_cmd, eq_cat, eq_tag, eq_lock = _plan_eq(tgt, {
+  local preview_eq_cmd, preview_eq_cat, preview_eq_tag, preview_eq_lock = _plan_eq(tgt, {
     loyals_bootstrap_pending = loyals_bootstrap_pending,
     sequence = seq,
   })
   local bal_cmd, bal_cat = _plan_bal(tgt, {
     sequence = seq,
   })
+  local main = _choose_main_lane(preview_eq_cmd, preview_eq_cat, bal_cmd, bal_cat)
+  local selected_eq = (main.lane == "eq") and main.cmd or nil
+  local selected_bal = (main.lane == "bal") and main.cmd or nil
+  local eq_aff = _trim((selected_eq or ""):match("^instill%s+.-%s+with%s+([%w_%-]+)$"))
+  local eq_cmd, eq_cat, eq_tag, eq_lock = preview_eq_cmd, preview_eq_cat, preview_eq_tag, preview_eq_lock
+  if main.lane ~= "eq" then
+    eq_cmd, eq_cat, eq_tag, eq_lock = nil, nil, nil, nil
+  end
   local class_cmd, class_cat = _plan_entity(tgt, {
     sequence = seq,
-    eq_cmd = eq_cmd,
+    eq_cmd = selected_eq,
     eq_tag = eq_tag,
+    eq_aff = eq_aff,
   })
   local bal_only_tick = (seq.enabled == true and seq.bal_only_tick == true and _trim(bal_cmd) ~= "" and _trim(eq_cmd) == "" and _trim(free_cmd) == "")
   if bal_only_tick then
     class_cmd, class_cat = nil, nil
   end
-  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
-  local selected_eq = (main.lane == "eq") and main.cmd or nil
-  local selected_bal = (main.lane == "bal") and main.cmd or nil
   local main_lane = main.lane
   if main_lane == "" and _trim(class_cmd) ~= "" then main_lane = "entity" end
   if main_lane == "" and _trim(free_cmd) ~= "" then main_lane = "free" end
