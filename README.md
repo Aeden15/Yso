@@ -5,6 +5,7 @@ Current workspace snapshot: April 2, 2026.
 ## Current fixes
 
 - **Occultist aff-burst route retuned** — Mana-bury pressure now prioritizes `asthma -> paralysis/slickness hold -> healthleech -> manaleech`, then applies `disloyalty` post-manaleech with `anorexia` as a late fallback only. Deaf-down pressure now pairs `command chimera` with an EQ filler/missing aff while chimera-pool mentals are still open, and the route no longer includes the `abdebug` screen/alias helpers.
+- **Domination Feed tracking added** — `Yso.dom.feed` now exposes `feed_ready()`, `feed_active()`, and `feed_remaining()` plus cast/ready/destroyed update helpers. The Domination trigger folder in `Yso system.xml` now echoes feed active, feed ready, and the destroyed entity in Domination style, and cooldown-line parsing (`Domination feed: ...`) updates state as a fallback.
 - **Unified self-cleanse module** — Bloodboil (Magi), Fool (Occultist), and Tree Tattoo (universal) now share a cureset-keyed PvP configuration architecture. PvP is scaffolded with per-cureset thresholds (depthswalker, bard, monk, dwc, dwb, blademaster, shaman, airlord) but disabled by default until tuned.
 - **Bloodboil hunt threshold lowered** — `min_affs_hunt` reduced from 4 to 2 so bloodboil fires earlier during hunting.
 - **Bloodboil PvP path** — `should_bloodboil()` no longer hard-gates on `cureset == "hunt"`. When PvP is enabled, it looks up per-cureset thresholds with softlock override support.
@@ -167,4 +168,3 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.
 - If you are debugging automation, start with the shared pipeline first: mode ownership, wake intake, queue staging, then queue commit/flush.
 - **Fool basher preemption** — Eligible Fool uses now clear Legacy basher `freestand` work before queueing and temporarily suppress fresh basher attack-package requeues until the Fool self-use line or a timeout. The prone gate still blocks Fool before any queue clearing, and debug/status output reports the prone reason and basher-hold state.
-

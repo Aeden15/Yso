@@ -1906,6 +1906,76 @@ cecho("&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;(RANDOM MENTAL).\n")</scrip
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Feed active</name>
+						<script>if Yso and Yso.dom and type(Yso.dom.feed_note_cast) == "function" then
+  pcall(Yso.dom.feed_note_cast, "line:feed_active")
+end
+cecho("&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;(FEED ACTIVE - COOLDOWN STARTED).\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You pour karma into your connection to [\w'\-]+, your profane benefactor feasting well and gifting you in turn\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Feed ready</name>
+						<script>if Yso and Yso.dom and type(Yso.dom.feed_note_ready) == "function" then
+  pcall(Yso.dom.feed_note_ready, "line:feed_ready")
+end
+cecho("&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;(FEED READY - CAN CAST AGAIN).\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You may grant a feast of karma to your profane benefactors once more\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Feed destroyed entity</name>
+						<script>local ent = tostring(matches[2] or "")
+if Yso and Yso.dom and type(Yso.dom.feed_note_destroyed) == "function" then
+  pcall(Yso.dom.feed_note_destroyed, ent, "line:feed_destroyed")
+end
+cecho(string.format("&lt;HotPink&gt;[Domination] &lt;LightCoral&gt;(FEED DESTROYED: %s).\n", ent ~= "" and ent or "unknown"))</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^(?:A|An) ([\w'\-]+) shrieks in rage as its bonds with the Prime Material snap under an immaterial strain\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Loyals down</name>
 						<script>-- No entourage/loyals present -&gt; not hostile
 if Yso and type(Yso.set_loyals_attack) == "function" then
@@ -13345,6 +13415,126 @@ function Yso.mind_focused()
 end
 
 --========================================================--
+-- Domination Feed tracking (cooldown + active/ready state)
+--========================================================--
+Yso.dom = Yso.dom or {}
+Yso.dom.feed = Yso.dom.feed or {}
+local DF = Yso.dom.feed
+
+if DF.active == nil then DF.active = false end
+if DF.ready == nil then DF.ready = true end
+if DF.last_cast_at == nil then DF.last_cast_at = 0 end
+if DF.ready_at == nil then DF.ready_at = 0 end
+if DF.last_entity_destroyed == nil then DF.last_entity_destroyed = &quot;&quot; end
+if DF.remaining_s == nil then DF.remaining_s = 0 end
+
+local function _dom_now()
+  if type(Yso.now) == &quot;function&quot; then
+    return tonumber(Yso.now()) or os.time()
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 1e12 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
+local function _dom_trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _dom_feed_parse_seconds(line)
+  local low = tostring(line or &quot;&quot;):lower()
+  if low:find(&quot;domination%s+feed:%s*&quot;) == nil then return nil end
+  local mins = tonumber(low:match(&quot;(%d+)%s+minutes?&quot;) or 0) or 0
+  local secs = tonumber(low:match(&quot;(%d+)%s+seconds?&quot;) or 0) or 0
+  if mins &gt; 0 or secs &gt; 0 then
+    return mins * 60 + secs
+  end
+  if low:find(&quot;ready&quot;, 1, true) then
+    return 0
+  end
+  return nil
+end
+
+function Yso.dom.feed_remaining()
+  local now = _dom_now()
+  local ready_at = tonumber(DF.ready_at or 0) or 0
+  local rem = tonumber(DF.remaining_s or 0) or 0
+  if ready_at &gt; now then
+    rem = math.max(rem, ready_at - now)
+  end
+  if rem &lt; 0 then rem = 0 end
+  return rem
+end
+
+function Yso.dom.feed_active()
+  return DF.active == true
+end
+
+function Yso.dom.feed_ready()
+  if Yso.dom.feed_remaining() &gt; 0 then return false end
+  return DF.ready == true
+end
+
+function Yso.dom.feed_set_remaining(secs, src)
+  secs = tonumber(secs or 0) or 0
+  if secs &lt; 0 then secs = 0 end
+  local now = _dom_now()
+  DF.remaining_s = secs
+  DF.ready_at = now + secs
+  DF.last_update_src = tostring(src or &quot;&quot;)
+  DF.last_update_at = now
+  if secs &lt;= 0 then
+    DF.ready = true
+    DF.active = false
+  else
+    DF.ready = false
+    -- Feed destroys the entity around ~18s post-cast; while remaining &gt; 42s
+    -- we treat the empowerment window as active.
+    DF.active = (secs &gt; 42)
+  end
+end
+
+function Yso.dom.feed_note_cast(src)
+  local now = _dom_now()
+  DF.active = true
+  DF.ready = false
+  DF.last_cast_at = now
+  DF.remaining_s = 60
+  DF.ready_at = now + 60
+  DF.last_update_src = tostring(src or &quot;feed_cast&quot;)
+  DF.last_update_at = now
+end
+
+function Yso.dom.feed_note_ready(src)
+  local now = _dom_now()
+  DF.active = false
+  DF.ready = true
+  DF.remaining_s = 0
+  DF.ready_at = now
+  DF.last_update_src = tostring(src or &quot;feed_ready&quot;)
+  DF.last_update_at = now
+end
+
+function Yso.dom.feed_note_destroyed(entity, src)
+  local now = _dom_now()
+  DF.active = false
+  DF.last_entity_destroyed = _dom_trim(entity)
+  DF.last_destroyed_at = now
+  DF.last_update_src = tostring(src or &quot;feed_destroyed&quot;)
+  DF.last_update_at = now
+end
+
+function Yso.dom.feed_update_from_cooldowns_line(line)
+  local secs = _dom_feed_parse_seconds(line)
+  if secs == nil then return false end
+  Yso.dom.feed_set_remaining(secs, &quot;cooldowns_line&quot;)
+  return true
+end
+
+--========================================================--
 -- Slowtime / Aeon / Retardation helpers (system-wide)
 --  • Used by queue policy + offense modules
 --========================================================--
@@ -20515,6 +20705,16 @@ local function _parse_aggression(line)
   return mins * 60 + secs
 end
 
+local function _maybe_update_dom_feed(line)
+  local low = tostring(line or &quot;&quot;):lower()
+  if low:find(&quot;domination feed:&quot;, 1, true) == nil then return false end
+  if not (Yso and Yso.dom and type(Yso.dom.feed_update_from_cooldowns_line) == &quot;function&quot;) then
+    return false
+  end
+  local ok = pcall(Yso.dom.feed_update_from_cooldowns_line, line)
+  return ok
+end
+
 local function _lower(s) return tostring(s or &quot;&quot;):lower() end
 
 local function _looks_like_duel_start(s)
@@ -20592,6 +20792,10 @@ A._tr.duel_spar_sniff = tempRegexTrigger([[.*]], _safe(function()
     end
     return
   end
+
+  -- Cooldowns fallback: keep Domination feed state fresh even if cast/ready
+  -- lines were missed due to package reload or trigger timing.
+  _maybe_update_dom_feed(line)
 
   local who = line:match(&quot;^([A-Z][%w_%-&apos;]+) .-&quot;)
   if who and _in_room_players(who) then

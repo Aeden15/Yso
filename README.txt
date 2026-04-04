@@ -14,6 +14,12 @@ Current fixes
   chimera-pool mentals remain open, and abdebug screen/alias helpers were
   removed from this route.
 
+  Domination Feed tracking added -- Yso.dom.feed now exposes feed_ready(),
+  feed_active(), and feed_remaining() plus cast/ready/destroyed update
+  helpers. The Domination trigger folder in Yso system.xml now cechos feed
+  active, feed ready, and the destroyed entity in Domination style, and
+  cooldown-line parsing (Domination feed: ...) updates state as fallback.
+
   Unified self-cleanse module -- Bloodboil (Magi), Fool (Occultist), and
   Tree Tattoo (universal) now share a cureset-keyed PvP configuration
   architecture. PvP is scaffolded with per-cureset thresholds but disabled
@@ -236,4 +242,3 @@ Syncing with OneDrive Desktop
     freestand work before queueing and suppress fresh basher attack-package
     requeues until the Fool self-use line or a timeout. Prone still blocks Fool
     before any queue clearing and remains visible in debug/status output.
-

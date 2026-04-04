@@ -132,6 +132,126 @@ function Yso.mind_focused()
 end
 
 --========================================================--
+-- Domination Feed tracking (cooldown + active/ready state)
+--========================================================--
+Yso.dom = Yso.dom or {}
+Yso.dom.feed = Yso.dom.feed or {}
+local DF = Yso.dom.feed
+
+if DF.active == nil then DF.active = false end
+if DF.ready == nil then DF.ready = true end
+if DF.last_cast_at == nil then DF.last_cast_at = 0 end
+if DF.ready_at == nil then DF.ready_at = 0 end
+if DF.last_entity_destroyed == nil then DF.last_entity_destroyed = "" end
+if DF.remaining_s == nil then DF.remaining_s = 0 end
+
+local function _dom_now()
+  if type(Yso.now) == "function" then
+    return tonumber(Yso.now()) or os.time()
+  end
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t > 1e12 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
+local function _dom_trim(s)
+  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+local function _dom_feed_parse_seconds(line)
+  local low = tostring(line or ""):lower()
+  if low:find("domination%s+feed:%s*") == nil then return nil end
+  local mins = tonumber(low:match("(%d+)%s+minutes?") or 0) or 0
+  local secs = tonumber(low:match("(%d+)%s+seconds?") or 0) or 0
+  if mins > 0 or secs > 0 then
+    return mins * 60 + secs
+  end
+  if low:find("ready", 1, true) then
+    return 0
+  end
+  return nil
+end
+
+function Yso.dom.feed_remaining()
+  local now = _dom_now()
+  local ready_at = tonumber(DF.ready_at or 0) or 0
+  local rem = tonumber(DF.remaining_s or 0) or 0
+  if ready_at > now then
+    rem = math.max(rem, ready_at - now)
+  end
+  if rem < 0 then rem = 0 end
+  return rem
+end
+
+function Yso.dom.feed_active()
+  return DF.active == true
+end
+
+function Yso.dom.feed_ready()
+  if Yso.dom.feed_remaining() > 0 then return false end
+  return DF.ready == true
+end
+
+function Yso.dom.feed_set_remaining(secs, src)
+  secs = tonumber(secs or 0) or 0
+  if secs < 0 then secs = 0 end
+  local now = _dom_now()
+  DF.remaining_s = secs
+  DF.ready_at = now + secs
+  DF.last_update_src = tostring(src or "")
+  DF.last_update_at = now
+  if secs <= 0 then
+    DF.ready = true
+    DF.active = false
+  else
+    DF.ready = false
+    -- Feed destroys the entity around ~18s post-cast; while remaining > 42s
+    -- we treat the empowerment window as active.
+    DF.active = (secs > 42)
+  end
+end
+
+function Yso.dom.feed_note_cast(src)
+  local now = _dom_now()
+  DF.active = true
+  DF.ready = false
+  DF.last_cast_at = now
+  DF.remaining_s = 60
+  DF.ready_at = now + 60
+  DF.last_update_src = tostring(src or "feed_cast")
+  DF.last_update_at = now
+end
+
+function Yso.dom.feed_note_ready(src)
+  local now = _dom_now()
+  DF.active = false
+  DF.ready = true
+  DF.remaining_s = 0
+  DF.ready_at = now
+  DF.last_update_src = tostring(src or "feed_ready")
+  DF.last_update_at = now
+end
+
+function Yso.dom.feed_note_destroyed(entity, src)
+  local now = _dom_now()
+  DF.active = false
+  DF.last_entity_destroyed = _dom_trim(entity)
+  DF.last_destroyed_at = now
+  DF.last_update_src = tostring(src or "feed_destroyed")
+  DF.last_update_at = now
+end
+
+function Yso.dom.feed_update_from_cooldowns_line(line)
+  local secs = _dom_feed_parse_seconds(line)
+  if secs == nil then return false end
+  Yso.dom.feed_set_remaining(secs, "cooldowns_line")
+  return true
+end
+
+--========================================================--
 -- Slowtime / Aeon / Retardation helpers (system-wide)
 --  • Used by queue policy + offense modules
 --========================================================--
