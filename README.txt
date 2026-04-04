@@ -7,6 +7,13 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultist aff-burst route retuned -- Mana-bury pressure now prioritizes
+  asthma -> paralysis/slickness hold -> healthleech -> manaleech, then applies
+  disloyalty post-manaleech with anorexia as a late fallback only. Deaf-down
+  pressure now pairs command chimera with an EQ filler/missing aff while
+  chimera-pool mentals remain open, and abdebug screen/alias helpers were
+  removed from this route.
+
   Unified self-cleanse module -- Bloodboil (Magi), Fool (Occultist), and
   Tree Tattoo (universal) now share a cureset-keyed PvP configuration
   architecture. PvP is scaffolded with per-cureset thresholds but disabled
@@ -229,5 +236,4 @@ Syncing with OneDrive Desktop
     freestand work before queueing and suppress fresh basher attack-package
     requeues until the Fool self-use line or a timeout. Prone still blocks Fool
     before any queue clearing and remains visible in debug/status output.
-
 

@@ -24,6 +24,7 @@ end
 local SCRIPT_DIR = script_dir()
 local PARTY_AFF_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "routes", "party_aff.lua")
 local OCC_AFF_BURST_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "routes", "occ_aff_burst.lua")
+local OCC_AURA_PLANNER_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "xml", "occ_aura_planner.lua")
 
 local pass_count = 0
 local fail_count = 0
@@ -106,7 +107,17 @@ local function new_env(mode_name)
     recent_tags = {},
     readaura_ready = false,
     readaura_ready_calls = {},
-    snapshot = { fresh = true, read_complete = true },
+    snapshot = {
+      fresh = true,
+      read_complete = true,
+      had_counts = true,
+      had_mana = true,
+      defs_state = "complete",
+      missing_keys = {},
+      mana_pct = 70,
+      deaf = false,
+      speed = false,
+    },
     target = "spartarget",
     mental_score = 100,
     txn_status = { active = false, matched = false },
@@ -154,7 +165,9 @@ local function new_env(mode_name)
       if aff == "healthleech" then return ("command worm at %s"):format(tgt), "mana_bury" end
       if aff == "haemophilia" then return ("command bloodleech at %s"):format(tgt), "mana_bury" end
       if aff == "addiction" then return ("command humbug at %s"):format(tgt), "mana_bury" end
-      if aff == "chimera_roar" then return ("command chimera at %s"):format(tgt), "mental_build" end
+      if aff == "chimera_command" or aff == "chimera_roar" then
+        return ("command chimera at %s"):format(tgt), "mental_build"
+      end
       return nil, nil
     end,
     oc = {
@@ -224,6 +237,24 @@ local function load_party_aff()
     env.aff_scores[lock_affs[i]] = 100
   end
 
+  dofile(OCC_AURA_PLANNER_PATH)
+  do
+    local AP = (((_G.Yso or {}).off or {}).oc or {}).aura_planner or {}
+    AP.snapshot = function() return env.snapshot end
+    if _G.Yso and _G.Yso.off and _G.Yso.off.oc and _G.Yso.off.oc.cleanseaura then
+      _G.Yso.off.oc.cleanseaura.snapshot = AP.snapshot
+    end
+    AP.needs_readaura = function(_, snap)
+      snap = snap or env.snapshot or {}
+      if snap.fresh ~= true then return true, "snapshot_stale" end
+      if snap.read_complete ~= true then return true, "snapshot_incomplete" end
+      if tostring(snap.defs_state or "missing") == "missing" then return true, "defs_incomplete" end
+      if snap.had_counts ~= true then return true, "counts_incomplete" end
+      if snap.deaf == nil then return true, "deaf_unknown" end
+      if snap.had_mana ~= true and snap.mana_pct == nil then return true, "mana_unknown" end
+      return false, ""
+    end
+  end
   dofile(PARTY_AFF_PATH)
 
   local PA = Yso.off.oc.party_aff
@@ -247,6 +278,7 @@ end
 local function load_occ_aff_burst()
   local env = new_env("occ")
 
+  dofile(OCC_AURA_PLANNER_PATH)
   dofile(OCC_AFF_BURST_PATH)
 
   local AB = Yso.off.oc.occ_aff_burst
@@ -255,7 +287,7 @@ local function load_occ_aff_burst()
 
   local eq_plan = get_upvalue(AB.attack_function, "_eq_plan")
   local route_pair_plan = get_upvalue(AB.attack_function, "_route_pair_plan")
-  local readaura_plan = get_upvalue(eq_plan, "_readaura_plan")
+  local AP = (((_G.Yso or {}).off or {}).oc or {}).aura_planner or {}
   return {
     env = env,
     AB = AB,
@@ -263,8 +295,8 @@ local function load_occ_aff_burst()
     route_pair_plan = route_pair_plan,
     payload_line = get_upvalue(AB.attack_function, "_payload_line"),
     loyals_open_cmd = get_upvalue(AB.attack_function, "_loyals_open_cmd"),
-    bootstrap_readaura_plan = get_upvalue(eq_plan, "_bootstrap_readaura_plan"),
-    should_probe_readaura = get_upvalue(readaura_plan, "_should_probe_readaura"),
+    bootstrap_readaura_plan = AP.bootstrap_readaura_plan,
+    should_probe_readaura = AP.should_probe_readaura,
   }
 end
 
@@ -283,9 +315,10 @@ do
   )
 
   T.env.txn_status = { active = true, matched = true }
-  assert_nil(
-    "party bootstrap suppressed by active txn",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = true }))
+  assert_eq(
+    "party bootstrap active txn falls through to pressure eq",
+    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = true })),
+    "unnamable speak"
   )
 
   T.env.txn_status = { active = false, matched = false }
@@ -299,9 +332,10 @@ do
   _G.gmcp.Char.Vitals.eq = "1"
   T.PA.state.loyals_sent_for = tgt
   assert_nil("party already-hostile skips free bootstrap", select(1, T.plan_free(tgt)))
-  assert_nil(
+  assert_eq(
     "party already-hostile does not force bootstrap readaura",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false }))
+    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
+    "unnamable speak"
   )
 
   T.PA.on_sent({
@@ -335,7 +369,10 @@ end
 do
   local T = load_party_aff()
   local tgt = T.env.target
-  T.env.snapshot = { fresh = true, read_complete = true, deaf = true, speed = false, had_mana = true, mana_pct = 70 }
+  T.env.snapshot = {
+    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
+    deaf = true, speed = false, mana_pct = 70,
+  }
   T.env.readaura_ready = true
 
   local eq_cmd, _, eq_tag = T.plan_eq(tgt, { loyals_bootstrap_pending = false })
@@ -351,7 +388,10 @@ end
 do
   local T = load_party_aff()
   local tgt = T.env.target
-  T.env.snapshot = { fresh = true, read_complete = true, deaf = false, speed = false, had_mana = true, mana_pct = 70 }
+  T.env.snapshot = {
+    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
+    deaf = false, speed = false, mana_pct = 70,
+  }
   T.env.readaura_ready = true
 
   local eq_cmd, _, eq_tag = T.plan_eq(tgt, { loyals_bootstrap_pending = false })
@@ -380,7 +420,10 @@ do
   local T = load_party_aff()
   local tgt = T.env.target
   T.PA.state.unnamable_sent_for = tgt
-  T.env.snapshot = { fresh = true, read_complete = true, deaf = false, speed = true, had_mana = true, mana_pct = 35 }
+  T.env.snapshot = {
+    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
+    deaf = false, speed = true, mana_pct = 35,
+  }
   T.env.readaura_ready = true
 
   assert_eq(
@@ -396,7 +439,7 @@ do
     ("pinchaura %s speed"):format(tgt)
   )
 
-  T.env.recent_tags["pa:eq:pinchaura:" .. tgt] = true
+  T.env.recent_tags["occ:eq:pinchaura:" .. tgt] = true
   assert_eq(
     "party truename branch utter follow-up",
     select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
@@ -412,7 +455,10 @@ do
   T.PA.state.loyals_sent_for = tgt
   T.PA.state.enabled = true
   T.PA.state.loop_enabled = true
-  T.env.snapshot = { fresh = true, read_complete = true, deaf = false, speed = false, had_mana = true, mana_pct = 70 }
+  T.env.snapshot = {
+    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
+    deaf = false, speed = false, mana_pct = 70,
+  }
   _G.Yso.state.ent_ready = function() return false end
 
   local payload = T.PA.build_payload({ target = tgt })
@@ -521,6 +567,78 @@ do
   local T = load_occ_aff_burst()
   local tgt = T.env.target
 
+  local pair_open = T.route_pair_plan(tgt, {
+    deaf = false,
+    cleanseaura_ready = false,
+    finish_stage = "pressure",
+    needs_attend = false,
+    needs_chimera = false,
+  })
+  assert_eq("occ mana-bury opener entity asthma", pair_open.entity_cmd, ("command bubonis at %s"):format(tgt))
+  assert_eq("occ mana-bury opener eq paralysis pair", pair_open.eq_cmd, ("instill %s with paralysis"):format(tgt))
+
+  T.env.aff_scores.asthma = 100
+  T.env.aff_scores.paralysis = 100
+  local pair_health = T.route_pair_plan(tgt, {
+    deaf = false,
+    cleanseaura_ready = false,
+    finish_stage = "pressure",
+    needs_attend = false,
+    needs_chimera = false,
+  })
+  assert_eq("occ mana-bury healthleech entity", pair_health.entity_cmd, ("command worm at %s"):format(tgt))
+  assert_nil("occ mana-bury healthleech suppresses duplicate eq", pair_health.eq_cmd)
+
+  T.env.aff_scores.healthleech = 100
+  local pair_ready = T.route_pair_plan(tgt, {
+    deaf = false,
+    cleanseaura_ready = false,
+    finish_stage = "pressure",
+    needs_attend = false,
+    needs_chimera = false,
+  })
+  assert_nil("occ mana-bury setup complete has no forced pair entity", pair_ready.entity_cmd)
+  assert_nil("occ mana-bury setup complete has no forced pair eq", pair_ready.eq_cmd)
+
+  T.env.aff_scores.manaleech = 100
+  local eq_disloyalty = select(1, T.eq_plan(tgt, {
+    needs_mana_bury = true,
+    cleanseaura_ready = false,
+    deaf = false,
+    finish_stage = "pressure",
+  }, nil))
+  assert_eq("occ post-manaleech disloyalty uses devolve", eq_disloyalty, ("devolve %s"):format(tgt))
+
+  T.env.aff_scores.disloyalty = 100
+  T.env.recent_tags["ab:eq:devolve:" .. tgt] = true
+  T.env.recent_tags["ab:eq:enervate:" .. tgt] = true
+  local eq_anorexia = select(1, T.eq_plan(tgt, {
+    needs_mana_bury = true,
+    cleanseaura_ready = false,
+    mana_pct = 85,
+    deaf = true,
+    finish_stage = "pressure",
+  }, nil))
+  assert_eq("occ late fallback anorexia uses regress", eq_anorexia, ("regress %s"):format(tgt))
+
+  T.env.aff_scores = {
+    manaleech = 100,
+    disloyalty = 100,
+    asthma = 100,
+    paralysis = 100,
+    slickness = 100,
+    healthleech = 100,
+  }
+  local pressure_pair = T.route_pair_plan(tgt, {
+    deaf = false,
+    cleanseaura_ready = false,
+    finish_stage = "pressure",
+    needs_attend = false,
+    needs_chimera = true,
+  })
+  assert_eq("occ deaf-down pressure forces chimera command", pressure_pair.entity_cmd, ("command chimera at %s"):format(tgt))
+  assert_eq("occ deaf-down pressure pairs eq filler", pressure_pair.eq_cmd, ("instill %s with clumsiness"):format(tgt))
+
   T.env.aff_scores.manaleech = 100
   T.env.aff_scores.agoraphobia = 100
   T.env.aff_scores.confusion = 100
@@ -538,6 +656,16 @@ do
   assert_eq("occ chimera-exhausted hearing target uses entity filler", pair.entity_cmd, ("command storm at %s"):format(tgt))
   assert_eq("occ chimera-exhausted filler aff", pair.entity_aff, "clumsiness")
   assert_eq("occ chimera-exhausted filler reason", pair.reason, "chimera_filler:clumsiness")
+
+  T.env.aff_scores.hallucinations = nil
+  local pair_reopen = T.route_pair_plan(tgt, {
+    deaf = false,
+    cleanseaura_ready = false,
+    finish_stage = "pressure",
+    needs_attend = false,
+    needs_chimera = true,
+  })
+  assert_eq("occ chimera pressure resumes when pool reopens", pair_reopen.entity_cmd, ("command chimera at %s"):format(tgt))
 
   local attend_pair = T.route_pair_plan(tgt, {
     deaf = true,
