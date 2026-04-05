@@ -488,6 +488,8 @@ local function _snapshot(tgt)
   st.postconv = st.route.postconv == true
   st.freeze_package_intact = _freeze_package_intact(st)
   st.freeze_missing = st.freeze_package_intact ~= true
+  st.water_moderate_ready = tonumber(st.res.water or 0) >= 2
+  st.freeze_requires_water_refresh = st.freeze_missing == true and st.water_moderate_ready ~= true
 
   st.bombard_reason = ""
   if st.clumsiness ~= true then
@@ -733,14 +735,16 @@ local function _select_command(tgt)
   end
 
   if st.freeze_missing == true and st.postconv ~= true then
-    local ok, why, cmd = _can_cast_freeze(tgt)
-    _set_route_stage(tgt, ok and "opener" or "hold", "freeze", "freeze_reopen")
-    if ok then
-      local reason = (st.frozen ~= true and "frozen_missing" or "frostbite_missing")
-      return _choice(cmd, "freeze_reopen", "freeze_reopen", reason, "opener", "freeze", "freeze_reopen"), st, rejects, ""
+    if st.freeze_requires_water_refresh == true then
+      local ok, why, cmd = _can_cast_freeze(tgt)
+      _set_route_stage(tgt, ok and "opener" or "hold", "freeze", "freeze_reopen")
+      if ok then
+        return _choice(cmd, "freeze_reopen", "freeze_reopen", "water_moderate_missing", "opener", "freeze", "freeze_reopen"), st, rejects, ""
+      end
+      _reject(rejects, "freeze_reopen", why ~= "" and why or "water_moderate_missing")
+      return nil, st, rejects, why ~= "" and why or "water_moderate_missing"
     end
-    _reject(rejects, "freeze_reopen", why ~= "" and why or "freeze_missing")
-    return nil, st, rejects, why ~= "" and why or "freeze_missing"
+    _reject(rejects, "freeze_reopen", "deferred_for_resonance_pivot")
   end
 
   if st.postconv == true then
@@ -788,6 +792,15 @@ local function _select_command(tgt)
     return diss, st, rejects, ""
   end
 
+  if st.freeze_missing == true then
+    local ok, why, cmd = _can_cast_freeze(tgt)
+    if ok then
+      _set_route_stage(tgt, "maintenance", "freeze", "maintenance")
+      return _choice(cmd, "maintenance", "maintenance_refresh", "freeze_package_incomplete", "maintenance", "freeze", "maintenance"), st, rejects, ""
+    end
+    _reject(rejects, "maintenance_freeze", why ~= "" and why or "freeze_package_incomplete")
+  end
+
   _set_route_stage(tgt, "hold", "idle", "maintenance")
   return nil, st, rejects, "no_legal_action"
 end
@@ -817,23 +830,10 @@ local function _emit_payload(payload, category)
       Q._commit_hint = nil
       return true
     end
-    if type(MF.on_payload_sent) == "function" then
-      pcall(MF.on_payload_sent, payload)
-    end
     Q._commit_hint = opts
     if Yso and Yso.pulse and type(Yso.pulse.wake) == "function"
       and not (Yso.pulse.state and Yso.pulse.state._in_flush) then
       pcall(Yso.pulse.wake, "emit:staged")
-    end
-    return true
-  end
-
-  if type(send) == "function" then
-    local cmd = _trim(payload and payload.eq or "")
-    if cmd == "" then return false end
-    send(cmd, false)
-    if type(MF.on_payload_sent) == "function" then
-      pcall(MF.on_payload_sent, { eq = cmd })
     end
     return true
   end
@@ -890,6 +890,12 @@ local function _update_explain(tgt, st, choice, rejects, blocker)
       fire = st.res.fire,
       water = st.res.water,
       missing_moderate = table.concat(st.conv_missing or {}, "/"),
+      water_moderate_ready = st.water_moderate_ready == true,
+    } or {},
+    freeze = st and {
+      freeze_missing = st.freeze_missing == true,
+      freeze_package_intact = st.freeze_package_intact == true,
+      water_refresh_required = st.freeze_requires_water_refresh == true,
     } or {},
     dissonance = st and {
       stage = st.dissonance_stage,
@@ -1021,8 +1027,12 @@ function MF.attack_function(arg)
 
   if preview then return payload end
 
-  local sent = _emit_payload({ eq = choice.cmd }, choice.category)
+  local queued_payload = { eq = choice.cmd }
+  local sent = _emit_payload(queued_payload, choice.category)
   if not sent then return false, "emit_failed" end
+  if type(MF.on_payload_queued) == "function" then
+    pcall(MF.on_payload_queued, queued_payload)
+  end
 
   MF.state.last_cmd = choice.cmd
   MF.state.last_category = choice.category
@@ -1069,7 +1079,7 @@ function MF.status()
   return MF.explain()
 end
 
-function MF.on_payload_sent(payload)
+function MF.on_payload_queued(payload)
   _payload_each_eq(payload, function(cmd)
     cmd = _trim(cmd)
     if cmd == "" then return end
@@ -1167,6 +1177,16 @@ function MF.on_payload_sent(payload)
   end)
 end
 
+function MF.on_payload_sent(payload)
+  return MF.on_payload_queued(payload)
+end
+
+function MF.on_payload_fired(payload)
+  payload = payload or {}
+  MF.state.last_fired_cmd = _trim(payload.eq or payload.cmd or "")
+  MF.state.last_fired_at = _now()
+end
+
 function MF.on_enter(ctx)
   MF.init()
   return true
@@ -1214,7 +1234,7 @@ function MF.on_manual_success(ctx)
 end
 
 function MF.on_send_result(payload, ctx)
-  MF.on_payload_sent(payload)
+  MF.on_payload_fired(payload)
   return true
 end
 

@@ -529,6 +529,10 @@ end
 
 function Yso.emit(payload, opts)
   opts = opts or {}
+  if type(payload) == "table" and _trim(opts.target or "") == "" then
+    local tgt = _trim(payload.target)
+    if tgt ~= "" then opts.target = tgt end
+  end
 
   -- Offense pause gate: when active, block offense automation emission unless forced.
   if type(Yso.offense_paused) == "function" and Yso.offense_paused() and opts.force ~= true then

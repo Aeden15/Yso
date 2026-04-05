@@ -802,16 +802,6 @@ local function _emit_payload(payload, category)
     return true
   end
 
-  if type(send) == "function" then
-    local cmd = _trim(payload and payload.eq or "")
-    if cmd == "" then return false end
-    send(cmd, false)
-    if type(MGD.on_payload_sent) == "function" then
-      pcall(MGD.on_payload_sent, { eq = cmd })
-    end
-    return true
-  end
-
   return false
 end
 
@@ -957,8 +947,12 @@ function MGD.attack_function(arg)
 
   if preview then return payload end
 
-  local sent = _emit_payload({ eq = cmd }, category)
+  local queued_payload = { eq = cmd }
+  local sent = _emit_payload(queued_payload, category)
   if not sent then return false, "emit_failed" end
+  if type(MGD.on_payload_queued) == "function" then
+    pcall(MGD.on_payload_queued, queued_payload)
+  end
 
   MGD.state.last_cmd = cmd
   MGD.state.last_category = category
@@ -1006,7 +1000,7 @@ function MGD.status()
   return MGD.explain()
 end
 
-function MGD.on_payload_sent(payload)
+function MGD.on_payload_queued(payload)
   _payload_each_eq(payload, function(cmd)
     cmd = _trim(cmd)
     if cmd == "" then return end
@@ -1100,6 +1094,16 @@ function MGD.on_payload_sent(payload)
   end)
 end
 
+function MGD.on_payload_sent(payload)
+  return MGD.on_payload_queued(payload)
+end
+
+function MGD.on_payload_fired(payload)
+  payload = payload or {}
+  MGD.state.last_fired_cmd = _trim(payload.eq or payload.cmd or "")
+  MGD.state.last_fired_at = _now()
+end
+
 function MGD.on_enter(ctx)
   MGD.init()
   return true
@@ -1147,7 +1151,7 @@ function MGD.on_manual_success(ctx)
 end
 
 function MGD.on_send_result(payload, ctx)
-  MGD.on_payload_sent(payload)
+  MGD.on_payload_fired(payload)
   return true
 end
 

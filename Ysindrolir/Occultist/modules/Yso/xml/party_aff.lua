@@ -589,32 +589,27 @@ local function _emit_payload(payload)
   }
   local cmd = _payload_line({ target = target, lanes = emit_payload })
   if _trim(cmd) == "" then return false, "empty" end
-
-  local Q = Yso and Yso.queue or nil
-  local used_queue = false
-  local wants_compound = _trim(emit_payload.bal) ~= "" and _trim(emit_payload.class) ~= "" and cmd:find("&&command ", 1, true) ~= nil
-  if wants_compound then
-    local sent, err = _safe_send(cmd)
-    if not sent then return false, err end
-  elseif Q and type(Q.emit) == "function" then
-    local ok, res = pcall(Q.emit, emit_payload)
+  if type(Yso.emit) == "function" then
+    local ok = Yso.emit(emit_payload, {
+      reason = "party_aff:emit",
+      kind = "offense",
+      target = target,
+      commit = true,
+    }) == true
+    if not ok then return false, "emit_failed" end
+  else
+    local Q = Yso and Yso.queue or nil
+    if not (Q and type(Q.emit) == "function") then
+      return false, "queue_emit_unavailable"
+    end
+    local ok, res = pcall(Q.emit, emit_payload, {
+      reason = "party_aff:emit",
+      kind = "offense",
+      target = target,
+      commit = true,
+    })
     if not ok then return false, res end
     if res ~= true then return false, "queue_emit_failed" end
-    used_queue = true
-  else
-    local sent, err = _safe_send(cmd)
-    if not sent then return false, err end
-  end
-
-  if Yso and Yso.locks and type(Yso.locks.note_send) == "function" then
-    if _trim(emit_payload.eq) ~= "" then pcall(Yso.locks.note_send, "eq") end
-    if _trim(emit_payload.bal) ~= "" then pcall(Yso.locks.note_send, "bal") end
-    if not used_queue and _trim(emit_payload.class) ~= "" then
-      pcall(Yso.locks.note_send, "class")
-    end
-  end
-  if not used_queue and _trim(emit_payload.class) ~= "" and Yso and Yso.state and type(Yso.state.set_ent_ready) == "function" then
-    pcall(Yso.state.set_ent_ready, false, "party_aff:fallback_emit")
   end
 
   return true, cmd
@@ -827,65 +822,7 @@ local function _remember_attack(cmd, payload)
 end
 
 local function _waiting_blocks_tick()
-  local wait = PA.state.waiting or {}
-  local queued = _trim(wait.queue)
-  if queued == "" then return false end
-  if (_now() - (tonumber(wait.at) or 0)) >= 3.0 then
-    _clear_waiting()
-    return false
-  end
-  local lanes = wait.lanes
-  if type(lanes) == "table" and #lanes > 0 then
-    local blocked_eq, blocked_ent = false, false
-    for i = 1, #lanes do
-      if not _lane_ready(lanes[i]) then
-        if lanes[i] == "eq" then blocked_eq = true end
-        if lanes[i] == "class" then blocked_ent = true end
-        local reason = "waiting_outcome"
-        if blocked_eq and not blocked_ent and #lanes == 1 then
-          reason = "waiting_eq"
-        elseif blocked_ent and not blocked_eq and #lanes == 1 then
-          reason = "waiting_ent"
-        end
-        wait.reason = reason
-        if PA.state.in_flight then PA.state.in_flight.reason = reason end
-        _note_no_send_reason(reason)
-        return true
-      end
-    end
-    if blocked_ent or table.concat(lanes, ","):find("class", 1, true) then
-      _note_retry_reason("retry_entity_ready")
-    end
-    _clear_waiting()
-    return false
-  end
-  local lane = _lc(wait.main_lane or "")
-  if lane == "eq" then
-    if _eq_ready() then _clear_waiting(); return false end
-    wait.reason = "waiting_eq"
-    if PA.state.in_flight then PA.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  if lane == "bal" then
-    if _bal_ready() then _clear_waiting(); return false end
-    wait.reason = "waiting_outcome"
-    if PA.state.in_flight then PA.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  if lane == "entity" or lane == "class" then
-    if _ent_ready() then
-      _note_retry_reason("retry_entity_ready")
-      _clear_waiting()
-      return false
-    end
-    wait.reason = "waiting_ent"
-    if PA.state.in_flight then PA.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  _clear_waiting()
+  -- Keep loop reevaluating continuously; queued ownership handles replacement.
   return false
 end
 

@@ -147,11 +147,9 @@ AB.debug = AB.debug or {
   last_render_at = 0,
   last_text = "",
 }
-local _render_debug_screen
-local _install_debug_aliases
 local _mana_bury_ready
 local _focus_lock_count
-local _focus_lock_roar_desired
+local _focus_lock_chimera_desired
 CS.cfg = CS.cfg or {
   mana_burst_pct = tonumber(AB.cfg.mana_burst_pct or 40) or 40,
 }
@@ -454,7 +452,7 @@ function CS.plan_aff(tgt)
   end
   local focus_count = (_focus_lock_count and _focus_lock_count(tgt)) or 0
   local mana_bury_ready = (_mana_bury_ready and _mana_bury_ready(tgt)) or false
-  local needs_chimera = (_focus_lock_roar_desired and _focus_lock_roar_desired(tgt)) or false
+  local needs_chimera = (_focus_lock_chimera_desired and _focus_lock_chimera_desired(tgt)) or false
   if bm.active == true and bm.passive_allowed ~= true then
     needs_chimera = false
   end
@@ -629,7 +627,7 @@ local function _route_active()
   return AB.state and AB.state.loop_enabled == true
 end
 
-local _FOCUS_LOCK_ROAR_POOL = {
+local _FOCUS_LOCK_CHIMERA_POOL = {
   "agoraphobia",
   "confusion",
   "claustrophobia",
@@ -738,8 +736,8 @@ local function _enlighten_focus_affs()
   return _normalized_aff_list(_FOCUS_LOCK_ENLIGHTEN_FALLBACK)
 end
 
-local function _focus_lock_roar_set()
-  return _list_to_set(_FOCUS_LOCK_ROAR_POOL)
+local function _focus_lock_chimera_set()
+  return _list_to_set(_FOCUS_LOCK_CHIMERA_POOL)
 end
 
 local function _focus_lock_moon_set()
@@ -759,8 +757,8 @@ local function _focus_lock_aff_in_set(aff, set)
   return aff ~= "" and type(set) == "table" and set[aff] == true
 end
 
-local function _focus_lock_in_roar_pool(aff)
-  return _focus_lock_aff_in_set(aff, _focus_lock_roar_set())
+local function _focus_lock_in_chimera_pool(aff)
+  return _focus_lock_aff_in_set(aff, _focus_lock_chimera_set())
 end
 
 local function _focus_lock_in_moon_pool(aff)
@@ -783,17 +781,10 @@ local function _has_bloodroot_hold(tgt)
   return _has_aff(tgt, "slickness") or _has_aff(tgt, "paralysis")
 end
 
-local function _mana_bury_slot_count(tgt)
-  local n = 0
-  if _has_bloodroot_hold(tgt) then n = n + 1 end
-  if _has_aff(tgt, "disloyalty") then n = n + 1 end
-  if _has_aff(tgt, "anorexia") then n = n + 1 end
-  return n
-end
-
 _mana_bury_ready = function(tgt)
-  if not _has_aff(tgt, "asthma") then return false end
-  return _mana_bury_slot_count(tgt) >= 2
+  return _has_aff(tgt, "asthma")
+    and _has_bloodroot_hold(tgt)
+    and _has_aff(tgt, "healthleech")
 end
 
 _focus_lock_count = function(tgt)
@@ -807,7 +798,7 @@ _focus_lock_count = function(tgt)
       n = n + 1
     end
   end
-  for i = 1, #_FOCUS_LOCK_ROAR_POOL do count_aff(_FOCUS_LOCK_ROAR_POOL[i]) end
+  for i = 1, #_FOCUS_LOCK_CHIMERA_POOL do count_aff(_FOCUS_LOCK_CHIMERA_POOL[i]) end
   local moon = _moon_focus_affs()
   for i = 1, #moon do count_aff(moon[i]) end
   local enlighten = _enlighten_focus_affs()
@@ -866,23 +857,22 @@ local function _mana_bury_prediction_set()
     asthma = true,
     slickness = true,
     paralysis = true,
-    disloyalty = true,
-    anorexia = true,
+    healthleech = true,
     manaleech = true,
   }
 end
 
 local function _focus_lock_prediction_set()
-  local set = _focus_lock_roar_set()
+  local set = _focus_lock_chimera_set()
   for aff in pairs(_focus_lock_moon_set()) do set[aff] = true end
   for aff in pairs(_focus_lock_enlighten_set()) do set[aff] = true end
   for aff in pairs(_focus_lock_discord_set()) do set[aff] = true end
   return set
 end
 
-local function _chimera_roar_complete(tgt)
-  for i = 1, #_FOCUS_LOCK_ROAR_POOL do
-    if not _has_aff(tgt, _FOCUS_LOCK_ROAR_POOL[i]) then
+local function _chimera_pool_complete(tgt)
+  for i = 1, #_FOCUS_LOCK_CHIMERA_POOL do
+    if not _has_aff(tgt, _FOCUS_LOCK_CHIMERA_POOL[i]) then
       return false
     end
   end
@@ -910,9 +900,9 @@ local function _predict_focus_lock_aff(tgt, plan)
   return _predict_cured_aff_in_family(tgt, _focus_lock_prediction_set())
 end
 
-_focus_lock_roar_desired = function(tgt)
+_focus_lock_chimera_desired = function(tgt)
   if _lock_stable(tgt) ~= true then return true end
-  return _focus_lock_in_roar_pool(_predict_focus_lock_aff(tgt))
+  return _focus_lock_in_chimera_pool(_predict_focus_lock_aff(tgt))
 end
 
 local function _focus_lock_needs_moon(tgt)
@@ -933,7 +923,7 @@ local function _entity_candidates(tgt, plan)
   end
   if _has_aff(tgt, "manaleech") ~= true then
     predicted = _predict_mana_bury_aff(tgt, plan)
-    if predicted == "asthma" or predicted == "slickness" or predicted == "paralysis" then
+    if predicted == "asthma" or predicted == "slickness" or predicted == "paralysis" or predicted == "healthleech" then
       push(predicted)
     end
     if not _has_aff(tgt, "asthma") then
@@ -941,16 +931,21 @@ local function _entity_candidates(tgt, plan)
     elseif not _has_bloodroot_hold(tgt) then
       push("slickness")
       push("paralysis")
+    elseif not _has_aff(tgt, "healthleech") then
+      push("healthleech")
     end
     return out, predicted and "predict" or "mana_bury"
   end
   predicted = _predict_focus_lock_aff(tgt, plan)
-  if _focus_lock_in_roar_pool(predicted) then push("chimera_roar") end
-  if _focus_lock_roar_desired(tgt) then push("chimera_roar") end
+  if _focus_lock_in_chimera_pool(predicted) then push("chimera_command") end
+  if _focus_lock_chimera_desired(tgt) then push("chimera_command") end
   return out, predicted and "predict" or "focus_lock"
 end
 
 _entity_aff_cmd = function(aff, tgt, ES)
+  if _lc(aff) == "chimera_command" then
+    return ("command chimera at %s"):format(tgt), "mental_build"
+  end
   if Yso.ent_cmd_for_aff and type(Yso.ent_cmd_for_aff) == "function" then
     return Yso.ent_cmd_for_aff(_lc(aff), tgt, _has_aff)
   end
@@ -1527,27 +1522,27 @@ local function _emit_payload(payload)
   local cmd = _payload_line({ lanes = emit_payload })
   if _trim(cmd) == "" then return false, "empty" end
 
-  local Q = Yso and Yso.queue or nil
-  local used_queue = false
-  if Q and type(Q.emit) == "function" then
-    local ok, res = pcall(Q.emit, emit_payload)
+  if type(Yso.emit) == "function" then
+    local ok = Yso.emit(emit_payload, {
+      reason = "occ_aff_burst:emit",
+      kind = "offense",
+      target = _trim(type(payload) == "table" and payload.target or ""),
+      commit = true,
+    }) == true
+    if not ok then return false, "emit_failed" end
+  else
+    local Q = Yso and Yso.queue or nil
+    if not (Q and type(Q.emit) == "function") then
+      return false, "queue_emit_unavailable"
+    end
+    local ok, res = pcall(Q.emit, emit_payload, {
+      reason = "occ_aff_burst:emit",
+      kind = "offense",
+      target = _trim(type(payload) == "table" and payload.target or ""),
+      commit = true,
+    })
     if not ok then return false, res end
     if res ~= true then return false, "queue_emit_failed" end
-    used_queue = true
-  else
-    local sent, err = _safe_send(cmd)
-    if not sent then return false, err end
-  end
-
-  if Yso and Yso.locks and type(Yso.locks.note_send) == "function" then
-    if _trim(emit_payload.eq) ~= "" then pcall(Yso.locks.note_send, "eq") end
-    if _trim(emit_payload.bal) ~= "" then pcall(Yso.locks.note_send, "bal") end
-    if not used_queue and _trim(emit_payload.class) ~= "" then
-      pcall(Yso.locks.note_send, "class")
-    end
-  end
-  if not used_queue and _trim(emit_payload.class) ~= "" and Yso and Yso.state and type(Yso.state.set_ent_ready) == "function" then
-    pcall(Yso.state.set_ent_ready, false, "occ_aff_burst:fallback_emit")
   end
 
   return true, cmd
@@ -2153,68 +2148,10 @@ local function _remember_attack(cmd, payload)
 end
 
 local function _waiting_blocks_tick()
-  local wait = AB.state.waiting or {}
-  local queued = _trim(wait.queue)
-  if queued == "" then
-    if type(AB.state.explain) == "table" and type(AB.state.explain.waiting) == "table" then
-      AB.state.explain.waiting.active = false
-      AB.state.explain.waiting.queue = ""
-      AB.state.explain.waiting.main_lane = ""
-      AB.state.explain.waiting.lanes = {}
-      AB.state.explain.waiting.age = 0
-    end
-    return false
+  if type(AB.state.explain) == "table" and type(AB.state.explain.waiting) == "table" then
+    AB.state.explain.waiting.active = false
   end
-
-  local age = math.max(0, _now() - (tonumber(wait.at) or _now()))
-  if (_now() - (tonumber(wait.at) or 0)) >= 3.0 then
-    _clear_waiting()
-    return false
-  end
-
-  if type(AB.state.explain) ~= "table" then AB.state.explain = {} end
-  AB.state.explain.route = AB.state.explain.route or "occ_aff_burst"
-  AB.state.explain.target = AB.state.explain.target or AB.state.last_target or _target()
-  AB.state.explain.resume_checkpoint = AB.state.explain.resume_checkpoint or AB.state.resume_checkpoint
-  AB.state.explain.debug = (AB.debug and AB.debug.enabled == true) or false
-  AB.state.explain.waiting = {
-    active = true,
-    queue = queued,
-    main_lane = _lc(wait.main_lane or ""),
-    lanes = (type(wait.lanes) == "table") and wait.lanes or {},
-    age = age,
-  }
-
-  local lanes = wait.lanes
-  if type(lanes) == "table" and #lanes > 0 then
-    for i = 1, #lanes do
-      if not _lane_ready(lanes[i]) then
-        _render_debug_screen(false)
-        return true
-      end
-    end
-    _clear_waiting()
-    return false
-  end
-
-  local lane = _lc(wait.main_lane or "")
-  if lane == "eq" then
-    if _eq_ready() then _clear_waiting(); return false end
-    _render_debug_screen(false)
-    return true
-  end
-  if lane == "bal" then
-    if _bal_ready() then _clear_waiting(); return false end
-    _render_debug_screen(false)
-    return true
-  end
-  if lane == "entity" or lane == "class" then
-    if _ent_ready() then _clear_waiting(); return false end
-    _render_debug_screen(false)
-    return true
-  end
-
-  _clear_waiting()
+  -- Keep loop reevaluating continuously; queued ownership handles replacement.
   return false
 end
 
@@ -2242,8 +2179,8 @@ end
 local function _send_loyals_passive(reason)
   local cmd = _trim(tostring(AB.cfg.off_passive_cmd or "order loyals passive"))
   if cmd == "" then return false end
-  local ok = _safe_send(cmd)
-  return ok == true
+  local emit_ok, _ = _emit_payload({ lanes = { free = cmd } })
+  return emit_ok == true
 end
 
 local function _mark_loyals_for_target(tgt)
@@ -2440,6 +2377,27 @@ local function _burst_ready(tgt)
   return _enlighten_score() >= tonumber(AB.cfg.enlighten_target or 5)
 end
 
+local function _chimera_pressure_pair_active(tgt, plan)
+  if type(plan) ~= "table" then return false end
+  if plan.deaf == true then return false end
+  if tostring(plan.finish_stage or "") ~= "pressure" then return false end
+  return _chimera_pool_complete(tgt) ~= true
+end
+
+local function _anorexia_fallback_due(tgt, plan)
+  if type(plan) ~= "table" then return false end
+  if plan.cleanseaura_ready == true or plan.needs_mana_bury ~= true then return false end
+  if _has_aff(tgt, "manaleech") ~= true or _has_aff(tgt, "disloyalty") ~= true then return false end
+  if _has_aff(tgt, "anorexia") == true then return false end
+  local mana = tonumber(plan.mana_pct or nil)
+  local cap = tonumber(CS.cfg.mana_burst_pct or 40) or 40
+  if mana == nil or mana <= (cap + 12) then return false end
+  local key = _lc(tgt)
+  if not _recent_sent("ab:eq:devolve:" .. key, 8.0) then return false end
+  if not _recent_sent("ab:eq:enervate:" .. key, 9.0) then return false end
+  return true
+end
+
 -- _readaura_tag, _aura_txn_active_for, _missing_key, _should_probe_readaura,
 -- _readaura_plan, _bootstrap_readaura_plan moved to occ_aura_planner.lua (AP.*)
 
@@ -2478,6 +2436,15 @@ local function _eq_plan(tgt, plan, gate)
   end
 
   if plan.needs_mana_bury and has_manaleech then
+    if not _has_aff(tgt, "disloyalty") then
+      return ("devolve %s"):format(tgt), "mana_bury", "ab:eq:devolve:" .. _lc(tgt), 2.5
+    end
+    if _chimera_pressure_pair_active(tgt, plan) and _ent_ready() and not _class_defense_gates(plan) then
+      return nil, nil, nil, nil
+    end
+    if _anorexia_fallback_due(tgt, plan) then
+      return ("regress %s"):format(tgt), "mana_bury", "ab:eq:regress:" .. _lc(tgt), 2.5
+    end
     return ("enervate %s"):format(tgt), "mana_bury", "ab:eq:enervate:" .. _lc(tgt), 4.0
   end
 
@@ -2501,7 +2468,7 @@ end
 
 local function _mana_bury_eq_cmd(tgt, aff)
   aff = _lc(aff)
-  if aff == "asthma" or aff == "slickness" or aff == "paralysis" then
+  if aff == "asthma" or aff == "slickness" or aff == "paralysis" or aff == "healthleech" or aff == "clumsiness" then
     return ("instill %s with %s"):format(tgt, aff), "mana_bury", "ab:eq:instill:" .. _lc(tgt) .. ":" .. aff, 2.5
   end
   if aff == "disloyalty" then
@@ -2516,10 +2483,15 @@ end
 local function _mana_bury_entity_aff(tgt, predicted)
   predicted = _lc(predicted)
   if not _has_aff(tgt, "asthma") then return "asthma" end
-  if _has_bloodroot_hold(tgt) then return nil end
+  if not _has_bloodroot_hold(tgt) then
+    if predicted == "paralysis" then return "paralysis" end
+    if predicted == "slickness" then return "slickness" end
+    return "slickness"
+  end
+  if not _has_aff(tgt, "healthleech") then return "healthleech" end
   if predicted == "paralysis" then return "paralysis" end
   if predicted == "slickness" then return "slickness" end
-  return "slickness"
+  return nil
 end
 
 local function _mana_bury_eq_aff(tgt, entity_aff, predicted)
@@ -2528,30 +2500,42 @@ local function _mana_bury_eq_aff(tgt, entity_aff, predicted)
   if predicted == "asthma" and entity_aff ~= "asthma" and not _has_aff(tgt, "asthma") then
     return "asthma"
   end
-  if predicted == "disloyalty" and not _has_aff(tgt, "disloyalty") then
-    return "disloyalty"
-  end
-  if predicted == "anorexia" and not _has_aff(tgt, "anorexia") then
-    return "anorexia"
-  end
   if (predicted == "slickness" or predicted == "paralysis")
-    and _has_aff(tgt, "asthma") and not _has_bloodroot_hold(tgt) and entity_aff == ""
+    and (
+      (_has_aff(tgt, "asthma") and not _has_bloodroot_hold(tgt) and entity_aff == "")
+      or (entity_aff == "asthma")
+    )
   then
     return predicted
+  end
+  if predicted == "healthleech" and not _has_aff(tgt, "healthleech") and entity_aff ~= "healthleech" then
+    return "healthleech"
   end
 
   if not _has_aff(tgt, "asthma") and entity_aff ~= "asthma" then
     return "asthma"
   end
-  if not _has_aff(tgt, "disloyalty") then
-    return "disloyalty"
+  if not _has_bloodroot_hold(tgt) then
+    if entity_aff == "asthma" then return "paralysis" end
+    if entity_aff == "slickness" then return "paralysis" end
+    return "slickness"
   end
-  if not _has_aff(tgt, "anorexia") then
-    return "anorexia"
+  if not _has_aff(tgt, "healthleech") and entity_aff ~= "healthleech" then
+    return "healthleech"
   end
-  if _has_aff(tgt, "asthma") and not _has_bloodroot_hold(tgt) and entity_aff == "" then
-    return "paralysis"
+  return nil
+end
+
+local function _chimera_pressure_eq_aff(tgt, entity_aff)
+  entity_aff = _lc(entity_aff)
+  if not _has_aff(tgt, "disloyalty") then return "disloyalty" end
+  if not _has_aff(tgt, "healthleech") and entity_aff ~= "healthleech" then return "healthleech" end
+  if not _has_aff(tgt, "asthma") and entity_aff ~= "asthma" then return "asthma" end
+  if not _has_bloodroot_hold(tgt) then
+    if entity_aff == "slickness" then return "paralysis" end
+    return "slickness"
   end
+  if not _has_aff(tgt, "clumsiness") then return "clumsiness" end
   return nil
 end
 
@@ -2572,6 +2556,7 @@ local function _route_pair_plan(tgt, plan)
   local has_wm = _has_aff(tgt, "whisperingmadness") or _has_aff(tgt, "whispering_madness")
   local predicted_mana = _predict_mana_bury_aff(tgt, plan)
   local predicted_focus = _predict_focus_lock_aff(tgt, plan)
+  local chimera_pair_pressure = _chimera_pressure_pair_active(tgt, plan)
 
   if has_manaleech ~= true then
     if ent_ready then
@@ -2606,12 +2591,17 @@ local function _route_pair_plan(tgt, plan)
     if plan and plan.needs_attend == true then
       out.entity_cmd = ("command chimera at %s"):format(tgt)
       out.entity_cat = "mental_build"
-      out.entity_aff = "chimera_roar"
+      out.entity_aff = "chimera_command"
       out.reason = "attend_deaf_chimera"
-    elseif (plan and plan.needs_chimera == true) or _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted_focus) then
+    elseif chimera_pair_pressure then
+      out.entity_cmd = ("command chimera at %s"):format(tgt)
+      out.entity_cat = "mental_build"
+      out.entity_aff = "chimera_command"
+      out.reason = "chimera_pressure_pair"
+    elseif (plan and plan.needs_chimera == true) or _focus_lock_chimera_desired(tgt) or _focus_lock_in_chimera_pool(predicted_focus) then
       local hearing_target = not (plan and plan.deaf == true)
-      local roar_complete = hearing_target and _chimera_roar_complete(tgt)
-      if roar_complete then
+      local chimera_pool_full = hearing_target and _chimera_pool_complete(tgt)
+      if chimera_pool_full then
         local filler_aff, filler_cmd, filler_cat = _entity_filler_plan(tgt, ES)
         if _trim(filler_cmd) ~= "" then
           out.entity_cmd = filler_cmd
@@ -2623,8 +2613,8 @@ local function _route_pair_plan(tgt, plan)
       if out.entity_cmd == nil then
         out.entity_cmd = ("command chimera at %s"):format(tgt)
         out.entity_cat = "mental_build"
-        out.entity_aff = "chimera_roar"
-        out.reason = _focus_lock_in_roar_pool(predicted_focus) and ("focus_lock_predict:" .. predicted_focus) or "focus_lock_roar"
+        out.entity_aff = "chimera_command"
+        out.reason = _focus_lock_in_chimera_pool(predicted_focus) and ("focus_lock_predict:" .. predicted_focus) or "focus_lock_chimera"
       end
     elseif ES.syc_refresh == true and has_wm ~= true and plan and plan.cleanseaura_ready ~= true then
       out.entity_cmd = ("command sycophant at %s"):format(tgt)
@@ -2634,14 +2624,24 @@ local function _route_pair_plan(tgt, plan)
     end
   end
 
+  if eq_ready and has_manaleech == true and chimera_pair_pressure and out.eq_cmd == nil and out.entity_aff == "chimera_command" then
+    local eq_aff = _chimera_pressure_eq_aff(tgt, out.entity_aff or "")
+    if eq_aff then
+      out.eq_cmd, out.eq_cat, out.eq_tag, out.eq_lock = _mana_bury_eq_cmd(tgt, eq_aff)
+      out.eq_aff = eq_aff
+      out.compensate_aff = eq_aff
+      if out.reason == "" then out.reason = "chimera_pressure_pair" end
+    end
+  end
+
   return out
 end
 
 local function _focus_lock_giving_sources(tgt, plan)
   local predicted = _predict_focus_lock_aff(tgt, plan)
   local out = {}
-  if _focus_lock_roar_desired(tgt) or _focus_lock_in_roar_pool(predicted) then
-    out[#out + 1] = "chimera_roar"
+  if _focus_lock_chimera_desired(tgt) or _focus_lock_in_chimera_pool(predicted) then
+    out[#out + 1] = "chimera_command"
   end
   if _focus_lock_needs_moon(tgt) or _focus_lock_in_moon_pool(predicted) then
     out[#out + 1] = "moon"
@@ -2780,7 +2780,6 @@ function AB.init()
   AB.state.loop_delay = tonumber(AB.state.loop_delay or AB.cfg.loop_delay or 0.15) or 0.15
   _set_loop_enabled((AB.state.loop_enabled == true) or (AB.state.enabled == true))
   pcall(_install_runtime_hooks)
-  pcall(_install_debug_aliases)
   return true
 end
 function AB.reset(reason)
@@ -3014,7 +3013,7 @@ function AB.attack_function(arg)
     lock_stable = _lock_stable(tgt),
     focus_lock_sources = _focus_lock_giving_sources(tgt, plan),
     manaleech = _has_aff(tgt, "manaleech"),
-    chimera_roar_complete = (plan and plan.deaf ~= true) and _chimera_roar_complete(tgt) or false,
+    chimera_pool_complete = (plan and plan.deaf ~= true) and _chimera_pool_complete(tgt) or false,
     eq_aff = pair and pair.eq_aff or "",
     entity_aff = pair and pair.entity_aff or "",
     pair_reason = pair and pair.reason or "",
@@ -3082,10 +3081,6 @@ function AB.attack_function(arg)
     },
     main_lane = main_lane,
   }
-
-  if preview ~= true then
-    _render_debug_screen(false)
-  end
 
   if not free_cmd and not eq_cmd and not bal_cmd and not entity_cmd then
     local why = ((anti.active == true) and "anti_tumble_wait" or "empty")
@@ -3297,7 +3292,7 @@ function AB.on_sent(payload, ctx)
         or (eq_aff == "anorexia" and _lane_contains_cmd(eq_lane, ("regress %s"):format(tgt)))
       ) then
         _note_refresh_sent(tgt, "eq", eq_aff)
-      elseif entity_aff ~= "" and entity_aff ~= "chimera_roar" and entity_aff ~= "sycophant"
+      elseif entity_aff ~= "" and entity_aff ~= "chimera_command" and entity_aff ~= "sycophant"
         and entity_cmd ~= "" and _lane_contains_cmd(class_lane, entity_cmd)
       then
         _note_refresh_sent(tgt, "entity", entity_aff)
@@ -3328,127 +3323,6 @@ function AB.evaluate(ctx)
   local payload, why = AB.build_payload(ctx)
   if not payload then return { ok = false, reason = why } end
   return { ok = true, payload = payload }
-end
-
-local function _dbg_bool(v)
-  if v == true then return "yes" end
-  if v == false then return "no" end
-  return "?"
-end
-
-local function _dbg_list(list)
-  if type(list) ~= "table" or #list == 0 then return "-" end
-  return table.concat(list, ", ")
-end
-
-local function _dbg_field(row)
-  if type(row) ~= "table" then return "?" end
-  local known = (row.known == true) and "K" or "-"
-  local fresh = (row.fresh == true) and "F" or "-"
-  local value = row.value
-  if type(value) == "boolean" then
-    value = value and "T" or "F"
-  elseif value == nil or tostring(value) == "" then
-    value = "?"
-  end
-  return string.format("%s/%s:%s", known, fresh, tostring(value))
-end
-
-local function _debug_screen_text()
-  local ex = AB.explain()
-  local finish = type(ex.finish_transition) == "table" and ex.finish_transition or {}
-  local shieldbreak = type(ex.shieldbreak) == "table" and ex.shieldbreak or {}
-  local para = type(ex.para) == "table" and ex.para or {}
-  local unnamable = type(ex.unnamable) == "table" and ex.unnamable or {}
-  local bm = type(ex.bm_snapshot) == "table" and ex.bm_snapshot or {}
-  local waiting = type(ex.waiting) == "table" and ex.waiting or {}
-  local blockers = {}
-  if ex.eq_blocked == true then blockers[#blockers + 1] = "eq:" .. _dbg_list(ex.eq_block_reasons) end
-  if ex.anti_tumble_active == true then blockers[#blockers + 1] = "anti-tumble" end
-  if tostring(finish.blocker or "") ~= "" then blockers[#blockers + 1] = tostring(finish.blocker) end
-  local next_action = tostring(finish.next_action or "")
-  if next_action == "" and type(ex.planned) == "table" then
-    next_action = _trim(ex.planned.eq or ex.planned.entity or ex.planned.bal or ex.planned.free or "")
-  end
-  if next_action == "" then next_action = "-" end
-  local lines = {
-    string.format("<CadetBlue>[ABDBG]<reset> target=%s checkpoint=%s", tostring(ex.target or "-"), tostring(ex.resume_checkpoint or "-")),
-    string.format(" Route  | stage=%s next=%s blockers=%s", tostring(finish.stage or "pressure"), next_action, _dbg_list(blockers)),
-    string.format(" Shield | up=%s pending=%s last=%s fail=%s summon=%s skip=%s pre=%s",
-      _dbg_bool(ex.shield_up), _dbg_bool(shieldbreak.pending), tostring(shieldbreak.last_result or "-"),
-      tostring(shieldbreak.fail_count or 0), tostring(shieldbreak.summon_attempts or 0),
-      _dbg_bool(shieldbreak.gremlin_skipped), tostring(shieldbreak.preshield_stage or "-")),
-    string.format(" Para   | cure=%s p=%.2f maturity=%.2f allow=%s score=%.2f why=%s lane=%s herb=%s",
-      tostring(para.predicted_next_cure or "-"), tonumber(para.confidence or 0) or 0,
-      tonumber(para.lock_maturity or 0) or 0, _dbg_bool(para.allowed),
-      tonumber(para.para_score or 0) or 0, tostring(para.block_reason or "-"),
-      tostring(para.last_lane or "-"), tostring(para.last_herb or "-")),
-    string.format(" Unname | tgt=%s hear=%s see=%s attend=%s ready=%.1fs last=%s why=%s",
-      tostring(unnamable.target or ex.target or "-"), _dbg_bool(unnamable.hear), _dbg_bool(unnamable.see),
-      tostring(unnamable.attend or "-"), tonumber(unnamable.ready_in or 0) or 0,
-      tostring(unnamable.last_mode or "-"), tostring(unnamable.block_reason or "-")),
-    string.format(" BM     | state=%s branch=%s/%s blind=%s deaf=%s shield=%s phys=%s ment=%s speed=%s mana=%s",
-      tostring(bm.state or "-"), _dbg_bool(ex.bm_branch_active), _dbg_bool(ex.bm_branch_provisional),
-      _dbg_field(bm.blind), _dbg_field(bm.deaf), _dbg_field(bm.shield),
-      _dbg_field(bm.physical), _dbg_field(bm.mental), _dbg_field(bm.speed), _dbg_field(bm.mana)),
-    string.format(" Legal  | eq_blocked=%s reasons=%s retry=%.2f",
-      _dbg_bool(ex.eq_blocked), _dbg_list(ex.eq_block_reasons), tonumber(ex.eq_retry_until or 0) or 0),
-    string.format(" Wait   | active=%s lane=%s age=%.2f lanes=%s q=%s",
-      _dbg_bool(waiting.active), tostring(waiting.main_lane or "-"), tonumber(waiting.age or 0) or 0,
-      _dbg_list(waiting.lanes), tostring(waiting.queue or "-")),
-    string.format(" Finish | cleanseaura=%s mana_ready=%s bury=%s focus=%s stage=%s blocker=%s",
-      tostring(finish.cleanseaura_state or "-"), _dbg_bool(finish.mana_ready), _dbg_bool(ex.mana_bury_ready),
-      tostring(ex.focus_lock_count or 0), tostring(finish.stage or "-"), tostring(finish.blocker or "-")),
-  }
-  return table.concat(lines, "\n") .. "\n"
-end
-
-_render_debug_screen = function(force)
-  if AB.debug.enabled ~= true and force ~= true then return false end
-  if type(cecho) ~= "function" then return false end
-  local text = _debug_screen_text()
-  local now = _now()
-  local min_gap = tonumber(AB.cfg.debug_screen_interval_s or 1.0) or 1.0
-  if force ~= true and text == tostring(AB.debug.last_text or "") and (now - tonumber(AB.debug.last_render_at or 0)) < min_gap then
-    return false
-  end
-  AB.debug.last_text = text
-  AB.debug.last_render_at = now
-  cecho(text)
-  return true
-end
-
-_install_debug_aliases = function()
-  if AB._debug_aliases_installed == true then return true end
-  if type(tempAlias) ~= "function" then return false end
-  AB._debug_alias_ids = AB._debug_alias_ids or {}
-  AB._debug_alias_ids.main = tempAlias([[^abdebug(?:\s+(on|off|show))?$]], function()
-    local mode = _lc(matches[2] or "")
-    if mode == "on" then
-      AB.debug.enabled = true
-      _render_debug_screen(true)
-      return
-    end
-    if mode == "off" then
-      AB.debug.enabled = false
-      if type(cecho) == "function" then
-        cecho("<CadetBlue>[ABDBG]<reset> off\n")
-      end
-      return
-    end
-    _render_debug_screen(true)
-  end)
-  AB._debug_aliases_installed = true
-  return true
-end
-
-function AB.toggle_debug_screen(on)
-  AB.debug.enabled = (on == nil) and not (AB.debug.enabled == true) or (on == true)
-  return _render_debug_screen(true)
-end
-
-function AB.show_debug_screen()
-  return _render_debug_screen(true)
 end
 
 function AB.status()

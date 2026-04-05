@@ -479,6 +479,41 @@ local function _safe_send(cmd)
   return true
 end
 
+local function _emit_lanes(payload, reason)
+  local lanes = type(payload) == "table" and payload.lanes or payload
+  if type(lanes) ~= "table" then return false, "invalid_payload" end
+  local emit_payload = {
+    free = lanes.free or lanes.pre,
+    eq = lanes.eq,
+    bal = lanes.bal,
+    class = lanes.class or lanes.ent or lanes.entity,
+    target = _trim(type(payload) == "table" and payload.target or ""),
+  }
+  if type(Yso.emit) == "function" then
+    local ok = Yso.emit(emit_payload, {
+      reason = reason or "group_damage:emit",
+      kind = "offense",
+      commit = true,
+      target = emit_payload.target,
+    }) == true
+    if not ok then return false, "emit_failed" end
+    return true, _payload_line({ target = emit_payload.target, lanes = emit_payload })
+  end
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.emit) == "function" then
+    local ok, res = pcall(Q.emit, emit_payload, {
+      reason = reason or "group_damage:emit",
+      kind = "offense",
+      commit = true,
+      target = emit_payload.target,
+    })
+    if not ok then return false, res end
+    if res ~= true then return false, "queue_emit_failed" end
+    return true, _payload_line({ target = emit_payload.target, lanes = emit_payload })
+  end
+  return false, "queue_emit_unavailable"
+end
+
 local function _set_debug_field(key, value)
   GD.state.debug = GD.state.debug or { last_no_send_reason = "", last_retry_reason = "", entity_no_send_reasons = {}, last_shield_target = "" }
   GD.state.debug[key] = value
@@ -645,71 +680,8 @@ local function _remember_attack(cmd, payload)
 end
 
 local function _waiting_blocks_tick()
-  local wait = GD.state.waiting or {}
-  local queued = _trim(wait.queue)
-  if queued == "" then return false end
-  if (_now() - (tonumber(wait.at) or 0)) >= 3.0 then
-    _clear_waiting()
-    return false
-  end
-
-  local lanes = wait.lanes
-  if type(lanes) == "table" and #lanes > 0 then
-    local blocked_eq, blocked_ent, blocked = false, false, false
-    for i = 1, #lanes do
-      if not _lane_ready(lanes[i]) then
-        blocked = true
-        if lanes[i] == "eq" then blocked_eq = true end
-        if lanes[i] == "class" then blocked_ent = true end
-      end
-    end
-    if blocked then
-      local reason = "waiting_outcome"
-      if blocked_ent and not blocked_eq and #lanes == 1 then
-        reason = "waiting_ent"
-      elseif blocked_eq and not blocked_ent and #lanes == 1 then
-        reason = "waiting_eq"
-      end
-      wait.reason = reason
-      if GD.state.in_flight then GD.state.in_flight.reason = reason end
-      _note_no_send_reason(reason)
-      return true
-    end
-    if blocked_ent or (#lanes > 1 and wait.reason == "waiting_outcome") or table.concat(lanes, ","):find("class", 1, true) then
-      _note_retry_reason("retry_entity_ready")
-    end
-    _clear_waiting()
-    return false
-  end
-
-  local lane = _lc(wait.main_lane or "")
-  if lane == "eq" then
-    if _eq_ready() then _clear_waiting(); return false end
-    wait.reason = "waiting_eq"
-    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  if lane == "bal" then
-    if _bal_ready() then _clear_waiting(); return false end
-    wait.reason = "waiting_outcome"
-    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  if lane == "entity" or lane == "class" then
-    if _ent_ready() then
-      _note_retry_reason("retry_entity_ready")
-      _clear_waiting()
-      return false
-    end
-    wait.reason = "waiting_ent"
-    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-
-  _clear_waiting()
+  -- Keep offense loop reevaluating continuously; queued ownership handles replacement.
+  -- We keep wait state for explain/debug, but do not hard-block route ticks.
   return false
 end
 
@@ -1549,7 +1521,7 @@ function GD.attack_function(arg)
     return false, "duplicate_action_suppressed"
   end
 
-  local sent, err = _safe_send(cmd)
+  local sent, err = _emit_lanes(emit_payload, "group_damage:attack")
   if not sent then
     _note_retry_reason("retry_hard_fail")
     return false, err
@@ -1721,7 +1693,7 @@ function GD.alias_loop_on_stopped(ctx)
 
   local passive = _trim(tostring(GD.cfg.off_passive_cmd or "order loyals passive"))
   if passive ~= "" then
-    _safe_send(passive)
+    _emit_lanes({ lanes = { free = passive }, target = _target() }, "group_damage:off_passive")
   end
   _set_loyals_hostile(false)
 
@@ -1767,7 +1739,12 @@ end
 local function _emit_lane(lane, cmd, reason)
   cmd = _trim(cmd)
   if cmd == "" then return false end
-  local ok = _safe_send(cmd)
+  local payload = { lanes = {}, target = _target() }
+  if lane == "eq" then payload.lanes.eq = cmd
+  elseif lane == "bal" then payload.lanes.bal = cmd
+  elseif lane == "class" or lane == "entity" then payload.lanes.class = cmd
+  else payload.lanes.free = cmd end
+  local ok = _emit_lanes(payload, reason or ("group_damage:lane:" .. tostring(lane)))
   return ok == true
 end
 
@@ -1892,7 +1869,7 @@ local function _maybe_empress(now)
   E.last_try = now
 
   _echo(("%s TUMBLED OUT -> Empress pull (%s)"):format(tgt, tostring(E.dir or "?")))
-  return (_safe_send(("outd empress%sfling empress %s"):format(_command_sep(), tgt)) == true)
+  return _emit_lane("bal", ("outd empress%sfling empress %s"):format(_command_sep(), tgt), "gd:empress")
 end
 
 local function _rescue_antitumble_action(now)

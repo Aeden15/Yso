@@ -226,22 +226,7 @@ local function _emit(payload, opts)
     local ok = pcall(Q.emit, payload)
     return ok == true
   end
-
-  -- Very small fallback: send eq/class directly if lane helpers exist.
-  local sent = false
-  if payload.eq and Q and type(Q.eq_clear) == "function" then
-    local ok = pcall(Q.eq_clear, payload.eq); sent = sent or (ok == true)
-  elseif payload.eq and type(send) == "function" then
-    send(payload.eq); sent = true
-  end
-
-  if payload.class and Q and type(Q.class_clear) == "function" then
-    local ok = pcall(Q.class_clear, payload.class); sent = sent or (ok == true)
-  elseif payload.class and type(send) == "function" then
-    send(payload.class); sent = true
-  end
-
-  return sent
+  return false
 end
 
 local function _maybe_shieldbreak(tgt)
