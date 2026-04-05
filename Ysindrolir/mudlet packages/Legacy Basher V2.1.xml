@@ -1716,6 +1716,21 @@ function Basher_Setup()
     end
   end
 
+  local function _attack_is_denizen_target(targetSet)
+    local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info or nil
+    if type(info) == "table" then
+      local npc = info.npc
+      if npc == true or npc == 1 or tostring(npc) == "1" or tostring(npc):lower() == "true" then return true end
+      local t = tostring(info.type or ""):lower()
+      if (t == "denizen" or t == "npc") then return true end
+    end
+    local targetIdNum = tonumber(targetSet or "")
+    if targetIdNum ~= nil then
+      return true
+    end
+    return false
+  end
+
   function Legacy.Basher.queueAttackPackage(mode, cmd, requeue_basher, reason)
     local S = Legacy.Settings.Basher or {}
     local why = tostring(reason or "basher")
@@ -1872,13 +1887,14 @@ function Basher_Setup()
     local hasAttack = (class_cfg.attack ~= nil and class_cfg.attack ~= "")
 
     if health ~= nil and targetHpPerc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and targetSet ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and hp_ok and targetSet ~= "" and eq_ready and bal_ready and mobCount &gt; 0 and hasAttack and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
-      if class == "Occultist" and _is_denizen_target() and health ~= nil and health &gt;= 100 then
+      local isDenizenTarget = _attack_is_denizen_target(targetSet)
+      if class == "Occultist" and isDenizenTarget and health ~= nil and health &gt;= 100 then
         Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
         local attend = Legacy.Settings.Basher._attend
         local isNewTarget = (attend.target ~= targetSet)
         local isHealthRecovery = (attend.target == targetSet and attend.healthDropped == true)
         if isNewTarget or isHealthRecovery then
-          if Legacy.Basher.queueAttackPackage("addclear", "attend @tar", true, "attend-opener") then
+          if Legacy.Basher.queueAttackPackage("addclear", "attend @tar;;cleanseaura @tar", true, "attend-opener") then
             Legacy.Settings.Basher.queued = true
             Legacy.Settings.Basher._attend = { target = targetSet, healthDropped = false }
             sendCount = sendCount + 1

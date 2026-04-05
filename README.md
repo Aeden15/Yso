@@ -4,7 +4,7 @@ Current workspace snapshot: March 29, 2026.
 
 ## Current fixes
 
-- **Legacy Occultist basher ATTEND opener** — `Legacy Basher V2.1.xml` now tracks denizen target health from `gmcp.IRE.Target.Info.hpperc` and auto-queues `attend @tar` as the first Occultist bashing action on a new denizen target at `>=100%` HP, then re-queues ATTEND for the same target if it drops below full and later returns to `>=100%`; ATTEND state resets on hunt-off and kill transitions.
+- **Legacy Occultist basher ATTEND opener** — `Legacy Basher V2.1.xml` now tracks denizen target health from `gmcp.IRE.Target.Info.hpperc` and auto-queues `attend @tar;;cleanseaura @tar` as the first Occultist bashing action on a new denizen target at `>=100%` HP, then re-queues the same ATTEND->CLEANSEAURA denizen opener when that target drops below full and later returns to `>=100%`; opener state resets on hunt-off and kill transitions.
 - **XML mirrors synced with canonical sources** — all bug fixes from the canonical Lua modules (Bugs 3, 6, 8, 10–13 + aurum bucket) are now applied to the Mudlet-facing XML mirror copies under `xml/`. Both canonical and XML surfaces match.
 - **Escape button separator ownership fixed** — `yso_escape_button.lua` no longer initializes global `Yso.sep` to `";;"`; it now inherits `Yso.sep`/`Yso.cfg` and falls back to `"&&"` so load order cannot override the canonical pipe separator. Its `_now()` helper also normalizes millisecond `getEpoch()` values.
 - **Fool hunt logic hardened for Occultist** — Fool now resolves cureset via a fallback chain (`ActiveServerSet` -> `CurrentCureset` -> hunt mode hint), supports tendon-severity weighting from `ak.twoh.tendons` (exact count), and exposes `fool status` / `fool auto on|off` runtime controls.
