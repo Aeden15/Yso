@@ -7,6 +7,12 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Legacy Occultist basher ATTEND opener -- Legacy Basher V2.1.xml now uses
+  gmcp.IRE.Target.Info.hpperc for denizen HP gating and auto-queues
+  attend @tar as the first Occultist bashing action on a new denizen target at
+  >=100% HP, then re-queues ATTEND if that same target drops below full and
+  later returns to >=100%. ATTEND state resets on hunt-off and kill transitions.
+
   XML mirrors synced with canonical sources — all bug fixes from the canonical
   Lua modules (Bugs 3, 6, 8, 10-13 + aurum bucket) are now applied to the
   Mudlet-facing XML mirror copies under xml/. Both canonical and XML surfaces

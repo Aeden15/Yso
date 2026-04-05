@@ -7,6 +7,7 @@
 			<script>if Legacy.Settings.Basher.status == true then
   Legacy.Settings.Basher.lastTar = Legacy.Settings.Basher.currentTar
   Legacy.Settings.Basher.currentTar = ""
+  Legacy.Settings.Basher._attend = nil
   Legacy.Settings.Basher.shield = false
   Legacy.Settings.Basher.desc = ""
   send('ql')
@@ -45,6 +46,7 @@ end
 			<script>if Legacy.Settings.Basher.status == true then
   Legacy.Settings.Basher.lastTar = Legacy.Settings.Basher.currentTar
   Legacy.Settings.Basher.currentTar = ""
+  Legacy.Settings.Basher._attend = nil
   Legacy.Settings.Basher.shield = false
   Legacy.Settings.Basher.desc = ""
   send('ql')
@@ -1095,6 +1097,7 @@ if Legacy.Settings.Basher.status == false then
   Legacy.Basher.Target()
 else
   Legacy.Settings.Basher.status = false
+  Legacy.Settings.Basher._attend = nil
   if raiseEvent then raiseEvent("LegacyBasherStatus", false) end
   send("cq freestand")
   Legacy.echo("&lt;red&gt;Bashing Deactivated.")
@@ -1853,6 +1856,13 @@ function Basher_Setup()
     if Yso and Yso.fool and type(Yso.fool.blocks_basher) == "function" and Yso.fool.blocks_basher() then return end
     if sendCount &gt;= 20 then  Legacy.bigEcho("SOMETHING BROKE, TURNING HUNTING OFF", "red", "gold") Legacy.Settings.Basher.status = false return end 
     if targetSet == "" and not currentTargetKnown then Legacy.Settings.Basher.currentTar = "" end
+    if class == "Occultist" then
+      Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
+      local attend = Legacy.Settings.Basher._attend
+      if attend.target == targetSet and health ~= nil and health &lt; 100 then
+        attend.healthDropped = true
+      end
+    end
 
     local hp_ok = ((hp ~= nil and hp &gt; 0) or (hp_text == nil and Legacy.Settings.Basher.powerThrough == true))
     local eq_ready = tostring(vitals.eq or "") == "1"
@@ -1862,6 +1872,20 @@ function Basher_Setup()
     local hasAttack = (class_cfg.attack ~= nil and class_cfg.attack ~= "")
 
     if health ~= nil and targetHpPerc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and targetSet ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and hp_ok and targetSet ~= "" and eq_ready and bal_ready and mobCount &gt; 0 and hasAttack and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
+      if class == "Occultist" and _is_denizen_target() and health ~= nil and health &gt;= 100 then
+        Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
+        local attend = Legacy.Settings.Basher._attend
+        local isNewTarget = (attend.target ~= targetSet)
+        local isHealthRecovery = (attend.target == targetSet and attend.healthDropped == true)
+        if isNewTarget or isHealthRecovery then
+          if Legacy.Basher.queueAttackPackage("addclear", "attend @tar", true, "attend-opener") then
+            Legacy.Settings.Basher.queued = true
+            Legacy.Settings.Basher._attend = { target = targetSet, healthDropped = false }
+            sendCount = sendCount + 1
+            return
+          end
+        end
+      end
       if Legacy.Settings.Basher.shield == false then
         if bigDamage ~= nil and health &gt;= bigDamage then
           for k,v  in pairs(class_cfg) do
