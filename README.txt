@@ -1,12 +1,25 @@
 Yso Systems Workspace
 =====================
-Last updated: April 2, 2026
+Last updated: April 5, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  NDB quick-who city count formatting restored -- Legacy V2.1.xml
+  Legacy.NDB.qwc() city headers now print plain (N) instead of escaped
+  \(N\), removing visible backslashes while preserving existing alignment
+  and city-color formatting.
+
+  Legacy Occultist basher ATTEND opener -- Legacy Basher V2.1.xml now uses
+  gmcp.IRE.Target.Info.hpperc for denizen HP gating and auto-queues
+  attend @tar + configured separator (Yso.sep / Yso.cfg.pipe_sep, fallback &&)
+  + cleanseaura @tar as the first Occultist bashing action on a new denizen
+  target at >=100% HP, then re-queues the same ATTEND->CLEANSEAURA denizen
+  opener when that target drops below full and later returns to >=100%. Opener
+  state resets on hunt-off and kill transitions.
+
   Occultist aff-burst route retuned -- Mana-bury pressure now prioritizes
   asthma -> paralysis/slickness hold -> healthleech -> manaleech, then applies
   disloyalty post-manaleech with anorexia as a late fallback only. Deaf-down

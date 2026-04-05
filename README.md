@@ -1,9 +1,13 @@
 # Yso
 
-Current workspace snapshot: April 2, 2026.
+Current workspace snapshot: April 5, 2026.
 
 ## Current fixes
 
+- **NDB quick-who city count formatting restored** — `Legacy V2.1.xml` `Legacy.NDB.qwc()` city headers now print count parentheses as plain `(N)` instead of escaped `\(N\)`, removing visible backslashes from quick-who output while preserving existing alignment and color logic.
+- **Mirror drift repaired for `occ_aff_burst`** — `modules/Yso/Combat/routes/occ_aff_burst.lua` and its XML mirror `modules/Yso/xml/occ_aff_burst.lua` were out of sync during automated bug checks; mirrors were refreshed and `Yso system.xml` was rebuilt so package-export surfaces are synchronized again.
+- **Legacy Occultist basher ATTEND opener** — `Legacy Basher V2.1.xml` now tracks denizen target health from `gmcp.IRE.Target.Info.hpperc` and auto-queues `attend @tar` + configured separator (`Yso.sep` / `Yso.cfg.pipe_sep`, fallback `&&`) + `cleanseaura @tar` as the first Occultist bashing action on a new denizen target at `>=100%` HP, then re-queues the same ATTEND->CLEANSEAURA denizen opener when that target drops below full and later returns to `>=100%`; opener state resets on hunt-off and kill transitions.
+- **Legacy party target-follow disabled** — `Legacy V2.1.xml` no longer auto-follows `(Party): ... "Target: ..."` lines via the `Party Target Follow` trigger. Target-call authority is now expected to come from the dedicated `Target caller.xml` package.
 - **Occultist aff-burst route retuned** — Mana-bury pressure now prioritizes `asthma -> paralysis/slickness hold -> healthleech -> manaleech`, then applies `disloyalty` post-manaleech with `anorexia` as a late fallback only. Deaf-down pressure now pairs `command chimera` with an EQ filler/missing aff while chimera-pool mentals are still open, and the route no longer includes the `abdebug` screen/alias helpers.
 - **Domination Feed tracking added** — `Yso.dom.feed` now exposes `feed_ready()`, `feed_active()`, and `feed_remaining()` plus cast/ready/destroyed update helpers. The Domination trigger folder in `Yso system.xml` now echoes feed active, feed ready, and the destroyed entity in Domination style, and cooldown-line parsing (`Domination feed: ...`) updates state as a fallback.
 - **Unified self-cleanse module** — Bloodboil (Magi), Fool (Occultist), and Tree Tattoo (universal) now share a cureset-keyed PvP configuration architecture. PvP is scaffolded with per-cureset thresholds (depthswalker, bard, monk, dwc, dwb, blademaster, shaman, airlord) but disabled by default until tuned.

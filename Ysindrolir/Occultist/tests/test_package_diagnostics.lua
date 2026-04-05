@@ -131,6 +131,7 @@ do
   assert_eq("1m: raw basher requeue send collapsed to helper", count_occurrences(basher, "send(\"queue add freestand basher\")"), 1)
   assert_eq("1n: raw big/small damage freestand sends collapsed", count_occurrences(basher, "send(\"queue add freestand \"..v.cmd)"), 0)
   assert_eq("1o: raw shieldbreak fallback freestand send collapsed", count_occurrences(basher, "send(\"queue addclear freestand \"..nr_cmd)"), 0)
+  assert_not_contains("1p: attend opener no hardcoded ;; separator", basher, "attend @tar;;cleanseaura @tar")
 end
 
 print("\n=== Test 2: target sensory helpers read affstrack.score ===")

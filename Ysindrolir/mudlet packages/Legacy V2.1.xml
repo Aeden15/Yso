@@ -46,7 +46,7 @@ Defup()</script>
 				<integer>3</integer>
 			</regexCodePropertyList>
 		</Trigger>
-		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+		<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 			<name>Class Tracking</name>
 			<script></script>
 			<triggerType>0</triggerType>
@@ -3506,7 +3506,7 @@ cecho("")</script>
 					</regexCodePropertyList>
 				</Trigger>
 			</TriggerGroup>
-			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Curing Swap Prompt Gate Check</name>
 				<script>if not Legacy then return end
 Legacy.Curing = Legacy.Curing or {}
@@ -4508,7 +4508,7 @@ disableTrigger("QWC Check")</script>
 				</regexCodePropertyList>
 			</Trigger>
 		</TriggerGroup>
-		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+		<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 			<name>Party Target Follow</name>
 			<script></script>
 			<triggerType>0</triggerType>
@@ -4523,7 +4523,7 @@ disableTrigger("QWC Check")</script>
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList />
 			<regexCodePropertyList />
-			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Target Follow</name>
 				<script>local leaders = {}
 if isTrueCall("party", matches[2], matches[3].." "..matches[4]) == true then
@@ -8751,14 +8751,14 @@ for _, city in ipairs(city_list) do
   -- Print the city name with color
   if Legacy.Settings.NDB.Config[city.name:lower()] then
     if city.name == "Ashtan" or city.name == "Hashan" or city.name == "Cyrene" then
-      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;   "..city.name..": &lt;grey&gt;\\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\\) ")
+      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;   "..city.name..": &lt;grey&gt;(&lt;white&gt;"..#city.players.."&lt;grey&gt;) ")
     elseif city.name == "Mhaldor" or city.name == "Eleusis" then
-      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;  "..city.name..": &lt;grey&gt;\\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\\) ")
+      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;  "..city.name..": &lt;grey&gt;(&lt;white&gt;"..#city.players.."&lt;grey&gt;) ")
     elseif city.name == "Targossas" then
-      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;"..city.name..": &lt;grey&gt;\\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\\) ")
+      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;"..city.name..": &lt;grey&gt;(&lt;white&gt;"..#city.players.."&lt;grey&gt;) ")
     end
   else
-    cecho("\n&lt;"..Legacy.Settings.NDB.Config["(none)"].color.."&gt;    "..city.name..": &lt;grey&gt;\\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\\) ")
+    cecho("\n&lt;"..Legacy.Settings.NDB.Config["(none)"].color.."&gt;    "..city.name..": &lt;grey&gt;(&lt;white&gt;"..#city.players.."&lt;grey&gt;) ")
   end
 
   -- Print sorted names with their colors
