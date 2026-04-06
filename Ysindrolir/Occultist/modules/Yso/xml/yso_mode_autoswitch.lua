@@ -236,6 +236,16 @@ local function _parse_aggression(line)
   return mins * 60 + secs
 end
 
+local function _maybe_update_dom_feed(line)
+  local low = tostring(line or ""):lower()
+  if low:find("domination feed:", 1, true) == nil then return false end
+  if not (Yso and Yso.dom and type(Yso.dom.feed_update_from_cooldowns_line) == "function") then
+    return false
+  end
+  local ok = pcall(Yso.dom.feed_update_from_cooldowns_line, line)
+  return ok
+end
+
 local function _lower(s) return tostring(s or ""):lower() end
 
 local function _looks_like_duel_start(s)
@@ -313,6 +323,10 @@ A._tr.duel_spar_sniff = tempRegexTrigger([[.*]], _safe(function()
     end
     return
   end
+
+  -- Cooldowns fallback: keep Domination feed state fresh even if cast/ready
+  -- lines were missed due to package reload or trigger timing.
+  _maybe_update_dom_feed(line)
 
   local who = line:match("^([A-Z][%w_%-']+) .-")
   if who and _in_room_players(who) then

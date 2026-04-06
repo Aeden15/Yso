@@ -2,6 +2,7 @@ local legacy_name_map = {
   ["entities.lua"] = { "entities" },
   ["hinder.lua"] = { "hinder" },
   ["party_aff.lua"] = { "party_aff" },
+  ["occ_aff.lua"] = { "occ_aff_burst.lua" },
   ["route_gate.lua"] = { "route_gate" },
   ["shieldbreak.lua"] = { "Hunt - Primebond Shieldbreak Selector" },
   ["yso_ak_score_exports.lua"] = { "Yso_AK_Score_Exports.lua" },

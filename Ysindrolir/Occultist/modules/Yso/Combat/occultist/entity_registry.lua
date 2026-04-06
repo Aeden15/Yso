@@ -176,6 +176,43 @@ local function _target_valid(tgt)
   return true
 end
 
+local function _has_aff_target(tgt, aff)
+  tgt = _trim(tgt)
+  aff = _lc(aff)
+  if tgt == "" or aff == "" then return false end
+
+  if Yso and Yso.tgt and type(Yso.tgt.has_aff) == "function" then
+    local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
+    if ok then return v == true end
+  end
+
+  if Yso and Yso.state and type(Yso.state.tgt_has_aff) == "function" then
+    local ok, v = pcall(Yso.state.tgt_has_aff, tgt, aff)
+    if ok then return v == true end
+  end
+
+  return false
+end
+
+local function _firelord_convert_aff(tgt, has_aff)
+  has_aff = type(has_aff) == "function" and has_aff or function(aff)
+    return _has_aff_target(tgt, aff)
+  end
+
+  local pyr = _dom("firelord") or _dom("pyradius") or {}
+  local converts = type(pyr.converts) == "table" and pyr.converts or {}
+
+  local wm_dest = _lc(converts.whisperingmadness or converts.whispering_madness or "recklessness")
+  local ml_dest = _lc(converts.manaleech or "anorexia")
+  local hl_dest = _lc(converts.healthleech or "psychic_damage")
+
+  if has_aff("whisperingmadness") and not has_aff(wm_dest) then return wm_dest end
+  if has_aff("whispering_madness") and not has_aff(wm_dest) then return wm_dest end
+  if has_aff("manaleech") and not has_aff(ml_dest) then return ml_dest end
+  if has_aff("healthleech") and not has_aff(hl_dest) then return hl_dest end
+  return nil
+end
+
 local function _ent_ready(ctx)
   if ctx and ctx.ent_ready ~= nil then return ctx.ent_ready == true end
   if Yso.state and type(Yso.state.ent_ready) == "function" then
@@ -183,6 +220,11 @@ local function _ent_ready(ctx)
     if ok then return v == true end
   end
   return true
+end
+
+function ER.firelord_aff(tgt, ctx)
+  ctx = type(ctx) == "table" and ctx or {}
+  return _firelord_convert_aff(tgt, ctx.has_aff)
 end
 
 function ER.target_swap(tgt)
@@ -457,6 +499,13 @@ function ER.rank(ctx)
       add("firelord", 100, "healthleech", { burst_support = 10 })
     else
       _skipped_set(skipped, "firelord", "burst_not_ready")
+    end
+  elseif category == "convert_support" then
+    local aff = _lc(ctx.firelord_aff or _firelord_convert_aff(tgt, has_aff) or "")
+    if aff ~= "" then
+      add("firelord", 72, aff, { burst_support = 8, convert = true })
+    else
+      _skipped_set(skipped, "firelord", "no_convert_source")
     end
   elseif category == "bootstrap_setup" then
     if T.established.worm ~= true then

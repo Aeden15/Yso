@@ -25,7 +25,7 @@ Canonical source locations (edit these):
 
   Occultist offense:
   - modules/Yso/Combat/routes/group_damage.lua            -> xml/group_damage.lua
-  - modules/Yso/Combat/routes/occ_aff_burst.lua           -> xml/occ_aff_burst.lua
+  - modules/Yso/Combat/routes/occ_aff.lua                 -> xml/occ_aff.lua
   - modules/Yso/Combat/routes/party_aff.lua               -> xml/party_aff.lua
   - modules/Yso/Combat/occultist/offense_helpers.lua      -> xml/yso_occultist_offense.lua
   - modules/Yso/Combat/occultist/entity_registry.lua      -> xml/entity_registry.lua

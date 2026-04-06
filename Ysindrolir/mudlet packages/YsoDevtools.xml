@@ -1372,7 +1372,10 @@ D.route_debug = D.route_debug or {}
 local RD = D.route_debug
 
 RD.routes = {
-  aff  = function() return Yso.off and Yso.off.oc and Yso.off.oc.occ_aff_burst end,
+  aff  = function()
+    local oc = Yso and Yso.off and Yso.off.oc or nil
+    return oc and (oc.occ_aff or oc.occ_aff_burst)
+  end,
   dam  = function()
     local off = Yso and Yso.off or nil
     if Yso and type(Yso.is_magi) == "function" then

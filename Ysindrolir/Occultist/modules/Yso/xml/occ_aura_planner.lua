@@ -357,5 +357,4 @@ function AP.cleanseaura_ready(tgt, snap)
   return (mana ~= nil and mana <= cap) or false, mana
 end
 
-cecho("<cyan>[Yso] aura planner loaded.<reset>\n")
 --========================================================--

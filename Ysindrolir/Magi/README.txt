@@ -115,6 +115,11 @@ Notes
   Focus uses live Yso.magi.resonance state, observes Crystalism focus without
   auto-casting it, and exposes Dissonance stage/confidence/last evidence in
   the shared YsoDevtools package rather than inventing a fixed timer.
+  Focus freeze gating now treats water resonance as the hard pre-gate:
+    when water is below moderate, freeze reopen remains mandatory.
+    when water is already moderate, missing frozen/frostbite no longer
+    blocks resonance pivots (bombard -> fire progress -> dissonance push).
+    if pivots are temporarily blocked, focus falls back to maintenance freeze.
   Crystalism resonance notice triggers live under:
     Yso system.xml -> Yso Triggers/Magi/Crystalism
   energise resonance is separate from the mheals absorb-energy flow:

@@ -5,6 +5,25 @@ Last updated: April 2, 2026
 
 Current fixes
 -------------
+  occ_aff thin-loop refactor (audit-safe): the duel aff route now stays
+  mode-controller owned while using a thin phase flow:
+    open -> pressure <-> cleanse -> convert -> finish
+  EQ convert logic is phase-gated, cleanse attend/truename keeps precedence,
+  finish detection uses target-side enlightened state, and send wait/dedup
+  remains route-local (`occ_aff.state.waiting` / `occ_aff.state.last_attack`).
+
+  Shared helper surface for occ_aff is now canonical under Yso.occ:
+    cleanse_ready
+    ent_refresh
+    ent_for_aff
+    firelord
+    phase / set_phase / get_phase
+    burst
+    pressure
+    convert
+  Firelord conversion selection is now shared and skillchart-driven via
+  `Yso.occ.getDom(\"pyradius\").converts`.
+
   Active Occultist offense is now alias-owned. The old orchestrator has been
   removed from the live offense path, and shared route-loop send memory now
   lives in:
@@ -75,7 +94,7 @@ Key components:
 
 Active routes
 -------------
-  occ_aff_burst   - duel affliction loop (combat mode)
+  occ_aff         - duel affliction loop (combat mode)
                     mana bury -> cleanseaura -> truename -> utter
   group_damage    - group/team damage loop (team dam)
                     healthleech + sensitivity + clumsiness + warp/firelord burst
@@ -89,7 +108,7 @@ Active routes
     magi_group_damage - Magi team damage route (team dam, Magi only)
 
 Mode-to-route mapping:
-  combat          -> occ_aff_burst
+  combat          -> occ_aff
   team dam        -> group_damage
   team aff        -> party_aff
   bash            -> Legacy bashing (not a Yso route)
@@ -121,7 +140,7 @@ File layout
         route_interface.lua         - shared route contract
         route_registry.lua          - route metadata registry
         routes/
-          occ_aff_burst.lua         - duel aff route
+          occ_aff.lua               - duel aff route
           group_damage.lua          - team damage route
           party_aff.lua             - team aff route
         occultist/
@@ -179,7 +198,7 @@ AK integration mirrors enemy aff tracking through Yso.ak.
 
 Aliases
 -------
-  ^aff$         - toggle the duel affliction loop (occ_aff_burst)
+  ^aff$         - toggle the duel affliction loop (occ_aff)
   ^dam$         - toggle the group damage loop
   ^focus$       - toggle the Magi duel focus route when playing Magi
   ^hunt$        - switch to bash mode without a noop entourage reset
@@ -191,7 +210,7 @@ Aliases
   ^teamroute (.+)$ - set team route directly (aff | dam)
 
 Notes:
-  ^aff$ owns occ_aff_burst directly.
+  ^aff$ owns occ_aff directly (legacy alias `occ_aff_burst` also resolves).
   ^team aff$ selects party_aff support pressure + chimera/tarot sequence.
   cleanse queues CLEANSEAURA through the shared queue path instead of bypassing
   lane staging.
@@ -216,6 +235,4 @@ Working notes
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
-
-
 

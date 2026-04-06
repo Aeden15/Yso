@@ -122,7 +122,7 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.xml.yso_occultist_affmap",
   "Yso.Combat.occultist.aeon",
   "Yso.Combat.routes.group_damage",
-  "Yso.Combat.routes.occ_aff_burst",
+  "Yso.Combat.routes.occ_aff",
   "Yso.Combat.routes.party_aff",
   "Yso.Combat.occultist.offense_helpers",
   "Yso.Core.target_intel",
@@ -152,7 +152,8 @@ local function _bootstrap_occ_aff(reload)
   _bootstrap_entry(reload)
   local order = Yso.bootstrap.core_order or {}
   for i = 1, #order do _bootstrap_require(order[i], reload) end
-  return (((_G.Yso or {}).off or {}).oc or {}).occ_aff_burst
+  local OC = ((_G.Yso or {}).off or {}).oc or {}
+  return OC.occ_aff or OC.occ_aff_burst
 end
 
 local function _bootstrap_require_any(mods, reload)
@@ -263,6 +264,7 @@ end
 
 Yso.bootstrap.require = _bootstrap_require
 Yso.bootstrap.entry = _bootstrap_entry
+Yso.bootstrap.occ_aff = _bootstrap_occ_aff
 Yso.bootstrap.occ_aff_burst = _bootstrap_occ_aff
 
 local function _bootstrap_finish_autoload()

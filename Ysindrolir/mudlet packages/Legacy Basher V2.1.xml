@@ -1894,7 +1894,8 @@ function Basher_Setup()
         local isNewTarget = (attend.target ~= targetSet)
         local isHealthRecovery = (attend.target == targetSet and attend.healthDropped == true)
         if isNewTarget or isHealthRecovery then
-          if Legacy.Basher.queueAttackPackage("addclear", "attend @tar;;cleanseaura @tar", true, "attend-opener") then
+          local opener_sep = (Yso and (Yso.sep or (Yso.cfg and Yso.cfg.pipe_sep))) or (string.char(38)..string.char(38))
+          if Legacy.Basher.queueAttackPackage("addclear", "attend @tar"..tostring(opener_sep).."cleanseaura @tar", true, "attend-opener") then
             Legacy.Settings.Basher.queued = true
             Legacy.Settings.Basher._attend = { target = targetSet, healthDropped = false }
             sendCount = sendCount + 1

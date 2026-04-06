@@ -259,7 +259,7 @@ do
   local ex = world.MF.explain()
   assert_eq("2b: explain uses planner route key", ex.route, "focus")
   assert_eq("2c: explain decision uses planner wording", ex.decision, "freeze_reopen")
-  assert_eq("2d: explain reason tracks the missing piece", ex.reason, "frostbite_missing")
+  assert_eq("2d: explain reason tracks the water resonance gate", ex.reason, "water_moderate_missing")
   assert_true("2e: explain exposes focus overlay state", ex.fulminate and ex.fulminate.focus_punish_armed == true)
 end
 
@@ -362,7 +362,7 @@ do
     air_res = 2,
     earth_res = 2,
     fire_res = 2,
-    water_res = 2,
+    water_res = 1,
   })
   local cmd = preview_eq(world)
   assert_eq("7a: initial freeze reopen fires", cmd, "cast freeze at foe")
@@ -400,6 +400,88 @@ do
   assert_eq("8a: reset clears last sent command", world.MF.state.last_sent_cmd, "")
   assert_eq("8b: reset clears postconv state", ex.postconv, false)
   assert_eq("8c: reset clears dissonance tracker", dis.stage, 0)
+end
+
+print("\n=== Test 9: freeze missing defers to bombard when water gate is met and A/E are missing ===")
+do
+  local world = make_world({
+    aff_scores = {
+      waterbonds = 100,
+      frozen = 100,
+      frostbite = 0,
+      clumsiness = 100,
+      asthma = 100,
+    },
+    air_res = 1,
+    earth_res = 1,
+    fire_res = 2,
+    water_res = 2,
+  })
+  local cmd, reason = preview_eq(world)
+  assert_eq("9a: bombard selected over freeze when water resonance is already moderate", cmd, "cast bombard at foe")
+  assert_eq("9b: reason tracks A/E resonance deficit", reason, "air_earth_moderate_missing")
+end
+
+print("\n=== Test 10: freeze missing defers to fire pivot after A/E are ready ===")
+do
+  local world = make_world({
+    aff_scores = {
+      waterbonds = 100,
+      frozen = 100,
+      frostbite = 0,
+      clumsiness = 100,
+      asthma = 100,
+    },
+    air_res = 2,
+    earth_res = 2,
+    fire_res = 1,
+    water_res = 2,
+  })
+  local cmd, reason = preview_eq(world)
+  assert_eq("10a: fire-side pivot selected over freeze when fire resonance is missing", cmd, "cast magma at foe")
+  assert_eq("10b: reason tracks fire progression", reason, "fire_progress_scalded")
+end
+
+print("\n=== Test 11: water resonance below moderate still forces freeze reopen ===")
+do
+  local world = make_world({
+    aff_scores = {
+      waterbonds = 100,
+      frozen = 100,
+      frostbite = 0,
+      clumsiness = 100,
+      asthma = 100,
+    },
+    air_res = 2,
+    earth_res = 2,
+    fire_res = 2,
+    water_res = 1,
+  })
+  local cmd, reason = preview_eq(world)
+  assert_eq("11a: freeze remains mandatory while water resonance is below moderate", cmd, "cast freeze at foe")
+  assert_eq("11b: reason surfaces water gate", reason, "water_moderate_missing")
+end
+
+print("\n=== Test 12: maintenance freeze fallback runs when pivots are temporarily blocked ===")
+do
+  local world = make_world({
+    aff_scores = {
+      waterbonds = 100,
+      frozen = 100,
+      frostbite = 0,
+      clumsiness = 100,
+      asthma = 100,
+    },
+    air_res = 2,
+    earth_res = 2,
+    fire_res = 2,
+    water_res = 2,
+    dissonance_stage = 1,
+  })
+  note_sent(world, "embed dissonance")
+  local cmd, reason = preview_eq(world)
+  assert_eq("12a: fallback freeze selected when resonance pivots are blocked by pending windows", cmd, "cast freeze at foe")
+  assert_eq("12b: fallback reason is maintenance freeze", reason, "freeze_package_incomplete")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))
