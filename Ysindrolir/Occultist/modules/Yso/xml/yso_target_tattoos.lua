@@ -48,7 +48,7 @@ end
 
 function T.has_mindseye(name)
   local r = _rec(name); if not r then return false end
-  return r.defs and r.defs.mindseye == true or false
+  return (r.defs and r.defs.mindseye) == true
 end
 
 function T.note_tree_touch(name)

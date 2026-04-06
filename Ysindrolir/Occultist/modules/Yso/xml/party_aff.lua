@@ -210,7 +210,7 @@ local function _aff_score(tgt, aff)
   return 0
 end
 
-local function _has_aff(tgt, aff) return _aff_score(tgt, aff) >= 100 end
+local function _has_aff(tgt, aff) return (tonumber(_aff_score(tgt, aff)) or 0) >= 100 end
 
 local function _mental_score()
   if Yso and Yso.oc and Yso.oc.ak and Yso.oc.ak.scores and type(Yso.oc.ak.scores.mental) == "function" then
@@ -249,7 +249,8 @@ end
 -- _cleanseaura_snapshot, _aura_txn_active_for moved to occ_aura_planner.lua (AP.*)
 
 local function _snapshot_view(tgt)
-  local snap = AP.snapshot and AP.snapshot(tgt) or {}
+  if type(AP.snapshot) ~= "function" then return {} end
+  local snap = AP.snapshot(tgt) or {}
   local fresh = (snap.fresh == true)
   local read_complete = fresh and (snap.read_complete == true)
   local parse_window_open = fresh and (snap.parse_window_open == true)
@@ -345,6 +346,25 @@ end
 local function _sequence_plan(tgt, opts)
   local cached = type(opts) == "table" and opts.sequence or nil
   if type(cached) == "table" then return cached end
+
+  tgt = _trim(tgt)
+  if tgt == "" then
+    return {
+      enabled = (PA.cfg.sequence_enabled ~= false),
+      loyals_bootstrap_pending = (type(opts) == "table" and opts.loyals_bootstrap_pending == true),
+      deaf = nil,
+      speed = nil,
+      mana_pct = nil,
+      can_utter = false,
+      cleanseaura_ready = false,
+      needs_readaura = false,
+      readaura_reason = "",
+      snapshot_fresh = false,
+      snapshot_read_complete = false,
+      unnamable_pending = false,
+      bal_only_tick = (_bal_ready() and not _ent_ready()),
+    }
+  end
 
   local snap = _snapshot_view(tgt)
   local loyals_bootstrap_pending = (type(opts) == "table" and opts.loyals_bootstrap_pending == true)

@@ -195,7 +195,12 @@ local function _affs_for_action(action, meta)
       list = Cures.affs_in_sip(item)
     end
     if not list or (type(list) == "table" and #list == 0 and not next(list)) then
-      local key = tostring(item):lower():gsub("^elixir%s+of%s+", ""):gsub("^vial%s+of%s+", ""):gsub("^vial%s+", ""):gsub("^%s+", ""):gsub("%s+$", "")
+      local key = tostring(item):lower()
+      key = key:gsub("^%s+", ""):gsub("%s+$", "")
+      key = key:gsub("^elixir%s+of%s+", "", 1)
+      key = key:gsub("^vial%s+of%s+", "", 1)
+      key = key:gsub("^vial%s+", "", 1)
+      key = key:gsub("^%s+", ""):gsub("%s+$", "")
       list = C.sip_map[key] or C.sip_map[key:gsub("%s+", "")]
     end
     if type(list) == "table" then

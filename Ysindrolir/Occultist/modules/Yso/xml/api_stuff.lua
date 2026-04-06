@@ -182,6 +182,7 @@ do
   Yso._trig.class_swap = tempRegexTrigger(
     [[^You are now a member of the (\w+) class\.$]],
     function()
+      if not matches or not matches[2] then return end
       C.set(matches[2], "class_swap")
     end
   )
@@ -344,6 +345,7 @@ Yso.trace = Yso.trace or {}
 do
   local T = Yso.trace
   T.max = tonumber(T.max or 200) or 200
+  if T.max < 1 then T.max = 1 end
   T.buf = T.buf or {}
   T.idx = tonumber(T.idx or 0) or 0
 
@@ -638,16 +640,6 @@ function Yso.emit(payload, opts)
 
     if Yso.trace and type(Yso.trace.push)=="function" then
       local lanes = {}
-      local function _has(v)
-        if v == nil then return false end
-        if type(v) == "string" then
-          v = v:gsub("^%s+",""):gsub("%s+$","")
-          return v ~= ""
-        elseif type(v) == "table" then
-          return v[1] ~= nil
-        end
-        return false
-      end
       if _has(payload.free) or _has(payload.pre) then lanes[#lanes+1] = "free" end
       if _has(payload.eq) then lanes[#lanes+1] = "eq" end
       if _has(payload.bal) then lanes[#lanes+1] = "bal" end
@@ -703,7 +695,7 @@ end
 
 -- ----------------- tiny helpers (CURING) -----------------
 local function _cure_echo(msg)
-  if Yso.curing.debug then
+  if Yso and Yso.curing and Yso.curing.debug then
     cecho(string.format("<cyan>[Yso:Cure] <reset>%s\n", msg))
   end
 end

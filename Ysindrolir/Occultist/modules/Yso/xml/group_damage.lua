@@ -383,6 +383,15 @@ local function _target_matches_active(tgt)
   return tgt ~= "" and _lc(tgt) == _lc(_target())
 end
 
+local function _affstrack_score_is_fresh(A)
+  if type(A) ~= "table" then return false end
+  local ts = tonumber(A.score_updated_at or A.updated_at or A.last_updated_at or A.last_update_at or A.ts)
+  if not ts then return true end
+  if ts > 1e12 then ts = ts / 1000 end
+  local max_age = tonumber(GD.cfg.aff_score_max_age_s or 1.25) or 1.25
+  return (_now() - ts) <= max_age
+end
+
 -- Prefer AK score exports for the active designated target only.
 -- For non-target observations, fall back to target-scoped tracking.
 local function _aff_score(tgt, aff)
@@ -395,7 +404,7 @@ local function _aff_score(tgt, aff)
       local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
       if ok and tonumber(v) then return tonumber(v) end
     end
-    if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    if type(affstrack) == "table" and type(affstrack.score) == "table" and _affstrack_score_is_fresh(affstrack) then
       return tonumber(affstrack.score[aff] or 0) or 0
     end
   end
@@ -407,7 +416,7 @@ local function _aff_score(tgt, aff)
   return 0
 end
 
-local function _has_aff(tgt, aff) return _aff_score(tgt, aff) >= 100 end
+local function _has_aff(tgt, aff) return (tonumber(_aff_score(tgt, aff)) or 0) >= 100 end
 
 local function _ak_speed_is_down()
   local A = rawget(_G, "ak")

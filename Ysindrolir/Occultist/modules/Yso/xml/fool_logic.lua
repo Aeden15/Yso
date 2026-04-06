@@ -226,7 +226,10 @@ end
 local function _release_basher_hold(reason)
   local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
   if F.state.basher_hold_timer and type(killTimer) == "function" then
-    pcall(killTimer, F.state.basher_hold_timer)
+    local ok, killed = pcall(killTimer, F.state.basher_hold_timer)
+    if not ok or killed == false then
+      _fool_echo("Basher hold timer cleanup could not confirm kill.")
+    end
   end
   F.state.basher_hold_timer = nil
   F.state.basher_hold = false
@@ -240,6 +243,8 @@ end
 local function _arm_basher_hold(reason)
   _release_basher_hold("refresh")
 
+  F.state.basher_hold_gen = (tonumber(F.state.basher_hold_gen or 0) or 0) + 1
+  local hold_gen = F.state.basher_hold_gen
   F.state.basher_hold = true
   F.state.basher_hold_reason = tostring(reason or "fool")
   F.state.basher_hold_at = _now()
@@ -247,6 +252,7 @@ local function _arm_basher_hold(reason)
 
   if type(tempTimer) == "function" then
     F.state.basher_hold_timer = tempTimer(10, function()
+      if tonumber(F.state.basher_hold_gen or 0) ~= hold_gen then return end
       _release_basher_hold("timeout")
     end)
   end

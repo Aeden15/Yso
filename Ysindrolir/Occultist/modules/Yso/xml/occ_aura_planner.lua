@@ -170,6 +170,8 @@ function AP.snapshot(tgt)
   if parse_window_open and confidence_state == "missing" then
     confidence_state = "pending"
   end
+  -- Boolean fields are intentionally nil when the snapshot is stale.
+  -- Callers can treat nil as "unknown/not fresh yet".
   local function bf(key)
     if not fresh then return nil end
     if a[key] == true then return true end
@@ -351,7 +353,8 @@ function AP.cleanseaura_ready(tgt, snap)
   local mana = snap.mana_pct
   if Yso and Yso.tgt and type(Yso.tgt.get_mana_pct) == "function" then
     local ok, v = pcall(Yso.tgt.get_mana_pct, tgt)
-    if ok and tonumber(v) then mana = tonumber(v) end
+    local n = ok and tonumber(v) or nil
+    if n then mana = n end
   end
   local cap = tonumber(AP.cfg.mana_burst_pct or CS.cfg.mana_burst_pct or 40) or 40
   return (mana ~= nil and mana <= cap) or false, mana

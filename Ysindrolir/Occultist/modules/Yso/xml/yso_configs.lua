@@ -17,8 +17,3 @@ Yso.fool.cfg.enabled = true
 Yso.fool.cfg.cd      = 35
 Yso.fool.cfg.debug   = false
 
---Priestess card configurations--
---(Pull from the Priestess card alias)
-
---Magician card configurations--
---(Pull from the mana alias for Magician card)

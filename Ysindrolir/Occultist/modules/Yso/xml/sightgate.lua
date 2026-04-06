@@ -288,7 +288,7 @@ if Off.ensure_chimera_ready and not Off._sg_wrapped_ensure_chimera_ready then
     local need = (Yso.occ.aura_need_attend and Yso.occ.aura_need_attend(t)) or nil
     if need == nil then
       -- no aura data -> let original do its normal READAURA queue if applicable
-      return _orig(t, aff)
+      return _orig(t, aff) == true
     end
 
     -- aura says blind/deaf present -> previously would ATTEND; now: do nothing

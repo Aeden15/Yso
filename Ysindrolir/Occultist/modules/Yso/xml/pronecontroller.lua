@@ -163,7 +163,10 @@ function P.step(t, aff)
   local stuck = P.cfg.stuck_score or 100
   local prone = _score("prone", aff)
   local deaf  = _score("deaf", aff)
-  if Yso and Yso.tgt and type(Yso.tgt.has_mindseye)=="function" and Yso.tgt.has_mindseye(t) then deaf = 0 end
+  if Yso and Yso.tgt and type(Yso.tgt.has_mindseye)=="function" then
+    local ok, v = pcall(Yso.tgt.has_mindseye, t)
+    if ok and v then deaf = 0 end
+  end
   local anore = _score("anorexia", aff)
 
   -- 1) Already prone: regress applies anorexia (per your helpfile)

@@ -386,7 +386,8 @@ function ER.worm_should_refresh(tgt)
   local W = T.effects.worm
   if _lc(W.target) ~= _lc(tgt) then return true end
   local now = _now()
-  if tonumber(W.proc_count or 0) >= 2 then return true end
+  local proc_count = tonumber(W.proc_count or 0) or 0
+  if proc_count >= 2 then return true end
   return now >= ((tonumber(W.until_t or 0) or 0) - (tonumber(ER.cfg.worm_refresh_lead_s) or 1.0))
 end
 

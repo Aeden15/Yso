@@ -106,7 +106,7 @@ Yso.dom._trig.entourage = tempRegexTrigger(
     -- We’ll collect the next few lines (A chaos hound..., wraps, etc.)
     local buf, done = {}, false
 
-    tempLineTrigger(1, 5, function()
+    tempLineTrigger(1, 20, function()
       if done then return end
 
       local l = line or getCurrentLine()

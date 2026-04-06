@@ -76,7 +76,7 @@ function B.get_aff_score(aff)
     return tonumber(alt.current or alt.score or alt.value or 0) or 0
   end
 
-  return tonumber(row or 0) or 0
+  return 0
 end
 -- ---- Lists used by scoreup() (AK owns canonical copy) ----
 function B.refresh_lists_from_AK()

@@ -176,6 +176,14 @@ end
 
 local function _aff_scores()
   if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    local ts = tonumber(affstrack.score_updated_at or affstrack.updated_at or affstrack.last_updated_at or affstrack.last_update_at or affstrack.ts)
+    if ts then
+      if ts > 1e12 then ts = ts / 1000 end
+      local max_age = tonumber(Off.cfg.aff_score_max_age_s or 1.25) or 1.25
+      if (_now() - ts) > max_age then
+        return {}
+      end
+    end
     return affstrack.score
   end
   return {}
@@ -573,14 +581,28 @@ local function _occ_has_aff(tgt, aff)
   aff = _lc(aff)
   if tgt == "" or aff == "" then return false end
 
+  local active_target = _lc(_current_target())
+  local using_active_target = (active_target ~= "" and active_target == _lc(tgt))
+
+  if using_active_target and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
+    local n = ok and tonumber(v) or nil
+    if n then return n >= 100 end
+  end
+
+  if using_active_target and type(affstrack) == "table" and type(affstrack.score) == "table" then
+    local n = tonumber(affstrack.score[aff] or 0) or 0
+    if n >= 100 then return true end
+  end
+
   if Yso.tgt and type(Yso.tgt.has_aff) == "function" then
     local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
-    if ok then return v == true end
+    if ok and v == true then return true end
   end
 
   if Yso.state and type(Yso.state.tgt_has_aff) == "function" then
     local ok, v = pcall(Yso.state.tgt_has_aff, tgt, aff)
-    if ok then return v == true end
+    if ok and v == true then return true end
   end
 
   return false

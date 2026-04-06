@@ -44,11 +44,29 @@ Off.cfg.softlock_gate = Off.cfg.softlock_gate or {
 
 Off._softlock_done = Off._softlock_done or {}
 Off._softlock_done_target = Off._softlock_done_target or ""
+Off._softlock_done_at = Off._softlock_done_at or {}
 
 -- ----------------------------
 -- Minimal helpers (self-contained)
 -- ----------------------------
 local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == "function" then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v > 1e12 then v = v / 1000 end
+      return v
+    end
+  end
+  return os.time()
+end
 
 local function _warn(msg)
   msg = tostring(msg or "")
@@ -167,6 +185,13 @@ function Off.try_softlock_setup(t, afftbl)
   t = _softlock_track_target(t)
   if t == "" then return false end
 
+  local now = _now()
+  local cooldown = tonumber(cfg.rearm_cooldown_s or 5) or 5
+  local last_done_at = tonumber(Off._softlock_done_at[t] or 0) or 0
+  if last_done_at > 0 and (now - last_done_at) < cooldown and not _softlock_ready(t, afftbl) then
+    return false
+  end
+
   local stuck = Off.cfg.stuck_score or 100
 
   local asthma   = _score("asthma", afftbl)
@@ -180,6 +205,7 @@ function Off.try_softlock_setup(t, afftbl)
   end
   if _softlock_ready(t, afftbl) then
     Off._softlock_done[t] = true
+    Off._softlock_done_at[t] = now
     return false
   end
 

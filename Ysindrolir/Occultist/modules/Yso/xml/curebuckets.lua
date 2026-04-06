@@ -259,9 +259,11 @@ function C.rebuild()
   C.by_aff = pack.by_aff
   C.by_bucket = pack.by_bucket
   C.ak = pack.ak
+  local occ_count = 0
+  for _ in pairs(occ_affs_set) do occ_count = occ_count + 1 end
 
   _echo(("rebuilt: %d occultist affs; ak=%s"):format(
-    (function() local n=0; for _ in pairs(occ_affs_set) do n=n+1 end; return n end)(),
+    occ_count,
     (C.ak and "yes" or "no")
   ))
 end

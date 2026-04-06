@@ -190,12 +190,12 @@ function O.stop(msg, src)
 end
 
 function O.on_up(duration_override)
-  if O.cfg.gag_lines then deleteLine() end
+  if O.cfg.gag_lines then pcall(deleteLine) end
   O.start(duration_override, "text_up")
 end
 
 function O.on_down()
-  if O.cfg.gag_lines then deleteLine() end
+  if O.cfg.gag_lines then pcall(deleteLine) end
   O.stop("ORB DEFENSE DISSIPATED.", "text_down")
 end
 

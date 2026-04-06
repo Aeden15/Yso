@@ -92,6 +92,9 @@ function ak.occie.aura.parsereduct(what)
 		"bellwort flower",
     "rage",
   }
+  if type(ak) ~= "table" or type(ak.occie) ~= "table" or type(ak.occie.aura) ~= "table" then
+    return
+  end
 	ak.occie.aura.physicalcures = {
     "piece of kelp",
 		"bloodroot leaf",

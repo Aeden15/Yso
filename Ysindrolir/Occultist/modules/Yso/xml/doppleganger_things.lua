@@ -234,6 +234,7 @@ function Dop.seek(who)
     expandAlias("t " .. who)
   else
     rawset(_G, "target", who)
+    _echo("Warning: AK target alias unavailable; using raw global target fallback.")
   end
 
   local tgt = Dop.getTarget(who) or who

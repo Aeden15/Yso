@@ -86,6 +86,7 @@ local _QTYPE_MAP = {
   class = "c!p!w!t",
   free = "eb!w!p!t",
 }
+local _VALID_WAKE_LANES = { eq = true, bal = true, class = true }
 
 local function _route_from_opts(opts)
   if type(opts) ~= "table" then return "" end
@@ -151,8 +152,9 @@ local function _coerce_stage_args(lane, payload)
 end
 
 local function _clear_targets(token)
+  if token == nil then return {} end
   token = _trim(token):lower()
-  if token == "" then return { "free", "eq", "bal", "class" } end
+  if token == "" then return {} end
   if token == "all" or token == "full" then return { "free", "eq", "bal", "class" } end
   if token == "eqbal" or token == "be" or token == "eb" then return { "eq", "bal" } end
 
@@ -349,7 +351,7 @@ local function _commit_payload(opts)
     return true
   end
 
-  if wake == "eq" or wake == "bal" or wake == "class" then
+  if _VALID_WAKE_LANES[wake] == true then
     local took = _take_lane(wake)
     if took then
       if piggyback and wake == "eq" then _take_lane("class") end
