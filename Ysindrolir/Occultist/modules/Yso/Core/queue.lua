@@ -30,6 +30,7 @@ Yso.cfg = Yso.cfg or {}
 Yso.net = Yso.net or {}
 Yso.net.cfg = Yso.net.cfg or {}
 Yso.queue = Yso.queue or {}
+Yso._queued = Yso._queued or {}
 
 local Q = Yso.queue
 
@@ -45,7 +46,7 @@ Q._staged = Q._staged or {
   class = nil,
 }
 
-Q._impl_version = "2026-03-21.1"
+Q._impl_version = "2026-04-05.1"
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
@@ -77,6 +78,20 @@ local function _lane_key(lane)
     return "free"
   end
   return nil
+end
+
+local _QTYPE_MAP = {
+  eq = "e!p!w!t",
+  bal = "b!p!w!t",
+  class = "c!p!w!t",
+  free = "eb!w!p!t",
+}
+local _VALID_WAKE_LANES = { eq = true, bal = true, class = true }
+
+local function _route_from_opts(opts)
+  if type(opts) ~= "table" then return "" end
+  local route = _trim(opts.route or opts.reason or opts.src)
+  return route
 end
 
 local function _infer_lane_from_payload(payload)
@@ -137,8 +152,9 @@ local function _coerce_stage_args(lane, payload)
 end
 
 local function _clear_targets(token)
+  if token == nil then return {} end
   token = _trim(token):lower()
-  if token == "" then return { "free", "eq", "bal", "class" } end
+  if token == "" then return {} end
   if token == "all" or token == "full" then return { "free", "eq", "bal", "class" } end
   if token == "eqbal" or token == "be" or token == "eb" then return { "eq", "bal" } end
 
@@ -266,7 +282,22 @@ local function _lane_ready(lane)
   return true
 end
 
-local function _mark_payload_sent(payload)
+local function _mark_payload_queued(payload)
+  if Yso and Yso.trace and type(Yso.trace.push) == "function" then
+    local lanes = {}
+    if type(payload.free) == "table" and #payload.free > 0 then lanes[#lanes + 1] = "free" end
+    if _trim(payload.eq) ~= "" then lanes[#lanes + 1] = "eq" end
+    if _trim(payload.bal) ~= "" then lanes[#lanes + 1] = "bal" end
+    if _trim(payload.class) ~= "" then lanes[#lanes + 1] = "class" end
+    pcall(Yso.trace.push, "queue.queued", {
+      ts = _now(),
+      lanes = table_concat(lanes, ","),
+      cmd = _payload_line(payload),
+    })
+  end
+end
+
+local function _mark_payload_fired(payload)
   if Yso and Yso.locks then
     if type(Yso.locks.note_payload) == "function" then
       pcall(Yso.locks.note_payload, payload)
@@ -275,19 +306,6 @@ local function _mark_payload_sent(payload)
       if _trim(payload.bal) ~= "" then pcall(Yso.locks.note_send, "bal") end
       if _trim(payload.class) ~= "" then pcall(Yso.locks.note_send, "class") end
     end
-  end
-
-  if Yso and Yso.trace and type(Yso.trace.push) == "function" then
-    local lanes = {}
-    if type(payload.free) == "table" and #payload.free > 0 then lanes[#lanes + 1] = "free" end
-    if _trim(payload.eq) ~= "" then lanes[#lanes + 1] = "eq" end
-    if _trim(payload.bal) ~= "" then lanes[#lanes + 1] = "bal" end
-    if _trim(payload.class) ~= "" then lanes[#lanes + 1] = "class" end
-    pcall(Yso.trace.push, "queue.commit", {
-      ts = _now(),
-      lanes = table_concat(lanes, ","),
-      cmd = _payload_line(payload),
-    })
   end
 end
 
@@ -333,7 +351,7 @@ local function _commit_payload(opts)
     return true
   end
 
-  if wake == "eq" or wake == "bal" or wake == "class" then
+  if _VALID_WAKE_LANES[wake] == true then
     local took = _take_lane(wake)
     if took then
       if piggyback and wake == "eq" then _take_lane("class") end
@@ -397,6 +415,113 @@ local function _raw_queue(verb, qtype, payload)
   payload = _trim(payload)
   if verb == "" or qtype == "" or payload == "" then return false end
   return _send_compound(("QUEUE %s %s %s"):format(verb, qtype, payload))
+end
+
+local function _owned_table()
+  Yso._queued = Yso._queued or {}
+  return Yso._queued
+end
+
+function Q.qtype_for_lane(lane)
+  local key = _lane_key(lane)
+  if key and _QTYPE_MAP[key] then return _QTYPE_MAP[key] end
+  local qtype = _trim(lane)
+  if qtype ~= "" then return qtype end
+  return nil
+end
+
+function Q.get_owned(lane)
+  local key = _lane_key(lane)
+  if not key then return nil end
+  return _owned_table()[key]
+end
+
+function Q.set_owned(lane, rec)
+  local key = _lane_key(lane)
+  if not key or type(rec) ~= "table" then return false end
+  _owned_table()[key] = rec
+  return true
+end
+
+function Q.clear_owned(lane)
+  local key = _lane_key(lane)
+  if not key then return false end
+  _owned_table()[key] = nil
+  return true
+end
+
+function Q.fingerprint(cmd, opts)
+  cmd = _trim(cmd)
+  if cmd == "" then return "" end
+  opts = opts or {}
+  local target = _trim(opts.target)
+  local route = _route_from_opts(opts)
+  return table_concat({ cmd:lower(), target:lower(), route:lower() }, "|")
+end
+
+function Q.same_lane_cmd(lane, cmd, opts)
+  local key = _lane_key(lane)
+  if not key then return false end
+  local owned = Q.get_owned(key)
+  if type(owned) ~= "table" then return false end
+  local fp = Q.fingerprint(cmd, opts)
+  if fp == "" then return false end
+  if _trim(owned.fingerprint) == fp then return true end
+  return _trim(owned.cmd) == _trim(cmd)
+end
+
+function Q.clear_lane(lane, opts)
+  opts = opts or {}
+  local key = _lane_key(lane)
+  if not key then return false, "invalid_lane" end
+  local qtype = _trim(opts.qtype or Q.qtype_for_lane(key))
+  if qtype == "" then return false, "invalid_qtype" end
+  local ok = Q.raw("CLEARQUEUE " .. qtype)
+  if not ok then return false, "clear_failed" end
+  Q.clear_owned(key)
+  return true
+end
+
+function Q.install_lane(lane, cmd, opts)
+  opts = opts or {}
+  local key = _lane_key(lane)
+  if not key then return false, "invalid_lane" end
+  cmd = _trim(cmd)
+  if cmd == "" then
+    return Q.clear_lane(key, opts)
+  end
+  local qtype = _trim(opts.qtype or Q.qtype_for_lane(key))
+  if qtype == "" then return false, "invalid_qtype" end
+
+  if Q.same_lane_cmd(key, cmd, opts) then
+    return true, "unchanged", Q.get_owned(key)
+  end
+
+  local existed = (type(Q.get_owned(key)) == "table")
+  local ok = Q.addclear(qtype, cmd)
+  if not ok then
+    local rec = Q.get_owned(key)
+    if type(rec) == "table" then
+      rec.last_result = "error"
+      rec.last_error = "addclear_failed"
+    end
+    return false, "addclear_failed"
+  end
+
+  local rec = {
+    cmd = cmd,
+    qtype = qtype,
+    target = _trim(opts.target),
+    fingerprint = Q.fingerprint(cmd, opts),
+    route = _route_from_opts(opts),
+    installed_at = _now(),
+    source_file = _trim(opts.source_file),
+    note = _trim(opts.note),
+    last_result = existed and "replaced" or "installed",
+    last_error = "",
+  }
+  Q.set_owned(key, rec)
+  return true, rec.last_result, rec
 end
 
 -- Clear staged lane(s)
@@ -479,16 +604,46 @@ function Q.commit(opts)
   local payload = _commit_payload(opts)
   if not _payload_has_value(payload) then return false end
 
-  local body = _payload_line(payload)
-  if body == "" then return false end
+  opts = opts or {}
+  local queued = {}
+  local any = false
 
-  local sent = _send_compound(body)
-  if not sent then return false end
+  if type(payload.free) == "table" and #payload.free > 0 then
+    local free_cmd = table_concat(payload.free, _command_sep())
+    local ok = Q.install_lane("free", free_cmd, opts)
+    if not ok then return false end
+    queued.free = payload.free
+    any = true
+  end
+
+  if _trim(payload.eq) ~= "" then
+    local ok = Q.install_lane("eq", payload.eq, opts)
+    if not ok then return false end
+    queued.eq = payload.eq
+    any = true
+  end
+
+  if _trim(payload.bal) ~= "" then
+    local ok = Q.install_lane("bal", payload.bal, opts)
+    if not ok then return false end
+    queued.bal = payload.bal
+    any = true
+  end
+
+  if _trim(payload.class) ~= "" then
+    local ok = Q.install_lane("class", payload.class, opts)
+    if not ok then return false end
+    queued.class = payload.class
+    any = true
+  end
+
+  if not any then return false end
 
   _clear_payload(payload)
-  _mark_payload_sent(payload)
-  _debug("commit => " .. body)
-  return true, payload
+  _mark_payload_queued(queued)
+  _mark_payload_fired(queued)
+  _debug("commit queued => " .. _payload_line(queued))
+  return true, queued
 end
 
 function Q.emit(payload, opts)
@@ -565,5 +720,7 @@ function Q.raw(mode, qtype, payload)
   if body == "" then return false end
   return _send_compound(body)
 end
+
+Q.mark_payload_fired = _mark_payload_fired
 
 return Q

@@ -182,6 +182,7 @@ do
   Yso._trig.class_swap = tempRegexTrigger(
     [[^You are now a member of the (\w+) class\.$]],
     function()
+      if not matches or not matches[2] then return end
       C.set(matches[2], "class_swap")
     end
   )
@@ -273,9 +274,21 @@ do
       if GD and type(GD.on_payload_sent) == "function" then
         pcall(GD.on_payload_sent, payload)
       end
+      local PA = (Yso and Yso.off and Yso.off.oc and Yso.off.oc.party_aff) or nil
+      if PA and type(PA.on_payload_sent) == "function" then
+        pcall(PA.on_payload_sent, payload)
+      end
+      local OA = (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.occ_aff or Yso.off.oc.aff)) or nil
+      if OA and type(OA.on_payload_sent) == "function" then
+        pcall(OA.on_payload_sent, payload)
+      end
       local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
       if MGD and type(MGD.on_payload_sent) == "function" then
         pcall(MGD.on_payload_sent, payload)
+      end
+      local MF = (Yso and Yso.off and Yso.off.magi and Yso.off.magi.focus) or nil
+      if MF and type(MF.on_payload_sent) == "function" then
+        pcall(MF.on_payload_sent, payload)
       end
 
     end
@@ -344,6 +357,7 @@ Yso.trace = Yso.trace or {}
 do
   local T = Yso.trace
   T.max = tonumber(T.max or 200) or 200
+  if T.max < 1 then T.max = 1 end
   T.buf = T.buf or {}
   T.idx = tonumber(T.idx or 0) or 0
 
@@ -527,8 +541,16 @@ local function _has(v)
   return false
 end
 
+local function _trim(s)
+  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
 function Yso.emit(payload, opts)
   opts = opts or {}
+  if type(payload) == "table" and _trim(opts.target or "") == "" then
+    local tgt = _trim(payload.target)
+    if tgt ~= "" then opts.target = tgt end
+  end
 
   -- Offense pause gate: when active, block offense automation emission unless forced.
   if type(Yso.offense_paused) == "function" and Yso.offense_paused() and opts.force ~= true then
@@ -634,16 +656,6 @@ function Yso.emit(payload, opts)
 
     if Yso.trace and type(Yso.trace.push)=="function" then
       local lanes = {}
-      local function _has(v)
-        if v == nil then return false end
-        if type(v) == "string" then
-          v = v:gsub("^%s+",""):gsub("%s+$","")
-          return v ~= ""
-        elseif type(v) == "table" then
-          return v[1] ~= nil
-        end
-        return false
-      end
       if _has(payload.free) or _has(payload.pre) then lanes[#lanes+1] = "free" end
       if _has(payload.eq) then lanes[#lanes+1] = "eq" end
       if _has(payload.bal) then lanes[#lanes+1] = "bal" end
@@ -699,7 +711,7 @@ end
 
 -- ----------------- tiny helpers (CURING) -----------------
 local function _cure_echo(msg)
-  if Yso.curing.debug then
+  if Yso and Yso.curing and Yso.curing.debug then
     cecho(string.format("<cyan>[Yso:Cure] <reset>%s\n", msg))
   end
 end

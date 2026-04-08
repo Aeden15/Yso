@@ -43,7 +43,6 @@ end)
 local Dissonance = _ensure_magi_peer("magi_dissonance", "magi_dissonance.lua", function()
   return Yso and Yso.magi and Yso.magi.dissonance or nil
 end)
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 local PENDING_SLOTS = {
   "horripilation",
@@ -106,6 +105,7 @@ MF.route_contract = MF.route_contract or {
 }
 
 do
+  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(MF, MF.route_contract)
   end
@@ -254,106 +254,6 @@ local function _spell_guard(slot_name, tgt, cmd)
     target_valid = _tgt_valid(tgt),
     eq_ready = _eq_ready(),
   })
-end
-
-local COMMANDS = {
-  horripilation = {
-    id = "horripilation",
-    string = "staff cast horripilation %s",
-    slot = "horripilation",
-    target_required = false,
-    format_target = true,
-  },
-  freeze = {
-    id = "freeze",
-    string = "cast freeze at %s",
-    slot = "freeze",
-    target_required = false,
-    format_target = true,
-  },
-  bombard = {
-    id = "bombard",
-    string = "cast bombard at %s",
-    slot = "bombard",
-    target_required = false,
-    format_target = true,
-  },
-  fulminate = {
-    id = "fulminate",
-    string = "cast fulminate at %s",
-    slot = "fulminate",
-    target_required = false,
-    format_target = true,
-  },
-  firelash = {
-    id = "firelash",
-    string = "cast firelash at %s",
-    slot = "firelash",
-    target_required = false,
-    format_target = true,
-  },
-  magma = {
-    id = "magma",
-    string = "cast magma at %s",
-    slot = "magma",
-    target_required = false,
-    format_target = true,
-  },
-  convergence = {
-    id = "convergence",
-    string = "cast convergence at %s",
-    slot = "convergence",
-    target_required = false,
-    format_target = true,
-  },
-  destroy = {
-    id = "destroy",
-    string = "cast destroy at %s",
-    slot = "destroy",
-    target_required = false,
-    format_target = true,
-  },
-  dissonance_embed = {
-    id = "dissonance_embed",
-    string = "embed dissonance",
-    slot = "dissonance",
-    target_required = false,
-  },
-}
-
-local function _build_cmd(spec, tgt, args)
-  if RI and type(RI.command_from_spec) == "function" then
-    return RI.command_from_spec(spec, tgt, args)
-  end
-  local raw = _trim(spec and spec.string or "")
-  if raw == "" then return nil, "missing_string" end
-  if spec and spec.format_target == true then
-    local ok, built = pcall(string.format, raw, tostring(tgt or ""))
-    if not ok then return nil, "format_error" end
-    return _trim(built), ""
-  end
-  return raw, ""
-end
-
-local function _can_send(command_id, tgt, args)
-  local spec = COMMANDS[command_id]
-  if type(spec) ~= "table" then return false, "unknown_command", "" end
-
-  if RI and type(RI.guard_and_build_command) == "function" then
-    return RI.guard_and_build_command({
-      spec = spec,
-      target = tgt,
-      args = args,
-      guard = function(slot, target, cmd)
-        return _spell_guard(slot, target, cmd)
-      end,
-    })
-  end
-
-  local cmd, why = _build_cmd(spec, tgt, args)
-  if not cmd then return false, tostring(why or "invalid_command"), "" end
-  local ok, gwhy = _spell_guard(spec.slot, tgt, cmd)
-  return ok, gwhy, cmd
 end
 
 local function _route_slot()
@@ -621,6 +521,60 @@ local function _snapshot(tgt)
   return st
 end
 
+local function _can_staffcast_horripilation(tgt)
+  local cmd = ("staff cast horripilation %s"):format(tgt)
+  local ok, why = _spell_guard("horripilation", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_freeze(tgt)
+  local cmd = ("cast freeze at %s"):format(tgt)
+  local ok, why = _spell_guard("freeze", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_bombard(tgt)
+  local cmd = ("cast bombard at %s"):format(tgt)
+  local ok, why = _spell_guard("bombard", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_fulminate(tgt)
+  local cmd = ("cast fulminate at %s"):format(tgt)
+  local ok, why = _spell_guard("fulminate", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_firelash(tgt)
+  local cmd = ("cast firelash at %s"):format(tgt)
+  local ok, why = _spell_guard("firelash", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_magma(tgt)
+  local cmd = ("cast magma at %s"):format(tgt)
+  local ok, why = _spell_guard("magma", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_convergence(tgt)
+  local cmd = ("cast convergence at %s"):format(tgt)
+  local ok, why = _spell_guard("convergence", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_destroy(tgt)
+  local cmd = ("cast destroy at %s"):format(tgt)
+  local ok, why = _spell_guard("destroy", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_or_embed_dissonance_builder(tgt)
+  local cmd = "embed dissonance"
+  local ok, why = _spell_guard("dissonance", tgt, cmd)
+  return ok, why, cmd
+end
+
 local function _choice(cmd, category, decision, reason, phase, subphase, bucket)
   return {
     cmd = cmd,
@@ -645,7 +599,7 @@ local function _pick_bombard_revisit(st, rejects)
     _reject(rejects, "bombard_revisit", "not_needed")
     return nil
   end
-  local ok, why, cmd = _can_send("bombard", st.target)
+  local ok, why, cmd = _can_cast_bombard(st.target)
   if ok then
     return _choice(cmd, "resonance_progress", "bombard_revisit", st.bombard_reason, "progress", "bombard", "resonance_progress")
   end
@@ -658,7 +612,7 @@ local function _pick_fulminate_branch(st, rejects)
     _reject(rejects, "fulminate_continue", "not_needed")
     return nil
   end
-  local ok, why, cmd = _can_send("fulminate", st.target)
+  local ok, why, cmd = _can_cast_fulminate(st.target)
   if ok then
     return _choice(cmd, "fulminate_branch", "fulminate_continue", _fulm_reason(st), "progress", "fulminate", "fulminate_branch")
   end
@@ -673,7 +627,7 @@ local function _pick_fire_progress(st, rejects)
   end
 
   if st.scalded ~= true or tonumber(st.res.earth or 0) < 2 then
-    local ok_magma, why_magma, cmd_magma = _can_send("magma", st.target)
+    local ok_magma, why_magma, cmd_magma = _can_cast_magma(st.target)
     if ok_magma then
       local why = (tonumber(st.res.earth or 0) < 2) and "fire_earth_progress" or "fire_progress_scalded"
       return _choice(cmd_magma, "resonance_progress", "fire_progress", why, "progress", "fire", "resonance_progress")
@@ -681,7 +635,7 @@ local function _pick_fire_progress(st, rejects)
     _reject(rejects, "fire_progress_magma", why_magma ~= "" and why_magma or "magma_blocked")
   end
 
-  local ok, why, cmd = _can_send("firelash", st.target)
+  local ok, why, cmd = _can_cast_firelash(st.target)
   if ok then
     return _choice(cmd, "resonance_progress", "fire_progress", "fire_moderate_missing", "progress", "fire", "resonance_progress")
   end
@@ -694,7 +648,7 @@ local function _pick_dissonance_push(st, rejects)
     _reject(rejects, "dissonance_push", "stage_4")
     return nil
   end
-  local ok, why, cmd = _can_send("dissonance_embed", st.target)
+  local ok, why, cmd = _can_cast_or_embed_dissonance_builder(st.target)
   if ok then
     return _choice(cmd, "dissonance_push", "dissonance_push", "dissonance_stage_" .. tostring(st.dissonance_stage), "gate", "dissonance", "dissonance_push")
   end
@@ -709,7 +663,7 @@ local function _pick_postconv_action(st, rejects)
   end
 
   if st.destroy_ready == true then
-    local ok, why, cmd = _can_send("destroy", st.target)
+    local ok, why, cmd = _can_cast_destroy(st.target)
     if ok then
       return _choice(cmd, "postconv_finish", "destroy_now", "destroy_ready", "postconv", "destroy", "postconv_finish")
     end
@@ -719,7 +673,7 @@ local function _pick_postconv_action(st, rejects)
   end
 
   if st.fulminate_need == true then
-    local ok, why, cmd = _can_send("fulminate", st.target)
+    local ok, why, cmd = _can_cast_fulminate(st.target)
     if ok then
       return _choice(cmd, "postconv_finish", "fulminate_continue", _fulm_reason(st), "postconv", "fulminate", "postconv_finish")
     end
@@ -727,7 +681,7 @@ local function _pick_postconv_action(st, rejects)
   end
 
   if st.scalded ~= true then
-    local ok_magma, why_magma, cmd_magma = _can_send("magma", st.target)
+    local ok_magma, why_magma, cmd_magma = _can_cast_magma(st.target)
     if ok_magma then
       return _choice(cmd_magma, "postconv_finish", "burst_pressure", "postconv_magma_pressure", "postconv", "burst", "postconv_finish")
     end
@@ -735,7 +689,7 @@ local function _pick_postconv_action(st, rejects)
   end
 
   do
-    local ok_firelash, why_firelash, cmd_firelash = _can_send("firelash", st.target)
+    local ok_firelash, why_firelash, cmd_firelash = _can_cast_firelash(st.target)
     if ok_firelash then
       return _choice(cmd_firelash, "postconv_finish", "burst_pressure", "postconv_firelash_pressure", "postconv", "burst", "postconv_finish")
     end
@@ -743,7 +697,7 @@ local function _pick_postconv_action(st, rejects)
   end
 
   if st.freeze_missing == true then
-    local ok, why, cmd = _can_send("freeze", st.target)
+    local ok, why, cmd = _can_cast_freeze(st.target)
     if ok then
       return _choice(cmd, "maintenance", "maintenance_refresh", "freeze_package_incomplete", "postconv", "maintenance", "maintenance")
     end
@@ -751,7 +705,7 @@ local function _pick_postconv_action(st, rejects)
   end
 
   if st.bombard_need == true then
-    local ok, why, cmd = _can_send("bombard", st.target)
+    local ok, why, cmd = _can_cast_bombard(st.target)
     if ok then
       return _choice(cmd, "maintenance", "maintenance_refresh", st.bombard_reason, "postconv", "maintenance", "maintenance")
     end
@@ -771,7 +725,7 @@ local function _select_command(tgt)
   end
 
   if st.waterbonds ~= true then
-    local ok, why, cmd = _can_send("horripilation", tgt)
+    local ok, why, cmd = _can_staffcast_horripilation(tgt)
     _set_route_stage(tgt, ok and "opener" or "hold", "horripilation", "opener_setup")
     if ok then
       return _choice(cmd, "opener_setup", "horripilation_open", "waterbonds_missing", "opener", "horripilation", "opener_setup"), st, rejects, ""
@@ -782,7 +736,7 @@ local function _select_command(tgt)
 
   if st.freeze_missing == true and st.postconv ~= true then
     if st.freeze_requires_water_refresh == true then
-      local ok, why, cmd = _can_send("freeze", tgt)
+      local ok, why, cmd = _can_cast_freeze(tgt)
       _set_route_stage(tgt, ok and "opener" or "hold", "freeze", "freeze_reopen")
       if ok then
         return _choice(cmd, "freeze_reopen", "freeze_reopen", "water_moderate_missing", "opener", "freeze", "freeze_reopen"), st, rejects, ""
@@ -804,7 +758,7 @@ local function _select_command(tgt)
   end
 
   if st.conv_ready == true then
-    local ok, why, cmd = _can_send("convergence", tgt)
+    local ok, why, cmd = _can_cast_convergence(tgt)
     _set_route_stage(tgt, ok and "gate" or "hold", "convergence", "convergence_now")
     if ok then
       return _choice(cmd, "convergence_now", "convergence_now", "all_gates_satisfied", "gate", "convergence", "convergence_now"), st, rejects, ""
@@ -839,7 +793,7 @@ local function _select_command(tgt)
   end
 
   if st.freeze_missing == true then
-    local ok, why, cmd = _can_send("freeze", tgt)
+    local ok, why, cmd = _can_cast_freeze(tgt)
     if ok then
       _set_route_stage(tgt, "maintenance", "freeze", "maintenance")
       return _choice(cmd, "maintenance", "maintenance_refresh", "freeze_package_incomplete", "maintenance", "freeze", "maintenance"), st, rejects, ""
@@ -876,23 +830,10 @@ local function _emit_payload(payload, category)
       Q._commit_hint = nil
       return true
     end
-    if type(MF.on_payload_sent) == "function" then
-      pcall(MF.on_payload_sent, payload)
-    end
     Q._commit_hint = opts
     if Yso and Yso.pulse and type(Yso.pulse.wake) == "function"
       and not (Yso.pulse.state and Yso.pulse.state._in_flush) then
       pcall(Yso.pulse.wake, "emit:staged")
-    end
-    return true
-  end
-
-  if type(send) == "function" then
-    local cmd = _trim(payload and payload.eq or "")
-    if cmd == "" then return false end
-    send(cmd, false)
-    if type(MF.on_payload_sent) == "function" then
-      pcall(MF.on_payload_sent, { eq = cmd })
     end
     return true
   end
@@ -1086,8 +1027,13 @@ function MF.attack_function(arg)
 
   if preview then return payload end
 
-  local sent = _emit_payload({ eq = choice.cmd }, choice.category)
+  local queued_payload = { eq = choice.cmd }
+  local sent = _emit_payload(queued_payload, choice.category)
   if not sent then return false, "emit_failed" end
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  if not has_ack_bus and type(MF.on_payload_queued) == "function" then
+    pcall(MF.on_payload_queued, queued_payload)
+  end
 
   MF.state.last_cmd = choice.cmd
   MF.state.last_category = choice.category
@@ -1134,7 +1080,7 @@ function MF.status()
   return MF.explain()
 end
 
-function MF.on_payload_sent(payload)
+function MF.on_payload_queued(payload)
   _payload_each_eq(payload, function(cmd)
     cmd = _trim(cmd)
     if cmd == "" then return end
@@ -1232,6 +1178,16 @@ function MF.on_payload_sent(payload)
   end)
 end
 
+function MF.on_payload_sent(payload)
+  return MF.on_payload_queued(payload)
+end
+
+function MF.on_payload_fired(payload)
+  payload = payload or {}
+  MF.state.last_fired_cmd = _trim(payload.eq or payload.cmd or "")
+  MF.state.last_fired_at = _now()
+end
+
 function MF.on_enter(ctx)
   MF.init()
   return true
@@ -1279,7 +1235,7 @@ function MF.on_manual_success(ctx)
 end
 
 function MF.on_send_result(payload, ctx)
-  MF.on_payload_sent(payload)
+  MF.on_payload_fired(payload)
   return true
 end
 

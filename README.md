@@ -1,11 +1,17 @@
 # Yso
 
-Current workspace snapshot: April 5, 2026.
+Current workspace snapshot: April 8, 2026.
 
 ## Current fixes
 
+- **Route send-ack hardening + dead-code cleanup (April 8, 2026)** — Magi `focus`/`magi_group_damage` and Occultist `group_damage`/`party_aff`/`occ_aff` no longer advance send-state directly inside `attack_function()` when the shared payload-ack bus is available; they now latch through `Yso.locks.note_payload()` callbacks (with local fallback when the ack bus is absent). `queue.commit()` now marks payloads as fired via `Yso.locks.note_payload()`, `api.lua` now forwards confirmed payload callbacks to `party_aff`, `occ_aff`, and Magi `focus`, and hardcoded `&&` joins in Occultist side routes were normalized to the configured command separator. Removed unreferenced helpers from `group_damage.lua` and `party_aff.lua`.
+- **Occultist aff-loop loyals/pacing hotfix (April 7, 2026)** — `occ_aff.lua` now exposes `A.S.loyals_hostile(...)` compatibility checks, updates hostile state through `Yso.set_loyals_attack`, sends configured passive command on loop-off when loyals are active, and blocks loop ticks while local waiting is active to reduce repeated re-queue spam.
+- **`occ_aff` repeat-queue fix (April 6, 2026)** — Fixed duel-route requeue stalls by clearing lane ownership after successful `occ_aff` sends in `modules/Yso/Combat/routes/occ_aff.lua` (mirrored to `modules/Yso/xml/occ_aff.lua`). This restores repeated same-command loop pressure (for example repeated `instill ... with healthleech`) instead of getting suppressed as unchanged. Added regression test: `Ysindrolir/Occultist/tests/test_occ_aff_loop_requeue.lua`.
+- **Bug-check run fixes (April 6, 2026)** — Fixed `occ_aff` local waiting semantics in `modules/Yso/Combat/routes/occ_aff.lua` (route-local wait gate + timer clear) and fixed Magi `freeze_step_done` reporting in `Magi/magi_group_damage.lua` by sourcing explain state from effective route state. All 10 Lua tests now pass; mirrors and `Yso system.xml` were rebuilt/synced.
+- **`occ_aff` thin-loop refactor (audit-safe)** — `modules/Yso/Combat/routes/occ_aff.lua` now runs a thin, phase-driven loop (`open -> pressure <-> cleanse -> convert -> finish`) with strict local wait/dedup state, guarded convert EQ path, target-side enlightened finish detection, and cleanse attend precedence over pressure fillers.
+- **Shared `Yso.occ.*` route helpers normalized** — `offense_helpers.lua` now exposes canonical helpers used by `occ_aff`: `cleanse_ready`, `ent_refresh`, `ent_for_aff`, `firelord`, `phase`, `set_phase`, `get_phase`, `burst`, `pressure`, and `convert`, with Firelord conversion selection driven by `pyradius.converts`.
 - **NDB quick-who city count formatting restored** — `Legacy V2.1.xml` `Legacy.NDB.qwc()` city headers now print count parentheses as plain `(N)` instead of escaped `\(N\)`, removing visible backslashes from quick-who output while preserving existing alignment and color logic.
-- **Mirror drift repaired for `occ_aff_burst`** — `modules/Yso/Combat/routes/occ_aff_burst.lua` and its XML mirror `modules/Yso/xml/occ_aff_burst.lua` were out of sync during automated bug checks; mirrors were refreshed and `Yso system.xml` was rebuilt so package-export surfaces are synchronized again.
+- **Occultist duel route renamed to `occ_aff`** — canonical duel route/module now lives at `modules/Yso/Combat/routes/occ_aff.lua` with XML mirror `modules/Yso/xml/occ_aff.lua`; route id/namespace are now `occ_aff` while `occ_aff_burst` remains a compatibility alias for existing toggles and references.
 - **Legacy Occultist basher ATTEND opener** — `Legacy Basher V2.1.xml` now tracks denizen target health from `gmcp.IRE.Target.Info.hpperc` and auto-queues `attend @tar` + configured separator (`Yso.sep` / `Yso.cfg.pipe_sep`, fallback `&&`) + `cleanseaura @tar` as the first Occultist bashing action on a new denizen target at `>=100%` HP, then re-queues the same ATTEND->CLEANSEAURA denizen opener when that target drops below full and later returns to `>=100%`; opener state resets on hunt-off and kill transitions.
 - **Legacy party target-follow disabled** — `Legacy V2.1.xml` no longer auto-follows `(Party): ... "Target: ..."` lines via the `Party Target Follow` trigger. Target-call authority is now expected to come from the dedicated `Target caller.xml` package.
 - **Occultist aff-burst route retuned** — Mana-bury pressure now prioritizes `asthma -> paralysis/slickness hold -> healthleech -> manaleech`, then applies `disloyalty` post-manaleech with `anorexia` as a late fallback only. Deaf-down pressure now pairs `command chimera` with an EQ filler/missing aff while chimera-pool mentals are still open, and the route no longer includes the `abdebug` screen/alias helpers.
@@ -60,7 +66,7 @@ Current workspace snapshot: April 5, 2026.
 ## What is here
 
 - Shared offense infrastructure such as the wake bus, queue, route-loop state, targeting/state helpers, and utility modules.
-- Occultist combat routes including `occ_aff_burst`, `group_damage`, `party_aff`, and the shared `parry` module.
+- Occultist combat routes including `occ_aff` (legacy alias: `occ_aff_burst`), `group_damage`, `party_aff`, and the shared `parry` module.
 - XML mirror scripts and Mudlet package files used to keep the live package aligned with the disk workspace.
 - Supporting Magi files that live in the same broader suite.
 - Magi-only route helpers and duel-route state such as `magi_route_core.lua`, `magi_dissonance.lua`, and `magi_focus.lua`.

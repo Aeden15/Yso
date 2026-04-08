@@ -1,16 +1,48 @@
 Yso Systems Workspace
 =====================
-Last updated: April 5, 2026
+Last updated: April 8, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Route send-ack hardening + dead-code cleanup (April 8, 2026) --
+  Magi focus/magi_group_damage and Occultist group_damage/party_aff/occ_aff
+  no longer advance send-state directly in attack_function() when the shared
+  payload-ack bus is present; they now latch from Yso.locks.note_payload()
+  callbacks (with route-local fallback when no ack bus is available). Core
+  queue.commit() now marks fired payloads through Yso.locks.note_payload(),
+  api.lua now forwards confirmed payload callbacks to party_aff, occ_aff, and
+  Magi focus, hardcoded && joins in side routes now use configured separator,
+  and unreferenced helper code was deleted from group_damage/party_aff routes.
+
+  occ_aff repeat-queue fix (April 6, 2026) -- modules/Yso/Combat/routes/occ_aff.lua
+  now clears queue lane ownership after successful sends (mirrored in
+  modules/Yso/xml/occ_aff.lua). This restores repeated same-command loop
+  pressure (for example repeated instill healthleech) instead of being
+  treated as unchanged and silently stalling. Added regression test:
+  Ysindrolir/Occultist/tests/test_occ_aff_loop_requeue.lua
+
+  occ_aff thin-loop refactor (audit-safe) -- modules/Yso/Combat/routes/occ_aff.lua
+  now runs a thin phase machine (open -> pressure <-> cleanse -> convert ->
+  finish) with local-only wait/dedup state, convert-path phase guards,
+  target-side enlightened finish detection, and cleanse attend precedence.
+
+  Shared Yso.occ helper surface normalized -- offense_helpers.lua now exports
+  cleanse_ready, ent_refresh, ent_for_aff, firelord, phase/set_phase/get_phase,
+  burst, pressure, and convert. Firelord conversion selection uses
+  Yso.occ.getDom(\"pyradius\").converts in shared selector logic.
+
   NDB quick-who city count formatting restored -- Legacy V2.1.xml
   Legacy.NDB.qwc() city headers now print plain (N) instead of escaped
   \(N\), removing visible backslashes while preserving existing alignment
   and city-color formatting.
+
+  Occultist duel route renamed to occ_aff -- Canonical duel route/module now
+  lives at modules/Yso/Combat/routes/occ_aff.lua with XML mirror
+  modules/Yso/xml/occ_aff.lua; route id/namespace are now occ_aff while
+  occ_aff_burst remains a compatibility alias for existing toggles/references.
 
   Legacy Occultist basher ATTEND opener -- Legacy Basher V2.1.xml now uses
   gmcp.IRE.Target.Info.hpperc for denizen HP gating and auto-queues

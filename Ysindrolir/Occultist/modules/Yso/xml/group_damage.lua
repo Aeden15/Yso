@@ -21,7 +21,6 @@ Yso.off.oc = Yso.off.oc or {}
 -- Canonical group damage driver lives here:
 Yso.off.oc.group_damage = Yso.off.oc.group_damage or {}
 local GD = Yso.off.oc.group_damage
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 --========================================================--
 -- Occultist ENTITY pool (defaulted)
 --  * Shared across Occultist offense routes (duel / party / utilities).
@@ -87,6 +86,7 @@ GD.route_contract = GD.route_contract or {
 }
 
 do
+  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(GD, GD.route_contract)
   end
@@ -383,6 +383,15 @@ local function _target_matches_active(tgt)
   return tgt ~= "" and _lc(tgt) == _lc(_target())
 end
 
+local function _affstrack_score_is_fresh(A)
+  if type(A) ~= "table" then return false end
+  local ts = tonumber(A.score_updated_at or A.updated_at or A.last_updated_at or A.last_update_at or A.ts)
+  if not ts then return true end
+  if ts > 1e12 then ts = ts / 1000 end
+  local max_age = tonumber(GD.cfg.aff_score_max_age_s or 1.25) or 1.25
+  return (_now() - ts) <= max_age
+end
+
 -- Prefer AK score exports for the active designated target only.
 -- For non-target observations, fall back to target-scoped tracking.
 local function _aff_score(tgt, aff)
@@ -395,7 +404,7 @@ local function _aff_score(tgt, aff)
       local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
       if ok and tonumber(v) then return tonumber(v) end
     end
-    if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    if type(affstrack) == "table" and type(affstrack.score) == "table" and _affstrack_score_is_fresh(affstrack) then
       return tonumber(affstrack.score[aff] or 0) or 0
     end
   end
@@ -407,7 +416,7 @@ local function _aff_score(tgt, aff)
   return 0
 end
 
-local function _has_aff(tgt, aff) return _aff_score(tgt, aff) >= 100 end
+local function _has_aff(tgt, aff) return (tonumber(_aff_score(tgt, aff)) or 0) >= 100 end
 
 local function _ak_speed_is_down()
   local A = rawget(_G, "ak")
@@ -450,11 +459,6 @@ local function _mark_justice_sent(tgt)
   GD.state.justice_once[k] = true
 end
 
-local function _payload_mode()
-  if type(Yso.get_payload_mode)=="function" then return Yso.get_payload_mode() end
-  return tostring((Yso.cfg and Yso.cfg.payload_mode) or "as_available")
-end
-
 local function _echo(msg)
   if not GD.cfg.echo then return end
   local line = string.format("<orange>[Yso:Occultist] <reset>%s", tostring(msg))
@@ -471,115 +475,42 @@ local function _command_sep()
   return sep
 end
 
-local COMMANDS = {
-  tarot_entity_payload = {
-    id = "tarot_entity_payload",
-    string = "outd %s&&%s&&fling %s at %s",
-  },
-  entity_at = {
-    id = "entity_at",
-    string = "command %s at %s",
-  },
-  entity_at_extra = {
-    id = "entity_at_extra",
-    string = "command %s at %s %s",
-  },
-  gremlin_at = {
-    id = "gremlin_at",
-    string = "command gremlin at %s",
-    target_required = false,
-    format_target = true,
-  },
-  hangedman_fling = {
-    id = "hangedman_fling",
-    string = "outd hangedman&&fling hangedman at %s",
-    target_required = false,
-    format_target = true,
-  },
-  crone_at_arm = {
-    id = "crone_at_arm",
-    string = "command crone at %s %s",
-    target_required = false,
-    format_target = true,
-  },
-  ruinate_justice = {
-    id = "ruinate_justice",
-    string = "ruinate justice %s",
-    target_required = false,
-    format_target = true,
-  },
-  anti_tumble_empress = {
-    id = "anti_tumble_empress",
-    string = "outd empress%sfling empress %s",
-  },
-  warp = {
-    id = "warp",
-    string = "warp %s",
-    target_required = false,
-    format_target = true,
-  },
-  instill_with = {
-    id = "instill_with",
-    string = "instill %s with %s",
-    target_required = false,
-    format_target = true,
-  },
-  fling_lust = {
-    id = "fling_lust",
-    string = "fling lust at %s",
-    target_required = false,
-    format_target = true,
-  },
-  outd_empress_fling = {
-    id = "outd_empress_fling",
-    string = "outd empress&&fling empress %s",
-    target_required = false,
-    format_target = true,
-  },
-  loyals_on_default = {
-    id = "loyals_on_default",
-    string = "order entourage kill %s",
-    target_required = false,
-    format_target = true,
-  },
-}
+local _tarot_entity_payload
+local _payload_line
 
-local _unpack = table.unpack or unpack
-local function _cmd(command_id, target, args)
-  local spec = COMMANDS[command_id]
-  if type(spec) ~= "table" then return nil end
-
-  if RI and type(RI.command_from_spec) == "function" then
-    local cmd = RI.command_from_spec(spec, target, args)
-    return cmd
+local function _emit_lanes(payload, reason)
+  local lanes = type(payload) == "table" and payload.lanes or payload
+  if type(lanes) ~= "table" then return false, "invalid_payload" end
+  local emit_payload = {
+    free = lanes.free or lanes.pre,
+    eq = lanes.eq,
+    bal = lanes.bal,
+    class = lanes.class or lanes.ent or lanes.entity,
+    target = _trim(type(payload) == "table" and payload.target or ""),
+  }
+  if type(Yso.emit) == "function" then
+    local ok = Yso.emit(emit_payload, {
+      reason = reason or "group_damage:emit",
+      kind = "offense",
+      commit = true,
+      target = emit_payload.target,
+    }) == true
+    if not ok then return false, "emit_failed" end
+    return true, _payload_line({ target = emit_payload.target, lanes = emit_payload })
   end
-
-  local raw = _trim(spec.string)
-  if raw == "" then return nil end
-  local list = {}
-  if type(args) == "table" then
-    for i = 1, #args do list[#list + 1] = args[i] end
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.emit) == "function" then
+    local ok, res = pcall(Q.emit, emit_payload, {
+      reason = reason or "group_damage:emit",
+      kind = "offense",
+      commit = true,
+      target = emit_payload.target,
+    })
+    if not ok then return false, res end
+    if res ~= true then return false, "queue_emit_failed" end
+    return true, _payload_line({ target = emit_payload.target, lanes = emit_payload })
   end
-
-  local ok, built
-  if spec.format_target == true then
-    list = { tostring(target or ""), _unpack(list) }
-    ok, built = pcall(string.format, raw, _unpack(list))
-  elseif #list > 0 then
-    ok, built = pcall(string.format, raw, _unpack(list))
-  else
-    return raw
-  end
-  if not ok then return nil end
-  return _trim(built)
-end
-
-local function _safe_send(cmd)
-  cmd = _trim(cmd)
-  if cmd == "" or type(send) ~= "function" then return false, "send_unavailable" end
-  local ok, err = pcall(send, cmd, false)
-  if not ok then return false, err end
-  return true
+  return false, "queue_emit_unavailable"
 end
 
 local function _set_debug_field(key, value)
@@ -748,71 +679,8 @@ local function _remember_attack(cmd, payload)
 end
 
 local function _waiting_blocks_tick()
-  local wait = GD.state.waiting or {}
-  local queued = _trim(wait.queue)
-  if queued == "" then return false end
-  if (_now() - (tonumber(wait.at) or 0)) >= 3.0 then
-    _clear_waiting()
-    return false
-  end
-
-  local lanes = wait.lanes
-  if type(lanes) == "table" and #lanes > 0 then
-    local blocked_eq, blocked_ent, blocked = false, false, false
-    for i = 1, #lanes do
-      if not _lane_ready(lanes[i]) then
-        blocked = true
-        if lanes[i] == "eq" then blocked_eq = true end
-        if lanes[i] == "class" then blocked_ent = true end
-      end
-    end
-    if blocked then
-      local reason = "waiting_outcome"
-      if blocked_ent and not blocked_eq and #lanes == 1 then
-        reason = "waiting_ent"
-      elseif blocked_eq and not blocked_ent and #lanes == 1 then
-        reason = "waiting_eq"
-      end
-      wait.reason = reason
-      if GD.state.in_flight then GD.state.in_flight.reason = reason end
-      _note_no_send_reason(reason)
-      return true
-    end
-    if blocked_ent or (#lanes > 1 and wait.reason == "waiting_outcome") or table.concat(lanes, ","):find("class", 1, true) then
-      _note_retry_reason("retry_entity_ready")
-    end
-    _clear_waiting()
-    return false
-  end
-
-  local lane = _lc(wait.main_lane or "")
-  if lane == "eq" then
-    if _eq_ready() then _clear_waiting(); return false end
-    wait.reason = "waiting_eq"
-    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  if lane == "bal" then
-    if _bal_ready() then _clear_waiting(); return false end
-    wait.reason = "waiting_outcome"
-    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-  if lane == "entity" or lane == "class" then
-    if _ent_ready() then
-      _note_retry_reason("retry_entity_ready")
-      _clear_waiting()
-      return false
-    end
-    wait.reason = "waiting_ent"
-    if GD.state.in_flight then GD.state.in_flight.reason = wait.reason end
-    _note_no_send_reason(wait.reason)
-    return true
-  end
-
-  _clear_waiting()
+  -- Keep offense loop reevaluating continuously; queued ownership handles replacement.
+  -- We keep wait state for explain/debug, but do not hard-block route ticks.
   return false
 end
 
@@ -860,17 +728,19 @@ local function _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
   return pick_eq
 end
 
-local function _tarot_entity_payload(bal_cmd, entity_cmd, tgt)
+_tarot_entity_payload = function(bal_cmd, entity_cmd, tgt)
   bal_cmd = _trim(bal_cmd)
   entity_cmd = _trim(entity_cmd)
   tgt = _trim(tgt)
   if bal_cmd == "" or entity_cmd == "" or tgt == "" then return nil end
-  local card_a, card_b, card_tgt = bal_cmd:match("^outd%s+([%w_%-]+)%s*&&%s*fling%s+([%w_%-]+)%s+at%s+(.+)$")
+  local sep = _command_sep()
+  local sep_pat = sep:gsub("(%W)", "%%%1")
+  local card_a, card_b, card_tgt = bal_cmd:match("^outd%s+([%w_%-]+)%s*" .. sep_pat .. "%s*fling%s+([%w_%-]+)%s+at%s+(.+)$")
   if _trim(card_a) == "" or card_a ~= card_b or _lc(card_tgt or "") ~= _lc(tgt) then return nil end
-  return _cmd("tarot_entity_payload", "", { card_a, entity_cmd, card_a, tgt })
+  return ("outd %s%s%s%sfling %s at %s"):format(card_a, sep, entity_cmd, sep, card_a, tgt)
 end
 
-local function _payload_line(payload)
+_payload_line = function(payload)
   if type(payload) ~= "table" or type(payload.lanes) ~= "table" then return "" end
   local lanes = payload.lanes
   local entity_cmd = _trim(lanes.entity or lanes.class)
@@ -1001,7 +871,7 @@ local function _final_pre_emit_payload(payload)
       return nil, "duplicate_action_suppressed"
     end
 
-    local cmd = _cmd("gremlin_at", tgt)
+    local cmd = ("command gremlin at %s"):format(tgt)
     if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == "function" then
       local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
       local alt = _trim(ok and v or "")
@@ -1108,9 +978,9 @@ local function _cmd_entity(ent, tgt, extra)
   tgt = tostring(tgt or "")
   if ent == "" or tgt == "" then return nil end
   if ent == "firelord" and extra and extra ~= "" then
-    return _cmd("entity_at_extra", "", { ent, tgt, extra })
+    return ("command %s at %s %s"):format(ent, tgt, extra)
   end
-  return _cmd("entity_at", "", { ent, tgt })
+  return ("command %s at %s"):format(ent, tgt)
 end
 
 
@@ -1123,33 +993,36 @@ _primebonded = function(ent)
   return false
 end
 
+-- Inline entity priority list — edit this table to change which entities are
+-- commanded and in what order. Each entry fires when the target is missing that
+-- aff and (if cond is present) the condition passes. Entries with a 'cond' that
+-- references _primebonded require that entity to be primebonded before firing.
+GD.cfg.ent_prio = GD.cfg.ent_prio or {
+  { aff = "healthleech", cmd = "command worm at %s" },
+  { aff = "clumsiness",  cmd = "command storm at %s" },
+  { aff = "asthma",      cmd = "command bubonis at %s" },
+  { aff = "slickness",   cmd = "command bubonis at %s",    cond = function(tgt, has) return has(tgt, "asthma") end },
+  { aff = "paralysis",   cmd = "command slime at %s",      cond = function(tgt, has) return has(tgt, "asthma") end },
+  { aff = "addiction",   cmd = "command humbug at %s",     cond = function(tgt, has) return _primebonded("humbug") end },
+  { aff = "weariness",   cmd = "command hound at %s",      cond = function(tgt, has) return _primebonded("hound") end },
+  { aff = "haemophilia", cmd = "command bloodleech at %s", cond = function(tgt, has) return _primebonded("bloodleech") end },
+}
+
+-- Walk GD.cfg.ent_prio and return the first entity command for an aff the
+-- target is missing. skip_aff (from opts) is excluded so EQ and entity don't
+-- redundantly cover the same aff when the caller already has an explicit pair.
 _entity_pick = function(tgt, st, category, opts)
-  local ER = _ER()
-  if not (ER and type(ER.pick) == "function") then return nil, nil, nil end
   opts = opts or {}
-  local skip_aff = _lc(opts.skip_aff)
-  local ctx = {
-    route = "group_damage",
-    target = tgt,
-    target_valid = _tgt_valid(tgt),
-    ent_ready = _ent_ready(),
-    eq_ready = (_eq_ready() and skip_aff == ""),
-    bal_ready = _bal_ready(),
-    has_aff = function(aff_name) return _has_aff(tgt, aff_name) end,
-    route_state = st,
-    category = category,
-    need = {
-      healthleech = opts.need_healthleech == true and skip_aff ~= "healthleech",
-      sensitivity = opts.need_sensitivity == true,
-      clumsiness = opts.need_clumsiness == true and skip_aff ~= "clumsiness",
-      slickness = opts.need_slickness == true and skip_aff ~= "slickness",
-      addiction = opts.need_addiction == true,
-    },
-  }
-  local cand, dbg = ER.pick(ctx)
-  GD.state.last_entity_debug = dbg
-  if not cand then return nil, category, dbg end
-  return cand.cmd, cand.category or category, dbg
+  if not _ent_ready() then return nil, nil, nil end
+  local skip = _lc(opts.skip_aff or "")
+  for _, entry in ipairs(GD.cfg.ent_prio or {}) do
+    if entry.aff ~= skip and not _has_aff(tgt, entry.aff) then
+      if not entry.cond or entry.cond(tgt, _has_aff) then
+        return (entry.cmd):format(tgt), entry.category or category, nil
+      end
+    end
+  end
+  return nil, nil, nil
 end
 
 local function _pick_entity_cmd(tgt, st, opts)
@@ -1160,19 +1033,19 @@ local function _pick_entity_cmd(tgt, st, opts)
   end
   local skip_aff = _lc(opts.skip_aff)
   if skip_aff == "clumsiness" then
-    return _cmd("entity_at", "", { "storm", tgt }), tostring(opts.category or "required_core_refresh")
+    return ("command storm at %s"):format(tgt), tostring(opts.category or "required_core_refresh")
   end
   if skip_aff == "healthleech" then
-    return _cmd("entity_at", "", { "worm", tgt }), tostring(opts.category or "required_core_application")
+    return ("command worm at %s"):format(tgt), tostring(opts.category or "required_core_application")
   end
   if skip_aff == "slickness" and _has_aff(tgt, "asthma") then
-    return _cmd("entity_at", "", { "bubonis", tgt }), tostring(opts.category or "fallback_support")
+    return ("command bubonis at %s"):format(tgt), tostring(opts.category or "fallback_support")
   end
   if skip_aff == "asthma" then
-    return _cmd("entity_at", "", { "bubonis", tgt }), tostring(opts.category or "required_core_refresh")
+    return ("command bubonis at %s"):format(tgt), tostring(opts.category or "required_core_refresh")
   end
   if skip_aff == "paralysis" and _has_aff(tgt, "asthma") then
-    return _cmd("entity_at", "", { "slime", tgt }), tostring(opts.category or "fallback_support")
+    return ("command slime at %s"):format(tgt), tostring(opts.category or "fallback_support")
   end
   return _entity_pick(tgt, st, tostring(opts.category or "fallback_support"), opts)
 end
@@ -1192,7 +1065,7 @@ local function _plan_free(tgt)
     parts[#parts + 1] = "stand"
   end
   if not _loyals_active_for(tgt) then
-    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or COMMANDS.loyals_on_default.string)):format(tgt)
+    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
   end
   if #parts == 0 then return nil, nil end
   return table.concat(parts, _command_sep()), "team_coordination"
@@ -1239,14 +1112,15 @@ local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
     end
   elseif not st.entangled and _prone_is_forced(tgt) then
     if _ent_ready() then
-      return _cmd("hangedman_fling", tgt),
-        _cmd("crone_at_arm", tgt, { _random_crone_arm(tgt) }),
+      local sep = _command_sep()
+      return ("outd hangedman%sfling hangedman at %s"):format(sep, tgt),
+        ("command crone at %s %s"):format(tgt, _random_crone_arm(tgt)),
         "fallback_support"
     end
   end
 
   if _justice_conversion_count(tgt) >= 2 and not _justice_already_sent(tgt) then
-    return _cmd("ruinate_justice", tgt), nil, nil
+    return ("ruinate justice %s"):format(tgt), nil, nil
   end
 
   return nil, nil, nil
@@ -1325,7 +1199,7 @@ local function _plan_route(tgt)
       need_addiction = need_addiction,
     })
     if burst_cmd then
-      p.eq = _cmd("warp", tgt)
+      p.eq = ("warp %s"):format(tgt)
       p.eq_category = "reserved_paired_burst"
       p.class = burst_cmd
       p.class_category = solved or "reserved_paired_burst"
@@ -1340,7 +1214,7 @@ local function _plan_route(tgt)
   -- Core refresh/application wins after any reserved burst and bootstrap work.
   if miss_sens then
     if _eq_ready() then
-      p.eq = _cmd("instill_with", tgt, { "sensitivity" })
+      p.eq = ("instill %s with sensitivity"):format(tgt)
       p.eq_category = "required_core_refresh"
       p.eq_aff = "sensitivity"
     end
@@ -1354,7 +1228,7 @@ local function _plan_route(tgt)
     if not p.class then pick_class("required_core_refresh") end
     if not p.class then pick_class("required_core_application") end
     if not p.class and _eq_ready() then
-      p.eq = _cmd("instill_with", tgt, { "clumsiness" })
+      p.eq = ("instill %s with clumsiness"):format(tgt)
       p.eq_category = "required_core_refresh"
       p.eq_aff = "clumsiness"
     end
@@ -1364,10 +1238,10 @@ local function _plan_route(tgt)
 
   if miss_hl then
     if st.count >= 2 and _eq_ready() then
-      p.eq = _cmd("warp", tgt)
+      p.eq = ("warp %s"):format(tgt)
       p.eq_category = "required_core_application"
     elseif _eq_ready() and not _ent_ready() then
-      p.eq = _cmd("instill_with", tgt, { "healthleech" })
+      p.eq = ("instill %s with healthleech"):format(tgt)
       p.eq_category = "required_core_application"
       p.eq_aff = "healthleech"
     end
@@ -1390,7 +1264,7 @@ local function _plan_route(tgt)
 
   -- Optional slickness is lower than missing-core work, but higher than fallback BAL support when EQ is free.
   if miss_slick and _eq_ready() then
-    p.eq = _cmd("instill_with", tgt, { "slickness" })
+    p.eq = ("instill %s with slickness"):format(tgt)
     p.eq_category = "fallback_support"
     p.eq_aff = "slickness"
   end
@@ -1652,7 +1526,7 @@ function GD.attack_function(arg)
     return false, "duplicate_action_suppressed"
   end
 
-  local sent, err = _safe_send(cmd)
+  local sent, err = _emit_lanes(emit_payload, "group_damage:attack")
   if not sent then
     _note_retry_reason("retry_hard_fail")
     return false, err
@@ -1665,8 +1539,11 @@ function GD.attack_function(arg)
   if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == "function" then
     pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
   end
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  if not has_ack_bus then
+    GD.on_sent(emit_payload, ctx)
+  end
 
-  GD.on_sent(emit_payload, ctx)
   _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
@@ -1686,11 +1563,6 @@ function GD.on_sent(payload, ctx)
     }
   end
   GD.state.template.last_emitted_payload = payload
-  local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity
-  if class_lane and Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry
-    and type(Yso.off.oc.entity_registry.note_payload_sent) == "function" then
-    pcall(Yso.off.oc.entity_registry.note_payload_sent, { class = class_lane })
-  end
   return GD.on_payload_sent(legacy)
 end
 
@@ -1824,7 +1696,7 @@ function GD.alias_loop_on_stopped(ctx)
 
   local passive = _trim(tostring(GD.cfg.off_passive_cmd or "order loyals passive"))
   if passive ~= "" then
-    _safe_send(passive)
+    _emit_lanes({ lanes = { free = passive }, target = _target() }, "group_damage:off_passive")
   end
   _set_loyals_hostile(false)
 
@@ -1865,13 +1737,6 @@ local function _tgt_present(tgt)
     if ok then return v == true end
   end
   return false
-end
-
-local function _emit_lane(lane, cmd, reason)
-  cmd = _trim(cmd)
-  if cmd == "" then return false end
-  local ok = _safe_send(cmd)
-  return ok == true
 end
 
 function GD.mark_tumble(tgt, dir)
@@ -1925,79 +1790,6 @@ function GD.mark_lust_landed(tgt)
   end
 end
 
-local function _maybe_antitumble(now)
-  local T = GD.state.tumble
-  if T.target == "" then return false end
-  if now > (tonumber(T.until_t) or 0) then
-    T.target = ""; T.dir = ""; T.fired = false
-    return false
-  end
-  if T.fired then return false end
-
-  -- Prefer reacting for current target only (prevents stale target spam).
-  local tgt = _target()
-  if tgt == "" or _lc(tgt) ~= _lc(T.target) then return false end
-
-  -- SM dominate is EQ lane; Lust is BAL lane.
-  local sm_ready = false
-  if Yso and type(Yso.soulmaster_ready) == "function" then
-    local ok,v = pcall(Yso.soulmaster_ready); if ok then sm_ready = (v == true) end
-  else
-    sm_ready = (rawget(_G, "soulmaster_ready") == true)
-  end
-
-  if sm_ready and Yso and Yso.occ and type(Yso.occ.sm_cmd_tumble) == "function" then
-    if not _eq_ready() then return false end
-    local ok,cmd = pcall(Yso.occ.sm_cmd_tumble, tgt, T.dir)
-    cmd = _trim(ok and cmd or "")
-    if cmd ~= "" then
-      _echo(("%s TUMBLE BEGIN -> Soulmaster dominate (anti-tumble)"):format(tgt))
-      if _emit_lane("eq", cmd, "gd:antitumble") then
-        T.fired = true
-        return true
-      end
-    end
-  end
-
-  -- fallback: Lust
-  if not _bal_ready() then return false end
-  _echo(("%s TUMBLE BEGIN -> Lust (SM not ready/usable)"):format(tgt))
-  if _emit_lane("bal", _cmd("fling_lust", tgt), "gd:antitumble") then
-    T.fired = true
-    return true
-  end
-  return false
-end
-
-local function _maybe_empress(now)
-  local E = GD.state.empress
-  if not E.pending then return false end
-
-  local tgt = _trim(E.target)
-  if tgt == "" then E.pending = false; return false end
-
-  -- Clear pending if target is already back in the room.
-  if _tgt_present(tgt) then
-    E.pending = false
-    return false
-  end
-
-  -- Hard timeout (don't keep this pending forever if presence tracking is missing).
-  if E.started_at ~= 0 and (now - (tonumber(E.started_at) or 0)) > 15.0 then
-    E.pending = false
-    return false
-  end
-
-  if now < (tonumber(E.fail_until) or 0) then return false end
-  if not _bal_ready() then return false end
-
-  if (now - (tonumber(E.last_try) or 0)) < 0.9 then return false end
-  E.last_try = now
-
-  _echo(("%s TUMBLED OUT -> Empress pull (%s)"):format(tgt, tostring(E.dir or "?")))
-  return (_safe_send(_cmd("anti_tumble_empress", "", { _command_sep(), tgt })) == true)
-end
-
 local function _rescue_antitumble_action(now)
   if GD.cfg.rescue_lust_empress ~= true then return nil end
 
@@ -2038,7 +1830,7 @@ local function _rescue_antitumble_action(now)
 
   if not _bal_ready() then return nil end
   return {
-    cmd = _cmd("fling_lust", tgt),
+    cmd = ("fling lust at %s"):format(tgt),
     qtype = "bal",
     kind = "offense",
     score = 118,
@@ -2066,7 +1858,7 @@ local function _rescue_empress_action(now)
   if (now - (tonumber(E.last_try) or 0)) < 0.9 then return nil end
 
   return {
-    cmd = _cmd("outd_empress_fling", tgt),
+    cmd = ("outd empress%sfling empress %s"):format(_command_sep(), tgt),
     qtype = "bal",
     kind = "offense",
     score = 116,
@@ -2163,7 +1955,7 @@ function GD.on_payload_sent(payload)
 
   local E = GD.state and GD.state.empress or nil
   if type(E) == "table" and E.pending then
-    local empress_cmd = ("outd empress&&fling empress %s"):format(_trim(E.target))
+    local empress_cmd = ("outd empress%sfling empress %s"):format(_command_sep(), _trim(E.target))
     if _payload_contains_cmd(payload, "bal", empress_cmd) then
       E.last_try = now
     end
