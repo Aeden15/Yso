@@ -274,9 +274,21 @@ do
       if GD and type(GD.on_payload_sent) == "function" then
         pcall(GD.on_payload_sent, payload)
       end
+      local PA = (Yso and Yso.off and Yso.off.oc and Yso.off.oc.party_aff) or nil
+      if PA and type(PA.on_payload_sent) == "function" then
+        pcall(PA.on_payload_sent, payload)
+      end
+      local OA = (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.occ_aff or Yso.off.oc.aff)) or nil
+      if OA and type(OA.on_payload_sent) == "function" then
+        pcall(OA.on_payload_sent, payload)
+      end
       local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
       if MGD and type(MGD.on_payload_sent) == "function" then
         pcall(MGD.on_payload_sent, payload)
+      end
+      local MF = (Yso and Yso.off and Yso.off.magi and Yso.off.magi.focus) or nil
+      if MF and type(MF.on_payload_sent) == "function" then
+        pcall(MF.on_payload_sent, payload)
       end
 
     end
@@ -527,6 +539,10 @@ local function _has(v)
     return v[1] ~= nil
   end
   return false
+end
+
+local function _trim(s)
+  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
 function Yso.emit(payload, opts)

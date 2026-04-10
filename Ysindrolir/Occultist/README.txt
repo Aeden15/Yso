@@ -1,10 +1,34 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: April 2, 2026
+Last updated: April 10, 2026
 
 
 Current fixes
 -------------
+  helper-surface trim + route-localization (April 10, 2026): occ_aff now owns
+  cleanse/burst/convert decision logic directly; offense_helpers now keeps only
+  shared phase state helpers (set_phase/get_phase). Removed route-only
+  Yso.occ exports:
+    cleanse_ready
+    ent_refresh
+    ent_for_aff
+    firelord
+    phase
+    burst
+    pressure
+    convert
+  Updated regression test:
+    tests/test_loyals_bootstrap_readaura.lua
+
+  occ_aff repeat-queue fix (April 6, 2026): the duel aff route now clears
+  queue lane ownership after successful sends, so repeated same-command
+  pressure can requeue on later ticks instead of being treated as unchanged.
+  Canonical + XML mirror updated:
+    modules/Yso/Combat/routes/occ_aff.lua
+    modules/Yso/xml/occ_aff.lua
+  Added regression test:
+    tests/test_occ_aff_loop_requeue.lua
+
   occ_aff thin-loop refactor (audit-safe): the duel aff route now stays
   mode-controller owned while using a thin phase flow:
     open -> pressure <-> cleanse -> convert -> finish
@@ -12,17 +36,8 @@ Current fixes
   finish detection uses target-side enlightened state, and send wait/dedup
   remains route-local (`occ_aff.state.waiting` / `occ_aff.state.last_attack`).
 
-  Shared helper surface for occ_aff is now canonical under Yso.occ:
-    cleanse_ready
-    ent_refresh
-    ent_for_aff
-    firelord
-    phase / set_phase / get_phase
-    burst
-    pressure
-    convert
-  Firelord conversion selection is now shared and skillchart-driven via
-  `Yso.occ.getDom(\"pyradius\").converts`.
+  Shared helper surface for occ_aff under Yso.occ is now minimal:
+    set_phase / get_phase
 
   Active Occultist offense is now alias-owned. The old orchestrator has been
   removed from the live offense path, and shared route-loop send memory now
@@ -235,4 +250,3 @@ Working notes
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
-

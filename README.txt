@@ -1,21 +1,57 @@
 Yso Systems Workspace
 =====================
-Last updated: April 5, 2026
+Last updated: April 10, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultist helper-surface trim + route-localization (April 10, 2026) --
+  modules/Yso/Combat/routes/occ_aff.lua now owns cleanse/burst/convert decision
+  flow directly instead of calling route-only Yso.occ helper wrappers.
+  modules/Yso/Combat/occultist/offense_helpers.lua now keeps only shared phase
+  state helpers (set_phase/get_phase) and drops route-only exports:
+  cleanse_ready, ent_for_aff, burst, convert, phase, pressure, firelord,
+  ent_refresh. Updated regression coverage in:
+  Ysindrolir/Occultist/tests/test_loyals_bootstrap_readaura.lua.
+  XML mirrors were refreshed and Yso system.xml was rebuilt.
+
+  Softlock gate phase-flow install fix (April 10, 2026) --
+  modules/Yso/Combat/occultist/softlock_gate.lua no longer emits a false
+  startup warning when Off.try_kelp_bury is absent in the modern offense
+  stack. The module now exposes Off.install_softlock_gate(), falls back to a
+  phase wrapper (Off.phase), and supplies a compatibility try_kelp_bury shim.
+  modules/Yso/xml/sightgate.lua now calls Off.install_softlock_gate() after
+  SightGate loads so late-bound phase hooks attach reliably. Updated regression
+  coverage in Ysindrolir/Occultist/tests/test_softlock_gate.lua. XML mirrors
+  were refreshed and Yso system.xml was rebuilt.
+
+  Route send-ack hardening + dead-code cleanup (April 8, 2026) --
+  Magi focus/magi_group_damage and Occultist group_damage/party_aff/occ_aff
+  no longer advance send-state directly in attack_function() when the shared
+  payload-ack bus is present; they now latch from Yso.locks.note_payload()
+  callbacks (with route-local fallback when no ack bus is available). Core
+  queue.commit() now marks fired payloads through Yso.locks.note_payload(),
+  api.lua now forwards confirmed payload callbacks to party_aff, occ_aff, and
+  Magi focus, hardcoded && joins in side routes now use configured separator,
+  and unreferenced helper code was deleted from group_damage/party_aff routes.
+
+  occ_aff repeat-queue fix (April 6, 2026) -- modules/Yso/Combat/routes/occ_aff.lua
+  now clears queue lane ownership after successful sends (mirrored in
+  modules/Yso/xml/occ_aff.lua). This restores repeated same-command loop
+  pressure (for example repeated instill healthleech) instead of being
+  treated as unchanged and silently stalling. Added regression test:
+  Ysindrolir/Occultist/tests/test_occ_aff_loop_requeue.lua
+
   occ_aff thin-loop refactor (audit-safe) -- modules/Yso/Combat/routes/occ_aff.lua
   now runs a thin phase machine (open -> pressure <-> cleanse -> convert ->
   finish) with local-only wait/dedup state, convert-path phase guards,
   target-side enlightened finish detection, and cleanse attend precedence.
 
-  Shared Yso.occ helper surface normalized -- offense_helpers.lua now exports
-  cleanse_ready, ent_refresh, ent_for_aff, firelord, phase/set_phase/get_phase,
-  burst, pressure, and convert. Firelord conversion selection uses
-  Yso.occ.getDom(\"pyradius\").converts in shared selector logic.
+  Shared Yso.occ helper surface normalized -- offense_helpers.lua now exposes
+  only shared phase-state ownership helpers (set_phase/get_phase). Route-local
+  cleanse/burst/convert behavior lives directly in occ_aff.
 
   NDB quick-who city count formatting restored -- Legacy V2.1.xml
   Legacy.NDB.qwc() city headers now print plain (N) instead of escaped

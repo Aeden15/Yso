@@ -641,6 +641,7 @@ function Q.commit(opts)
 
   _clear_payload(payload)
   _mark_payload_queued(queued)
+  _mark_payload_fired(queued)
   _debug("commit queued => " .. _payload_line(queued))
   return true, queued
 end

@@ -85,6 +85,27 @@ PA.cfg = PA.cfg or {
   asthma_stable_count = 2,
   cleanseaura_mana_pct = 40,
 
+  -- How many affs from aff_prio must be on the target before the
+  -- lock is considered "stable" (gates enervate and manaleech drain).
+  lock_stable_count = 3,
+
+  -- Instill priority order.  Walk this list and instill the first
+  -- aff the target is missing.  Reorder freely.
+  aff_prio = {
+    "asthma",
+    "haemophilia",
+    "addiction",
+    "clumsiness",
+    "healthleech",
+    "weariness",
+    "sensitivity",
+    "agoraphobia",
+    "dementia",
+    "claustrophobia",
+    "confusion",
+    "hallucinations",
+  },
+
   attend_aff_floor = 3,
   shieldbreak_lockout_s = 1.0,
   attend_lockout_s = 2.3,
@@ -388,7 +409,7 @@ local function _sequence_plan(tgt, opts)
 end
 
 local function _focus_lock_count(tgt)
-  local list = { "asthma", "haemophilia", "addiction", "clumsiness", "healthleech", "weariness", "sensitivity" }
+  local list = PA.cfg.aff_prio or {}
   local n = 0
   for i = 1, #list do
     if _has_aff(tgt, list[i]) then n = n + 1 end
@@ -440,7 +461,7 @@ local function _entity_refresh_state(tgt)
 end
 
 local function _first_missing_lock_aff(tgt, skip_aff)
-  local order = { "asthma", "haemophilia", "addiction", "clumsiness", "healthleech", "weariness", "sensitivity", "agoraphobia", "dementia", "claustrophobia", "confusion", "hallucinations", }
+  local order = PA.cfg.aff_prio or {}
   skip_aff = _lc(skip_aff)
   for i = 1, #order do
     if order[i] ~= skip_aff and not _has_aff(tgt, order[i]) then return order[i] end
@@ -460,9 +481,12 @@ local function _entity_cmd_for_aff(aff, tgt)
     local cmd = Yso.ent_cmd_for_aff(aff, tgt, _has_aff)
     if cmd then return cmd end
   end
-  if aff == "asthma" then return ("command bubonis at %s"):format(tgt) end
-  if aff == "clumsiness" then return ("command storm at %s"):format(tgt) end
+  if aff == "asthma"      then return ("command bubonis at %s"):format(tgt) end
+  if aff == "clumsiness"  then return ("command storm at %s"):format(tgt) end
   if aff == "healthleech" then return ("command worm at %s"):format(tgt) end
+  if aff == "haemophilia" then return ("command bloodleech at %s"):format(tgt) end
+  if aff == "addiction"   then return ("command humbug at %s"):format(tgt) end
+  if aff == "weariness"   then return ("command hound at %s"):format(tgt) end
   return nil
 end
 
@@ -511,14 +535,6 @@ local function _command_sep()
   local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or "&&")
   if sep == "" then sep = "&&" end
   return sep
-end
-
-local function _safe_send(cmd)
-  cmd = _trim(cmd)
-  if cmd == "" or type(send) ~= "function" then return false, "send_unavailable" end
-  local ok, err = pcall(send, cmd, false)
-  if not ok then return false, err end
-  return true
 end
 
 local _payload_line
@@ -710,12 +726,14 @@ _payload_line = function(payload)
   if type(payload) ~= "table" or type(payload.lanes) ~= "table" then return "" end
   local lanes = payload.lanes
   local entity_cmd = _trim(lanes.entity or lanes.class)
-  local card_a, card_b, card_tgt = _trim(lanes.bal):match("^outd%s+([%w_%-]+)%s*&&%s*fling%s+([%w_%-]+)%s+at%s+(.+)$")
+  local sep = _command_sep()
+  local sep_pat = sep:gsub("(%W)", "%%%1")
+  local card_a, card_b, card_tgt = _trim(lanes.bal):match("^outd%s+([%w_%-]+)%s*" .. sep_pat .. "%s*fling%s+([%w_%-]+)%s+at%s+(.+)$")
   local cmds = {}
   if _trim(lanes.free) ~= "" then cmds[#cmds + 1] = _trim(lanes.free) end
   if _trim(lanes.eq) ~= "" then cmds[#cmds + 1] = _trim(lanes.eq) end
   if _trim(card_a) ~= "" and card_a == card_b and _lc(card_tgt or "") == _lc(payload.target or "") and entity_cmd ~= "" then
-    cmds[#cmds + 1] = ("outd %s&&%s&&fling %s at %s"):format(card_a, entity_cmd, card_a, payload.target)
+    cmds[#cmds + 1] = ("outd %s%s%s%sfling %s at %s"):format(card_a, sep, entity_cmd, sep, card_a, payload.target)
     return table.concat(cmds, _command_sep())
   end
   if _trim(lanes.bal) ~= "" then cmds[#cmds + 1] = _trim(lanes.bal) end
@@ -982,7 +1000,7 @@ local function _plan_bal(tgt, opts)
 
   if seq.enabled then
     if seq.deaf == false then
-      return ("outd moon&&fling moon at %s"):format(tgt), "mental_pressure"
+      return ("outd moon%sfling moon at %s"):format(_command_sep(), tgt), "mental_pressure"
     end
     return nil, nil
   end
@@ -994,7 +1012,7 @@ local function _plan_bal(tgt, opts)
   end
 
   if _mental_score() < tonumber(PA.cfg.mental_target or 3) then
-    return ("outd moon&&fling moon at %s"):format(tgt), "mental_pressure"
+    return ("outd moon%sfling moon at %s"):format(_command_sep(), tgt), "mental_pressure"
   end
 
   return nil, nil
@@ -1040,22 +1058,13 @@ _plan_entity = function(tgt, opts)
     return ("command sycophant at %s"):format(tgt), "mana_drain"
   end
 
-  local ER2 = Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
-  if ER2 and type(ER2.pick) == "function" then
-    local ctx = {
-      route = "party_aff",
-      target = tgt,
-      target_valid = _tgt_valid(tgt),
-      ent_ready = true,
-      eq_ready = _eq_ready(),
-      bal_ready = _bal_ready(),
-      has_aff = function(a) return _has_aff(tgt, a) end,
-      category = "entity_support",
-      need = {},
-    }
-    local ok, cand = pcall(ER2.pick, ctx)
-    if ok and type(cand) == "table" and cand.cmd then
-      return cand.cmd, cand.category or "entity_support"
+  -- Walk PA.cfg.aff_prio and send an entity for the first aff the target
+  -- is missing that has an entity command.  _entity_cmd_for_aff returns nil
+  -- for affs with no entity (e.g. sensitivity), so those are silently skipped.
+  for _, aff in ipairs(PA.cfg.aff_prio or {}) do
+    if not _has_aff(tgt, aff) then
+      local cmd = _entity_cmd_for_aff(aff, tgt)
+      if cmd then return cmd, "entity_support" end
     end
   end
 
@@ -1313,7 +1322,10 @@ function PA.attack_function(arg)
       })
     end
   end
-  PA.on_sent(emit_payload, ctx)
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  if not has_ack_bus then
+    PA.on_sent(emit_payload, ctx)
+  end
   _remember_attack(cmd, emit_payload)
   return true, cmd, payload
 end
@@ -1342,12 +1354,11 @@ function PA.on_sent(payload, ctx)
       PA.state.unnamable_sent_for = tgt
     end
   end
-  local class_lane = payload.lanes and (payload.lanes.class or payload.lanes.entity) or payload.class or payload.entity
-  if class_lane and Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry
-    and type(Yso.off.oc.entity_registry.note_payload_sent) == "function" then
-    pcall(Yso.off.oc.entity_registry.note_payload_sent, { class = class_lane })
-  end
   return true
+end
+
+function PA.on_payload_sent(payload)
+  return PA.on_sent(payload, nil)
 end
 
 function PA.build_payload(ctx)
@@ -1410,8 +1421,13 @@ function PA.on_resume(ctx)
   end
   return true
 end
-function PA.on_manual_success(ctx) return true end
-function PA.on_send_result(payload, ctx) return PA.on_sent(payload, ctx) end
+function PA.on_manual_success(ctx)
+  if PA.state and PA.state.loop_enabled == true then
+    PA.schedule_loop(tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15)
+  end
+  return true
+end
+function PA.on_send_result(payload, ctx) return PA.on_payload_sent(payload) end
 
 function PA.on_target_swap(old_target, new_target)
   if _lc(old_target) ~= _lc(new_target) then

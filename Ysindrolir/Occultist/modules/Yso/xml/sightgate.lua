@@ -318,6 +318,11 @@ do
   end
 end
 
+-- If softlock_gate loaded before sightgate, allow it to bind to phase flow now.
+if type(Off.install_softlock_gate) == "function" then
+  pcall(Off.install_softlock_gate)
+end
+
 --========================================================--
 -- Usage (intent flag):
 --   Before UNNAMABLE VISION or HERETIC WITNESS, call:

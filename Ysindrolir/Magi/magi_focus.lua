@@ -1030,7 +1030,8 @@ function MF.attack_function(arg)
   local queued_payload = { eq = choice.cmd }
   local sent = _emit_payload(queued_payload, choice.category)
   if not sent then return false, "emit_failed" end
-  if type(MF.on_payload_queued) == "function" then
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  if not has_ack_bus and type(MF.on_payload_queued) == "function" then
     pcall(MF.on_payload_queued, queued_payload)
   end
 

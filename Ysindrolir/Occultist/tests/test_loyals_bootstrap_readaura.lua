@@ -77,8 +77,6 @@ local function setup_world(opts)
   local emitted = {}
   local readaura_begins = 0
   local set_ready_calls = 0
-  local convert_calls = 0
-  local pressure_calls = 0
   local starting_attack_calls = 0
 
   function getEpoch() return 1000 end
@@ -205,18 +203,6 @@ local function setup_world(opts)
   dofile(ENTITY_REG_PATH)
   dofile(HELPERS_PATH)
 
-  local orig_convert = Yso.occ.convert
-  Yso.occ.convert = function(...)
-    convert_calls = convert_calls + 1
-    return orig_convert(...)
-  end
-
-  local orig_pressure = Yso.occ.pressure
-  Yso.occ.pressure = function(...)
-    pressure_calls = pressure_calls + 1
-    return orig_pressure(...)
-  end
-
   dofile(OCC_AFF_PATH)
   local AB = Yso.off.oc.occ_aff
   AB.cfg.echo = false
@@ -241,8 +227,6 @@ local function setup_world(opts)
     set_mana = function(v) mana_pct = v end,
     set_aura_need_attend = function(v) aura_need_attend = (v == true) end,
     calls = {
-      convert = function() return convert_calls end,
-      pressure = function() return pressure_calls end,
       start = function() return starting_attack_calls end,
       aura_begin = function() return readaura_begins end,
       set_ready = function() return set_ready_calls end,
@@ -250,20 +234,20 @@ local function setup_world(opts)
   }
 end
 
-print("=== Test 1: helper surface exists and module load does not call starting_attack ===")
+print("=== Test 1: helper surface trimmed and module load does not call starting_attack ===")
 do
   local W = setup_world({ mana_pct = 50 })
   assert_eq("1a: starting_attack not called during load", W.calls.start(), 0)
-  assert_true("1b: cleanse_ready exists", type(Yso.occ.cleanse_ready) == "function")
-  assert_true("1c: ent_refresh exists", type(Yso.occ.ent_refresh) == "function")
-  assert_true("1d: ent_for_aff exists", type(Yso.occ.ent_for_aff) == "function")
-  assert_true("1e: firelord exists", type(Yso.occ.firelord) == "function")
-  assert_true("1f: phase exists", type(Yso.occ.phase) == "function")
-  assert_true("1g: set_phase exists", type(Yso.occ.set_phase) == "function")
-  assert_true("1h: get_phase exists", type(Yso.occ.get_phase) == "function")
-  assert_true("1i: burst exists", type(Yso.occ.burst) == "function")
-  assert_true("1j: pressure exists", type(Yso.occ.pressure) == "function")
-  assert_true("1k: convert exists", type(Yso.occ.convert) == "function")
+  assert_true("1b: set_phase exists", type(Yso.occ.set_phase) == "function")
+  assert_true("1c: get_phase exists", type(Yso.occ.get_phase) == "function")
+  assert_nil("1d: cleanse_ready removed", Yso.occ.cleanse_ready)
+  assert_nil("1e: ent_refresh removed", Yso.occ.ent_refresh)
+  assert_nil("1f: ent_for_aff removed", Yso.occ.ent_for_aff)
+  assert_nil("1g: firelord removed", Yso.occ.firelord)
+  assert_nil("1h: phase alias removed", Yso.occ.phase)
+  assert_nil("1i: burst helper removed", Yso.occ.burst)
+  assert_nil("1j: pressure helper removed", Yso.occ.pressure)
+  assert_nil("1k: convert helper removed", Yso.occ.convert)
 end
 
 print("\n=== Test 2: phase regression guard (cleanse -> pressure) ===")
@@ -284,13 +268,13 @@ do
   W.AB.state.last_readaura = 1000
   local preview = W.AB.build_payload({ target = W.target })
   assert_true("3a: preview generated", type(preview) == "table")
-  assert_eq("3b: convert not called in pressure", W.calls.convert(), 0)
+  assert_eq("3b: pressure keeps pressure EQ action", preview.lanes.eq, "instill " .. W.target .. " with healthleech")
 
   Yso.occ.set_phase(W.target, "convert", "test")
   W.AB.state.last_readaura = 1000
   preview = W.AB.build_payload({ target = W.target })
   assert_true("3c: preview generated in convert", type(preview) == "table")
-  assert_true("3d: convert called in convert phase", W.calls.convert() > 0)
+  assert_eq("3d: convert phase runs convert EQ action", preview.lanes.eq, "whisperingmadness " .. W.target)
 end
 
 print("\n=== Test 4: cleanse attend precedence over pressure filler ===")
@@ -300,7 +284,7 @@ do
   W.AB.state.phase_tgt = W.target:lower()
   local preview = W.AB.build_payload({ target = W.target })
   assert_eq("4a: attend owns EQ in cleanse", preview.lanes.eq, "attend " .. W.target)
-  assert_true("4b: pressure helper not used in cleanse branch", W.calls.pressure() == 0)
+  assert_eq("4b: cleanse class command is chimera", preview.lanes.entity, "command chimera at " .. W.target)
   assert_eq("4c: deferred bal followup present", preview.lanes.bal, "unnamable speak")
 end
 

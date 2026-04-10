@@ -950,7 +950,8 @@ function MGD.attack_function(arg)
   local queued_payload = { eq = cmd }
   local sent = _emit_payload(queued_payload, category)
   if not sent then return false, "emit_failed" end
-  if type(MGD.on_payload_queued) == "function" then
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  if not has_ack_bus and type(MGD.on_payload_queued) == "function" then
     pcall(MGD.on_payload_queued, queued_payload)
   end
 
@@ -973,11 +974,7 @@ function MGD.explain()
   MGD.init()
   local ex = type(MGD.state.explain) == "table" and MGD.state.explain or {}
   local tgt = _target()
-  local st = RC.build_snapshot({
-    state = MGD.state, target = tgt,
-    affs = { "waterbonds","frozen","frostbite","slickness","disrupt","scalded","conflagrate","aflame" },
-    pending_slots = MGD.cfg and MGD.cfg.pending_slots or {},
-  })
+  local st = _effective_state(tgt)
   ex.route = "magi_group_damage"
   ex.enabled = MGD.is_enabled()
   ex.route_enabled = MGD.is_enabled()
