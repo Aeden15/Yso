@@ -12,13 +12,18 @@ local _trigger_id = 0
 local _event_id = 0
 local _current_line = ""
 
+local _trace_env = tostring(os.getenv("YSO_TEST_TRACE") or ""):lower()
+local TRACE = (_trace_env == "1" or _trace_env == "true" or _trace_env == "yes" or _trace_env == "on")
+
 -- Mudlet stubs
 function getEpoch() return _clock end
 function send(cmd, show)
   _sends[#_sends + 1] = cmd
 end
 function expandAlias() end
-function cecho(msg) io.write(msg) end
+function cecho(msg)
+  if TRACE then io.write(msg) end
+end
 function echo() end
 function tempRegexTrigger(pattern, fn)
   _trigger_id = _trigger_id + 1
@@ -125,7 +130,7 @@ dofile(_this_dir() .. "/../modules/Yso/xml/yso_hunt_mode_upkeep.lua")
 local M = Yso.huntmode
 
 -- enable debug for trace
-M.cfg.debug = true
+M.cfg.debug = TRACE
 
 print("=== Test 1: refresh sends exactly one ENT ===")
 clear_sends()
