@@ -155,8 +155,12 @@ local function _ensure_route_module(entry)
   local bootstrap = Yso and Yso.bootstrap or nil
   local id = type(entry) == "table" and tostring(entry.id or "") or ""
   if type(bootstrap) == "table" then
-    if id == "occ_aff_burst" and type(bootstrap.occ_aff_burst) == "function" then
-      pcall(bootstrap.occ_aff_burst, true)
+    if (id == "occ_aff" or id == "occ_aff_burst") then
+      if type(bootstrap.occ_aff) == "function" then
+        pcall(bootstrap.occ_aff, true)
+      elseif type(bootstrap.occ_aff_burst) == "function" then
+        pcall(bootstrap.occ_aff_burst, true)
+      end
     elseif type(bootstrap.entry) == "function" then
       pcall(bootstrap.entry, true)
     end

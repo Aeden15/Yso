@@ -225,6 +225,10 @@ local function _is_bal_main(c)
 end
 
 local function _emit(payload, opts)
+  -- Emission priority is intentional:
+  -- 1) emit_now: immediate force-commit path for urgent/off-cycle sends.
+  -- 2) emit: normal staged/commit-aware route path.
+  -- 3) queue.emit: compatibility fallback when bus helpers load before api wiring.
   if type(Yso.emit_now) == "function" then
     local ok = Yso.emit_now(payload, opts)
     if ok then P.state._did_emit = true end
@@ -391,6 +395,7 @@ end
 
 if P.state._eh_vitals then pcall(killAnonymousEventHandler, P.state._eh_vitals) end
 P.state._eh_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", _on_vitals)
+if not P.state._eh_vitals then _dbg("failed to register gmcp.Char.Vitals handler") end
 
 -- Prompt wake fallback: prevents "sleep" if GMCP/line triggers are missed.
 local function _on_prompt()
@@ -398,6 +403,7 @@ local function _on_prompt()
 end
 if P.state._eh_prompt then pcall(killAnonymousEventHandler, P.state._eh_prompt) end
 P.state._eh_prompt = registerAnonymousEventHandler("sysPrompt", _on_prompt)
+if not P.state._eh_prompt then _dbg("failed to register sysPrompt handler") end
 
 _dbg("pulse bus loaded (dispatcher-only)")
 --========================================================--

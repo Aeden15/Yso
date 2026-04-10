@@ -117,16 +117,23 @@ local function _send_compound(body)
     or (Yso and Yso.sep)
     or (Yso and Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep))
     or "&&"
-  local parts = {}
-  local idx = 1
+  local parts = nil
+  if Yso and Yso.util and type(Yso.util.split) == "function" then
+    local ok, out = pcall(Yso.util.split, body, sep)
+    if ok and type(out) == "table" then parts = out end
+  end
 
-  while true do
-    local a, b = body:find(sep, idx, true)
-    local part = a and body:sub(idx, a - 1) or body:sub(idx)
-    part = part:gsub("^%s+",""):gsub("%s+$","")
-    if part ~= "" then parts[#parts+1] = part end
-    if not a then break end
-    idx = b + 1
+  if type(parts) ~= "table" then
+    parts = {}
+    local idx = 1
+    while true do
+      local a, b = body:find(sep, idx, true)
+      local part = a and body:sub(idx, a - 1) or body:sub(idx)
+      part = part:gsub("^%s+",""):gsub("%s+$","")
+      if part ~= "" then parts[#parts+1] = part end
+      if not a then break end
+      idx = b + 1
+    end
   end
 
   for i = 1, #parts do
@@ -340,13 +347,6 @@ function E.press()
   _queue_clear("eq", "order pathfinder home")
   E.state.last_press = _now()
   return
-
-  -- 4) Astral fallback (optional; left disabled by return above unless you reorder priorities)
-  -- local astral = tostring(E.cfg.astral_cmd or "")
-  -- if astral ~= "" then
-  --   _queue_clear("eq", astral)
-  --   E.state.last_press = _now()
-  -- end
 end
 
 _cecho(string.format(

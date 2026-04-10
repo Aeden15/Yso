@@ -176,6 +176,14 @@ end
 
 local function _aff_scores()
   if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    local ts = tonumber(affstrack.score_updated_at or affstrack.updated_at or affstrack.last_updated_at or affstrack.last_update_at or affstrack.ts)
+    if ts then
+      if ts > 1e12 then ts = ts / 1000 end
+      local max_age = tonumber(Off.cfg.aff_score_max_age_s or 1.25) or 1.25
+      if (_now() - ts) > max_age then
+        return {}
+      end
+    end
     return affstrack.score
   end
   return {}
@@ -226,22 +234,7 @@ local function _emit(payload, opts)
     local ok = pcall(Q.emit, payload)
     return ok == true
   end
-
-  -- Very small fallback: send eq/class directly if lane helpers exist.
-  local sent = false
-  if payload.eq and Q and type(Q.eq_clear) == "function" then
-    local ok = pcall(Q.eq_clear, payload.eq); sent = sent or (ok == true)
-  elseif payload.eq and type(send) == "function" then
-    send(payload.eq); sent = true
-  end
-
-  if payload.class and Q and type(Q.class_clear) == "function" then
-    local ok = pcall(Q.class_clear, payload.class); sent = sent or (ok == true)
-  elseif payload.class and type(send) == "function" then
-    send(payload.class); sent = true
-  end
-
-  return sent
+  return false
 end
 
 local function _maybe_shieldbreak(tgt)
@@ -559,6 +552,382 @@ local function _ensure_pulse()
 end
 
 _ensure_pulse()
+
+------------------------------------------------------------
+-- Shared thin-loop helper surface (occ_aff + compatibility)
+------------------------------------------------------------
+
+Yso.occ = Yso.occ or {}
+Yso.occ._phase = Yso.occ._phase or {}
+
+local function _phase_now()
+  if type(getEpoch) == "function" then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v > 1e12 then v = v / 1000 end
+      return v
+    end
+  end
+  return os.time()
+end
+
+local function _occ_target_key(tgt)
+  return _lc(tgt)
+end
+
+local function _occ_has_aff(tgt, aff)
+  tgt = _trim(tgt)
+  aff = _lc(aff)
+  if tgt == "" or aff == "" then return false end
+
+  local active_target = _lc(_current_target())
+  local using_active_target = (active_target ~= "" and active_target == _lc(tgt))
+
+  if using_active_target and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
+    local n = ok and tonumber(v) or nil
+    if n then return n >= 100 end
+  end
+
+  if using_active_target and type(affstrack) == "table" and type(affstrack.score) == "table" then
+    local n = tonumber(affstrack.score[aff] or 0) or 0
+    if n >= 100 then return true end
+  end
+
+  if Yso.tgt and type(Yso.tgt.has_aff) == "function" then
+    local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
+    if ok and v == true then return true end
+  end
+
+  if Yso.state and type(Yso.state.tgt_has_aff) == "function" then
+    local ok, v = pcall(Yso.state.tgt_has_aff, tgt, aff)
+    if ok and v == true then return true end
+  end
+
+  return false
+end
+
+local function _occ_target_mana_pct(tgt)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+
+  if Yso.tgt and type(Yso.tgt.get_mana_pct) == "function" then
+    local ok, v = pcall(Yso.tgt.get_mana_pct, tgt)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+
+  if Yso.occ and type(Yso.occ.aura_get) == "function" then
+    local ok, v = pcall(Yso.occ.aura_get, tgt, "mana_pct")
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+
+  if Yso.occ and type(Yso.occ.mana_pct) == "table" then
+    return tonumber(Yso.occ.mana_pct[_occ_target_key(tgt)] or Yso.occ.mana_pct[tgt]) or nil
+  end
+
+  return nil
+end
+
+local function _occ_mental_score()
+  if Yso.oc and Yso.oc.ak and Yso.oc.ak.scores and type(Yso.oc.ak.scores.mental) == "function" then
+    local ok, v = pcall(Yso.oc.ak.scores.mental)
+    if ok then
+      local n = tonumber(v)
+      if n then return n end
+    end
+  end
+  if type(affstrack) == "table" and type(affstrack.mentalscore) == "number" then
+    return tonumber(affstrack.mentalscore) or 0
+  end
+  return 0
+end
+
+local function _occ_target_enlightened(tgt)
+  return _occ_has_aff(tgt, "enlightened")
+end
+
+local function _occ_firelord_aff_from_skillchart(tgt)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+
+  local dom = nil
+  if Yso.occ and type(Yso.occ.getDom) == "function" then
+    local ok, v = pcall(Yso.occ.getDom, "pyradius")
+    if ok and type(v) == "table" then dom = v end
+  end
+  local converts = (dom and type(dom.converts) == "table") and dom.converts or {}
+
+  local function choose(src, dest)
+    src = _lc(src)
+    dest = _lc(dest)
+    if src == "" or dest == "" then return nil end
+    if _occ_has_aff(tgt, src) and not _occ_has_aff(tgt, dest) then
+      return dest
+    end
+    return nil
+  end
+
+  local wm_dest = _lc(converts.whisperingmadness or converts.whispering_madness or "recklessness")
+  local ml_dest = _lc(converts.manaleech or "anorexia")
+  local hl_dest = _lc(converts.healthleech or "psychic_damage")
+
+  return choose("whisperingmadness", wm_dest)
+      or choose("whispering_madness", wm_dest)
+      or choose("manaleech", ml_dest)
+      or choose("healthleech", hl_dest)
+      or nil
+end
+
+function Yso.occ.set_phase(tgt, phase, reason)
+  tgt = _trim(tgt)
+  phase = _lc(phase)
+  if tgt == "" or phase == "" then return false end
+  Yso.occ._phase[_occ_target_key(tgt)] = {
+    phase = phase,
+    reason = tostring(reason or ""),
+    since = _phase_now(),
+  }
+  return true
+end
+
+function Yso.occ.get_phase(tgt)
+  tgt = _trim(tgt)
+  if tgt == "" then return "open" end
+  local p = Yso.occ._phase[_occ_target_key(tgt)]
+  if type(p) == "table" then
+    local v = _lc(p.phase)
+    if v ~= "" then return v end
+  end
+  return "open"
+end
+
+function Yso.occ.phase(tgt)
+  return Yso.occ.get_phase(tgt)
+end
+
+function Yso.occ.cleanse_ready(tgt)
+  local mana = _occ_target_mana_pct(tgt)
+  local cap = 40
+  if Yso.off and Yso.off.oc and Yso.off.oc.occ_aff and Yso.off.oc.occ_aff.cfg then
+    cap = tonumber(Yso.off.oc.occ_aff.cfg.mana_burst_pct or cap) or cap
+  end
+  if mana ~= nil and mana <= cap then return true end
+
+  if Yso.occ and type(Yso.occ.aura_need_attend) == "function" then
+    local ok, v = pcall(Yso.occ.aura_need_attend, tgt)
+    if ok and v == true then return true end
+  end
+
+  return false
+end
+
+function Yso.occ.ent_for_aff(tgt, aff)
+  tgt = _trim(tgt)
+  aff = _lc(aff)
+  if tgt == "" or aff == "" then return nil end
+
+  if type(Yso.ent_cmd_for_aff) == "function" then
+    local ok, cmd = pcall(Yso.ent_cmd_for_aff, aff, tgt, function(_, a)
+      return _occ_has_aff(tgt, a)
+    end)
+    if ok and _trim(cmd) ~= "" then
+      return _trim(cmd)
+    end
+  end
+
+  if aff == "chimera_roar" then
+    return ("command chimera at %s"):format(tgt)
+  end
+
+  if aff == "anorexia" or aff == "recklessness" or aff == "psychic_damage" then
+    return ("command firelord at %s %s"):format(tgt, aff)
+  end
+
+  return nil
+end
+
+function Yso.occ.burst(tgt, ctx)
+  ctx = type(ctx) == "table" and ctx or {}
+  local eq_cmd = _lc(ctx.eq_cmd or "")
+  if eq_cmd:match("^attend%s+") then return true end
+  if eq_cmd:match("^cleanseaura%s+") then return true end
+  if eq_cmd:match("^utter%s+truename%s+") then return true end
+
+  if Yso.occ.cleanse_ready(tgt) ~= true then return false end
+
+  if Yso.occ and Yso.occ.truebook and type(Yso.occ.truebook.can_utter) == "function" then
+    local ok, v = pcall(Yso.occ.truebook.can_utter, tgt)
+    if ok and v == true then return true end
+  end
+
+  if Yso.occ and type(Yso.occ.aura_need_attend) == "function" then
+    local ok, v = pcall(Yso.occ.aura_need_attend, tgt)
+    if ok and v == true then return true end
+  end
+
+  return false
+end
+
+function Yso.occ.pressure(tgt)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+
+  if not _occ_has_aff(tgt, "healthleech") then
+    return ("instill %s with healthleech"):format(tgt)
+  end
+  if not _occ_has_aff(tgt, "sensitivity") then
+    return ("instill %s with sensitivity"):format(tgt)
+  end
+  if not _occ_has_aff(tgt, "paralysis") then
+    return ("instill %s with paralysis"):format(tgt)
+  end
+  if not _occ_has_aff(tgt, "clumsiness") then
+    return ("instill %s with clumsiness"):format(tgt)
+  end
+  if not (_occ_has_aff(tgt, "whisperingmadness") or _occ_has_aff(tgt, "whispering_madness")) then
+    return ("whisperingmadness %s"):format(tgt)
+  end
+  return ("devolve %s"):format(tgt)
+end
+
+function Yso.occ.convert(tgt, ctx)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+  ctx = type(ctx) == "table" and ctx or {}
+
+  local phase = _lc(ctx.phase or Yso.occ.get_phase(tgt))
+  if phase ~= "convert" and phase ~= "finish" then
+    return nil
+  end
+
+  local has_wm = _occ_has_aff(tgt, "whisperingmadness") or _occ_has_aff(tgt, "whispering_madness")
+  local enlightened = _occ_target_enlightened(tgt)
+  local enlighten_target = tonumber(ctx.enlighten_target or 5) or 5
+  local unravel_mentals = tonumber(ctx.unravel_mentals or 4) or 4
+  local mental_score = _occ_mental_score()
+
+  if not has_wm then
+    return ("whisperingmadness %s"):format(tgt)
+  end
+
+  if not enlightened then
+    if mental_score >= enlighten_target then
+      return ("enlighten %s"):format(tgt)
+    end
+    if Yso.occ and type(Yso.occ.readaura_is_ready) == "function" then
+      local ok, ready = pcall(Yso.occ.readaura_is_ready)
+      if ok and ready == true then
+        return ("readaura %s"):format(tgt)
+      end
+    end
+    return ("whisperingmadness %s"):format(tgt)
+  end
+
+  if mental_score >= unravel_mentals then
+    return ("unravel %s"):format(tgt)
+  end
+
+  if Yso.occ and type(Yso.occ.readaura_is_ready) == "function" then
+    local ok, ready = pcall(Yso.occ.readaura_is_ready)
+    if ok and ready == true then
+      return ("readaura %s"):format(tgt)
+    end
+  end
+
+  return ("unravel %s"):format(tgt)
+end
+
+function Yso.occ.firelord(tgt, ctx)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+  ctx = type(ctx) == "table" and ctx or {}
+  local phase = _lc(ctx.phase or Yso.occ.get_phase(tgt))
+
+  if phase ~= "convert" and phase ~= "finish" then
+    return nil
+  end
+
+  local aff = _occ_firelord_aff_from_skillchart(tgt)
+  if _trim(aff) == "" then return nil end
+
+  local ER = Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
+  if ER and type(ER.rank) == "function" then
+    local ranked = nil
+    local ok, r = pcall(ER.rank, {
+      target = tgt,
+      category = "convert_support",
+      firelord_aff = aff,
+      phase = phase,
+      has_aff = function(a) return _occ_has_aff(tgt, a) end,
+      route_state = { healthleech = _occ_has_aff(tgt, "healthleech") },
+      need = {},
+    })
+    if ok and type(r) == "table" then ranked = r end
+    if type(ranked) == "table" and ranked[1] and _trim(ranked[1].cmd) ~= "" then
+      return _trim(ranked[1].cmd)
+    end
+  end
+
+  return ("command firelord at %s %s"):format(tgt, aff)
+end
+
+function Yso.occ.ent_refresh(tgt, ctx)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+  ctx = type(ctx) == "table" and ctx or {}
+
+  local phase = _lc(ctx.phase or Yso.occ.get_phase(tgt))
+  local ER = Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
+  if not (ER and type(ER.rank) == "function") then return nil end
+
+  local need = {
+    healthleech = not _occ_has_aff(tgt, "healthleech"),
+    clumsiness = not _occ_has_aff(tgt, "clumsiness"),
+  }
+
+  local category = "fallback_support"
+  if phase == "open" or phase == "pressure" or phase == "cleanse" then
+    category = (need.healthleech or need.clumsiness) and "required_core_refresh" or "fallback_support"
+  end
+
+  local ranked = nil
+  local ok, r = pcall(ER.rank, {
+    target = tgt,
+    category = category,
+    phase = phase,
+    eq_ready = _eq_ready(),
+    has_aff = function(a) return _occ_has_aff(tgt, a) end,
+    route_state = {
+      asthma = _occ_has_aff(tgt, "asthma"),
+      paralysis = _occ_has_aff(tgt, "paralysis"),
+      addiction = _occ_has_aff(tgt, "addiction"),
+      healthleech = _occ_has_aff(tgt, "healthleech"),
+    },
+    need = need,
+  })
+  if ok and type(r) == "table" then ranked = r end
+  if type(ranked) ~= "table" then return nil end
+
+  for i = 1, #ranked do
+    local pick = ranked[i]
+    local ent = _lc(pick and pick.entity)
+    local cmd = _trim(pick and pick.cmd)
+    if cmd ~= "" then
+      if ent == "firelord" then
+        if phase == "convert" or phase == "finish" then
+          return cmd
+        end
+      else
+        return cmd
+      end
+    end
+  end
+
+  return nil
+end
 
 --========================================================--
 

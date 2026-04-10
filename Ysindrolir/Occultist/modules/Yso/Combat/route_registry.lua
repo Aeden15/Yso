@@ -76,11 +76,11 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
-  occ_aff_burst = {
-    id = "occ_aff_burst",
+  occ_aff = {
+    id = "occ_aff",
     mode = "combat",
     party_route = nil,
-    namespace = "Yso.off.oc.occ_aff_burst",
+    namespace = "Yso.off.oc.occ_aff",
     description = "Duel affliction loop",
     priority = 60,
     active = true,
@@ -126,11 +126,12 @@ local ROUTES = {
 }
 
 local ALIASES = {
-  aff = "occ_aff_burst",
-  occ = "occ_aff_burst",
-  occ_aff = "occ_aff_burst",
-  occultist_offense = "occ_aff_burst",
-  burst = "occ_aff_burst",
+  aff = "occ_aff",
+  occ = "occ_aff",
+  occ_aff = "occ_aff",
+  occ_aff_burst = "occ_aff",
+  occultist_offense = "occ_aff",
+  burst = "occ_aff",
   focus = { magi = "focus" },
   magi_focus = { magi = "focus" },
   gd = { magi = "magi_group_damage", default = "group_damage" },

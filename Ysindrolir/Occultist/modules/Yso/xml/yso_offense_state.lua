@@ -9,6 +9,7 @@ Yso.off = Yso.off or {}
 Yso.off.state = Yso.off.state or {}
 
 local S = Yso.off.state
+local EPOCH_MS_THRESHOLD = 20000000000 -- 2033-05-18 boundary between sec/ms epochs
 
 local function _trim(s)
   return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
@@ -21,7 +22,7 @@ local function _now()
   end
   if type(getEpoch) == "function" then
     local t = tonumber(getEpoch()) or os.time()
-    if t > 20000000000 then t = t / 1000 end
+    if t > EPOCH_MS_THRESHOLD then t = t / 1000 end
     return t
   end
   return os.time()

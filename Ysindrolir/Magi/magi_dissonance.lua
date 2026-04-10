@@ -44,6 +44,9 @@ local CONF_RANK = {
 local function _merge_conf(cur, new)
   cur = _lc(cur)
   new = _lc(new)
+  if new ~= "" and not CONF_RANK[new] and type(cecho) == "function" then
+    cecho(string.format("<yellow>[Magi:Dissonance] <reset>Unknown confidence level '%s'; keeping current value.\n", tostring(new)))
+  end
   if CONF_RANK[new] and CONF_RANK[new] > (CONF_RANK[cur] or 0) then
     return new
   end

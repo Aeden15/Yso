@@ -123,7 +123,7 @@ for _, l in ipairs(lines) do
   cecho(string.format("&lt;white&gt;%s\n", l))
 end
 
-local AB = Off.occ_aff_burst
+local AB = Off.occ_aff or Off.occ_aff_burst
 if AB and AB.state then
   cecho(string.format("&lt;white&gt;  aff     : %s\n", yn(AB.state.enabled)))
 end

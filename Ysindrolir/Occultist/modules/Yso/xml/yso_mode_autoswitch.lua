@@ -289,7 +289,7 @@ A._tr = A._tr or {}
 local function _kill_tr(id) if id then killTrigger(id) end end
 
 _kill_tr(A._tr.duel_spar_sniff)
-A._tr.duel_spar_sniff = tempRegexTrigger([[.*]], _safe(function()
+A._tr.duel_spar_sniff = tempRegexTrigger([[duel|spar|aggression:|challenge|accept]], _safe(function()
   local line = getCurrentLine() or ""
   local low  = _lower(line)
 

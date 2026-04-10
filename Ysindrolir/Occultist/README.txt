@@ -1,10 +1,38 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: April 4, 2026
+Last updated: April 2, 2026
 
 
 Current fixes
 -------------
+  occ_aff repeat-queue fix (April 6, 2026): the duel aff route now clears
+  queue lane ownership after successful sends, so repeated same-command
+  pressure can requeue on later ticks instead of being treated as unchanged.
+  Canonical + XML mirror updated:
+    modules/Yso/Combat/routes/occ_aff.lua
+    modules/Yso/xml/occ_aff.lua
+  Added regression test:
+    tests/test_occ_aff_loop_requeue.lua
+
+  occ_aff thin-loop refactor (audit-safe): the duel aff route now stays
+  mode-controller owned while using a thin phase flow:
+    open -> pressure <-> cleanse -> convert -> finish
+  EQ convert logic is phase-gated, cleanse attend/truename keeps precedence,
+  finish detection uses target-side enlightened state, and send wait/dedup
+  remains route-local (`occ_aff.state.waiting` / `occ_aff.state.last_attack`).
+
+  Shared helper surface for occ_aff is now canonical under Yso.occ:
+    cleanse_ready
+    ent_refresh
+    ent_for_aff
+    firelord
+    phase / set_phase / get_phase
+    burst
+    pressure
+    convert
+  Firelord conversion selection is now shared and skillchart-driven via
+  `Yso.occ.getDom(\"pyradius\").converts`.
+
   Active Occultist offense is now alias-owned. The old orchestrator has been
   removed from the live offense path, and shared route-loop send memory now
   lives in:
@@ -75,7 +103,7 @@ Key components:
 
 Active routes
 -------------
-  occ_aff_burst   - duel affliction loop (combat mode)
+  occ_aff         - duel affliction loop (combat mode)
                     mana bury -> cleanseaura -> truename -> utter
   group_damage    - group/team damage loop (team dam)
                     healthleech + sensitivity + clumsiness + warp/firelord burst
@@ -89,7 +117,7 @@ Active routes
     magi_group_damage - Magi team damage route (team dam, Magi only)
 
 Mode-to-route mapping:
-  combat          -> occ_aff_burst
+  combat          -> occ_aff
   team dam        -> group_damage
   team aff        -> party_aff
   bash            -> Legacy bashing (not a Yso route)
@@ -98,26 +126,6 @@ Inactive legacy route stubs:
   lock, limb, limb_prep, finisher, bash, clock
   These remain on disk as placeholders or compatibility stubs, but they are
   not part of the active route set.
-
-
-Command table convention
-------------------------
-Active offense route modules now centralize outbound command text in a local
-`COMMANDS` table and use one helper pathway (`_cmd(...)`) for formatting.
-
-Required spec keys:
-  `id`      stable identifier used by route selectors/bookkeeping
-  `string`  command template text (for example `"instill %s with %s"`)
-
-Common optional keys:
-  `format_target = true` for target-first templates
-  `target_required = false` when target validation is handled elsewhere
-
-When adding a command:
-  1. Add/modify the entry in the route's `COMMANDS` table.
-  2. Use `_cmd("id", target, { ... })` in planners/selectors instead of
-     ad-hoc string literals.
-  3. Keep command text parity exact unless intentionally changing behavior.
 
 
 File layout
@@ -141,7 +149,7 @@ File layout
         route_interface.lua         - shared route contract
         route_registry.lua          - route metadata registry
         routes/
-          occ_aff_burst.lua         - duel aff route
+          occ_aff.lua               - duel aff route
           group_damage.lua          - team damage route
           party_aff.lua             - team aff route
         occultist/
@@ -199,7 +207,7 @@ AK integration mirrors enemy aff tracking through Yso.ak.
 
 Aliases
 -------
-  ^aff$         - toggle the duel affliction loop (occ_aff_burst)
+  ^aff$         - toggle the duel affliction loop (occ_aff)
   ^dam$         - toggle the group damage loop
   ^focus$       - toggle the Magi duel focus route when playing Magi
   ^hunt$        - switch to bash mode without a noop entourage reset
@@ -211,7 +219,7 @@ Aliases
   ^teamroute (.+)$ - set team route directly (aff | dam)
 
 Notes:
-  ^aff$ owns occ_aff_burst directly.
+  ^aff$ owns occ_aff directly (legacy alias `occ_aff_burst` also resolves).
   ^team aff$ selects party_aff support pressure + chimera/tarot sequence.
   cleanse queues CLEANSEAURA through the shared queue path instead of bypassing
   lane staging.
@@ -236,5 +244,3 @@ Working notes
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
-
-

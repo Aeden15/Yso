@@ -155,6 +155,7 @@ local function _collect_entity_state(entity, tgt, wanted)
     )
     active_confirmed = confirm.active_confirmed == true and expires_at > now
     if tonumber(confirm.cured_at or 0) > last_success then
+      -- Cured timestamp supersedes prior confirmation.
       active_confirmed = false
       stale = true
     end

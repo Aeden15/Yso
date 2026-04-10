@@ -23,7 +23,7 @@ return {
 
   -- Occultist offense
   { source = "modules/Yso/Combat/routes/group_damage.lua",             mirror = "modules/Yso/xml/group_damage.lua" },
-  { source = "modules/Yso/Combat/routes/occ_aff_burst.lua",            mirror = "modules/Yso/xml/occ_aff_burst.lua" },
+  { source = "modules/Yso/Combat/routes/occ_aff.lua",                  mirror = "modules/Yso/xml/occ_aff.lua" },
   { source = "modules/Yso/Combat/routes/party_aff.lua",                mirror = "modules/Yso/xml/party_aff.lua" },
   { source = "modules/Yso/Combat/occultist/offense_helpers.lua",       mirror = "modules/Yso/xml/yso_occultist_offense.lua" },
   { source = "modules/Yso/Combat/occultist/entity_registry.lua",       mirror = "modules/Yso/xml/entity_registry.lua" },

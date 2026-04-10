@@ -432,6 +432,17 @@ local function _pick_convert(tgt, ctx)
   local phase = tostring(ctx.phase or "convert"):lower()
   if phase ~= "convert" and phase ~= "finish" then return nil end
 
+  if Yso.occ and type(Yso.occ.convert) == "function" then
+    local ok, cmd = pcall(Yso.occ.convert, tgt, {
+      phase = phase,
+      enlighten_target = tonumber(ctx.enlighten_target or A.cfg.enlighten_target or 5) or 5,
+      unravel_mentals = tonumber(ctx.unravel_mentals or A.cfg.unravel_mentals or 4) or 4,
+    })
+    if ok and _trim(cmd) ~= "" then
+      return _trim(cmd)
+    end
+  end
+
   local enlighten_target = tonumber(ctx.enlighten_target or A.cfg.enlighten_target or 5) or 5
   local unravel_mentals  = tonumber(ctx.unravel_mentals  or A.cfg.unravel_mentals  or 4) or 4
   local mental           = _mental_score()
@@ -775,7 +786,9 @@ function A.attack_function(arg)
     end
   end
 
-  if payload.eq == "" and _eq() and ra_ready and _ra_due() then
+  -- Keep generic readaura fallback out of convert/finish so convert logic can drive EQ.
+  if payload.eq == "" and _eq() and ra_ready and _ra_due()
+      and phase ~= "convert" and phase ~= "finish" then
     payload.eq = "readaura " .. tgt
   end
 

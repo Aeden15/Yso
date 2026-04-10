@@ -22,9 +22,9 @@ local function join_path(...)
 end
 
 local SCRIPT_DIR = script_dir()
-local PARTY_AFF_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "routes", "party_aff.lua")
-local OCC_AFF_BURST_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "routes", "occ_aff_burst.lua")
-local OCC_AURA_PLANNER_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "xml", "occ_aura_planner.lua")
+local ENTITY_REG_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "occultist", "entity_registry.lua")
+local HELPERS_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "occultist", "offense_helpers.lua")
+local OCC_AFF_PATH = join_path(SCRIPT_DIR, "..", "modules", "Yso", "Combat", "routes", "occ_aff.lua")
 
 local pass_count = 0
 local fail_count = 0
@@ -36,6 +36,22 @@ end
 
 local function pass()
   pass_count = pass_count + 1
+end
+
+local function assert_true(label, got)
+  if got ~= true then
+    fail(label, string.format("expected true, got %s", tostring(got)))
+    return
+  end
+  pass()
+end
+
+local function assert_false(label, got)
+  if got == true then
+    fail(label, string.format("expected false, got %s", tostring(got)))
+    return
+  end
+  pass()
 end
 
 local function assert_eq(label, got, expected)
@@ -54,628 +70,293 @@ local function assert_nil(label, got)
   pass()
 end
 
-local function assert_true(label, got)
-  if got ~= true then
-    fail(label, string.format("expected true, got %s", tostring(got)))
-    return
-  end
-  pass()
-end
+local function setup_world(opts)
+  opts = opts or {}
 
-local function assert_false(label, got)
-  if got == true then
-    fail(label, "expected false")
-    return
-  end
-  pass()
-end
+  local timers = {}
+  local emitted = {}
+  local readaura_begins = 0
+  local set_ready_calls = 0
+  local convert_calls = 0
+  local pressure_calls = 0
+  local starting_attack_calls = 0
 
-local function get_upvalue(fn, wanted)
-  for i = 1, 100 do
-    local name, value = debug.getupvalue(fn, i)
-    if not name then break end
-    if name == wanted then return value end
-  end
-  error("missing upvalue: " .. tostring(wanted))
-end
-
-local function install_common_stubs()
   function getEpoch() return 1000 end
   function send() return true end
   function cecho() end
   function echo() end
   function tempAlias() return 1 end
-  function tempTimer() return 1 end
-  function killTimer() end
+  function killAlias() end
   function tempRegexTrigger() return 1 end
   function killTrigger() end
   function registerAnonymousEventHandler() return 1 end
   function killAnonymousEventHandler() end
-  function selectString() return 0 end
-  function resetFormat() end
-  function deleteLine() end
-  function deselect() end
-  function getCurrentLine() return "" end
-end
-
-local function new_env(mode_name)
-  install_common_stubs()
-
-  local env = {
-    aff_scores = {},
-    aura_begins = {},
-    recent_tags = {},
-    readaura_ready = false,
-    readaura_ready_calls = {},
-    snapshot = {
-      fresh = true,
-      read_complete = true,
-      had_counts = true,
-      had_mana = true,
-      defs_state = "complete",
-      missing_keys = {},
-      mana_pct = 70,
-      deaf = false,
-      speed = false,
-    },
-    target = "spartarget",
-    mental_score = 100,
-    txn_status = { active = false, matched = false },
-  }
+  function tempTimer(_, fn)
+    timers[#timers + 1] = fn
+    return #timers
+  end
 
   _G.gmcp = { Char = { Vitals = { eq = "1", bal = "1" } } }
-  _G.ak = {}
-  _G.affstrack = nil
+  _G.affstrack = { score = {} }
 
-  local mode = {
-    is_hunt = function() return false end,
-    is_party = function() return mode_name == "party" end,
-    route_loop_active = function(route)
-      if mode_name == "party" then return route == "party_aff" end
-      if mode_name == "occ" then return route == "occ_aff_burst" end
-      return false
-    end,
+  local target = opts.target or "foe"
+  local tgt_affs = opts.tgt_affs or {}
+  local mana_pct = (opts.mana_pct == nil) and 30 or opts.mana_pct
+  local aura_need_attend = (opts.aura_need_attend == true)
+
+  local doms = {
+    worm = { name = "worm", syntax = { "command worm at <target>" }, bal_cost = 2.0 },
+    danaeus = { name = "storm", syntax = { "command storm at <target>" }, bal_cost = 2.0 },
+    ninkharsag = { name = "slime", syntax = { "command slime at <target>" }, bal_cost = 2.0 },
+    rixil = { name = "sycophant", syntax = { "command sycophant at <target>" }, bal_cost = 2.0 },
+    nemesis = { name = "humbug", syntax = { "command humbug at <target>" }, bal_cost = 2.0 },
+    pyradius = {
+      name = "pyradius",
+      syntax = { "command firelord at <target> <affliction>" },
+      bal_cost = 2.0,
+      converts = { whisperingmadness = "recklessness", manaleech = "anorexia", healthleech = "psychic_damage" },
+    },
   }
-  if mode_name == "party" then
-    mode.party_route = function() return "aff" end
-  end
 
   _G.Yso = {
     sep = "&&",
-    state = {},
-    mode = mode,
-    get_target = function() return env.target end,
-    offense_paused = function() return false end,
-    target_is_valid = function() return true end,
-    loyals_attack = function(tgt)
-      return _G.Yso.state.loyals_hostile == true and _G.Yso.state.loyals_target == tgt
-    end,
-    set_loyals_attack = function(hostile, tgt)
-      _G.Yso.state.loyals_hostile = (hostile == true)
-      _G.Yso.state.loyals_target = (hostile == true) and tgt or nil
-    end,
-    ent_cmd_for_aff = function(aff, tgt, has_aff_fn)
-      aff = tostring(aff or ""):lower()
-      local has = type(has_aff_fn) == "function" and has_aff_fn or function() return false end
-      if aff == "asthma" then return ("command bubonis at %s"):format(tgt), "mana_bury" end
-      if aff == "slickness" and has(tgt, "asthma") then return ("command bubonis at %s"):format(tgt), "mana_bury" end
-      if aff == "paralysis" and has(tgt, "asthma") then return ("command slime at %s"):format(tgt), "mana_bury" end
-      if aff == "clumsiness" then return ("command storm at %s"):format(tgt), "mana_bury" end
-      if aff == "weariness" then return ("command hound at %s"):format(tgt), "mana_bury" end
-      if aff == "healthleech" then return ("command worm at %s"):format(tgt), "mana_bury" end
-      if aff == "haemophilia" then return ("command bloodleech at %s"):format(tgt), "mana_bury" end
-      if aff == "addiction" then return ("command humbug at %s"):format(tgt), "mana_bury" end
-      if aff == "chimera_command" or aff == "chimera_roar" then
-        return ("command chimera at %s"):format(tgt), "mental_build"
+    waiting = { queue = "GLOBAL_WAIT" },
+    class = "Occultist",
+    state = {
+      eq_ready = function() return opts.eq_ready ~= false end,
+      bal_ready = function() return opts.bal_ready == true end,
+      ent_ready = function() return opts.ent_ready ~= false end,
+      tgt_has_aff = function(tgt, aff)
+        if tostring(tgt):lower() ~= tostring(target):lower() then return false end
+        return tgt_affs[tostring(aff):lower()] == true
+      end,
+    },
+    target_is_valid = function() return opts.target_valid ~= false end,
+    get_target = function() return target end,
+    loyals_attack = function() return false end,
+    set_loyals_attack = function() return true end,
+    starting_attack = function()
+      starting_attack_calls = starting_attack_calls + 1
+      if type(((_G.Yso or {}).off or {}).oc) == "table" and type(((_G.Yso.off.oc or {}).occ_aff or {}).attack_function) ~= "function" then
+        error("attack_function_not_defined")
       end
-      return nil, nil
     end,
+    tgt = {
+      has_aff = function(tgt, aff)
+        if tostring(tgt):lower() ~= tostring(target):lower() then return false end
+        return tgt_affs[tostring(aff):lower()] == true
+      end,
+      get_mana_pct = function(tgt)
+        if tostring(tgt):lower() ~= tostring(target):lower() then return nil end
+        return mana_pct
+      end,
+    },
     oc = {
       ak = {
-        get_aff_score = function(aff)
-          return env.aff_scores[tostring(aff or "")] or 0
-        end,
         scores = {
-          mental = function() return env.mental_score end,
+          mental = function() return tonumber(opts.mental_score or 0) or 0 end,
         },
       },
     },
-    occ = {
-      aura_txn_status = function()
-        return env.txn_status
+    queue = {
+      emit = function(payload)
+        emitted[#emitted + 1] = payload
+        if opts.emit_mode == "nil" then
+          return nil
+        end
+        if opts.emit_mode == "false" then
+          return false
+        end
+        if opts.emit_return ~= nil then
+          return opts.emit_return
+        end
+        return true
       end,
-      readaura_is_ready = function()
-        return env.readaura_ready == true
-      end,
-      aura_begin = function(tgt, why)
-        env.aura_begins[#env.aura_begins + 1] = { target = tgt, why = why }
-      end,
-      set_readaura_ready = function(v, why)
-        env.readaura_ready_calls[#env.readaura_ready_calls + 1] = { value = v, why = why }
-      end,
-      truebook = {
-        can_utter = function() return false end,
-      },
     },
     off = {
-      state = {
-        recent = function(tag)
-          return env.recent_tags[tostring(tag or "")] == true
+      oc = {},
+    },
+    occ = {
+      getDom = function(key)
+        return doms[tostring(key or ""):lower()]
+      end,
+      aura_need_attend = function()
+        return aura_need_attend
+      end,
+      aura_begin = function()
+        readaura_begins = readaura_begins + 1
+      end,
+      set_readaura_ready = function()
+        set_ready_calls = set_ready_calls + 1
+      end,
+      readaura_is_ready = function()
+        if opts.readaura_ready == nil then return true end
+        return opts.readaura_ready == true
+      end,
+      truebook = {
+        can_utter = function()
+          return opts.can_utter == true
         end,
-        note = function() return true end,
-      },
-      oc = {
-        cleanseaura = {
-          snapshot = function() return env.snapshot end,
-        },
-        entity_registry = {
-          worm_should_refresh = function() return false end,
-          syc_should_refresh = function() return false end,
-          target_swap = function() end,
-        },
       },
     },
   }
   _G.yso = _G.Yso
 
-  return env
-end
+  dofile(ENTITY_REG_PATH)
+  dofile(HELPERS_PATH)
 
-local function load_party_aff()
-  local env = new_env("party")
-  local lock_affs = {
-    "asthma",
-    "haemophilia",
-    "addiction",
-    "clumsiness",
-    "healthleech",
-    "weariness",
-    "sensitivity",
-    "manaleech",
-  }
-  for i = 1, #lock_affs do
-    env.aff_scores[lock_affs[i]] = 100
+  local orig_convert = Yso.occ.convert
+  Yso.occ.convert = function(...)
+    convert_calls = convert_calls + 1
+    return orig_convert(...)
   end
 
-  dofile(OCC_AURA_PLANNER_PATH)
-  do
-    local AP = (((_G.Yso or {}).off or {}).oc or {}).aura_planner or {}
-    AP.snapshot = function() return env.snapshot end
-    if _G.Yso and _G.Yso.off and _G.Yso.off.oc and _G.Yso.off.oc.cleanseaura then
-      _G.Yso.off.oc.cleanseaura.snapshot = AP.snapshot
-    end
-    AP.needs_readaura = function(_, snap)
-      snap = snap or env.snapshot or {}
-      if snap.fresh ~= true then return true, "snapshot_stale" end
-      if snap.read_complete ~= true then return true, "snapshot_incomplete" end
-      if tostring(snap.defs_state or "missing") == "missing" then return true, "defs_incomplete" end
-      if snap.had_counts ~= true then return true, "counts_incomplete" end
-      if snap.deaf == nil then return true, "deaf_unknown" end
-      if snap.had_mana ~= true and snap.mana_pct == nil then return true, "mana_unknown" end
-      return false, ""
-    end
+  local orig_pressure = Yso.occ.pressure
+  Yso.occ.pressure = function(...)
+    pressure_calls = pressure_calls + 1
+    return orig_pressure(...)
   end
-  dofile(PARTY_AFF_PATH)
 
-  local PA = Yso.off.oc.party_aff
-  PA.cfg.echo = false
-  PA.cfg.attend_aff_floor = 99
-  PA.cfg.mental_target = 3
-  PA.reset("test")
-
-  return {
-    env = env,
-    PA = PA,
-    payload_line = get_upvalue(PA.attack_function, "_payload_line"),
-    plan_eq = get_upvalue(PA.attack_function, "_plan_eq"),
-    plan_bal = get_upvalue(PA.attack_function, "_plan_bal"),
-    plan_entity = get_upvalue(PA.attack_function, "_plan_entity"),
-    plan_free = get_upvalue(PA.attack_function, "_plan_free"),
-    sequence_plan = get_upvalue(PA.attack_function, "_sequence_plan"),
-  }
-end
-
-local function load_occ_aff_burst()
-  local env = new_env("occ")
-
-  dofile(OCC_AURA_PLANNER_PATH)
-  dofile(OCC_AFF_BURST_PATH)
-
-  local AB = Yso.off.oc.occ_aff_burst
+  dofile(OCC_AFF_PATH)
+  local AB = Yso.off.oc.occ_aff
   AB.cfg.echo = false
-  AB.reset("test")
+  AB.cfg.loop_delay = 1.0
+  AB.init()
 
-  local eq_plan = get_upvalue(AB.attack_function, "_eq_plan")
-  local route_pair_plan = get_upvalue(AB.attack_function, "_route_pair_plan")
-  local AP = (((_G.Yso or {}).off or {}).oc or {}).aura_planner or {}
+  local function run_timers()
+    local pending = timers
+    timers = {}
+    for i = 1, #pending do
+      local fn = pending[i]
+      if type(fn) == "function" then fn() end
+    end
+  end
+
   return {
-    env = env,
     AB = AB,
-    eq_plan = eq_plan,
-    route_pair_plan = route_pair_plan,
-    payload_line = get_upvalue(AB.attack_function, "_payload_line"),
-    loyals_open_cmd = get_upvalue(AB.attack_function, "_loyals_open_cmd"),
-    bootstrap_readaura_plan = AP.bootstrap_readaura_plan,
-    should_probe_readaura = AP.should_probe_readaura,
-  }
-end
-
-do
-  local T = load_party_aff()
-  local tgt = T.env.target
-
-  local free_cmd = select(1, T.plan_free(tgt))
-  local eq_cmd = select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = true }))
-  assert_eq("party bootstrap free", free_cmd, ("order entourage kill %s"):format(tgt))
-  assert_eq("party bootstrap eq", eq_cmd, ("readaura %s"):format(tgt))
-  assert_eq(
-    "party bootstrap line",
-    T.payload_line({ lanes = { free = free_cmd, eq = eq_cmd, bal = nil, entity = nil } }),
-    ("order entourage kill %s&&readaura %s"):format(tgt, tgt)
-  )
-
-  T.env.txn_status = { active = true, matched = true }
-  assert_eq(
-    "party bootstrap active txn falls through to pressure eq",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = true })),
-    "unnamable speak"
-  )
-
-  T.env.txn_status = { active = false, matched = false }
-  _G.gmcp.Char.Vitals.eq = "0"
-  assert_nil(
-    "party bootstrap suppressed when eq down",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = true }))
-  )
-  assert_eq("party free survives eq down", select(1, T.plan_free(tgt)), ("order entourage kill %s"):format(tgt))
-
-  _G.gmcp.Char.Vitals.eq = "1"
-  T.PA.state.loyals_sent_for = tgt
-  assert_nil("party already-hostile skips free bootstrap", select(1, T.plan_free(tgt)))
-  assert_eq(
-    "party already-hostile does not force bootstrap readaura",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
-    "unnamable speak"
-  )
-
-  T.PA.on_sent({
-    target = tgt,
-    lanes = {
-      free = ("order entourage kill %s"):format(tgt),
-      eq = ("readaura %s"):format(tgt),
+    emitted = emitted,
+    run_timers = run_timers,
+    target = target,
+    tgt_affs = tgt_affs,
+    set_mana = function(v) mana_pct = v end,
+    set_aura_need_attend = function(v) aura_need_attend = (v == true) end,
+    calls = {
+      convert = function() return convert_calls end,
+      pressure = function() return pressure_calls end,
+      start = function() return starting_attack_calls end,
+      aura_begin = function() return readaura_begins end,
+      set_ready = function() return set_ready_calls end,
     },
-  }, { target = tgt })
-  assert_eq("party on_sent marks loyals target", T.PA.state.loyals_sent_for, tgt)
-  assert_true("party on_sent marks loyals hostile", _G.Yso.state.loyals_hostile == true)
-  assert_eq("party on_sent aura_begin count", #T.env.aura_begins, 1)
-  assert_eq("party on_sent aura_begin reason", T.env.aura_begins[1].why, "party_aff_send")
-  assert_eq("party on_sent readaura_ready count", #T.env.readaura_ready_calls, 1)
-  assert_false("party on_sent marks readaura not ready", T.env.readaura_ready_calls[1].value)
-  assert_eq("party on_sent readaura reason", T.env.readaura_ready_calls[1].why, "sent")
-end
-
-do
-  local T = load_party_aff()
-  local tgt = T.env.target
-  T.env.snapshot = { fresh = false, read_complete = false }
-  T.env.readaura_ready = true
-  assert_eq(
-    "party stale snapshot forces readaura",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
-    ("readaura %s"):format(tgt)
-  )
-end
-
-do
-  local T = load_party_aff()
-  local tgt = T.env.target
-  T.env.snapshot = {
-    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
-    deaf = true, speed = false, mana_pct = 70,
   }
-  T.env.readaura_ready = true
-
-  local eq_cmd, _, eq_tag = T.plan_eq(tgt, { loyals_bootstrap_pending = false })
-  assert_eq("party deaf branch attend", eq_cmd, ("attend %s"):format(tgt))
-  assert_eq(
-    "party deaf branch chimera pairing",
-    select(1, T.plan_entity(tgt, { eq_cmd = eq_cmd, eq_tag = eq_tag })),
-    ("command chimera at %s"):format(tgt)
-  )
-  assert_nil("party deaf branch suppresses moon", select(1, T.plan_bal(tgt, {})))
 end
 
+print("=== Test 1: helper surface exists and module load does not call starting_attack ===")
 do
-  local T = load_party_aff()
-  local tgt = T.env.target
-  T.env.snapshot = {
-    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
-    deaf = false, speed = false, mana_pct = 70,
-  }
-  T.env.readaura_ready = true
-
-  local eq_cmd, _, eq_tag = T.plan_eq(tgt, { loyals_bootstrap_pending = false })
-  assert_eq("party hearing opener uses unnamable", eq_cmd, "unnamable speak")
-  assert_nil(
-    "party hearing opener suppresses entity during unnamable setup",
-    select(1, T.plan_entity(tgt, { eq_cmd = eq_cmd, eq_tag = eq_tag }))
-  )
-
-  T.PA.on_sent({
-    target = tgt,
-    lanes = { eq = "unnamable speak" },
-  }, { target = tgt })
-  assert_eq("party hearing opener marks unnamable sent", T.PA.state.unnamable_sent_for, tgt)
-  assert_nil("party hearing follow-up has no eq setup", select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })))
-  assert_eq("party hearing follow-up plans moon", select(1, T.plan_bal(tgt, {})), ("outd moon&&fling moon at %s"):format(tgt))
-  assert_eq("party hearing follow-up plans chimera", select(1, T.plan_entity(tgt, {})), ("command chimera at %s"):format(tgt))
-  assert_eq(
-    "party hearing follow-up combo order",
-    T.payload_line({ target = tgt, lanes = { bal = ("outd moon&&fling moon at %s"):format(tgt), entity = ("command chimera at %s"):format(tgt) } }),
-    ("outd moon&&command chimera at %s&&fling moon at %s"):format(tgt, tgt)
-  )
+  local W = setup_world({ mana_pct = 50 })
+  assert_eq("1a: starting_attack not called during load", W.calls.start(), 0)
+  assert_true("1b: cleanse_ready exists", type(Yso.occ.cleanse_ready) == "function")
+  assert_true("1c: ent_refresh exists", type(Yso.occ.ent_refresh) == "function")
+  assert_true("1d: ent_for_aff exists", type(Yso.occ.ent_for_aff) == "function")
+  assert_true("1e: firelord exists", type(Yso.occ.firelord) == "function")
+  assert_true("1f: phase exists", type(Yso.occ.phase) == "function")
+  assert_true("1g: set_phase exists", type(Yso.occ.set_phase) == "function")
+  assert_true("1h: get_phase exists", type(Yso.occ.get_phase) == "function")
+  assert_true("1i: burst exists", type(Yso.occ.burst) == "function")
+  assert_true("1j: pressure exists", type(Yso.occ.pressure) == "function")
+  assert_true("1k: convert exists", type(Yso.occ.convert) == "function")
 end
 
+print("\n=== Test 2: phase regression guard (cleanse -> pressure) ===")
 do
-  local T = load_party_aff()
-  local tgt = T.env.target
-  T.PA.state.unnamable_sent_for = tgt
-  T.env.snapshot = {
-    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
-    deaf = false, speed = true, mana_pct = 35,
-  }
-  T.env.readaura_ready = true
-
-  assert_eq(
-    "party cleanseaura branch command",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
-    ("cleanseaura %s"):format(tgt)
-  )
-
-  _G.Yso.occ.truebook.can_utter = function() return true end
-  assert_eq(
-    "party truename branch speed strip first",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
-    ("pinchaura %s speed"):format(tgt)
-  )
-
-  T.env.recent_tags["occ:eq:pinchaura:" .. tgt] = true
-  assert_eq(
-    "party truename branch utter follow-up",
-    select(1, T.plan_eq(tgt, { loyals_bootstrap_pending = false })),
-    ("utter truename %s"):format(tgt)
-  )
+  local W = setup_world({ mana_pct = 80 })
+  Yso.occ.set_phase(W.target, "cleanse", "test")
+  W.AB.state.phase_tgt = W.target:lower()
+  local preview = W.AB.build_payload({ target = W.target })
+  assert_true("2a: build_payload table", type(preview) == "table")
+  assert_eq("2b: phase falls back to pressure", Yso.occ.get_phase(W.target), "pressure")
 end
 
+print("\n=== Test 3: convert guard does not run before convert/finish ===")
 do
-  local T = load_party_aff()
-  local tgt = T.env.target
-  T.PA.state.unnamable_sent_for = tgt
-  _G.Yso.set_loyals_attack(true, tgt)
-  T.PA.state.loyals_sent_for = tgt
-  T.PA.state.enabled = true
-  T.PA.state.loop_enabled = true
-  T.env.snapshot = {
-    fresh = true, read_complete = true, had_counts = true, had_mana = true, defs_state = "complete", missing_keys = {},
-    deaf = false, speed = false, mana_pct = 70,
-  }
-  _G.Yso.state.ent_ready = function() return false end
+  local W = setup_world({ mana_pct = 80 })
+  Yso.occ.set_phase(W.target, "pressure", "test")
+  W.AB.state.phase_tgt = W.target:lower()
+  W.AB.state.last_readaura = 1000
+  local preview = W.AB.build_payload({ target = W.target })
+  assert_true("3a: preview generated", type(preview) == "table")
+  assert_eq("3b: convert not called in pressure", W.calls.convert(), 0)
 
-  local payload = T.PA.build_payload({ target = tgt })
-  assert_true("party bal-only payload generated", type(payload) == "table")
-  assert_true("party bal-only meta flag", payload.meta and payload.meta.bal_only_tick == true)
-  assert_eq("party bal-only keeps tarot lane", payload.lanes.bal, ("outd moon&&fling moon at %s"):format(tgt))
-  assert_nil("party bal-only suppresses entity lane", payload.lanes.entity)
-  assert_nil("party bal-only suppresses eq lane", payload.lanes.eq)
-  assert_nil("party bal-only suppresses free lane", payload.lanes.free)
+  Yso.occ.set_phase(W.target, "convert", "test")
+  W.AB.state.last_readaura = 1000
+  preview = W.AB.build_payload({ target = W.target })
+  assert_true("3c: preview generated in convert", type(preview) == "table")
+  assert_true("3d: convert called in convert phase", W.calls.convert() > 0)
 end
 
+print("\n=== Test 4: cleanse attend precedence over pressure filler ===")
 do
-  local T = load_occ_aff_burst()
-  local tgt = T.env.target
-  local plan = {
-    loyals_bootstrap_pending = true,
-    readaura_via_loyals = true,
-    cleanseaura_ready = false,
-    needs_mana_bury = false,
-  }
-
-  local free_cmd = select(1, T.loyals_open_cmd(tgt))
-  local eq_cmd = select(1, T.eq_plan(tgt, plan, nil))
-  assert_eq("occ bootstrap free", free_cmd, ("order entourage kill %s"):format(tgt))
-  assert_eq("occ bootstrap eq", eq_cmd, ("readaura %s"):format(tgt))
-  assert_eq(
-    "occ bootstrap line",
-    T.payload_line({ lanes = { free = free_cmd, eq = eq_cmd, bal = nil, entity = nil } }),
-    ("order entourage kill %s&&readaura %s"):format(tgt, tgt)
-  )
-
-  T.env.txn_status = { active = true, matched = true }
-  assert_nil(
-    "occ bootstrap suppressed by active txn",
-    select(1, T.bootstrap_readaura_plan(tgt, plan))
-  )
-
-  T.env.txn_status = { active = false, matched = false }
-  _G.gmcp.Char.Vitals.eq = "0"
-  assert_nil("occ bootstrap suppressed when eq down", select(1, T.eq_plan(tgt, plan, nil)))
-  assert_eq("occ free survives eq down", select(1, T.loyals_open_cmd(tgt)), ("order entourage kill %s"):format(tgt))
-
-  _G.gmcp.Char.Vitals.eq = "1"
-  T.AB.state.loyals_sent_for = tgt
-  assert_nil("occ already-hostile skips free bootstrap", select(1, T.loyals_open_cmd(tgt)))
-  assert_nil(
-    "occ already-hostile does not force bootstrap readaura",
-    select(1, T.bootstrap_readaura_plan(tgt, {
-      loyals_bootstrap_pending = false,
-      readaura_via_loyals = true,
-    }))
-  )
-
-  T.AB.state.explain = {}
-  T.AB.on_sent({
-    target = tgt,
-    lanes = {
-      free = ("order entourage kill %s"):format(tgt),
-      eq = ("readaura %s"):format(tgt),
-    },
-    meta = {},
-  }, { target = tgt })
-  assert_eq("occ on_sent marks loyals target", T.AB.state.loyals_sent_for, tgt)
-  assert_eq("occ on_sent aura_begin count", #T.env.aura_begins, 1)
-  assert_eq("occ on_sent aura_begin reason", T.env.aura_begins[1].why, "occ_aff_burst_send")
-  assert_eq("occ on_sent readaura_ready count", #T.env.readaura_ready_calls, 1)
-  assert_false("occ on_sent marks readaura not ready", T.env.readaura_ready_calls[1].value)
-  assert_eq("occ on_sent readaura reason", T.env.readaura_ready_calls[1].why, "sent")
+  local W = setup_world({ mana_pct = 25, aura_need_attend = true, can_utter = false, bal_ready = true })
+  Yso.occ.set_phase(W.target, "cleanse", "test")
+  W.AB.state.phase_tgt = W.target:lower()
+  local preview = W.AB.build_payload({ target = W.target })
+  assert_eq("4a: attend owns EQ in cleanse", preview.lanes.eq, "attend " .. W.target)
+  assert_true("4b: pressure helper not used in cleanse branch", W.calls.pressure() == 0)
+  assert_eq("4c: deferred bal followup present", preview.lanes.bal, "unnamable speak")
 end
 
+print("\n=== Test 5: target-side enlightened transitions to finish ===")
 do
-  local T = load_occ_aff_burst()
-  local tgt = T.env.target
-
-  T.env.readaura_ready = true
-  assert_false("occ loyals-active fresh snapshot does not force readaura", T.should_probe_readaura(tgt, {
-    snapshot_parse_window_open = false,
-    snapshot_confidence_state = "fresh",
-    snapshot_complete = true,
-    snapshot_read_complete = true,
-    snapshot_had_counts = true,
-    snapshot_had_mana = true,
-    snapshot_missing_keys = {},
-    mana_pct = 72,
-    speed = false,
-    needs_readaura = false,
-    readaura_via_loyals = true,
-  }, false))
-
-  assert_true("occ stale snapshot still probes readaura", T.should_probe_readaura(tgt, {
-    snapshot_parse_window_open = false,
-    snapshot_confidence_state = "stale",
-    snapshot_complete = false,
-    snapshot_read_complete = false,
-    snapshot_had_counts = false,
-    snapshot_had_mana = false,
-    snapshot_missing_keys = { "defs", "counts", "mana" },
-    mana_pct = nil,
-    speed = nil,
-    needs_readaura = true,
-    readaura_via_loyals = true,
-  }, false))
+  local W = setup_world({ mana_pct = 25, tgt_affs = { enlightened = true } })
+  Yso.occ.set_phase(W.target, "convert", "test")
+  W.AB.state.phase_tgt = W.target:lower()
+  local preview = W.AB.build_payload({ target = W.target })
+  assert_true("5a: preview generated", type(preview) == "table")
+  assert_eq("5b: phase transitioned to finish", Yso.occ.get_phase(W.target), "finish")
 end
 
+print("\n=== Test 6: local wait/dedup only, no global waiting mutation ===")
 do
-  local T = load_occ_aff_burst()
-  local tgt = T.env.target
+  local W = setup_world({ mana_pct = 80, emit_return = true })
+  Yso.occ.set_phase(W.target, "pressure", "test")
+  W.AB.state.phase_tgt = W.target:lower()
 
-  local pair_open = T.route_pair_plan(tgt, {
-    deaf = false,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = false,
-    needs_chimera = false,
-  })
-  assert_eq("occ mana-bury opener entity asthma", pair_open.entity_cmd, ("command bubonis at %s"):format(tgt))
-  assert_eq("occ mana-bury opener eq paralysis pair", pair_open.eq_cmd, ("instill %s with paralysis"):format(tgt))
+  local sent1 = W.AB.attack_function()
+  assert_true("6a: first emit succeeds", sent1 == true)
+  assert_true("6b: route-local waiting set", tostring(W.AB.state.waiting.queue or "") ~= "")
+  assert_eq("6c: global waiting unchanged", tostring((Yso.waiting or {}).queue), "GLOBAL_WAIT")
 
-  T.env.aff_scores.asthma = 100
-  T.env.aff_scores.paralysis = 100
-  local pair_health = T.route_pair_plan(tgt, {
-    deaf = false,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = false,
-    needs_chimera = false,
-  })
-  assert_eq("occ mana-bury healthleech entity", pair_health.entity_cmd, ("command worm at %s"):format(tgt))
-  assert_nil("occ mana-bury healthleech suppresses duplicate eq", pair_health.eq_cmd)
+  local sent2 = W.AB.attack_function()
+  assert_false("6d: second tick blocked by local wait", sent2 == true)
 
-  T.env.aff_scores.healthleech = 100
-  local pair_ready = T.route_pair_plan(tgt, {
-    deaf = false,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = false,
-    needs_chimera = false,
-  })
-  assert_nil("occ mana-bury setup complete has no forced pair entity", pair_ready.entity_cmd)
-  assert_nil("occ mana-bury setup complete has no forced pair eq", pair_ready.eq_cmd)
+  W.run_timers()
+  assert_nil("6e: local wait clears via timer", W.AB.state.waiting.queue)
+end
 
-  T.env.aff_scores.manaleech = 100
-  local eq_disloyalty = select(1, T.eq_plan(tgt, {
-    needs_mana_bury = true,
-    cleanseaura_ready = false,
-    deaf = false,
-    finish_stage = "pressure",
-  }, nil))
-  assert_eq("occ post-manaleech disloyalty uses devolve", eq_disloyalty, ("devolve %s"):format(tgt))
+print("\n=== Test 7: emit failure (nil/false) fails closed without waiting state ===")
+do
+  local Wnil = setup_world({ mana_pct = 80, emit_mode = "nil" })
+  Yso.occ.set_phase(Wnil.target, "pressure", "test")
+  Wnil.AB.state.phase_tgt = Wnil.target:lower()
+  local sent_nil = Wnil.AB.attack_function()
+  assert_false("7a: nil emit return treated as failure", sent_nil == true)
+  assert_nil("7b: nil emit does not set waiting", Wnil.AB.state.waiting.queue)
 
-  T.env.aff_scores.disloyalty = 100
-  T.env.recent_tags["ab:eq:devolve:" .. tgt] = true
-  T.env.recent_tags["ab:eq:enervate:" .. tgt] = true
-  local eq_anorexia = select(1, T.eq_plan(tgt, {
-    needs_mana_bury = true,
-    cleanseaura_ready = false,
-    mana_pct = 85,
-    deaf = true,
-    finish_stage = "pressure",
-  }, nil))
-  assert_eq("occ late fallback anorexia uses regress", eq_anorexia, ("regress %s"):format(tgt))
+  local Wfalse = setup_world({ mana_pct = 80, emit_mode = "false" })
+  Yso.occ.set_phase(Wfalse.target, "pressure", "test")
+  Wfalse.AB.state.phase_tgt = Wfalse.target:lower()
+  local sent_false = Wfalse.AB.attack_function()
+  assert_false("7c: false emit return treated as failure", sent_false == true)
+  assert_nil("7d: false emit does not set waiting", Wfalse.AB.state.waiting.queue)
+end
 
-  T.env.aff_scores = {
-    manaleech = 100,
-    disloyalty = 100,
-    asthma = 100,
-    paralysis = 100,
-    slickness = 100,
-    healthleech = 100,
-  }
-  local pressure_pair = T.route_pair_plan(tgt, {
-    deaf = false,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = false,
-    needs_chimera = true,
-  })
-  assert_eq("occ deaf-down pressure forces chimera command", pressure_pair.entity_cmd, ("command chimera at %s"):format(tgt))
-  assert_eq("occ deaf-down pressure pairs eq filler", pressure_pair.eq_cmd, ("instill %s with clumsiness"):format(tgt))
-
-  T.env.aff_scores.manaleech = 100
-  T.env.aff_scores.agoraphobia = 100
-  T.env.aff_scores.confusion = 100
-  T.env.aff_scores.claustrophobia = 100
-  T.env.aff_scores.dementia = 100
-  T.env.aff_scores.hallucinations = 100
-
-  local pair = T.route_pair_plan(tgt, {
-    deaf = false,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = false,
-    needs_chimera = true,
-  })
-  assert_eq("occ chimera-exhausted hearing target uses entity filler", pair.entity_cmd, ("command storm at %s"):format(tgt))
-  assert_eq("occ chimera-exhausted filler aff", pair.entity_aff, "clumsiness")
-  assert_eq("occ chimera-exhausted filler reason", pair.reason, "chimera_filler:clumsiness")
-
-  T.env.aff_scores.hallucinations = nil
-  local pair_reopen = T.route_pair_plan(tgt, {
-    deaf = false,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = false,
-    needs_chimera = true,
-  })
-  assert_eq("occ chimera pressure resumes when pool reopens", pair_reopen.entity_cmd, ("command chimera at %s"):format(tgt))
-
-  local attend_pair = T.route_pair_plan(tgt, {
-    deaf = true,
-    cleanseaura_ready = false,
-    finish_stage = "pressure",
-    needs_attend = true,
-    needs_chimera = true,
-  })
-  assert_eq("occ deaf attend keeps chimera pairing", attend_pair.entity_cmd, ("command chimera at %s"):format(tgt))
-  assert_eq("occ deaf attend reason", attend_pair.reason, "attend_deaf_chimera")
+print("\n=== Test 8: readaura fallback path remains active ===")
+do
+  local W = setup_world({ mana_pct = 25, aura_need_attend = false, readaura_ready = true, can_utter = false })
+  Yso.occ.set_phase(W.target, "cleanse", "test")
+  W.AB.state.phase_tgt = W.target:lower()
+  W.AB.state.last_readaura = 0
+  local preview = W.AB.build_payload({ target = W.target })
+  assert_true("8a: cleanse path still issues eq action", type(preview.lanes.eq) == "string" and preview.lanes.eq ~= "")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

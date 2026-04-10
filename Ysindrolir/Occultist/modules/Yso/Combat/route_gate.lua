@@ -68,6 +68,7 @@ end
 
 local function _normalize_payload(payload)
   local out = _clone(payload)
+  out.lanes = out.lanes or {}
   out.lanes = type(out.lanes) == "table" and out.lanes or {}
   out.meta = type(out.meta) == "table" and out.meta or {}
   if out.lanes.pre ~= nil and out.lanes.free == nil then

@@ -175,9 +175,10 @@ function M.on_vitals()
   if not _is_occultist() then return end
 
   local hp = _hp_percent()
-  local mp = _mp_percent()
-  if not hp or not mp then return end
+  if not hp then return end
   if hp <= 0 then return end        -- dead / invalid
+  local mp = _mp_percent()
+  if not mp then return end
 
   -- Condition: mp < threshold AND hp > hp_min
   if mp > (M.cfg.mp_threshold or 35) then return end

@@ -169,7 +169,7 @@ local function _aff_score(tgt, aff)
 end
 
 local function _stuck(tgt, aff)
-  return _aff_score(tgt, aff) >= 100
+  return (tonumber(_aff_score(tgt, aff)) or 0) >= 100
 end
 
 local MENTALS = {

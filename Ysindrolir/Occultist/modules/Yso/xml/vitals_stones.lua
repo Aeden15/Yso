@@ -64,6 +64,7 @@ if Yso.probe._trig.simulacrum then killTrigger(Yso.probe._trig.simulacrum) end
 Yso.probe._trig.simulacrum = tempRegexTrigger(
   [[^Your simulacrum is at (\d+)\s+health\.]],
   function()
+    if not matches or not matches[2] then return end
     local cur = tonumber(matches[2]) or 0
     local max = tonumber(Yso.probe.cfg.max_simulacrum) or 10000
     _echo_probe("Simulacrum", _pct(cur, max))
@@ -75,6 +76,7 @@ if Yso.probe._trig.heartstone then killTrigger(Yso.probe._trig.heartstone) end
 Yso.probe._trig.heartstone = tempRegexTrigger(
   [[^Your heartstone stores (\d+)\s+mana\.]],
   function()
+    if not matches or not matches[2] then return end
     local cur = tonumber(matches[2]) or 0
     local max = tonumber(Yso.probe.cfg.max_heartstone) or 10000
     _echo_probe("Heartstone", _pct(cur, max))

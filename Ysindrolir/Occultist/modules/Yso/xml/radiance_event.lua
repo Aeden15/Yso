@@ -14,8 +14,15 @@ Yso.radianceAlert = Yso.radianceAlert or {}
 
 local RA = Yso.radianceAlert
 
+local function _default_sound()
+  if type(package) == "table" and type(package.config) == "string" and package.config:sub(1, 1) == "\\" then
+    return "C:/Windows/Media/Alarm01.wav"
+  end
+  return ""
+end
+
 RA.cfg = RA.cfg or {
-  SOUND = "C:/Windows/Media/Alarm01.wav",
+  SOUND = _default_sound(),
   WIDTH = 80,
   PAD_BEFORE = 1,
   PAD_AFTER  = 1,

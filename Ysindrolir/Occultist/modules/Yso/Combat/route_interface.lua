@@ -68,12 +68,6 @@ local function _copy(tbl)
   return out
 end
 
-local function _trim(s)
-  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
-end
-
-local _unpack = table.unpack or unpack
-
 local function _noop() return nil end
 local function _noop_evaluate() return {} end
 local function _noop_explain() return {} end
@@ -135,71 +129,6 @@ function RI.validate(spec)
   if type(spec.capabilities) ~= "table" then errs[#errs+1] = "capabilities must be a table" end
   if type(spec.override_policy) ~= "table" then errs[#errs+1] = "override_policy must be a table" end
   return (#errs == 0), errs, spec
-end
-
--- Build one route command from a command spec:
---   {
---     id = "freeze",
---     string = "cast freeze at %s",
---     slot = "freeze",
---     target_required = true,
---     format_target = true, -- pass target as first format arg
---     formatter = function(target, ...) return "..." end
---   }
-function RI.command_from_spec(spec, target, args)
-  spec = type(spec) == "table" and spec or {}
-  local raw = _trim(spec.string)
-  if raw == "" then return nil, "missing_string" end
-
-  local list = {}
-  if type(args) == "table" then
-    for i = 1, #args do list[i] = args[i] end
-  end
-
-  local need_target = (spec.target_required ~= false)
-  target = _trim(target)
-  if need_target and target == "" then return nil, "no_target" end
-
-  local cmd
-  if type(spec.formatter) == "function" then
-    local ok, built = pcall(spec.formatter, target, _unpack(list))
-    if not ok then return nil, "formatter_error" end
-    cmd = _trim(built)
-  elseif spec.format_target == true then
-    local ok, built = pcall(string.format, raw, target, _unpack(list))
-    if not ok then return nil, "format_error" end
-    cmd = _trim(built)
-  elseif #list > 0 then
-    local ok, built = pcall(string.format, raw, _unpack(list))
-    if not ok then return nil, "format_error" end
-    cmd = _trim(built)
-  else
-    cmd = raw
-  end
-
-  if cmd == "" then return nil, "empty_command" end
-  return cmd, ""
-end
-
--- Build + optional guard gate in one call.
--- Guard signature:
---   guard(slot, target, cmd, opts) -> ok:boolean, why:string
-function RI.guard_and_build_command(opts)
-  opts = type(opts) == "table" and opts or {}
-  local spec = type(opts.spec) == "table" and opts.spec or {}
-  local target = _trim(opts.target)
-  local cmd, why = RI.command_from_spec(spec, target, opts.args)
-  if not cmd then return false, tostring(why or "invalid_command"), "" end
-
-  local guard = opts.guard
-  if type(guard) == "function" then
-    local slot = tostring(opts.slot or spec.slot or "")
-    local ok, gwhy = guard(slot, target, cmd, opts)
-    if ok ~= true then
-      return false, tostring(gwhy or "guard_blocked"), cmd
-    end
-  end
-  return true, "", cmd
 end
 
 return RI

@@ -159,10 +159,12 @@ Yso.occ = Yso.occ or {}
 -- prevent double-wrapping on script reload
 if not Yso.occ._yso_tgt_mana_wrapped then
   Yso.occ._yso_tgt_mana_wrapped = true
-  local prev = Yso.occ.set_target_mana_pct
+  Yso.occ._yso_tgt_mana_orig = Yso.occ.set_target_mana_pct
 
   Yso.occ.set_target_mana_pct = function(name, pct)
-    if type(prev) == "function" then pcall(prev, name, pct) end
+    if type(Yso.occ._yso_tgt_mana_orig) == "function" then
+      pcall(Yso.occ._yso_tgt_mana_orig, name, pct)
+    end
     T.set_mana_pct(name, pct)
   end
 end

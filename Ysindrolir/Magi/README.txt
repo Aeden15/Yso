@@ -1,6 +1,6 @@
 Magi workspace notes
 ====================
-Last updated: April 4, 2026
+Last updated: March 31, 2026
 
 This folder is the class-specific home for Magi work.
 
@@ -80,24 +80,6 @@ Current Magi helpers
 
   vibeds_alias_body.lua
     Paste-ready alias body for the vibes helper.
-
-Command table convention
-------------------------
-  Magi route modules now keep all sendable offense commands in one local
-  `COMMANDS` table near the top of each route.
-
-  Required fields for each command spec:
-    `id`       stable command identifier used in selectors/parsers
-    `string`   command text template (e.g. `"cast freeze at %s"`)
-    `slot`     pending/guard slot used by route spell gating
-
-  Optional fields:
-    `format_target = true` for `%s` target templates
-    `target_required = false` when guard semantics should own no-target rejects
-    `guard = function(...) ... end` for route-local prereqs beyond spell_guard
-
-  Route selectors should use the shared helper path (`_can_send(command_id, ...)`)
-  instead of per-command `_can_cast_*` wrappers.
 
 Default vibes notes
 -------------------
