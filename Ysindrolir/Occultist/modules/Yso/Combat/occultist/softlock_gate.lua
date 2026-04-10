@@ -44,11 +44,29 @@ Off.cfg.softlock_gate = Off.cfg.softlock_gate or {
 
 Off._softlock_done = Off._softlock_done or {}
 Off._softlock_done_target = Off._softlock_done_target or ""
+Off._softlock_done_at = Off._softlock_done_at or {}
 
 -- ----------------------------
 -- Minimal helpers (self-contained)
 -- ----------------------------
 local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == "function" then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v > 1e12 then v = v / 1000 end
+      return v
+    end
+  end
+  return os.time()
+end
 
 local function _warn(msg)
   msg = tostring(msg or "")
@@ -167,6 +185,13 @@ function Off.try_softlock_setup(t, afftbl)
   t = _softlock_track_target(t)
   if t == "" then return false end
 
+  local now = _now()
+  local cooldown = tonumber(cfg.rearm_cooldown_s or 5) or 5
+  local last_done_at = tonumber(Off._softlock_done_at[t] or 0) or 0
+  if last_done_at > 0 and (now - last_done_at) < cooldown and not _softlock_ready(t, afftbl) then
+    return false
+  end
+
   local stuck = Off.cfg.stuck_score or 100
 
   local asthma   = _score("asthma", afftbl)
@@ -180,6 +205,7 @@ function Off.try_softlock_setup(t, afftbl)
   end
   if _softlock_ready(t, afftbl) then
     Off._softlock_done[t] = true
+    Off._softlock_done_at[t] = now
     return false
   end
 
@@ -244,30 +270,115 @@ function Off.try_softlock_setup(t, afftbl)
 end
 
 -- ----------------------------
--- Wrap kelp-bury: soft-lock runs first, then original kelp-bury.
+-- Install hooks:
+--   1) Legacy kelp-bury wrapper (if present)
+--   2) Phase wrapper (modern sightgate flow)
 -- ----------------------------
-if not Off._softlock_gate_wrapped then
-  if type(Off.try_kelp_bury) == "function" then
-    Off._softlock_gate_wrapped = true
-    Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
+local function _scores_or_empty(afftbl)
+  if type(afftbl) == "table" then return afftbl end
+  if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    return affstrack.score
+  end
+  return {}
+end
 
+local function _install_legacy_kelp_bury()
+  if type(Off.try_kelp_bury) ~= "function" then return false end
+  if Off._softlock_gate_wrapped == true and Off._softlock_gate_mode == "legacy_kelp_bury" then
+    return true
+  end
+
+  Off._softlock_gate_wrapped = true
+  Off._softlock_gate_mode = "legacy_kelp_bury"
+  Off._softlock_gate_pending = false
+  Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
+
+  Off.try_kelp_bury = function(t, afftbl)
+    local cfg = Off.cfg.softlock_gate or {}
+    local scores = _scores_or_empty(afftbl)
+    local tracked_t = _softlock_track_target(t)
+    if cfg.enabled ~= false and tracked_t ~= "" then
+      local ready = _softlock_ready(tracked_t, scores)
+      Off._softlock_done[tracked_t] = ready == true
+      if ready then
+        Off._softlock_done_at[tracked_t] = _now()
+      else
+        -- Run soft-lock setup instead of entering kelp-bury.
+        return Off.try_softlock_setup(tracked_t, scores) == true
+      end
+    end
+    return Off._try_kelp_bury_orig(t, scores)
+  end
+
+  return true
+end
+
+local function _install_phase_wrapper()
+  if type(Off.phase) ~= "function" then return false end
+  if Off._softlock_phase_wrapped == true then
+    Off._softlock_gate_wrapped = true
+    Off._softlock_gate_mode = "phase_wrapper"
+    Off._softlock_gate_pending = false
+    return true
+  end
+
+  Off._softlock_phase_orig = Off._softlock_phase_orig or Off.phase
+  Off._softlock_phase_wrapped = true
+  Off._softlock_gate_wrapped = true
+  Off._softlock_gate_mode = "phase_wrapper"
+  Off._softlock_gate_pending = false
+
+  Off.phase = function(t, afftbl)
+    local cfg = Off.cfg.softlock_gate or {}
+    local scores = _scores_or_empty(afftbl)
+    local tracked_t = _softlock_track_target(t)
+    local ready = false
+
+    if cfg.enabled ~= false and tracked_t ~= "" then
+      ready = _softlock_ready(tracked_t, scores)
+      Off._softlock_done[tracked_t] = ready == true
+      if ready then
+        Off._softlock_done_at[tracked_t] = _now()
+      end
+    end
+
+    local phase = Off._softlock_phase_orig(t, afftbl)
+    if cfg.enabled ~= false and tracked_t ~= "" and not ready then
+      return "SOFTLOCK_SETUP"
+    end
+    return phase
+  end
+
+  -- Compatibility shim for callers that still expect this symbol.
+  if type(Off.try_kelp_bury) ~= "function" then
     Off.try_kelp_bury = function(t, afftbl)
       local cfg = Off.cfg.softlock_gate or {}
+      local scores = _scores_or_empty(afftbl)
       local tracked_t = _softlock_track_target(t)
-      if cfg.enabled ~= false and tracked_t ~= "" then
-        local ready = _softlock_ready(tracked_t, afftbl)
-        Off._softlock_done[tracked_t] = ready == true
-        if not ready then
-          -- Run soft-lock setup instead of entering kelp-bury.
-          return Off.try_softlock_setup(tracked_t, afftbl) == true
-        end
+      if cfg.enabled == false or tracked_t == "" then
+        return false
       end
-      return Off._try_kelp_bury_orig(t, afftbl)
+      local ready = _softlock_ready(tracked_t, scores)
+      Off._softlock_done[tracked_t] = ready == true
+      if ready then
+        Off._softlock_done_at[tracked_t] = _now()
+        return false
+      end
+      return Off.try_softlock_setup(tracked_t, scores) == true
     end
-  elseif Off._softlock_gate_warned ~= true then
-    Off._softlock_gate_warned = true
-    _warn("Off.try_kelp_bury not found; softlock gate not installed. Check load order.")
   end
+
+  return true
 end
+
+function Off.install_softlock_gate()
+  if _install_legacy_kelp_bury() then return true end
+  if _install_phase_wrapper() then return true end
+
+  Off._softlock_gate_pending = true
+  return false
+end
+
+Off.install_softlock_gate()
 
 --========================================================--

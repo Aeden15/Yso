@@ -200,6 +200,12 @@ local function make_world(opts)
     end
   end
 
+  if opts.preload_phase then
+    Yso.off.oc.phase = function(t, afftbl)
+      return "UNRAVEL"
+    end
+  end
+
   _G.Yso = Yso
   _G.yso = Yso
 
@@ -313,12 +319,24 @@ do
   assert_eq("6e: wrapper returns original result", ret2, "orig:zeta")
 end
 
-print("\n=== Test 7: missing wrapper install emits a warning ===")
+print("\n=== Test 7: missing hooks stay pending without startup warning ===")
 do
   local world = make_world({ preload_queue = true, preload_try_kelp_bury = false, target = "eta" })
   local text = table.concat(world.logs, "\n")
-  assert_contains("7: warning text emitted", text, "Off.try_kelp_bury not found")
-  assert_contains("7: warning explains install failure", text, "softlock gate not installed")
+  assert_eq("7a: install pending when no hook target exists", world.off._softlock_gate_pending, true)
+  assert_not_contains("7b: no eager missing-hook warning", text, "Off.try_kelp_bury not found")
+end
+
+print("\n=== Test 8: phase wrapper installs and forces SOFTLOCK_SETUP until ready ===")
+do
+  local world = make_world({ preload_queue = true, preload_try_kelp_bury = false, preload_phase = true, target = "theta" })
+  assert_eq("8a: phase-wrapper mode selected", world.off._softlock_gate_mode, "phase_wrapper")
+
+  local p1 = world.off.phase("theta", { asthma = 0, slickness = 0, anorexia = 0 })
+  assert_eq("8b: not-ready target forced into softlock setup", p1, "SOFTLOCK_SETUP")
+
+  local p2 = world.off.phase("theta", { asthma = 100, slickness = 100, anorexia = 0 })
+  assert_eq("8c: ready target falls through to original phase", p2, "UNRAVEL")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

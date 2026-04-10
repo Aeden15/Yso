@@ -1,12 +1,22 @@
 Yso Systems Workspace
 =====================
-Last updated: April 8, 2026
+Last updated: April 10, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Softlock gate phase-flow install fix (April 10, 2026) --
+  modules/Yso/Combat/occultist/softlock_gate.lua no longer emits a false
+  startup warning when Off.try_kelp_bury is absent in the modern offense
+  stack. The module now exposes Off.install_softlock_gate(), falls back to a
+  phase wrapper (Off.phase), and supplies a compatibility try_kelp_bury shim.
+  modules/Yso/xml/sightgate.lua now calls Off.install_softlock_gate() after
+  SightGate loads so late-bound phase hooks attach reliably. Updated regression
+  coverage in Ysindrolir/Occultist/tests/test_softlock_gate.lua. XML mirrors
+  were refreshed and Yso system.xml was rebuilt.
+
   Route send-ack hardening + dead-code cleanup (April 8, 2026) --
   Magi focus/magi_group_damage and Occultist group_damage/party_aff/occ_aff
   no longer advance send-state directly in attack_function() when the shared

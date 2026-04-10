@@ -12978,31 +12978,116 @@ function Off.try_softlock_setup(t, afftbl)
 end
 
 -- ----------------------------
--- Wrap kelp-bury: soft-lock runs first, then original kelp-bury.
+-- Install hooks:
+--   1) Legacy kelp-bury wrapper (if present)
+--   2) Phase wrapper (modern sightgate flow)
 -- ----------------------------
-if not Off._softlock_gate_wrapped then
-  if type(Off.try_kelp_bury) == &quot;function&quot; then
-    Off._softlock_gate_wrapped = true
-    Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
+local function _scores_or_empty(afftbl)
+  if type(afftbl) == &quot;table&quot; then return afftbl end
+  if type(affstrack) == &quot;table&quot; and type(affstrack.score) == &quot;table&quot; then
+    return affstrack.score
+  end
+  return {}
+end
 
+local function _install_legacy_kelp_bury()
+  if type(Off.try_kelp_bury) ~= &quot;function&quot; then return false end
+  if Off._softlock_gate_wrapped == true and Off._softlock_gate_mode == &quot;legacy_kelp_bury&quot; then
+    return true
+  end
+
+  Off._softlock_gate_wrapped = true
+  Off._softlock_gate_mode = &quot;legacy_kelp_bury&quot;
+  Off._softlock_gate_pending = false
+  Off._try_kelp_bury_orig = Off._try_kelp_bury_orig or Off.try_kelp_bury
+
+  Off.try_kelp_bury = function(t, afftbl)
+    local cfg = Off.cfg.softlock_gate or {}
+    local scores = _scores_or_empty(afftbl)
+    local tracked_t = _softlock_track_target(t)
+    if cfg.enabled ~= false and tracked_t ~= &quot;&quot; then
+      local ready = _softlock_ready(tracked_t, scores)
+      Off._softlock_done[tracked_t] = ready == true
+      if ready then
+        Off._softlock_done_at[tracked_t] = _now()
+      else
+        -- Run soft-lock setup instead of entering kelp-bury.
+        return Off.try_softlock_setup(tracked_t, scores) == true
+      end
+    end
+    return Off._try_kelp_bury_orig(t, scores)
+  end
+
+  return true
+end
+
+local function _install_phase_wrapper()
+  if type(Off.phase) ~= &quot;function&quot; then return false end
+  if Off._softlock_phase_wrapped == true then
+    Off._softlock_gate_wrapped = true
+    Off._softlock_gate_mode = &quot;phase_wrapper&quot;
+    Off._softlock_gate_pending = false
+    return true
+  end
+
+  Off._softlock_phase_orig = Off._softlock_phase_orig or Off.phase
+  Off._softlock_phase_wrapped = true
+  Off._softlock_gate_wrapped = true
+  Off._softlock_gate_mode = &quot;phase_wrapper&quot;
+  Off._softlock_gate_pending = false
+
+  Off.phase = function(t, afftbl)
+    local cfg = Off.cfg.softlock_gate or {}
+    local scores = _scores_or_empty(afftbl)
+    local tracked_t = _softlock_track_target(t)
+    local ready = false
+
+    if cfg.enabled ~= false and tracked_t ~= &quot;&quot; then
+      ready = _softlock_ready(tracked_t, scores)
+      Off._softlock_done[tracked_t] = ready == true
+      if ready then
+        Off._softlock_done_at[tracked_t] = _now()
+      end
+    end
+
+    local phase = Off._softlock_phase_orig(t, afftbl)
+    if cfg.enabled ~= false and tracked_t ~= &quot;&quot; and not ready then
+      return &quot;SOFTLOCK_SETUP&quot;
+    end
+    return phase
+  end
+
+  -- Compatibility shim for callers that still expect this symbol.
+  if type(Off.try_kelp_bury) ~= &quot;function&quot; then
     Off.try_kelp_bury = function(t, afftbl)
       local cfg = Off.cfg.softlock_gate or {}
+      local scores = _scores_or_empty(afftbl)
       local tracked_t = _softlock_track_target(t)
-      if cfg.enabled ~= false and tracked_t ~= &quot;&quot; then
-        local ready = _softlock_ready(tracked_t, afftbl)
-        Off._softlock_done[tracked_t] = ready == true
-        if not ready then
-          -- Run soft-lock setup instead of entering kelp-bury.
-          return Off.try_softlock_setup(tracked_t, afftbl) == true
-        end
+      if cfg.enabled == false or tracked_t == &quot;&quot; then
+        return false
       end
-      return Off._try_kelp_bury_orig(t, afftbl)
+      local ready = _softlock_ready(tracked_t, scores)
+      Off._softlock_done[tracked_t] = ready == true
+      if ready then
+        Off._softlock_done_at[tracked_t] = _now()
+        return false
+      end
+      return Off.try_softlock_setup(tracked_t, scores) == true
     end
-  elseif Off._softlock_gate_warned ~= true then
-    Off._softlock_gate_warned = true
-    _warn(&quot;Off.try_kelp_bury not found; softlock gate not installed. Check load order.&quot;)
   end
+
+  return true
 end
+
+function Off.install_softlock_gate()
+  if _install_legacy_kelp_bury() then return true end
+  if _install_phase_wrapper() then return true end
+
+  Off._softlock_gate_pending = true
+  return false
+end
+
+Off.install_softlock_gate()
 
 --========================================================--
 </script>
@@ -24220,6 +24305,11 @@ do
   end
 end
 
+-- If softlock_gate loaded before sightgate, allow it to bind to phase flow now.
+if type(Off.install_softlock_gate) == &quot;function&quot; then
+  pcall(Off.install_softlock_gate)
+end
+
 --========================================================--
 -- Usage (intent flag):
 --   Before UNNAMABLE VISION or HERETIC WITNESS, call:
@@ -28290,6 +28380,17 @@ local function _pick_convert(tgt, ctx)
   local phase = tostring(ctx.phase or &quot;convert&quot;):lower()
   if phase ~= &quot;convert&quot; and phase ~= &quot;finish&quot; then return nil end
 
+  if Yso.occ and type(Yso.occ.convert) == &quot;function&quot; then
+    local ok, cmd = pcall(Yso.occ.convert, tgt, {
+      phase = phase,
+      enlighten_target = tonumber(ctx.enlighten_target or A.cfg.enlighten_target or 5) or 5,
+      unravel_mentals = tonumber(ctx.unravel_mentals or A.cfg.unravel_mentals or 4) or 4,
+    })
+    if ok and _trim(cmd) ~= &quot;&quot; then
+      return _trim(cmd)
+    end
+  end
+
   local enlighten_target = tonumber(ctx.enlighten_target or A.cfg.enlighten_target or 5) or 5
   local unravel_mentals  = tonumber(ctx.unravel_mentals  or A.cfg.unravel_mentals  or 4) or 4
   local mental           = _mental_score()
@@ -28633,7 +28734,9 @@ function A.attack_function(arg)
     end
   end
 
-  if payload.eq == &quot;&quot; and _eq() and ra_ready and _ra_due() then
+  -- Keep generic readaura fallback out of convert/finish so convert logic can drive EQ.
+  if payload.eq == &quot;&quot; and _eq() and ra_ready and _ra_due()
+      and phase ~= &quot;convert&quot; and phase ~= &quot;finish&quot; then
     payload.eq = &quot;readaura &quot; .. tgt
   end
 
