@@ -4,6 +4,7 @@ Current workspace snapshot: April 10, 2026.
 
 ## Current fixes
 
+- **Occultist route-placeholder cleanup (April 10, 2026)** — removed dead `modules/Yso/Combat/routes/bash.lua` auto-wrapper and replaced `modules/Yso/Combat/routes/limb.lua` + `limb_prep.lua` with explicit deprecated route stubs that expose lifecycle hooks/route contract and fail closed with a clear "not implemented" warning until real limb strategies are implemented.
 - **Occultist helper-surface trim + route-localization (April 10, 2026)** — `modules/Yso/Combat/routes/occ_aff.lua` now owns its cleanse/burst/convert decision logic directly instead of delegating through `Yso.occ.*` helper wrappers. `offense_helpers.lua` now keeps only shared phase state helpers (`set_phase/get_phase`) and removes route-only exports (`cleanse_ready`, `ent_for_aff`, `burst`, `convert`, `phase`, `pressure`, `firelord`, `ent_refresh`). Regression tests were updated (`test_loyals_bootstrap_readaura.lua`), XML mirrors were refreshed, and `Yso system.xml` was rebuilt.
 - **Softlock gate phase-flow install fix (April 10, 2026)** — `modules/Yso/Combat/occultist/softlock_gate.lua` no longer emits a false startup warning when `Off.try_kelp_bury` is absent in the modern offense stack. It now installs through `Off.install_softlock_gate()` with phase-wrapper fallback (`Off.phase`) and compatibility `try_kelp_bury` shim behavior. `modules/Yso/xml/sightgate.lua` now calls `Off.install_softlock_gate()` after SightGate loads so late-bound phase hooks attach reliably. Softlock gate regression tests were updated (`tests/test_softlock_gate.lua`), XML mirrors were refreshed, and `Yso system.xml` was rebuilt.
 - **`occ_aff` convert-phase routing regression fixed (April 10, 2026)** — `modules/Yso/Combat/routes/occ_aff.lua` now delegates convert/finish EQ selection through `Yso.occ.convert(...)` (with local fallback) and prevents the generic readaura fallback from pre-empting convert/finish phases. This restores convert-path helper execution expected by regression tests (`test_loyals_bootstrap_readaura.lua`) while preserving readaura behavior in non-convert phases. XML mirrors were refreshed and `Yso system.xml` was rebuilt after the patch.
@@ -159,9 +160,6 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 back to Windows PowerShell otherwise. The script text is ASCII-safe so either
 shell can parse it cleanly.
 
-Line endings are now enforced with `.gitattributes`: LF by default for source
-and docs, with CRLF exceptions for `*.cmd`, `*.bat`, and `*.ps1`.
-
 ### What gets synced
 
 | Repo path | Desktop path |
@@ -182,6 +180,5 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - Crystalism resonance notices now echo in the package `Yso Triggers -> Magi -> Crystalism` folder, and `energise` also exposes a separate consumable Crystalism state for personal aliases without reusing the heal-burst `Yso.magi.energy` flag.
 - The packaged `mheals` alias now requires both `Yso.magi.energy` and `Yso.magi.crystalism.consume_energise_resonance()` before it queues `absorb energy`.
 - The package bootstraps the Crystalism energise helper inline in the trigger/alias path so `mheals` does not depend on `magi_reference.lua` load order.
-- `YSO_TEST_TRACE=1` enables verbose hunt-mode test trace output; default test runs stay quiet.
 - If you are debugging automation, start with the shared pipeline first: mode ownership, wake intake, queue staging, then queue commit/flush.
 - **Fool basher preemption** — Eligible Fool uses now clear Legacy basher `freestand` work before queueing and temporarily suppress fresh basher attack-package requeues until the Fool self-use line or a timeout. The prone gate still blocks Fool before any queue clearing, and debug/status output reports the prone reason and basher-hold state.

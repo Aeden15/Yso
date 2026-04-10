@@ -7,6 +7,11 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultist route-placeholder cleanup (April 10, 2026) -- removed dead
+  modules/Yso/Combat/routes/bash.lua auto-wrapper and replaced
+  modules/Yso/Combat/routes/limb.lua + limb_prep.lua with explicit deprecated
+  route stubs that expose the route contract/lifecycle hooks and fail closed
+  with a clear "not implemented" warning until real limb strategies land.
   Occultist helper-surface trim + route-localization (April 10, 2026) --
   modules/Yso/Combat/routes/occ_aff.lua now owns cleanse/burst/convert decision
   flow directly instead of calling route-only Yso.occ helper wrappers.
@@ -296,16 +301,12 @@ Syncing with OneDrive Desktop
   sync.cmd now prefers PowerShell 7 (pwsh) when it is installed and falls back
   to Windows PowerShell otherwise. The script text is ASCII-safe so either
   shell can parse it cleanly.
-  Line endings are enforced by .gitattributes: LF by default for source/docs,
-  and CRLF exceptions for *.cmd, *.bat, and *.ps1.
 
   What gets synced:
     Repo  Ysindrolir/         <->  Desktop  Yso systems/Ysindrolir/
     Repo  README.md/.txt      <->  Desktop  Yso systems/README.md/.txt
 
   Git-only files (.git/, .gitignore, etc.) are excluded automatically.
-  Test trace verbosity is optional: set YSO_TEST_TRACE=1 when running
-  Ysindrolir/Occultist/tests/test_hunt_mode_upkeep.lua for full cecho trace.
   - Fool basher preemption: eligible Fool uses clear Legacy basher
     freestand work before queueing and suppress fresh basher attack-package
     requeues until the Fool self-use line or a timeout. Prone still blocks Fool
