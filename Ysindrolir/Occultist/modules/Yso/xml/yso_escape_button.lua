@@ -4,7 +4,7 @@
 --   • F5 “escape” handler for Achaea (Yso namespace)
 --   • Respects current Yso command separator (Yso.sep; default "&&")
 --   • Universe TOUCH defaults to Newthera
---   • Uses Legacy affliction tracking (Legacy.Curing.Affs) when present
+--   • Prefers Yso self-aff tracker, with compatibility fallbacks
 --   • Uses Yso.queue.*_clear (or addclear) when available; otherwise sends directly
 --
 -- Priority:
@@ -171,7 +171,14 @@ local function _queue_clear(qtype, payload)
   _send_compound(payload)
 end
 
--- ---------------- affliction source: Legacy-first ----------------
+-- ---------------- affliction source: Yso-first ----------------
+local function _yso_affs()
+  if type(Yso) == "table" and type(Yso.affs) == "table" then
+    return Yso.affs
+  end
+  return nil
+end
+
 local function _legacy_affs()
   if type(Legacy) == "table"
      and type(Legacy.Curing) == "table"
@@ -182,30 +189,45 @@ local function _legacy_affs()
   return nil
 end
 
-local function _yso_affs()
-  if type(Yso) == "table" and type(Yso.affs) == "table" then
-    return Yso.affs
+local function _gmcp_has_aff(key)
+  local g = gmcp and gmcp.Char and gmcp.Char.Afflictions
+  if type(g) ~= "table" then return false end
+  if g[key] == true then return true end
+
+  local lists = { g.List, g.list, g.Afflictions, g.afflictions }
+  for i = 1, #lists do
+    local list = lists[i]
+    if type(list) == "table" then
+      for j = 1, #list do
+        local v = list[j]
+        local name = type(v) == "table" and v.name or v
+        if tostring(name or ""):lower() == key then
+          return true
+        end
+      end
+    end
   end
-  return nil
+  return false
 end
 
 local function _has_aff(key)
-  key = tostring(key or "")
+  key = tostring(key or ""):lower()
   if key == "" then return false end
 
-  local L = _legacy_affs()
-  if L then
-    if L[key] then return true end
-    local lk = key:lower()
-    if lk ~= key and L[lk] then return true end
+  if Yso and Yso.self and type(Yso.self.has_aff) == "function" then
+    local ok, v = pcall(Yso.self.has_aff, key)
+    if ok and v == true then return true end
   end
 
   local Y = _yso_affs()
   if Y then
     if Y[key] then return true end
-    local lk = key:lower()
-    if lk ~= key and Y[lk] then return true end
   end
+
+  if _gmcp_has_aff(key) then return true end
+
+  local L = _legacy_affs()
+  if L and L[key] then return true end
 
   return false
 end

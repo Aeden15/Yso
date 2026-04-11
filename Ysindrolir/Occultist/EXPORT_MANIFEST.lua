@@ -3,6 +3,7 @@
 return {
   -- Core infrastructure
   { source = "modules/Yso/Core/api.lua",              mirror = "modules/Yso/xml/api_stuff.lua" },
+  { source = "modules/Yso/Core/self_aff.lua",         mirror = "modules/Yso/xml/yso_self_aff.lua" },
   { source = "modules/Yso/Core/offense_state.lua",    mirror = "modules/Yso/xml/yso_offense_state.lua" },
   { source = "modules/Yso/Core/wake_bus.lua",         mirror = "modules/Yso/xml/yso_pulse_wake_bus.lua" },
   { source = "modules/Yso/Core/queue.lua",            mirror = "modules/Yso/xml/yso_queue.lua" },
@@ -35,4 +36,6 @@ return {
 
   -- Curing helpers
   { source = "modules/Yso/Curing/bash_vitals_swap.lua",      mirror = "modules/Yso/xml/bash_vitals_swap.lua" },
+  { source = "modules/Yso/Curing/self_curedefs.lua",         mirror = "modules/Yso/xml/yso_self_curedefs.lua" },
+  { source = "modules/Yso/Curing/serverside_policy.lua",     mirror = "modules/Yso/xml/yso_serverside_policy.lua" },
 }

@@ -36,6 +36,8 @@ local API_PATH = join_path(ROOT_DIR, "Occultist", "modules", "Yso", "Core", "api
 local TATTOOS_PATH = join_path(ROOT_DIR, "Occultist", "modules", "Yso", "xml", "yso_target_tattoos.lua")
 local SIGHTGATE_PATH = join_path(ROOT_DIR, "Occultist", "modules", "Yso", "xml", "sightgate.lua")
 local PRONE_PATH = join_path(ROOT_DIR, "Occultist", "modules", "Yso", "xml", "pronecontroller.lua")
+local PARRY_PATH = join_path(ROOT_DIR, "Occultist", "modules", "Yso", "Combat", "parry.lua")
+local ESCAPE_PATH = join_path(ROOT_DIR, "Occultist", "modules", "Yso", "xml", "yso_escape_button.lua")
 
 local pass_count = 0
 local fail_count = 0
@@ -115,6 +117,8 @@ do
   local api = read_all(API_PATH)
   local sightgate = read_all(SIGHTGATE_PATH)
   local prone = read_all(PRONE_PATH)
+  local parry = read_all(PARRY_PATH)
+  local escape = read_all(ESCAPE_PATH)
 
   assert_not_contains("1a: AK no compslit typo", ak, "compslit")
   assert_not_contains("1b: AK no incata math bug", ak, "+ incata")
@@ -132,6 +136,9 @@ do
   assert_eq("1n: raw big/small damage freestand sends collapsed", count_occurrences(basher, "send(\"queue add freestand \"..v.cmd)"), 0)
   assert_eq("1o: raw shieldbreak fallback freestand send collapsed", count_occurrences(basher, "send(\"queue addclear freestand \"..nr_cmd)"), 0)
   assert_not_contains("1p: attend opener no hardcoded ;; separator", basher, "attend @tar;;cleanseaura @tar")
+  assert_not_contains("1q: parry no Legacy self-aff ownership", parry, "Legacy.Curing.Affs")
+  assert_contains("1r: escape prefers Yso self tracker", escape, "Yso.self.has_aff")
+  assert_not_contains("1s: escape no legacy-first marker", escape, "affliction source: Legacy-first")
 end
 
 print("\n=== Test 2: target sensory helpers read affstrack.score ===")

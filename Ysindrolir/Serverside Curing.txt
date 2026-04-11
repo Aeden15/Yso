@@ -1,0 +1,54 @@
+Yso / Achaea Serverside Curing Notes
+====================================
+
+Status
+------
+- Phase-one coordinator scaffold is active in Yso.
+- Base restore target is curingset: default.
+- Group remains the top-level override curingset.
+- Class overlay is delta-based (not a dedicated curingset).
+
+Module ownership
+----------------
+Core/self_aff.lua
+- Canonical self-aff truth and broader self state.
+- GMCP-first ingest with text fallback.
+
+Curing/self_curedefs.lua
+- Hand-maintained cure metadata derived from AFFLICTION_CURES.txt.
+- Runtime metadata only (no live state ownership).
+
+Curing/serverside_policy.lua
+- Mode arbitration: group > class_overlay > default.
+- Delta-only profile/priority writes.
+- Restore-to-default logic after calm/aggression expiry.
+- Manual intervention grace: 8s.
+- Emergency queue and tree-policy scaffolds.
+
+Live command references (Achaea)
+--------------------------------
+Curingsets
+- CURINGSET LIST
+- CURINGSET SWITCH <set>
+- CURINGSET RENAME <old> <new>
+
+Priorities
+- CURING PRIORITY <aff> <slot>
+- CURING PRIORITY LIST
+
+Queue operations
+- QUEUE ADD <bal|eq|free|class> <command>
+- QUEUE INSERT <bal|eq|free|class> <index> <command>
+
+Planned nuance (later phases)
+-----------------------------
+- Expand class overlays beyond blademaster.
+- Add richer emergency queue case map with anti-spam controls.
+- Expand tree-policy actuation once preferred server command shape is finalized.
+- Add deeper text fallback coverage for edge aff/state lines.
+
+Guardrails
+----------
+- Yso is coordinator logic only; Achaea autocuring remains the curing engine.
+- Legacy may provide class/group signals, but does not own self-aff truth.
+- Yso avoids churn by applying only deltas.

@@ -93,6 +93,9 @@ end
 
 -- Load canonical modules first, then remaining XML-resident legacy scripts.
 safe_require_any("Yso.Core.api", "Yso.xml.api_stuff")
+safe_require("Yso.Core.self_aff")
+safe_require("Yso.Curing.self_curedefs")
+safe_require("Yso.Curing.serverside_policy")
 safe_require_any("Yso.Core.offense_state", "Yso.xml.yso_offense_state")
 safe_require_any("Yso.Integration.ak_legacy_wiring", "Yso.xml.ak_legacy_wiring")
 safe_require("Yso.Core.queue")

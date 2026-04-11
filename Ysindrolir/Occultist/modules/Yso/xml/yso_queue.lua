@@ -398,41 +398,6 @@ local function _clear_payload(payload)
   if _trim(payload.class) ~= "" then Q._staged.class = nil end
 end
 
-local function _owned_lanes_for_qtype(qtype)
-  qtype = _trim(qtype):lower()
-  if qtype == "" then return {} end
-
-  if qtype == "eqbal" or qtype == "be" or qtype == "eb" then
-    return { "eq", "bal" }
-  end
-
-  local lane = _lane_key(qtype)
-  if lane then return { lane } end
-  return {}
-end
-
-local function _clear_owned_for_qtype(qtype)
-  local lanes = _owned_lanes_for_qtype(qtype)
-  if #lanes == 0 then return end
-  for i = 1, #lanes do
-    Q.clear_owned(lanes[i])
-  end
-end
-
-local function _invalidate_owned_on_raw_queue(verb, qtype)
-  verb = _trim(verb):upper()
-  if verb == "CLEARQUEUE"
-     or verb == "ADD"
-     or verb == "ADDCLEAR"
-     or verb == "ADDCLEARFULL"
-     or verb == "PREPEND"
-     or verb == "INSERT"
-     or verb == "REPLACE"
-  then
-    _clear_owned_for_qtype(qtype)
-  end
-end
-
 local function _raw_queue(verb, qtype, payload)
   verb = _trim(verb):upper()
   qtype = _trim(qtype)
@@ -449,11 +414,7 @@ local function _raw_queue(verb, qtype, payload)
   end
   payload = _trim(payload)
   if verb == "" or qtype == "" or payload == "" then return false end
-  local ok = _send_compound(("QUEUE %s %s %s"):format(verb, qtype, payload))
-  if ok then
-    _invalidate_owned_on_raw_queue(verb, qtype)
-  end
-  return ok
+  return _send_compound(("QUEUE %s %s %s"):format(verb, qtype, payload))
 end
 
 local function _owned_table()
@@ -757,14 +718,7 @@ function Q.raw(mode, qtype, payload)
   end
   local body = _trim(mode or qtype)
   if body == "" then return false end
-  local ok = _send_compound(body)
-  if not ok then return false end
-
-  local raw_qtype = body:match("^CLEARQUEUE%s+(.+)$")
-  if raw_qtype then
-    _invalidate_owned_on_raw_queue("CLEARQUEUE", raw_qtype)
-  end
-  return true
+  return _send_compound(body)
 end
 
 Q.mark_payload_fired = _mark_payload_fired

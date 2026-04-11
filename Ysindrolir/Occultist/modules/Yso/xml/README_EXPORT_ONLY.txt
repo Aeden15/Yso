@@ -8,6 +8,7 @@ Canonical source locations (edit these):
 
   Core infrastructure:
   - modules/Yso/Core/api.lua                              -> xml/api_stuff.lua
+  - modules/Yso/Core/self_aff.lua                         -> xml/yso_self_aff.lua
   - modules/Yso/Core/offense_state.lua                    -> xml/yso_offense_state.lua
   - modules/Yso/Core/wake_bus.lua                         -> xml/yso_pulse_wake_bus.lua
   - modules/Yso/Core/queue.lua                            -> xml/yso_queue.lua
@@ -23,15 +24,21 @@ Canonical source locations (edit these):
   - modules/Yso/Combat/route_interface.lua                -> xml/route_interface.lua
   - modules/Yso/Combat/route_registry.lua                 -> xml/route_registry.lua
 
-  Occultist offense:
+  Combat routes:
   - modules/Yso/Combat/routes/group_damage.lua            -> xml/group_damage.lua
   - modules/Yso/Combat/routes/occ_aff.lua                 -> xml/occ_aff.lua
   - modules/Yso/Combat/routes/party_aff.lua               -> xml/party_aff.lua
+
+  Occultist offense:
   - modules/Yso/Combat/occultist/offense_helpers.lua      -> xml/yso_occultist_offense.lua
   - modules/Yso/Combat/occultist/entity_registry.lua      -> xml/entity_registry.lua
-  - modules/Yso/Combat/occultist/domination_reference.lua -> xml/domination_reference.lua
   - modules/Yso/Combat/occultist/aeon.lua                 -> xml/yso_aeon.lua
   - modules/Yso/Combat/occultist/softlock_gate.lua        -> xml/softlock_gate.lua
+
+  Curing:
+  - modules/Yso/Curing/bash_vitals_swap.lua               -> xml/bash_vitals_swap.lua
+  - modules/Yso/Curing/self_curedefs.lua                  -> xml/yso_self_curedefs.lua
+  - modules/Yso/Curing/serverside_policy.lua              -> xml/yso_serverside_policy.lua
 
   Integration / bridges:
   - modules/Yso/Integration/ak_legacy_wiring.lua          -> xml/ak_legacy_wiring.lua
@@ -39,7 +46,7 @@ Canonical source locations (edit these):
 Files in xml/ not listed above remain XML-resident legacy until migrated.
 See EXPORT_MANIFEST.lua for the machine-readable mapping.
 
-Rebuild notes (2026-03-16):
+Rebuild notes (2026-04-11):
 
   rebuild_yso_system_xml.lua only rewrites package items that actually exist in
   mudlet packages/Yso system.xml.

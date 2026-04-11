@@ -112,10 +112,52 @@ C.use_profile = function(name)
 
   if type(send) == "function" then
     send(string.format("curingset switch %s", name), false)
+    _G.CurrentCureset = name
     _cwire_echo("sent: curingset switch "..name)
   else
     _cwire_echo("cannot use_profile("..name.."): send() missing")
   end
+end
+
+-- Tree policy bridge (phase-1 conservative scaffold).
+-- aff_trigger: prioritize trigger behavior while under active pressure.
+-- aff_count: fallback/default behavior.
+C.set_tree_policy = function(mode, _ctx)
+  mode = tostring(mode or ""):lower()
+  if mode == "" then return end
+
+  -- Keep wire-level behavior simple and non-destructive in phase one.
+  -- Policy computes desired mode and the adapter exposes it for diagnostics.
+  Yso.curing = Yso.curing or {}
+  Yso.curing.tree_policy = mode
+  _cwire_echo("tree policy -> " .. mode)
+end
+
+-- Emergency queue bridge used by serverside policy scaffolding.
+C.queue_emergency = function(cmd, opts)
+  cmd = tostring(cmd or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if cmd == "" then return false end
+
+  opts = type(opts) == "table" and opts or {}
+  local qtype = tostring(opts.qtype or "bal"):gsub("^%s+", ""):gsub("%s+$", "")
+  if qtype == "" then qtype = "bal" end
+  local idx = tonumber(opts.index)
+
+  local line
+  if idx and idx >= 1 then
+    line = string.format("QUEUE INSERT %s %d %s", qtype, idx, cmd)
+  else
+    line = string.format("QUEUE ADD %s %s", qtype, cmd)
+  end
+
+  if type(send) ~= "function" then
+    _cwire_echo("cannot queue_emergency: send() missing")
+    return false
+  end
+
+  send(line, false)
+  _cwire_echo("sent: " .. line)
+  return true
 end
 
 -- Emergency hook is intentionally minimal; you can flesh this out later.

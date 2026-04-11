@@ -107,6 +107,9 @@ Yso.bootstrap = Yso.bootstrap or {}
 Yso.bootstrap.root = root
 Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.Core.api",
+  "Yso.Core.self_aff",
+  "Yso.Curing.self_curedefs",
+  "Yso.Curing.serverside_policy",
   "Yso.Core.offense_state",
   "Yso.Integration.ak_legacy_wiring",
   "Yso.Core.queue",
@@ -167,6 +170,27 @@ local function _bootstrap_require_any(mods, reload)
 end
 
 Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
+  {
+    name = "self_aff",
+    modules = { "Yso.Core.self_aff", "Yso.xml.yso_self_aff" },
+    probe = function()
+      return type((((_G.Yso or {}).selfaff or {})).has_aff) == "function"
+    end,
+  },
+  {
+    name = "self_curedefs",
+    modules = { "Yso.Curing.self_curedefs", "Yso.xml.yso_self_curedefs" },
+    probe = function()
+      return type(((((_G.Yso or {}).curing or {}).defs or {})).get) == "function"
+    end,
+  },
+  {
+    name = "serverside_policy",
+    modules = { "Yso.Curing.serverside_policy", "Yso.xml.yso_serverside_policy" },
+    probe = function()
+      return type(((((_G.Yso or {}).curing or {}).policy or {})).tick) == "function"
+    end,
+  },
   {
     name = "route_registry",
     modules = { "Yso.Combat.route_registry", "Yso.xml.route_registry" },

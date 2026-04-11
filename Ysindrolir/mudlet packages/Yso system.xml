@@ -5410,6 +5410,23 @@ Yso.curing.adapters = Yso.curing.adapters or {
     -- ex: if tag == &quot;lockpanic&quot; then _send(&quot;LEGACY LOCKPANIC&quot;) end
     _cure_echo(string.format(&quot;emergency(%s) called (adapter not yet wired)&quot;, tostring(tag)))
   end,
+
+  -- Optional tree policy hook for serverside_policy.lua.
+  set_tree_policy = function(mode, ctx)
+    _cure_echo(string.format(
+      &quot;set_tree_policy(%s) called (adapter not yet wired)&quot;,
+      tostring(mode)
+    ))
+  end,
+
+  -- Optional emergency queue hook for serverside_policy.lua.
+  queue_emergency = function(cmd, opts)
+    _cure_echo(string.format(
+      &quot;queue_emergency(%s) called (adapter not yet wired)&quot;,
+      tostring(cmd)
+    ))
+    return false
+  end,
 }
 
 -- shortcut
@@ -5782,43 +5799,187 @@ Yso.ak.init()
 -- Self-aff helpers (used by offense + queue guards)
 --========================================================--
 
-Yso      = Yso or {}
+Yso = Yso or {}
 Yso.self = Yso.self or {}
 
-function Yso.self.has_aff(aff)
-  local key = tostring(aff or &quot;&quot;):lower()
-  if key == &quot;&quot; then return false end
-
-  -- Preferred: Legacy curing table (self affs)
-  if Legacy and Legacy.Curing and type(Legacy.Curing.Affs) == &quot;table&quot; then
-    if Legacy.Curing.Affs[key] then return true end
-    -- Some tables keep TitleCase keys
-    local tc = key:gsub(&quot;^%l&quot;, string.upper)
-    if Legacy.Curing.Affs[tc] then return true end
+local function _selfaff_module()
+  if Yso and Yso.selfaff and type(Yso.selfaff) == &quot;table&quot; then
+    return Yso.selfaff
   end
+  if type(require) == &quot;function&quot; then
+    local ok = pcall(require, &quot;Yso.Core.self_aff&quot;)
+    if ok and Yso and type(Yso.selfaff) == &quot;table&quot; then
+      return Yso.selfaff
+    end
+  end
+  return nil
+end
 
-  -- Fallback: GMCP aff list shapes (varies by client/package)
+local function _gmcp_aff_has(key)
   local g = gmcp and gmcp.Char and gmcp.Char.Afflictions
-  if type(g) == &quot;table&quot; then
-    -- common list fields
-    local candidates = { g.list, g.List, g.afflictions, g.Afflictions }
-    for _, lst in ipairs(candidates) do
-      if type(lst) == &quot;table&quot; then
-        for _, v in ipairs(lst) do
-          if type(v) == &quot;string&quot; and v:lower() == key then return true end
-          if type(v) == &quot;table&quot; and v.name and tostring(v.name):lower() == key then return true end
-        end
+  if type(g) ~= &quot;table&quot; then return false end
+  local candidates = { g.list, g.List, g.afflictions, g.Afflictions }
+  for _, lst in ipairs(candidates) do
+    if type(lst) == &quot;table&quot; then
+      for _, v in ipairs(lst) do
+        if type(v) == &quot;string&quot; and v:lower() == key then return true end
+        if type(v) == &quot;table&quot; and tostring(v.name or &quot;&quot;):lower() == key then return true end
       end
     end
-    -- occasionally boolean keyed
-    if g[key] == true then return true end
   end
-
+  if g[key] == true then return true end
   return false
+end
+
+function Yso.self.has_aff(aff)
+  local SA = _selfaff_module()
+  if SA and type(SA.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(SA.has_aff, aff)
+    if ok then return v == true end
+  end
+  local key = tostring(aff or &quot;&quot;):lower()
+  if key == &quot;&quot; then return false end
+  return _gmcp_aff_has(key)
+end
+
+function Yso.self.any_aff(list)
+  local SA = _selfaff_module()
+  if SA and type(SA.any_aff) == &quot;function&quot; then
+    local ok, v = pcall(SA.any_aff, list)
+    if ok then return v == true end
+  end
+  if type(list) ~= &quot;table&quot; then return false end
+  for i = 1, #list do
+    if Yso.self.has_aff(list[i]) then return true end
+  end
+  return false
+end
+
+function Yso.self.aff_count(arg)
+  local SA = _selfaff_module()
+  if SA and type(SA.aff_count) == &quot;function&quot; then
+    local ok, v = pcall(SA.aff_count, arg)
+    if ok and type(v) == &quot;number&quot; then return v end
+  end
+  if type(arg) == &quot;table&quot; then
+    local n = 0
+    for i = 1, #arg do
+      if Yso.self.has_aff(arg[i]) then n = n + 1 end
+    end
+    return n
+  end
+  return 0
+end
+
+function Yso.self.list_affs()
+  local SA = _selfaff_module()
+  if SA and type(SA.list_affs) == &quot;function&quot; then
+    local ok, v = pcall(SA.list_affs)
+    if ok and type(v) == &quot;table&quot; then return v end
+  end
+  return {}
+end
+
+function Yso.self.gain(name, source)
+  local SA = _selfaff_module()
+  if SA and type(SA.gain) == &quot;function&quot; then
+    local ok, v = pcall(SA.gain, name, source or &quot;manual&quot;)
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.cure(name, source)
+  local SA = _selfaff_module()
+  if SA and type(SA.cure) == &quot;function&quot; then
+    local ok, v = pcall(SA.cure, name, source or &quot;manual&quot;)
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.sync_full(list, source)
+  local SA = _selfaff_module()
+  if SA and type(SA.sync_full) == &quot;function&quot; then
+    local ok, v = pcall(SA.sync_full, list, source or &quot;manual&quot;)
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.reset(source)
+  local SA = _selfaff_module()
+  if SA and type(SA.reset) == &quot;function&quot; then
+    local ok, v = pcall(SA.reset, source or &quot;manual&quot;)
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.is_prone()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_prone) == &quot;function&quot; then
+    local ok, v = pcall(SA.is_prone)
+    if ok then return v == true end
+  end
+  return Yso.self.has_aff(&quot;prone&quot;)
+end
+
+function Yso.self.is_asleep()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_asleep) == &quot;function&quot; then
+    local ok, v = pcall(SA.is_asleep)
+    if ok then return v == true end
+  end
+  return Yso.self.has_aff(&quot;sleep&quot;)
+end
+
+function Yso.self.is_blackout()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_blackout) == &quot;function&quot; then
+    local ok, v = pcall(SA.is_blackout)
+    if ok then return v == true end
+  end
+  return Yso.self.has_aff(&quot;blackout&quot;)
+end
+
+function Yso.self.is_writhed()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_writhed) == &quot;function&quot; then
+    local ok, v = pcall(SA.is_writhed)
+    if ok then return v == true end
+  end
+  return Yso.self.any_aff({ &quot;webbed&quot;, &quot;entangled&quot;, &quot;transfixed&quot;, &quot;bound&quot;, &quot;impaled&quot; })
+end
+
+function Yso.self.bleeding()
+  local SA = _selfaff_module()
+  if SA and type(SA.bleeding) == &quot;function&quot; then
+    local ok, v = pcall(SA.bleeding)
+    if ok and type(v) == &quot;number&quot; then return v end
+  end
+  local v = gmcp and gmcp.Char and gmcp.Char.Vitals and gmcp.Char.Vitals.bleeding
+  return tonumber(v) or 0
+end
+
+function Yso.self.is_standing()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_standing) == &quot;function&quot; then
+    local ok, v = pcall(SA.is_standing)
+    if ok then return v == true end
+  end
+  return (not Yso.self.is_prone()) and (not Yso.self.is_asleep())
 end
 
 function Yso.self.is_paralyzed()
   return Yso.self.has_aff(&quot;paralysis&quot;)
+end
+
+-- Try to warm-load new curing subsystems for live sessions.
+if type(require) == &quot;function&quot; then
+  pcall(require, &quot;Yso.Core.self_aff&quot;)
+  pcall(require, &quot;Yso.Curing.self_curedefs&quot;)
+  pcall(require, &quot;Yso.Curing.serverside_policy&quot;)
 end
 </script>
 					<eventHandlerList />
@@ -5940,10 +6101,52 @@ C.use_profile = function(name)
 
   if type(send) == &quot;function&quot; then
     send(string.format(&quot;curingset switch %s&quot;, name), false)
+    _G.CurrentCureset = name
     _cwire_echo(&quot;sent: curingset switch &quot;..name)
   else
     _cwire_echo(&quot;cannot use_profile(&quot;..name..&quot;): send() missing&quot;)
   end
+end
+
+-- Tree policy bridge (phase-1 conservative scaffold).
+-- aff_trigger: prioritize trigger behavior while under active pressure.
+-- aff_count: fallback/default behavior.
+C.set_tree_policy = function(mode, _ctx)
+  mode = tostring(mode or &quot;&quot;):lower()
+  if mode == &quot;&quot; then return end
+
+  -- Keep wire-level behavior simple and non-destructive in phase one.
+  -- Policy computes desired mode and the adapter exposes it for diagnostics.
+  Yso.curing = Yso.curing or {}
+  Yso.curing.tree_policy = mode
+  _cwire_echo(&quot;tree policy -&gt; &quot; .. mode)
+end
+
+-- Emergency queue bridge used by serverside policy scaffolding.
+C.queue_emergency = function(cmd, opts)
+  cmd = tostring(cmd or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+  if cmd == &quot;&quot; then return false end
+
+  opts = type(opts) == &quot;table&quot; and opts or {}
+  local qtype = tostring(opts.qtype or &quot;bal&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+  if qtype == &quot;&quot; then qtype = &quot;bal&quot; end
+  local idx = tonumber(opts.index)
+
+  local line
+  if idx and idx &gt;= 1 then
+    line = string.format(&quot;QUEUE INSERT %s %d %s&quot;, qtype, idx, cmd)
+  else
+    line = string.format(&quot;QUEUE ADD %s %s&quot;, qtype, cmd)
+  end
+
+  if type(send) ~= &quot;function&quot; then
+    _cwire_echo(&quot;cannot queue_emergency: send() missing&quot;)
+    return false
+  end
+
+  send(line, false)
+  _cwire_echo(&quot;sent: &quot; .. line)
+  return true
 end
 
 -- Emergency hook is intentionally minimal; you can flesh this out later.
@@ -6538,41 +6741,6 @@ local function _clear_payload(payload)
   if _trim(payload.class) ~= &quot;&quot; then Q._staged.class = nil end
 end
 
-local function _owned_lanes_for_qtype(qtype)
-  qtype = _trim(qtype):lower()
-  if qtype == &quot;&quot; then return {} end
-
-  if qtype == &quot;eqbal&quot; or qtype == &quot;be&quot; or qtype == &quot;eb&quot; then
-    return { &quot;eq&quot;, &quot;bal&quot; }
-  end
-
-  local lane = _lane_key(qtype)
-  if lane then return { lane } end
-  return {}
-end
-
-local function _clear_owned_for_qtype(qtype)
-  local lanes = _owned_lanes_for_qtype(qtype)
-  if #lanes == 0 then return end
-  for i = 1, #lanes do
-    Q.clear_owned(lanes[i])
-  end
-end
-
-local function _invalidate_owned_on_raw_queue(verb, qtype)
-  verb = _trim(verb):upper()
-  if verb == &quot;CLEARQUEUE&quot;
-     or verb == &quot;ADD&quot;
-     or verb == &quot;ADDCLEAR&quot;
-     or verb == &quot;ADDCLEARFULL&quot;
-     or verb == &quot;PREPEND&quot;
-     or verb == &quot;INSERT&quot;
-     or verb == &quot;REPLACE&quot;
-  then
-    _clear_owned_for_qtype(qtype)
-  end
-end
-
 local function _raw_queue(verb, qtype, payload)
   verb = _trim(verb):upper()
   qtype = _trim(qtype)
@@ -6589,11 +6757,7 @@ local function _raw_queue(verb, qtype, payload)
   end
   payload = _trim(payload)
   if verb == &quot;&quot; or qtype == &quot;&quot; or payload == &quot;&quot; then return false end
-  local ok = _send_compound((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, payload))
-  if ok then
-    _invalidate_owned_on_raw_queue(verb, qtype)
-  end
-  return ok
+  return _send_compound((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, payload))
 end
 
 local function _owned_table()
@@ -6897,14 +7061,7 @@ function Q.raw(mode, qtype, payload)
   end
   local body = _trim(mode or qtype)
   if body == &quot;&quot; then return false end
-  local ok = _send_compound(body)
-  if not ok then return false end
-
-  local raw_qtype = body:match(&quot;^CLEARQUEUE%s+(.+)$&quot;)
-  if raw_qtype then
-    _invalidate_owned_on_raw_queue(&quot;CLEARQUEUE&quot;, raw_qtype)
-  end
-  return true
+  return _send_compound(body)
 end
 
 Q.mark_payload_fired = _mark_payload_fired
@@ -16540,16 +16697,38 @@ end
 local function _self_has_aff(aff)
   aff = tostring(aff or &quot;&quot;):lower()
   if aff == &quot;&quot; then return false end
+
+  if Yso and Yso.selfaff and type(Yso.selfaff.normalize) == &quot;function&quot; then
+    aff = Yso.selfaff.normalize(aff)
+  end
+
   if Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot; then
     local ok, v = pcall(Yso.self.has_aff, aff)
     if ok and v == true then return true end
   end
-  if Legacy and Legacy.Curing and type(Legacy.Curing.Affs) == &quot;table&quot; and Legacy.Curing.Affs[aff] then
+
+  if Yso and type(Yso.affs) == &quot;table&quot; and Yso.affs[aff] then
     return true
   end
-  if affstrack and type(affstrack.score) == &quot;table&quot; then
-    return (tonumber(affstrack.score[aff]) or 0) &gt;= 100
+
+  local g = gmcp and gmcp.Char and gmcp.Char.Afflictions
+  if type(g) == &quot;table&quot; then
+    if g[aff] == true then return true end
+    local lists = { g.List, g.list, g.Afflictions, g.afflictions }
+    for i = 1, #lists do
+      local lst = lists[i]
+      if type(lst) == &quot;table&quot; then
+        for j = 1, #lst do
+          local item = lst[j]
+          local name = type(item) == &quot;table&quot; and item.name or item
+          if tostring(name or &quot;&quot;):lower() == aff then
+            return true
+          end
+        end
+      end
+    end
   end
+
   return false
 end
 
@@ -16623,9 +16802,9 @@ local function _arm_candidate_for_restore()
 end
 
 local function _restore_finished()
-  return (not _self_has_aff(&quot;damagedleftleg&quot;))
-     and (not _self_has_aff(&quot;damagedrightleg&quot;))
-     and _self_standing()
+  local left_damaged = _self_has_aff(&quot;damagedleftleg&quot;) or (_self_score(&quot;damagedleftleg&quot;) &gt; 0)
+  local right_damaged = _self_has_aff(&quot;damagedrightleg&quot;) or (_self_score(&quot;damagedrightleg&quot;) &gt; 0)
+  return (not left_damaged) and (not right_damaged) and _self_standing()
 end
 
 function P.note_leg_restored(aff)
@@ -21059,7 +21238,7 @@ _sync_mode(&quot;init&quot;)
 --   • F5 “escape” handler for Achaea (Yso namespace)
 --   • Respects current Yso command separator (Yso.sep; default &quot;&amp;&amp;&quot;)
 --   • Universe TOUCH defaults to Newthera
---   • Uses Legacy affliction tracking (Legacy.Curing.Affs) when present
+--   • Prefers Yso self-aff tracker, with compatibility fallbacks
 --   • Uses Yso.queue.*_clear (or addclear) when available; otherwise sends directly
 --
 -- Priority:
@@ -21226,7 +21405,14 @@ local function _queue_clear(qtype, payload)
   _send_compound(payload)
 end
 
--- ---------------- affliction source: Legacy-first ----------------
+-- ---------------- affliction source: Yso-first ----------------
+local function _yso_affs()
+  if type(Yso) == &quot;table&quot; and type(Yso.affs) == &quot;table&quot; then
+    return Yso.affs
+  end
+  return nil
+end
+
 local function _legacy_affs()
   if type(Legacy) == &quot;table&quot;
      and type(Legacy.Curing) == &quot;table&quot;
@@ -21237,30 +21423,45 @@ local function _legacy_affs()
   return nil
 end
 
-local function _yso_affs()
-  if type(Yso) == &quot;table&quot; and type(Yso.affs) == &quot;table&quot; then
-    return Yso.affs
+local function _gmcp_has_aff(key)
+  local g = gmcp and gmcp.Char and gmcp.Char.Afflictions
+  if type(g) ~= &quot;table&quot; then return false end
+  if g[key] == true then return true end
+
+  local lists = { g.List, g.list, g.Afflictions, g.afflictions }
+  for i = 1, #lists do
+    local list = lists[i]
+    if type(list) == &quot;table&quot; then
+      for j = 1, #list do
+        local v = list[j]
+        local name = type(v) == &quot;table&quot; and v.name or v
+        if tostring(name or &quot;&quot;):lower() == key then
+          return true
+        end
+      end
+    end
   end
-  return nil
+  return false
 end
 
 local function _has_aff(key)
-  key = tostring(key or &quot;&quot;)
+  key = tostring(key or &quot;&quot;):lower()
   if key == &quot;&quot; then return false end
 
-  local L = _legacy_affs()
-  if L then
-    if L[key] then return true end
-    local lk = key:lower()
-    if lk ~= key and L[lk] then return true end
+  if Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(Yso.self.has_aff, key)
+    if ok and v == true then return true end
   end
 
   local Y = _yso_affs()
   if Y then
     if Y[key] then return true end
-    local lk = key:lower()
-    if lk ~= key and Y[lk] then return true end
   end
+
+  if _gmcp_has_aff(key) then return true end
+
+  local L = _legacy_affs()
+  if L and L[key] then return true end
 
   return false
 end
@@ -22690,6 +22891,1494 @@ return B
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
+					<name>Yso self aff</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso self aff
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso/Core/self_aff.lua
+-- Canonical self-affliction truth for Yso.
+--  * Owns normalized self aff state and broader curing-relevant self state.
+--  * Prefers GMCP ingest, accepts text fallback when GMCP is stale.
+--  * Exposes stable helpers through Yso.self.*.
+--========================================================--
+
+Yso = Yso or {}
+Yso.selfaff = Yso.selfaff or {}
+Yso.self = Yso.self or {}
+Yso.affs = Yso.affs or {}
+Yso.util = Yso.util or {}
+
+local SA = Yso.selfaff
+
+SA.cfg = SA.cfg or {
+  debug = false,
+  text_stale_guard_s = 1.25,
+}
+
+SA.affs = SA.affs or {}
+SA.states = SA.states or {
+  prone = false,
+  sleep = false,
+  blackout = false,
+  bleeding = 0,
+  writhe = {
+    webbed = false,
+    entangled = false,
+    transfixed = false,
+    bound = false,
+    impaled = false,
+  },
+}
+
+SA.meta = SA.meta or {
+  last_gmcp_at = 0,
+  last_text_at = 0,
+  last_source = &quot;&quot;,
+}
+
+SA._eh = SA._eh or {}
+SA._tr = SA._tr or {}
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 1e12 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
+local function _echo(msg)
+  if SA.cfg.debug ~= true then return end
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;steel_blue&gt;[Yso:self_aff] &lt;reset&gt;%s\n&quot;, tostring(msg)))
+  end
+end
+
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local _aliases = {
+  [&quot;blindness&quot;] = &quot;blind&quot;,
+  [&quot;deafness&quot;] = &quot;deaf&quot;,
+  [&quot;health leech&quot;] = &quot;healthleech&quot;,
+  [&quot;mana leech&quot;] = &quot;manaleech&quot;,
+  [&quot;paralyzed&quot;] = &quot;paralysis&quot;,
+  [&quot;sleeping&quot;] = &quot;sleep&quot;,
+  [&quot;asleep&quot;] = &quot;sleep&quot;,
+  [&quot;fallen&quot;] = &quot;prone&quot;,
+  [&quot;prefarar&quot;] = &quot;sensitivity&quot;,
+  [&quot;lover&apos;s effect&quot;] = &quot;loverseffect&quot;,
+  [&quot;internal trauma&quot;] = &quot;internaltrauma&quot;,
+  [&quot;tempered humours&quot;] = &quot;temperedhumours&quot;,
+  [&quot;stupidity&quot;] = &quot;stupidity&quot;,
+  [&quot;crippled limb&quot;] = &quot;crippledlimb&quot;,
+  [&quot;damaged limb&quot;] = &quot;damagedlimb&quot;,
+  [&quot;mangled limb&quot;] = &quot;mangledlimb&quot;,
+  [&quot;deadening&quot;] = &quot;deadening&quot;,
+  [&quot;healthleech&quot;] = &quot;healthleech&quot;,
+  [&quot;manaleech&quot;] = &quot;manaleech&quot;,
+}
+
+local _state_affs = {
+  prone = true,
+  sleep = true,
+  blackout = true,
+  webbed = true,
+  entangled = true,
+  transfixed = true,
+  bound = true,
+  impaled = true,
+}
+
+local _writhe_affs = {
+  webbed = true,
+  entangled = true,
+  transfixed = true,
+  bound = true,
+  impaled = true,
+}
+
+function SA.normalize(name)
+  local s = tostring(name or &quot;&quot;):lower()
+  if s == &quot;&quot; then return &quot;&quot; end
+
+  s = s:gsub(&quot;[%.,;:!%?]+$&quot;, &quot;&quot;)
+  s = s:gsub(&quot;[_%-]+&quot;, &quot; &quot;)
+  s = s:gsub(&quot;%s+&quot;, &quot; &quot;)
+  s = _trim(s)
+  if s == &quot;&quot; then return &quot;&quot; end
+
+  local alias = _aliases[s]
+  if alias then return alias end
+
+  s = s:gsub(&quot;%s+&quot;, &quot;&quot;)
+  alias = _aliases[s]
+  if alias then return alias end
+
+  return s
+end
+
+Yso.util.aff_aliases = Yso.util.aff_aliases or {}
+for k, v in pairs(_aliases) do
+  Yso.util.aff_aliases[k] = v
+end
+Yso.util.normalize_aff_name = SA.normalize
+Yso.util.display_aff_name = SA.normalize
+
+local function _mark_meta(source)
+  source = tostring(source or &quot;&quot;)
+  local now = _now()
+  SA.meta.last_source = source
+  if source:find(&quot;gmcp&quot;, 1, true) then
+    SA.meta.last_gmcp_at = now
+  elseif source:find(&quot;text&quot;, 1, true) then
+    SA.meta.last_text_at = now
+  end
+end
+
+local function _text_allowed()
+  local stale = tonumber(SA.cfg.text_stale_guard_s or 1.25) or 1.25
+  if stale &lt;= 0 then return true end
+  local last = tonumber(SA.meta.last_gmcp_at or 0) or 0
+  if last &lt;= 0 then return true end
+  return (_now() - last) &gt;= stale
+end
+
+local function _ensure_row(key)
+  local row = SA.affs[key]
+  if type(row) == &quot;table&quot; then return row end
+  row = {
+    active = false,
+    first_seen = 0,
+    last_seen = 0,
+    last_cured = 0,
+    source = &quot;&quot;,
+  }
+  SA.affs[key] = row
+  return row
+end
+
+local function _sync_mirror(key, active)
+  if active then
+    Yso.affs[key] = true
+  else
+    Yso.affs[key] = nil
+  end
+end
+
+local function _set_state_from_aff(key, active)
+  if key == &quot;prone&quot; then
+    SA.states.prone = (active == true)
+  elseif key == &quot;sleep&quot; then
+    SA.states.sleep = (active == true)
+  elseif key == &quot;blackout&quot; then
+    SA.states.blackout = (active == true)
+  elseif _writhe_affs[key] then
+    SA.states.writhe[key] = (active == true)
+  end
+end
+
+local function _set_aff_active(key, active, source)
+  key = SA.normalize(key)
+  if key == &quot;&quot; then return false end
+  source = tostring(source or &quot;manual&quot;)
+
+  if source:find(&quot;text&quot;, 1, true) and not _text_allowed() then
+    return false
+  end
+
+  local row = _ensure_row(key)
+  local now = _now()
+  local was = (row.active == true)
+  local is = (active == true)
+
+  if is then
+    if not was and (tonumber(row.first_seen or 0) or 0) &lt;= 0 then
+      row.first_seen = now
+    end
+    row.last_seen = now
+  elseif was then
+    row.last_cured = now
+  end
+
+  row.active = is
+  row.source = source
+  SA.affs[key] = row
+  _sync_mirror(key, is)
+
+  if _state_affs[key] then
+    _set_state_from_aff(key, is)
+  end
+
+  if was ~= is and type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.self.aff.changed&quot;, key, is, source)
+  end
+
+  _mark_meta(source)
+  return true
+end
+
+local function _parse_aff_list(payload)
+  local out = {}
+  if type(payload) ~= &quot;table&quot; then return out end
+
+  local function add_one(v)
+    if type(v) == &quot;string&quot; then
+      local n = SA.normalize(v)
+      if n ~= &quot;&quot; then out[n] = true end
+      return
+    end
+    if type(v) == &quot;table&quot; then
+      local name = v.name or v.affliction or v.aff or v[1]
+      local n = SA.normalize(name)
+      if n ~= &quot;&quot; then out[n] = true end
+    end
+  end
+
+  if type(payload.List) == &quot;table&quot; then
+    for _, v in ipairs(payload.List) do add_one(v) end
+  elseif type(payload.list) == &quot;table&quot; then
+    for _, v in ipairs(payload.list) do add_one(v) end
+  elseif type(payload.Afflictions) == &quot;table&quot; then
+    for _, v in ipairs(payload.Afflictions) do add_one(v) end
+  elseif type(payload.afflictions) == &quot;table&quot; then
+    for _, v in ipairs(payload.afflictions) do add_one(v) end
+  else
+    for _, v in ipairs(payload) do add_one(v) end
+  end
+
+  return out
+end
+
+function SA.gain(name, source)
+  return _set_aff_active(name, true, source or &quot;manual&quot;)
+end
+
+function SA.cure(name, source)
+  return _set_aff_active(name, false, source or &quot;manual&quot;)
+end
+
+function SA.sync_full(list, source)
+  source = tostring(source or &quot;gmcp.full&quot;)
+  local next_map = _parse_aff_list(list)
+  local seen = {}
+
+  for aff in pairs(next_map) do
+    _set_aff_active(aff, true, source)
+    seen[aff] = true
+  end
+
+  for aff, row in pairs(SA.affs) do
+    if type(row) == &quot;table&quot; and row.active == true and not seen[aff] then
+      _set_aff_active(aff, false, source)
+    end
+  end
+
+  _mark_meta(source)
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.self.aff.synced&quot;, source)
+  end
+  return true
+end
+
+function SA.reset(source)
+  source = tostring(source or &quot;reset&quot;)
+  for aff, row in pairs(SA.affs) do
+    if type(row) == &quot;table&quot; and row.active == true then
+      _set_aff_active(aff, false, source)
+    end
+  end
+  SA.states.prone = false
+  SA.states.sleep = false
+  SA.states.blackout = false
+  SA.states.bleeding = 0
+  for k in pairs(SA.states.writhe) do
+    SA.states.writhe[k] = false
+  end
+  _mark_meta(source)
+  return true
+end
+
+function SA.set_bleeding(value, source)
+  local n = tonumber(value) or 0
+  if n &lt; 0 then n = 0 end
+  SA.states.bleeding = n
+  _mark_meta(source or &quot;gmcp.vitals&quot;)
+end
+
+function SA.ingest_gmcp_aff_list()
+  local pkt = gmcp and gmcp.Char and gmcp.Char.Afflictions
+  if type(pkt) ~= &quot;table&quot; then return false end
+  if type(pkt.List) == &quot;table&quot; or type(pkt.list) == &quot;table&quot; then
+    SA.sync_full(pkt, &quot;gmcp.full&quot;)
+    return true
+  end
+  return false
+end
+
+function SA.ingest_gmcp_add()
+  local pkt = gmcp and gmcp.Char and gmcp.Char.Afflictions and gmcp.Char.Afflictions.Add
+  if type(pkt) ~= &quot;table&quot; then return false end
+  local name = pkt.name or pkt.affliction or pkt.aff or pkt[1]
+  if not name then return false end
+  return SA.gain(name, &quot;gmcp.add&quot;)
+end
+
+function SA.ingest_gmcp_remove()
+  local pkt = gmcp and gmcp.Char and gmcp.Char.Afflictions and gmcp.Char.Afflictions.Remove
+  if type(pkt) ~= &quot;table&quot; then return false end
+  local name = pkt.name or pkt.affliction or pkt.aff or pkt[1]
+  if not name then return false end
+  return SA.cure(name, &quot;gmcp.remove&quot;)
+end
+
+function SA.ingest_gmcp_vitals()
+  local v = gmcp and gmcp.Char and gmcp.Char.Vitals
+  if type(v) ~= &quot;table&quot; then return false end
+
+  local posture = tostring(v.position or v.posture or v.pose or &quot;&quot;):lower()
+  if posture ~= &quot;&quot; then
+    if posture:find(&quot;prone&quot;, 1, true) or posture:find(&quot;fallen&quot;, 1, true) then
+      SA.gain(&quot;prone&quot;, &quot;gmcp.vitals&quot;)
+    elseif posture:find(&quot;stand&quot;, 1, true) then
+      SA.cure(&quot;prone&quot;, &quot;gmcp.vitals&quot;)
+    end
+
+    if posture:find(&quot;sleep&quot;, 1, true) then
+      SA.gain(&quot;sleep&quot;, &quot;gmcp.vitals&quot;)
+    elseif posture:find(&quot;stand&quot;, 1, true) or posture:find(&quot;sit&quot;, 1, true) or posture:find(&quot;prone&quot;, 1, true) then
+      SA.cure(&quot;sleep&quot;, &quot;gmcp.vitals&quot;)
+    end
+  end
+
+  if v.bleeding ~= nil then
+    SA.set_bleeding(v.bleeding, &quot;gmcp.vitals&quot;)
+  end
+
+  _mark_meta(&quot;gmcp.vitals&quot;)
+  return true
+end
+
+function SA.ingest_text_gain(name)
+  return SA.gain(name, &quot;text&quot;)
+end
+
+function SA.ingest_text_cure(name)
+  return SA.cure(name, &quot;text&quot;)
+end
+
+function SA.has_aff(aff)
+  local key = SA.normalize(aff)
+  if key == &quot;&quot; then return false end
+  local row = SA.affs[key]
+  return type(row) == &quot;table&quot; and row.active == true
+end
+
+function SA.any_aff(list)
+  if type(list) ~= &quot;table&quot; then return false end
+  for i = 1, #list do
+    if SA.has_aff(list[i]) then return true end
+  end
+  return false
+end
+
+function SA.aff_count(arg)
+  local c = 0
+  if type(arg) == &quot;table&quot; then
+    for i = 1, #arg do
+      if SA.has_aff(arg[i]) then c = c + 1 end
+    end
+    return c
+  end
+
+  for _, row in pairs(SA.affs) do
+    if type(row) == &quot;table&quot; and row.active == true then
+      c = c + 1
+    end
+  end
+  return c
+end
+
+function SA.list_affs()
+  local out = {}
+  for aff, row in pairs(SA.affs) do
+    if type(row) == &quot;table&quot; and row.active == true then
+      out[#out + 1] = aff
+    end
+  end
+  table.sort(out)
+  return out
+end
+
+function SA.is_prone()
+  return SA.states.prone == true or SA.has_aff(&quot;prone&quot;)
+end
+
+function SA.is_asleep()
+  return SA.states.sleep == true or SA.has_aff(&quot;sleep&quot;)
+end
+
+function SA.is_blackout()
+  return SA.states.blackout == true or SA.has_aff(&quot;blackout&quot;)
+end
+
+function SA.is_writhed()
+  for _, v in pairs(SA.states.writhe or {}) do
+    if v == true then return true end
+  end
+  return false
+end
+
+function SA.bleeding()
+  return tonumber(SA.states.bleeding or 0) or 0
+end
+
+function SA.is_standing()
+  if SA.is_prone() then return false end
+  if SA.is_asleep() then return false end
+  return true
+end
+
+Yso.self.has_aff = function(aff) return SA.has_aff(aff) end
+Yso.self.any_aff = function(list) return SA.any_aff(list) end
+Yso.self.aff_count = function(arg) return SA.aff_count(arg) end
+Yso.self.list_affs = function() return SA.list_affs() end
+Yso.self.gain = function(name, source) return SA.gain(name, source) end
+Yso.self.cure = function(name, source) return SA.cure(name, source) end
+Yso.self.sync_full = function(list, source) return SA.sync_full(list, source) end
+Yso.self.reset = function(source) return SA.reset(source) end
+Yso.self.is_prone = function() return SA.is_prone() end
+Yso.self.is_asleep = function() return SA.is_asleep() end
+Yso.self.is_blackout = function() return SA.is_blackout() end
+Yso.self.is_writhed = function() return SA.is_writhed() end
+Yso.self.bleeding = function() return SA.bleeding() end
+Yso.self.is_standing = function() return SA.is_standing() end
+Yso.self.is_paralyzed = function() return SA.has_aff(&quot;paralysis&quot;) end
+
+local function _kill_eh(id)
+  if id and type(killAnonymousEventHandler) == &quot;function&quot; then
+    pcall(killAnonymousEventHandler, id)
+  end
+end
+
+local function _kill_tr(id)
+  if id and type(killTrigger) == &quot;function&quot; then
+    pcall(killTrigger, id)
+  end
+end
+
+function SA.install_hooks()
+  if SA._hooks_installed == true then return true end
+
+  if type(registerAnonymousEventHandler) == &quot;function&quot; then
+    _kill_eh(SA._eh.aff_list)
+    SA._eh.aff_list = registerAnonymousEventHandler(&quot;gmcp.Char.Afflictions.List&quot;, function()
+      SA.ingest_gmcp_aff_list()
+    end)
+
+    _kill_eh(SA._eh.aff_add)
+    SA._eh.aff_add = registerAnonymousEventHandler(&quot;gmcp.Char.Afflictions.Add&quot;, function()
+      SA.ingest_gmcp_add()
+    end)
+
+    _kill_eh(SA._eh.aff_remove)
+    SA._eh.aff_remove = registerAnonymousEventHandler(&quot;gmcp.Char.Afflictions.Remove&quot;, function()
+      SA.ingest_gmcp_remove()
+    end)
+
+    _kill_eh(SA._eh.vitals)
+    SA._eh.vitals = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
+      SA.ingest_gmcp_vitals()
+    end)
+  end
+
+  if type(tempRegexTrigger) == &quot;function&quot; then
+    _kill_tr(SA._tr.aff_cured)
+    SA._tr.aff_cured = tempRegexTrigger([[^You have cured the ([\w&apos; -]+) affliction\.$]], function()
+      if matches and matches[2] then
+        SA.ingest_text_cure(matches[2])
+      end
+    end)
+
+    _kill_tr(SA._tr.not_prone)
+    SA._tr.not_prone = tempRegexTrigger([[^You are not fallen or kneeling\.$]], function()
+      SA.ingest_text_cure(&quot;prone&quot;)
+    end)
+  end
+
+  SA._hooks_installed = true
+  return true
+end
+
+SA.install_hooks()
+SA.ingest_gmcp_aff_list()
+SA.ingest_gmcp_vitals()
+
+return SA
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso self curedefs</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso self curedefs
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso/Curing/self_curedefs.lua
+-- Hand-maintained self cure metadata derived from AFFLICTION_CURES.txt.
+-- Metadata only (no live state).
+--========================================================--
+
+Yso = Yso or {}
+Yso.curing = Yso.curing or {}
+Yso.curing.defs = Yso.curing.defs or {}
+
+local D = Yso.curing.defs
+
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _canon(name)
+  if Yso and Yso.selfaff and type(Yso.selfaff.normalize) == &quot;function&quot; then
+    return Yso.selfaff.normalize(name)
+  end
+  local s = tostring(name or &quot;&quot;):lower()
+  s = s:gsub(&quot;[%.,;:!%?]+$&quot;, &quot;&quot;)
+  s = s:gsub(&quot;[_%-]+&quot;, &quot; &quot;)
+  s = s:gsub(&quot;%s+&quot;, &quot; &quot;)
+  s = _trim(s)
+  s = s:gsub(&quot;%s+&quot;, &quot;&quot;)
+  return s
+end
+
+local function _norm_bucket(v)
+  v = tostring(v or &quot;&quot;):lower():gsub(&quot;[%s%-_]+&quot;, &quot;&quot;)
+  if v == &quot;&quot; or v == &quot;-&quot; then return nil end
+  return v
+end
+
+local RAW = {
+  { canon = &quot;ablaze&quot;, action = &quot;apply&quot;, herb = &quot;mending&quot;, alchemy = &quot;mending&quot;, bucket = &quot;mending&quot;, aliases = { &quot;Ablaze&quot; } },
+  { canon = &quot;addiction&quot;, action = &quot;eat&quot;, herb = &quot;ginseng&quot;, alchemy = &quot;ferrum&quot;, bucket = &quot;ginseng&quot;, aliases = { &quot;Addiction&quot; } },
+  { canon = &quot;aeon&quot;, action = &quot;smoke&quot;, herb = &quot;elm&quot;, alchemy = &quot;cinnabar&quot;, bucket = &quot;elm&quot;, aliases = { &quot;Aeon&quot; } },
+  { canon = &quot;agoraphobia&quot;, action = &quot;eat&quot;, herb = &quot;lobelia&quot;, alchemy = &quot;argentum&quot;, bucket = &quot;lobelia&quot;, aliases = { &quot;Agoraphobia&quot; } },
+  { canon = &quot;anorexia&quot;, action = &quot;apply&quot;, herb = &quot;epidermal&quot;, alchemy = &quot;epidermal&quot;, bucket = &quot;epidermal&quot;, aliases = { &quot;Anorexia&quot; } },
+  { canon = &quot;asthma&quot;, action = &quot;eat&quot;, herb = &quot;kelp&quot;, alchemy = &quot;aurum&quot;, bucket = &quot;kelp&quot;, aliases = { &quot;Asthma&quot; } },
+  { canon = &quot;bleeding&quot;, action = &quot;clot&quot;, herb = nil, alchemy = nil, bucket = &quot;clot&quot;, aliases = { &quot;Bleeding&quot; } },
+  { canon = &quot;blind&quot;, action = &quot;apply&quot;, herb = &quot;epidermal&quot;, alchemy = &quot;epidermal&quot;, bucket = &quot;epidermal&quot;, aliases = { &quot;Blindness&quot;, &quot;blindness&quot; } },
+  { canon = &quot;claustrophobia&quot;, action = &quot;eat&quot;, herb = &quot;lobelia&quot;, alchemy = &quot;argentum&quot;, bucket = &quot;lobelia&quot;, aliases = { &quot;Claustrophobia&quot; } },
+  { canon = &quot;clumsiness&quot;, action = &quot;eat&quot;, herb = &quot;kelp&quot;, alchemy = &quot;aurum&quot;, bucket = &quot;kelp&quot;, aliases = { &quot;Clumsiness&quot; } },
+  { canon = &quot;concussion&quot;, action = &quot;apply&quot;, herb = &quot;restoration&quot;, alchemy = &quot;restoration&quot;, bucket = &quot;restoration&quot;, aliases = { &quot;Concussion&quot; } },
+  { canon = &quot;confusion&quot;, action = &quot;eat&quot;, herb = &quot;pricklyash&quot;, alchemy = &quot;stannum&quot;, bucket = &quot;pricklyash&quot;, aliases = { &quot;Confusion&quot;, &quot;Prickly Ash&quot; } },
+  { canon = &quot;crippledlimb&quot;, action = &quot;apply&quot;, herb = &quot;mending&quot;, alchemy = &quot;mending&quot;, bucket = &quot;mending&quot;, aliases = { &quot;Crippled limb&quot; } },
+  { canon = &quot;damagedlimb&quot;, action = &quot;apply&quot;, herb = &quot;restoration&quot;, alchemy = &quot;restoration&quot;, bucket = &quot;restoration&quot;, aliases = { &quot;Damaged limb&quot; } },
+  { canon = &quot;darkshade&quot;, action = &quot;eat&quot;, herb = &quot;ginseng&quot;, alchemy = &quot;ferrum&quot;, bucket = &quot;ginseng&quot;, aliases = { &quot;Darkshade&quot; } },
+  { canon = &quot;deadening&quot;, action = &quot;smoke&quot;, herb = &quot;elm&quot;, alchemy = &quot;cinnabar&quot;, bucket = &quot;elm&quot;, aliases = { &quot;Deadening&quot; } },
+  { canon = &quot;deaf&quot;, action = &quot;apply&quot;, herb = &quot;epidermal&quot;, alchemy = &quot;epidermal&quot;, bucket = &quot;epidermal&quot;, aliases = { &quot;Deafness&quot;, &quot;deafness&quot; } },
+  { canon = &quot;dementia&quot;, action = &quot;eat&quot;, herb = &quot;pricklyash&quot;, alchemy = &quot;stannum&quot;, bucket = &quot;pricklyash&quot;, aliases = { &quot;Dementia&quot; } },
+  { canon = &quot;disfigurement&quot;, action = &quot;smoke&quot;, herb = &quot;valerian&quot;, alchemy = &quot;realgar&quot;, bucket = &quot;valerian&quot;, aliases = { &quot;Disfigurement&quot; } },
+  { canon = &quot;dissonance&quot;, action = &quot;eat&quot;, herb = &quot;goldenseal&quot;, alchemy = &quot;plumbum&quot;, bucket = &quot;goldenseal&quot;, aliases = { &quot;Dissonance&quot; } },
+  { canon = &quot;dizziness&quot;, action = &quot;eat&quot;, herb = &quot;goldenseal&quot;, alchemy = &quot;plumbum&quot;, bucket = &quot;goldenseal&quot;, aliases = { &quot;Dizziness&quot; } },
+  { canon = &quot;drowning&quot;, action = &quot;eat&quot;, herb = &quot;pear&quot;, alchemy = &quot;calcite&quot;, bucket = &quot;pear&quot;, aliases = { &quot;Drowning&quot; } },
+  { canon = &quot;entangled&quot;, action = &quot;writhe&quot;, herb = nil, alchemy = nil, bucket = &quot;writhe&quot;, aliases = { &quot;Entangled&quot; }, family = &quot;writhe&quot; },
+  { canon = &quot;epilepsy&quot;, action = &quot;eat&quot;, herb = &quot;goldenseal&quot;, alchemy = &quot;plumbum&quot;, bucket = &quot;goldenseal&quot;, aliases = { &quot;Epilepsy&quot; } },
+  { canon = &quot;fear&quot;, action = &quot;compose&quot;, herb = nil, alchemy = nil, bucket = &quot;compose&quot;, aliases = { &quot;Fear&quot; } },
+  { canon = &quot;freezing&quot;, action = &quot;apply&quot;, herb = &quot;caloric&quot;, alchemy = &quot;caloric&quot;, bucket = &quot;caloric&quot;, aliases = { &quot;Freezing&quot; } },
+  { canon = &quot;generosity&quot;, action = &quot;eat&quot;, herb = &quot;bellwort&quot;, alchemy = &quot;cuprum&quot;, bucket = &quot;bellwort&quot;, aliases = { &quot;Generosity&quot; } },
+  { canon = &quot;hallucinations&quot;, action = &quot;eat&quot;, herb = &quot;pricklyash&quot;, alchemy = &quot;stannum&quot;, bucket = &quot;pricklyash&quot;, aliases = { &quot;Hallucinations&quot; } },
+  { canon = &quot;haemophilia&quot;, action = &quot;eat&quot;, herb = &quot;ginseng&quot;, alchemy = &quot;ferrum&quot;, bucket = &quot;ginseng&quot;, aliases = { &quot;Haemophilia&quot; } },
+  { canon = &quot;healthleech&quot;, action = &quot;eat&quot;, herb = &quot;kelp&quot;, alchemy = &quot;aurum&quot;, bucket = &quot;kelp&quot;, aliases = { &quot;Health Leech&quot; } },
+  { canon = &quot;hellsight&quot;, action = &quot;smoke&quot;, herb = &quot;valerian&quot;, alchemy = &quot;realgar&quot;, bucket = &quot;valerian&quot;, aliases = { &quot;Hellsight&quot; } },
+  { canon = &quot;hypochondria&quot;, action = &quot;eat&quot;, herb = &quot;kelp&quot;, alchemy = &quot;aurum&quot;, bucket = &quot;kelp&quot;, aliases = { &quot;Hypochondria&quot; } },
+  { canon = &quot;hypersomnia&quot;, action = &quot;eat&quot;, herb = &quot;pricklyash&quot;, alchemy = &quot;stannum&quot;, bucket = &quot;pricklyash&quot;, aliases = { &quot;Hypersomnia&quot; } },
+  { canon = &quot;impatience&quot;, action = &quot;eat&quot;, herb = &quot;goldenseal&quot;, alchemy = &quot;plumbum&quot;, bucket = &quot;goldenseal&quot;, aliases = { &quot;Impatience&quot; } },
+  { canon = &quot;indifference&quot;, action = &quot;eat&quot;, herb = &quot;bellwort&quot;, alchemy = &quot;cuprum&quot;, bucket = &quot;bellwort&quot;, aliases = { &quot;Indifference&quot; } },
+  { canon = &quot;internaltrauma&quot;, action = &quot;apply&quot;, herb = &quot;restoration&quot;, alchemy = &quot;restoration&quot;, bucket = &quot;restoration&quot;, aliases = { &quot;Internal Trauma&quot; } },
+  { canon = &quot;justice&quot;, action = &quot;eat&quot;, herb = &quot;bellwort&quot;, alchemy = &quot;cuprum&quot;, bucket = &quot;bellwort&quot;, aliases = { &quot;Justice&quot; } },
+  { canon = &quot;lethargy&quot;, action = &quot;eat&quot;, herb = &quot;ginseng&quot;, alchemy = &quot;ferrum&quot;, bucket = &quot;ginseng&quot;, aliases = { &quot;Lethargy&quot; } },
+  { canon = &quot;loneliness&quot;, action = &quot;eat&quot;, herb = &quot;lobelia&quot;, alchemy = &quot;argentum&quot;, bucket = &quot;lobelia&quot;, aliases = { &quot;Loneliness&quot; } },
+  { canon = &quot;loverseffect&quot;, action = &quot;eat&quot;, herb = &quot;bellwort&quot;, alchemy = &quot;cuprum&quot;, bucket = &quot;bellwort&quot;, aliases = { &quot;Lover&apos;s Effect&quot; } },
+  { canon = &quot;masochism&quot;, action = &quot;eat&quot;, herb = &quot;lobelia&quot;, alchemy = &quot;argentum&quot;, bucket = &quot;lobelia&quot;, aliases = { &quot;Masochism&quot; } },
+  { canon = &quot;manaleech&quot;, action = &quot;smoke&quot;, herb = &quot;valerian&quot;, alchemy = &quot;realgar&quot;, bucket = &quot;valerian&quot;, aliases = { &quot;Mana Leech&quot; } },
+  { canon = &quot;mangledlimb&quot;, action = &quot;apply&quot;, herb = &quot;restoration&quot;, alchemy = &quot;restoration&quot;, bucket = &quot;restoration&quot;, aliases = { &quot;Mangled limb&quot; } },
+  { canon = &quot;nausea&quot;, action = &quot;eat&quot;, herb = &quot;ginseng&quot;, alchemy = &quot;ferrum&quot;, bucket = &quot;ginseng&quot;, aliases = { &quot;Nausea&quot; } },
+  { canon = &quot;pacifism&quot;, action = &quot;eat&quot;, herb = &quot;bellwort&quot;, alchemy = &quot;cuprum&quot;, bucket = &quot;bellwort&quot;, aliases = { &quot;Pacifism&quot; } },
+  { canon = &quot;paralysis&quot;, action = &quot;eat&quot;, herb = &quot;bloodroot&quot;, alchemy = &quot;magnesium&quot;, bucket = &quot;bloodroot&quot;, aliases = { &quot;Paralysis&quot; } },
+  { canon = &quot;paranoia&quot;, action = &quot;eat&quot;, herb = &quot;pricklyash&quot;, alchemy = &quot;stannum&quot;, bucket = &quot;pricklyash&quot;, aliases = { &quot;Paranoia&quot; } },
+  { canon = &quot;peace&quot;, action = &quot;eat&quot;, herb = &quot;bellwort&quot;, alchemy = &quot;cuprum&quot;, bucket = &quot;bellwort&quot;, aliases = { &quot;Peace&quot; } },
+  { canon = &quot;recklessness&quot;, action = &quot;eat&quot;, herb = &quot;lobelia&quot;, alchemy = &quot;argentum&quot;, bucket = &quot;lobelia&quot;, aliases = { &quot;Recklessness&quot; } },
+  { canon = &quot;scytherus&quot;, action = &quot;eat&quot;, herb = &quot;ginseng&quot;, alchemy = &quot;ferrum&quot;, bucket = &quot;ginseng&quot;, aliases = { &quot;Scytherus&quot; } },
+  { canon = &quot;sensitivity&quot;, action = &quot;eat&quot;, herb = &quot;kelp&quot;, alchemy = &quot;aurum&quot;, bucket = &quot;kelp&quot;, aliases = { &quot;Sensitivity&quot;, &quot;prefarar&quot; } },
+  { canon = &quot;shyness&quot;, action = &quot;eat&quot;, herb = &quot;goldenseal&quot;, alchemy = &quot;plumbum&quot;, bucket = &quot;goldenseal&quot;, aliases = { &quot;Shyness&quot; } },
+  { canon = &quot;slickness&quot;, action = &quot;smoke&quot;, herb = &quot;valerian&quot;, alchemy = &quot;realgar&quot;, bucket = &quot;valerian&quot;, aliases = { &quot;Slickness&quot; }, family = &quot;dual&quot;, alternatives = {
+    { action = &quot;eat&quot;, herb = &quot;bloodroot&quot;, alchemy = &quot;magnesium&quot;, bucket = &quot;bloodroot&quot; },
+  } },
+  { canon = &quot;stinky&quot;, action = &quot;scrub&quot;, herb = nil, alchemy = nil, bucket = &quot;scrub&quot;, aliases = { &quot;Stinky&quot; } },
+  { canon = &quot;stupidity&quot;, action = &quot;eat&quot;, herb = &quot;goldenseal&quot;, alchemy = &quot;plumbum&quot;, bucket = &quot;goldenseal&quot;, aliases = { &quot;Stupidity&quot; } },
+  { canon = &quot;stuttering&quot;, action = &quot;apply&quot;, herb = &quot;epidermal&quot;, alchemy = &quot;epidermal&quot;, bucket = &quot;epidermal&quot;, aliases = { &quot;Stuttering&quot; } },
+  { canon = &quot;temperedhumours&quot;, action = &quot;eat&quot;, herb = &quot;ginger&quot;, alchemy = &quot;antimony&quot;, bucket = &quot;ginger&quot;, aliases = { &quot;Tempered Humours&quot; } },
+  { canon = &quot;transfixed&quot;, action = &quot;writhe&quot;, herb = nil, alchemy = nil, bucket = &quot;writhe&quot;, aliases = { &quot;Transfixed&quot; }, family = &quot;writhe&quot; },
+  { canon = &quot;vertigo&quot;, action = &quot;eat&quot;, herb = &quot;lobelia&quot;, alchemy = &quot;argentum&quot;, bucket = &quot;lobelia&quot;, aliases = { &quot;Vertigo&quot; } },
+  { canon = &quot;voyria&quot;, action = &quot;sip&quot;, herb = &quot;immunity&quot;, alchemy = &quot;immunity&quot;, bucket = &quot;immunity&quot;, aliases = { &quot;Voyria&quot; } },
+  { canon = &quot;weariness&quot;, action = &quot;eat&quot;, herb = &quot;kelp&quot;, alchemy = &quot;aurum&quot;, bucket = &quot;kelp&quot;, aliases = { &quot;Weariness&quot; } },
+  { canon = &quot;webbed&quot;, action = &quot;writhe&quot;, herb = nil, alchemy = nil, bucket = &quot;writhe&quot;, aliases = { &quot;Webbed&quot; }, family = &quot;writhe&quot; },
+}
+
+D.by_aff = D.by_aff or {}
+D.by_bucket = D.by_bucket or {}
+D.alias_to_canon = D.alias_to_canon or {}
+
+local function _index_row(row)
+  local canon = _canon(row.canon)
+  if canon == &quot;&quot; then return end
+
+  local copy = {
+    canon = canon,
+    action = (function()
+      local a = _trim(row.action)
+      if a == &quot;&quot; then return nil end
+      return a:lower()
+    end)(),
+    herb = row.herb and _norm_bucket(row.herb) or nil,
+    alchemy = row.alchemy and _norm_bucket(row.alchemy) or nil,
+    bucket = _norm_bucket(row.bucket or row.herb or row.alchemy),
+    aliases = {},
+    family = row.family,
+    alternatives = row.alternatives,
+  }
+
+  if type(row.aliases) == &quot;table&quot; then
+    for i = 1, #row.aliases do
+      local a = _canon(row.aliases[i])
+      if a ~= &quot;&quot; then
+        copy.aliases[#copy.aliases + 1] = a
+      end
+    end
+  end
+
+  D.by_aff[canon] = copy
+  D.alias_to_canon[canon] = canon
+  for i = 1, #copy.aliases do
+    D.alias_to_canon[copy.aliases[i]] = canon
+  end
+
+  if copy.bucket then
+    D.by_bucket[copy.bucket] = D.by_bucket[copy.bucket] or {}
+    D.by_bucket[copy.bucket][canon] = true
+  end
+end
+
+function D.rebuild()
+  D.by_aff = {}
+  D.by_bucket = {}
+  D.alias_to_canon = {}
+  for i = 1, #RAW do
+    _index_row(RAW[i])
+  end
+end
+
+function D.canon(name)
+  local c = _canon(name)
+  if c == &quot;&quot; then return &quot;&quot; end
+  return D.alias_to_canon[c] or c
+end
+
+function D.get(name)
+  local c = D.canon(name)
+  if c == &quot;&quot; then return nil end
+  return D.by_aff[c]
+end
+
+function D.bucket_for(name)
+  local row = D.get(name)
+  return row and row.bucket or nil
+end
+
+function D.action_for(name)
+  local row = D.get(name)
+  return row and row.action or nil
+end
+
+function D.affs_in_bucket(bucket)
+  local key = _norm_bucket(bucket)
+  local set = key and D.by_bucket[key] or nil
+  local out = {}
+  if type(set) == &quot;table&quot; then
+    for aff in pairs(set) do
+      out[#out + 1] = aff
+    end
+    table.sort(out)
+  end
+  return out
+end
+
+D.rebuild()
+
+return D
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso serverside policy</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso serverside policy
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso/Curing/serverside_policy.lua
+-- Serverside curing coordinator (phase 1 scaffold + working policy).
+--  * Mode arbitration: group &gt; class_overlay &gt; default
+--  * Delta-only write strategy
+--  * Manual intervention grace window
+--  * Conservative group hysteresis
+--  * Emergency queue + tree policy scaffolding
+--========================================================--
+
+Yso = Yso or {}
+Yso.curing = Yso.curing or {}
+Yso.curing.policy = Yso.curing.policy or {}
+
+local P = Yso.curing.policy
+
+P.cfg = P.cfg or {
+  debug = false,
+  tick_min_s = 0.25,
+
+  base_set = &quot;default&quot;,
+  group_set = &quot;group&quot;,
+
+  aggression_timeout_s = 28,
+
+  group_window_s = 10,
+  group_enter_hits = 8,
+  group_enter_attackers = 3,
+  group_leave_calm_s = 18,
+  group_min_dwell_s = 16,
+
+  manual_grace_s = 8,
+  self_send_guard_s = 0.35,
+
+  emergency_min_gap_s = 2.0,
+  tree_min_gap_s = 4.0,
+}
+
+P.state = P.state or {
+  mode = &quot;default&quot;,
+  current_set = &quot;&quot;,
+  active_overlay = nil,
+
+  group_active = false,
+  group_since = 0,
+  group_forced = nil,
+
+  last_tick = 0,
+  last_apply = 0,
+  last_hostile_at = 0,
+  aggression_until = 0,
+
+  manual_grace_until = 0,
+  last_manual_source = &quot;&quot;,
+  self_send_until = 0,
+
+  hit_log = {},
+  attacker_seen = {},
+
+  overlay_applied = {},
+  known_baseline = {},
+
+  queue_recent = {},
+  tree_policy = &quot;&quot;,
+  last_tree_at = 0,
+
+  priority_list_requested_at = 0,
+}
+
+P.overlays = P.overlays or {
+  blademaster = {
+    class = &quot;Blademaster&quot;,
+    raise = {
+      &quot;paralysis&quot;,
+      &quot;asthma&quot;,
+      &quot;slickness&quot;,
+      &quot;impatience&quot;,
+      &quot;anorexia&quot;,
+      &quot;weariness&quot;,
+      &quot;clumsiness&quot;,
+      &quot;dizziness&quot;,
+      &quot;sensitivity&quot;,
+      &quot;damagedlimb&quot;,
+      &quot;crippledlimb&quot;,
+      &quot;mangledlimb&quot;,
+    },
+    lower = {},
+    queue_emergency = {
+      -- phase-1 scaffold
+      -- { qtype = &quot;bal&quot;, cmd = &quot;touch tree&quot;, dedupe = &quot;tree_touch&quot; },
+    },
+    tree_hints = {
+      prefer = &quot;aff_trigger&quot;,
+    },
+  },
+}
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 1e12 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _tbl_size(t)
+  local n = 0
+  if type(t) ~= &quot;table&quot; then return 0 end
+  for _ in pairs(t) do n = n + 1 end
+  return n
+end
+
+local function _echo(msg)
+  if P.cfg.debug ~= true then return end
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;cadet_blue&gt;[Yso:policy] &lt;reset&gt;%s\n&quot;, tostring(msg)))
+  end
+end
+
+local function _canon_aff(aff)
+  if Yso and Yso.selfaff and type(Yso.selfaff.normalize) == &quot;function&quot; then
+    return Yso.selfaff.normalize(aff)
+  end
+  return tostring(aff or &quot;&quot;):lower()
+end
+
+local function _norm_class(v)
+  v = _trim(v)
+  if v == &quot;&quot; then return &quot;&quot; end
+  return v:sub(1, 1):upper() .. v:sub(2):lower()
+end
+
+local function _mark_self_send()
+  P.state.self_send_until = _now() + (tonumber(P.cfg.self_send_guard_s or 0.35) or 0.35)
+end
+
+local function _is_self_send_window()
+  return _now() &lt;= (tonumber(P.state.self_send_until or 0) or 0)
+end
+
+local function _manual_grace_active()
+  return _now() &lt; (tonumber(P.state.manual_grace_until or 0) or 0)
+end
+
+local function _adapter_table()
+  Yso.curing = Yso.curing or {}
+  Yso.curing.adapters = Yso.curing.adapters or {}
+  return Yso.curing.adapters
+end
+
+local function _send_profile(set_name)
+  set_name = _trim(set_name):lower()
+  if set_name == &quot;&quot; then return false end
+
+  if _trim(P.state.current_set):lower() == set_name then
+    return false
+  end
+
+  local C = _adapter_table()
+  _mark_self_send()
+  if type(C.use_profile) == &quot;function&quot; then
+    C.use_profile(set_name)
+  elseif type(send) == &quot;function&quot; then
+    send(&quot;curingset switch &quot; .. set_name, false)
+  end
+
+  P.state.current_set = set_name
+  _echo(&quot;switch set -&gt; &quot; .. set_name)
+  return true
+end
+
+local function _set_prio(aff, prio)
+  aff = _canon_aff(aff)
+  prio = tonumber(prio)
+  if aff == &quot;&quot; or not prio then return false end
+
+  local C = _adapter_table()
+  _mark_self_send()
+  if type(C.set_aff_prio) == &quot;function&quot; then
+    C.set_aff_prio(aff, prio)
+  elseif type(send) == &quot;function&quot; then
+    send(string.format(&quot;curing priority %s %d&quot;, aff, prio), false)
+  end
+  return true
+end
+
+local function _restore_aff_default(aff)
+  aff = _canon_aff(aff)
+  if aff == &quot;&quot; then return false end
+
+  local base = P.state.known_baseline[aff]
+  if type(base) == &quot;number&quot; then
+    return _set_prio(aff, base)
+  end
+
+  if type(Reprio) == &quot;function&quot; then
+    _mark_self_send()
+    Reprio(aff)
+    return true
+  end
+
+  return _set_prio(aff, 26)
+end
+
+local function _read_baseline_from_legacy(set_name)
+  local set = _trim(set_name):lower()
+  if set == &quot;&quot; then return end
+  local prios = Legacy and Legacy.Curing and Legacy.Curing.Prios
+  local base_sets = prios and prios.baseSets
+  local row = type(base_sets) == &quot;table&quot; and base_sets[set] or nil
+  if type(row) ~= &quot;table&quot; then return end
+
+  for aff, pos in pairs(row) do
+    if type(pos) == &quot;number&quot; then
+      P.state.known_baseline[_canon_aff(aff)] = pos
+    end
+  end
+end
+
+local function _read_current_set()
+  local set = &quot;&quot;
+  if Legacy and Legacy.Curing and type(Legacy.Curing.ActiveServerSet) == &quot;string&quot; then
+    set = _trim(Legacy.Curing.ActiveServerSet):lower()
+  end
+  if set == &quot;&quot; and type(rawget(_G, &quot;CurrentCureset&quot;)) == &quot;string&quot; then
+    set = _trim(rawget(_G, &quot;CurrentCureset&quot;)):lower()
+  end
+  if set ~= &quot;&quot; then
+    P.state.current_set = set
+  end
+  return set
+end
+
+local function _target_name()
+  if Yso and type(Yso.get_target) == &quot;function&quot; then
+    local ok, t = pcall(Yso.get_target)
+    t = ok and _trim(t) or &quot;&quot;
+    if t ~= &quot;&quot; then return t end
+  end
+  return _trim(rawget(_G, &quot;target&quot;))
+end
+
+local function _legacy_enemy_class()
+  local tgt = _target_name()
+  if tgt == &quot;&quot; then return &quot;&quot; end
+
+  local cls = &quot;&quot;
+  if Legacy and Legacy.CT and type(Legacy.CT.Enemies) == &quot;table&quot; then
+    cls = Legacy.CT.Enemies[tgt]
+      or Legacy.CT.Enemies[tgt:lower()]
+      or Legacy.CT.Enemies[tgt:sub(1, 1):upper() .. tgt:sub(2):lower()]
+      or &quot;&quot;
+  end
+
+  if cls == &quot;&quot; and Legacy and Legacy.CT and type(Legacy.CT.timers) == &quot;table&quot; then
+    local timer = Legacy.CT.timers[tgt] or Legacy.CT.timers[tgt:lower()]
+    if type(timer) == &quot;table&quot; then
+      cls = timer.class or &quot;&quot;
+    end
+  end
+
+  return _norm_class(cls)
+end
+
+local function _legacy_group_signal()
+  local en_class = _norm_class(rawget(_G, &quot;enClass&quot;))
+  if en_class == &quot;Group&quot; then return true end
+
+  if Legacy and Legacy.CT and type(Legacy.CT.timers) == &quot;table&quot; then
+    if _tbl_size(Legacy.CT.timers) &gt;= 3 then
+      return true
+    end
+  end
+  return false
+end
+
+local function _prune_hits(now)
+  local win = tonumber(P.cfg.group_window_s or 10) or 10
+  local kept = {}
+  local seen = {}
+
+  for i = 1, #(P.state.hit_log or {}) do
+    local row = P.state.hit_log[i]
+    if type(row) == &quot;table&quot; then
+      local at = tonumber(row.at or 0) or 0
+      if at &gt; 0 and (now - at) &lt;= win then
+        kept[#kept + 1] = row
+        if row.attacker ~= &quot;&quot; then seen[row.attacker] = true end
+      end
+    end
+  end
+
+  P.state.hit_log = kept
+  P.state.attacker_seen = seen
+
+  return #kept, _tbl_size(seen)
+end
+
+function P.note_hostile_hit(attacker, source)
+  local now = _now()
+  attacker = _trim(attacker):lower()
+
+  local row = {
+    at = now,
+    attacker = attacker,
+    source = tostring(source or &quot;hostile&quot;),
+  }
+  P.state.hit_log[#P.state.hit_log + 1] = row
+  if attacker ~= &quot;&quot; then
+    P.state.attacker_seen[attacker] = true
+  end
+
+  P.state.last_hostile_at = now
+  local expiry = now + (tonumber(P.cfg.aggression_timeout_s or 28) or 28)
+  if expiry &gt; (tonumber(P.state.aggression_until or 0) or 0) then
+    P.state.aggression_until = expiry
+  end
+
+  _prune_hits(now)
+  return true
+end
+
+function P.note_manual_intervention(source)
+  if _is_self_send_window() then return false end
+  local now = _now()
+  local grace = tonumber(P.cfg.manual_grace_s or 8) or 8
+  P.state.manual_grace_until = now + grace
+  P.state.last_manual_source = tostring(source or &quot;manual&quot;)
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.curing.manual_intervention&quot;, P.state.last_manual_source, grace)
+  end
+  _echo(&quot;manual grace armed from &quot; .. P.state.last_manual_source)
+  return true
+end
+
+local function _aggression_active(now)
+  now = tonumber(now) or _now()
+  if now &lt; (tonumber(P.state.aggression_until or 0) or 0) then
+    return true
+  end
+
+  if Yso and Yso.mode and Yso.mode.auto and Yso.mode.auto.state then
+    local until_at = tonumber(Yso.mode.auto.state.combat_until or 0) or 0
+    if now &lt; until_at then return true end
+  end
+
+  local last = tonumber(P.state.last_hostile_at or 0) or 0
+  local timeout = tonumber(P.cfg.aggression_timeout_s or 28) or 28
+  if last &gt; 0 and (now - last) &lt;= timeout then
+    return true
+  end
+
+  return false
+end
+
+local function _compute_group_active(now)
+  now = tonumber(now) or _now()
+  if P.state.group_forced ~= nil then
+    return P.state.group_forced == true
+  end
+
+  local hits, attackers = _prune_hits(now)
+  local legacy = _legacy_group_signal()
+  local fallback = hits &gt;= (tonumber(P.cfg.group_enter_hits or 8) or 8)
+    and attackers &gt;= (tonumber(P.cfg.group_enter_attackers or 3) or 3)
+
+  if P.state.group_active == true then
+    if legacy or fallback then return true end
+
+    local dwell = tonumber(P.cfg.group_min_dwell_s or 16) or 16
+    if (now - (tonumber(P.state.group_since or now) or now)) &lt; dwell then
+      return true
+    end
+
+    local calm = tonumber(P.cfg.group_leave_calm_s or 18) or 18
+    if (now - (tonumber(P.state.last_hostile_at or 0) or 0)) &lt; calm then
+      return true
+    end
+
+    return false
+  end
+
+  return legacy or fallback
+end
+
+local function _select_overlay(now)
+  now = tonumber(now) or _now()
+  if not _aggression_active(now) then
+    return nil
+  end
+
+  local cls = _legacy_enemy_class()
+  if cls == &quot;Blademaster&quot; then
+    return &quot;blademaster&quot;
+  end
+
+  return nil
+end
+
+local function _clear_overlay_deltas()
+  local had = false
+  for aff in pairs(P.state.overlay_applied or {}) do
+    had = true
+    _restore_aff_default(aff)
+  end
+  P.state.overlay_applied = {}
+  P.state.active_overlay = nil
+  return had
+end
+
+local function _apply_overlay(name)
+  if _trim(name) == &quot;&quot; then
+    return _clear_overlay_deltas()
+  end
+
+  if P.state.active_overlay == name then
+    return false
+  end
+
+  _clear_overlay_deltas()
+
+  local spec = P.overlays[name]
+  if type(spec) ~= &quot;table&quot; then
+    return false
+  end
+
+  for i = 1, #(spec.raise or {}) do
+    local aff = _canon_aff(spec.raise[i])
+    if aff ~= &quot;&quot; then
+      _set_prio(aff, 1)
+      P.state.overlay_applied[aff] = 1
+    end
+  end
+
+  for i = 1, #(spec.lower or {}) do
+    local aff = _canon_aff(spec.lower[i])
+    if aff ~= &quot;&quot; then
+      _set_prio(aff, 26)
+      P.state.overlay_applied[aff] = 26
+    end
+  end
+
+  P.state.active_overlay = name
+  _echo(&quot;overlay -&gt; &quot; .. name)
+  return true
+end
+
+local function _compute_tree_policy(now, overlay)
+  now = tonumber(now) or _now()
+
+  local in_hunt = false
+  if Yso and Yso.mode and type(Yso.mode.is_hunt) == &quot;function&quot; then
+    local ok, v = pcall(Yso.mode.is_hunt)
+    in_hunt = ok and (v == true)
+  end
+
+  if not in_hunt then
+    local set = _trim(P.state.current_set):lower()
+    in_hunt = (set == &quot;hunt&quot; or set == &quot;bash&quot;)
+  end
+
+  if in_hunt then return &quot;aff_count&quot; end
+  if overlay ~= nil or _aggression_active(now) then return &quot;aff_trigger&quot; end
+  return &quot;aff_count&quot;
+end
+
+local function _apply_tree_policy(policy, overlay)
+  policy = _trim(policy)
+  if policy == &quot;&quot; then return false end
+  if P.state.tree_policy == policy then return false end
+
+  local now = _now()
+  local min_gap = tonumber(P.cfg.tree_min_gap_s or 4.0) or 4.0
+  if now - (tonumber(P.state.last_tree_at or 0) or 0) &lt; min_gap then
+    return false
+  end
+
+  local C = _adapter_table()
+  if type(C.set_tree_policy) == &quot;function&quot; then
+    _mark_self_send()
+    C.set_tree_policy(policy, {
+      overlay = overlay,
+      mode = P.state.mode,
+      curingset = P.state.current_set,
+    })
+  end
+
+  P.state.tree_policy = policy
+  P.state.last_tree_at = now
+
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.curing.tree_policy&quot;, policy, overlay)
+  end
+
+  return true
+end
+
+function P.queue_emergency(cmd, opts)
+  opts = opts or {}
+  cmd = _trim(cmd)
+  if cmd == &quot;&quot; then return false, &quot;empty&quot; end
+  if _manual_grace_active() then return false, &quot;manual_grace&quot; end
+
+  local now = _now()
+  local qtype = _trim(opts.qtype or &quot;bal&quot;)
+  local idx = tonumber(opts.index)
+  local key = string.format(&quot;%s|%s|%s&quot;, qtype, tostring(idx or &quot;&quot;), cmd:lower())
+
+  local last = tonumber(P.state.queue_recent[key] or 0) or 0
+  local min_gap = tonumber(P.cfg.emergency_min_gap_s or 2.0) or 2.0
+  if last &gt; 0 and (now - last) &lt; min_gap then
+    return false, &quot;dedupe&quot;
+  end
+
+  local line
+  if idx and idx &gt;= 1 then
+    line = string.format(&quot;QUEUE INSERT %s %d %s&quot;, qtype, idx, cmd)
+  else
+    line = string.format(&quot;QUEUE ADD %s %s&quot;, qtype, cmd)
+  end
+
+  local C = _adapter_table()
+  _mark_self_send()
+  if type(C.queue_emergency) == &quot;function&quot; then
+    local ok = C.queue_emergency(cmd, {
+      qtype = qtype,
+      index = idx,
+    })
+    if ok ~= true then
+      return false, &quot;adapter_rejected&quot;
+    end
+  elseif type(send) == &quot;function&quot; then
+    send(line, false)
+  else
+    return false, &quot;send_missing&quot;
+  end
+
+  P.state.queue_recent[key] = now
+  return true
+end
+
+function P.resync(reason)
+  reason = tostring(reason or &quot;resync&quot;)
+  _read_current_set()
+  _read_baseline_from_legacy(P.cfg.base_set)
+
+  local now = _now()
+  local requested_at = tonumber(P.state.priority_list_requested_at or 0) or 0
+  if (now - requested_at) &gt;= 6 and type(send) == &quot;function&quot; then
+    _mark_self_send()
+    send(&quot;curing priority list&quot;, false)
+    P.state.priority_list_requested_at = now
+  end
+
+  P.tick(&quot;resync:&quot; .. reason, true)
+  return true
+end
+
+function P.set_group_override(v, reason)
+  if v == nil then
+    local was_forced = (P.state.group_forced == true)
+    P.state.group_forced = nil
+    if was_forced then
+      -- Clearing an explicit override should not inherit fallback hysteresis.
+      P.state.group_active = false
+      P.state.group_since = 0
+    end
+    P.tick(&quot;group_override:clear&quot;, true)
+    return true
+  end
+
+  P.state.group_forced = (v == true)
+  P.tick(&quot;group_override:&quot; .. tostring(reason or &quot;manual&quot;), true)
+  return true
+end
+
+function P.tick(source, force)
+  local now = _now()
+  local min_tick = tonumber(P.cfg.tick_min_s or 0.25) or 0.25
+  if force ~= true and (now - (tonumber(P.state.last_tick or 0) or 0)) &lt; min_tick then
+    return false, &quot;throttled&quot;
+  end
+  P.state.last_tick = now
+
+  _read_current_set()
+
+  local group_on = _compute_group_active(now)
+  local overlay = (group_on and nil) or _select_overlay(now)
+
+  if _manual_grace_active() then
+    P.state.mode = group_on and &quot;group&quot; or (overlay and &quot;class_overlay&quot; or &quot;default&quot;)
+    return true, &quot;manual_grace&quot;
+  end
+
+  local changed = false
+
+  if group_on then
+    if P.state.group_active ~= true then
+      P.state.group_active = true
+      P.state.group_since = now
+    end
+
+    if _send_profile(P.cfg.group_set) then changed = true end
+    if _clear_overlay_deltas() then changed = true end
+    P.state.mode = &quot;group&quot;
+  else
+    if P.state.group_active == true then
+      P.state.group_active = false
+      if _send_profile(P.cfg.base_set) then changed = true end
+    else
+      if _trim(P.state.current_set) == &quot;&quot; then
+        if _send_profile(P.cfg.base_set) then changed = true end
+      end
+    end
+
+    if overlay then
+      if _trim(P.state.current_set):lower() ~= _trim(P.cfg.base_set):lower() then
+        if _send_profile(P.cfg.base_set) then changed = true end
+      end
+      if _apply_overlay(overlay) then changed = true end
+      P.state.mode = &quot;class_overlay&quot;
+    else
+      if _clear_overlay_deltas() then changed = true end
+      P.state.mode = &quot;default&quot;
+    end
+  end
+
+  local tree_policy = _compute_tree_policy(now, overlay)
+  if _apply_tree_policy(tree_policy, overlay) then
+    changed = true
+  end
+
+  if changed then
+    P.state.last_apply = now
+    if type(raiseEvent) == &quot;function&quot; then
+      raiseEvent(&quot;yso.curing.policy.applied&quot;, P.state.mode, overlay or &quot;&quot;)
+    end
+  end
+
+  return true, changed and &quot;applied&quot; or &quot;stable&quot;
+end
+
+function P.status()
+  return {
+    mode = P.state.mode,
+    current_set = P.state.current_set,
+    overlay = P.state.active_overlay,
+    group_active = (P.state.group_active == true),
+    manual_grace = math.max(0, (tonumber(P.state.manual_grace_until or 0) or 0) - _now()),
+    aggression_left = math.max(0, (tonumber(P.state.aggression_until or 0) or 0) - _now()),
+    tree_policy = P.state.tree_policy,
+  }
+end
+
+local function _kill_eh(id)
+  if id and type(killAnonymousEventHandler) == &quot;function&quot; then
+    pcall(killAnonymousEventHandler, id)
+  end
+end
+
+local function _kill_tr(id)
+  if id and type(killTrigger) == &quot;function&quot; then
+    pcall(killTrigger, id)
+  end
+end
+
+function P.install_hooks()
+  if P._hooks_installed == true then return true end
+  P._eh = P._eh or {}
+  P._tr = P._tr or {}
+
+  if type(registerAnonymousEventHandler) == &quot;function&quot; then
+    _kill_eh(P._eh.vitals)
+    P._eh.vitals = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
+      P.tick(&quot;gmcp.vitals&quot;)
+    end)
+
+    _kill_eh(P._eh.prompt)
+    P._eh.prompt = registerAnonymousEventHandler(&quot;sysPrompt&quot;, function()
+      P.tick(&quot;prompt&quot;)
+    end)
+
+    _kill_eh(P._eh.mode)
+    P._eh.mode = registerAnonymousEventHandler(&quot;yso.mode.changed&quot;, function()
+      P.tick(&quot;mode_changed&quot;, true)
+    end)
+
+    _kill_eh(P._eh.slc_hit)
+    P._eh.slc_hit = registerAnonymousEventHandler(&quot;Legacy.SLC.Hit&quot;, function(_, attacker)
+      P.note_hostile_hit(attacker, &quot;Legacy.SLC.Hit&quot;)
+    end)
+
+    _kill_eh(P._eh.send_request)
+    P._eh.send_request = registerAnonymousEventHandler(&quot;sysDataSendRequest&quot;, function(_, command)
+      if type(command) ~= &quot;string&quot; then return end
+      if _trim(command) == &quot;&quot; then return end
+      if _is_self_send_window() then return end
+      P.note_manual_intervention(&quot;sysDataSendRequest&quot;)
+    end)
+  end
+
+  if type(tempRegexTrigger) == &quot;function&quot; then
+    _kill_tr(P._tr.prio_changed)
+    P._tr.prio_changed = tempRegexTrigger([[^Changed the priority of .+\.$]], function()
+      if _is_self_send_window() then return end
+      P.note_manual_intervention(&quot;text_ack:prio&quot;)
+    end)
+
+    _kill_tr(P._tr.set_changed)
+    P._tr.set_changed = tempRegexTrigger([[^Changed the set named .+\.$]], function()
+      if _is_self_send_window() then return end
+      P.note_manual_intervention(&quot;text_ack:set&quot;)
+    end)
+  end
+
+  P._hooks_installed = true
+  return true
+end
+
+function P.init()
+  _read_current_set()
+  _read_baseline_from_legacy(P.cfg.base_set)
+  P.install_hooks()
+  P.resync(&quot;init&quot;)
+  return true
+end
+
+P.init()
+
+return P
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
 					<name>Bootstrap</name>
 					<packageName></packageName>
 					<script>--========================================================--
@@ -22801,6 +24490,9 @@ Yso.bootstrap = Yso.bootstrap or {}
 Yso.bootstrap.root = root
 Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.Core.api&quot;,
+  &quot;Yso.Core.self_aff&quot;,
+  &quot;Yso.Curing.self_curedefs&quot;,
+  &quot;Yso.Curing.serverside_policy&quot;,
   &quot;Yso.Core.offense_state&quot;,
   &quot;Yso.Integration.ak_legacy_wiring&quot;,
   &quot;Yso.Core.queue&quot;,
@@ -22861,6 +24553,27 @@ local function _bootstrap_require_any(mods, reload)
 end
 
 Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
+  {
+    name = &quot;self_aff&quot;,
+    modules = { &quot;Yso.Core.self_aff&quot;, &quot;Yso.xml.yso_self_aff&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).selfaff or {})).has_aff) == &quot;function&quot;
+    end,
+  },
+  {
+    name = &quot;self_curedefs&quot;,
+    modules = { &quot;Yso.Curing.self_curedefs&quot;, &quot;Yso.xml.yso_self_curedefs&quot; },
+    probe = function()
+      return type(((((_G.Yso or {}).curing or {}).defs or {})).get) == &quot;function&quot;
+    end,
+  },
+  {
+    name = &quot;serverside_policy&quot;,
+    modules = { &quot;Yso.Curing.serverside_policy&quot;, &quot;Yso.xml.yso_serverside_policy&quot; },
+    probe = function()
+      return type(((((_G.Yso or {}).curing or {}).policy or {})).tick) == &quot;function&quot;
+    end,
+  },
   {
     name = &quot;route_registry&quot;,
     modules = { &quot;Yso.Combat.route_registry&quot;, &quot;Yso.xml.route_registry&quot; },

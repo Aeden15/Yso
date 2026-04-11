@@ -783,6 +783,23 @@ Yso.curing.adapters = Yso.curing.adapters or {
     -- ex: if tag == "lockpanic" then _send("LEGACY LOCKPANIC") end
     _cure_echo(string.format("emergency(%s) called (adapter not yet wired)", tostring(tag)))
   end,
+
+  -- Optional tree policy hook for serverside_policy.lua.
+  set_tree_policy = function(mode, ctx)
+    _cure_echo(string.format(
+      "set_tree_policy(%s) called (adapter not yet wired)",
+      tostring(mode)
+    ))
+  end,
+
+  -- Optional emergency queue hook for serverside_policy.lua.
+  queue_emergency = function(cmd, opts)
+    _cure_echo(string.format(
+      "queue_emergency(%s) called (adapter not yet wired)",
+      tostring(cmd)
+    ))
+    return false
+  end,
 }
 
 -- shortcut
@@ -1155,41 +1172,185 @@ Yso.ak.init()
 -- Self-aff helpers (used by offense + queue guards)
 --========================================================--
 
-Yso      = Yso or {}
+Yso = Yso or {}
 Yso.self = Yso.self or {}
 
-function Yso.self.has_aff(aff)
-  local key = tostring(aff or ""):lower()
-  if key == "" then return false end
-
-  -- Preferred: Legacy curing table (self affs)
-  if Legacy and Legacy.Curing and type(Legacy.Curing.Affs) == "table" then
-    if Legacy.Curing.Affs[key] then return true end
-    -- Some tables keep TitleCase keys
-    local tc = key:gsub("^%l", string.upper)
-    if Legacy.Curing.Affs[tc] then return true end
+local function _selfaff_module()
+  if Yso and Yso.selfaff and type(Yso.selfaff) == "table" then
+    return Yso.selfaff
   end
+  if type(require) == "function" then
+    local ok = pcall(require, "Yso.Core.self_aff")
+    if ok and Yso and type(Yso.selfaff) == "table" then
+      return Yso.selfaff
+    end
+  end
+  return nil
+end
 
-  -- Fallback: GMCP aff list shapes (varies by client/package)
+local function _gmcp_aff_has(key)
   local g = gmcp and gmcp.Char and gmcp.Char.Afflictions
-  if type(g) == "table" then
-    -- common list fields
-    local candidates = { g.list, g.List, g.afflictions, g.Afflictions }
-    for _, lst in ipairs(candidates) do
-      if type(lst) == "table" then
-        for _, v in ipairs(lst) do
-          if type(v) == "string" and v:lower() == key then return true end
-          if type(v) == "table" and v.name and tostring(v.name):lower() == key then return true end
-        end
+  if type(g) ~= "table" then return false end
+  local candidates = { g.list, g.List, g.afflictions, g.Afflictions }
+  for _, lst in ipairs(candidates) do
+    if type(lst) == "table" then
+      for _, v in ipairs(lst) do
+        if type(v) == "string" and v:lower() == key then return true end
+        if type(v) == "table" and tostring(v.name or ""):lower() == key then return true end
       end
     end
-    -- occasionally boolean keyed
-    if g[key] == true then return true end
   end
-
+  if g[key] == true then return true end
   return false
+end
+
+function Yso.self.has_aff(aff)
+  local SA = _selfaff_module()
+  if SA and type(SA.has_aff) == "function" then
+    local ok, v = pcall(SA.has_aff, aff)
+    if ok then return v == true end
+  end
+  local key = tostring(aff or ""):lower()
+  if key == "" then return false end
+  return _gmcp_aff_has(key)
+end
+
+function Yso.self.any_aff(list)
+  local SA = _selfaff_module()
+  if SA and type(SA.any_aff) == "function" then
+    local ok, v = pcall(SA.any_aff, list)
+    if ok then return v == true end
+  end
+  if type(list) ~= "table" then return false end
+  for i = 1, #list do
+    if Yso.self.has_aff(list[i]) then return true end
+  end
+  return false
+end
+
+function Yso.self.aff_count(arg)
+  local SA = _selfaff_module()
+  if SA and type(SA.aff_count) == "function" then
+    local ok, v = pcall(SA.aff_count, arg)
+    if ok and type(v) == "number" then return v end
+  end
+  if type(arg) == "table" then
+    local n = 0
+    for i = 1, #arg do
+      if Yso.self.has_aff(arg[i]) then n = n + 1 end
+    end
+    return n
+  end
+  return 0
+end
+
+function Yso.self.list_affs()
+  local SA = _selfaff_module()
+  if SA and type(SA.list_affs) == "function" then
+    local ok, v = pcall(SA.list_affs)
+    if ok and type(v) == "table" then return v end
+  end
+  return {}
+end
+
+function Yso.self.gain(name, source)
+  local SA = _selfaff_module()
+  if SA and type(SA.gain) == "function" then
+    local ok, v = pcall(SA.gain, name, source or "manual")
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.cure(name, source)
+  local SA = _selfaff_module()
+  if SA and type(SA.cure) == "function" then
+    local ok, v = pcall(SA.cure, name, source or "manual")
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.sync_full(list, source)
+  local SA = _selfaff_module()
+  if SA and type(SA.sync_full) == "function" then
+    local ok, v = pcall(SA.sync_full, list, source or "manual")
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.reset(source)
+  local SA = _selfaff_module()
+  if SA and type(SA.reset) == "function" then
+    local ok, v = pcall(SA.reset, source or "manual")
+    if ok then return v == true end
+  end
+  return false
+end
+
+function Yso.self.is_prone()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_prone) == "function" then
+    local ok, v = pcall(SA.is_prone)
+    if ok then return v == true end
+  end
+  return Yso.self.has_aff("prone")
+end
+
+function Yso.self.is_asleep()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_asleep) == "function" then
+    local ok, v = pcall(SA.is_asleep)
+    if ok then return v == true end
+  end
+  return Yso.self.has_aff("sleep")
+end
+
+function Yso.self.is_blackout()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_blackout) == "function" then
+    local ok, v = pcall(SA.is_blackout)
+    if ok then return v == true end
+  end
+  return Yso.self.has_aff("blackout")
+end
+
+function Yso.self.is_writhed()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_writhed) == "function" then
+    local ok, v = pcall(SA.is_writhed)
+    if ok then return v == true end
+  end
+  return Yso.self.any_aff({ "webbed", "entangled", "transfixed", "bound", "impaled" })
+end
+
+function Yso.self.bleeding()
+  local SA = _selfaff_module()
+  if SA and type(SA.bleeding) == "function" then
+    local ok, v = pcall(SA.bleeding)
+    if ok and type(v) == "number" then return v end
+  end
+  local v = gmcp and gmcp.Char and gmcp.Char.Vitals and gmcp.Char.Vitals.bleeding
+  return tonumber(v) or 0
+end
+
+function Yso.self.is_standing()
+  local SA = _selfaff_module()
+  if SA and type(SA.is_standing) == "function" then
+    local ok, v = pcall(SA.is_standing)
+    if ok then return v == true end
+  end
+  return (not Yso.self.is_prone()) and (not Yso.self.is_asleep())
 end
 
 function Yso.self.is_paralyzed()
   return Yso.self.has_aff("paralysis")
+end
+
+-- Try to warm-load new curing subsystems for live sessions.
+if type(require) == "function" then
+  pcall(require, "Yso.Core.self_aff")
+  pcall(require, "Yso.Curing.self_curedefs")
+  pcall(require, "Yso.Curing.serverside_policy")
 end

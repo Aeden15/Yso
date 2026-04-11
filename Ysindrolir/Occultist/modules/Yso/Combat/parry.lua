@@ -97,16 +97,38 @@ end
 local function _self_has_aff(aff)
   aff = tostring(aff or ""):lower()
   if aff == "" then return false end
+
+  if Yso and Yso.selfaff and type(Yso.selfaff.normalize) == "function" then
+    aff = Yso.selfaff.normalize(aff)
+  end
+
   if Yso and Yso.self and type(Yso.self.has_aff) == "function" then
     local ok, v = pcall(Yso.self.has_aff, aff)
     if ok and v == true then return true end
   end
-  if Legacy and Legacy.Curing and type(Legacy.Curing.Affs) == "table" and Legacy.Curing.Affs[aff] then
+
+  if Yso and type(Yso.affs) == "table" and Yso.affs[aff] then
     return true
   end
-  if affstrack and type(affstrack.score) == "table" then
-    return (tonumber(affstrack.score[aff]) or 0) >= 100
+
+  local g = gmcp and gmcp.Char and gmcp.Char.Afflictions
+  if type(g) == "table" then
+    if g[aff] == true then return true end
+    local lists = { g.List, g.list, g.Afflictions, g.afflictions }
+    for i = 1, #lists do
+      local lst = lists[i]
+      if type(lst) == "table" then
+        for j = 1, #lst do
+          local item = lst[j]
+          local name = type(item) == "table" and item.name or item
+          if tostring(name or ""):lower() == aff then
+            return true
+          end
+        end
+      end
+    end
   end
+
   return false
 end
 
@@ -180,9 +202,9 @@ local function _arm_candidate_for_restore()
 end
 
 local function _restore_finished()
-  return (not _self_has_aff("damagedleftleg"))
-     and (not _self_has_aff("damagedrightleg"))
-     and _self_standing()
+  local left_damaged = _self_has_aff("damagedleftleg") or (_self_score("damagedleftleg") > 0)
+  local right_damaged = _self_has_aff("damagedrightleg") or (_self_score("damagedrightleg") > 0)
+  return (not left_damaged) and (not right_damaged) and _self_standing()
 end
 
 function P.note_leg_restored(aff)

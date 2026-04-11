@@ -23,6 +23,9 @@ local body_signature_map = {
 
 local insert_before_name_map = {
   ["bash_vitals_swap.lua"] = "Bootstrap",
+  ["yso_self_aff.lua"] = "Bootstrap",
+  ["yso_self_curedefs.lua"] = "Bootstrap",
+  ["yso_serverside_policy.lua"] = "Bootstrap",
   ["entities.lua"] = "group_damage.lua",
   ["hinder.lua"] = "entities",
   ["party_aff.lua"] = "group_damage.lua",

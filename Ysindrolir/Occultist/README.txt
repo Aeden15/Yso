@@ -5,6 +5,23 @@ Last updated: April 10, 2026
 
 Current fixes
 -------------
+  serverside curing coordinator refactor (April 11, 2026):
+    Yso now owns self-affliction truth and broader curing-relevant self state
+    through:
+      modules/Yso/Core/self_aff.lua
+    New serverside curing coordination layers:
+      modules/Yso/Curing/self_curedefs.lua
+      modules/Yso/Curing/serverside_policy.lua
+    Key behavior:
+      one base cureset ("default")
+      one active class overlay (phase-one: blademaster)
+      top-level group override with conservative hysteresis
+      8s manual intervention grace
+      delta-only prio/profile writes
+      emergency queue + tree policy scaffolds
+    Loader/bootstrap/export pipeline now includes these modules, and parry +
+    escape self-aff reads now prefer Yso-owned tracker over Legacy-first reads.
+
   helper-surface trim + route-localization (April 10, 2026): occ_aff now owns
   cleanse/burst/convert decision logic directly; offense_helpers now keeps only
   shared phase state helpers (set_phase/get_phase). Removed route-only
