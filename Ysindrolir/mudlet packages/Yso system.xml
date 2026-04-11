@@ -22949,6 +22949,7 @@ SA.cfg = SA.cfg or {
   debug = false,
   text_stale_guard_s = 1.25,
   gmcp_list_barrier_s = 0.20,
+  gmcp_list_barrier_ms = nil,
 }
 
 SA.affs = SA.affs or {}
@@ -23088,7 +23089,13 @@ end
 
 local function _text_allowed()
   local now = _now()
-  local list_barrier = tonumber(SA.cfg.gmcp_list_barrier_s or 0.20) or 0.20
+  local list_barrier_ms = tonumber(SA.cfg.gmcp_list_barrier_ms)
+  local list_barrier = nil
+  if list_barrier_ms and list_barrier_ms &gt; 0 then
+    list_barrier = list_barrier_ms / 1000
+  else
+    list_barrier = tonumber(SA.cfg.gmcp_list_barrier_s or 0.20) or 0.20
+  end
   if list_barrier &gt; 0 then
     local last_list = tonumber(SA.meta.last_gmcp_list_at or 0) or 0
     if last_list &gt; 0 and (now - last_list) &lt; list_barrier then
@@ -23241,11 +23248,10 @@ local function _set_aff_active(key, active, source)
     _set_state_from_aff(key, is)
   end
 
+  _mark_meta(source)
   if was ~= is and type(raiseEvent) == &quot;function&quot; then
     raiseEvent(&quot;yso.self.aff.changed&quot;, key, is, source)
   end
-
-  _mark_meta(source)
   return true
 end
 
@@ -23327,13 +23333,28 @@ function SA.reset(source, opts)
   local aggr_until = policy and policy.state and tonumber(policy.state.aggression_until or 0) or 0
   local auto_until = Yso and Yso.mode and Yso.mode.auto and Yso.mode.auto.state
     and tonumber(Yso.mode.auto.state.combat_until or 0) or 0
-  local in_mode_combat = false
-  if Yso and Yso.mode and type(Yso.mode.is_combat) == &quot;function&quot; then
-    local ok, v = pcall(Yso.mode.is_combat)
-    in_mode_combat = ok and (v == true)
+  local actively_fighting = false
+  if Yso and type(Yso.is_actively_fighting) == &quot;function&quot; then
+    local ok, v = pcall(Yso.is_actively_fighting)
+    actively_fighting = ok and (v == true)
+  elseif Yso and Yso.mode and type(Yso.mode.active_route_id) == &quot;function&quot; then
+    local ok_route, rid = pcall(Yso.mode.active_route_id)
+    local route_id = ok_route and _trim(rid):lower() or &quot;&quot;
+    if route_id ~= &quot;&quot; and route_id ~= &quot;none&quot; then
+      local in_live_mode = false
+      if type(Yso.mode.is_combat) == &quot;function&quot; then
+        local ok_mode, v = pcall(Yso.mode.is_combat)
+        in_live_mode = ok_mode and (v == true)
+      end
+      if not in_live_mode and type(Yso.mode.is_party) == &quot;function&quot; then
+        local ok_mode, v = pcall(Yso.mode.is_party)
+        in_live_mode = ok_mode and (v == true)
+      end
+      actively_fighting = in_live_mode
+    end
   end
 
-  if not force and (aggr_until &gt; now or auto_until &gt; now or in_mode_combat) then
+  if not force and (aggr_until &gt; now or auto_until &gt; now or actively_fighting) then
     return false, &quot;combat_active&quot;
   end
 
@@ -23625,6 +23646,13 @@ local KNOWN_BUCKETS = {
 
 D.known_buckets = D.known_buckets or KNOWN_BUCKETS
 D.validation_errors = D.validation_errors or {}
+D.reference_warnings = D.reference_warnings or {}
+
+local REFERENCE_SPOTCHECK = {
+  paralysis = { action = &quot;eat&quot;, bucket = &quot;bloodroot&quot; },
+  blind = { action = &quot;apply&quot;, bucket = &quot;epidermal&quot; },
+  sensitivity = { action = &quot;eat&quot;, bucket = &quot;kelp&quot; },
+}
 
 local function _warn(msg)
   if type(cecho) == &quot;function&quot; then
@@ -23810,6 +23838,34 @@ function D.validate()
   return (#(D.validation_errors or {})) == 0, D.validation_errors or {}
 end
 
+function D.startup_spotcheck()
+  D.reference_warnings = {}
+  for aff, expect in pairs(REFERENCE_SPOTCHECK) do
+    local row = D.by_aff[aff]
+    if type(row) ~= &quot;table&quot; then
+      D.reference_warnings[#D.reference_warnings + 1] =
+        string.format(&quot;missing spotcheck aff &apos;%s&apos;&quot;, tostring(aff))
+    else
+      if expect.action and row.action ~= expect.action then
+        D.reference_warnings[#D.reference_warnings + 1] =
+          string.format(&quot;spotcheck action mismatch %s: got %s expected %s&quot;,
+            tostring(aff), tostring(row.action), tostring(expect.action))
+      end
+      if expect.bucket and row.bucket ~= expect.bucket then
+        D.reference_warnings[#D.reference_warnings + 1] =
+          string.format(&quot;spotcheck bucket mismatch %s: got %s expected %s&quot;,
+            tostring(aff), tostring(row.bucket), tostring(expect.bucket))
+      end
+    end
+  end
+
+  if #D.reference_warnings &gt; 0 then
+    _warn(&quot;startup spotcheck found &quot; .. tostring(#D.reference_warnings) .. &quot; warning(s)&quot;)
+  end
+
+  return (#D.reference_warnings == 0), D.reference_warnings
+end
+
 function D.canon(name)
   local c = _canon(name)
   if c == &quot;&quot; then return &quot;&quot; end
@@ -23846,6 +23902,7 @@ function D.affs_in_bucket(bucket)
 end
 
 D.rebuild()
+D.startup_spotcheck()
 
 return D
 </script>

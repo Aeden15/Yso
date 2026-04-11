@@ -21,6 +21,7 @@ SA.cfg = SA.cfg or {
   debug = false,
   text_stale_guard_s = 1.25,
   gmcp_list_barrier_s = 0.20,
+  gmcp_list_barrier_ms = nil,
 }
 
 SA.affs = SA.affs or {}
@@ -160,7 +161,13 @@ end
 
 local function _text_allowed()
   local now = _now()
-  local list_barrier = tonumber(SA.cfg.gmcp_list_barrier_s or 0.20) or 0.20
+  local list_barrier_ms = tonumber(SA.cfg.gmcp_list_barrier_ms)
+  local list_barrier = nil
+  if list_barrier_ms and list_barrier_ms > 0 then
+    list_barrier = list_barrier_ms / 1000
+  else
+    list_barrier = tonumber(SA.cfg.gmcp_list_barrier_s or 0.20) or 0.20
+  end
   if list_barrier > 0 then
     local last_list = tonumber(SA.meta.last_gmcp_list_at or 0) or 0
     if last_list > 0 and (now - last_list) < list_barrier then
@@ -313,11 +320,10 @@ local function _set_aff_active(key, active, source)
     _set_state_from_aff(key, is)
   end
 
+  _mark_meta(source)
   if was ~= is and type(raiseEvent) == "function" then
     raiseEvent("yso.self.aff.changed", key, is, source)
   end
-
-  _mark_meta(source)
   return true
 end
 
@@ -399,13 +405,28 @@ function SA.reset(source, opts)
   local aggr_until = policy and policy.state and tonumber(policy.state.aggression_until or 0) or 0
   local auto_until = Yso and Yso.mode and Yso.mode.auto and Yso.mode.auto.state
     and tonumber(Yso.mode.auto.state.combat_until or 0) or 0
-  local in_mode_combat = false
-  if Yso and Yso.mode and type(Yso.mode.is_combat) == "function" then
-    local ok, v = pcall(Yso.mode.is_combat)
-    in_mode_combat = ok and (v == true)
+  local actively_fighting = false
+  if Yso and type(Yso.is_actively_fighting) == "function" then
+    local ok, v = pcall(Yso.is_actively_fighting)
+    actively_fighting = ok and (v == true)
+  elseif Yso and Yso.mode and type(Yso.mode.active_route_id) == "function" then
+    local ok_route, rid = pcall(Yso.mode.active_route_id)
+    local route_id = ok_route and _trim(rid):lower() or ""
+    if route_id ~= "" and route_id ~= "none" then
+      local in_live_mode = false
+      if type(Yso.mode.is_combat) == "function" then
+        local ok_mode, v = pcall(Yso.mode.is_combat)
+        in_live_mode = ok_mode and (v == true)
+      end
+      if not in_live_mode and type(Yso.mode.is_party) == "function" then
+        local ok_mode, v = pcall(Yso.mode.is_party)
+        in_live_mode = ok_mode and (v == true)
+      end
+      actively_fighting = in_live_mode
+    end
   end
 
-  if not force and (aggr_until > now or auto_until > now or in_mode_combat) then
+  if not force and (aggr_until > now or auto_until > now or actively_fighting) then
     return false, "combat_active"
   end
 

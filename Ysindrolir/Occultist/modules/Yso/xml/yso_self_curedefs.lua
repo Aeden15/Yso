@@ -47,6 +47,13 @@ local KNOWN_BUCKETS = {
 
 D.known_buckets = D.known_buckets or KNOWN_BUCKETS
 D.validation_errors = D.validation_errors or {}
+D.reference_warnings = D.reference_warnings or {}
+
+local REFERENCE_SPOTCHECK = {
+  paralysis = { action = "eat", bucket = "bloodroot" },
+  blind = { action = "apply", bucket = "epidermal" },
+  sensitivity = { action = "eat", bucket = "kelp" },
+}
 
 local function _warn(msg)
   if type(cecho) == "function" then
@@ -232,6 +239,34 @@ function D.validate()
   return (#(D.validation_errors or {})) == 0, D.validation_errors or {}
 end
 
+function D.startup_spotcheck()
+  D.reference_warnings = {}
+  for aff, expect in pairs(REFERENCE_SPOTCHECK) do
+    local row = D.by_aff[aff]
+    if type(row) ~= "table" then
+      D.reference_warnings[#D.reference_warnings + 1] =
+        string.format("missing spotcheck aff '%s'", tostring(aff))
+    else
+      if expect.action and row.action ~= expect.action then
+        D.reference_warnings[#D.reference_warnings + 1] =
+          string.format("spotcheck action mismatch %s: got %s expected %s",
+            tostring(aff), tostring(row.action), tostring(expect.action))
+      end
+      if expect.bucket and row.bucket ~= expect.bucket then
+        D.reference_warnings[#D.reference_warnings + 1] =
+          string.format("spotcheck bucket mismatch %s: got %s expected %s",
+            tostring(aff), tostring(row.bucket), tostring(expect.bucket))
+      end
+    end
+  end
+
+  if #D.reference_warnings > 0 then
+    _warn("startup spotcheck found " .. tostring(#D.reference_warnings) .. " warning(s)")
+  end
+
+  return (#D.reference_warnings == 0), D.reference_warnings
+end
+
 function D.canon(name)
   local c = _canon(name)
   if c == "" then return "" end
@@ -268,5 +303,6 @@ function D.affs_in_bucket(bucket)
 end
 
 D.rebuild()
+D.startup_spotcheck()
 
 return D

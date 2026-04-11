@@ -209,6 +209,7 @@ assert_eq("5a: mode is group", P.state.mode, "group")
 assert_true("5b: group active", P.state.group_active == true)
 assert_eq("5c: overlay suspended", P.state.active_overlay, nil)
 assert_true("5d: switched to group set", _profile_calls[#_profile_calls] == "group")
+assert_false("5e: yso-initiated set switch did not mark untrusted", P.state.set_untrusted == true)
 
 print("\n=== Test 6: clearing group restores default then re-evaluates overlay ===")
 clear_calls()

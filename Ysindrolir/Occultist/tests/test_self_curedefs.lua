@@ -61,6 +61,9 @@ local ok, errs = D.validate()
 assert_true("1a: curedefs validate", ok)
 assert_eq("1b: no bucket validation errors", #(errs or {}), 0)
 assert_true("1c: known bucket includes bloodroot", D.known_buckets.bloodroot == true)
+local spot_ok, spot_warnings = D.startup_spotcheck()
+assert_true("1d: startup spotcheck validate", spot_ok == true)
+assert_eq("1e: startup spotcheck warning count", #(spot_warnings or {}), 0)
 
 print("\n=== Test 2: alternatives always table ===")
 for aff, row in pairs(D.by_aff) do

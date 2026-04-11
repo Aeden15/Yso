@@ -81,8 +81,11 @@ _G.Yso = {
   util = {
     now = function() return _clock end,
   },
+  is_actively_fighting = function() return false end,
   mode = {
     is_combat = function() return false end,
+    is_party = function() return false end,
+    active_route_id = function() return "" end,
     auto = { state = { combat_until = 0 } },
   },
   curing = {
@@ -140,6 +143,16 @@ assert_false("4c: still no asthma", SA.has_aff("asthma"))
 advance(2)
 assert_true("4d: text accepted once gmcp is stale", SA.ingest_text_gain("asthma"))
 assert_true("4e: asthma active", SA.has_aff("asthma"))
+SA.cfg.gmcp_list_barrier_ms = 400
+SA.cfg.text_stale_guard_s = 0
+advance(1)
+SA.sync_full({ "paralysis" }, "gmcp.full")
+advance(0.25)
+assert_false("4f: text still blocked inside ms barrier", SA.ingest_text_gain("asthma"))
+advance(0.20)
+assert_true("4g: text allowed once ms barrier expires", SA.ingest_text_gain("asthma"))
+SA.cfg.gmcp_list_barrier_ms = nil
+SA.cfg.text_stale_guard_s = 1.25
 
 print("\n=== Test 5: reset gating in combat context ===")
 _G.Yso.curing.policy.state.aggression_until = _clock + 5
@@ -148,6 +161,15 @@ assert_false("5a: reset blocked while combat active", ok_reset)
 assert_eq("5b: reset reason", why_reset, "combat_active")
 assert_true("5c: forced reset allowed", SA.reset("test", { force = true }))
 _G.Yso.curing.policy.state.aggression_until = 0
+_G.Yso.mode.is_combat = function() return true end
+_G.Yso.mode.active_route_id = function() return "" end
+assert_true("5d: reset allowed when only mode=combat and no active route", SA.reset("test"))
+_G.Yso.is_actively_fighting = function() return true end
+local ok_fight, why_fight = SA.reset("test")
+assert_false("5e: reset blocked while actively fighting", ok_fight)
+assert_eq("5f: active-fight reason", why_fight, "combat_active")
+_G.Yso.is_actively_fighting = function() return false end
+_G.Yso.mode.is_combat = function() return false end
 
 print("\n=== Test 6: broader self state helpers ===")
 _G.gmcp.Char.Vitals = { position = "prone", bleeding = "23" }
