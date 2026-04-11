@@ -210,6 +210,21 @@ local function _gmcp_has_aff(key)
   return false
 end
 
+local function _compat_me_has_aff(key)
+  local me = Yso and Yso.state and Yso.state.me or nil
+  if type(me) ~= "table" then return false end
+
+  local affs = me.affs or nil
+  if type(affs) ~= "table" then return false end
+
+  local map = affs.map
+  if type(map) == "table" then
+    if map[key] == true then return true end
+  end
+  if affs[key] == true then return true end
+  return false
+end
+
 local function _has_aff(key)
   key = tostring(key or ""):lower()
   if key == "" then return false end
@@ -225,6 +240,7 @@ local function _has_aff(key)
   end
 
   if _gmcp_has_aff(key) then return true end
+  if _compat_me_has_aff(key) then return true end
 
   local L = _legacy_affs()
   if L and L[key] then return true end

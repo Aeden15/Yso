@@ -5907,10 +5907,10 @@ function Yso.self.sync_full(list, source)
   return false
 end
 
-function Yso.self.reset(source)
+function Yso.self.reset(source, opts)
   local SA = _selfaff_module()
   if SA and type(SA.reset) == &quot;function&quot; then
-    local ok, v = pcall(SA.reset, source or &quot;manual&quot;)
+    local ok, v = pcall(SA.reset, source or &quot;manual&quot;, opts)
     if ok then return v == true end
   end
   return false
@@ -5977,9 +5977,24 @@ end
 
 -- Try to warm-load new curing subsystems for live sessions.
 if type(require) == &quot;function&quot; then
-  pcall(require, &quot;Yso.Core.self_aff&quot;)
-  pcall(require, &quot;Yso.Curing.self_curedefs&quot;)
-  pcall(require, &quot;Yso.Curing.serverside_policy&quot;)
+  Yso._warm_require_warned = Yso._warm_require_warned or {}
+  local function _warm_require(mod, label)
+    local ok = pcall(require, mod)
+    if ok then return true end
+    if Yso._warm_require_warned[mod] then return false end
+    Yso._warm_require_warned[mod] = true
+    if type(cecho) == &quot;function&quot; then
+      cecho(string.format(
+        &quot;&lt;yellow&gt;[Yso:API] WARN:&lt;reset&gt; %s failed to load; using fallback reads.\n&quot;,
+        tostring(label or mod)
+      ))
+    end
+    return false
+  end
+
+  _warm_require(&quot;Yso.Core.self_aff&quot;, &quot;self_aff&quot;)
+  _warm_require(&quot;Yso.Curing.self_curedefs&quot;, &quot;self_curedefs&quot;)
+  _warm_require(&quot;Yso.Curing.serverside_policy&quot;, &quot;serverside_policy&quot;)
 end
 </script>
 					<eventHandlerList />
@@ -16695,6 +16710,8 @@ local function _self_score(limb)
 end
 
 local function _self_has_aff(aff)
+  -- Diagnostic note (#22): parry remains Yso-self-truth first by design.
+  -- No additional Legacy hysteresis layer is applied here unless real divergence is observed.
   aff = tostring(aff or &quot;&quot;):lower()
   if aff == &quot;&quot; then return false end
 
@@ -21444,6 +21461,21 @@ local function _gmcp_has_aff(key)
   return false
 end
 
+local function _compat_me_has_aff(key)
+  local me = Yso and Yso.state and Yso.state.me or nil
+  if type(me) ~= &quot;table&quot; then return false end
+
+  local affs = me.affs or nil
+  if type(affs) ~= &quot;table&quot; then return false end
+
+  local map = affs.map
+  if type(map) == &quot;table&quot; then
+    if map[key] == true then return true end
+  end
+  if affs[key] == true then return true end
+  return false
+end
+
 local function _has_aff(key)
   key = tostring(key or &quot;&quot;):lower()
   if key == &quot;&quot; then return false end
@@ -21459,6 +21491,7 @@ local function _has_aff(key)
   end
 
   if _gmcp_has_aff(key) then return true end
+  if _compat_me_has_aff(key) then return true end
 
   local L = _legacy_affs()
   if L and L[key] then return true end
@@ -22915,6 +22948,7 @@ local SA = Yso.selfaff
 SA.cfg = SA.cfg or {
   debug = false,
   text_stale_guard_s = 1.25,
+  gmcp_list_barrier_s = 0.20,
 }
 
 SA.affs = SA.affs or {}
@@ -22934,12 +22968,16 @@ SA.states = SA.states or {
 
 SA.meta = SA.meta or {
   last_gmcp_at = 0,
+  last_gmcp_list_at = 0,
   last_text_at = 0,
   last_source = &quot;&quot;,
 }
 
 SA._eh = SA._eh or {}
 SA._tr = SA._tr or {}
+SA._compat_mirror_store = SA._compat_mirror_store or {}
+SA._compat_mirror_ready = (SA._compat_mirror_ready == true)
+SA._compat_write_guard = (SA._compat_write_guard == true)
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
@@ -23040,17 +23078,101 @@ local function _mark_meta(source)
   SA.meta.last_source = source
   if source:find(&quot;gmcp&quot;, 1, true) then
     SA.meta.last_gmcp_at = now
+    if source == &quot;gmcp.full&quot; then
+      SA.meta.last_gmcp_list_at = now
+    end
   elseif source:find(&quot;text&quot;, 1, true) then
     SA.meta.last_text_at = now
   end
 end
 
 local function _text_allowed()
+  local now = _now()
+  local list_barrier = tonumber(SA.cfg.gmcp_list_barrier_s or 0.20) or 0.20
+  if list_barrier &gt; 0 then
+    local last_list = tonumber(SA.meta.last_gmcp_list_at or 0) or 0
+    if last_list &gt; 0 and (now - last_list) &lt; list_barrier then
+      return false
+    end
+  end
+
   local stale = tonumber(SA.cfg.text_stale_guard_s or 1.25) or 1.25
   if stale &lt;= 0 then return true end
   local last = tonumber(SA.meta.last_gmcp_at or 0) or 0
   if last &lt;= 0 then return true end
-  return (_now() - last) &gt;= stale
+  return (now - last) &gt;= stale
+end
+
+local function _compat_store()
+  local store = SA._compat_mirror_store
+  if type(store) ~= &quot;table&quot; then
+    store = {}
+    SA._compat_mirror_store = store
+  end
+  return store
+end
+
+local function _set_compat_guard(v)
+  SA._compat_write_guard = (v == true)
+end
+
+local function _sync_store_from_legacy_affs()
+  local src = Yso.affs
+  if type(src) ~= &quot;table&quot; then return end
+  local store = _compat_store()
+  for k, v in pairs(src) do
+    local key = SA.normalize(k)
+    if key ~= &quot;&quot; then
+      if v == true then
+        store[key] = true
+      elseif v == false or v == nil then
+        store[key] = nil
+      end
+    end
+  end
+end
+
+local function _install_affs_proxy()
+  if SA._compat_mirror_ready == true and type(Yso.affs) == &quot;table&quot; then return end
+  _sync_store_from_legacy_affs()
+  local store = _compat_store()
+  local proxy = {}
+
+  local mt = {
+    __index = function(_, k)
+      return store[k]
+    end,
+    __newindex = function(_, k, v)
+      local key = SA.normalize(k)
+      if key == &quot;&quot; then return end
+
+      if SA._compat_write_guard == true then
+        if v == true then
+          store[key] = true
+        elseif v == nil or v == false then
+          store[key] = nil
+        else
+          store[key] = v
+        end
+        return
+      end
+
+      if v == true then
+        SA.gain(key, &quot;compat&quot;)
+      elseif v == nil or v == false then
+        SA.cure(key, &quot;compat&quot;)
+      else
+        store[key] = v
+      end
+    end,
+    __pairs = function()
+      return next, store, nil
+    end,
+  }
+
+  setmetatable(proxy, mt)
+  Yso.affs = proxy
+  SA._compat_mirror_ready = true
 end
 
 local function _ensure_row(key)
@@ -23068,11 +23190,11 @@ local function _ensure_row(key)
 end
 
 local function _sync_mirror(key, active)
-  if active then
-    Yso.affs[key] = true
-  else
-    Yso.affs[key] = nil
-  end
+  _install_affs_proxy()
+  local store = _compat_store()
+  _set_compat_guard(true)
+  if active then store[key] = true else store[key] = nil end
+  _set_compat_guard(false)
 end
 
 local function _set_state_from_aff(key, active)
@@ -23102,7 +23224,7 @@ local function _set_aff_active(key, active, source)
   local is = (active == true)
 
   if is then
-    if not was and (tonumber(row.first_seen or 0) or 0) &lt;= 0 then
+    if not was then
       row.first_seen = now
     end
     row.last_seen = now
@@ -23190,8 +23312,31 @@ function SA.sync_full(list, source)
   return true
 end
 
-function SA.reset(source)
+function SA.reset(source, opts)
+  local reset_opts = opts
+  if type(source) == &quot;table&quot; then
+    reset_opts = source
+    source = &quot;reset&quot;
+  end
   source = tostring(source or &quot;reset&quot;)
+  reset_opts = reset_opts or {}
+
+  local force = (reset_opts.force == true)
+  local now = _now()
+  local policy = Yso and Yso.curing and Yso.curing.policy
+  local aggr_until = policy and policy.state and tonumber(policy.state.aggression_until or 0) or 0
+  local auto_until = Yso and Yso.mode and Yso.mode.auto and Yso.mode.auto.state
+    and tonumber(Yso.mode.auto.state.combat_until or 0) or 0
+  local in_mode_combat = false
+  if Yso and Yso.mode and type(Yso.mode.is_combat) == &quot;function&quot; then
+    local ok, v = pcall(Yso.mode.is_combat)
+    in_mode_combat = ok and (v == true)
+  end
+
+  if not force and (aggr_until &gt; now or auto_until &gt; now or in_mode_combat) then
+    return false, &quot;combat_active&quot;
+  end
+
   for aff, row in pairs(SA.affs) do
     if type(row) == &quot;table&quot; and row.active == true then
       _set_aff_active(aff, false, source)
@@ -23355,7 +23500,7 @@ Yso.self.list_affs = function() return SA.list_affs() end
 Yso.self.gain = function(name, source) return SA.gain(name, source) end
 Yso.self.cure = function(name, source) return SA.cure(name, source) end
 Yso.self.sync_full = function(list, source) return SA.sync_full(list, source) end
-Yso.self.reset = function(source) return SA.reset(source) end
+Yso.self.reset = function(source, opts) return SA.reset(source, opts) end
 Yso.self.is_prone = function() return SA.is_prone() end
 Yso.self.is_asleep = function() return SA.is_asleep() end
 Yso.self.is_blackout = function() return SA.is_blackout() end
@@ -23422,6 +23567,7 @@ end
 SA.install_hooks()
 SA.ingest_gmcp_aff_list()
 SA.ingest_gmcp_vitals()
+_install_affs_proxy()
 
 return SA
 </script>
@@ -23444,6 +23590,47 @@ Yso.curing = Yso.curing or {}
 Yso.curing.defs = Yso.curing.defs or {}
 
 local D = Yso.curing.defs
+
+local KNOWN_BUCKETS = {
+  antimony = true,
+  bellwort = true,
+  bloodroot = true,
+  calcite = true,
+  caloric = true,
+  cinnabar = true,
+  clot = true,
+  compose = true,
+  cuprum = true,
+  elm = true,
+  epidermal = true,
+  ferrum = true,
+  ginger = true,
+  ginseng = true,
+  goldenseal = true,
+  immunity = true,
+  kelp = true,
+  lobelia = true,
+  magnesium = true,
+  mending = true,
+  pear = true,
+  plumbum = true,
+  pricklyash = true,
+  realgar = true,
+  restoration = true,
+  scrub = true,
+  stannum = true,
+  valerian = true,
+  writhe = true,
+}
+
+D.known_buckets = D.known_buckets or KNOWN_BUCKETS
+D.validation_errors = D.validation_errors or {}
+
+local function _warn(msg)
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;gold&gt;[Yso:curedefs] &lt;reset&gt;%s\n&quot;, tostring(msg)))
+  end
+end
 
 local function _trim(s)
   return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
@@ -23555,7 +23742,7 @@ local function _index_row(row)
     bucket = _norm_bucket(row.bucket or row.herb or row.alchemy),
     aliases = {},
     family = row.family,
-    alternatives = row.alternatives,
+    alternatives = {},
   }
 
   if type(row.aliases) == &quot;table&quot; then
@@ -23564,6 +23751,33 @@ local function _index_row(row)
       if a ~= &quot;&quot; then
         copy.aliases[#copy.aliases + 1] = a
       end
+    end
+  end
+
+  if type(row.alternatives) == &quot;table&quot; then
+    for i = 1, #row.alternatives do
+      local alt = row.alternatives[i]
+      if type(alt) == &quot;table&quot; then
+        copy.alternatives[#copy.alternatives + 1] = {
+          action = (alt.action and _trim(alt.action) ~= &quot;&quot;) and tostring(alt.action):lower() or nil,
+          herb = alt.herb and _norm_bucket(alt.herb) or nil,
+          alchemy = alt.alchemy and _norm_bucket(alt.alchemy) or nil,
+          bucket = _norm_bucket(alt.bucket or alt.herb or alt.alchemy),
+        }
+      end
+    end
+  end
+
+  if copy.bucket and not D.known_buckets[copy.bucket] then
+    D.validation_errors[#D.validation_errors + 1] =
+      string.format(&quot;invalid bucket &apos;%s&apos; for %s&quot;, tostring(copy.bucket), canon)
+  end
+
+  for i = 1, #copy.alternatives do
+    local alt = copy.alternatives[i]
+    if alt.bucket and not D.known_buckets[alt.bucket] then
+      D.validation_errors[#D.validation_errors + 1] =
+        string.format(&quot;invalid alt bucket &apos;%s&apos; for %s&quot;, tostring(alt.bucket), canon)
     end
   end
 
@@ -23583,9 +23797,17 @@ function D.rebuild()
   D.by_aff = {}
   D.by_bucket = {}
   D.alias_to_canon = {}
+  D.validation_errors = {}
   for i = 1, #RAW do
     _index_row(RAW[i])
   end
+  if #D.validation_errors &gt; 0 then
+    _warn(&quot;bucket validation found &quot; .. tostring(#D.validation_errors) .. &quot; issue(s)&quot;)
+  end
+end
+
+function D.validate()
+  return (#(D.validation_errors or {})) == 0, D.validation_errors or {}
 end
 
 function D.canon(name)
@@ -23677,6 +23899,14 @@ P.state = P.state or {
   mode = &quot;default&quot;,
   current_set = &quot;&quot;,
   active_overlay = nil,
+  set_untrusted = false,
+  set_untrusted_reason = &quot;&quot;,
+  set_untrusted_since = 0,
+  set_observed_streak = 0,
+  set_last_observed = &quot;&quot;,
+  set_last_resync_req_at = 0,
+  set_expected = &quot;&quot;,
+  set_expected_until = 0,
 
   group_active = false,
   group_since = 0,
@@ -23703,6 +23933,14 @@ P.state = P.state or {
 
   priority_list_requested_at = 0,
 }
+P.state.set_untrusted = (P.state.set_untrusted == true)
+P.state.set_untrusted_reason = tostring(P.state.set_untrusted_reason or &quot;&quot;)
+P.state.set_untrusted_since = tonumber(P.state.set_untrusted_since or 0) or 0
+P.state.set_observed_streak = tonumber(P.state.set_observed_streak or 0) or 0
+P.state.set_last_observed = tostring(P.state.set_last_observed or &quot;&quot;)
+P.state.set_last_resync_req_at = tonumber(P.state.set_last_resync_req_at or 0) or 0
+P.state.set_expected = tostring(P.state.set_expected or &quot;&quot;)
+P.state.set_expected_until = tonumber(P.state.set_expected_until or 0) or 0
 
 P.overlays = P.overlays or {
   blademaster = {
@@ -23795,6 +24033,49 @@ local function _adapter_table()
   return Yso.curing.adapters
 end
 
+local function _request_authoritative_resync(reason, force)
+  local now = _now()
+  if force ~= true and (now - (tonumber(P.state.set_last_resync_req_at or 0) or 0)) &lt; 2.0 then
+    return false
+  end
+
+  if type(send) == &quot;function&quot; then
+    _mark_self_send()
+    send(&quot;curingset list&quot;, false)
+    send(&quot;curing priority list&quot;, false)
+    P.state.set_last_resync_req_at = now
+    P.state.priority_list_requested_at = now
+    _echo(&quot;authoritative resync requested: &quot; .. tostring(reason or &quot;unknown&quot;))
+    return true
+  end
+  return false
+end
+
+local function _mark_set_untrusted(reason)
+  local was_untrusted = (P.state.set_untrusted == true)
+  local prior_reason = tostring(P.state.set_untrusted_reason or &quot;&quot;)
+  if P.state.set_untrusted ~= true then
+    P.state.set_untrusted = true
+    P.state.set_untrusted_since = _now()
+    P.state.set_observed_streak = 0
+  end
+  P.state.set_untrusted_reason = tostring(reason or &quot;set_unknown&quot;)
+  _request_authoritative_resync(
+    P.state.set_untrusted_reason,
+    (not was_untrusted) or (prior_reason ~= P.state.set_untrusted_reason)
+  )
+end
+
+local function _clear_set_untrusted(reason)
+  if P.state.set_untrusted ~= true then return end
+  P.state.set_untrusted = false
+  P.state.set_untrusted_reason = &quot;&quot;
+  P.state.set_untrusted_since = 0
+  P.state.set_observed_streak = 0
+  P.state.set_last_observed = &quot;&quot;
+  _echo(&quot;set trust restored: &quot; .. tostring(reason or &quot;stable&quot;))
+end
+
 local function _send_profile(set_name)
   set_name = _trim(set_name):lower()
   if set_name == &quot;&quot; then return false end
@@ -23805,6 +24086,8 @@ local function _send_profile(set_name)
 
   local C = _adapter_table()
   _mark_self_send()
+  P.state.set_expected = set_name
+  P.state.set_expected_until = _now() + 3.0
   if type(C.use_profile) == &quot;function&quot; then
     C.use_profile(set_name)
   elseif type(send) == &quot;function&quot; then
@@ -23865,17 +24148,68 @@ local function _read_baseline_from_legacy(set_name)
 end
 
 local function _read_current_set()
-  local set = &quot;&quot;
+  local now = _now()
+  local legacy_set = &quot;&quot;
+  local global_set = &quot;&quot;
   if Legacy and Legacy.Curing and type(Legacy.Curing.ActiveServerSet) == &quot;string&quot; then
-    set = _trim(Legacy.Curing.ActiveServerSet):lower()
+    legacy_set = _trim(Legacy.Curing.ActiveServerSet):lower()
   end
-  if set == &quot;&quot; and type(rawget(_G, &quot;CurrentCureset&quot;)) == &quot;string&quot; then
-    set = _trim(rawget(_G, &quot;CurrentCureset&quot;)):lower()
+  if type(rawget(_G, &quot;CurrentCureset&quot;)) == &quot;string&quot; then
+    global_set = _trim(rawget(_G, &quot;CurrentCureset&quot;)):lower()
   end
-  if set ~= &quot;&quot; then
-    P.state.current_set = set
+
+  local disagreement = (legacy_set ~= &quot;&quot; and global_set ~= &quot;&quot; and legacy_set ~= global_set)
+  local resolved = legacy_set ~= &quot;&quot; and legacy_set or global_set
+  local current = _trim(P.state.current_set):lower()
+  local expected = _trim(P.state.set_expected):lower()
+  local expected_until = tonumber(P.state.set_expected_until or 0) or 0
+  local in_expected_window = (expected ~= &quot;&quot; and now &lt;= expected_until)
+
+  if disagreement then
+    local transient_self_sync = false
+    if in_expected_window and (legacy_set == expected or global_set == expected) then
+      resolved = expected
+      transient_self_sync = true
+    elseif _is_self_send_window() and current ~= &quot;&quot; and (legacy_set == current or global_set == current) then
+      resolved = current
+      transient_self_sync = true
+    end
+
+    if not transient_self_sync then
+      _mark_set_untrusted(&quot;set_source_disagree&quot;)
+      resolved = legacy_set ~= &quot;&quot; and legacy_set or global_set
+    end
+  elseif resolved == &quot;&quot; then
+    _mark_set_untrusted(&quot;set_unknown&quot;)
+  elseif
+    not in_expected_window
+    and current ~= &quot;&quot;
+    and current ~= resolved
+  then
+    _mark_set_untrusted(&quot;external_switch&quot;)
   end
-  return set
+
+  if resolved ~= &quot;&quot; then
+    P.state.current_set = resolved
+    if resolved == (P.state.set_last_observed or &quot;&quot;) then
+      P.state.set_observed_streak = (tonumber(P.state.set_observed_streak or 0) or 0) + 1
+    else
+      P.state.set_last_observed = resolved
+      P.state.set_observed_streak = 1
+    end
+  end
+
+  if expected ~= &quot;&quot; and resolved == expected then
+    P.state.set_expected = &quot;&quot;
+    P.state.set_expected_until = 0
+  end
+
+  if P.state.set_untrusted == true and not disagreement and resolved ~= &quot;&quot; and (P.state.set_observed_streak or 0) &gt;= 2 then
+    _clear_set_untrusted(&quot;stable_observation&quot;)
+    _read_baseline_from_legacy(P.cfg.base_set)
+  end
+
+  return resolved
 end
 
 local function _target_name()
@@ -23973,6 +24307,7 @@ function P.note_manual_intervention(source)
   local grace = tonumber(P.cfg.manual_grace_s or 8) or 8
   P.state.manual_grace_until = now + grace
   P.state.last_manual_source = tostring(source or &quot;manual&quot;)
+  P.clear_emergency_dedupe(&quot;manual_intervention&quot;)
   if type(raiseEvent) == &quot;function&quot; then
     raiseEvent(&quot;yso.curing.manual_intervention&quot;, P.state.last_manual_source, grace)
   end
@@ -24112,6 +24447,8 @@ local function _compute_tree_policy(now, overlay)
 end
 
 local function _apply_tree_policy(policy, overlay)
+  -- Phase-one note: tree adapter currently carries policy mode only.
+  -- Cooldown-aware tree command orchestration stays intentionally deferred.
   policy = _trim(policy)
   if policy == &quot;&quot; then return false end
   if P.state.tree_policy == policy then return false end
@@ -24186,8 +24523,17 @@ function P.queue_emergency(cmd, opts)
   return true
 end
 
+function P.clear_emergency_dedupe(reason)
+  P.state.queue_recent = {}
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.curing.queue_dedupe_cleared&quot;, tostring(reason or &quot;manual&quot;))
+  end
+  return true
+end
+
 function P.resync(reason)
   reason = tostring(reason or &quot;resync&quot;)
+  _request_authoritative_resync(&quot;resync:&quot; .. reason)
   _read_current_set()
   _read_baseline_from_legacy(P.cfg.base_set)
 
@@ -24230,6 +24576,9 @@ function P.tick(source, force)
   P.state.last_tick = now
 
   _read_current_set()
+  if P.state.set_untrusted == true then
+    return true, &quot;set_untrusted&quot;
+  end
 
   local group_on = _compute_group_active(now)
   local overlay = (group_on and nil) or _select_overlay(now)
@@ -24291,6 +24640,8 @@ function P.status()
   return {
     mode = P.state.mode,
     current_set = P.state.current_set,
+    set_untrusted = (P.state.set_untrusted == true),
+    set_untrusted_reason = P.state.set_untrusted_reason,
     overlay = P.state.active_overlay,
     group_active = (P.state.group_active == true),
     manual_grace = math.max(0, (tonumber(P.state.manual_grace_until or 0) or 0) - _now()),
@@ -24357,6 +24708,11 @@ function P.install_hooks()
     P._tr.set_changed = tempRegexTrigger([[^Changed the set named .+\.$]], function()
       if _is_self_send_window() then return end
       P.note_manual_intervention(&quot;text_ack:set&quot;)
+    end)
+
+    _kill_tr(P._tr.queue_cleared)
+    P._tr.queue_cleared = tempRegexTrigger([[^You clear your \w+ queue\.$]], function()
+      P.clear_emergency_dedupe(&quot;text_ack:queue_clear&quot;)
     end)
   end
 

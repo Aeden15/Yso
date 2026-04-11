@@ -20,6 +20,7 @@ local SA = Yso.selfaff
 SA.cfg = SA.cfg or {
   debug = false,
   text_stale_guard_s = 1.25,
+  gmcp_list_barrier_s = 0.20,
 }
 
 SA.affs = SA.affs or {}
@@ -39,12 +40,16 @@ SA.states = SA.states or {
 
 SA.meta = SA.meta or {
   last_gmcp_at = 0,
+  last_gmcp_list_at = 0,
   last_text_at = 0,
   last_source = "",
 }
 
 SA._eh = SA._eh or {}
 SA._tr = SA._tr or {}
+SA._compat_mirror_store = SA._compat_mirror_store or {}
+SA._compat_mirror_ready = (SA._compat_mirror_ready == true)
+SA._compat_write_guard = (SA._compat_write_guard == true)
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
@@ -145,17 +150,101 @@ local function _mark_meta(source)
   SA.meta.last_source = source
   if source:find("gmcp", 1, true) then
     SA.meta.last_gmcp_at = now
+    if source == "gmcp.full" then
+      SA.meta.last_gmcp_list_at = now
+    end
   elseif source:find("text", 1, true) then
     SA.meta.last_text_at = now
   end
 end
 
 local function _text_allowed()
+  local now = _now()
+  local list_barrier = tonumber(SA.cfg.gmcp_list_barrier_s or 0.20) or 0.20
+  if list_barrier > 0 then
+    local last_list = tonumber(SA.meta.last_gmcp_list_at or 0) or 0
+    if last_list > 0 and (now - last_list) < list_barrier then
+      return false
+    end
+  end
+
   local stale = tonumber(SA.cfg.text_stale_guard_s or 1.25) or 1.25
   if stale <= 0 then return true end
   local last = tonumber(SA.meta.last_gmcp_at or 0) or 0
   if last <= 0 then return true end
-  return (_now() - last) >= stale
+  return (now - last) >= stale
+end
+
+local function _compat_store()
+  local store = SA._compat_mirror_store
+  if type(store) ~= "table" then
+    store = {}
+    SA._compat_mirror_store = store
+  end
+  return store
+end
+
+local function _set_compat_guard(v)
+  SA._compat_write_guard = (v == true)
+end
+
+local function _sync_store_from_legacy_affs()
+  local src = Yso.affs
+  if type(src) ~= "table" then return end
+  local store = _compat_store()
+  for k, v in pairs(src) do
+    local key = SA.normalize(k)
+    if key ~= "" then
+      if v == true then
+        store[key] = true
+      elseif v == false or v == nil then
+        store[key] = nil
+      end
+    end
+  end
+end
+
+local function _install_affs_proxy()
+  if SA._compat_mirror_ready == true and type(Yso.affs) == "table" then return end
+  _sync_store_from_legacy_affs()
+  local store = _compat_store()
+  local proxy = {}
+
+  local mt = {
+    __index = function(_, k)
+      return store[k]
+    end,
+    __newindex = function(_, k, v)
+      local key = SA.normalize(k)
+      if key == "" then return end
+
+      if SA._compat_write_guard == true then
+        if v == true then
+          store[key] = true
+        elseif v == nil or v == false then
+          store[key] = nil
+        else
+          store[key] = v
+        end
+        return
+      end
+
+      if v == true then
+        SA.gain(key, "compat")
+      elseif v == nil or v == false then
+        SA.cure(key, "compat")
+      else
+        store[key] = v
+      end
+    end,
+    __pairs = function()
+      return next, store, nil
+    end,
+  }
+
+  setmetatable(proxy, mt)
+  Yso.affs = proxy
+  SA._compat_mirror_ready = true
 end
 
 local function _ensure_row(key)
@@ -173,11 +262,11 @@ local function _ensure_row(key)
 end
 
 local function _sync_mirror(key, active)
-  if active then
-    Yso.affs[key] = true
-  else
-    Yso.affs[key] = nil
-  end
+  _install_affs_proxy()
+  local store = _compat_store()
+  _set_compat_guard(true)
+  if active then store[key] = true else store[key] = nil end
+  _set_compat_guard(false)
 end
 
 local function _set_state_from_aff(key, active)
@@ -207,7 +296,7 @@ local function _set_aff_active(key, active, source)
   local is = (active == true)
 
   if is then
-    if not was and (tonumber(row.first_seen or 0) or 0) <= 0 then
+    if not was then
       row.first_seen = now
     end
     row.last_seen = now
@@ -295,8 +384,31 @@ function SA.sync_full(list, source)
   return true
 end
 
-function SA.reset(source)
+function SA.reset(source, opts)
+  local reset_opts = opts
+  if type(source) == "table" then
+    reset_opts = source
+    source = "reset"
+  end
   source = tostring(source or "reset")
+  reset_opts = reset_opts or {}
+
+  local force = (reset_opts.force == true)
+  local now = _now()
+  local policy = Yso and Yso.curing and Yso.curing.policy
+  local aggr_until = policy and policy.state and tonumber(policy.state.aggression_until or 0) or 0
+  local auto_until = Yso and Yso.mode and Yso.mode.auto and Yso.mode.auto.state
+    and tonumber(Yso.mode.auto.state.combat_until or 0) or 0
+  local in_mode_combat = false
+  if Yso and Yso.mode and type(Yso.mode.is_combat) == "function" then
+    local ok, v = pcall(Yso.mode.is_combat)
+    in_mode_combat = ok and (v == true)
+  end
+
+  if not force and (aggr_until > now or auto_until > now or in_mode_combat) then
+    return false, "combat_active"
+  end
+
   for aff, row in pairs(SA.affs) do
     if type(row) == "table" and row.active == true then
       _set_aff_active(aff, false, source)
@@ -460,7 +572,7 @@ Yso.self.list_affs = function() return SA.list_affs() end
 Yso.self.gain = function(name, source) return SA.gain(name, source) end
 Yso.self.cure = function(name, source) return SA.cure(name, source) end
 Yso.self.sync_full = function(list, source) return SA.sync_full(list, source) end
-Yso.self.reset = function(source) return SA.reset(source) end
+Yso.self.reset = function(source, opts) return SA.reset(source, opts) end
 Yso.self.is_prone = function() return SA.is_prone() end
 Yso.self.is_asleep = function() return SA.is_asleep() end
 Yso.self.is_blackout = function() return SA.is_blackout() end
@@ -527,5 +639,6 @@ end
 SA.install_hooks()
 SA.ingest_gmcp_aff_list()
 SA.ingest_gmcp_vitals()
+_install_affs_proxy()
 
 return SA

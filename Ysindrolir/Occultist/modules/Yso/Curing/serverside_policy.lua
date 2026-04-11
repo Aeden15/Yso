@@ -43,6 +43,14 @@ P.state = P.state or {
   mode = "default",
   current_set = "",
   active_overlay = nil,
+  set_untrusted = false,
+  set_untrusted_reason = "",
+  set_untrusted_since = 0,
+  set_observed_streak = 0,
+  set_last_observed = "",
+  set_last_resync_req_at = 0,
+  set_expected = "",
+  set_expected_until = 0,
 
   group_active = false,
   group_since = 0,
@@ -69,6 +77,14 @@ P.state = P.state or {
 
   priority_list_requested_at = 0,
 }
+P.state.set_untrusted = (P.state.set_untrusted == true)
+P.state.set_untrusted_reason = tostring(P.state.set_untrusted_reason or "")
+P.state.set_untrusted_since = tonumber(P.state.set_untrusted_since or 0) or 0
+P.state.set_observed_streak = tonumber(P.state.set_observed_streak or 0) or 0
+P.state.set_last_observed = tostring(P.state.set_last_observed or "")
+P.state.set_last_resync_req_at = tonumber(P.state.set_last_resync_req_at or 0) or 0
+P.state.set_expected = tostring(P.state.set_expected or "")
+P.state.set_expected_until = tonumber(P.state.set_expected_until or 0) or 0
 
 P.overlays = P.overlays or {
   blademaster = {
@@ -161,6 +177,49 @@ local function _adapter_table()
   return Yso.curing.adapters
 end
 
+local function _request_authoritative_resync(reason, force)
+  local now = _now()
+  if force ~= true and (now - (tonumber(P.state.set_last_resync_req_at or 0) or 0)) < 2.0 then
+    return false
+  end
+
+  if type(send) == "function" then
+    _mark_self_send()
+    send("curingset list", false)
+    send("curing priority list", false)
+    P.state.set_last_resync_req_at = now
+    P.state.priority_list_requested_at = now
+    _echo("authoritative resync requested: " .. tostring(reason or "unknown"))
+    return true
+  end
+  return false
+end
+
+local function _mark_set_untrusted(reason)
+  local was_untrusted = (P.state.set_untrusted == true)
+  local prior_reason = tostring(P.state.set_untrusted_reason or "")
+  if P.state.set_untrusted ~= true then
+    P.state.set_untrusted = true
+    P.state.set_untrusted_since = _now()
+    P.state.set_observed_streak = 0
+  end
+  P.state.set_untrusted_reason = tostring(reason or "set_unknown")
+  _request_authoritative_resync(
+    P.state.set_untrusted_reason,
+    (not was_untrusted) or (prior_reason ~= P.state.set_untrusted_reason)
+  )
+end
+
+local function _clear_set_untrusted(reason)
+  if P.state.set_untrusted ~= true then return end
+  P.state.set_untrusted = false
+  P.state.set_untrusted_reason = ""
+  P.state.set_untrusted_since = 0
+  P.state.set_observed_streak = 0
+  P.state.set_last_observed = ""
+  _echo("set trust restored: " .. tostring(reason or "stable"))
+end
+
 local function _send_profile(set_name)
   set_name = _trim(set_name):lower()
   if set_name == "" then return false end
@@ -171,6 +230,8 @@ local function _send_profile(set_name)
 
   local C = _adapter_table()
   _mark_self_send()
+  P.state.set_expected = set_name
+  P.state.set_expected_until = _now() + 3.0
   if type(C.use_profile) == "function" then
     C.use_profile(set_name)
   elseif type(send) == "function" then
@@ -231,17 +292,68 @@ local function _read_baseline_from_legacy(set_name)
 end
 
 local function _read_current_set()
-  local set = ""
+  local now = _now()
+  local legacy_set = ""
+  local global_set = ""
   if Legacy and Legacy.Curing and type(Legacy.Curing.ActiveServerSet) == "string" then
-    set = _trim(Legacy.Curing.ActiveServerSet):lower()
+    legacy_set = _trim(Legacy.Curing.ActiveServerSet):lower()
   end
-  if set == "" and type(rawget(_G, "CurrentCureset")) == "string" then
-    set = _trim(rawget(_G, "CurrentCureset")):lower()
+  if type(rawget(_G, "CurrentCureset")) == "string" then
+    global_set = _trim(rawget(_G, "CurrentCureset")):lower()
   end
-  if set ~= "" then
-    P.state.current_set = set
+
+  local disagreement = (legacy_set ~= "" and global_set ~= "" and legacy_set ~= global_set)
+  local resolved = legacy_set ~= "" and legacy_set or global_set
+  local current = _trim(P.state.current_set):lower()
+  local expected = _trim(P.state.set_expected):lower()
+  local expected_until = tonumber(P.state.set_expected_until or 0) or 0
+  local in_expected_window = (expected ~= "" and now <= expected_until)
+
+  if disagreement then
+    local transient_self_sync = false
+    if in_expected_window and (legacy_set == expected or global_set == expected) then
+      resolved = expected
+      transient_self_sync = true
+    elseif _is_self_send_window() and current ~= "" and (legacy_set == current or global_set == current) then
+      resolved = current
+      transient_self_sync = true
+    end
+
+    if not transient_self_sync then
+      _mark_set_untrusted("set_source_disagree")
+      resolved = legacy_set ~= "" and legacy_set or global_set
+    end
+  elseif resolved == "" then
+    _mark_set_untrusted("set_unknown")
+  elseif
+    not in_expected_window
+    and current ~= ""
+    and current ~= resolved
+  then
+    _mark_set_untrusted("external_switch")
   end
-  return set
+
+  if resolved ~= "" then
+    P.state.current_set = resolved
+    if resolved == (P.state.set_last_observed or "") then
+      P.state.set_observed_streak = (tonumber(P.state.set_observed_streak or 0) or 0) + 1
+    else
+      P.state.set_last_observed = resolved
+      P.state.set_observed_streak = 1
+    end
+  end
+
+  if expected ~= "" and resolved == expected then
+    P.state.set_expected = ""
+    P.state.set_expected_until = 0
+  end
+
+  if P.state.set_untrusted == true and not disagreement and resolved ~= "" and (P.state.set_observed_streak or 0) >= 2 then
+    _clear_set_untrusted("stable_observation")
+    _read_baseline_from_legacy(P.cfg.base_set)
+  end
+
+  return resolved
 end
 
 local function _target_name()
@@ -339,6 +451,7 @@ function P.note_manual_intervention(source)
   local grace = tonumber(P.cfg.manual_grace_s or 8) or 8
   P.state.manual_grace_until = now + grace
   P.state.last_manual_source = tostring(source or "manual")
+  P.clear_emergency_dedupe("manual_intervention")
   if type(raiseEvent) == "function" then
     raiseEvent("yso.curing.manual_intervention", P.state.last_manual_source, grace)
   end
@@ -478,6 +591,8 @@ local function _compute_tree_policy(now, overlay)
 end
 
 local function _apply_tree_policy(policy, overlay)
+  -- Phase-one note: tree adapter currently carries policy mode only.
+  -- Cooldown-aware tree command orchestration stays intentionally deferred.
   policy = _trim(policy)
   if policy == "" then return false end
   if P.state.tree_policy == policy then return false end
@@ -552,8 +667,17 @@ function P.queue_emergency(cmd, opts)
   return true
 end
 
+function P.clear_emergency_dedupe(reason)
+  P.state.queue_recent = {}
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.curing.queue_dedupe_cleared", tostring(reason or "manual"))
+  end
+  return true
+end
+
 function P.resync(reason)
   reason = tostring(reason or "resync")
+  _request_authoritative_resync("resync:" .. reason)
   _read_current_set()
   _read_baseline_from_legacy(P.cfg.base_set)
 
@@ -596,6 +720,9 @@ function P.tick(source, force)
   P.state.last_tick = now
 
   _read_current_set()
+  if P.state.set_untrusted == true then
+    return true, "set_untrusted"
+  end
 
   local group_on = _compute_group_active(now)
   local overlay = (group_on and nil) or _select_overlay(now)
@@ -657,6 +784,8 @@ function P.status()
   return {
     mode = P.state.mode,
     current_set = P.state.current_set,
+    set_untrusted = (P.state.set_untrusted == true),
+    set_untrusted_reason = P.state.set_untrusted_reason,
     overlay = P.state.active_overlay,
     group_active = (P.state.group_active == true),
     manual_grace = math.max(0, (tonumber(P.state.manual_grace_until or 0) or 0) - _now()),
@@ -723,6 +852,11 @@ function P.install_hooks()
     P._tr.set_changed = tempRegexTrigger([[^Changed the set named .+\.$]], function()
       if _is_self_send_window() then return end
       P.note_manual_intervention("text_ack:set")
+    end)
+
+    _kill_tr(P._tr.queue_cleared)
+    P._tr.queue_cleared = tempRegexTrigger([[^You clear your \w+ queue\.$]], function()
+      P.clear_emergency_dedupe("text_ack:queue_clear")
     end)
   end
 

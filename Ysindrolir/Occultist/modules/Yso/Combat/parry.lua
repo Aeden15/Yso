@@ -95,6 +95,8 @@ local function _self_score(limb)
 end
 
 local function _self_has_aff(aff)
+  -- Diagnostic note (#22): parry remains Yso-self-truth first by design.
+  -- No additional Legacy hysteresis layer is applied here unless real divergence is observed.
   aff = tostring(aff or ""):lower()
   if aff == "" then return false end
 

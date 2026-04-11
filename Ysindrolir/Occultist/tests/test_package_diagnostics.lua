@@ -139,6 +139,8 @@ do
   assert_not_contains("1q: parry no Legacy self-aff ownership", parry, "Legacy.Curing.Affs")
   assert_contains("1r: escape prefers Yso self tracker", escape, "Yso.self.has_aff")
   assert_not_contains("1s: escape no legacy-first marker", escape, "affliction source: Legacy-first")
+  assert_contains("1t: api warm-load warning path present", api, "[Yso:API] WARN:")
+  assert_contains("1u: escape includes state.me fallback", escape, "Yso.state and Yso.state.me")
 end
 
 print("\n=== Test 2: target sensory helpers read affstrack.score ===")

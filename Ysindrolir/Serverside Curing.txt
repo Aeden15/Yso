@@ -47,6 +47,13 @@ Planned nuance (later phases)
 - Expand tree-policy actuation once preferred server command shape is finalized.
 - Add deeper text fallback coverage for edge aff/state lines.
 
+Diagnostic notes (deferred)
+---------------------------
+- Tree cooldown orchestration is intentionally deferred in phase one while
+  tree-policy adapter remains mode-level only.
+- Additional parry hysteresis layering is deferred unless live evidence of
+  self-truth divergence appears in production logs.
+
 Guardrails
 ----------
 - Yso is coordinator logic only; Achaea autocuring remains the curing engine.

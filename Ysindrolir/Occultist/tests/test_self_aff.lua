@@ -81,6 +81,15 @@ _G.Yso = {
   util = {
     now = function() return _clock end,
   },
+  mode = {
+    is_combat = function() return false end,
+    auto = { state = { combat_until = 0 } },
+  },
+  curing = {
+    policy = {
+      state = { aggression_until = 0 },
+    },
+  },
 }
 _G.yso = _G.Yso
 
@@ -108,6 +117,10 @@ assert_true("2f: cure asthma", SA.cure("asthma", "manual"))
 local r2 = SA.affs.asthma
 assert_false("2g: row inactive", r2 and r2.active == true)
 assert_eq("2h: last_cured stamp", r2 and r2.last_cured, 1003)
+advance(1)
+assert_true("2i: re-gain asthma", SA.gain("asthma", "manual"))
+local r3 = SA.affs.asthma
+assert_eq("2j: first_seen resets on fresh gain", r3 and r3.first_seen, 1004)
 
 print("\n=== Test 3: full sync and compatibility mirror ===")
 advance(1)
@@ -128,24 +141,39 @@ advance(2)
 assert_true("4d: text accepted once gmcp is stale", SA.ingest_text_gain("asthma"))
 assert_true("4e: asthma active", SA.has_aff("asthma"))
 
-print("\n=== Test 5: broader self state helpers ===")
+print("\n=== Test 5: reset gating in combat context ===")
+_G.Yso.curing.policy.state.aggression_until = _clock + 5
+local ok_reset, why_reset = SA.reset("test")
+assert_false("5a: reset blocked while combat active", ok_reset)
+assert_eq("5b: reset reason", why_reset, "combat_active")
+assert_true("5c: forced reset allowed", SA.reset("test", { force = true }))
+_G.Yso.curing.policy.state.aggression_until = 0
+
+print("\n=== Test 6: broader self state helpers ===")
 _G.gmcp.Char.Vitals = { position = "prone", bleeding = "23" }
 SA.ingest_gmcp_vitals()
-assert_true("5a: prone from vitals", SA.is_prone())
-assert_eq("5b: bleeding numeric", SA.bleeding(), 23)
+assert_true("6a: prone from vitals", SA.is_prone())
+assert_eq("6b: bleeding numeric", SA.bleeding(), 23)
 _G.gmcp.Char.Vitals = { position = "standing", bleeding = "0" }
 SA.ingest_gmcp_vitals()
-assert_false("5c: prone cleared from standing", SA.is_prone())
-assert_eq("5d: bleeding clear", SA.bleeding(), 0)
+assert_false("6c: prone cleared from standing", SA.is_prone())
+assert_eq("6d: bleeding clear", SA.bleeding(), 0)
 
-print("\n=== Test 6: public Yso.self write/query wrappers ===")
+print("\n=== Test 7: compat mirror writes route to tracker ===")
+Yso.self.reset("test", { force = true })
+Yso.affs.paralysis = true
+assert_true("7a: compat write gain", Yso.self.has_aff("paralysis"))
+Yso.affs.paralysis = nil
+assert_false("7b: compat write cure", Yso.self.has_aff("paralysis"))
+
+print("\n=== Test 8: public Yso.self write/query wrappers ===")
 Yso.self.reset("test")
 Yso.self.gain("blackout", "manual")
-assert_true("6a: wrapper has_aff", Yso.self.has_aff("blackout"))
+assert_true("8a: wrapper has_aff", Yso.self.has_aff("blackout"))
 Yso.self.cure("blackout", "manual")
-assert_false("6b: wrapper cure", Yso.self.has_aff("blackout"))
+assert_false("8b: wrapper cure", Yso.self.has_aff("blackout"))
 Yso.self.sync_full({ "webbed" }, "manual")
-assert_true("6c: wrapper sync_full", Yso.self.is_writhed())
+assert_true("8c: wrapper sync_full", Yso.self.is_writhed())
 
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then

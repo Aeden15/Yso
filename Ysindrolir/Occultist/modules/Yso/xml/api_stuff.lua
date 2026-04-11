@@ -1280,10 +1280,10 @@ function Yso.self.sync_full(list, source)
   return false
 end
 
-function Yso.self.reset(source)
+function Yso.self.reset(source, opts)
   local SA = _selfaff_module()
   if SA and type(SA.reset) == "function" then
-    local ok, v = pcall(SA.reset, source or "manual")
+    local ok, v = pcall(SA.reset, source or "manual", opts)
     if ok then return v == true end
   end
   return false
@@ -1350,7 +1350,22 @@ end
 
 -- Try to warm-load new curing subsystems for live sessions.
 if type(require) == "function" then
-  pcall(require, "Yso.Core.self_aff")
-  pcall(require, "Yso.Curing.self_curedefs")
-  pcall(require, "Yso.Curing.serverside_policy")
+  Yso._warm_require_warned = Yso._warm_require_warned or {}
+  local function _warm_require(mod, label)
+    local ok = pcall(require, mod)
+    if ok then return true end
+    if Yso._warm_require_warned[mod] then return false end
+    Yso._warm_require_warned[mod] = true
+    if type(cecho) == "function" then
+      cecho(string.format(
+        "<yellow>[Yso:API] WARN:<reset> %s failed to load; using fallback reads.\n",
+        tostring(label or mod)
+      ))
+    end
+    return false
+  end
+
+  _warm_require("Yso.Core.self_aff", "self_aff")
+  _warm_require("Yso.Curing.self_curedefs", "self_curedefs")
+  _warm_require("Yso.Curing.serverside_policy", "serverside_policy")
 end

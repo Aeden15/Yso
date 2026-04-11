@@ -13,6 +13,47 @@ Yso.curing.defs = Yso.curing.defs or {}
 
 local D = Yso.curing.defs
 
+local KNOWN_BUCKETS = {
+  antimony = true,
+  bellwort = true,
+  bloodroot = true,
+  calcite = true,
+  caloric = true,
+  cinnabar = true,
+  clot = true,
+  compose = true,
+  cuprum = true,
+  elm = true,
+  epidermal = true,
+  ferrum = true,
+  ginger = true,
+  ginseng = true,
+  goldenseal = true,
+  immunity = true,
+  kelp = true,
+  lobelia = true,
+  magnesium = true,
+  mending = true,
+  pear = true,
+  plumbum = true,
+  pricklyash = true,
+  realgar = true,
+  restoration = true,
+  scrub = true,
+  stannum = true,
+  valerian = true,
+  writhe = true,
+}
+
+D.known_buckets = D.known_buckets or KNOWN_BUCKETS
+D.validation_errors = D.validation_errors or {}
+
+local function _warn(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("<gold>[Yso:curedefs] <reset>%s\n", tostring(msg)))
+  end
+end
+
 local function _trim(s)
   return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
@@ -123,7 +164,7 @@ local function _index_row(row)
     bucket = _norm_bucket(row.bucket or row.herb or row.alchemy),
     aliases = {},
     family = row.family,
-    alternatives = row.alternatives,
+    alternatives = {},
   }
 
   if type(row.aliases) == "table" then
@@ -132,6 +173,33 @@ local function _index_row(row)
       if a ~= "" then
         copy.aliases[#copy.aliases + 1] = a
       end
+    end
+  end
+
+  if type(row.alternatives) == "table" then
+    for i = 1, #row.alternatives do
+      local alt = row.alternatives[i]
+      if type(alt) == "table" then
+        copy.alternatives[#copy.alternatives + 1] = {
+          action = (alt.action and _trim(alt.action) ~= "") and tostring(alt.action):lower() or nil,
+          herb = alt.herb and _norm_bucket(alt.herb) or nil,
+          alchemy = alt.alchemy and _norm_bucket(alt.alchemy) or nil,
+          bucket = _norm_bucket(alt.bucket or alt.herb or alt.alchemy),
+        }
+      end
+    end
+  end
+
+  if copy.bucket and not D.known_buckets[copy.bucket] then
+    D.validation_errors[#D.validation_errors + 1] =
+      string.format("invalid bucket '%s' for %s", tostring(copy.bucket), canon)
+  end
+
+  for i = 1, #copy.alternatives do
+    local alt = copy.alternatives[i]
+    if alt.bucket and not D.known_buckets[alt.bucket] then
+      D.validation_errors[#D.validation_errors + 1] =
+        string.format("invalid alt bucket '%s' for %s", tostring(alt.bucket), canon)
     end
   end
 
@@ -151,9 +219,17 @@ function D.rebuild()
   D.by_aff = {}
   D.by_bucket = {}
   D.alias_to_canon = {}
+  D.validation_errors = {}
   for i = 1, #RAW do
     _index_row(RAW[i])
   end
+  if #D.validation_errors > 0 then
+    _warn("bucket validation found " .. tostring(#D.validation_errors) .. " issue(s)")
+  end
+end
+
+function D.validate()
+  return (#(D.validation_errors or {})) == 0, D.validation_errors or {}
 end
 
 function D.canon(name)
