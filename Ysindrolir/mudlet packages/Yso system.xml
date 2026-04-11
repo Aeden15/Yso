@@ -157,16 +157,50 @@ end
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Ignored affs</name>
-					<script>local cap = Legacy.Curing.Prios.capture
+					<script>Legacy = Legacy or {}
+Legacy.Curing = Legacy.Curing or {}
+Legacy.Curing.Prios = Legacy.Curing.Prios or {}
+
+local P = Legacy.Curing.Prios
+local cap = P.capture
 if not (cap and cap.active) then return end
 
 cap.active = false
 if cap._tid then killTimer(cap._tid); cap._tid = nil end
 
--- Activate baseline for current set so Reprio() restores correctly.
-Legacy.Curing.Prios.UseBaseline(cap.set)
+local set = tostring(cap.set or Legacy.Curing.ActiveServerSet or "legacy"):lower()
+local applied = false
 
-cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios for cureset '"..cap.set.."'.")
+if type(P.UseBaseline) == "function" then
+  local ok, res = pcall(P.UseBaseline, set)
+  applied = ok and (res ~= false)
+elseif type(Legacy.Curing.UseBaseline) == "function" then
+  local ok, res = pcall(Legacy.Curing.UseBaseline, set)
+  applied = ok and (res ~= false)
+end
+
+if not applied then
+  local base = type(P.baseSets) == "table" and P.baseSets[set] or nil
+  if type(base) == "table" then
+    P.legacy = base
+    if type(table) == "table" and type(table.deepcopy) == "function" then
+      local ok, tmp = pcall(table.deepcopy, base)
+      if ok and type(tmp) == "table" then
+        P.temp = tmp
+      end
+    end
+    applied = true
+  end
+end
+
+if not applied and P._baseline_warned_once ~= true then
+  P._baseline_warned_once = true
+  cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Baseline sync warning: could not activate baseline for cureset '"..set.."'.")
+end
+
+if applied then
+  cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios for cureset '"..set.."'.")
+end
 </script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
