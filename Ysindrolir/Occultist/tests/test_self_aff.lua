@@ -159,6 +159,11 @@ SA.sync_full({ "paralysis" }, "gmcp.full")
 assert_false("4a: asthma removed by full sync", SA.has_aff("asthma"))
 assert_false("4b: text blocked immediately after gmcp", SA.ingest_text_gain("asthma"))
 assert_false("4c: still no asthma", SA.has_aff("asthma"))
+assert_true(
+  "4c2: hardblock bound bypasses stale guard",
+  SA.ingest_text_gain("bound", { source = "text.hardblock.bound", force = true })
+)
+assert_true("4c3: bound active from hardblock text", SA.has_aff("bound"))
 advance(2)
 assert_true("4d: text accepted once gmcp is stale", SA.ingest_text_gain("asthma"))
 assert_true("4e: asthma active", SA.has_aff("asthma"))

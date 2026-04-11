@@ -353,12 +353,14 @@ local function _sync_writhe_lane_blocks(source)
   return true
 end
 
-local function _set_aff_active(key, active, source)
+local function _set_aff_active(key, active, source, opts)
   key = SA.normalize(key)
   if key == "" then return false end
   source = tostring(source or "manual")
+  opts = opts or {}
+  local force_text = (type(opts) == "table" and opts.force_text == true)
 
-  if source:find("text", 1, true) and not _text_allowed() then
+  if source:find("text", 1, true) and not force_text and not _text_allowed() then
     return false
   end
 
@@ -427,12 +429,12 @@ local function _parse_aff_list(payload)
   return out
 end
 
-function SA.gain(name, source)
-  return _set_aff_active(name, true, source or "manual")
+function SA.gain(name, source, opts)
+  return _set_aff_active(name, true, source or "manual", opts)
 end
 
-function SA.cure(name, source)
-  return _set_aff_active(name, false, source or "manual")
+function SA.cure(name, source, opts)
+  return _set_aff_active(name, false, source or "manual", opts)
 end
 
 function SA.sync_full(list, source)
@@ -575,12 +577,28 @@ function SA.ingest_gmcp_vitals()
   return true
 end
 
-function SA.ingest_text_gain(name)
-  return SA.gain(name, "text")
+function SA.ingest_text_gain(name, opts)
+  local source = "text"
+  local write_opts = nil
+  if type(opts) == "string" then
+    source = tostring(opts)
+  elseif type(opts) == "table" then
+    source = tostring(opts.source or "text")
+    if opts.force == true or opts.force_text == true then
+      write_opts = { force_text = true }
+    end
+  end
+  return SA.gain(name, source, write_opts)
 end
 
-function SA.ingest_text_cure(name)
-  return SA.cure(name, "text")
+function SA.ingest_text_cure(name, opts)
+  local source = "text"
+  if type(opts) == "string" then
+    source = tostring(opts)
+  elseif type(opts) == "table" then
+    source = tostring(opts.source or "text")
+  end
+  return SA.cure(name, source)
 end
 
 function SA.has_aff(aff)
@@ -744,6 +762,14 @@ function SA.install_hooks()
     SA._tr.not_prone = tempRegexTrigger([[^You are not fallen or kneeling\.$]], function()
       SA.ingest_text_cure("prone")
     end)
+
+    _kill_tr(SA._tr.hardblock_bound)
+    SA._tr.hardblock_bound = tempRegexTrigger(
+      [[^You cannot do that because both of your arms must be whole and unbound\.$]],
+      function()
+        SA.ingest_text_gain("bound", { source = "text.hardblock.bound", force = true })
+      end
+    )
   end
 
   SA._hooks_installed = true
