@@ -34,7 +34,12 @@ local function _pct_color(p)
 end
 
 local function _echo_probe(tag, pct)
-  cecho(string.format("<HotPink>[%s] %s%d%%<reset>\n", tag, _pct_color(pct), pct))
+  local line = string.format("<HotPink>[%s] %s%d%%<reset>", tag, _pct_color(pct), pct)
+  if Yso and Yso.util and type(Yso.util.cecho_line) == "function" then
+    Yso.util.cecho_line(line)
+    return
+  end
+  cecho("\n" .. line .. "\n")
 end
 
 -- -------- senders --------

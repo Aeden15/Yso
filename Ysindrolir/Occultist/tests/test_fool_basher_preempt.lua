@@ -88,6 +88,7 @@ local function make_world(opts)
   local ops = {}
   local timers = {}
   local triggers = {}
+  local owned = {}
   local timer_id = 0
   local trigger_id = 0
   local event_id = 0
@@ -174,7 +175,36 @@ local function make_world(opts)
     queue = {
       addclearfull = function(qtype, payload)
         op("queue:addclearfull:" .. tostring(qtype) .. ":" .. tostring(payload))
+        local q = tostring(qtype or ""):lower()
+        if q == "bal" or q == "b" or q == "bu" or q == "eqbal" then
+          owned.bal = nil
+        end
         return opts.queue_ok ~= false
+      end,
+      raw = function(body)
+        op("queue:raw:" .. tostring(body))
+        local upper = tostring(body or ""):upper()
+        if upper:match("^CLEARQUEUE%s+") then
+          local q = tostring(body:match("^CLEARQUEUE%s+(.+)$") or ""):lower()
+          if q:find("bal", 1, true) or q == "eqbal" or q == "eb" or q == "be" then
+            owned.bal = nil
+          end
+        end
+        if opts.raw_ok == false then
+          return false
+        end
+        return true
+      end,
+      set_owned = function(lane, rec)
+        owned[tostring(lane or ""):lower()] = rec
+        return true
+      end,
+      get_owned = function(lane)
+        return owned[tostring(lane or ""):lower()]
+      end,
+      clear_owned = function(lane)
+        owned[tostring(lane or ""):lower()] = nil
+        return true
       end,
     },
     _trig = {},
@@ -196,6 +226,7 @@ local function make_world(opts)
     timers = timers,
     triggers = triggers,
     events = events,
+    owned = owned,
     F = Yso.fool,
     run_timer = function(id)
       if timers[id] and timers[id].fn then
@@ -224,6 +255,7 @@ do
   })
   assert_eq("1c: basher queued reset", Legacy.Settings.Basher.queued, false)
   assert_true("1d: basher hold active", world.F.blocks_basher())
+  assert_true("1e: Fool queue marked pending", world.F.state.pending == true)
 end
 
 print("\n=== Test 2: prone blocks Fool before any basher interference ===")
@@ -250,6 +282,7 @@ do
   assert_true("3b: auto path arms hold", world.F.blocks_basher())
   world.run_trigger(Yso._trig.fool_success)
   assert_false("3c: success line releases hold", world.F.blocks_basher())
+  assert_false("3d: success clears pending", world.F.state.pending)
 end
 
 print("\n=== Test 4: diagnose snapshot path arms hold and timeout releases ===")
@@ -266,7 +299,70 @@ do
   assert_false("4c: timeout releases hold", world.F.blocks_basher())
 end
 
-print("\n=== Test 5: attack-package retry stays suppressed until Fool releases ===")
+print("\n=== Test 5: pending Fool cancels when hunt threshold drops before fire ===")
+do
+  local affs = { brokenleftarm = true, clumsiness = true }
+  local world = make_world({
+    affs = affs,
+  })
+
+  assert_true("5a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  assert_true("5b: pending flag armed", world.F.state.pending == true)
+
+  affs.clumsiness = nil
+  world.F.on_vitals()
+
+  assert_ops("5c: stale pending Fool clears its queue", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+    "queue:raw:CLEARQUEUE bal",
+  })
+  assert_false("5d: stale pending clears hold", world.F.blocks_basher())
+  assert_false("5e: stale pending cleared", world.F.state.pending)
+  assert_eq("5f: cooldown not consumed by cancel", world.F.state.last_used, 0)
+  assert_eq("5g: owned bal cleared after cancel", world.owned.bal, nil)
+end
+
+print("\n=== Test 6: stale cancel fails closed if queue clear fails ===")
+do
+  local affs = { brokenleftarm = true, clumsiness = true }
+  local world = make_world({
+    affs = affs,
+    raw_ok = false,
+  })
+
+  assert_true("6a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  affs.clumsiness = nil
+  world.F.on_vitals()
+
+  assert_true("6b: pending remains when clearqueue fails", world.F.state.pending == true)
+  assert_true("6c: basher hold remains while pending clear failed", world.F.blocks_basher())
+end
+
+print("\n=== Test 7: ownership mismatch clears pending without CLEARQUEUE ===")
+do
+  local affs = { brokenleftarm = true, clumsiness = true }
+  local world = make_world({
+    affs = affs,
+  })
+
+  assert_true("7a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  world.owned.bal = {
+    cmd = "cast bloodboil",
+    note = "someone_else",
+  }
+  affs.clumsiness = nil
+  world.F.on_vitals()
+
+  assert_ops("7b: ownership mismatch avoids clearqueue", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+  })
+  assert_false("7c: mismatch clears pending marker", world.F.state.pending)
+  assert_false("7d: mismatch releases hold", world.F.blocks_basher())
+end
+
+print("\n=== Test 8: attack-package retry stays suppressed until Fool releases ===")
 do
   local world = make_world({
     affs = { brokenleftarm = true, clumsiness = true },
@@ -285,15 +381,15 @@ do
     return true
   end
 
-  assert_true("5a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
-  assert_false("5b: hold suppresses attack-package requeue", queue_attack_package("command orb"))
-  assert_eq("5c: basher queued stays false while suppressed", Legacy.Settings.Basher.queued, false)
-  assert_count("5d: no extra ops while hold active", world.ops, 2)
+  assert_true("8a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  assert_false("8b: hold suppresses attack-package requeue", queue_attack_package("command orb"))
+  assert_eq("8c: basher queued stays false while suppressed", Legacy.Settings.Basher.queued, false)
+  assert_count("8d: no extra ops while hold active", world.ops, 2)
 
   world.run_trigger(Yso._trig.fool_success)
-  assert_true("5e: attack package resumes after success", queue_attack_package("command orb"))
-  assert_eq("5f: basher queued becomes true after release", Legacy.Settings.Basher.queued, true)
-  assert_ops("5g: resumed attack package queues paired work", world.ops, {
+  assert_true("8e: attack package resumes after success", queue_attack_package("command orb"))
+  assert_eq("8f: basher queued becomes true after release", Legacy.Settings.Basher.queued, true)
+  assert_ops("8g: resumed attack package queues paired work", world.ops, {
     "send:cq freestand",
     "queue:addclearfull:bal:fling fool at me",
     "send:queue add freestand command orb",

@@ -7,6 +7,20 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultism simulacrum/heartstone clean-line echo fix (April 11, 2026) --
+  Yso system.xml trigger scripts "Simulacrum dusted" and "Heartstone dusted"
+  now prepend a newline before cecho output so the reminder text lands on a
+  clean line instead of bleeding into combat text. modules/Yso/xml/
+  vitals_stones.lua now routes probe echoes through Yso.util.cecho_line()
+  (with newline fallback) for the same clean-line behavior.
+
+  Fool hunt stale-queue cancellation hardening (April 10, 2026) -- Occultist
+  Fool now tracks pending self-cleanses separately from live cooldown, stamps
+  cooldown only on actual self-use, and cancels stale pending Fool queues only
+  when lane ownership still matches the pending Fool token. Failed CLEARQUEUE
+  attempts now fail closed (pending/hold retained), and raw queue writes now
+  invalidate lane ownership metadata so stale-cancel checks do not trust stale
+  ownership records.
   Occultist route-placeholder cleanup (April 10, 2026) -- removed dead
   modules/Yso/Combat/routes/bash.lua auto-wrapper and replaced
   modules/Yso/Combat/routes/limb.lua + limb_prep.lua with explicit deprecated

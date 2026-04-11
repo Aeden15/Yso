@@ -1183,7 +1183,7 @@ cecho("\n" .. string.format(
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Simulacrum dusted</name>
 						<script>deleteLine()
-cecho("&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW SIMULACRUM).\n")
+cecho("\n&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW SIMULACRUM).\n")
 </script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1322,7 +1322,7 @@ cecho(string.format(
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Heartstone dusted</name>
 						<script>deleteLine()
-cecho("&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW HEARTSTONE).\n")
+cecho("\n&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW HEARTSTONE).\n")
 </script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -6538,6 +6538,41 @@ local function _clear_payload(payload)
   if _trim(payload.class) ~= &quot;&quot; then Q._staged.class = nil end
 end
 
+local function _owned_lanes_for_qtype(qtype)
+  qtype = _trim(qtype):lower()
+  if qtype == &quot;&quot; then return {} end
+
+  if qtype == &quot;eqbal&quot; or qtype == &quot;be&quot; or qtype == &quot;eb&quot; then
+    return { &quot;eq&quot;, &quot;bal&quot; }
+  end
+
+  local lane = _lane_key(qtype)
+  if lane then return { lane } end
+  return {}
+end
+
+local function _clear_owned_for_qtype(qtype)
+  local lanes = _owned_lanes_for_qtype(qtype)
+  if #lanes == 0 then return end
+  for i = 1, #lanes do
+    Q.clear_owned(lanes[i])
+  end
+end
+
+local function _invalidate_owned_on_raw_queue(verb, qtype)
+  verb = _trim(verb):upper()
+  if verb == &quot;CLEARQUEUE&quot;
+     or verb == &quot;ADD&quot;
+     or verb == &quot;ADDCLEAR&quot;
+     or verb == &quot;ADDCLEARFULL&quot;
+     or verb == &quot;PREPEND&quot;
+     or verb == &quot;INSERT&quot;
+     or verb == &quot;REPLACE&quot;
+  then
+    _clear_owned_for_qtype(qtype)
+  end
+end
+
 local function _raw_queue(verb, qtype, payload)
   verb = _trim(verb):upper()
   qtype = _trim(qtype)
@@ -6554,7 +6589,11 @@ local function _raw_queue(verb, qtype, payload)
   end
   payload = _trim(payload)
   if verb == &quot;&quot; or qtype == &quot;&quot; or payload == &quot;&quot; then return false end
-  return _send_compound((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, payload))
+  local ok = _send_compound((&quot;QUEUE %s %s %s&quot;):format(verb, qtype, payload))
+  if ok then
+    _invalidate_owned_on_raw_queue(verb, qtype)
+  end
+  return ok
 end
 
 local function _owned_table()
@@ -6858,7 +6897,14 @@ function Q.raw(mode, qtype, payload)
   end
   local body = _trim(mode or qtype)
   if body == &quot;&quot; then return false end
-  return _send_compound(body)
+  local ok = _send_compound(body)
+  if not ok then return false end
+
+  local raw_qtype = body:match(&quot;^CLEARQUEUE%s+(.+)$&quot;)
+  if raw_qtype then
+    _invalidate_owned_on_raw_queue(&quot;CLEARQUEUE&quot;, raw_qtype)
+  end
+  return true
 end
 
 Q.mark_payload_fired = _mark_payload_fired
@@ -25125,7 +25171,12 @@ local function _pct_color(p)
 end
 
 local function _echo_probe(tag, pct)
-  cecho(string.format(&quot;&lt;HotPink&gt;[%s] %s%d%%&lt;reset&gt;\n&quot;, tag, _pct_color(pct), pct))
+  local line = string.format(&quot;&lt;HotPink&gt;[%s] %s%d%%&lt;reset&gt;&quot;, tag, _pct_color(pct), pct)
+  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+    Yso.util.cecho_line(line)
+    return
+  end
+  cecho(&quot;\n&quot; .. line .. &quot;\n&quot;)
 end
 
 -- -------- senders --------
@@ -26627,9 +26678,18 @@ F.cfg = F.cfg or {
 }
 
 F.state = F.state or {
-  last_used  = 0,     -- when we last queued Fool
+  last_used  = 0,     -- when Fool last actually fired
   last_auto  = 0,     -- when auto/diag last attempted Fool
   await_diag = false, -- set by dv alias; cleared on diag completion
+  pending = false,
+  pending_id = 0,
+  pending_source = nil,
+  pending_qtype = nil,
+  pending_lane = nil,
+  pending_cmd = nil,
+  pending_owner_token = nil,
+  pending_at = 0,
+  pending_timer = nil,
   basher_hold = false,
   basher_hold_reason = nil,
   basher_hold_at = 0,
@@ -26803,6 +26863,126 @@ local function _bool_word(v)
   return (v == true) and &quot;true&quot; or &quot;false&quot;
 end
 
+local function _pending_lane_from_qtype(qtype)
+  local q = _trim(qtype):lower()
+  if q == &quot;bal&quot; or q == &quot;b&quot; or q == &quot;bu&quot; or q == &quot;b!p!w!t&quot; then return &quot;bal&quot; end
+  if q == &quot;eq&quot; or q == &quot;e&quot; or q == &quot;e!p!w!t&quot; then return &quot;eq&quot; end
+  if q == &quot;class&quot; or q == &quot;c&quot; or q == &quot;c!p!w!t&quot; then return &quot;class&quot; end
+  if q == &quot;eqbal&quot; or q == &quot;be&quot; or q == &quot;eb&quot; then return &quot;bal&quot; end
+  return nil
+end
+
+local function _pending_owner_state()
+  local lane = _trim(F.state.pending_lane)
+  if lane == &quot;&quot; then return nil end
+
+  local Q = Yso and Yso.queue or nil
+  if not (Q and type(Q.get_owned) == &quot;function&quot;) then
+    return nil
+  end
+
+  local rec = Q.get_owned(lane)
+  if type(rec) ~= &quot;table&quot; then
+    return false
+  end
+
+  local token = tostring(F.state.pending_owner_token or &quot;&quot;)
+  if token ~= &quot;&quot; then
+    return tostring(rec.note or &quot;&quot;) == token
+  end
+
+  local cmd = _trim(F.state.pending_cmd)
+  return (cmd ~= &quot;&quot; and _trim(rec.cmd) == cmd)
+end
+
+local function _clear_pending(reason)
+  local had_pending = (F.state.pending == true)
+  local lane = _trim(F.state.pending_lane)
+  local token = tostring(F.state.pending_owner_token or &quot;&quot;)
+
+  if F.state.pending_timer and type(killTimer) == &quot;function&quot; then
+    pcall(killTimer, F.state.pending_timer)
+  end
+
+  if lane ~= &quot;&quot; and token ~= &quot;&quot; then
+    local Q = Yso and Yso.queue or nil
+    if Q and type(Q.get_owned) == &quot;function&quot; and type(Q.clear_owned) == &quot;function&quot; then
+      local rec = Q.get_owned(lane)
+      if type(rec) == &quot;table&quot; and tostring(rec.note or &quot;&quot;) == token then
+        Q.clear_owned(lane)
+      end
+    end
+  end
+
+  F.state.pending = false
+  F.state.pending_source = nil
+  F.state.pending_qtype = nil
+  F.state.pending_lane = nil
+  F.state.pending_cmd = nil
+  F.state.pending_owner_token = nil
+  F.state.pending_at = 0
+  F.state.pending_timer = nil
+  if had_pending then
+    _fool_echo(&quot;Pending Fool cleared (&quot;..tostring(reason or &quot;unknown&quot;)..&quot;).&quot;)
+  end
+end
+
+local function _mark_pending(source, qtype, cmd)
+  local lane = _pending_lane_from_qtype(qtype)
+  F.state.pending_id = (tonumber(F.state.pending_id or 0) or 0) + 1
+  local token = &quot;fool_pending:&quot; .. tostring(F.state.pending_id)
+
+  F.state.pending = true
+  F.state.pending_source = tostring(source or &quot;manual&quot;)
+  F.state.pending_qtype = tostring(qtype or Legacy.Fool.queue_type or &quot;bal&quot;)
+  F.state.pending_lane = lane
+  F.state.pending_cmd = tostring(cmd or &quot;fling fool at me&quot;)
+  F.state.pending_owner_token = token
+  F.state.pending_at = _now()
+
+  local Q = Yso and Yso.queue or nil
+  if lane and Q and type(Q.set_owned) == &quot;function&quot; then
+    local rec = {
+      cmd = F.state.pending_cmd,
+      qtype = F.state.pending_qtype,
+      target = &quot;me&quot;,
+      route = &quot;fool&quot;,
+      installed_at = F.state.pending_at,
+      source_file = &quot;fool_logic.lua&quot;,
+      note = token,
+      last_result = &quot;installed&quot;,
+      last_error = &quot;&quot;,
+    }
+    if type(Q.fingerprint) == &quot;function&quot; then
+      rec.fingerprint = Q.fingerprint(F.state.pending_cmd, {
+        target = &quot;me&quot;,
+        route = &quot;fool&quot;,
+      })
+    end
+    Q.set_owned(lane, rec)
+  end
+
+  if type(tempTimer) == &quot;function&quot; then
+    local pending_gen = F.state.pending_id
+    F.state.pending_timer = tempTimer(15, function()
+      if tonumber(F.state.pending_id or 0) ~= pending_gen then return end
+      _clear_pending(&quot;timeout&quot;)
+      _release_basher_hold(&quot;pending-timeout&quot;)
+    end)
+  end
+
+  _fool_echo(string.format(
+    &quot;Pending Fool armed (source=%s, qtype=%s, lane=%s).&quot;,
+    F.state.pending_source,
+    F.state.pending_qtype,
+    tostring(F.state.pending_lane or &quot;?&quot;)
+  ))
+end
+
+local function _has_pending()
+  return F.state.pending == true
+end
+
 local function _release_basher_hold(reason)
   local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
   if F.state.basher_hold_timer and type(killTimer) == &quot;function&quot; then
@@ -26860,6 +27040,8 @@ end
 
 local _is_lock_state
 local _min_affs_for_current_set
+local _evaluate_fool
+local _cancel_pending_fool
 
 function F.status()
   local curset = _current_cureset() or &quot;legacy&quot;
@@ -26871,9 +27053,11 @@ function F.status()
   local auto = (F.cfg.enabled == true) and &quot;on&quot; or &quot;off&quot;
   local hold = (F.blocks_basher() == true) and &quot;on&quot; or &quot;off&quot;
   local hold_reason = tostring(F.state.basher_hold_reason or &quot;-&quot;)
+  local pending = (_has_pending() == true) and &quot;on&quot; or &quot;off&quot;
+  local pending_src = tostring(F.state.pending_source or &quot;-&quot;)
 
   _emit_status(string.format(
-    &quot;auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s basher_hold=%s(%s)&quot;,
+    &quot;auto=%s cureset=%s aff_score=%d min=%d allow_lock=%s lock=%s cd_left=%.1fs queue=%s/%s pending=%s(%s) basher_hold=%s(%s)&quot;,
     auto,
     curset,
     count,
@@ -26883,6 +27067,8 @@ function F.status()
     _cooldown_remaining(),
     qmode,
     qtype,
+    pending,
+    pending_src,
     hold,
     hold_reason
   ))
@@ -26959,6 +27145,91 @@ _min_affs_for_current_set = function()
   end
 end
 
+_evaluate_fool = function(source)
+  local ctx = {
+    source = tostring(source or &quot;manual&quot;),
+    curset = _current_cureset() or &quot;?&quot;,
+    count = _aff_count(),
+    is_locked = _is_lock_state(),
+  }
+  ctx.min_affs, ctx.allow_lock = _min_affs_for_current_set()
+  ctx.lock_ok = (ctx.allow_lock == true and ctx.is_locked == true)
+
+  if _has(&quot;prone&quot;) then
+    ctx.reason = &quot;prone&quot;
+    ctx.message = &quot;Not using Fool: prone.&quot;
+    return false, ctx
+  end
+
+  if _has(&quot;webbed&quot;) then
+    ctx.reason = &quot;webbed&quot;
+    ctx.message = &quot;Not using Fool: webbed.&quot;
+    return false, ctx
+  end
+
+  if _both_arms_broken() then
+    ctx.reason = &quot;both_arms_broken&quot;
+    ctx.message = &quot;Not using Fool: both arms broken.&quot;
+    return false, ctx
+  end
+
+  if ctx.count &lt; ctx.min_affs and not ctx.lock_ok then
+    ctx.reason = &quot;threshold&quot;
+    ctx.message = string.format(
+      &quot;Not using Fool: cureset=%s, affs=%d (&lt; %d), allow_lock=%s, lock=%s.&quot;,
+      ctx.curset, ctx.count, ctx.min_affs, tostring(ctx.allow_lock), tostring(ctx.is_locked)
+    )
+    return false, ctx
+  end
+
+  ctx.reason = &quot;ok&quot;
+  ctx.message = string.format(
+    &quot;Using Fool (source=%s, cureset=%s, affs=%d, min=%d, allow_lock=%s, lock=%s).&quot;,
+    ctx.source, ctx.curset, ctx.count, ctx.min_affs,
+    tostring(ctx.allow_lock), tostring(ctx.is_locked)
+  )
+  return true, ctx
+end
+
+_cancel_pending_fool = function(reason)
+  if not _has_pending() then
+    return false
+  end
+
+  local owner_state = _pending_owner_state()
+  if owner_state == false then
+    _fool_echo(&quot;Pending Fool ownership changed; skipping queue clear.&quot;)
+    _clear_pending(reason or &quot;replaced&quot;)
+    _release_basher_hold(&quot;replaced&quot;)
+    return true
+  end
+
+  if owner_state ~= true then
+    _fool_echo(&quot;Pending Fool cancel skipped: queue ownership unknown.&quot;)
+    return false
+  end
+
+  local qtype = tostring(F.state.pending_qtype or Legacy.Fool.queue_type or &quot;bal&quot;)
+  local ok = false
+
+  if Yso.queue and type(Yso.queue.raw) == &quot;function&quot; then
+    ok = (Yso.queue.raw(&quot;CLEARQUEUE &quot; .. qtype) == true)
+  elseif type(send) == &quot;function&quot; then
+    send(&quot;CLEARQUEUE &quot; .. qtype, false)
+    ok = true
+  end
+
+  if ok then
+    _fool_echo(&quot;Canceled pending Fool queue (&quot;..tostring(reason or &quot;stale&quot;)..&quot;).&quot;)
+    _clear_pending(reason or &quot;cancel&quot;)
+    _release_basher_hold(&quot;cancel:&quot;..tostring(reason or &quot;stale&quot;))
+  else
+    _fool_echo(&quot;Failed to clear pending Fool queue (&quot;..tostring(reason or &quot;stale&quot;)..&quot;).&quot;)
+  end
+
+  return ok
+end
+
 -- Queue helper
 local function _queue_fool(source)
   if not _is_occultist() then
@@ -26978,10 +27249,11 @@ local function _queue_fool(source)
     -- Yso queue helper path
     local queued = (queue_fn(qtype, cmd) == true)
     if queued then
-      F.state.last_used = _now()
+      _mark_pending(source, qtype, cmd)
       _arm_basher_hold(hold_reason)
       _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
     else
+      _clear_pending(&quot;queue-failed&quot;)
       _release_basher_hold(&quot;queue-failed&quot;)
     end
     return queued
@@ -26989,10 +27261,11 @@ local function _queue_fool(source)
     -- raw queue path
     local ok = pcall(send, string.format(&quot;queue %s %s %s&quot;, mode, qtype, cmd), false)
     if not ok then
+      _clear_pending(&quot;queue-error&quot;)
       _release_basher_hold(&quot;queue-error&quot;)
       return false
     end
-    F.state.last_used = _now()
+    _mark_pending(source, qtype, cmd)
     _arm_basher_hold(hold_reason)
     _fool_echo(string.format(&quot;Queued Fool via %s %s.&quot;, mode, qtype))
     return true
@@ -27013,43 +27286,16 @@ function Legacy.FoolSelfCleanse(source)
   end
   source = tostring(source or &quot;manual&quot;)
 
-  -- Mechanical gates
-  if _has(&quot;prone&quot;) then
-    _fool_echo(&quot;Not using Fool: prone.&quot;)
+  if _has_pending() then
+    _fool_echo(&quot;Not using Fool: pending queue already armed.&quot;)
     return false
   end
 
-  if _has(&quot;webbed&quot;) then
-    _fool_echo(&quot;Not using Fool: webbed.&quot;)
+  local ok, ctx = _evaluate_fool(source)
+  _fool_echo(ctx.message)
+  if not ok then
     return false
   end
-
-  if _both_arms_broken() then
-    _fool_echo(&quot;Not using Fool: both arms broken.&quot;)
-    return false
-  end
-
-  -- Severity gates (cureset aware)
-  local count                  = _aff_count()
-  local is_locked              = _is_lock_state()
-  local min_affs, allow_lock   = _min_affs_for_current_set()
-  local curset                 = _current_cureset() or &quot;?&quot;
-
-  local lock_ok = allow_lock and is_locked
-
-  if count &lt; min_affs and not lock_ok then
-    _fool_echo(string.format(
-      &quot;Not using Fool: cureset=%s, affs=%d (&lt; %d), allow_lock=%s, lock=%s.&quot;,
-      curset, count, min_affs, tostring(allow_lock), tostring(is_locked)
-    ))
-    return false
-  end
-
-  _fool_echo(string.format(
-    &quot;Using Fool (source=%s, cureset=%s, affs=%d, min=%d, allow_lock=%s, lock=%s).&quot;,
-    source, curset, count, min_affs,
-    tostring(allow_lock), tostring(is_locked)
-  ))
 
   local queued = _queue_fool(source)
   return queued == true
@@ -27082,8 +27328,17 @@ end
 --  Auto driver #1: GMCP vitals tick
 --========================================================--
 function F.on_vitals()
+  if _has_pending() then
+    local ok, ctx = _evaluate_fool(F.state.pending_source or &quot;pending&quot;)
+    if not ok then
+      _fool_echo(&quot;Pending Fool became stale: &quot;..tostring(ctx.reason or &quot;unknown&quot;)..&quot;.&quot;)
+      _cancel_pending_fool(ctx.reason or &quot;stale&quot;)
+    end
+  end
+
   if not F.cfg.enabled then return end
   if not _is_occultist() then return end
+  if _has_pending() then return end
   if not _cooldown_ready() then return end
   if not _gcd_ready() then return end
 
@@ -27147,6 +27402,8 @@ end
 Yso._trig.fool_success = tempRegexTrigger(
   [[^You press the Fool tarot to your forehead\.$]],
   _safe(function()
+    F.state.last_used = _now()
+    _clear_pending(&quot;success&quot;)
     _release_basher_hold(&quot;success&quot;)
   end)
 )
