@@ -122,13 +122,31 @@ local ok_commit_blocked = Q.commit({ allow_eqbal = true })
 assert_false("3b: commit no-op while blocked", ok_commit_blocked == true)
 assert_eq("3c: no new queue send while blocked", #_send_lines, before_send_count)
 
-print("\n=== Test 4: unblock rebuilds from fresh payload ===")
-assert_true("4a: unblock lane", Q.unblock_lane("eq", "writhe_clear"))
-assert_true("4b: stage fresh eq command", Q.stage("eq", "instill target with slickness"))
+print("\n=== Test 4: send-time lane recheck catches mid-cycle block ===")
+assert_true("4a: unblock lane for race sim", Q.unblock_lane("eq", "writhe_clear"))
+assert_true("4b: stage eq command for race sim", Q.stage("eq", "instill target with clumsiness"))
+local original_lane_blocked = Q.lane_blocked
+local lane_blocked_calls = 0
+Q.lane_blocked = function(lane)
+  lane_blocked_calls = lane_blocked_calls + 1
+  if tostring(lane or "") == "eq" and lane_blocked_calls >= 2 then
+    return true, "webbed"
+  end
+  return false, ""
+end
+local before_race_send = #_send_lines
+local ok_commit_race = Q.commit({ allow_eqbal = true })
+Q.lane_blocked = original_lane_blocked
+assert_false("4c: commit suppressed when lane blocks mid-cycle", ok_commit_race == true)
+assert_eq("4d: no queue send for blocked race payload", #_send_lines, before_race_send)
+
+print("\n=== Test 5: unblock rebuilds from fresh payload ===")
+assert_true("5a: lane unblock stable", Q.unblock_lane("eq", "writhe_clear"))
+assert_true("5b: stage fresh eq command", Q.stage("eq", "instill target with slickness"))
 local ok_commit_2 = Q.commit({ allow_eqbal = true })
-assert_true("4c: commit fresh eq command", ok_commit_2 == true)
+assert_true("5c: commit fresh eq command", ok_commit_2 == true)
 local last_line = _send_lines[#_send_lines] or ""
-assert_true("4d: last queue send is refreshed command", last_line:find("slickness", 1, true) ~= nil)
+assert_true("5d: last queue send is refreshed command", last_line:find("slickness", 1, true) ~= nil)
 
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then

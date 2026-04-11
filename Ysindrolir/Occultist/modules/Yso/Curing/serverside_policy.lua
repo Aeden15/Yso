@@ -8,7 +8,7 @@
 --  * Delta-only write strategy
 --  * Manual intervention grace window
 --  * Conservative group hysteresis
---  * Emergency queue + tree policy scaffolding
+--  * Emergency queue scaffold + tree-ready diagnostics
 --========================================================--
 
 Yso = Yso or {}
@@ -76,11 +76,7 @@ P.state = P.state or {
   last_tree_at = 0,
   tree_ready = false,
   tree_ready_known = false,
-  tree_touched = false,
-  tree_unchanged_wait_ready = false,
-  tree_last_attempt_at = 0,
   tree_last_ready_at = 0,
-  tree_last_unchanged_at = 0,
   tree_last_source = "",
 
   priority_list_requested_at = 0,
@@ -95,11 +91,7 @@ P.state.set_expected = tostring(P.state.set_expected or "")
 P.state.set_expected_until = tonumber(P.state.set_expected_until or 0) or 0
 P.state.tree_ready = (P.state.tree_ready == true)
 P.state.tree_ready_known = (P.state.tree_ready_known == true)
-P.state.tree_touched = (P.state.tree_touched == true)
-P.state.tree_unchanged_wait_ready = (P.state.tree_unchanged_wait_ready == true)
-P.state.tree_last_attempt_at = tonumber(P.state.tree_last_attempt_at or 0) or 0
 P.state.tree_last_ready_at = tonumber(P.state.tree_last_ready_at or 0) or 0
-P.state.tree_last_unchanged_at = tonumber(P.state.tree_last_unchanged_at or 0) or 0
 P.state.tree_last_source = tostring(P.state.tree_last_source or "")
 
 P.overlays = P.overlays or {
@@ -122,7 +114,6 @@ P.overlays = P.overlays or {
     lower = {},
     queue_emergency = {
       -- phase-1 scaffold
-      -- { qtype = "bal", cmd = "touch tree", dedupe = "tree_touch" },
     },
     tree_hints = {
       prefer = "aff_trigger",
@@ -195,9 +186,12 @@ end
 
 local function _sync_tree_compat_mirrors()
   Yso.state = Yso.state or {}
+  Yso.tree = Yso.tree or {}
+  Yso.tree.state = Yso.tree.state or {}
   local ready = (P.state.tree_ready == true)
-  local touched = (P.state.tree_touched == true)
+  local touched = (P.state.tree_ready_known == true and ready ~= true)
   Yso.state.tree_ready = ready
+  Yso.tree.state.ready = ready
   Yso.state.tree_touched = touched
   rawset(_G, "tree_ready", ready)
   rawset(_G, "tree_touched", touched)
@@ -227,28 +221,6 @@ local function _is_touch_tree_cmd(cmd)
   if cmd:match("^touch%s+tree$") then return true end
   if cmd:match("^touch%s+tree%s+tattoo$") then return true end
   return false
-end
-
-local function _contains_touch_tree_cmd(cmd)
-  cmd = _trim(cmd):lower()
-  if cmd == "" then return false end
-  if _is_touch_tree_cmd(cmd) then return true end
-  return cmd:find("touch tree", 1, true) ~= nil
-end
-
-local function _tree_touch_block_reason(cmd)
-  if not _is_touch_tree_cmd(cmd) then return nil, {} end
-
-  local writhe = _active_writhe_affs()
-  if #writhe > 0 then
-    return "writhe_block", writhe
-  end
-
-  if P.state.tree_unchanged_wait_ready == true then
-    return "tree_wait_ready", {}
-  end
-
-  return nil, {}
 end
 
 local function _request_authoritative_resync(reason, force)
@@ -677,16 +649,6 @@ local function _apply_tree_policy(policy, overlay)
     return false
   end
 
-  local C = _adapter_table()
-  if type(C.set_tree_policy) == "function" then
-    _mark_self_send()
-    C.set_tree_policy(policy, {
-      overlay = overlay,
-      mode = P.state.mode,
-      curingset = P.state.current_set,
-    })
-  end
-
   P.state.tree_policy = policy
   P.state.last_tree_at = now
 
@@ -705,55 +667,37 @@ function P.set_tree_ready(v, source)
   P.state.tree_last_source = tostring(source or "manual")
   if ready then
     P.state.tree_last_ready_at = now
-    P.state.tree_touched = false
-    P.state.tree_unchanged_wait_ready = false
   end
   _sync_tree_compat_mirrors()
   if type(raiseEvent) == "function" then
-    raiseEvent("yso.curing.tree_state", ready, P.state.tree_touched, P.state.tree_unchanged_wait_ready, P.state.tree_last_source)
+    raiseEvent("yso.curing.tree_state", ready, P.state.tree_last_source)
   end
   return true
 end
 
 function P.set_tree_touched(v, source)
-  local touched = (v == true)
-  P.state.tree_touched = touched
-  P.state.tree_last_source = tostring(source or "manual")
-  if touched and P.state.tree_ready_known == true then
-    P.state.tree_ready = false
+  if v == true then
+    return P.set_tree_ready(false, source or "compat:set_tree_touched")
   end
-  _sync_tree_compat_mirrors()
-  if type(raiseEvent) == "function" then
-    raiseEvent("yso.curing.tree_state", P.state.tree_ready, touched, P.state.tree_unchanged_wait_ready, P.state.tree_last_source)
-  end
-  return true
+  return false
 end
 
 function P.note_tree_attempt(source)
-  local now = _now()
-  P.state.tree_last_attempt_at = now
-  P.state.tree_touched = true
-  if P.state.tree_ready_known == true then
-    P.state.tree_ready = false
-  end
-  P.state.tree_last_source = tostring(source or "tree_attempt")
-  _sync_tree_compat_mirrors()
-  return true
+  return P.set_tree_ready(false, source or "tree_attempt")
 end
 
 function P.note_tree_unchanged(source)
-  P.note_tree_attempt(source or "tree_unchanged")
-  P.state.tree_unchanged_wait_ready = true
-  P.state.tree_last_unchanged_at = _now()
-  _sync_tree_compat_mirrors()
   if type(raiseEvent) == "function" then
-    raiseEvent("yso.curing.tree_unchanged", P.state.tree_last_source)
+    raiseEvent("yso.curing.tree_unchanged", tostring(source or "tree_unchanged"))
   end
   return true
 end
 
 function P.tree_touch_blocked_reason(cmd)
-  return _tree_touch_block_reason(cmd)
+  if _is_touch_tree_cmd(cmd) then
+    return "tree_state_only", {}
+  end
+  return nil, {}
 end
 
 function P.tree_ready()
@@ -761,7 +705,8 @@ function P.tree_ready()
 end
 
 function P.tree_touched()
-  return P.state.tree_touched == true
+  if P.state.tree_ready_known ~= true then return false end
+  return P.state.tree_ready ~= true
 end
 
 function P.queue_emergency(cmd, opts)
@@ -770,9 +715,8 @@ function P.queue_emergency(cmd, opts)
   if cmd == "" then return false, "empty" end
   if _manual_grace_active() then return false, "manual_grace" end
 
-  local tree_block_reason = _tree_touch_block_reason(cmd)
-  if tree_block_reason then
-    return false, tree_block_reason
+  if _is_touch_tree_cmd(cmd) then
+    return false, "tree_state_only"
   end
 
   local now = _now()
@@ -807,10 +751,6 @@ function P.queue_emergency(cmd, opts)
     send(line, false)
   else
     return false, "send_missing"
-  end
-
-  if _is_touch_tree_cmd(cmd) then
-    P.note_tree_attempt("policy.queue_emergency")
   end
 
   P.state.queue_recent[key] = now
@@ -944,8 +884,6 @@ function P.status()
     tree_policy = P.state.tree_policy,
     tree_ready = (P.state.tree_ready == true),
     tree_ready_known = (P.state.tree_ready_known == true),
-    tree_touched = (P.state.tree_touched == true),
-    tree_wait_ready = (P.state.tree_unchanged_wait_ready == true),
     writhe_blocked = (#writhe_affs > 0),
     writhe_affs = writhe_affs,
   }
@@ -994,13 +932,6 @@ function P.install_hooks()
       if type(command) ~= "string" then return end
       local cmd = _trim(command)
       if cmd == "" then return end
-      if _contains_touch_tree_cmd(cmd) then
-        if _is_self_send_window() then
-          P.note_tree_attempt("sysDataSendRequest:self")
-        else
-          P.note_tree_attempt("sysDataSendRequest:manual")
-        end
-      end
       if _is_self_send_window() then return end
       P.note_manual_intervention("sysDataSendRequest")
     end)
@@ -1010,10 +941,6 @@ function P.install_hooks()
       P.set_tree_ready(v ~= false, "event:yso.tree.ready")
     end)
 
-    _kill_eh(P._eh.tree_touched_evt)
-    P._eh.tree_touched_evt = registerAnonymousEventHandler("yso.tree.touched", function(_, v)
-      P.set_tree_touched(v == true, "event:yso.tree.touched")
-    end)
   end
 
   if type(tempRegexTrigger) == "function" then
@@ -1032,6 +959,16 @@ function P.install_hooks()
     _kill_tr(P._tr.queue_cleared)
     P._tr.queue_cleared = tempRegexTrigger([[^You clear your \w+ queue\.$]], function()
       P.clear_emergency_dedupe("text_ack:queue_clear")
+    end)
+
+    _kill_tr(P._tr.tree_touch_line)
+    P._tr.tree_touch_line = tempRegexTrigger([[^You touch the tree of life tattoo\.$]], function()
+      P.set_tree_ready(false, "text_ack:tree_touch")
+    end)
+
+    _kill_tr(P._tr.tree_ready_line)
+    P._tr.tree_ready_line = tempRegexTrigger([[^You may utilise the tree tattoo again\.$]], function()
+      P.set_tree_ready(true, "text_ack:tree_ready")
     end)
 
     _kill_tr(P._tr.tree_unchanged)

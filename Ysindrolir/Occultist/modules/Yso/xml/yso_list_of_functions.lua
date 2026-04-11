@@ -37,8 +37,9 @@ local S = Yso.state
 if S.soulmaster_ready  == nil then S.soulmaster_ready  = false end
 if S.loyals_hostile    == nil then S.loyals_hostile    = false end
 if S.loyals_target     == nil then S.loyals_target     = nil   end
-if S.tree_touched      == nil then S.tree_touched      = false end
 if S.tree_ready        == nil then S.tree_ready        = false end
+if S.tree_ready_known  == nil then S.tree_ready_known  = false end
+if S.tree_touched      == nil then S.tree_touched      = false end
 if S.sycophant_ready   == nil then S.sycophant_ready   = false end
 if S.mind_focused      == nil then S.mind_focused      = false end
 
@@ -84,16 +85,12 @@ end
 
 function Yso.set_tree_touched(v)
   local touched = _bool(v)
-  local P = _tree_policy()
-  if P and type(P.set_tree_touched) == "function" then
-    pcall(P.set_tree_touched, touched, "compat:set_tree_touched")
+  if touched then
+    Yso.set_tree_ready(false)
+    return
   end
-  if P and type(P.tree_touched) == "function" then
-    local ok, pv = pcall(P.tree_touched)
-    if ok then touched = (pv == true) end
-  elseif P and type(P.state) == "table" then
-    touched = (P.state.tree_touched == true)
-  end
+  local ready = Yso.tree_ready()
+  touched = (ready ~= true)
   S.tree_touched = touched
   tree_touched   = touched
 end
@@ -111,7 +108,10 @@ function Yso.set_tree_ready(v)
     ready = (P.state.tree_ready == true)
   end
   S.tree_ready = ready
+  S.tree_ready_known = true
+  S.tree_touched = (ready ~= true)
   tree_ready   = ready
+  tree_touched = S.tree_touched
 end
 
 function Yso.set_sycophant_ready(v)
@@ -143,21 +143,22 @@ end
 
 function Yso.tree_touched()
   local P = _tree_policy()
-  if P and type(P.tree_touched) == "function" then
-    local ok, v = pcall(P.tree_touched)
-    if ok then
-      local touched = (v == true)
-      S.tree_touched = touched
-      tree_touched = touched
-      return touched
-    end
-  elseif P and type(P.state) == "table" then
-    local touched = (P.state.tree_touched == true)
+  if P and type(P.state) == "table" and P.state.tree_ready_known == true then
+    local touched = (P.state.tree_ready ~= true)
+    S.tree_ready = (P.state.tree_ready == true)
+    S.tree_ready_known = true
+    S.tree_touched = touched
+    tree_ready = S.tree_ready
+    tree_touched = touched
+    return touched
+  end
+  if S.tree_ready_known == true then
+    local touched = (S.tree_ready ~= true)
     S.tree_touched = touched
     tree_touched = touched
     return touched
   end
-  return _bool(S.tree_touched) or _bool(rawget(_G, "tree_touched"))
+  return _bool(S.tree_touched)
 end
 
 function Yso.tree_ready()
@@ -167,13 +168,19 @@ function Yso.tree_ready()
     if ok then
       local ready = (v == true)
       S.tree_ready = ready
+      S.tree_ready_known = true
+      S.tree_touched = (ready ~= true)
       tree_ready = ready
+      tree_touched = S.tree_touched
       return ready
     end
   elseif P and type(P.state) == "table" then
     local ready = (P.state.tree_ready == true)
     S.tree_ready = ready
+    S.tree_ready_known = (P.state.tree_ready_known == true)
+    S.tree_touched = (S.tree_ready_known == true and ready ~= true)
     tree_ready = ready
+    tree_touched = S.tree_touched
     return ready
   end
   return _bool(S.tree_ready) or _bool(rawget(_G, "tree_ready"))

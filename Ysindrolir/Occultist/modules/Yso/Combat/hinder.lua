@@ -45,6 +45,10 @@ local WRITHE_FALLBACK_AFFS = {
   "bound",
   "roped",
   "impaled",
+  "pinned",
+  "ensnared",
+  "trussed",
+  "shackled",
 }
 
 local function _trim(s)

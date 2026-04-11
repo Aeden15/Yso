@@ -36,6 +36,10 @@ SA.states = SA.states or {
     transfixed = false,
     bound = false,
     impaled = false,
+    pinned = false,
+    ensnared = false,
+    trussed = false,
+    shackled = false,
   },
 }
 
@@ -99,6 +103,7 @@ local _aliases = {
   ["healthleech"] = "healthleech",
   ["manaleech"] = "manaleech",
   ["roped"] = "bound",
+  ["roped up"] = "bound",
 }
 
 local _state_affs = {
@@ -110,6 +115,10 @@ local _state_affs = {
   transfixed = true,
   bound = true,
   impaled = true,
+  pinned = true,
+  ensnared = true,
+  trussed = true,
+  shackled = true,
 }
 
 SA.writhe_family = SA.writhe_family or {
@@ -118,9 +127,18 @@ SA.writhe_family = SA.writhe_family or {
   transfixed = true,
   bound = true,
   impaled = true,
+  pinned = true,
+  ensnared = true,
+  trussed = true,
+  shackled = true,
 }
 
 local _writhe_affs = SA.writhe_family
+for aff in pairs(_writhe_affs) do
+  if SA.states.writhe[aff] == nil then
+    SA.states.writhe[aff] = false
+  end
+end
 
 function SA.normalize(name)
   local s = tostring(name or ""):lower()

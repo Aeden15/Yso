@@ -103,19 +103,18 @@ Current fixes
   active, feed ready, and the destroyed entity in Domination style, and
   cooldown-line parsing (Domination feed: ...) updates state as fallback.
 
-  Unified self-cleanse module -- Bloodboil (Magi), Fool (Occultist), and
-  Tree Tattoo (universal) now share a cureset-keyed PvP configuration
-  architecture. PvP is scaffolded with per-cureset thresholds but disabled
-  by default until tuned.
+  Unified self-cleanse module -- Bloodboil (Magi) and Fool (Occultist)
+  share the cureset-keyed PvP configuration architecture. Tree is now
+  state-tracking only in Yso, while execution remains Achaea serverside-owned.
 
   - Bloodboil hunt threshold lowered from 4 to 2.
   - Bloodboil PvP path: no longer hard-gates on cureset=hunt; looks up
     per-cureset thresholds with softlock override when PvP is enabled.
   - Fool hunt threshold lowered from 3 to 2.
   - Fool per-cureset PvP thresholds via Legacy.Fool.pvp.curesets table.
-  - New Tree Tattoo auto-touch module (Yso.tree): 14s cooldown tracking,
-    paralysis gate, cureset-keyed thresholds, auto-fires on GMCP vitals
-    and cooldown-ready line.
+  - Tree state tracker (Yso.tree): reads "You touch the tree..." as ready=false
+    and "You may utilise the tree tattoo again." as ready=true. No Yso
+    touch-tree command sends are issued from this module.
   - Devtools: ytest sc/selfcleanse shows all three abilities. ytest tree
     and ytest fool also available.
 

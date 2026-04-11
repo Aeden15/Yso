@@ -123,6 +123,7 @@ assert_eq("1a: Blindness -> blind", SA.normalize("Blindness."), "blind")
 assert_eq("1b: mana-leech -> manaleech", SA.normalize("mana-leech"), "manaleech")
 assert_eq("1c: sleeping -> sleep", SA.normalize("sleeping"), "sleep")
 assert_eq("1d: underscores collapse", SA.normalize("health_leech"), "healthleech")
+assert_eq("1e: roped alias canonicalizes to bound", SA.normalize("roped"), "bound")
 
 print("\n=== Test 2: gain/cure row timestamps and source ===")
 SA.reset("test")
@@ -215,6 +216,9 @@ assert_false("8b: wrapper cure", Yso.self.has_aff("blackout"))
 Yso.self.sync_full({ "webbed" }, "manual")
 assert_true("8c: wrapper sync_full", Yso.self.is_writhed())
 assert_true("8d: list_writhe_affs reports webbed", table.concat(Yso.self.list_writhe_affs(), ",") == "webbed")
+Yso.self.gain("roped", "manual")
+assert_true("8e: roped gain marks canonical bound writhe aff", Yso.self.has_aff("bound"))
+assert_true("8f: expanded writhe-family helper recognizes pinned", Yso.self.is_writhe_aff("pinned"))
 
 print("\n=== Test 9: writhe-family lane block/unblock hooks ===")
 local saw_eq_block = false
@@ -227,6 +231,7 @@ end
 assert_true("9a: eq lane blocked on writhe gain", saw_eq_block)
 assert_true("9b: bal lane blocked on writhe gain", saw_bal_block)
 Yso.self.cure("webbed", "manual")
+Yso.self.cure("bound", "manual")
 local saw_eq_unblock = false
 local saw_bal_unblock = false
 for i = 1, #_queue_unblocks do

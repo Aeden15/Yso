@@ -487,6 +487,17 @@ function Q.clear_lane(lane, opts)
   return true
 end
 
+local function _lane_send_allowed(lane, cmd)
+  if _trim(cmd) == "" then return false end
+  local blocked = type(Q.lane_blocked) == "function" and Q.lane_blocked(lane) or false
+  if blocked == true then
+    -- Recheck at send time so newly-applied writhe blocks cannot leak stale lane payloads.
+    Q._staged[lane] = nil
+    return false
+  end
+  return true
+end
+
 function Q.lane_blocked(lane)
   local key = _lane_key(lane)
   if not key or key == "free" then return false, "" end
@@ -708,21 +719,21 @@ function Q.commit(opts)
     any = true
   end
 
-  if _trim(payload.eq) ~= "" then
+  if _lane_send_allowed("eq", payload.eq) then
     local ok = Q.install_lane("eq", payload.eq, opts)
     if not ok then return false end
     queued.eq = payload.eq
     any = true
   end
 
-  if _trim(payload.bal) ~= "" then
+  if _lane_send_allowed("bal", payload.bal) then
     local ok = Q.install_lane("bal", payload.bal, opts)
     if not ok then return false end
     queued.bal = payload.bal
     any = true
   end
 
-  if _trim(payload.class) ~= "" then
+  if _lane_send_allowed("class", payload.class) then
     local ok = Q.install_lane("class", payload.class, opts)
     if not ok then return false end
     queued.class = payload.class
