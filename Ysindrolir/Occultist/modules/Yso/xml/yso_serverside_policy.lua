@@ -74,6 +74,14 @@ P.state = P.state or {
   queue_recent = {},
   tree_policy = "",
   last_tree_at = 0,
+  tree_ready = false,
+  tree_ready_known = false,
+  tree_touched = false,
+  tree_unchanged_wait_ready = false,
+  tree_last_attempt_at = 0,
+  tree_last_ready_at = 0,
+  tree_last_unchanged_at = 0,
+  tree_last_source = "",
 
   priority_list_requested_at = 0,
 }
@@ -85,6 +93,14 @@ P.state.set_last_observed = tostring(P.state.set_last_observed or "")
 P.state.set_last_resync_req_at = tonumber(P.state.set_last_resync_req_at or 0) or 0
 P.state.set_expected = tostring(P.state.set_expected or "")
 P.state.set_expected_until = tonumber(P.state.set_expected_until or 0) or 0
+P.state.tree_ready = (P.state.tree_ready == true)
+P.state.tree_ready_known = (P.state.tree_ready_known == true)
+P.state.tree_touched = (P.state.tree_touched == true)
+P.state.tree_unchanged_wait_ready = (P.state.tree_unchanged_wait_ready == true)
+P.state.tree_last_attempt_at = tonumber(P.state.tree_last_attempt_at or 0) or 0
+P.state.tree_last_ready_at = tonumber(P.state.tree_last_ready_at or 0) or 0
+P.state.tree_last_unchanged_at = tonumber(P.state.tree_last_unchanged_at or 0) or 0
+P.state.tree_last_source = tostring(P.state.tree_last_source or "")
 
 P.overlays = P.overlays or {
   blademaster = {
@@ -175,6 +191,64 @@ local function _adapter_table()
   Yso.curing = Yso.curing or {}
   Yso.curing.adapters = Yso.curing.adapters or {}
   return Yso.curing.adapters
+end
+
+local function _sync_tree_compat_mirrors()
+  Yso.state = Yso.state or {}
+  local ready = (P.state.tree_ready == true)
+  local touched = (P.state.tree_touched == true)
+  Yso.state.tree_ready = ready
+  Yso.state.tree_touched = touched
+  rawset(_G, "tree_ready", ready)
+  rawset(_G, "tree_touched", touched)
+end
+
+local function _active_writhe_affs()
+  local out = {}
+  if Yso and Yso.self and type(Yso.self.list_writhe_affs) == "function" then
+    local ok, list = pcall(Yso.self.list_writhe_affs)
+    if ok and type(list) == "table" then
+      for i = 1, #list do
+        local key = _trim(list[i]):lower()
+        if key ~= "" then out[#out + 1] = key end
+      end
+      if #out > 0 then return out end
+    end
+  end
+  if Yso and Yso.self and type(Yso.self.is_writhed) == "function" and Yso.self.is_writhed() == true then
+    out[#out + 1] = "writhe"
+  end
+  return out
+end
+
+local function _is_touch_tree_cmd(cmd)
+  cmd = _trim(cmd):lower()
+  if cmd == "" then return false end
+  if cmd:match("^touch%s+tree$") then return true end
+  if cmd:match("^touch%s+tree%s+tattoo$") then return true end
+  return false
+end
+
+local function _contains_touch_tree_cmd(cmd)
+  cmd = _trim(cmd):lower()
+  if cmd == "" then return false end
+  if _is_touch_tree_cmd(cmd) then return true end
+  return cmd:find("touch tree", 1, true) ~= nil
+end
+
+local function _tree_touch_block_reason(cmd)
+  if not _is_touch_tree_cmd(cmd) then return nil, {} end
+
+  local writhe = _active_writhe_affs()
+  if #writhe > 0 then
+    return "writhe_block", writhe
+  end
+
+  if P.state.tree_unchanged_wait_ready == true then
+    return "tree_wait_ready", {}
+  end
+
+  return nil, {}
 end
 
 local function _request_authoritative_resync(reason, force)
@@ -623,11 +697,83 @@ local function _apply_tree_policy(policy, overlay)
   return true
 end
 
+function P.set_tree_ready(v, source)
+  local ready = (v == true)
+  local now = _now()
+  P.state.tree_ready = ready
+  P.state.tree_ready_known = true
+  P.state.tree_last_source = tostring(source or "manual")
+  if ready then
+    P.state.tree_last_ready_at = now
+    P.state.tree_touched = false
+    P.state.tree_unchanged_wait_ready = false
+  end
+  _sync_tree_compat_mirrors()
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.curing.tree_state", ready, P.state.tree_touched, P.state.tree_unchanged_wait_ready, P.state.tree_last_source)
+  end
+  return true
+end
+
+function P.set_tree_touched(v, source)
+  local touched = (v == true)
+  P.state.tree_touched = touched
+  P.state.tree_last_source = tostring(source or "manual")
+  if touched and P.state.tree_ready_known == true then
+    P.state.tree_ready = false
+  end
+  _sync_tree_compat_mirrors()
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.curing.tree_state", P.state.tree_ready, touched, P.state.tree_unchanged_wait_ready, P.state.tree_last_source)
+  end
+  return true
+end
+
+function P.note_tree_attempt(source)
+  local now = _now()
+  P.state.tree_last_attempt_at = now
+  P.state.tree_touched = true
+  if P.state.tree_ready_known == true then
+    P.state.tree_ready = false
+  end
+  P.state.tree_last_source = tostring(source or "tree_attempt")
+  _sync_tree_compat_mirrors()
+  return true
+end
+
+function P.note_tree_unchanged(source)
+  P.note_tree_attempt(source or "tree_unchanged")
+  P.state.tree_unchanged_wait_ready = true
+  P.state.tree_last_unchanged_at = _now()
+  _sync_tree_compat_mirrors()
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.curing.tree_unchanged", P.state.tree_last_source)
+  end
+  return true
+end
+
+function P.tree_touch_blocked_reason(cmd)
+  return _tree_touch_block_reason(cmd)
+end
+
+function P.tree_ready()
+  return P.state.tree_ready == true
+end
+
+function P.tree_touched()
+  return P.state.tree_touched == true
+end
+
 function P.queue_emergency(cmd, opts)
   opts = opts or {}
   cmd = _trim(cmd)
   if cmd == "" then return false, "empty" end
   if _manual_grace_active() then return false, "manual_grace" end
+
+  local tree_block_reason = _tree_touch_block_reason(cmd)
+  if tree_block_reason then
+    return false, tree_block_reason
+  end
 
   local now = _now()
   local qtype = _trim(opts.qtype or "bal")
@@ -661,6 +807,10 @@ function P.queue_emergency(cmd, opts)
     send(line, false)
   else
     return false, "send_missing"
+  end
+
+  if _is_touch_tree_cmd(cmd) then
+    P.note_tree_attempt("policy.queue_emergency")
   end
 
   P.state.queue_recent[key] = now
@@ -781,6 +931,7 @@ function P.tick(source, force)
 end
 
 function P.status()
+  local writhe_affs = _active_writhe_affs()
   return {
     mode = P.state.mode,
     current_set = P.state.current_set,
@@ -791,6 +942,12 @@ function P.status()
     manual_grace = math.max(0, (tonumber(P.state.manual_grace_until or 0) or 0) - _now()),
     aggression_left = math.max(0, (tonumber(P.state.aggression_until or 0) or 0) - _now()),
     tree_policy = P.state.tree_policy,
+    tree_ready = (P.state.tree_ready == true),
+    tree_ready_known = (P.state.tree_ready_known == true),
+    tree_touched = (P.state.tree_touched == true),
+    tree_wait_ready = (P.state.tree_unchanged_wait_ready == true),
+    writhe_blocked = (#writhe_affs > 0),
+    writhe_affs = writhe_affs,
   }
 end
 
@@ -835,9 +992,27 @@ function P.install_hooks()
     _kill_eh(P._eh.send_request)
     P._eh.send_request = registerAnonymousEventHandler("sysDataSendRequest", function(_, command)
       if type(command) ~= "string" then return end
-      if _trim(command) == "" then return end
+      local cmd = _trim(command)
+      if cmd == "" then return end
+      if _contains_touch_tree_cmd(cmd) then
+        if _is_self_send_window() then
+          P.note_tree_attempt("sysDataSendRequest:self")
+        else
+          P.note_tree_attempt("sysDataSendRequest:manual")
+        end
+      end
       if _is_self_send_window() then return end
       P.note_manual_intervention("sysDataSendRequest")
+    end)
+
+    _kill_eh(P._eh.tree_ready_evt)
+    P._eh.tree_ready_evt = registerAnonymousEventHandler("yso.tree.ready", function(_, v)
+      P.set_tree_ready(v ~= false, "event:yso.tree.ready")
+    end)
+
+    _kill_eh(P._eh.tree_touched_evt)
+    P._eh.tree_touched_evt = registerAnonymousEventHandler("yso.tree.touched", function(_, v)
+      P.set_tree_touched(v == true, "event:yso.tree.touched")
     end)
   end
 
@@ -858,6 +1033,14 @@ function P.install_hooks()
     P._tr.queue_cleared = tempRegexTrigger([[^You clear your \w+ queue\.$]], function()
       P.clear_emergency_dedupe("text_ack:queue_clear")
     end)
+
+    _kill_tr(P._tr.tree_unchanged)
+    P._tr.tree_unchanged = tempRegexTrigger(
+      [[^Your tree of life tattoo glows faintly for a moment then fades, leaving you unchanged\.$]],
+      function()
+        P.note_tree_unchanged("text_ack:tree_unchanged")
+      end
+    )
   end
 
   P._hooks_installed = true
@@ -865,6 +1048,7 @@ function P.install_hooks()
 end
 
 function P.init()
+  _sync_tree_compat_mirrors()
   _read_current_set()
   _read_baseline_from_legacy(P.cfg.base_set)
   P.install_hooks()

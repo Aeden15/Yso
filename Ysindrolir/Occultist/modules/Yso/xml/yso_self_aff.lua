@@ -51,6 +51,7 @@ SA._tr = SA._tr or {}
 SA._compat_mirror_store = SA._compat_mirror_store or {}
 SA._compat_mirror_ready = (SA._compat_mirror_ready == true)
 SA._compat_write_guard = (SA._compat_write_guard == true)
+SA._writhe_lane_blocked = (SA._writhe_lane_blocked == true)
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
@@ -97,6 +98,7 @@ local _aliases = {
   ["deadening"] = "deadening",
   ["healthleech"] = "healthleech",
   ["manaleech"] = "manaleech",
+  ["roped"] = "bound",
 }
 
 local _state_affs = {
@@ -110,13 +112,15 @@ local _state_affs = {
   impaled = true,
 }
 
-local _writhe_affs = {
+SA.writhe_family = SA.writhe_family or {
   webbed = true,
   entangled = true,
   transfixed = true,
   bound = true,
   impaled = true,
 }
+
+local _writhe_affs = SA.writhe_family
 
 function SA.normalize(name)
   local s = tostring(name or ""):lower()
@@ -288,6 +292,49 @@ local function _set_state_from_aff(key, active)
   end
 end
 
+local function _sync_writhe_lane_blocks(source)
+  local active = false
+  local reason = ""
+  for aff, row in pairs(SA.affs) do
+    if _writhe_affs[aff] and type(row) == "table" and row.active == true then
+      active = true
+      reason = aff
+      break
+    end
+  end
+
+  if active == SA._writhe_lane_blocked then return false end
+  SA._writhe_lane_blocked = active
+
+  local Q = Yso and Yso.queue
+  if type(Q) ~= "table" then return true end
+
+  if active then
+    for _, lane in ipairs({ "eq", "bal" }) do
+      if type(Q.block_lane) == "function" then
+        pcall(Q.block_lane, lane, reason ~= "" and reason or "writhe", {
+          source = tostring(source or "self_aff.writhe"),
+          clear_owned = true,
+          clear_staged = true,
+        })
+      end
+    end
+  else
+    for _, lane in ipairs({ "eq", "bal" }) do
+      if type(Q.unblock_lane) == "function" then
+        pcall(Q.unblock_lane, lane, "writhe_clear", {
+          source = tostring(source or "self_aff.writhe"),
+        })
+      end
+    end
+  end
+
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.self.writhe_lane_block", active, reason)
+  end
+  return true
+end
+
 local function _set_aff_active(key, active, source)
   key = SA.normalize(key)
   if key == "" then return false end
@@ -318,6 +365,9 @@ local function _set_aff_active(key, active, source)
 
   if _state_affs[key] then
     _set_state_from_aff(key, is)
+  end
+  if _writhe_affs[key] then
+    _sync_writhe_lane_blocks(source)
   end
 
   _mark_meta(source)
@@ -442,6 +492,7 @@ function SA.reset(source, opts)
   for k in pairs(SA.states.writhe) do
     SA.states.writhe[k] = false
   end
+  _sync_writhe_lane_blocks(source)
   _mark_meta(source)
   return true
 end
@@ -573,7 +624,29 @@ function SA.is_writhed()
   for _, v in pairs(SA.states.writhe or {}) do
     if v == true then return true end
   end
+  for aff, row in pairs(SA.affs) do
+    if _writhe_affs[aff] and type(row) == "table" and row.active == true then
+      return true
+    end
+  end
   return false
+end
+
+function SA.is_writhe_aff(name)
+  local key = SA.normalize(name)
+  if key == "" then return false end
+  return _writhe_affs[key] == true
+end
+
+function SA.list_writhe_affs()
+  local out = {}
+  for aff, row in pairs(SA.affs) do
+    if _writhe_affs[aff] and type(row) == "table" and row.active == true then
+      out[#out + 1] = aff
+    end
+  end
+  table.sort(out)
+  return out
 end
 
 function SA.bleeding()
@@ -598,6 +671,8 @@ Yso.self.is_prone = function() return SA.is_prone() end
 Yso.self.is_asleep = function() return SA.is_asleep() end
 Yso.self.is_blackout = function() return SA.is_blackout() end
 Yso.self.is_writhed = function() return SA.is_writhed() end
+Yso.self.is_writhe_aff = function(name) return SA.is_writhe_aff(name) end
+Yso.self.list_writhe_affs = function() return SA.list_writhe_affs() end
 Yso.self.bleeding = function() return SA.bleeding() end
 Yso.self.is_standing = function() return SA.is_standing() end
 Yso.self.is_paralyzed = function() return SA.has_aff("paralysis") end
@@ -661,5 +736,6 @@ SA.install_hooks()
 SA.ingest_gmcp_aff_list()
 SA.ingest_gmcp_vitals()
 _install_affs_proxy()
+_sync_writhe_lane_blocks("init")
 
 return SA

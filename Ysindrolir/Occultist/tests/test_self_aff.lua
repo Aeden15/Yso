@@ -66,6 +66,8 @@ function registerAnonymousEventHandler() return 1 end
 function killAnonymousEventHandler() end
 
 local _events = {}
+local _queue_blocks = {}
+local _queue_unblocks = {}
 function raiseEvent(name, ...)
   _events[#_events + 1] = { name = name, args = { ... } }
 end
@@ -92,6 +94,22 @@ _G.Yso = {
     policy = {
       state = { aggression_until = 0 },
     },
+  },
+  queue = {
+    block_lane = function(lane, reason)
+      _queue_blocks[#_queue_blocks + 1] = {
+        lane = tostring(lane or ""),
+        reason = tostring(reason or ""),
+      }
+      return true
+    end,
+    unblock_lane = function(lane, reason)
+      _queue_unblocks[#_queue_unblocks + 1] = {
+        lane = tostring(lane or ""),
+        reason = tostring(reason or ""),
+      }
+      return true
+    end,
   },
 }
 _G.yso = _G.Yso
@@ -196,6 +214,28 @@ Yso.self.cure("blackout", "manual")
 assert_false("8b: wrapper cure", Yso.self.has_aff("blackout"))
 Yso.self.sync_full({ "webbed" }, "manual")
 assert_true("8c: wrapper sync_full", Yso.self.is_writhed())
+assert_true("8d: list_writhe_affs reports webbed", table.concat(Yso.self.list_writhe_affs(), ",") == "webbed")
+
+print("\n=== Test 9: writhe-family lane block/unblock hooks ===")
+local saw_eq_block = false
+local saw_bal_block = false
+for i = 1, #_queue_blocks do
+  local row = _queue_blocks[i]
+  if row.lane == "eq" then saw_eq_block = true end
+  if row.lane == "bal" then saw_bal_block = true end
+end
+assert_true("9a: eq lane blocked on writhe gain", saw_eq_block)
+assert_true("9b: bal lane blocked on writhe gain", saw_bal_block)
+Yso.self.cure("webbed", "manual")
+local saw_eq_unblock = false
+local saw_bal_unblock = false
+for i = 1, #_queue_unblocks do
+  local row = _queue_unblocks[i]
+  if row.lane == "eq" then saw_eq_unblock = true end
+  if row.lane == "bal" then saw_bal_unblock = true end
+end
+assert_true("9c: eq lane unblocked on writhe clear", saw_eq_unblock)
+assert_true("9d: bal lane unblocked on writhe clear", saw_bal_unblock)
 
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then

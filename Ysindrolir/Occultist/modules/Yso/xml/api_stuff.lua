@@ -1325,6 +1325,35 @@ function Yso.self.is_writhed()
   return Yso.self.any_aff({ "webbed", "entangled", "transfixed", "bound", "impaled" })
 end
 
+function Yso.self.is_writhe_aff(name)
+  local SA = _selfaff_module()
+  if SA and type(SA.is_writhe_aff) == "function" then
+    local ok, v = pcall(SA.is_writhe_aff, name)
+    if ok then return v == true end
+  end
+  local key = tostring(name or ""):lower()
+  if key == "" then return false end
+  return key == "webbed"
+    or key == "entangled"
+    or key == "transfixed"
+    or key == "bound"
+    or key == "roped"
+    or key == "impaled"
+end
+
+function Yso.self.list_writhe_affs()
+  local SA = _selfaff_module()
+  if SA and type(SA.list_writhe_affs) == "function" then
+    local ok, v = pcall(SA.list_writhe_affs)
+    if ok and type(v) == "table" then return v end
+  end
+  local out = {}
+  for _, aff in ipairs({ "webbed", "entangled", "transfixed", "bound", "roped", "impaled" }) do
+    if Yso.self.has_aff(aff) then out[#out + 1] = aff end
+  end
+  return out
+end
+
 function Yso.self.bleeding()
   local SA = _selfaff_module()
   if SA and type(SA.bleeding) == "function" then

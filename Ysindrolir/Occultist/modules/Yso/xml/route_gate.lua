@@ -123,6 +123,8 @@ function RG.finalize(payload, ctx)
   local hinder_snapshot = Yso.hinder and Yso.hinder.collect and Yso.hinder.collect(ctx) or {}
   local hinder_decision = Yso.hinder and Yso.hinder.classify and Yso.hinder.classify(hinder_snapshot, planned, ctx) or {}
   ctx.hinder_decision = hinder_decision
+  local hinder_queue_state = Yso.hinder and Yso.hinder.reconcile_queue and Yso.hinder.reconcile_queue(hinder_decision, ctx) or nil
+  ctx.hinder_queue_state = hinder_queue_state
 
   local entity_state = Yso.entities and Yso.entities.collect and Yso.entities.collect(ctx) or {}
   local entity_obligations = Yso.entities and Yso.entities.classify and Yso.entities.classify(entity_state, planned, ctx) or {}
@@ -137,6 +139,7 @@ function RG.finalize(payload, ctx)
     hinder = {
       snapshot = _clone(hinder_snapshot),
       decision = _clone(hinder_decision),
+      queue = _clone(hinder_queue_state),
     },
     entities = {
       required = _clone(entity_state.required or {}),

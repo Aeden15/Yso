@@ -5952,6 +5952,35 @@ function Yso.self.is_writhed()
   return Yso.self.any_aff({ &quot;webbed&quot;, &quot;entangled&quot;, &quot;transfixed&quot;, &quot;bound&quot;, &quot;impaled&quot; })
 end
 
+function Yso.self.is_writhe_aff(name)
+  local SA = _selfaff_module()
+  if SA and type(SA.is_writhe_aff) == &quot;function&quot; then
+    local ok, v = pcall(SA.is_writhe_aff, name)
+    if ok then return v == true end
+  end
+  local key = tostring(name or &quot;&quot;):lower()
+  if key == &quot;&quot; then return false end
+  return key == &quot;webbed&quot;
+    or key == &quot;entangled&quot;
+    or key == &quot;transfixed&quot;
+    or key == &quot;bound&quot;
+    or key == &quot;roped&quot;
+    or key == &quot;impaled&quot;
+end
+
+function Yso.self.list_writhe_affs()
+  local SA = _selfaff_module()
+  if SA and type(SA.list_writhe_affs) == &quot;function&quot; then
+    local ok, v = pcall(SA.list_writhe_affs)
+    if ok and type(v) == &quot;table&quot; then return v end
+  end
+  local out = {}
+  for _, aff in ipairs({ &quot;webbed&quot;, &quot;entangled&quot;, &quot;transfixed&quot;, &quot;bound&quot;, &quot;roped&quot;, &quot;impaled&quot; }) do
+    if Yso.self.has_aff(aff) then out[#out + 1] = aff end
+  end
+  return out
+end
+
 function Yso.self.bleeding()
   local SA = _selfaff_module()
   if SA and type(SA.bleeding) == &quot;function&quot; then
@@ -6403,6 +6432,7 @@ Q._staged = Q._staged or {
   bal = nil,
   class = nil,
 }
+Q._blocked = Q._blocked or {}
 
 Q._impl_version = &quot;2026-04-05.1&quot;
 
@@ -6620,6 +6650,10 @@ end
 
 local function _lane_ready(lane)
   if lane == &quot;free&quot; then return true end
+  if type(Q.lane_blocked) == &quot;function&quot; then
+    local blocked = Q.lane_blocked(lane)
+    if blocked == true then return false end
+  end
 
   if Yso and Yso.locks and type(Yso.locks.ready) == &quot;function&quot; then
     local ok, res = pcall(Yso.locks.ready, lane)
@@ -6840,10 +6874,92 @@ function Q.clear_lane(lane, opts)
   return true
 end
 
+function Q.lane_blocked(lane)
+  local key = _lane_key(lane)
+  if not key or key == &quot;free&quot; then return false, &quot;&quot; end
+  local row = Q._blocked and Q._blocked[key] or nil
+  if type(row) ~= &quot;table&quot; then return false, &quot;&quot; end
+  if row.active ~= true then return false, &quot;&quot; end
+  return true, _trim(row.reason), row
+end
+
+function Q.block_lane(lane, reason, opts)
+  opts = opts or {}
+  local key = _lane_key(lane)
+  if not key or key == &quot;free&quot; then return false, &quot;invalid_lane&quot; end
+
+  local was_blocked = Q.lane_blocked(key)
+  local now = _now()
+  local why = _trim(reason)
+  if why == &quot;&quot; then why = &quot;blocked&quot; end
+
+  Q._blocked = type(Q._blocked) == &quot;table&quot; and Q._blocked or {}
+  Q._blocked[key] = {
+    active = true,
+    reason = why,
+    source = _trim(opts.source),
+    blocked_at = now,
+  }
+
+  if opts.clear_staged ~= false then
+    Q._staged[key] = nil
+  end
+
+  if opts.clear_owned == true then
+    local owned = type(Q.get_owned) == &quot;function&quot; and Q.get_owned(key) or nil
+    if type(owned) == &quot;table&quot; and type(Q.clear_lane) == &quot;function&quot; then
+      local ok = Q.clear_lane(key, { qtype = opts.qtype })
+      if not ok and type(Q.clear_owned) == &quot;function&quot; then
+        Q.clear_owned(key)
+      end
+    elseif type(Q.clear_owned) == &quot;function&quot; then
+      Q.clear_owned(key)
+    end
+  end
+
+  if Yso and Yso.trace and type(Yso.trace.push) == &quot;function&quot; then
+    pcall(Yso.trace.push, &quot;queue.block&quot;, {
+      ts = now,
+      lane = key,
+      reason = why,
+      source = _trim(opts.source),
+      changed = (was_blocked ~= true),
+    })
+  end
+
+  return true, was_blocked and &quot;unchanged&quot; or &quot;blocked&quot;, Q._blocked[key]
+end
+
+function Q.unblock_lane(lane, reason, opts)
+  opts = opts or {}
+  local key = _lane_key(lane)
+  if not key or key == &quot;free&quot; then return false, &quot;invalid_lane&quot; end
+
+  local blocked, _, prev = Q.lane_blocked(key)
+  if blocked ~= true then return true, &quot;already_clear&quot; end
+
+  Q._blocked[key] = nil
+  local now = _now()
+  if Yso and Yso.trace and type(Yso.trace.push) == &quot;function&quot; then
+    pcall(Yso.trace.push, &quot;queue.unblock&quot;, {
+      ts = now,
+      lane = key,
+      reason = _trim(reason),
+      prior_reason = type(prev) == &quot;table&quot; and _trim(prev.reason) or &quot;&quot;,
+      source = _trim(opts.source),
+    })
+  end
+  return true
+end
+
 function Q.install_lane(lane, cmd, opts)
   opts = opts or {}
   local key = _lane_key(lane)
   if not key then return false, &quot;invalid_lane&quot; end
+  local blocked = Q.lane_blocked(key)
+  if blocked == true and opts.force_blocked ~= true then
+    return false, &quot;lane_blocked&quot;
+  end
   cmd = _trim(cmd)
   if cmd == &quot;&quot; then
     return Q.clear_lane(key, opts)
@@ -6912,6 +7028,11 @@ function Q.stage(lane, payload, opts)
   opts = opts or {}
   local key, staged_payload, compat = _coerce_stage_args(lane, payload)
   if not key then return false end
+  local blocked = Q.lane_blocked(key)
+  if blocked == true and key ~= &quot;free&quot; then
+    Q._staged[key] = nil
+    return false, &quot;lane_blocked&quot;
+  end
   payload = staged_payload
 
   if compat == &quot;swapped&quot; then
@@ -7080,6 +7201,14 @@ function Q.raw(mode, qtype, payload)
 end
 
 Q.mark_payload_fired = _mark_payload_fired
+
+do
+  local is_writhed = Yso and Yso.self and type(Yso.self.is_writhed) == &quot;function&quot; and Yso.self.is_writhed() == true
+  if is_writhed then
+    Q.block_lane(&quot;eq&quot;, &quot;writhe&quot;, { source = &quot;queue.init&quot;, clear_owned = true, clear_staged = true })
+    Q.block_lane(&quot;bal&quot;, &quot;writhe&quot;, { source = &quot;queue.init&quot;, clear_owned = true, clear_staged = true })
+  end
+end
 
 return Q
 </script>
@@ -7806,27 +7935,31 @@ local function _now()
 end
 
 H.cfg = H.cfg or {}
-H.state = H.state or { snapshot = nil }
-
-local ALL_AFFS = {
-  &quot;paralysis&quot;,
-  &quot;clumsiness&quot;,
-  &quot;webbed&quot;,
-  &quot;entangled&quot;,
-  &quot;prone&quot;,
-  &quot;fallen&quot;,
-  &quot;sleeping&quot;,
-  &quot;transfixed&quot;,
-  &quot;impaled&quot;,
+H.state = H.state or {
+  snapshot = nil,
+  lane_blocked = { eq = false, bal = false },
 }
 
-local EQ_BAL_AFFS = {
-  &quot;webbed&quot;,
-  &quot;entangled&quot;,
+local BASE_AFFS = {
+  &quot;paralysis&quot;,
+  &quot;clumsiness&quot;,
   &quot;prone&quot;,
   &quot;fallen&quot;,
   &quot;sleeping&quot;,
+}
+
+local EQ_BAL_BASE_AFFS = {
+  &quot;prone&quot;,
+  &quot;fallen&quot;,
+  &quot;sleeping&quot;,
+}
+
+local WRITHE_FALLBACK_AFFS = {
+  &quot;webbed&quot;,
+  &quot;entangled&quot;,
   &quot;transfixed&quot;,
+  &quot;bound&quot;,
+  &quot;roped&quot;,
   &quot;impaled&quot;,
 }
 
@@ -7876,19 +8009,46 @@ local function _free_parts(payload)
   return (type(parts) == &quot;table&quot;) and parts or nil
 end
 
+local function _active_writhe_blockers()
+  local out = {}
+  if Yso and Yso.self and type(Yso.self.list_writhe_affs) == &quot;function&quot; then
+    local ok, list = pcall(Yso.self.list_writhe_affs)
+    if ok and type(list) == &quot;table&quot; then
+      for i = 1, #list do
+        _append_unique(out, list[i])
+      end
+      if #out &gt; 0 then return out end
+    end
+  end
+
+  for i = 1, #WRITHE_FALLBACK_AFFS do
+    local aff = WRITHE_FALLBACK_AFFS[i]
+    if (Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot;)
+      and Yso.self.has_aff(aff) == true
+    then
+      _append_unique(out, aff)
+    end
+  end
+  return out
+end
+
 function H.collect(ctx)
   local snapshot = {
     at = _now(),
     eq_bal_blockers = {},
     entity_blockers = {},
     all_offense_blocked = false,
+    writhe_blockers = _active_writhe_blockers(),
   }
 
-  for i = 1, #ALL_AFFS do
-    local aff = ALL_AFFS[i]
+  for i = 1, #BASE_AFFS do
+    local aff = BASE_AFFS[i]
     snapshot[aff] = (Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot;)
       and Yso.self.has_aff(aff) == true
       or false
+  end
+  for i = 1, #(snapshot.writhe_blockers or {}) do
+    snapshot[snapshot.writhe_blockers[i]] = true
   end
 
   if snapshot.paralysis == true then
@@ -7899,11 +8059,14 @@ function H.collect(ctx)
   if snapshot.clumsiness == true then
     _append_unique(snapshot.entity_blockers, &quot;clumsiness&quot;)
   end
-  for i = 1, #EQ_BAL_AFFS do
-    local aff = EQ_BAL_AFFS[i]
+  for i = 1, #EQ_BAL_BASE_AFFS do
+    local aff = EQ_BAL_BASE_AFFS[i]
     if snapshot[aff] == true then
       _append_unique(snapshot.eq_bal_blockers, aff)
     end
+  end
+  for i = 1, #(snapshot.writhe_blockers or {}) do
+    _append_unique(snapshot.eq_bal_blockers, snapshot.writhe_blockers[i])
   end
 
   H.state.snapshot = snapshot
@@ -7926,6 +8089,8 @@ function H.classify(snapshot, payload, ctx)
     blocked_lanes = { free = {}, eq = {}, bal = {}, entity = {} },
     blocked_reasons = {},
     offensive_free_parts = {},
+    writhe_blockers = {},
+    writhe_blocked = false,
   }
 
   local function block(lane, reason)
@@ -7947,6 +8112,11 @@ function H.classify(snapshot, payload, ctx)
     block(&quot;eq&quot;, reason)
     block(&quot;bal&quot;, reason)
   end
+  for i = 1, #(snapshot.writhe_blockers or {}) do
+    local reason = snapshot.writhe_blockers[i]
+    _append_unique(decision.writhe_blockers, reason)
+  end
+  decision.writhe_blocked = (#decision.writhe_blockers &gt; 0)
 
   local parts = _free_parts(payload)
   if type(parts) == &quot;table&quot; then
@@ -7994,6 +8164,85 @@ function H.apply(payload, decision, ctx)
   end
 
   return out
+end
+
+local function _writhe_blocked_lanes(decision)
+  local out = { eq = false, bal = false, reason = &quot;&quot; }
+  if type(decision) ~= &quot;table&quot; or decision.writhe_blocked ~= true then
+    return out
+  end
+
+  local blocked = type(decision.blocked_lanes) == &quot;table&quot; and decision.blocked_lanes or {}
+  out.eq = (type(blocked.eq) == &quot;table&quot; and #blocked.eq &gt; 0)
+  out.bal = (type(blocked.bal) == &quot;table&quot; and #blocked.bal &gt; 0)
+  out.reason = _trim((decision.writhe_blockers and decision.writhe_blockers[1]) or &quot;writhe&quot;)
+  return out
+end
+
+function H.reconcile_queue(decision, ctx)
+  local Q = Yso and Yso.queue
+  if type(Q) ~= &quot;table&quot; then return nil end
+
+  H.state.lane_blocked = H.state.lane_blocked or { eq = false, bal = false }
+  local blocked = _writhe_blocked_lanes(decision)
+  local changed = {}
+
+  local function on_block(lane, reason)
+    if type(Q.block_lane) == &quot;function&quot; then
+      pcall(Q.block_lane, lane, reason, {
+        source = &quot;hinder.writhe&quot;,
+        clear_owned = true,
+        clear_staged = true,
+      })
+      return
+    end
+
+    if type(Q.clear) == &quot;function&quot; then pcall(Q.clear, lane) end
+    if type(Q.get_owned) == &quot;function&quot; and type(Q.clear_lane) == &quot;function&quot; then
+      local owned = Q.get_owned(lane)
+      if type(owned) == &quot;table&quot; then
+        pcall(Q.clear_lane, lane, { note = &quot;hinder.writhe&quot; })
+      end
+    elseif type(Q.clear_owned) == &quot;function&quot; then
+      pcall(Q.clear_owned, lane)
+    end
+  end
+
+  local function on_unblock(lane)
+    if type(Q.unblock_lane) == &quot;function&quot; then
+      pcall(Q.unblock_lane, lane, &quot;hinder.writhe.clear&quot;, { source = &quot;hinder.writhe&quot; })
+    end
+  end
+
+  for _, lane in ipairs({ &quot;eq&quot;, &quot;bal&quot; }) do
+    local now_blocked = (blocked[lane] == true)
+    local was_blocked = (H.state.lane_blocked[lane] == true)
+    if now_blocked and not was_blocked then
+      H.state.lane_blocked[lane] = true
+      changed[lane] = &quot;blocked&quot;
+      on_block(lane, blocked.reason ~= &quot;&quot; and blocked.reason or &quot;writhe&quot;)
+    elseif not now_blocked and was_blocked then
+      H.state.lane_blocked[lane] = false
+      changed[lane] = &quot;unblocked&quot;
+      on_unblock(lane)
+    end
+  end
+
+  if type(raiseEvent) == &quot;function&quot; then
+    for lane, action in pairs(changed) do
+      raiseEvent(&quot;yso.hinder.writhe_lane&quot;, lane, action, blocked.reason)
+    end
+  end
+
+  return {
+    writhe_blocked = (blocked.eq or blocked.bal),
+    lanes = {
+      eq = (H.state.lane_blocked.eq == true),
+      bal = (H.state.lane_blocked.bal == true),
+    },
+    reason = blocked.reason,
+    changed = changed,
+  }
 end
 
 return H
@@ -8433,6 +8682,8 @@ function RG.finalize(payload, ctx)
   local hinder_snapshot = Yso.hinder and Yso.hinder.collect and Yso.hinder.collect(ctx) or {}
   local hinder_decision = Yso.hinder and Yso.hinder.classify and Yso.hinder.classify(hinder_snapshot, planned, ctx) or {}
   ctx.hinder_decision = hinder_decision
+  local hinder_queue_state = Yso.hinder and Yso.hinder.reconcile_queue and Yso.hinder.reconcile_queue(hinder_decision, ctx) or nil
+  ctx.hinder_queue_state = hinder_queue_state
 
   local entity_state = Yso.entities and Yso.entities.collect and Yso.entities.collect(ctx) or {}
   local entity_obligations = Yso.entities and Yso.entities.classify and Yso.entities.classify(entity_state, planned, ctx) or {}
@@ -8447,6 +8698,7 @@ function RG.finalize(payload, ctx)
     hinder = {
       snapshot = _clone(hinder_snapshot),
       decision = _clone(hinder_decision),
+      queue = _clone(hinder_queue_state),
     },
     entities = {
       required = _clone(entity_state.required or {}),
@@ -13701,6 +13953,10 @@ if rawget(_G, &quot;sycophant_ready&quot;)  == nil then sycophant_ready  = false
 if rawget(_G, &quot;mind_focused&quot;)     == nil then mind_focused     = false end
 
 local function _bool(v) return v == true end
+local function _tree_policy()
+  local P = Yso and Yso.curing and Yso.curing.policy or nil
+  return type(P) == &quot;table&quot; and P or nil
+end
 
 --========================
 -- Setters (preferred)
@@ -13729,13 +13985,35 @@ function Yso.reset_loyals_attack()
 end
 
 function Yso.set_tree_touched(v)
-  S.tree_touched = _bool(v)
-  tree_touched   = S.tree_touched
+  local touched = _bool(v)
+  local P = _tree_policy()
+  if P and type(P.set_tree_touched) == &quot;function&quot; then
+    pcall(P.set_tree_touched, touched, &quot;compat:set_tree_touched&quot;)
+  end
+  if P and type(P.tree_touched) == &quot;function&quot; then
+    local ok, pv = pcall(P.tree_touched)
+    if ok then touched = (pv == true) end
+  elseif P and type(P.state) == &quot;table&quot; then
+    touched = (P.state.tree_touched == true)
+  end
+  S.tree_touched = touched
+  tree_touched   = touched
 end
 
 function Yso.set_tree_ready(v)
-  S.tree_ready = _bool(v)
-  tree_ready   = S.tree_ready
+  local ready = _bool(v)
+  local P = _tree_policy()
+  if P and type(P.set_tree_ready) == &quot;function&quot; then
+    pcall(P.set_tree_ready, ready, &quot;compat:set_tree_ready&quot;)
+  end
+  if P and type(P.tree_ready) == &quot;function&quot; then
+    local ok, pv = pcall(P.tree_ready)
+    if ok then ready = (pv == true) end
+  elseif P and type(P.state) == &quot;table&quot; then
+    ready = (P.state.tree_ready == true)
+  end
+  S.tree_ready = ready
+  tree_ready   = ready
 end
 
 function Yso.set_sycophant_ready(v)
@@ -13766,10 +14044,40 @@ function Yso.loyals_attack(tgt)
 end
 
 function Yso.tree_touched()
+  local P = _tree_policy()
+  if P and type(P.tree_touched) == &quot;function&quot; then
+    local ok, v = pcall(P.tree_touched)
+    if ok then
+      local touched = (v == true)
+      S.tree_touched = touched
+      tree_touched = touched
+      return touched
+    end
+  elseif P and type(P.state) == &quot;table&quot; then
+    local touched = (P.state.tree_touched == true)
+    S.tree_touched = touched
+    tree_touched = touched
+    return touched
+  end
   return _bool(S.tree_touched) or _bool(rawget(_G, &quot;tree_touched&quot;))
 end
 
 function Yso.tree_ready()
+  local P = _tree_policy()
+  if P and type(P.tree_ready) == &quot;function&quot; then
+    local ok, v = pcall(P.tree_ready)
+    if ok then
+      local ready = (v == true)
+      S.tree_ready = ready
+      tree_ready = ready
+      return ready
+    end
+  elseif P and type(P.state) == &quot;table&quot; then
+    local ready = (P.state.tree_ready == true)
+    S.tree_ready = ready
+    tree_ready = ready
+    return ready
+  end
   return _bool(S.tree_ready) or _bool(rawget(_G, &quot;tree_ready&quot;))
 end
 
@@ -22979,6 +23287,7 @@ SA._tr = SA._tr or {}
 SA._compat_mirror_store = SA._compat_mirror_store or {}
 SA._compat_mirror_ready = (SA._compat_mirror_ready == true)
 SA._compat_write_guard = (SA._compat_write_guard == true)
+SA._writhe_lane_blocked = (SA._writhe_lane_blocked == true)
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
@@ -23025,6 +23334,7 @@ local _aliases = {
   [&quot;deadening&quot;] = &quot;deadening&quot;,
   [&quot;healthleech&quot;] = &quot;healthleech&quot;,
   [&quot;manaleech&quot;] = &quot;manaleech&quot;,
+  [&quot;roped&quot;] = &quot;bound&quot;,
 }
 
 local _state_affs = {
@@ -23038,13 +23348,15 @@ local _state_affs = {
   impaled = true,
 }
 
-local _writhe_affs = {
+SA.writhe_family = SA.writhe_family or {
   webbed = true,
   entangled = true,
   transfixed = true,
   bound = true,
   impaled = true,
 }
+
+local _writhe_affs = SA.writhe_family
 
 function SA.normalize(name)
   local s = tostring(name or &quot;&quot;):lower()
@@ -23216,6 +23528,49 @@ local function _set_state_from_aff(key, active)
   end
 end
 
+local function _sync_writhe_lane_blocks(source)
+  local active = false
+  local reason = &quot;&quot;
+  for aff, row in pairs(SA.affs) do
+    if _writhe_affs[aff] and type(row) == &quot;table&quot; and row.active == true then
+      active = true
+      reason = aff
+      break
+    end
+  end
+
+  if active == SA._writhe_lane_blocked then return false end
+  SA._writhe_lane_blocked = active
+
+  local Q = Yso and Yso.queue
+  if type(Q) ~= &quot;table&quot; then return true end
+
+  if active then
+    for _, lane in ipairs({ &quot;eq&quot;, &quot;bal&quot; }) do
+      if type(Q.block_lane) == &quot;function&quot; then
+        pcall(Q.block_lane, lane, reason ~= &quot;&quot; and reason or &quot;writhe&quot;, {
+          source = tostring(source or &quot;self_aff.writhe&quot;),
+          clear_owned = true,
+          clear_staged = true,
+        })
+      end
+    end
+  else
+    for _, lane in ipairs({ &quot;eq&quot;, &quot;bal&quot; }) do
+      if type(Q.unblock_lane) == &quot;function&quot; then
+        pcall(Q.unblock_lane, lane, &quot;writhe_clear&quot;, {
+          source = tostring(source or &quot;self_aff.writhe&quot;),
+        })
+      end
+    end
+  end
+
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.self.writhe_lane_block&quot;, active, reason)
+  end
+  return true
+end
+
 local function _set_aff_active(key, active, source)
   key = SA.normalize(key)
   if key == &quot;&quot; then return false end
@@ -23246,6 +23601,9 @@ local function _set_aff_active(key, active, source)
 
   if _state_affs[key] then
     _set_state_from_aff(key, is)
+  end
+  if _writhe_affs[key] then
+    _sync_writhe_lane_blocks(source)
   end
 
   _mark_meta(source)
@@ -23370,6 +23728,7 @@ function SA.reset(source, opts)
   for k in pairs(SA.states.writhe) do
     SA.states.writhe[k] = false
   end
+  _sync_writhe_lane_blocks(source)
   _mark_meta(source)
   return true
 end
@@ -23501,7 +23860,29 @@ function SA.is_writhed()
   for _, v in pairs(SA.states.writhe or {}) do
     if v == true then return true end
   end
+  for aff, row in pairs(SA.affs) do
+    if _writhe_affs[aff] and type(row) == &quot;table&quot; and row.active == true then
+      return true
+    end
+  end
   return false
+end
+
+function SA.is_writhe_aff(name)
+  local key = SA.normalize(name)
+  if key == &quot;&quot; then return false end
+  return _writhe_affs[key] == true
+end
+
+function SA.list_writhe_affs()
+  local out = {}
+  for aff, row in pairs(SA.affs) do
+    if _writhe_affs[aff] and type(row) == &quot;table&quot; and row.active == true then
+      out[#out + 1] = aff
+    end
+  end
+  table.sort(out)
+  return out
 end
 
 function SA.bleeding()
@@ -23526,6 +23907,8 @@ Yso.self.is_prone = function() return SA.is_prone() end
 Yso.self.is_asleep = function() return SA.is_asleep() end
 Yso.self.is_blackout = function() return SA.is_blackout() end
 Yso.self.is_writhed = function() return SA.is_writhed() end
+Yso.self.is_writhe_aff = function(name) return SA.is_writhe_aff(name) end
+Yso.self.list_writhe_affs = function() return SA.list_writhe_affs() end
 Yso.self.bleeding = function() return SA.bleeding() end
 Yso.self.is_standing = function() return SA.is_standing() end
 Yso.self.is_paralyzed = function() return SA.has_aff(&quot;paralysis&quot;) end
@@ -23589,6 +23972,7 @@ SA.install_hooks()
 SA.ingest_gmcp_aff_list()
 SA.ingest_gmcp_vitals()
 _install_affs_proxy()
+_sync_writhe_lane_blocks(&quot;init&quot;)
 
 return SA
 </script>
@@ -23987,6 +24371,14 @@ P.state = P.state or {
   queue_recent = {},
   tree_policy = &quot;&quot;,
   last_tree_at = 0,
+  tree_ready = false,
+  tree_ready_known = false,
+  tree_touched = false,
+  tree_unchanged_wait_ready = false,
+  tree_last_attempt_at = 0,
+  tree_last_ready_at = 0,
+  tree_last_unchanged_at = 0,
+  tree_last_source = &quot;&quot;,
 
   priority_list_requested_at = 0,
 }
@@ -23998,6 +24390,14 @@ P.state.set_last_observed = tostring(P.state.set_last_observed or &quot;&quot;)
 P.state.set_last_resync_req_at = tonumber(P.state.set_last_resync_req_at or 0) or 0
 P.state.set_expected = tostring(P.state.set_expected or &quot;&quot;)
 P.state.set_expected_until = tonumber(P.state.set_expected_until or 0) or 0
+P.state.tree_ready = (P.state.tree_ready == true)
+P.state.tree_ready_known = (P.state.tree_ready_known == true)
+P.state.tree_touched = (P.state.tree_touched == true)
+P.state.tree_unchanged_wait_ready = (P.state.tree_unchanged_wait_ready == true)
+P.state.tree_last_attempt_at = tonumber(P.state.tree_last_attempt_at or 0) or 0
+P.state.tree_last_ready_at = tonumber(P.state.tree_last_ready_at or 0) or 0
+P.state.tree_last_unchanged_at = tonumber(P.state.tree_last_unchanged_at or 0) or 0
+P.state.tree_last_source = tostring(P.state.tree_last_source or &quot;&quot;)
 
 P.overlays = P.overlays or {
   blademaster = {
@@ -24088,6 +24488,64 @@ local function _adapter_table()
   Yso.curing = Yso.curing or {}
   Yso.curing.adapters = Yso.curing.adapters or {}
   return Yso.curing.adapters
+end
+
+local function _sync_tree_compat_mirrors()
+  Yso.state = Yso.state or {}
+  local ready = (P.state.tree_ready == true)
+  local touched = (P.state.tree_touched == true)
+  Yso.state.tree_ready = ready
+  Yso.state.tree_touched = touched
+  rawset(_G, &quot;tree_ready&quot;, ready)
+  rawset(_G, &quot;tree_touched&quot;, touched)
+end
+
+local function _active_writhe_affs()
+  local out = {}
+  if Yso and Yso.self and type(Yso.self.list_writhe_affs) == &quot;function&quot; then
+    local ok, list = pcall(Yso.self.list_writhe_affs)
+    if ok and type(list) == &quot;table&quot; then
+      for i = 1, #list do
+        local key = _trim(list[i]):lower()
+        if key ~= &quot;&quot; then out[#out + 1] = key end
+      end
+      if #out &gt; 0 then return out end
+    end
+  end
+  if Yso and Yso.self and type(Yso.self.is_writhed) == &quot;function&quot; and Yso.self.is_writhed() == true then
+    out[#out + 1] = &quot;writhe&quot;
+  end
+  return out
+end
+
+local function _is_touch_tree_cmd(cmd)
+  cmd = _trim(cmd):lower()
+  if cmd == &quot;&quot; then return false end
+  if cmd:match(&quot;^touch%s+tree$&quot;) then return true end
+  if cmd:match(&quot;^touch%s+tree%s+tattoo$&quot;) then return true end
+  return false
+end
+
+local function _contains_touch_tree_cmd(cmd)
+  cmd = _trim(cmd):lower()
+  if cmd == &quot;&quot; then return false end
+  if _is_touch_tree_cmd(cmd) then return true end
+  return cmd:find(&quot;touch tree&quot;, 1, true) ~= nil
+end
+
+local function _tree_touch_block_reason(cmd)
+  if not _is_touch_tree_cmd(cmd) then return nil, {} end
+
+  local writhe = _active_writhe_affs()
+  if #writhe &gt; 0 then
+    return &quot;writhe_block&quot;, writhe
+  end
+
+  if P.state.tree_unchanged_wait_ready == true then
+    return &quot;tree_wait_ready&quot;, {}
+  end
+
+  return nil, {}
 end
 
 local function _request_authoritative_resync(reason, force)
@@ -24536,11 +24994,83 @@ local function _apply_tree_policy(policy, overlay)
   return true
 end
 
+function P.set_tree_ready(v, source)
+  local ready = (v == true)
+  local now = _now()
+  P.state.tree_ready = ready
+  P.state.tree_ready_known = true
+  P.state.tree_last_source = tostring(source or &quot;manual&quot;)
+  if ready then
+    P.state.tree_last_ready_at = now
+    P.state.tree_touched = false
+    P.state.tree_unchanged_wait_ready = false
+  end
+  _sync_tree_compat_mirrors()
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.curing.tree_state&quot;, ready, P.state.tree_touched, P.state.tree_unchanged_wait_ready, P.state.tree_last_source)
+  end
+  return true
+end
+
+function P.set_tree_touched(v, source)
+  local touched = (v == true)
+  P.state.tree_touched = touched
+  P.state.tree_last_source = tostring(source or &quot;manual&quot;)
+  if touched and P.state.tree_ready_known == true then
+    P.state.tree_ready = false
+  end
+  _sync_tree_compat_mirrors()
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.curing.tree_state&quot;, P.state.tree_ready, touched, P.state.tree_unchanged_wait_ready, P.state.tree_last_source)
+  end
+  return true
+end
+
+function P.note_tree_attempt(source)
+  local now = _now()
+  P.state.tree_last_attempt_at = now
+  P.state.tree_touched = true
+  if P.state.tree_ready_known == true then
+    P.state.tree_ready = false
+  end
+  P.state.tree_last_source = tostring(source or &quot;tree_attempt&quot;)
+  _sync_tree_compat_mirrors()
+  return true
+end
+
+function P.note_tree_unchanged(source)
+  P.note_tree_attempt(source or &quot;tree_unchanged&quot;)
+  P.state.tree_unchanged_wait_ready = true
+  P.state.tree_last_unchanged_at = _now()
+  _sync_tree_compat_mirrors()
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.curing.tree_unchanged&quot;, P.state.tree_last_source)
+  end
+  return true
+end
+
+function P.tree_touch_blocked_reason(cmd)
+  return _tree_touch_block_reason(cmd)
+end
+
+function P.tree_ready()
+  return P.state.tree_ready == true
+end
+
+function P.tree_touched()
+  return P.state.tree_touched == true
+end
+
 function P.queue_emergency(cmd, opts)
   opts = opts or {}
   cmd = _trim(cmd)
   if cmd == &quot;&quot; then return false, &quot;empty&quot; end
   if _manual_grace_active() then return false, &quot;manual_grace&quot; end
+
+  local tree_block_reason = _tree_touch_block_reason(cmd)
+  if tree_block_reason then
+    return false, tree_block_reason
+  end
 
   local now = _now()
   local qtype = _trim(opts.qtype or &quot;bal&quot;)
@@ -24574,6 +25104,10 @@ function P.queue_emergency(cmd, opts)
     send(line, false)
   else
     return false, &quot;send_missing&quot;
+  end
+
+  if _is_touch_tree_cmd(cmd) then
+    P.note_tree_attempt(&quot;policy.queue_emergency&quot;)
   end
 
   P.state.queue_recent[key] = now
@@ -24694,6 +25228,7 @@ function P.tick(source, force)
 end
 
 function P.status()
+  local writhe_affs = _active_writhe_affs()
   return {
     mode = P.state.mode,
     current_set = P.state.current_set,
@@ -24704,6 +25239,12 @@ function P.status()
     manual_grace = math.max(0, (tonumber(P.state.manual_grace_until or 0) or 0) - _now()),
     aggression_left = math.max(0, (tonumber(P.state.aggression_until or 0) or 0) - _now()),
     tree_policy = P.state.tree_policy,
+    tree_ready = (P.state.tree_ready == true),
+    tree_ready_known = (P.state.tree_ready_known == true),
+    tree_touched = (P.state.tree_touched == true),
+    tree_wait_ready = (P.state.tree_unchanged_wait_ready == true),
+    writhe_blocked = (#writhe_affs &gt; 0),
+    writhe_affs = writhe_affs,
   }
 end
 
@@ -24748,9 +25289,27 @@ function P.install_hooks()
     _kill_eh(P._eh.send_request)
     P._eh.send_request = registerAnonymousEventHandler(&quot;sysDataSendRequest&quot;, function(_, command)
       if type(command) ~= &quot;string&quot; then return end
-      if _trim(command) == &quot;&quot; then return end
+      local cmd = _trim(command)
+      if cmd == &quot;&quot; then return end
+      if _contains_touch_tree_cmd(cmd) then
+        if _is_self_send_window() then
+          P.note_tree_attempt(&quot;sysDataSendRequest:self&quot;)
+        else
+          P.note_tree_attempt(&quot;sysDataSendRequest:manual&quot;)
+        end
+      end
       if _is_self_send_window() then return end
       P.note_manual_intervention(&quot;sysDataSendRequest&quot;)
+    end)
+
+    _kill_eh(P._eh.tree_ready_evt)
+    P._eh.tree_ready_evt = registerAnonymousEventHandler(&quot;yso.tree.ready&quot;, function(_, v)
+      P.set_tree_ready(v ~= false, &quot;event:yso.tree.ready&quot;)
+    end)
+
+    _kill_eh(P._eh.tree_touched_evt)
+    P._eh.tree_touched_evt = registerAnonymousEventHandler(&quot;yso.tree.touched&quot;, function(_, v)
+      P.set_tree_touched(v == true, &quot;event:yso.tree.touched&quot;)
     end)
   end
 
@@ -24771,6 +25330,14 @@ function P.install_hooks()
     P._tr.queue_cleared = tempRegexTrigger([[^You clear your \w+ queue\.$]], function()
       P.clear_emergency_dedupe(&quot;text_ack:queue_clear&quot;)
     end)
+
+    _kill_tr(P._tr.tree_unchanged)
+    P._tr.tree_unchanged = tempRegexTrigger(
+      [[^Your tree of life tattoo glows faintly for a moment then fades, leaving you unchanged\.$]],
+      function()
+        P.note_tree_unchanged(&quot;text_ack:tree_unchanged&quot;)
+      end
+    )
   end
 
   P._hooks_installed = true
@@ -24778,6 +25345,7 @@ function P.install_hooks()
 end
 
 function P.init()
+  _sync_tree_compat_mirrors()
   _read_current_set()
   _read_baseline_from_legacy(P.cfg.base_set)
   P.install_hooks()

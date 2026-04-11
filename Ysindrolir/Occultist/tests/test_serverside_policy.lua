@@ -63,6 +63,7 @@ local _tree_calls = {}
 local _queue_calls = {}
 local _event_calls = {}
 local _queue_adapter_ok = true
+local _writhe_affs = {}
 
 local function clear_calls()
   _send_lines = {}
@@ -126,6 +127,16 @@ _G.Yso = {
   mode = {
     auto = { state = { combat_until = 0 } },
     is_hunt = function() return false end,
+  },
+  self = {
+    list_writhe_affs = function()
+      local out = {}
+      for i = 1, #_writhe_affs do out[#out + 1] = _writhe_affs[i] end
+      return out
+    end,
+    is_writhed = function()
+      return #_writhe_affs > 0
+    end,
   },
   get_target = function() return "enemy" end,
   curing = {
@@ -331,6 +342,29 @@ P.state.hit_log = {}
 P.state.last_hostile_at = now() - 20
 P.tick("unit.hits.exit", true)
 assert_false("13c: group exits after calm window", P.state.group_active == true)
+
+print("\n=== Test 14: tree unchanged suppression lifts on ready ===")
+clear_calls()
+_writhe_affs = {}
+P.note_tree_unchanged("unit.tree.unchanged")
+local ok_tu1, why_tu1 = P.queue_emergency("touch tree", { qtype = "bal" })
+assert_false("14a: touch tree blocked while unchanged waiting", ok_tu1)
+assert_eq("14b: unchanged wait reason", why_tu1, "tree_wait_ready")
+P.set_tree_ready(true, "unit.tree.ready")
+local ok_tu2, why_tu2 = P.queue_emergency("touch tree", { qtype = "bal" })
+assert_true("14c: touch tree allowed when ready returns", ok_tu2 == true and why_tu2 == nil)
+
+print("\n=== Test 15: writhe-family suppresses tree queue attempts ===")
+clear_calls()
+_writhe_affs = { "webbed" }
+local ok_tw1, why_tw1 = P.queue_emergency("touch tree", { qtype = "bal" })
+assert_false("15a: touch tree blocked by writhe", ok_tw1)
+assert_eq("15b: writhe block reason", why_tw1, "writhe_block")
+_writhe_affs = {}
+P.set_tree_ready(true, "unit.tree.ready.2")
+P.clear_emergency_dedupe("unit.tree.test")
+local ok_tw2, why_tw2 = P.queue_emergency("touch tree", { qtype = "bal" })
+assert_true("15c: touch tree allowed after writhe clears", ok_tw2 == true and why_tw2 == nil)
 
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then

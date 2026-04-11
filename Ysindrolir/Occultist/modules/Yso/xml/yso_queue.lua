@@ -45,6 +45,7 @@ Q._staged = Q._staged or {
   bal = nil,
   class = nil,
 }
+Q._blocked = Q._blocked or {}
 
 Q._impl_version = "2026-04-05.1"
 
@@ -262,6 +263,10 @@ end
 
 local function _lane_ready(lane)
   if lane == "free" then return true end
+  if type(Q.lane_blocked) == "function" then
+    local blocked = Q.lane_blocked(lane)
+    if blocked == true then return false end
+  end
 
   if Yso and Yso.locks and type(Yso.locks.ready) == "function" then
     local ok, res = pcall(Yso.locks.ready, lane)
@@ -482,10 +487,92 @@ function Q.clear_lane(lane, opts)
   return true
 end
 
+function Q.lane_blocked(lane)
+  local key = _lane_key(lane)
+  if not key or key == "free" then return false, "" end
+  local row = Q._blocked and Q._blocked[key] or nil
+  if type(row) ~= "table" then return false, "" end
+  if row.active ~= true then return false, "" end
+  return true, _trim(row.reason), row
+end
+
+function Q.block_lane(lane, reason, opts)
+  opts = opts or {}
+  local key = _lane_key(lane)
+  if not key or key == "free" then return false, "invalid_lane" end
+
+  local was_blocked = Q.lane_blocked(key)
+  local now = _now()
+  local why = _trim(reason)
+  if why == "" then why = "blocked" end
+
+  Q._blocked = type(Q._blocked) == "table" and Q._blocked or {}
+  Q._blocked[key] = {
+    active = true,
+    reason = why,
+    source = _trim(opts.source),
+    blocked_at = now,
+  }
+
+  if opts.clear_staged ~= false then
+    Q._staged[key] = nil
+  end
+
+  if opts.clear_owned == true then
+    local owned = type(Q.get_owned) == "function" and Q.get_owned(key) or nil
+    if type(owned) == "table" and type(Q.clear_lane) == "function" then
+      local ok = Q.clear_lane(key, { qtype = opts.qtype })
+      if not ok and type(Q.clear_owned) == "function" then
+        Q.clear_owned(key)
+      end
+    elseif type(Q.clear_owned) == "function" then
+      Q.clear_owned(key)
+    end
+  end
+
+  if Yso and Yso.trace and type(Yso.trace.push) == "function" then
+    pcall(Yso.trace.push, "queue.block", {
+      ts = now,
+      lane = key,
+      reason = why,
+      source = _trim(opts.source),
+      changed = (was_blocked ~= true),
+    })
+  end
+
+  return true, was_blocked and "unchanged" or "blocked", Q._blocked[key]
+end
+
+function Q.unblock_lane(lane, reason, opts)
+  opts = opts or {}
+  local key = _lane_key(lane)
+  if not key or key == "free" then return false, "invalid_lane" end
+
+  local blocked, _, prev = Q.lane_blocked(key)
+  if blocked ~= true then return true, "already_clear" end
+
+  Q._blocked[key] = nil
+  local now = _now()
+  if Yso and Yso.trace and type(Yso.trace.push) == "function" then
+    pcall(Yso.trace.push, "queue.unblock", {
+      ts = now,
+      lane = key,
+      reason = _trim(reason),
+      prior_reason = type(prev) == "table" and _trim(prev.reason) or "",
+      source = _trim(opts.source),
+    })
+  end
+  return true
+end
+
 function Q.install_lane(lane, cmd, opts)
   opts = opts or {}
   local key = _lane_key(lane)
   if not key then return false, "invalid_lane" end
+  local blocked = Q.lane_blocked(key)
+  if blocked == true and opts.force_blocked ~= true then
+    return false, "lane_blocked"
+  end
   cmd = _trim(cmd)
   if cmd == "" then
     return Q.clear_lane(key, opts)
@@ -554,6 +641,11 @@ function Q.stage(lane, payload, opts)
   opts = opts or {}
   local key, staged_payload, compat = _coerce_stage_args(lane, payload)
   if not key then return false end
+  local blocked = Q.lane_blocked(key)
+  if blocked == true and key ~= "free" then
+    Q._staged[key] = nil
+    return false, "lane_blocked"
+  end
   payload = staged_payload
 
   if compat == "swapped" then
@@ -722,5 +814,13 @@ function Q.raw(mode, qtype, payload)
 end
 
 Q.mark_payload_fired = _mark_payload_fired
+
+do
+  local is_writhed = Yso and Yso.self and type(Yso.self.is_writhed) == "function" and Yso.self.is_writhed() == true
+  if is_writhed then
+    Q.block_lane("eq", "writhe", { source = "queue.init", clear_owned = true, clear_staged = true })
+    Q.block_lane("bal", "writhe", { source = "queue.init", clear_owned = true, clear_staged = true })
+  end
+end
 
 return Q

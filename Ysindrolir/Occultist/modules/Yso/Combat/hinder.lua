@@ -19,27 +19,31 @@ local function _now()
 end
 
 H.cfg = H.cfg or {}
-H.state = H.state or { snapshot = nil }
-
-local ALL_AFFS = {
-  "paralysis",
-  "clumsiness",
-  "webbed",
-  "entangled",
-  "prone",
-  "fallen",
-  "sleeping",
-  "transfixed",
-  "impaled",
+H.state = H.state or {
+  snapshot = nil,
+  lane_blocked = { eq = false, bal = false },
 }
 
-local EQ_BAL_AFFS = {
-  "webbed",
-  "entangled",
+local BASE_AFFS = {
+  "paralysis",
+  "clumsiness",
   "prone",
   "fallen",
   "sleeping",
+}
+
+local EQ_BAL_BASE_AFFS = {
+  "prone",
+  "fallen",
+  "sleeping",
+}
+
+local WRITHE_FALLBACK_AFFS = {
+  "webbed",
+  "entangled",
   "transfixed",
+  "bound",
+  "roped",
   "impaled",
 }
 
@@ -89,19 +93,46 @@ local function _free_parts(payload)
   return (type(parts) == "table") and parts or nil
 end
 
+local function _active_writhe_blockers()
+  local out = {}
+  if Yso and Yso.self and type(Yso.self.list_writhe_affs) == "function" then
+    local ok, list = pcall(Yso.self.list_writhe_affs)
+    if ok and type(list) == "table" then
+      for i = 1, #list do
+        _append_unique(out, list[i])
+      end
+      if #out > 0 then return out end
+    end
+  end
+
+  for i = 1, #WRITHE_FALLBACK_AFFS do
+    local aff = WRITHE_FALLBACK_AFFS[i]
+    if (Yso and Yso.self and type(Yso.self.has_aff) == "function")
+      and Yso.self.has_aff(aff) == true
+    then
+      _append_unique(out, aff)
+    end
+  end
+  return out
+end
+
 function H.collect(ctx)
   local snapshot = {
     at = _now(),
     eq_bal_blockers = {},
     entity_blockers = {},
     all_offense_blocked = false,
+    writhe_blockers = _active_writhe_blockers(),
   }
 
-  for i = 1, #ALL_AFFS do
-    local aff = ALL_AFFS[i]
+  for i = 1, #BASE_AFFS do
+    local aff = BASE_AFFS[i]
     snapshot[aff] = (Yso and Yso.self and type(Yso.self.has_aff) == "function")
       and Yso.self.has_aff(aff) == true
       or false
+  end
+  for i = 1, #(snapshot.writhe_blockers or {}) do
+    snapshot[snapshot.writhe_blockers[i]] = true
   end
 
   if snapshot.paralysis == true then
@@ -112,11 +143,14 @@ function H.collect(ctx)
   if snapshot.clumsiness == true then
     _append_unique(snapshot.entity_blockers, "clumsiness")
   end
-  for i = 1, #EQ_BAL_AFFS do
-    local aff = EQ_BAL_AFFS[i]
+  for i = 1, #EQ_BAL_BASE_AFFS do
+    local aff = EQ_BAL_BASE_AFFS[i]
     if snapshot[aff] == true then
       _append_unique(snapshot.eq_bal_blockers, aff)
     end
+  end
+  for i = 1, #(snapshot.writhe_blockers or {}) do
+    _append_unique(snapshot.eq_bal_blockers, snapshot.writhe_blockers[i])
   end
 
   H.state.snapshot = snapshot
@@ -139,6 +173,8 @@ function H.classify(snapshot, payload, ctx)
     blocked_lanes = { free = {}, eq = {}, bal = {}, entity = {} },
     blocked_reasons = {},
     offensive_free_parts = {},
+    writhe_blockers = {},
+    writhe_blocked = false,
   }
 
   local function block(lane, reason)
@@ -160,6 +196,11 @@ function H.classify(snapshot, payload, ctx)
     block("eq", reason)
     block("bal", reason)
   end
+  for i = 1, #(snapshot.writhe_blockers or {}) do
+    local reason = snapshot.writhe_blockers[i]
+    _append_unique(decision.writhe_blockers, reason)
+  end
+  decision.writhe_blocked = (#decision.writhe_blockers > 0)
 
   local parts = _free_parts(payload)
   if type(parts) == "table" then
@@ -207,6 +248,85 @@ function H.apply(payload, decision, ctx)
   end
 
   return out
+end
+
+local function _writhe_blocked_lanes(decision)
+  local out = { eq = false, bal = false, reason = "" }
+  if type(decision) ~= "table" or decision.writhe_blocked ~= true then
+    return out
+  end
+
+  local blocked = type(decision.blocked_lanes) == "table" and decision.blocked_lanes or {}
+  out.eq = (type(blocked.eq) == "table" and #blocked.eq > 0)
+  out.bal = (type(blocked.bal) == "table" and #blocked.bal > 0)
+  out.reason = _trim((decision.writhe_blockers and decision.writhe_blockers[1]) or "writhe")
+  return out
+end
+
+function H.reconcile_queue(decision, ctx)
+  local Q = Yso and Yso.queue
+  if type(Q) ~= "table" then return nil end
+
+  H.state.lane_blocked = H.state.lane_blocked or { eq = false, bal = false }
+  local blocked = _writhe_blocked_lanes(decision)
+  local changed = {}
+
+  local function on_block(lane, reason)
+    if type(Q.block_lane) == "function" then
+      pcall(Q.block_lane, lane, reason, {
+        source = "hinder.writhe",
+        clear_owned = true,
+        clear_staged = true,
+      })
+      return
+    end
+
+    if type(Q.clear) == "function" then pcall(Q.clear, lane) end
+    if type(Q.get_owned) == "function" and type(Q.clear_lane) == "function" then
+      local owned = Q.get_owned(lane)
+      if type(owned) == "table" then
+        pcall(Q.clear_lane, lane, { note = "hinder.writhe" })
+      end
+    elseif type(Q.clear_owned) == "function" then
+      pcall(Q.clear_owned, lane)
+    end
+  end
+
+  local function on_unblock(lane)
+    if type(Q.unblock_lane) == "function" then
+      pcall(Q.unblock_lane, lane, "hinder.writhe.clear", { source = "hinder.writhe" })
+    end
+  end
+
+  for _, lane in ipairs({ "eq", "bal" }) do
+    local now_blocked = (blocked[lane] == true)
+    local was_blocked = (H.state.lane_blocked[lane] == true)
+    if now_blocked and not was_blocked then
+      H.state.lane_blocked[lane] = true
+      changed[lane] = "blocked"
+      on_block(lane, blocked.reason ~= "" and blocked.reason or "writhe")
+    elseif not now_blocked and was_blocked then
+      H.state.lane_blocked[lane] = false
+      changed[lane] = "unblocked"
+      on_unblock(lane)
+    end
+  end
+
+  if type(raiseEvent) == "function" then
+    for lane, action in pairs(changed) do
+      raiseEvent("yso.hinder.writhe_lane", lane, action, blocked.reason)
+    end
+  end
+
+  return {
+    writhe_blocked = (blocked.eq or blocked.bal),
+    lanes = {
+      eq = (H.state.lane_blocked.eq == true),
+      bal = (H.state.lane_blocked.bal == true),
+    },
+    reason = blocked.reason,
+    changed = changed,
+  }
 end
 
 return H
