@@ -7,6 +7,17 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultist route progression + companion command consistency hotfix (April 11, 2026) --
+  occ_aff / party_aff / group_damage now strictly suppress loyal-kill opener
+  fallback while companion recovery is pending, so loops continue evaluating
+  legal EQ/BAL/class actions without stale companion re-sends. Package command
+  surfaces were aligned to:
+    order loyals kill
+    order loyals passive
+  including Yso system.xml (Loyals passive/attack + clock defaults) and
+  Yso offense aliases.xml (entattack/entpass). Legacy UI V2.0.xml UI Setup now
+  nil-guards EP/WP vitals arithmetic to prevent gmcp.Char.Vitals math errors.
+
   Occultist companion-control unification + loop-toggle visibility (April 11, 2026) --
   Added a shared helper at modules/Yso/Combat/occultist/companions.lua and
   wired Occultist route automation to canonical free-lane companion commands:

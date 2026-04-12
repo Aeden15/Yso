@@ -645,7 +645,7 @@ end</script>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Entourage attack</name>
-					<script>-- ^entattack$  -&gt;  order entourage kill &lt;target&gt;
+					<script>-- ^entattack$  -&gt;  order loyals kill &lt;target&gt;
 local tgt = ""
 if Yso and type(Yso.get_target) == "function" then
   local ok, v = pcall(Yso.get_target)
@@ -656,9 +656,9 @@ tgt = tgt:gsub("^%s+",""):gsub("%s+$","")
 if tgt == "" then cecho("&lt;red&gt;[YSO]&lt;reset&gt; No target.\n"); return end
 local Q = Yso.queue
 if Q and type(Q.free) == "function" then
-  Q.free("order entourage kill " .. tgt)
+  Q.free("order loyals kill " .. tgt)
 elseif type(send) == "function" then
-  send("order entourage kill " .. tgt)
+  send("order loyals kill " .. tgt)
 end</script>
 					<command />
 					<packageName />
@@ -666,12 +666,12 @@ end</script>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Entourage passive</name>
-					<script>-- ^entpass$  -&gt;  order entourage passive
+					<script>-- ^entpass$  -&gt;  order loyals passive
 local Q = Yso and Yso.queue
 if Q and type(Q.free) == "function" then
-  Q.free("order entourage passive")
+  Q.free("order loyals passive")
 elseif type(send) == "function" then
-  send("order entourage passive")
+  send("order loyals passive")
 end</script>
 					<command />
 					<packageName />

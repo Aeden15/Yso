@@ -4024,7 +4024,7 @@ if mode == "k" then
     return
   end
 
-  send("order entourage kill " .. tgt)
+  send("order loyals kill " .. tgt)
   if Yso and type(Yso.set_loyals_attack) == "function" then
     Yso.set_loyals_attack(true, tgt)
   else
@@ -4033,7 +4033,7 @@ if mode == "k" then
 
 elseif mode == "p" then
   send("unenemy all")
-  send("order entourage passive")
+  send("order loyals passive")
   if Yso and type(Yso.set_loyals_attack) == "function" then
     Yso.set_loyals_attack(false)
   else
@@ -10001,7 +10001,8 @@ local function _plan_free(tgt)
   if _loyals_active_for(tgt) then return nil, nil end
   local C = _companions()
   if C and type(C.kill) == &quot;function&quot; then
-    local ok, opener = pcall(C.kill, tgt, { include_stand = true, emit = false })
+    local ok, opener, why = pcall(C.kill, tgt, { include_stand = true, emit = false })
+    local opener_reason = ok and _trim(why) or &quot;&quot;
     if ok and type(opener) == &quot;table&quot; then
       local out = {}
       for i = 1, #opener do
@@ -10013,6 +10014,9 @@ local function _plan_free(tgt)
       end
     elseif ok and type(opener) == &quot;string&quot; and _trim(opener) ~= &quot;&quot; then
       return _trim(opener), &quot;team_coordination&quot;
+    elseif opener_reason == &quot;recovering&quot; then
+      -- Companion helper intentionally suppresses kill orders while recovering.
+      return nil, nil
     end
   end
   return (&quot;stand%sorder loyals kill %s&quot;):format(_command_sep(), tgt), &quot;team_coordination&quot;
@@ -11962,10 +11966,11 @@ local function _plan_free(tgt)
 
   local C = _companions()
   if C and type(C.kill) == &quot;function&quot; then
-    local ok, res = pcall(C.kill, tgt, {
+    local ok, res, why = pcall(C.kill, tgt, {
       include_stand = (Yso and Yso.legality and Yso.legality.queue_stand == true),
       emit = false,
     })
+    local open_reason = ok and _trim(why) or &quot;&quot;
     if ok and type(res) == &quot;table&quot; then
       local parts = {}
       for i = 1, #res do
@@ -11977,6 +11982,9 @@ local function _plan_free(tgt)
       end
     elseif ok and type(res) == &quot;string&quot; and _trim(res) ~= &quot;&quot; then
       return _trim(res), &quot;team_coordination&quot;
+    elseif open_reason == &quot;recovering&quot; then
+      -- Companion helper intentionally suppresses kill orders while recovering.
+      return nil, nil
     end
   end
 
@@ -18131,8 +18139,8 @@ C.cfg = C.cfg or {
   abom_gcd           = 2.0,
   abom_auto_disable  = true,
   abom_cmd           = "command abomination at %s",
-  clock_loyals_on_cmd  = "order entourage kill %s",
-  clock_loyals_off_cmd = "order entourage passive",
+  clock_loyals_on_cmd  = "order loyals kill %s",
+  clock_loyals_off_cmd = "order loyals passive",
 
   -- queues
   q_eq               = "ec!p!w!t",
@@ -18604,14 +18612,14 @@ local function _set_loyals_attack_state(state)
 end
 
 local function _clock_loyals_on(t)
-  local cmd = (C.cfg.clock_loyals_on_cmd or "order entourage kill %s"):format(t)
+  local cmd = (C.cfg.clock_loyals_on_cmd or "order loyals kill %s"):format(t)
   send(cmd)
   _set_loyals_attack_state(true)
   if C.cfg.debug and cecho then cecho(("&lt;gray&gt;[clock] loyals ON: %s\n"):format(cmd)) end
 end
 
 local function _clock_loyals_off()
-  local cmd = C.cfg.clock_loyals_off_cmd or "order entourage passive"
+  local cmd = C.cfg.clock_loyals_off_cmd or "order loyals passive"
   send(cmd)
   _set_loyals_attack_state(false)
   if C.cfg.debug and cecho then cecho(("&lt;gray&gt;[clock] loyals OFF: %s\n"):format(cmd)) end
@@ -32260,9 +32268,13 @@ function A.attack_function(arg)
   if not _loyals_active_for(tgt) then
     local C = _companions()
     local opener = nil
+    local opener_reason = &quot;&quot;
     if C and type(C.kill) == &quot;function&quot; then
-      local ok, res = pcall(C.kill, tgt, { include_stand = true, emit = false })
-      if ok then opener = res end
+      local ok, res, why = pcall(C.kill, tgt, { include_stand = true, emit = false })
+      if ok then
+        opener = res
+        opener_reason = _trim(why)
+      end
     end
     if type(opener) == &quot;table&quot; then
       for i = 1, #opener do
@@ -32271,6 +32283,8 @@ function A.attack_function(arg)
       end
     elseif type(opener) == &quot;string&quot; and _trim(opener) ~= &quot;&quot; then
       payload.free[#payload.free + 1] = _trim(opener)
+    elseif opener_reason == &quot;recovering&quot; then
+      -- Companion helper intentionally suppresses kill orders while recovering.
     else
       payload.free[#payload.free + 1] = string.format(&quot;order loyals kill %s&quot;, tgt)
     end

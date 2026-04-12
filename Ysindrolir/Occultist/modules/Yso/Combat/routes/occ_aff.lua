@@ -753,9 +753,13 @@ function A.attack_function(arg)
   if not _loyals_active_for(tgt) then
     local C = _companions()
     local opener = nil
+    local opener_reason = ""
     if C and type(C.kill) == "function" then
-      local ok, res = pcall(C.kill, tgt, { include_stand = true, emit = false })
-      if ok then opener = res end
+      local ok, res, why = pcall(C.kill, tgt, { include_stand = true, emit = false })
+      if ok then
+        opener = res
+        opener_reason = _trim(why)
+      end
     end
     if type(opener) == "table" then
       for i = 1, #opener do
@@ -764,6 +768,8 @@ function A.attack_function(arg)
       end
     elseif type(opener) == "string" and _trim(opener) ~= "" then
       payload.free[#payload.free + 1] = _trim(opener)
+    elseif opener_reason == "recovering" then
+      -- Companion helper intentionally suppresses kill orders while recovering.
     else
       payload.free[#payload.free + 1] = string.format("order loyals kill %s", tgt)
     end

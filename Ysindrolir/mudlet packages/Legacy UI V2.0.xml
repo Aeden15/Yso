@@ -654,7 +654,13 @@ PlayerMsgsLabel:cecho("&lt;gold&gt;Msgs: &lt;white&gt;"..gmcp.Char.Status.unread
 PlayerStatusConsole:cecho("\n&lt;gold&gt;Level: &lt;white&gt;"..gmcp.Char.Status.level)
 PlayerStatusConsole:cecho("     &lt;gold&gt;Class: &lt;white&gt;"..gmcp.Char.Status.class)
 PlayerStatusConsole:cecho("\n\n&lt;gold&gt;Race: &lt;white&gt;"..gmcp.Char.Status.gender:title().." "..gmcp.Char.Status.race.." "..gmcp.Char.Status.specialisation)
-PlayerStatusConsole:cecho("\n\n&lt;gold&gt;Endurance: &lt;magenta&gt;"..math.floor((tonumber(gmcp.Char.Vitals.ep)/tonumber(gmcp.Char.Vitals.maxep))* 100).."%".."  &lt;gold&gt;Willpower: &lt;yellow&gt;"..math.floor((tonumber(gmcp.Char.Vitals.wp)/tonumber(gmcp.Char.Vitals.maxwp))* 100).."%")
+local ep = tonumber(gmcp.Char.Vitals.ep or 0) or 0
+local maxep = tonumber(gmcp.Char.Vitals.maxep or 0) or 0
+local wp = tonumber(gmcp.Char.Vitals.wp or 0) or 0
+local maxwp = tonumber(gmcp.Char.Vitals.maxwp or 0) or 0
+local ep_pct = (maxep &gt; 0) and math.floor((ep / maxep) * 100) or 0
+local wp_pct = (maxwp &gt; 0) and math.floor((wp / maxwp) * 100) or 0
+PlayerStatusConsole:cecho("\n\n&lt;gold&gt;Endurance: &lt;magenta&gt;"..ep_pct.."%".."  &lt;gold&gt;Willpower: &lt;yellow&gt;"..wp_pct.."%")
 end
 registerAnonymousEventHandler("gmcp.Char.Vitals", "TitleCard")
   

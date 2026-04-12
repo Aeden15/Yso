@@ -1113,7 +1113,8 @@ local function _plan_free(tgt)
   if _loyals_active_for(tgt) then return nil, nil end
   local C = _companions()
   if C and type(C.kill) == "function" then
-    local ok, opener = pcall(C.kill, tgt, { include_stand = true, emit = false })
+    local ok, opener, why = pcall(C.kill, tgt, { include_stand = true, emit = false })
+    local opener_reason = ok and _trim(why) or ""
     if ok and type(opener) == "table" then
       local out = {}
       for i = 1, #opener do
@@ -1125,6 +1126,9 @@ local function _plan_free(tgt)
       end
     elseif ok and type(opener) == "string" and _trim(opener) ~= "" then
       return _trim(opener), "team_coordination"
+    elseif opener_reason == "recovering" then
+      -- Companion helper intentionally suppresses kill orders while recovering.
+      return nil, nil
     end
   end
   return ("stand%sorder loyals kill %s"):format(_command_sep(), tgt), "team_coordination"

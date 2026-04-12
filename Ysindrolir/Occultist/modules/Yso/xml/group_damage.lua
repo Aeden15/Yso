@@ -1121,10 +1121,11 @@ local function _plan_free(tgt)
 
   local C = _companions()
   if C and type(C.kill) == "function" then
-    local ok, res = pcall(C.kill, tgt, {
+    local ok, res, why = pcall(C.kill, tgt, {
       include_stand = (Yso and Yso.legality and Yso.legality.queue_stand == true),
       emit = false,
     })
+    local open_reason = ok and _trim(why) or ""
     if ok and type(res) == "table" then
       local parts = {}
       for i = 1, #res do
@@ -1136,6 +1137,9 @@ local function _plan_free(tgt)
       end
     elseif ok and type(res) == "string" and _trim(res) ~= "" then
       return _trim(res), "team_coordination"
+    elseif open_reason == "recovering" then
+      -- Companion helper intentionally suppresses kill orders while recovering.
+      return nil, nil
     end
   end
 
