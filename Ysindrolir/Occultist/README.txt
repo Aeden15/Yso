@@ -1,10 +1,31 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: April 10, 2026
+Last updated: April 12, 2026
 
 
 Current fixes
 -------------
+  Occultist occ_aff Sunder-template alignment (April 12, 2026):
+    occ_aff now uses the same lane-table route template shape as party_aff and
+    group_damage: planner payloads carry lanes + meta, include both
+    lanes.entity and lanes.class, pass through Yso.route_gate.finalize, and
+    emit via the shared lane adapter path.
+    Route-local planner state now tracks waiting/in-flight fingerprints and
+    no-send/retry reasons for consistent diagnostics with other Sunder-style
+    routes, while keeping the existing affliction decision tree intact.
+
+  Occultist aff-route stall + vitals nil-guard hotfix (April 12, 2026):
+    occ_aff now keeps loop ticks continuously reevaluating (matching
+    party_aff/group_damage) instead of hard-blocking on local waiting state,
+    which removes staged-emit dead-time stalls and keeps fresh payload planning
+    active while companion recovery suppression is in effect.
+    Companion helper route-active detection now also recognizes:
+      occ_aff_burst
+      aff
+    aliases for consistent one-shot recovery behavior.
+    Legacy UI V2.0.xml UI Setup vitals-change math now guards maxhp/maxmp
+    percentage arithmetic to prevent repeated gmcp.Char.Vitals nil-value errors.
+
   Occultist route progression + companion command consistency hotfix (April 11, 2026):
     occ_aff / party_aff / group_damage now strictly suppress loyal-kill opener
     fallback while companion recovery is pending, so loops continue evaluating

@@ -149,7 +149,7 @@ end
 function C.is_route_active()
   local M = Yso and Yso.mode or nil
   if type(M) == "table" and type(M.route_loop_active) == "function" then
-    local routes = { "occ_aff", "party_aff", "group_damage" }
+    local routes = { "occ_aff", "occ_aff_burst", "aff", "party_aff", "group_damage" }
     for i = 1, #routes do
       local ok, v = pcall(M.route_loop_active, routes[i])
       if ok and v == true then return true end
@@ -159,7 +159,7 @@ function C.is_route_active()
   if type(M) == "table" and type(M.active_route_id) == "function" then
     local ok, rid = pcall(M.active_route_id)
     rid = ok and _lc(rid) or ""
-    if rid == "occ_aff" or rid == "party_aff" or rid == "group_damage" then
+    if rid == "occ_aff" or rid == "occ_aff_burst" or rid == "aff" or rid == "party_aff" or rid == "group_damage" then
       return true
     end
   end

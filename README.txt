@@ -1,12 +1,29 @@
 Yso Systems Workspace
 =====================
-Last updated: April 10, 2026
+Last updated: April 12, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultist occ_aff Sunder-template alignment (April 12, 2026) --
+  Converted occ_aff to the same lane-table Sunder route structure used by
+  party_aff/group_damage: planner payload now carries lanes+meta, includes
+  dual entity/class lane keys, finalizes through Yso.route_gate, and emits
+  through the same commit-ready lane adapter path. Added route-local in-flight
+  and debug/template bookkeeping (waiting main_lane/fingerprint, in_flight,
+  last no-send/retry reason) while preserving existing aff decision logic.
+
+  Occultist aff-route stall + vitals nil-guard hotfix (April 12, 2026) --
+  occ_aff now keeps route ticks continuously reevaluating (matching party/group
+  behavior) instead of hard-blocking on local waiting state, preventing staged
+  emit dead-time stalls while still allowing fresh EQ/BAL/class planning during
+  companion recovery windows. Companion route-active detection now also accepts
+  occ_aff_burst / aff aliases for consistent recovery handling. Legacy UI V2.0
+  UI Setup vitals-change math now guards maxhp/maxmp percentage calculations to
+  prevent repeated gmcp.Char.Vitals arithmetic-on-nil handler errors.
+
   Occultist route progression + companion command consistency hotfix (April 11, 2026) --
   occ_aff / party_aff / group_damage now strictly suppress loyal-kill opener
   fallback while companion recovery is pending, so loops continue evaluating

@@ -1,8 +1,11 @@
 # Yso
 
-Current workspace snapshot: April 10, 2026.
+Current workspace snapshot: April 12, 2026.
 
 ## Current fixes
+
+- **Occultist `occ_aff` Sunder-template alignment (April 12, 2026)** — Converted `occ_aff` attack flow to the lane-table Sunder route shape used by `party_aff`/`group_damage`: route payloads now carry `lanes` + `meta`, include dual `entity`/`class` keys, pass through `Yso.route_gate.finalize(...)`, and emit via the same commit-ready lane adapter path. Added route-local in-flight/debug/template state (`waiting/main_lane/fingerprint`, `in_flight`, last no-send/retry reason) while keeping existing affliction decision logic intact.
+- **Occultist aff-route stall + vitals nil-guard hotfix (April 12, 2026)** — `occ_aff` now mirrors party/group loop behavior by keeping route ticks continuously reevaluating (no hard wait-block gate on local waiting state), which prevents staged-emit dead-time stalls and keeps EQ/BAL/class planning responsive while companion recovery is pending. Companion route-active detection now also recognizes `occ_aff_burst`/`aff` aliases for recovery handling consistency. `Legacy UI V2.0.xml` `UI Setup` vitals-change math now safely guards `maxhp`/`maxmp` percentage calculations to stop repeated `gmcp.Char.Vitals` arithmetic-on-nil runtime errors.
 
 - **Occultist route progression + companion command consistency hotfix (April 11, 2026)** — `occ_aff`, `party_aff`, and `group_damage` now strictly suppress loyal kill opener fallback while companion recovery is pending, so loops keep evaluating legal EQ/BAL/class actions without re-sending stale companion orders. Package alias/script surfaces were aligned to `order loyals kill/passive` (including `Yso system.xml` `Loyals passive/attack` and clock defaults, plus `Yso offense aliases.xml` entattack/entpass), and `Legacy UI V2.0.xml` `UI Setup` vitals math now nil-guards EP/WP percentage arithmetic to prevent `gmcp.Char.Vitals` error spam.
 - **Occultist companion-control unification + loop-toggle visibility (April 11, 2026)** — Added shared companion helper at `modules/Yso/Combat/occultist/companions.lua` and wired Occultist combat routes to canonical free-lane commands (`order loyals kill <target>`, `order loyals passive`) instead of entourage kill automation. Companion hard-failure lines now trigger one-shot `call entities` recovery with suppression while pending, plus recovery invalidation hooks for tumble/starburst/astralform. Route toggles now keep `<orange>[Yso:Occultist]` prefix with uppercase `<HotPink>` ON/OFF wording for clearer visibility.

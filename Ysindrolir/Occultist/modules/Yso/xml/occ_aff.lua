@@ -118,8 +118,11 @@ A.state = A.state or {
   loop_enabled = (A.cfg.enabled == true),
   busy = false,
   timer_id = nil,
-  waiting = { queue = nil, at = 0 },
-  last_attack = { cmd = "", at = 0, target = "" },
+  waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 },
+  last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" },
+  in_flight = { fingerprint = "", target = "", route = "occ_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" },
+  debug = { last_no_send_reason = "", last_retry_reason = "" },
+  template = { last_payload = nil, last_emitted_payload = nil, last_target = "", last_reason = "", last_disable_reason = "" },
   loop_delay = tonumber(A.cfg.loop_delay or 0.15) or 0.15,
   last_target = "",
   last_readaura = 0,
@@ -208,20 +211,77 @@ local function _command_sep()
 end
 
 local function _payload_line(payload)
+  local lanes = type(payload) == "table" and (payload.lanes or payload) or {}
   local parts = {}
-  if type(payload.free) == "table" then
-    for i = 1, #payload.free do
-      local s = _trim(payload.free[i])
+  local free_lane = lanes.free or lanes.pre
+  if type(free_lane) == "table" then
+    for i = 1, #free_lane do
+      local s = _trim(free_lane[i])
       if s ~= "" then parts[#parts + 1] = s end
     end
+  elseif type(free_lane) == "string" then
+    local s = _trim(free_lane)
+    if s ~= "" then parts[#parts + 1] = s end
   end
-  local eq_cmd = _trim(payload.eq)
-  local bal_cmd = _trim(payload.bal)
-  local ent_cmd = _trim(payload.class)
+  local eq_cmd = _trim(lanes.eq)
+  local bal_cmd = _trim(lanes.bal)
+  local ent_cmd = _trim(lanes.entity or lanes.class or lanes.ent)
   if eq_cmd ~= "" then parts[#parts + 1] = eq_cmd end
   if bal_cmd ~= "" then parts[#parts + 1] = bal_cmd end
   if ent_cmd ~= "" then parts[#parts + 1] = ent_cmd end
   return table.concat(parts, _command_sep())
+end
+
+local function _set_debug_field(key, value)
+  A.state.debug = A.state.debug or { last_no_send_reason = "", last_retry_reason = "" }
+  A.state.debug[key] = value
+  return value
+end
+
+local function _note_no_send_reason(reason)
+  return _set_debug_field("last_no_send_reason", _trim(reason))
+end
+
+local function _note_retry_reason(reason)
+  return _set_debug_field("last_retry_reason", _trim(reason))
+end
+
+local function _waiting_lanes_from_payload(payload)
+  local lanes = {}
+  local seen = {}
+  local lane_tbl = type(payload) == "table" and (payload.lanes or payload) or {}
+
+  local function add(name, cmd)
+    name = _lc(name)
+    if name == "entity" then name = "class" end
+    if name == "" or name == "free" or seen[name] then return end
+    if _trim(cmd) == "" then return end
+    seen[name] = true
+    lanes[#lanes + 1] = name
+  end
+
+  add("eq", lane_tbl.eq)
+  add("bal", lane_tbl.bal)
+  add("class", lane_tbl.class or lane_tbl.ent or lane_tbl.entity)
+  if #lanes == 0 and type(payload) == "table" and type(payload.meta) == "table" then
+    add(payload.meta.main_lane, "__fallback__")
+  end
+
+  return lanes
+end
+
+local function _action_fingerprint(payload)
+  if type(payload) ~= "table" then return "" end
+  local lanes = payload.lanes or payload
+  if type(lanes) ~= "table" then return "" end
+  return table.concat({
+    "occ_aff",
+    _lc(payload.target or ""),
+    _trim(lanes.eq),
+    _trim(lanes.entity or lanes.class or lanes.ent),
+    _trim(lanes.bal),
+    _trim(lanes.free),
+  }, "|")
 end
 
 local function _same_attack_is_hot(cmd)
@@ -231,6 +291,17 @@ local function _same_attack_is_hot(cmd)
   if _trim(last.cmd) ~= cmd then return false end
   local hot_window = math.max(0.10, (tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15) * 0.75)
   return (_now() - (tonumber(last.at) or 0)) < hot_window
+end
+
+local function _same_fingerprint_in_flight(payload)
+  local fingerprint = _action_fingerprint(payload)
+  local flight = A.state and A.state.in_flight or nil
+  if fingerprint == "" or type(flight) ~= "table" then return false end
+  if _trim(flight.fingerprint) == "" or _trim(flight.target) == "" then return false end
+  if _lc(payload.target or "") ~= _lc(flight.target) then return false end
+  if fingerprint ~= _trim(flight.fingerprint) then return false end
+  local window = math.max(0.10, (tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15) * 0.9)
+  return (_now() - (tonumber(flight.at) or 0)) < window
 end
 
 local function _loyals_active_for(tgt)
@@ -317,63 +388,114 @@ local function _emit_free(cmd, reason, tgt)
   return ok == true
 end
 
-local function _emit(payload, tgt)
-  A.state.waiting = A.state.waiting or { queue = nil, at = 0 }
-  A.state.last_attack = A.state.last_attack or { cmd = "", at = 0, target = "" }
+local function _emit_payload(payload)
+  local lane_tbl = type(payload) == "table" and (payload.lanes or payload) or nil
+  if type(lane_tbl) ~= "table" then return false, "invalid_payload" end
 
+  local target = _trim(type(payload) == "table" and payload.target or "")
   local emit_payload = {
-    free = payload.free,
-    eq = _trim(payload.eq) ~= "" and payload.eq or nil,
-    bal = _trim(payload.bal) ~= "" and payload.bal or nil,
-    class = _trim(payload.class) ~= "" and payload.class or nil,
-    target = tgt,
+    free = lane_tbl.free or lane_tbl.pre,
+    eq = lane_tbl.eq,
+    bal = lane_tbl.bal,
+    class = lane_tbl.class or lane_tbl.ent or lane_tbl.entity,
   }
+  local cmd = _payload_line({ target = target, lanes = emit_payload })
+  if _trim(cmd) == "" then return false, "empty" end
 
-  local line = _payload_line(payload)
-  if line == "" then return false end
-
-  if A.alias_loop_waiting_blocks() then return false end
-
-  if _same_attack_is_hot(line) then
-    return false
-  end
-
-  local ok = false
   if type(Yso.emit) == "function" then
-    local sent_ok, sent = pcall(Yso.emit, emit_payload, {
+    local ok = Yso.emit(emit_payload, {
       reason = "occ_aff:emit",
       kind = "offense",
+      target = target,
       commit = true,
-      target = tgt,
+      allow_eqbal = true,
+      prefer = "eq",
+    }) == true
+    if not ok then return false, "emit_failed" end
+  else
+    local Q = Yso and Yso.queue or nil
+    if not (Q and type(Q.emit) == "function") then
+      return false, "queue_emit_unavailable"
+    end
+    local ok, res = pcall(Q.emit, emit_payload, {
+      reason = "occ_aff:emit",
+      kind = "offense",
+      target = target,
+      commit = true,
       allow_eqbal = true,
       prefer = "eq",
     })
-    ok = (sent_ok == true and sent == true)
-  elseif Yso.queue and type(Yso.queue.emit) == "function" then
-    local sent_ok, sent = pcall(Yso.queue.emit, emit_payload, {
-      reason = "occ_aff:emit",
-      kind = "offense",
-      commit = true,
-      target = tgt,
-      allow_eqbal = true,
-      prefer = "eq",
-    })
-    ok = (sent_ok == true and sent == true)
-  elseif type(Yso.attack) == "function" then
-    local sent_ok, sent = pcall(Yso.attack, line)
-    ok = (sent_ok == true and sent == true)
+    if not ok then return false, res end
+    if res ~= true then return false, "queue_emit_failed" end
   end
 
-  if ok ~= true then
-    return false
+  return true, cmd
+end
+
+local function _route_gate_finalize(payload, ctx, tgt)
+  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == "function") then
+    return payload, nil
+  end
+  return Yso.route_gate.finalize(payload, {
+    route = "occ_aff",
+    target = tgt,
+    lane_ready = {
+      eq = _eq(),
+      bal = _bal(),
+      entity = _ent(),
+    },
+    required_entities = {},
+    ctx = ctx,
+  })
+end
+
+local function _final_pre_emit_payload(payload)
+  if type(payload) ~= "table" or type(payload.lanes) ~= "table" then return payload, nil end
+  local lanes = payload.lanes
+  if lanes.entity == nil then lanes.entity = lanes.class or lanes.ent end
+  if lanes.class == nil then lanes.class = lanes.entity end
+  return payload, nil
+end
+
+local function _remember_attack(cmd, payload)
+  local meta = type(payload) == "table" and (payload.meta or {}) or {}
+  local main_lane = _lc(meta.main_lane or "")
+  local lanes = _waiting_lanes_from_payload(payload)
+  local fingerprint = _action_fingerprint(payload)
+  local wait_reason = "waiting_outcome"
+  if #lanes == 1 then
+    if lanes[1] == "eq" then
+      wait_reason = "waiting_eq"
+    elseif lanes[1] == "class" then
+      wait_reason = "waiting_ent"
+    end
   end
 
-  A.state.last_attack.cmd = line
+  A.state.last_attack = A.state.last_attack or {}
+  A.state.last_attack.cmd = _trim(cmd)
   A.state.last_attack.at = _now()
-  A.state.last_attack.target = _trim(tgt)
+  A.state.last_attack.target = _trim(type(payload) == "table" and payload.target or "")
+  A.state.last_attack.main_lane = main_lane
+  A.state.last_attack.lanes = lanes
+  A.state.last_attack.fingerprint = fingerprint
 
-  A.state.waiting.queue = line
-  A.state.waiting.at = _now()
+  A.state.waiting = A.state.waiting or {}
+  A.state.waiting.queue = A.state.last_attack.cmd
+  A.state.waiting.main_lane = main_lane
+  A.state.waiting.lanes = lanes
+  A.state.waiting.fingerprint = fingerprint
+  A.state.waiting.reason = wait_reason
+  A.state.waiting.at = A.state.last_attack.at
+
+  A.state.in_flight = A.state.in_flight or {}
+  A.state.in_flight.fingerprint = fingerprint
+  A.state.in_flight.target = A.state.last_attack.target
+  A.state.in_flight.route = "occ_aff"
+  A.state.in_flight.at = A.state.last_attack.at
+  A.state.in_flight.lanes = lanes
+  A.state.in_flight.eq = _trim(type(payload) == "table" and payload.lanes and payload.lanes.eq or "")
+  A.state.in_flight.entity = _trim(type(payload) == "table" and payload.lanes and (payload.lanes.entity or payload.lanes.class) or "")
+  A.state.in_flight.reason = wait_reason
 
   if type(tempTimer) == "function" then
     local clear_after = math.max(0.10, tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15)
@@ -383,8 +505,32 @@ local function _emit(payload, tgt)
       end
     end)
   end
+end
 
-  return true
+local function _emit(payload)
+  A.state.waiting = A.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
+  A.state.last_attack = A.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
+  local line = _payload_line(payload)
+  if line == "" then
+    _note_no_send_reason("empty")
+    return false, "empty"
+  end
+  if _same_fingerprint_in_flight(payload) then
+    _note_no_send_reason("duplicate_action_suppressed")
+    return false, "duplicate_action_suppressed"
+  end
+  if _same_attack_is_hot(line) then
+    _note_no_send_reason("duplicate_action_suppressed")
+    return false, "duplicate_action_suppressed"
+  end
+
+  local sent, err = _emit_payload(payload)
+  if not sent then
+    _note_retry_reason("retry_hard_fail")
+    return false, err
+  end
+  _remember_attack(line, payload)
+  return true, line
 end
 
 -- Check whether a target currently has an affliction.
@@ -563,8 +709,11 @@ end
 function A.init()
   A.cfg = A.cfg or {}
   A.state = A.state or {}
-  A.state.waiting = A.state.waiting or { queue = nil, at = 0 }
-  A.state.last_attack = A.state.last_attack or { cmd = "", at = 0, target = "" }
+  A.state.waiting = A.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
+  A.state.last_attack = A.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
+  A.state.in_flight = A.state.in_flight or { fingerprint = "", target = "", route = "occ_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  A.state.debug = A.state.debug or { last_no_send_reason = "", last_retry_reason = "" }
+  A.state.template = A.state.template or { last_payload = nil, last_emitted_payload = nil, last_target = "", last_reason = "", last_disable_reason = "" }
   A.state.observe_tries = A.state.observe_tries or {}
   A.state.explain = type(A.state.explain) == "table" and A.state.explain or {}
   if A.state.loop_delay == nil then
@@ -576,9 +725,11 @@ end
 function A.reset(reason)
   A.init()
   local target = _trim(A.state.last_target)
-  A.state.waiting.queue = nil
-  A.state.waiting.at = 0
-  A.state.last_attack = { cmd = "", at = 0, target = "" }
+  A.state.waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
+  A.state.last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
+  A.state.in_flight = { fingerprint = "", target = "", route = "occ_aff", at = 0, resolved_at = _now(), lanes = nil, eq = "", entity = "", reason = "" }
+  A.state.debug = { last_no_send_reason = "", last_retry_reason = "" }
+  A.state.template = { last_payload = nil, last_emitted_payload = nil, last_target = "", last_reason = tostring(reason or "manual"), last_disable_reason = "" }
   A.state.defer_unnamable = nil
   A.state.observe_tries = {}
   A.state.last_readaura = 0
@@ -621,8 +772,10 @@ function A.alias_loop_prepare_start(ctx)
   A.state.enabled = true
   A.state.loop_enabled = true
   A.state.busy = false
-  A.state.waiting.queue = nil
-  A.state.waiting.at = 0
+  A.state.waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
+  A.state.in_flight = { fingerprint = "", target = "", route = "occ_aff", at = 0, resolved_at = _now(), lanes = nil, eq = "", entity = "", reason = "" }
+  A.state.debug = A.state.debug or { last_no_send_reason = "", last_retry_reason = "" }
+  A.state.template = A.state.template or { last_payload = nil, last_emitted_payload = nil, last_target = "", last_reason = "", last_disable_reason = "" }
   return ctx or {}
 end
 
@@ -634,8 +787,7 @@ end
 function A.alias_loop_on_stopped(ctx)
   A.state.loop_enabled = false
   A.state.busy = false
-  A.state.waiting.queue = nil
-  A.state.waiting.at = 0
+  A.alias_loop_clear_waiting()
   if _loyals_any_active() then
     local C = _companions()
     local sent = false
@@ -665,20 +817,34 @@ end
 function A.alias_loop_clear_waiting()
   A.state.waiting = A.state.waiting or {}
   A.state.waiting.queue = nil
+  A.state.waiting.main_lane = nil
+  A.state.waiting.lanes = nil
+  A.state.waiting.fingerprint = ""
+  A.state.waiting.reason = ""
   A.state.waiting.at = 0
+  A.state.in_flight = A.state.in_flight or {}
+  A.state.in_flight.resolved_at = _now()
+  A.state.in_flight.fingerprint = ""
+  A.state.in_flight.target = ""
+  A.state.in_flight.lanes = nil
+  A.state.in_flight.eq = ""
+  A.state.in_flight.entity = ""
+  A.state.in_flight.reason = ""
   return true
 end
 
 function A.alias_loop_waiting_blocks()
   local queue = _trim(A.state and A.state.waiting and A.state.waiting.queue)
-  if queue == "" then return false end
-  local age = _now() - (tonumber(A.state.waiting and A.state.waiting.at) or 0)
-  local stale_s = math.max(0.45, (tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15) * 6)
-  if age >= stale_s then
-    A.alias_loop_clear_waiting()
-    return false
+  if queue ~= "" then
+    local age = _now() - (tonumber(A.state.waiting and A.state.waiting.at) or 0)
+    local stale_s = math.max(0.45, (tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15) * 6)
+    if age >= stale_s then
+      A.alias_loop_clear_waiting()
+    end
   end
-  return true
+  -- Keep offense loop reevaluating continuously; queued ownership handles replacement.
+  -- This prevents stale queued-state stalls when a staged emit does not commit.
+  return false
 end
 
 function A.alias_loop_on_error(err)
@@ -912,36 +1078,122 @@ function A.attack_function(arg)
     payload.class = _trim(_pick_entity(tgt, phase) or "")
   end
 
-  payload.meta = {
-    phase = phase,
+  local free_cmd = ""
+  if type(payload.free) == "table" and #payload.free > 0 then
+    free_cmd = table.concat(payload.free, _command_sep())
+  end
+  local eq_cmd = _trim(payload.eq)
+  local bal_cmd = _trim(payload.bal)
+  local class_cmd = _trim(payload.class)
+
+  local function _eq_category(cmd, p)
+    local lc = _lc(cmd)
+    if lc == "" then return nil end
+    if lc:match("^attend%s+") then return "mental_pressure" end
+    if lc == "unnamable speak" then return "mental_pressure" end
+    if lc:match("^utter%s+truename%s+") then return "reserved_burst" end
+    if lc:match("^cleanseaura%s+") then return "truename_acquire" end
+    if lc:match("^readaura%s+") then return "team_coordination" end
+    if lc:match("^instill%s+") then return "pressure" end
+    if p == "convert" or p == "finish" then return "reserved_burst" end
+    return "pressure"
+  end
+
+  local eq_cat = _eq_category(eq_cmd, phase)
+  local bal_cat = (_lc(bal_cmd) == "unnamable speak") and "mental_pressure" or ((_trim(bal_cmd) ~= "") and "pressure" or nil)
+  local class_cat = (_trim(class_cmd) ~= "") and ((phase == "cleanse" and _lc(class_cmd):match("^command%s+chimera%s+at%s+")) and "mental_pressure" or "entity_support") or nil
+  local main_lane = ""
+  local main_category = nil
+  if eq_cmd ~= "" then
+    main_lane = "eq"
+    main_category = eq_cat
+  elseif bal_cmd ~= "" then
+    main_lane = "bal"
+    main_category = bal_cat
+  elseif class_cmd ~= "" then
+    main_lane = "entity"
+    main_category = class_cat
+  elseif free_cmd ~= "" then
+    main_lane = "free"
+    main_category = "team_coordination"
+  end
+
+  local route_payload = {
     route = "occ_aff",
+    target = tgt,
+    lanes = {
+      free = (free_cmd ~= "") and free_cmd or nil,
+      eq = (eq_cmd ~= "") and eq_cmd or nil,
+      bal = (bal_cmd ~= "") and bal_cmd or nil,
+      entity = (class_cmd ~= "") and class_cmd or nil,
+      class = (class_cmd ~= "") and class_cmd or nil,
+    },
+    meta = {
+      phase = phase,
+      route = "occ_aff",
+      free_category = (free_cmd ~= "") and "team_coordination" or nil,
+      eq_category = eq_cat,
+      bal_category = bal_cat,
+      entity_category = class_cat,
+      main_lane = main_lane,
+      main_category = main_category,
+      free_parts = (type(payload.free) == "table" and #payload.free > 0) and payload.free or nil,
+    },
+  }
+
+  route_payload, _ = _route_gate_finalize(route_payload, ctx, tgt)
+  A.state.template.last_payload = route_payload
+  A.state.template.last_target = tgt
+  local gate = type(route_payload) == "table" and (route_payload._route_gate or (route_payload.meta and route_payload.meta.route_gate)) or nil
+  A.state.explain = {
+    route = "occ_aff",
+    target = tgt,
+    phase = phase,
+    planned = gate and gate.planned and gate.planned.lanes or route_payload.lanes,
+    gated = gate and gate.gated and gate.gated.lanes or route_payload.lanes,
+    blocked_reasons = gate and gate.blocked_reasons or {},
+    hindrance = gate and gate.hinder or {},
+    required_entities = gate and gate.entities and gate.entities.required or {},
+    entity_obligations = gate and gate.entities and gate.entities.obligations or {},
+    emitted = gate and gate.emitted or {},
+    confirmed = gate and gate.confirmed or {},
   }
 
   if preview then
-    return {
-      target = tgt,
-      route = "occ_aff",
-      lanes = {
-        free = (#payload.free > 0) and payload.free[1] or nil,
-        eq = _trim(payload.eq) ~= "" and _trim(payload.eq) or nil,
-        bal = _trim(payload.bal) ~= "" and _trim(payload.bal) or nil,
-        entity = _trim(payload.class) ~= "" and _trim(payload.class) or nil,
-      },
-      payload = payload,
-      meta = payload.meta,
-    }
+    local planner_empty = not route_payload.lanes.free and not route_payload.lanes.eq and not route_payload.lanes.bal and not route_payload.lanes.entity
+    if planner_empty then return nil, "empty" end
+    return route_payload
   end
 
-  local sent = _emit(payload, tgt)
-  if sent == true then
-    local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
-    if not has_ack_bus then
-      A.on_sent(payload, { target = tgt })
-    end
-    return true
+  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == "function")
+    and Yso.route_gate.payload_for_emit(route_payload)
+    or route_payload
+  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
+  if emit_empty then
+    _note_no_send_reason("empty")
+    return false, "empty"
+  end
+  local emit_err = nil
+  emit_payload, emit_err = _final_pre_emit_payload(emit_payload)
+  if not emit_payload then
+    _note_no_send_reason(emit_err or "empty")
+    return false, emit_err or "empty"
   end
 
-  return false
+  local sent, cmd_or_err = _emit(emit_payload)
+  if not sent then
+    return false, cmd_or_err
+  end
+
+  A.state.template.last_emitted_payload = emit_payload
+  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == "function" then
+    pcall(Yso.route_gate.note_emitted, route_payload, emit_payload, ctx)
+  end
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  if not has_ack_bus then
+    A.on_sent(emit_payload, { target = tgt })
+  end
+  return true, cmd_or_err, route_payload
 end
 
 function A.build_payload(ctx)
@@ -952,6 +1204,7 @@ local function _clear_owned_lanes(payload)
   local Q = Yso and Yso.queue or nil
   if not (Q and type(Q.clear_owned) == "function") then return end
 
+  local lanes = type(payload) == "table" and (payload.lanes or payload) or {}
   local cleared = {}
   local function clear_lane(lane)
     if cleared[lane] then return end
@@ -959,16 +1212,17 @@ local function _clear_owned_lanes(payload)
     pcall(Q.clear_owned, lane)
   end
 
-  if type(payload.free) == "table" and #payload.free > 0 then
+  local free_lane = lanes.free or lanes.pre
+  if (type(free_lane) == "table" and #free_lane > 0) or _trim(free_lane) ~= "" then
     clear_lane("free")
   end
-  if _trim(payload.eq) ~= "" then
+  if _trim(lanes.eq) ~= "" then
     clear_lane("eq")
   end
-  if _trim(payload.bal) ~= "" then
+  if _trim(lanes.bal) ~= "" then
     clear_lane("bal")
   end
-  if _trim(payload.class) ~= "" or _trim(payload.entity) ~= "" or _trim(payload.ent) ~= "" then
+  if _trim(lanes.class) ~= "" or _trim(lanes.entity) ~= "" or _trim(lanes.ent) ~= "" then
     clear_lane("class")
   end
 end
@@ -978,22 +1232,42 @@ function A.on_sent(payload, ctx)
   local tgt = _trim(payload.target or (type(ctx) == "table" and ctx.target) or A.state.last_target)
   if tgt == "" then return false end
 
-  local eq_cmd = _trim(payload.eq)
-  local free = payload.free
+  local lanes = payload.lanes or payload
+  local eq_cmd = _trim(lanes.eq)
+  local free = lanes.free or lanes.pre
+  local sep = _command_sep()
   local C = _companions()
-  if C and type(C.note_order_sent) == "function" and type(free) == "table" then
-    for i = 1, #free do
-      local cmd = _trim(free[i])
-      if cmd ~= "" then pcall(C.note_order_sent, cmd, tgt) end
-    end
-  elseif type(free) == "table" then
-    for i = 1, #free do
-      local cmd = _trim(free[i]):lower()
-      if cmd == ("order loyals kill " .. tgt:lower()) then
-        _set_loyals_hostile(true, tgt)
-        break
+  local function _each_free_part(fn)
+    if type(free) == "table" then
+      for i = 1, #free do
+        local part = _trim(free[i])
+        if part ~= "" then fn(part) end
       end
+      return
     end
+    local body = _trim(free)
+    if body == "" then return end
+    local idx = 1
+    while true do
+      local a, b = body:find(sep, idx, true)
+      local part = a and body:sub(idx, a - 1) or body:sub(idx)
+      part = _trim(part)
+      if part ~= "" then fn(part) end
+      if not a then break end
+      idx = b + 1
+    end
+  end
+
+  if C and type(C.note_order_sent) == "function" then
+    _each_free_part(function(cmd)
+      pcall(C.note_order_sent, cmd, tgt)
+    end)
+  else
+    _each_free_part(function(cmd)
+      if _lc(cmd) == ("order loyals kill " .. _lc(tgt)) then
+        _set_loyals_hostile(true, tgt)
+      end
+    end)
   end
 
   if eq_cmd == ("readaura " .. tgt) then
@@ -1037,21 +1311,9 @@ function A.S.loyals_hostile(tgt)
 end
 
 function A.evaluate(ctx)
-  local tgt = _trim((type(ctx) == "table" and ctx.target) or A.state.last_target)
-  return {
-    route = "occ_aff",
-    active = A.is_active(),
-    enabled = A.is_enabled(),
-    target = tgt,
-    phase = (function()
-      if tgt == "" then return "open" end
-      if Yso.occ and type(Yso.occ.get_phase) == "function" then
-        local ok, v = pcall(Yso.occ.get_phase, tgt)
-        if ok and type(v) == "string" and _trim(v) ~= "" then return _trim(v) end
-      end
-      return "open"
-    end)(),
-  }
+  local payload, why = A.build_payload(ctx)
+  if not payload then return { ok = false, reason = why } end
+  return { ok = true, payload = payload }
 end
 
 function A.status()
@@ -1069,7 +1331,10 @@ function A.status()
       end
       return "open"
     end)(),
-    waiting = _trim(A.state.waiting and A.state.waiting.queue),
+    waiting = A.state and A.state.waiting or {},
+    in_flight = A.state and A.state.in_flight or {},
+    last_no_send_reason = A.state and A.state.debug and A.state.debug.last_no_send_reason or "",
+    last_retry_reason = A.state and A.state.debug and A.state.debug.last_retry_reason or "",
   }
 end
 
@@ -1130,27 +1395,14 @@ function A.on_payload_sent(payload)
 end
 
 function A.explain()
-  local tgt = _trim(A.state.last_target)
-  local ex = {
-    route = "occ_aff",
-    target = tgt,
-    phase = (function()
-      if tgt == "" then return "open" end
-      if Yso.occ and type(Yso.occ.get_phase) == "function" then
-        local ok, v = pcall(Yso.occ.get_phase, tgt)
-        if ok and type(v) == "string" and _trim(v) ~= "" then return _trim(v) end
-      end
-      return "open"
-    end)(),
-    enabled = A.is_enabled(),
-    active = A.is_active(),
-    waiting = {
-      active = _trim(A.state.waiting and A.state.waiting.queue) ~= "",
-      queue = _trim(A.state.waiting and A.state.waiting.queue),
-      age = math.max(0, _now() - (tonumber(A.state.waiting and A.state.waiting.at or 0) or 0)),
-    },
-    last_attack = A.state.last_attack,
-  }
+  local ex = A.state and A.state.explain or {}
+  ex.route = ex.route or "occ_aff"
+  ex.route_enabled = A.is_enabled()
+  ex.active = A.is_active()
+  ex.waiting = A.state and A.state.waiting or {}
+  ex.in_flight = A.state and A.state.in_flight or {}
+  ex.last_no_send_reason = A.state and A.state.debug and A.state.debug.last_no_send_reason or ""
+  ex.last_retry_reason = A.state and A.state.debug and A.state.debug.last_retry_reason or ""
   A.state.explain = ex
   return ex
 end
