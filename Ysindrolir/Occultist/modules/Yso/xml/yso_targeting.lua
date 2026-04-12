@@ -183,6 +183,24 @@ local function _forward_to_ak(fn, arg)
   return true, res
 end
 
+local function _reset_combat_lane_state(reason)
+  local Q = Yso and Yso.queue
+  if type(Q) == "table" then
+    if type(Q.flush_staged) == "function" then
+      pcall(Q.flush_staged)
+    elseif type(Q.clear) == "function" then
+      pcall(Q.clear, "all")
+    end
+    if type(Q.unblock_lane) == "function" then
+      pcall(Q.unblock_lane, "eq", "target_reset", { source = "targeting" })
+      pcall(Q.unblock_lane, "bal", "target_reset", { source = "targeting" })
+    end
+  end
+  if Yso and Yso.hinder and type(Yso.hinder.reset) == "function" then
+    pcall(Yso.hinder.reset, reason or "target_reset")
+  end
+end
+
 function TG.clear(source, reason, silent, opts)
   source = _clean(source)
   if source == "" then source = "system" end
@@ -201,6 +219,7 @@ function TG.clear(source, reason, silent, opts)
   TG.state.locked, TG.state.lock_source, TG.state.lock_reason = false, "", ""
 
   _sync_mirrors("")
+  _reset_combat_lane_state("target_clear")
 
   -- Phase 1 plumbing: mirror into Yso.state
   if Yso and Yso.ingest and type(Yso.ingest.target_left) == "function" then
@@ -246,12 +265,9 @@ function TG.set(name, source, opts)
 
   _sync_mirrors(name)
 
-  -- Target swap hygiene: do NOT carry staged entity actions across targets.
-  -- (Prevents stale "command <ent> at <old>" from firing after a swap.)
+  -- Target swap hygiene: do NOT carry staged work or lane blocks across targets.
   if old ~= "" and old:lower() ~= name:lower() then
-    if Yso and Yso.queue and type(Yso.queue.clear) == "function" then
-      pcall(Yso.queue.clear, "class")
-    end
+    _reset_combat_lane_state("target_swap")
     if Yso and Yso.state then
       Yso.state._last_ent_cmd = nil
       Yso.state._last_ent_cmd_ts = nil

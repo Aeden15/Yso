@@ -209,6 +209,17 @@ function E.install_hooks()
   return true
 end
 
+function E.uninstall_hooks()
+  E._hook_ids = E._hook_ids or {}
+  if E._hook_ids.worm_chew and type(killTrigger) == "function" then
+    pcall(killTrigger, E._hook_ids.worm_chew)
+  end
+  E._hook_ids.worm_chew = nil
+  E.state = E.state or {}
+  E.state.hooks_installed = false
+  return true
+end
+
 function E.collect(ctx)
   pcall(E.install_hooks)
   local payload = type(ctx) == "table" and ctx.payload or nil

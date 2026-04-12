@@ -128,7 +128,20 @@ local function _schedule_dead_clear(tgt)
   C._st.dead.pending = tgt
   C._st.dead.at = _now()
 
-  C._tm.dead_clear = tempTimer(2.2, function()
+  if type(tempTimer) ~= "function" then
+    local pend = C._st.dead.pending
+    C._tm.dead_clear = nil
+    C._st.dead.pending = ""
+    C._st.dead.at = 0
+    if pend ~= "" and _is_current(pend) then
+      _clear("dead")
+    end
+    return
+  end
+
+  local my_id
+  my_id = tempTimer(2.2, function()
+    if C._tm.dead_clear ~= my_id then return end
     local pend = C._st.dead.pending
     C._tm.dead_clear = nil
     C._st.dead.pending = ""
@@ -137,6 +150,7 @@ local function _schedule_dead_clear(tgt)
       _clear("dead")
     end
   end)
+  C._tm.dead_clear = my_id
 end
 
 Yso.off.oc = Yso.off.oc or {}
@@ -320,15 +334,23 @@ function D.current_route()
 end
 
 function D.toggle(on)
+  local prev = (D.state.enabled == true)
+  local next_enabled
   if on == nil then
-    D.state.enabled = not (D.state.enabled == true)
+    next_enabled = not prev
   else
-    D.state.enabled = (on == true)
+    next_enabled = (on == true)
   end
-  D.cfg.enabled = (D.state.enabled == true)
+  D.state.enabled = next_enabled
+  D.cfg.enabled = next_enabled
   _v("enabled="..tostring(D.state.enabled))
   if Yso.pulse and type(Yso.pulse.wake) == "function" then
-    Yso.pulse.wake("driver:toggle")
+    local ok = pcall(Yso.pulse.wake, "driver:toggle")
+    if not ok then
+      D.state.enabled = prev
+      D.cfg.enabled = prev
+      _v("toggle rollback: pulse wake failed")
+    end
   end
   return D.state.enabled
 end

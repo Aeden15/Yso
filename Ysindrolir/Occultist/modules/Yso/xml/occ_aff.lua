@@ -150,7 +150,12 @@ local function _dbg_json(v)
   if t == "boolean" then return v and "true" or "false" end
   if t == "number" then return tostring(v) end
   if t == "string" then
-    return '"' .. v:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\r", "\\r"):gsub("\n", "\\n") .. '"'
+    return '"' .. v:gsub('[\\"\r\n]', {
+      ['\\'] = '\\\\',
+      ['"']  = '\\"',
+      ['\r'] = '\\r',
+      ['\n'] = '\\n',
+    }) .. '"'
   end
   if t == "table" then
     local is_arr = true
@@ -556,7 +561,10 @@ local function _remember_attack(cmd, payload)
 
   if type(tempTimer) == "function" then
     local clear_after = math.max(0.10, tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15)
+    local fp = fingerprint
     pcall(tempTimer, clear_after, function()
+      local waiting_fp = _trim(A and A.state and A.state.waiting and A.state.waiting.fingerprint or "")
+      if waiting_fp == "" or waiting_fp ~= fp then return end
       if A and type(A.alias_loop_clear_waiting) == "function" then
         pcall(A.alias_loop_clear_waiting)
       end
@@ -584,6 +592,17 @@ local function _emit(payload)
   local sent, err = _emit_payload(payload)
   if not sent then
     _note_retry_reason("retry_hard_fail")
+    A.state.in_flight = {
+      fingerprint = "",
+      target = "",
+      route = "occ_aff",
+      at = 0,
+      resolved_at = 0,
+      lanes = nil,
+      eq = "",
+      entity = "",
+      reason = "",
+    }
     return false, err
   end
   _remember_attack(line, payload)

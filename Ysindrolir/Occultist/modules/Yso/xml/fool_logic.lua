@@ -427,11 +427,20 @@ local function _mark_pending(source, qtype, cmd)
 
   if type(tempTimer) == "function" then
     local pending_gen = F.state.pending_id
-    F.state.pending_timer = tempTimer(15, function()
+    local timer_id = tempTimer(15, function()
       if tonumber(F.state.pending_id or 0) ~= pending_gen then return end
       _clear_pending("timeout")
       _release_basher_hold("pending-timeout")
     end)
+    if timer_id then
+      F.state.pending_timer = timer_id
+    else
+      _fool_echo("WARNING: tempTimer returned nil; pending fallback auto-clearing.")
+      _clear_pending("timer-unavailable")
+    end
+  else
+    _fool_echo("WARNING: tempTimer unavailable; pending fallback auto-clearing.")
+    _clear_pending("timer-unavailable")
   end
 
   _fool_echo(string.format(
@@ -448,6 +457,8 @@ end
 
 local function _release_basher_hold(reason)
   local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
+  -- Invalidate any previously armed timeout callback generation first.
+  F.state.basher_hold_gen = (tonumber(F.state.basher_hold_gen or 0) or 0) + 1
   if F.state.basher_hold_timer and type(killTimer) == "function" then
     local ok, killed = pcall(killTimer, F.state.basher_hold_timer)
     if not ok or killed == false then
@@ -473,12 +484,29 @@ local function _arm_basher_hold(reason)
   F.state.basher_hold_at = _now()
   _fool_echo("Basher hold armed ("..F.state.basher_hold_reason..").")
 
-  if type(tempTimer) == "function" then
-    F.state.basher_hold_timer = tempTimer(10, function()
-      if tonumber(F.state.basher_hold_gen or 0) ~= hold_gen then return end
-      _release_basher_hold("timeout")
-    end)
+  if type(tempTimer) ~= "function" then
+    _fool_echo("WARNING: tempTimer unavailable; basher hold skipped.")
+    F.state.basher_hold = false
+    F.state.basher_hold_reason = nil
+    F.state.basher_hold_at = 0
+    F.state.basher_hold_timer = nil
+    return
   end
+
+  local timer_id = tempTimer(10, function()
+    if tonumber(F.state.basher_hold_gen or 0) ~= hold_gen then return end
+    _release_basher_hold("timeout")
+  end)
+  if timer_id then
+    F.state.basher_hold_timer = timer_id
+    return
+  end
+
+  _fool_echo("WARNING: tempTimer returned nil; basher hold skipped.")
+  F.state.basher_hold = false
+  F.state.basher_hold_reason = nil
+  F.state.basher_hold_at = 0
+  F.state.basher_hold_timer = nil
 end
 
 local function _clear_basher_queue()

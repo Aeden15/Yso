@@ -204,7 +204,8 @@ function C.is_any_active()
 end
 
 function C.can_order()
-  return C.state.recovering ~= true
+  local st = (type(C.state) == "table") and C.state or {}
+  return st.recovering ~= true
 end
 
 function C.mark_recovering(reason)
@@ -229,7 +230,8 @@ end
 
 function C.note_recovery(kind, line)
   kind = _trim(kind)
-  if C.state.recovering == true or C.state.recall_pending == true then
+  local st = (type(C.state) == "table") and C.state or nil
+  if st and (st.recovering == true or st.recall_pending == true) then
     C.reset_recovery(kind ~= "" and kind or "recovered")
     _dbg("companion recovery: " .. tostring(kind ~= "" and kind or line or "unknown"))
   end

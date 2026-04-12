@@ -24,6 +24,13 @@ H.state = H.state or {
   lane_blocked = { eq = false, bal = false },
 }
 
+function H.reset(_reason)
+  H.state = H.state or {}
+  H.state.snapshot = nil
+  H.state.lane_blocked = { eq = false, bal = false }
+  return true
+end
+
 local BASE_AFFS = {
   "paralysis",
   "clumsiness",

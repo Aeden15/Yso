@@ -108,12 +108,22 @@ local function make_world(opts)
     return true
   end
   _G.tempTimer = function(secs, fn)
+    if opts.no_temp_timer == true then
+      return nil
+    end
     timer_id = timer_id + 1
     timers[timer_id] = { secs = secs, fn = fn }
     return timer_id
   end
   _G.killTimer = function(id)
+    if opts.kill_timer_error == true then
+      error("killTimer unavailable")
+    end
+    if opts.kill_timer_returns_false == true then
+      return false
+    end
     timers[id] = nil
+    return true
   end
   _G.tempRegexTrigger = function(pattern, fn)
     trigger_id = trigger_id + 1
@@ -606,6 +616,46 @@ do
     "send:cq freestand",
     "queue:addclearfull:bal:fling fool at me",
   })
+end
+
+print("\n=== Test 17: tempTimer-missing fallback avoids stale pending or hold deadlock ===")
+do
+  local world = make_world({
+    cureset = "hunt",
+    no_temp_timer = true,
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+  })
+
+  assert_true("17a: hunt Fool still queues with timer fallback", Legacy.FoolSelfCleanse("manual"))
+  assert_ops("17b: queue still sent", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+  })
+  assert_false("17c: pending auto-cleared when tempTimer unavailable", world.F.state.pending == true)
+  assert_false("17d: basher hold skipped when tempTimer unavailable", world.F.blocks_basher())
+end
+
+print("\n=== Test 18: stale basher timer callback cannot clear a newer hold generation ===")
+do
+  local world = make_world({
+    cureset = "hunt",
+    kill_timer_returns_false = true,
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+  })
+
+  assert_true("18a: first Fool queues", Legacy.FoolSelfCleanse("manual"))
+  local stale_timer = world.F.state.basher_hold_timer
+  assert_true("18b: first hold timer captured", stale_timer ~= nil)
+
+  world.run_trigger(Yso._trig.fool_success)
+  assert_false("18c: first success releases hold", world.F.blocks_basher())
+
+  world.set_now(1040)
+  assert_true("18d: second Fool queues", Legacy.FoolSelfCleanse("manual"))
+  assert_true("18e: second hold is active", world.F.blocks_basher())
+
+  world.run_timer(stale_timer)
+  assert_true("18f: stale timer callback does not release new hold", world.F.blocks_basher())
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

@@ -62,7 +62,8 @@ local function assert_has(label, list, wanted)
   fail(label, string.format("missing value %s", tostring(wanted)))
 end
 
-local function setup_world()
+local function setup_world(opts)
+  opts = opts or {}
   _G.Yso = {}
   _G.yso = _G.Yso
 
@@ -72,9 +73,15 @@ local function setup_world()
     return epoch_ms
   end
 
+  local timer_id = 0
+  local timers = {}
   _G.tempTimer = function(_, fn)
-    if type(fn) == "function" then fn() end
-    return 1
+    timer_id = timer_id + 1
+    timers[timer_id] = fn
+    if opts.defer_timers ~= true and type(fn) == "function" then
+      fn()
+    end
+    return timer_id
   end
   _G.cecho = function() end
   _G.echo = function() end
@@ -100,6 +107,9 @@ local function setup_world()
 
   function queue.emit(payload, _)
     emit_calls = emit_calls + 1
+    if tonumber(opts.emit_fail_on) == emit_calls then
+      return false
+    end
     local changed = false
     for _, lane in ipairs({ "free", "eq", "bal", "class" }) do
       local cmd = lane_value(payload, lane)
@@ -156,6 +166,11 @@ local function setup_world()
     route = Yso.off.oc.occ_aff,
     clear_calls = clear_calls,
     emit_calls = function() return emit_calls end,
+    timers = timers,
+    run_timer = function(id)
+      local fn = timers[id]
+      if type(fn) == "function" then fn() end
+    end,
   }
 end
 
@@ -174,9 +189,48 @@ assert_has("cleared free lane ownership", world.clear_calls, "free")
 assert_has("cleared eq lane ownership", world.clear_calls, "eq")
 assert_has("cleared class lane ownership", world.clear_calls, "class")
 
+print("\n=== Test 2: emit failure clears in-flight fingerprint for retry ===")
+do
+  local world2 = setup_world({ defer_timers = true, emit_fail_on = 2 })
+  local A2 = world2.route
+
+  local sent_ok = A2.attack_function()
+  assert_true("2a: first attack sends", sent_ok)
+  assert_true("2b: in_flight fingerprint set after first send", tostring(A2.state.in_flight.fingerprint or "") ~= "")
+
+  local sent_fail = A2.attack_function()
+  assert_eq("2c: second attack send fails", sent_fail, false)
+  assert_eq("2d: in_flight fingerprint cleared on emit failure", tostring(A2.state.in_flight.fingerprint or ""), "")
+  assert_eq("2e: in_flight target cleared on emit failure", tostring(A2.state.in_flight.target or ""), "")
+end
+
+print("\n=== Test 3: waiting clear timer respects fingerprint guard ===")
+do
+  local world3 = setup_world({ defer_timers = true })
+  local A3 = world3.route
+
+  local sent_ok = A3.attack_function()
+  assert_true("3a: first attack sends", sent_ok)
+  local first_wait_fp = tostring(A3.state.waiting and A3.state.waiting.fingerprint or "")
+  assert_true("3b: waiting fingerprint captured", first_wait_fp ~= "")
+
+  local stale_timer_id = nil
+  for id, _ in pairs(world3.timers) do
+    stale_timer_id = id
+    break
+  end
+  assert_true("3c: waiting clear timer captured", stale_timer_id ~= nil)
+
+  A3.state.waiting.queue = "new attack waiting"
+  A3.state.waiting.fingerprint = "new-fingerprint"
+  world3.run_timer(stale_timer_id)
+
+  assert_eq("3d: stale timer does not clear newer waiting fingerprint", tostring(A3.state.waiting.fingerprint or ""), "new-fingerprint")
+  assert_eq("3e: stale timer does not clear newer waiting queue", tostring(A3.state.waiting.queue or ""), "new attack waiting")
+end
+
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then
   io.stderr:write(string.format("FAILURES: %d\n", fail_count))
   os.exit(1)
 end
-

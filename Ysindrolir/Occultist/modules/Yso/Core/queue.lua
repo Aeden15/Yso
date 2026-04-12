@@ -651,6 +651,16 @@ function Q.clear(lane)
   return true
 end
 
+function Q.flush_staged()
+  Q._staged = {
+    free = {},
+    eq = nil,
+    bal = nil,
+    class = nil,
+  }
+  return true
+end
+
 function Q.list(lane)
   local key = _lane_key(lane)
   if not key then return _snapshot() end

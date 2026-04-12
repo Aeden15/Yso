@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
 	<TriggerPackage>
@@ -360,7 +360,9 @@ end</script>
 						<regexCodePropertyList />
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 1</name>
-							<script>Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -381,7 +383,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 2</name>
-							<script>Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -402,7 +406,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 3</name>
-							<script>Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -423,7 +429,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Last stage</name>
-							<script>Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -445,15 +453,22 @@ end</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>The monk's radiancing</name>
 							<script>local who = matches[2] or "Monk"
-Yso.radianceAlert.banner({
-  "########################################################",
-  "#                 RADIANCE  PRE-TELL                   #",
-  ("#          %s is setting something up..."):format(who):sub(1,56) .. string.rep(" ", math.max(0, 56-#(("%s is setting something up..."):format(who)))) .. "#",
-  "########################################################",
-}, "&lt;yellow&gt;")
+local msg = ("%s is setting something up..."):format(who)
+local padded = ("#          " .. msg):sub(1, 56)
+local pad = string.rep(" ", math.max(0, 56 - #msg))
 
--- Stage 0 does not emit the standard staged banner, but still raises the event.
-Yso.radianceAlert.fire(0, who, "pre-tell")
+if Yso and Yso.radianceAlert and type(Yso.radianceAlert.banner) == "function" then
+  Yso.radianceAlert.banner({
+    "########################################################",
+    "#                 RADIANCE  PRE-TELL                   #",
+    padded .. pad .. "#",
+    "########################################################",
+  }, "&lt;yellow&gt;")
+end
+
+if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(0, who, "pre-tell")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -814,8 +829,8 @@ end</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
 						<script>if Yso and Yso.pulse then
-  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_queued") end
-  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_queued") end
+  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_queued") end
+  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_queued") end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -839,8 +854,8 @@ end</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL queued (serverside)</name>
 						<script>if Yso and Yso.pulse then
-  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_queued") end
-  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_queued") end
+  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_queued") end
+  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_queued") end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -864,8 +879,8 @@ end</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ running queued cmd</name>
 						<script>if Yso and Yso.pulse then
-  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_run") end
-  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_run") end
+  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_run") end
+  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_run") end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -889,8 +904,8 @@ end</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL running queued cmd</name>
 						<script>if Yso and Yso.pulse then
-  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_run") end
-  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_run") end
+  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_run") end
+  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_run") end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1217,9 +1232,9 @@ local pct  = math.floor((cur / maxm) * 100 + 0.5)
 
 -- track it for the system (optional)
 Yso.occ.mana_pct[name:lower()] = cur / maxm
-if type(Yso.occ.aura_note_mana) == "function" then
+if Yso and Yso.occ and type(Yso.occ.aura_note_mana) == "function" then
   pcall(Yso.occ.aura_note_mana, name, cur, maxm)
-elseif type(Yso.occ.set_target_mana_pct) == "function" then
+elseif Yso and Yso.occ and type(Yso.occ.set_target_mana_pct) == "function" then
   pcall(Yso.occ.set_target_mana_pct, name, pct)
 end
 
@@ -7138,6 +7153,16 @@ function Q.clear(lane)
   return true
 end
 
+function Q.flush_staged()
+  Q._staged = {
+    free = {},
+    eq = nil,
+    bal = nil,
+    class = nil,
+  }
+  return true
+end
+
 function Q.list(lane)
   local key = _lane_key(lane)
   if not key then return _snapshot() end
@@ -8061,6 +8086,13 @@ H.state = H.state or {
   lane_blocked = { eq = false, bal = false },
 }
 
+function H.reset(_reason)
+  H.state = H.state or {}
+  H.state.snapshot = nil
+  H.state.lane_blocked = { eq = false, bal = false }
+  return true
+end
+
 local BASE_AFFS = {
   &quot;paralysis&quot;,
   &quot;clumsiness&quot;,
@@ -8585,6 +8617,17 @@ function E.install_hooks()
   )
 
   E.state.hooks_installed = true
+  return true
+end
+
+function E.uninstall_hooks()
+  E._hook_ids = E._hook_ids or {}
+  if E._hook_ids.worm_chew and type(killTrigger) == &quot;function&quot; then
+    pcall(killTrigger, E._hook_ids.worm_chew)
+  end
+  E._hook_ids.worm_chew = nil
+  E.state = E.state or {}
+  E.state.hooks_installed = false
   return true
 end
 
@@ -10634,7 +10677,8 @@ function C.is_any_active()
 end
 
 function C.can_order()
-  return C.state.recovering ~= true
+  local st = (type(C.state) == &quot;table&quot;) and C.state or {}
+  return st.recovering ~= true
 end
 
 function C.mark_recovering(reason)
@@ -10659,7 +10703,8 @@ end
 
 function C.note_recovery(kind, line)
   kind = _trim(kind)
-  if C.state.recovering == true or C.state.recall_pending == true then
+  local st = (type(C.state) == &quot;table&quot;) and C.state or nil
+  if st and (st.recovering == true or st.recall_pending == true) then
     C.reset_recovery(kind ~= &quot;&quot; and kind or &quot;recovered&quot;)
     _dbg(&quot;companion recovery: &quot; .. tostring(kind ~= &quot;&quot; and kind or line or &quot;unknown&quot;))
   end
@@ -13164,6 +13209,24 @@ local function _forward_to_ak(fn, arg)
   return true, res
 end
 
+local function _reset_combat_lane_state(reason)
+  local Q = Yso and Yso.queue
+  if type(Q) == &quot;table&quot; then
+    if type(Q.flush_staged) == &quot;function&quot; then
+      pcall(Q.flush_staged)
+    elseif type(Q.clear) == &quot;function&quot; then
+      pcall(Q.clear, &quot;all&quot;)
+    end
+    if type(Q.unblock_lane) == &quot;function&quot; then
+      pcall(Q.unblock_lane, &quot;eq&quot;, &quot;target_reset&quot;, { source = &quot;targeting&quot; })
+      pcall(Q.unblock_lane, &quot;bal&quot;, &quot;target_reset&quot;, { source = &quot;targeting&quot; })
+    end
+  end
+  if Yso and Yso.hinder and type(Yso.hinder.reset) == &quot;function&quot; then
+    pcall(Yso.hinder.reset, reason or &quot;target_reset&quot;)
+  end
+end
+
 function TG.clear(source, reason, silent, opts)
   source = _clean(source)
   if source == &quot;&quot; then source = &quot;system&quot; end
@@ -13182,6 +13245,7 @@ function TG.clear(source, reason, silent, opts)
   TG.state.locked, TG.state.lock_source, TG.state.lock_reason = false, &quot;&quot;, &quot;&quot;
 
   _sync_mirrors(&quot;&quot;)
+  _reset_combat_lane_state(&quot;target_clear&quot;)
 
   -- Phase 1 plumbing: mirror into Yso.state
   if Yso and Yso.ingest and type(Yso.ingest.target_left) == &quot;function&quot; then
@@ -13227,12 +13291,9 @@ function TG.set(name, source, opts)
 
   _sync_mirrors(name)
 
-  -- Target swap hygiene: do NOT carry staged entity actions across targets.
-  -- (Prevents stale &quot;command &lt;ent&gt; at &lt;old&gt;&quot; from firing after a swap.)
+  -- Target swap hygiene: do NOT carry staged work or lane blocks across targets.
   if old ~= &quot;&quot; and old:lower() ~= name:lower() then
-    if Yso and Yso.queue and type(Yso.queue.clear) == &quot;function&quot; then
-      pcall(Yso.queue.clear, &quot;class&quot;)
-    end
+    _reset_combat_lane_state(&quot;target_swap&quot;)
     if Yso and Yso.state then
       Yso.state._last_ent_cmd = nil
       Yso.state._last_ent_cmd_ts = nil
@@ -17441,7 +17502,20 @@ local function _schedule_dead_clear(tgt)
   C._st.dead.pending = tgt
   C._st.dead.at = _now()
 
-  C._tm.dead_clear = tempTimer(2.2, function()
+  if type(tempTimer) ~= &quot;function&quot; then
+    local pend = C._st.dead.pending
+    C._tm.dead_clear = nil
+    C._st.dead.pending = &quot;&quot;
+    C._st.dead.at = 0
+    if pend ~= &quot;&quot; and _is_current(pend) then
+      _clear(&quot;dead&quot;)
+    end
+    return
+  end
+
+  local my_id
+  my_id = tempTimer(2.2, function()
+    if C._tm.dead_clear ~= my_id then return end
     local pend = C._st.dead.pending
     C._tm.dead_clear = nil
     C._st.dead.pending = &quot;&quot;
@@ -17450,6 +17524,7 @@ local function _schedule_dead_clear(tgt)
       _clear(&quot;dead&quot;)
     end
   end)
+  C._tm.dead_clear = my_id
 end
 
 Yso.off.oc = Yso.off.oc or {}
@@ -17633,15 +17708,23 @@ function D.current_route()
 end
 
 function D.toggle(on)
+  local prev = (D.state.enabled == true)
+  local next_enabled
   if on == nil then
-    D.state.enabled = not (D.state.enabled == true)
+    next_enabled = not prev
   else
-    D.state.enabled = (on == true)
+    next_enabled = (on == true)
   end
-  D.cfg.enabled = (D.state.enabled == true)
+  D.state.enabled = next_enabled
+  D.cfg.enabled = next_enabled
   _v(&quot;enabled=&quot;..tostring(D.state.enabled))
   if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    Yso.pulse.wake(&quot;driver:toggle&quot;)
+    local ok = pcall(Yso.pulse.wake, &quot;driver:toggle&quot;)
+    if not ok then
+      D.state.enabled = prev
+      D.cfg.enabled = prev
+      _v(&quot;toggle rollback: pulse wake failed&quot;)
+    end
   end
   return D.state.enabled
 end
@@ -30599,11 +30682,20 @@ local function _mark_pending(source, qtype, cmd)
 
   if type(tempTimer) == &quot;function&quot; then
     local pending_gen = F.state.pending_id
-    F.state.pending_timer = tempTimer(15, function()
+    local timer_id = tempTimer(15, function()
       if tonumber(F.state.pending_id or 0) ~= pending_gen then return end
       _clear_pending(&quot;timeout&quot;)
       _release_basher_hold(&quot;pending-timeout&quot;)
     end)
+    if timer_id then
+      F.state.pending_timer = timer_id
+    else
+      _fool_echo(&quot;WARNING: tempTimer returned nil; pending fallback auto-clearing.&quot;)
+      _clear_pending(&quot;timer-unavailable&quot;)
+    end
+  else
+    _fool_echo(&quot;WARNING: tempTimer unavailable; pending fallback auto-clearing.&quot;)
+    _clear_pending(&quot;timer-unavailable&quot;)
   end
 
   _fool_echo(string.format(
@@ -30620,6 +30712,8 @@ end
 
 local function _release_basher_hold(reason)
   local had_hold = (F.state.basher_hold == true) or (F.state.basher_hold_timer ~= nil)
+  -- Invalidate any previously armed timeout callback generation first.
+  F.state.basher_hold_gen = (tonumber(F.state.basher_hold_gen or 0) or 0) + 1
   if F.state.basher_hold_timer and type(killTimer) == &quot;function&quot; then
     local ok, killed = pcall(killTimer, F.state.basher_hold_timer)
     if not ok or killed == false then
@@ -30645,12 +30739,29 @@ local function _arm_basher_hold(reason)
   F.state.basher_hold_at = _now()
   _fool_echo(&quot;Basher hold armed (&quot;..F.state.basher_hold_reason..&quot;).&quot;)
 
-  if type(tempTimer) == &quot;function&quot; then
-    F.state.basher_hold_timer = tempTimer(10, function()
-      if tonumber(F.state.basher_hold_gen or 0) ~= hold_gen then return end
-      _release_basher_hold(&quot;timeout&quot;)
-    end)
+  if type(tempTimer) ~= &quot;function&quot; then
+    _fool_echo(&quot;WARNING: tempTimer unavailable; basher hold skipped.&quot;)
+    F.state.basher_hold = false
+    F.state.basher_hold_reason = nil
+    F.state.basher_hold_at = 0
+    F.state.basher_hold_timer = nil
+    return
   end
+
+  local timer_id = tempTimer(10, function()
+    if tonumber(F.state.basher_hold_gen or 0) ~= hold_gen then return end
+    _release_basher_hold(&quot;timeout&quot;)
+  end)
+  if timer_id then
+    F.state.basher_hold_timer = timer_id
+    return
+  end
+
+  _fool_echo(&quot;WARNING: tempTimer returned nil; basher hold skipped.&quot;)
+  F.state.basher_hold = false
+  F.state.basher_hold_reason = nil
+  F.state.basher_hold_at = 0
+  F.state.basher_hold_timer = nil
 end
 
 local function _clear_basher_queue()
@@ -31719,7 +31830,12 @@ local function _dbg_json(v)
   if t == &quot;boolean&quot; then return v and &quot;true&quot; or &quot;false&quot; end
   if t == &quot;number&quot; then return tostring(v) end
   if t == &quot;string&quot; then
-    return &apos;&quot;&apos; .. v:gsub(&quot;\\&quot;, &quot;\\\\&quot;):gsub(&apos;&quot;&apos;, &apos;\\&quot;&apos;):gsub(&quot;\r&quot;, &quot;\\r&quot;):gsub(&quot;\n&quot;, &quot;\\n&quot;) .. &apos;&quot;&apos;
+    return &apos;&quot;&apos; .. v:gsub(&apos;[\\&quot;\r\n]&apos;, {
+      [&apos;\\&apos;] = &apos;\\\\&apos;,
+      [&apos;&quot;&apos;]  = &apos;\\&quot;&apos;,
+      [&apos;\r&apos;] = &apos;\\r&apos;,
+      [&apos;\n&apos;] = &apos;\\n&apos;,
+    }) .. &apos;&quot;&apos;
   end
   if t == &quot;table&quot; then
     local is_arr = true
@@ -32125,7 +32241,10 @@ local function _remember_attack(cmd, payload)
 
   if type(tempTimer) == &quot;function&quot; then
     local clear_after = math.max(0.10, tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15)
+    local fp = fingerprint
     pcall(tempTimer, clear_after, function()
+      local waiting_fp = _trim(A and A.state and A.state.waiting and A.state.waiting.fingerprint or &quot;&quot;)
+      if waiting_fp == &quot;&quot; or waiting_fp ~= fp then return end
       if A and type(A.alias_loop_clear_waiting) == &quot;function&quot; then
         pcall(A.alias_loop_clear_waiting)
       end
@@ -32153,6 +32272,17 @@ local function _emit(payload)
   local sent, err = _emit_payload(payload)
   if not sent then
     _note_retry_reason(&quot;retry_hard_fail&quot;)
+    A.state.in_flight = {
+      fingerprint = &quot;&quot;,
+      target = &quot;&quot;,
+      route = &quot;occ_aff&quot;,
+      at = 0,
+      resolved_at = 0,
+      lanes = nil,
+      eq = &quot;&quot;,
+      entity = &quot;&quot;,
+      reason = &quot;&quot;,
+    }
     return false, err
   end
   _remember_attack(line, payload)

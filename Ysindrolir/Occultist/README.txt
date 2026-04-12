@@ -5,6 +5,28 @@ Last updated: April 12, 2026
 
 Current fixes
 -------------
+  Combined reliability sweep (April 12, 2026):
+    Hardened Fool timer safety paths: pending now auto-clears if tempTimer is
+    unavailable, and basher-hold generation invalidation now protects against
+    stale/orphan timer callbacks.
+    occ_aff now clears in-flight fingerprints on emit hard-fail and guards
+    delayed waiting-clear timers by fingerprint so stale callbacks cannot wipe
+    newer waiting state.
+    Added cross-fight reset helpers:
+      Yso.queue.flush_staged()
+      Yso.hinder.reset()
+      Yso.entities.uninstall_hooks()
+    and targeting now calls reset hooks on target swap/clear to prevent stale
+    staged lanes and writhe lane-block state from leaking between fights.
+    Package `Yso system.xml` now guards radianceAlert fire/banner call-sites,
+    applies pre-tell string formatting single-evaluation, and includes stricter
+    nested guard checks for pulse/occ helper call paths.
+    New/expanded regression coverage:
+      tests/test_fool_basher_preempt.lua
+      tests/test_occ_aff_loop_requeue.lua
+      tests/test_reliability_sweep.lua
+      tests/test_package_diagnostics.lua
+
   Fool hunt/bash cureset gate fix (April 12, 2026):
     fool_logic.lua cureset resolution order is now:
       dev override
