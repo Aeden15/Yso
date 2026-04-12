@@ -9,11 +9,13 @@
 --      - GMCP: checks on gmcp.Char.Vitals
 --      - Diagnose snapshot: checks when a queued DIAGNOSE finishes
 --  • Requirements:
+--      - in hunt cureset: cooldown ready + BAL ready now + 3+ current affs
 --      - not prone
+--      - not paralysis
 --      - not webbed
 --      - at least one arm NOT brokenleftarm/brokenrightarm
 --      - AND (>= min_affs, with cureset-aware thresholds)
---      - AND local 35s cooldown (for auto/diag paths; manual alias can ignore)
+--      - non-hunt auto/diag paths still observe local cooldown timing
 --========================================================--
 
 Legacy              = Legacy              or {}
@@ -26,7 +28,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or "addclearfull"  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or "bal"           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- compatibility field; hunt gate is fixed at 3+
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -149,18 +151,32 @@ local function _both_arms_broken()
   return _has("brokenleftarm") and _has("brokenrightarm")
 end
 
+local function _mode_implies_hunt()
+  local mode = Yso and Yso.mode
+  if type(mode) ~= "table" then
+    return false
+  end
+  if type(mode.is_bash) == "function" then
+    local ok, in_bash = pcall(mode.is_bash)
+    if ok and in_bash == true then
+      return true
+    end
+  end
+  if type(mode.is_hunt) == "function" then
+    local ok, in_hunt = pcall(mode.is_hunt)
+    if ok and in_hunt == true then
+      return true
+    end
+  end
+  local state = _normalize_cureset_name(rawget(mode, "state"))
+  return state == "hunt"
+end
+
 -- current cureset name from Legacy (e.g. "legacy", "hunt", "group")
 local function _current_cureset()
   local cur = _normalize_cureset_name(_dev_cureset_override)
   if cur then
     return cur
-  end
-
-  if Yso and Yso.mode and type(Yso.mode.is_hunt) == "function" then
-    local ok, in_hunt = pcall(Yso.mode.is_hunt)
-    if ok and in_hunt == true then
-      return "hunt"
-    end
   end
 
   local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
@@ -173,6 +189,10 @@ local function _current_cureset()
   cur = _normalize_cureset_name(global_cur)
   if cur then
     return cur
+  end
+
+  if _mode_implies_hunt() then
+    return "hunt"
   end
 
   return "legacy"
@@ -260,6 +280,22 @@ local function _cooldown_remaining()
   local rem = cd - (_now() - last)
   if rem < 0 then rem = 0 end
   return rem
+end
+
+local function _vitals()
+  return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+end
+
+local function _bal_ready_now()
+  if Yso and Yso.state and type(Yso.state.bal_ready) == "function" then
+    local ok, v = pcall(Yso.state.bal_ready)
+    if ok then
+      return v == true
+    end
+  end
+  local v = _vitals()
+  local bal = v.bal or v.balance
+  return bal == true or tostring(bal or "") == "1"
 end
 
 local function _emit_status(msg)
@@ -470,6 +506,7 @@ local _min_affs_for_current_set
 local _evaluate_fool
 local _cancel_pending_fool
 local _recheck_pending_fool
+local _cooldown_ready
 
 function F.status()
   local curset = _current_cureset() or "legacy"
@@ -547,10 +584,15 @@ _is_lock_state = function()
 end
 
 -- Resolve min_affs and whether "lock" is allowed to override the threshold
--- • HUNT cureset: min_affs_hunt, lock does NOT override (pure threshold)
+-- • HUNT cureset: fixed 3-aff threshold, lock does NOT override
 -- • Other curesets: min_affs_default, lock CAN override (for PvP)
 -- • Global Legacy.Fool.min_affs override (if set) always uses lock override.
 _min_affs_for_current_set = function()
+  local cur = _current_cureset() or "legacy"
+  if cur == "hunt" then
+    return 3, false -- Hunt is always a fixed 3-aff threshold with no lock override.
+  end
+
   -- explicit global override wins
   if Legacy.Fool.min_affs ~= nil then
     local v = tonumber(Legacy.Fool.min_affs)
@@ -559,16 +601,9 @@ _min_affs_for_current_set = function()
     end
   end
 
-  local cur = _current_cureset() or "legacy"
-  if cur == "hunt" then
-    local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
-    if v < 1 then v = 1 end
-    return v, false  -- NO lock override in hunt
-  else
-    local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
-    if v < 1 then v = 1 end
-    return v, true   -- lock override allowed
-  end
+  local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
+  if v < 1 then v = 1 end
+  return v, true   -- lock override allowed
 end
 
 _evaluate_fool = function(source)
@@ -580,6 +615,12 @@ _evaluate_fool = function(source)
   }
   ctx.min_affs, ctx.allow_lock = _min_affs_for_current_set()
   ctx.lock_ok = (ctx.allow_lock == true and ctx.is_locked == true)
+
+  if _has("paralysis") then
+    ctx.reason = "paralysis"
+    ctx.message = "Not using Fool: paralysis."
+    return false, ctx
+  end
 
   if _has("prone") then
     ctx.reason = "prone"
@@ -597,6 +638,19 @@ _evaluate_fool = function(source)
     ctx.reason = "both_arms_broken"
     ctx.message = "Not using Fool: both arms broken."
     return false, ctx
+  end
+
+  if ctx.curset == "hunt" then
+    if not _cooldown_ready() then
+      ctx.reason = "cooldown"
+      ctx.message = "Not using Fool: cooldown not ready."
+      return false, ctx
+    end
+    if not _bal_ready_now() then
+      ctx.reason = "bal_not_ready"
+      ctx.message = "Not using Fool: balance lane not ready."
+      return false, ctx
+    end
   end
 
   if ctx.count < ctx.min_affs and not ctx.lock_ok then
@@ -750,7 +804,7 @@ end
 
 -- ---------- cooldown helpers for auto/diag paths ----------
 
-local function _cooldown_ready()
+_cooldown_ready = function()
   local cd   = tonumber(F.cfg.cd or 35) or 35
   local last = tonumber(F.state.last_used or 0) or 0
   return (_now() - last) >= cd

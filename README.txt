@@ -7,6 +7,31 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Fool hunt/bash cureset gate fix (April 12, 2026) --
+  fool_logic.lua now resolves curesets in this order:
+    dev override
+    Legacy.Curing.ActiveServerSet
+    _G.CurrentCureset
+    mode fallback
+    legacy
+  so bash mode no longer overrides explicit non-hunt curesets.
+  Hunt Fool is now a strict live gate only:
+    cooldown ready
+    balance ready now
+    3+ current affs
+    no paralysis/prone/webbed/both-arms-broken hard fail
+  The old permissive 2-aff hunt behavior was removed. Regression coverage was
+  updated in test_fool_basher_preempt.lua for hunt threshold/timing/hard-fail
+  behavior plus cureset precedence.
+
+  Occultist direct-call loop-state compatibility fix (April 12, 2026) --
+  occ_aff.can_run() now enforces enabled/active route-loop state only when a
+  route-loop manager is present (or explicitly requested), so standalone/test
+  direct calls to build_payload()/attack_function() remain valid. This resolves
+  regressions in test_loyals_bootstrap_readaura.lua and
+  test_occ_aff_loop_requeue.lua. XML mirrors were refreshed and Yso system.xml
+  was rebuilt.
+
   Occultist occ_aff Sunder-template alignment (April 12, 2026) --
   Converted occ_aff to the same lane-table Sunder route structure used by
   party_aff/group_damage: planner payload now carries lanes+meta, includes

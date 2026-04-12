@@ -5,6 +5,24 @@ Last updated: April 12, 2026
 
 Current fixes
 -------------
+  Fool hunt/bash cureset gate fix (April 12, 2026):
+    fool_logic.lua cureset resolution order is now:
+      dev override
+      Legacy.Curing.ActiveServerSet
+      _G.CurrentCureset
+      mode fallback
+      legacy
+    so bash mode no longer forces hunt when a non-hunt cureset is explicitly
+    selected.
+    In hunt cureset, Fool now requires all of:
+      cooldown ready
+      balance ready now
+      3+ current afflictions
+      no hard fail (paralysis/prone/webbed/both arms broken)
+    The old permissive 2-aff hunt behavior was removed. Regression coverage in
+    tests/test_fool_basher_preempt.lua now includes cureset precedence, hunt
+    threshold/timing, and hard-fail blocking checks.
+
   Occultist occ_aff Sunder-template alignment (April 12, 2026):
     occ_aff now uses the same lane-table route template shape as party_aff and
     group_damage: planner payloads carry lanes + meta, include both

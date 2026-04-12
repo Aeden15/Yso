@@ -30181,11 +30181,13 @@ cecho(_tag_prefix() .. &quot;&lt;cyan&gt;Yso Magician module loaded (bu queue).&
 --      - GMCP: checks on gmcp.Char.Vitals
 --      - Diagnose snapshot: checks when a queued DIAGNOSE finishes
 --  • Requirements:
+--      - in hunt cureset: cooldown ready + BAL ready now + 3+ current affs
 --      - not prone
+--      - not paralysis
 --      - not webbed
 --      - at least one arm NOT brokenleftarm/brokenrightarm
 --      - AND (&gt;= min_affs, with cureset-aware thresholds)
---      - AND local 35s cooldown (for auto/diag paths; manual alias can ignore)
+--      - non-hunt auto/diag paths still observe local cooldown timing
 --========================================================--
 
 Legacy              = Legacy              or {}
@@ -30198,7 +30200,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or &quot;addclearfull&quot;  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or &quot;bal&quot;           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 2               -- HUNT cureset only
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- compatibility field; hunt gate is fixed at 3+
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -30321,18 +30323,32 @@ local function _both_arms_broken()
   return _has(&quot;brokenleftarm&quot;) and _has(&quot;brokenrightarm&quot;)
 end
 
+local function _mode_implies_hunt()
+  local mode = Yso and Yso.mode
+  if type(mode) ~= &quot;table&quot; then
+    return false
+  end
+  if type(mode.is_bash) == &quot;function&quot; then
+    local ok, in_bash = pcall(mode.is_bash)
+    if ok and in_bash == true then
+      return true
+    end
+  end
+  if type(mode.is_hunt) == &quot;function&quot; then
+    local ok, in_hunt = pcall(mode.is_hunt)
+    if ok and in_hunt == true then
+      return true
+    end
+  end
+  local state = _normalize_cureset_name(rawget(mode, &quot;state&quot;))
+  return state == &quot;hunt&quot;
+end
+
 -- current cureset name from Legacy (e.g. &quot;legacy&quot;, &quot;hunt&quot;, &quot;group&quot;)
 local function _current_cureset()
   local cur = _normalize_cureset_name(_dev_cureset_override)
   if cur then
     return cur
-  end
-
-  if Yso and Yso.mode and type(Yso.mode.is_hunt) == &quot;function&quot; then
-    local ok, in_hunt = pcall(Yso.mode.is_hunt)
-    if ok and in_hunt == true then
-      return &quot;hunt&quot;
-    end
   end
 
   local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
@@ -30345,6 +30361,10 @@ local function _current_cureset()
   cur = _normalize_cureset_name(global_cur)
   if cur then
     return cur
+  end
+
+  if _mode_implies_hunt() then
+    return &quot;hunt&quot;
   end
 
   return &quot;legacy&quot;
@@ -30432,6 +30452,22 @@ local function _cooldown_remaining()
   local rem = cd - (_now() - last)
   if rem &lt; 0 then rem = 0 end
   return rem
+end
+
+local function _vitals()
+  return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+end
+
+local function _bal_ready_now()
+  if Yso and Yso.state and type(Yso.state.bal_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.bal_ready)
+    if ok then
+      return v == true
+    end
+  end
+  local v = _vitals()
+  local bal = v.bal or v.balance
+  return bal == true or tostring(bal or &quot;&quot;) == &quot;1&quot;
 end
 
 local function _emit_status(msg)
@@ -30642,6 +30678,7 @@ local _min_affs_for_current_set
 local _evaluate_fool
 local _cancel_pending_fool
 local _recheck_pending_fool
+local _cooldown_ready
 
 function F.status()
   local curset = _current_cureset() or &quot;legacy&quot;
@@ -30719,10 +30756,15 @@ _is_lock_state = function()
 end
 
 -- Resolve min_affs and whether &quot;lock&quot; is allowed to override the threshold
--- • HUNT cureset: min_affs_hunt, lock does NOT override (pure threshold)
+-- • HUNT cureset: fixed 3-aff threshold, lock does NOT override
 -- • Other curesets: min_affs_default, lock CAN override (for PvP)
 -- • Global Legacy.Fool.min_affs override (if set) always uses lock override.
 _min_affs_for_current_set = function()
+  local cur = _current_cureset() or &quot;legacy&quot;
+  if cur == &quot;hunt&quot; then
+    return 3, false -- Hunt is always a fixed 3-aff threshold with no lock override.
+  end
+
   -- explicit global override wins
   if Legacy.Fool.min_affs ~= nil then
     local v = tonumber(Legacy.Fool.min_affs)
@@ -30731,16 +30773,9 @@ _min_affs_for_current_set = function()
     end
   end
 
-  local cur = _current_cureset() or &quot;legacy&quot;
-  if cur == &quot;hunt&quot; then
-    local v = tonumber(Legacy.Fool.min_affs_hunt or 2) or 2
-    if v &lt; 1 then v = 1 end
-    return v, false  -- NO lock override in hunt
-  else
-    local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
-    if v &lt; 1 then v = 1 end
-    return v, true   -- lock override allowed
-  end
+  local v = tonumber(Legacy.Fool.min_affs_default or 6) or 6
+  if v &lt; 1 then v = 1 end
+  return v, true   -- lock override allowed
 end
 
 _evaluate_fool = function(source)
@@ -30752,6 +30787,12 @@ _evaluate_fool = function(source)
   }
   ctx.min_affs, ctx.allow_lock = _min_affs_for_current_set()
   ctx.lock_ok = (ctx.allow_lock == true and ctx.is_locked == true)
+
+  if _has(&quot;paralysis&quot;) then
+    ctx.reason = &quot;paralysis&quot;
+    ctx.message = &quot;Not using Fool: paralysis.&quot;
+    return false, ctx
+  end
 
   if _has(&quot;prone&quot;) then
     ctx.reason = &quot;prone&quot;
@@ -30769,6 +30810,19 @@ _evaluate_fool = function(source)
     ctx.reason = &quot;both_arms_broken&quot;
     ctx.message = &quot;Not using Fool: both arms broken.&quot;
     return false, ctx
+  end
+
+  if ctx.curset == &quot;hunt&quot; then
+    if not _cooldown_ready() then
+      ctx.reason = &quot;cooldown&quot;
+      ctx.message = &quot;Not using Fool: cooldown not ready.&quot;
+      return false, ctx
+    end
+    if not _bal_ready_now() then
+      ctx.reason = &quot;bal_not_ready&quot;
+      ctx.message = &quot;Not using Fool: balance lane not ready.&quot;
+      return false, ctx
+    end
   end
 
   if ctx.count &lt; ctx.min_affs and not ctx.lock_ok then
@@ -30922,7 +30976,7 @@ end
 
 -- ---------- cooldown helpers for auto/diag paths ----------
 
-local function _cooldown_ready()
+_cooldown_ready = function()
   local cd   = tonumber(F.cfg.cd or 35) or 35
   local last = tonumber(F.state.last_used or 0) or 0
   return (_now() - last) &gt;= cd
@@ -31654,6 +31708,56 @@ local function _lc(s)
   return _trim(s):lower()
 end
 
+-- #region agent log
+local _DBG_FILE = &quot;debug-c8972a.log&quot;
+local _DBG_SESSION = &quot;c8972a&quot;
+local _DBG_RUN = &quot;pre-fix-1&quot;
+
+local function _dbg_json(v)
+  local t = type(v)
+  if t == &quot;nil&quot; then return &quot;null&quot; end
+  if t == &quot;boolean&quot; then return v and &quot;true&quot; or &quot;false&quot; end
+  if t == &quot;number&quot; then return tostring(v) end
+  if t == &quot;string&quot; then
+    return &apos;&quot;&apos; .. v:gsub(&quot;\\&quot;, &quot;\\\\&quot;):gsub(&apos;&quot;&apos;, &apos;\\&quot;&apos;):gsub(&quot;\r&quot;, &quot;\\r&quot;):gsub(&quot;\n&quot;, &quot;\\n&quot;) .. &apos;&quot;&apos;
+  end
+  if t == &quot;table&quot; then
+    local is_arr = true
+    local max_i = 0
+    for k, _ in pairs(v) do
+      if type(k) ~= &quot;number&quot; then is_arr = false break end
+      if k &gt; max_i then max_i = k end
+    end
+    local out = {}
+    if is_arr then
+      for i = 1, max_i do out[#out + 1] = _dbg_json(v[i]) end
+      return &quot;[&quot; .. table.concat(out, &quot;,&quot;) .. &quot;]&quot;
+    end
+    for k, vv in pairs(v) do
+      out[#out + 1] = _dbg_json(tostring(k)) .. &quot;:&quot; .. _dbg_json(vv)
+    end
+    return &quot;{&quot; .. table.concat(out, &quot;,&quot;) .. &quot;}&quot;
+  end
+  return _dbg_json(tostring(v))
+end
+
+local function _dbg_log(hypothesis_id, location, message, data)
+  local row = {
+    sessionId = _DBG_SESSION,
+    runId = _DBG_RUN,
+    hypothesisId = tostring(hypothesis_id or &quot;&quot;),
+    location = tostring(location or &quot;occ_aff.lua&quot;),
+    message = tostring(message or &quot;&quot;),
+    data = type(data) == &quot;table&quot; and data or { value = tostring(data or &quot;&quot;) },
+    timestamp = math.floor((os.time() or 0) * 1000),
+  }
+  local fh = io.open(_DBG_FILE, &quot;a&quot;)
+  if not fh then return end
+  fh:write(_dbg_json(row), &quot;\n&quot;)
+  fh:close()
+end
+-- #endregion
+
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
     local ok, v = pcall(Yso.util.now)
@@ -31723,6 +31827,13 @@ local function _command_sep()
   local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;)
   if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
   return sep
+end
+
+local function _attack_opts(arg)
+  if type(arg) == &quot;table&quot; and (arg.preview ~= nil or arg.ctx ~= nil) then
+    return arg.ctx, (arg.preview == true)
+  end
+  return arg, false
 end
 
 local function _payload_line(payload)
@@ -32120,21 +32231,43 @@ end
 local function _burst_ready(tgt, ctx)
   ctx = type(ctx) == &quot;table&quot; and ctx or {}
   local eq_cmd = _lc(ctx.eq_cmd or &quot;&quot;)
-  if eq_cmd:match(&quot;^attend%s+&quot;) then return true end
-  if eq_cmd:match(&quot;^cleanseaura%s+&quot;) then return true end
-  if eq_cmd:match(&quot;^utter%s+truename%s+&quot;) then return true end
+  local mana = _target_mana_pct(tgt)
+  local cap = tonumber(A.cfg.mana_burst_pct or 40) or 40
+  local in_cleanseaura_window = (mana ~= nil and mana &lt;= cap) or false
+  if eq_cmd:match(&quot;^cleanseaura%s+&quot;) then
+    -- #region agent log
+    _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;eq_cleanseaura&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
+    -- #endregion
+    return true
+  end
+  if eq_cmd:match(&quot;^utter%s+truename%s+&quot;) then
+    -- #region agent log
+    _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;eq_utter_truename&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
+    -- #endregion
+    return true
+  end
 
   if _cleanse_ready(tgt) ~= true then return false end
 
   if Yso and Yso.occ and Yso.occ.truebook and type(Yso.occ.truebook.can_utter) == &quot;function&quot; then
     local ok, v = pcall(Yso.occ.truebook.can_utter, tgt)
-    if ok and v == true then return true end
+    if ok and v == true then
+      -- #region agent log
+      _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;truebook_can_utter&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
+      -- #endregion
+      return true
+    end
   end
 
-  if Yso and Yso.occ and type(Yso.occ.aura_need_attend) == &quot;function&quot; then
-    local ok, v = pcall(Yso.occ.aura_need_attend, tgt)
-    if ok and v == true then return true end
+  if in_cleanseaura_window then
+    -- #region agent log
+    _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;mana_window&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
+    -- #endregion
+    return true
   end
+  -- #region agent log
+  _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_false&quot;, { reason = &quot;no_convert_window&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window, eq_cmd = eq_cmd })
+  -- #endregion
   return false
 end
 
@@ -32192,12 +32325,18 @@ local function _pick_convert(tgt, ctx)
 
   local has_wm = _tgt_has(tgt, &quot;whisperingmadness&quot;) or _tgt_has(tgt, &quot;whispering_madness&quot;)
   if not has_wm then
+    -- #region agent log
+    _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;missing_whisperingmadness&quot;, cmd = (&quot;whisperingmadness %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
+    -- #endregion
     return (&quot;whisperingmadness %s&quot;):format(tgt)
   end
 
   local enlightened = _tgt_has(tgt, &quot;enlightened&quot;)
   if not enlightened then
     if mental &gt;= enlighten_target then
+      -- #region agent log
+      _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;enlighten_threshold&quot;, cmd = (&quot;enlighten %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
+      -- #endregion
       return (&quot;enlighten %s&quot;):format(tgt)
     end
     local ra_ready = true
@@ -32205,7 +32344,15 @@ local function _pick_convert(tgt, ctx)
       local ok, v = pcall(Yso.occ.readaura_is_ready)
       ra_ready = (ok and v == true)
     end
-    if ra_ready then return (&quot;readaura %s&quot;):format(tgt) end
+    if ra_ready then
+      -- #region agent log
+      _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;prep_readaura&quot;, cmd = (&quot;readaura %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
+      -- #endregion
+      return (&quot;readaura %s&quot;):format(tgt)
+    end
+    -- #region agent log
+    _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;fallback_whisperingmadness&quot;, cmd = (&quot;whisperingmadness %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
+    -- #endregion
     return (&quot;whisperingmadness %s&quot;):format(tgt)
   end
 
@@ -32230,6 +32377,8 @@ function A.init()
   A.state.debug = A.state.debug or { last_no_send_reason = &quot;&quot;, last_retry_reason = &quot;&quot; }
   A.state.template = A.state.template or { last_payload = nil, last_emitted_payload = nil, last_target = &quot;&quot;, last_reason = &quot;&quot;, last_disable_reason = &quot;&quot; }
   A.state.observe_tries = A.state.observe_tries or {}
+  A.state.last_attend_at = type(A.state.last_attend_at) == &quot;table&quot; and A.state.last_attend_at or {}
+  A.state.last_unnamable_at = type(A.state.last_unnamable_at) == &quot;table&quot; and A.state.last_unnamable_at or {}
   A.state.explain = type(A.state.explain) == &quot;table&quot; and A.state.explain or {}
   if A.state.loop_delay == nil then
     A.state.loop_delay = tonumber(A.cfg.loop_delay or 0.15) or 0.15
@@ -32247,6 +32396,8 @@ function A.reset(reason)
   A.state.template = { last_payload = nil, last_emitted_payload = nil, last_target = &quot;&quot;, last_reason = tostring(reason or &quot;manual&quot;), last_disable_reason = &quot;&quot; }
   A.state.defer_unnamable = nil
   A.state.observe_tries = {}
+  A.state.last_attend_at = {}
+  A.state.last_unnamable_at = {}
   A.state.last_readaura = 0
   if target ~= &quot;&quot; and Yso.occ and type(Yso.occ.set_phase) == &quot;function&quot; then
     pcall(Yso.occ.set_phase, target, &quot;open&quot;, reason or &quot;reset&quot;)
@@ -32255,18 +32406,85 @@ function A.reset(reason)
 end
 
 function A.is_enabled()
-  return A.state and A.state.enabled == true
+  return A.state and (A.state.enabled == true or A.state.loop_enabled == true)
 end
 
 function A.is_active()
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
+    return Yso.mode.route_loop_active(&quot;occ_aff&quot;) == true
+  end
   return A.state and A.state.loop_enabled == true
 end
 
 function A.can_run(ctx)
-  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() == true then
-    return false, &quot;pause&quot;
+  A.init()
+  local has_route_loop_manager = Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot;
+  local enforce_loop_state = has_route_loop_manager
+  if type(ctx) == &quot;table&quot; and ctx.enforce_loop_state ~= nil then
+    enforce_loop_state = (ctx.enforce_loop_state == true)
   end
-  return true
+  local enabled = A.is_enabled()
+  local active = A.is_active()
+  if enforce_loop_state and not enabled then
+    -- #region agent log
+    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, {
+      reason = &quot;disabled&quot;,
+      enabled = enabled,
+      active = active,
+      enforce_loop_state = enforce_loop_state,
+      has_route_loop_manager = has_route_loop_manager,
+    })
+    -- #endregion
+    return false, &quot;disabled&quot;
+  end
+  if enforce_loop_state and not active then
+    -- #region agent log
+    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, {
+      reason = &quot;inactive&quot;,
+      enabled = enabled,
+      active = active,
+      enforce_loop_state = enforce_loop_state,
+      has_route_loop_manager = has_route_loop_manager,
+    })
+    -- #endregion
+    return false, &quot;inactive&quot;
+  end
+  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() == true then
+    -- #region agent log
+    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, { reason = &quot;paused&quot;, enabled = enabled, active = active })
+    -- #endregion
+    return false, &quot;paused&quot;
+  end
+  local tgt = _trim((ctx and ctx.target) or &quot;&quot;)
+  if tgt == &quot;&quot; and type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok then tgt = _trim(v) end
+  end
+  if tgt == &quot;&quot; then
+    local ak = rawget(_G, &quot;ak&quot;)
+    if type(ak) == &quot;table&quot; then
+      tgt = _trim(ak.target or ak.tgt)
+    end
+  end
+  if tgt == &quot;&quot; then
+    -- #region agent log
+    _dbg_log(&quot;H2&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, { reason = &quot;no_target&quot;, enabled = enabled, active = active })
+    -- #endregion
+    return false, &quot;no_target&quot;
+  end
+  if type(Yso.target_is_valid) == &quot;function&quot; then
+    local ok, valid = pcall(Yso.target_is_valid, tgt)
+    if ok and valid ~= true then
+      -- #region agent log
+      _dbg_log(&quot;H2&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, { reason = &quot;target_invalid&quot;, target = tgt, enabled = enabled, active = active })
+      -- #endregion
+      return false, &quot;target_invalid&quot;
+    end
+  end
+  -- #region agent log
+  _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_ok&quot;, { target = tgt, enabled = enabled, active = active })
+  -- #endregion
+  return true, tgt
 end
 
 function A.schedule_loop(delay)
@@ -32277,6 +32495,10 @@ function A.schedule_loop(delay)
 end
 
 A.alias_loop_stop_details = A.alias_loop_stop_details or {
+  inactive = true,
+  disabled = true,
+  no_target = true,
+  paused = true,
   target_invalid = true,
   target_slain = true,
   route_off = true,
@@ -32295,14 +32517,36 @@ function A.alias_loop_prepare_start(ctx)
 end
 
 function A.alias_loop_on_started(ctx)
+  A.state.busy = false
+  A.alias_loop_clear_waiting()
   _echo_toggle(&quot;AFF LOOP ON.&quot;)
+  local ok, tgt_or_reason = A.can_run(ctx)
+  if not ok then
+    if tgt_or_reason == &quot;no_target&quot; then
+      _echo_toggle(&quot;No target yet; holding.&quot;)
+    elseif tgt_or_reason == &quot;target_invalid&quot; then
+      local tgt = _trim(A.state and A.state.last_target or &quot;&quot;)
+      if tgt ~= &quot;&quot; then
+        _echo_toggle(string.format(&quot;%s is not in room; holding.&quot;, tgt))
+      else
+        _echo_toggle(&quot;Target invalid; holding.&quot;)
+      end
+    end
+  end
   return true
 end
 
 function A.alias_loop_on_stopped(ctx)
+  A.init()
+  ctx = ctx or {}
+  local reason = tostring(ctx.reason or &quot;manual&quot;)
+  A.state.enabled = false
   A.state.loop_enabled = false
   A.state.busy = false
   A.alias_loop_clear_waiting()
+  A.state.template = A.state.template or { last_payload = nil, last_emitted_payload = nil, last_target = &quot;&quot;, last_reason = &quot;&quot;, last_disable_reason = &quot;&quot; }
+  A.state.template.last_reason = reason
+  A.state.template.last_disable_reason = reason
   if _loyals_any_active() then
     local C = _companions()
     local sent = false
@@ -32324,7 +32568,7 @@ function A.alias_loop_on_stopped(ctx)
     pcall(C.reset_recovery, &quot;route_off&quot;)
   end
   if not (type(ctx) == &quot;table&quot; and ctx.silent == true) then
-    _echo_toggle(&quot;AFF LOOP OFF.&quot;)
+    _echo_toggle(string.format(&quot;AFF LOOP OFF (%s).&quot;, tostring(reason):upper()))
   end
   return true
 end
@@ -32353,6 +32597,9 @@ function A.alias_loop_waiting_blocks()
   if queue ~= &quot;&quot; then
     local age = _now() - (tonumber(A.state.waiting and A.state.waiting.at) or 0)
     local stale_s = math.max(0.45, (tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15) * 6)
+    -- #region agent log
+    _dbg_log(&quot;H3&quot;, &quot;occ_aff.lua:alias_loop_waiting_blocks&quot;, &quot;waiting_present&quot;, { queue = queue, age = age, stale_s = stale_s, reason = A.state and A.state.waiting and A.state.waiting.reason or &quot;&quot; })
+    -- #endregion
     if age &gt;= stale_s then
       A.alias_loop_clear_waiting()
     end
@@ -32374,32 +32621,19 @@ function A.alias_loop_on_error(err)
 end
 
 function A.attack_function(arg)
-  A.init()
-  arg = type(arg) == &quot;table&quot; and arg or {}
-  local ctx = type(arg.ctx) == &quot;table&quot; and arg.ctx or {}
-  local preview = (arg.preview == true)
-
-  local tgt = _trim(ctx.target)
-  if tgt == &quot;&quot; and type(Yso.get_target) == &quot;function&quot; then
-    local ok, v = pcall(Yso.get_target)
-    if ok then tgt = _trim(v) end
+  local ctx, preview = _attack_opts(arg)
+  -- #region agent log
+  _dbg_log(&quot;H2&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;attack_enter&quot;, { preview = preview == true, ctx_target = _trim(ctx and ctx.target or &quot;&quot;) })
+  -- #endregion
+  local ok, info = A.can_run(ctx)
+  if not ok then
+    -- #region agent log
+    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;attack_blocked&quot;, { reason = info, preview = preview == true })
+    -- #endregion
+    if preview then return nil, info end
+    return false, info
   end
-  if tgt == &quot;&quot; then
-    local ak = rawget(_G, &quot;ak&quot;)
-    if type(ak) == &quot;table&quot; then
-      tgt = _trim(ak.target or ak.tgt)
-    end
-  end
-  if tgt == &quot;&quot; then
-    return false, &quot;no_target&quot;
-  end
-
-  if type(Yso.target_is_valid) == &quot;function&quot; then
-    local ok, valid = pcall(Yso.target_is_valid, tgt)
-    if ok and valid ~= true then
-      return false, &quot;target_invalid&quot;
-    end
-  end
+  local tgt = info
 
   local tkey = tgt:lower()
   A.state.last_target = tgt
@@ -32495,14 +32729,25 @@ function A.attack_function(arg)
 
   -- 3 cleanse/truename
   if phase == &quot;cleanse&quot; then
+    local now_ts = _now()
+    local attend_lock_s = tonumber(A.cfg.attend_lock_s or 2.4) or 2.4
+    local unnamable_lock_s = tonumber(A.cfg.unnamable_lock_s or 2.4) or 2.4
+    local last_attend = tonumber(A.state.last_attend_at[tkey] or 0) or 0
+    local last_unnamable = tonumber(A.state.last_unnamable_at[tkey] or 0) or 0
+    local attend_ready = ((now_ts - last_attend) &gt;= attend_lock_s)
+    local unnamable_ready = ((now_ts - last_unnamable) &gt;= unnamable_lock_s)
     local need_attend = false
     if Yso.occ and type(Yso.occ.aura_need_attend) == &quot;function&quot; then
       local ok, v = pcall(Yso.occ.aura_need_attend, tgt)
       need_attend = (ok and v == true)
     end
 
-    if need_attend and payload.eq == &quot;&quot; and _eq() then
+    if need_attend and payload.eq == &quot;&quot; and _eq() and attend_ready then
       payload.eq = &quot;attend &quot; .. tgt
+    elseif need_attend and payload.eq == &quot;&quot; and _eq() and not attend_ready then
+      -- #region agent log
+      _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;attend_suppressed_cooldown&quot;, { target = tgt, tkey = tkey, now = now_ts, last_attend = last_attend, lock_s = attend_lock_s })
+      -- #endregion
     end
 
     if need_attend and payload.class == &quot;&quot; and _ent() then
@@ -32511,13 +32756,27 @@ function A.attack_function(arg)
 
     if payload.eq == (&quot;attend &quot; .. tgt) then
       A.state.defer_unnamable = tkey
+      if not preview then
+        A.state.last_attend_at[tkey] = now_ts
+      end
+      -- #region agent log
+      _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;attend_selected&quot;, { target = tgt, tkey = tkey, now = now_ts, lock_s = attend_lock_s, preview = preview == true })
+      -- #endregion
     end
 
-    if A.state.defer_unnamable == tkey and payload.bal == &quot;&quot; and _bal() then
+    if A.state.defer_unnamable == tkey and payload.bal == &quot;&quot; and _bal() and unnamable_ready then
       payload.bal = &quot;unnamable speak&quot;
       if not preview then
+        A.state.last_unnamable_at[tkey] = now_ts
         A.state.defer_unnamable = nil
       end
+      -- #region agent log
+      _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;unnamable_selected&quot;, { target = tgt, tkey = tkey, now = now_ts, lock_s = unnamable_lock_s, preview = preview == true })
+      -- #endregion
+    elseif A.state.defer_unnamable == tkey and payload.bal == &quot;&quot; and _bal() and not unnamable_ready then
+      -- #region agent log
+      _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;unnamable_suppressed_cooldown&quot;, { target = tgt, tkey = tkey, now = now_ts, last_unnamable = last_unnamable, lock_s = unnamable_lock_s })
+      -- #endregion
     end
 
     local can_utter = false
@@ -32657,6 +32916,16 @@ function A.attack_function(arg)
   }
 
   route_payload, _ = _route_gate_finalize(route_payload, ctx, tgt)
+  -- #region agent log
+  _dbg_log(&quot;H4&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;payload_planned&quot;, {
+    target = tgt,
+    phase = phase,
+    eq = _trim(route_payload and route_payload.lanes and route_payload.lanes.eq or &quot;&quot;),
+    bal = _trim(route_payload and route_payload.lanes and route_payload.lanes.bal or &quot;&quot;),
+    entity = _trim(route_payload and route_payload.lanes and (route_payload.lanes.entity or route_payload.lanes.class) or &quot;&quot;),
+    free = _trim(route_payload and route_payload.lanes and route_payload.lanes.free or &quot;&quot;),
+  })
+  -- #endregion
   A.state.template.last_payload = route_payload
   A.state.template.last_target = tgt
   local gate = type(route_payload) == &quot;table&quot; and (route_payload._route_gate or (route_payload.meta and route_payload.meta.route_gate)) or nil
@@ -32697,17 +32966,36 @@ function A.attack_function(arg)
 
   local sent, cmd_or_err = _emit(emit_payload)
   if not sent then
+    -- #region agent log
+    _dbg_log(&quot;H5&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;emit_failed&quot;, { reason = tostring(cmd_or_err or &quot;&quot;), target = tgt })
+    -- #endregion
     return false, cmd_or_err
   end
+  -- #region agent log
+  _dbg_log(&quot;H5&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;emit_ok&quot;, { target = tgt, cmd = tostring(cmd_or_err or &quot;&quot;) })
+  -- #endregion
 
   A.state.template.last_emitted_payload = emit_payload
   if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == &quot;function&quot; then
     pcall(Yso.route_gate.note_emitted, route_payload, emit_payload, ctx)
   end
   local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == &quot;function&quot;
-  if not has_ack_bus then
-    A.on_sent(emit_payload, { target = tgt })
-  end
+  -- #region agent log
+  _dbg_log(&quot;H11&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;post_emit_ack_path&quot;, {
+    target = tgt,
+    has_ack_bus = has_ack_bus == true,
+    eq = _trim(emit_payload and emit_payload.lanes and emit_payload.lanes.eq or &quot;&quot;),
+  })
+  -- #endregion
+  local on_sent_ok, on_sent_res = pcall(A.on_sent, emit_payload, { target = tgt, via_ack_bus = has_ack_bus == true })
+  -- #region agent log
+  _dbg_log(&quot;H11&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;post_emit_on_sent_result&quot;, {
+    target = tgt,
+    has_ack_bus = has_ack_bus == true,
+    ok = on_sent_ok == true,
+    result = on_sent_res == true,
+  })
+  -- #endregion
   return true, cmd_or_err, route_payload
 end
 
