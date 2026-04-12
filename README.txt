@@ -7,6 +7,25 @@ Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Occultist companion-control unification + loop-toggle visibility (April 11, 2026) --
+  Added a shared helper at modules/Yso/Combat/occultist/companions.lua and
+  wired Occultist route automation to canonical free-lane companion commands:
+    order loyals kill <target>
+    order loyals passive
+  Companion hard-failure lines now trigger one-shot call entities recovery
+  with suppression while recall is pending, plus invalidation hooks for
+  tumble/starburst/astralform. Route toggles now keep:
+    [Yso:Occultist]
+  in orange with uppercase HotPink ON/OFF wording for clearer visibility.
+
+  Mind-locking alert trigger added under Miscellaneous stuff (April 11, 2026) --
+  Yso system.xml now includes trigger:
+    Mind locking
+  under the Miscellaneous stuff folder, with:
+    ^You feel the probing mind of (.+) touch yours\.$
+  Alarm01.wav sound enabled and script:
+    Yso.radianceAlert.fire(1, who, "MIND LOCKING")
+
   Occultism simulacrum/heartstone clean-line echo fix (April 11, 2026) --
   Yso system.xml trigger scripts "Simulacrum dusted" and "Heartstone dusted"
   now prepend a newline before cecho output so the reminder text lands on a

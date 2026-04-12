@@ -357,10 +357,14 @@ assert_true("14e: tree ready restored true", P.tree_ready() == true)
 
 print("\n=== Test 15: no-send guarantee for touch tree in policy queue ===")
 clear_calls()
+P.clear_emergency_dedupe("unit.tree_state_only")
 local ok_tw1, why_tw1 = P.queue_emergency("touch tree", { qtype = "bal" })
 assert_false("15a: touch tree denied by policy", ok_tw1)
 assert_eq("15b: state-only reason", why_tw1, "tree_state_only")
 assert_eq("15c: no queue command emitted", #_queue_calls, 0)
+local ok_tw2, why_tw2 = P.queue_emergency("eat kelp", { qtype = "bal" })
+assert_true("15d: non-tree emergency still proceeds after rejection", ok_tw2 == true and why_tw2 == nil)
+assert_eq("15e: queue call remains healthy", #_queue_calls, 1)
 
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then

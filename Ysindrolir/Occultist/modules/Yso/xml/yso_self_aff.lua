@@ -140,6 +140,27 @@ for aff in pairs(_writhe_affs) do
   end
 end
 
+SA.arm_damage_family = SA.arm_damage_family or {
+  brokenleftarm = true,
+  brokenrightarm = true,
+  damagedleftarm = true,
+  damagedrightarm = true,
+  mangledleftarm = true,
+  mangledrightarm = true,
+  crippledleftarm = true,
+  crippledrightarm = true,
+  brokenarm = true,
+  damagedarm = true,
+  mangledarm = true,
+  crippledarm = true,
+  brokenlimb = true,
+  damagedlimb = true,
+  mangledlimb = true,
+  crippledlimb = true,
+}
+
+local _arm_damage_affs = SA.arm_damage_family
+
 function SA.normalize(name)
   local s = tostring(name or ""):lower()
   if s == "" then return "" end
@@ -601,6 +622,30 @@ function SA.ingest_text_cure(name, opts)
   return SA.cure(name, source)
 end
 
+local function _arm_damage_active()
+  for aff in pairs(_arm_damage_affs) do
+    if SA.has_aff(aff) then
+      return true, aff
+    end
+  end
+  return false, ""
+end
+
+function SA.ingest_text_arms_unusable(opts)
+  local source = "text.hardblock.bound"
+  if type(opts) == "table" and _trim(opts.source) ~= "" then
+    source = tostring(opts.source)
+  end
+
+  local blocked, aff = _arm_damage_active()
+  if blocked == true then
+    _echo(string.format("arms-unusable hardblock ignored (arm damage aff active: %s)", tostring(aff)))
+    return false, "arm_damage_active"
+  end
+
+  return SA.ingest_text_gain("bound", { source = source, force = true })
+end
+
 function SA.has_aff(aff)
   local key = SA.normalize(aff)
   if key == "" then return false end
@@ -767,7 +812,7 @@ function SA.install_hooks()
     SA._tr.hardblock_bound = tempRegexTrigger(
       [[^You cannot do that because both of your arms must be whole and unbound\.$]],
       function()
-        SA.ingest_text_gain("bound", { source = "text.hardblock.bound", force = true })
+        SA.ingest_text_arms_unusable({ source = "text.hardblock.bound" })
       end
     )
   end

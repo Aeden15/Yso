@@ -247,6 +247,27 @@ end
 assert_true("9c: eq lane unblocked on writhe clear", saw_eq_unblock)
 assert_true("9d: bal lane unblocked on writhe clear", saw_bal_unblock)
 
+print("\n=== Test 10: arms-unusable hardblock guard + gmcp remove ===")
+Yso.self.reset("test", { force = true })
+local blocks_before = #_queue_blocks
+Yso.self.gain("damagedleftarm", "manual")
+local ok_guarded, why_guarded = SA.ingest_text_arms_unusable({ source = "text.hardblock.bound" })
+assert_false("10a: hardblock ignored when arm damage active", ok_guarded == true)
+assert_eq("10b: guard reason", why_guarded, "arm_damage_active")
+assert_false("10c: bound not force-gained with damaged arm", Yso.self.has_aff("bound"))
+assert_eq("10d: no new lane block when guard fires", #_queue_blocks, blocks_before)
+
+Yso.self.cure("damagedleftarm", "manual")
+local ok_bound = SA.ingest_text_arms_unusable({ source = "text.hardblock.bound" })
+assert_true("10e: hardblock force-gains bound when no arm damage", ok_bound == true)
+assert_true("10f: bound active after hardblock ingest", Yso.self.has_aff("bound"))
+
+local unblocks_before = #_queue_unblocks
+_G.gmcp.Char.Afflictions.Remove = { name = "bound" }
+assert_true("10g: gmcp remove ingests", SA.ingest_gmcp_remove())
+assert_false("10h: bound cured by gmcp remove", Yso.self.has_aff("bound"))
+assert_true("10i: gmcp remove releases writhe lane block", #_queue_unblocks > unblocks_before)
+
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then
   io.stderr:write(string.format("FAILURES: %d\n", fail_count))

@@ -30,6 +30,7 @@ local insert_before_name_map = {
   ["hinder.lua"] = "entities",
   ["party_aff.lua"] = "group_damage.lua",
   ["route_gate.lua"] = "group_damage.lua",
+  ["yso_occultist_companions.lua"] = "group_damage.lua",
   ["yso_targeting.lua"] = "Yso.target",
 }
 

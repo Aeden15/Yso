@@ -73,8 +73,8 @@ A.cfg = A.cfg or {
   max_observe = 3,
   enlighten_target = 5,
   unravel_mentals = 4,
-  loyals_on_cmd = "order entourage kill %s",
-  off_passive_cmd = "order entourage passive",
+  loyals_on_cmd = "order loyals kill %s",
+  off_passive_cmd = "order loyals passive",
 
   -- Instill priority list for the EQ slot during open/pressure phase.
   -- Each entry is a plain aff name (string) or
@@ -153,6 +153,23 @@ local function _now()
   return os.time()
 end
 
+local function _companions()
+  local C = Yso and Yso.occ and Yso.occ.companions or nil
+  return type(C) == "table" and C or nil
+end
+
+local function _echo_toggle(msg)
+  if A.cfg.echo ~= true then return end
+  local line = string.format("<orange>[Yso:Occultist] <HotPink>%s<reset>", tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == "function" then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == "function" then
+    cecho(line .. "\n")
+  elseif type(echo) == "function" then
+    echo(("[Yso:Occultist] %s\n"):format(tostring(msg)))
+  end
+end
+
 local function _eq()
   if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
     local ok, v = pcall(Yso.state.eq_ready)
@@ -217,6 +234,12 @@ local function _same_attack_is_hot(cmd)
 end
 
 local function _loyals_active_for(tgt)
+  local C = _companions()
+  if C and type(C.is_active_for) == "function" then
+    local ok, v = pcall(C.is_active_for, tgt)
+    if ok then return v == true end
+  end
+
   tgt = _trim(tgt)
   if tgt == "" then return false end
   if type(Yso.loyals_attack) == "function" then
@@ -234,6 +257,12 @@ local function _loyals_active_for(tgt)
 end
 
 local function _loyals_any_active()
+  local C = _companions()
+  if C and type(C.is_any_active) == "function" then
+    local ok, v = pcall(C.is_any_active)
+    if ok then return v == true end
+  end
+
   if type(Yso.loyals_attack) == "function" then
     local ok, v = pcall(Yso.loyals_attack)
     if ok and v == true then return true end
@@ -242,6 +271,17 @@ local function _loyals_any_active()
 end
 
 local function _set_loyals_hostile(v, tgt)
+  local C = _companions()
+  if C and type(C.note_order_sent) == "function" then
+    if v == true then
+      local ok, handled = pcall(C.note_order_sent, ("order loyals kill %s"):format(_trim(tgt)), tgt)
+      if ok and handled == true then return end
+    else
+      local ok, handled = pcall(C.note_order_sent, "order loyals passive", tgt)
+      if ok and handled == true then return end
+    end
+  end
+
   local hostile = (v == true)
   tgt = _trim(tgt)
   if type(Yso.set_loyals_attack) == "function" then
@@ -587,13 +627,7 @@ function A.alias_loop_prepare_start(ctx)
 end
 
 function A.alias_loop_on_started(ctx)
-  if A.cfg.echo == true then
-    if type(cecho) == "function" then
-      cecho("<HotPink>[Occultism] <reset>Aff loop ON.\n")
-    elseif type(echo) == "function" then
-      echo("[Occultism] Aff loop ON.\n")
-    end
-  end
+  _echo_toggle("AFF LOOP ON.")
   return true
 end
 
@@ -603,20 +637,27 @@ function A.alias_loop_on_stopped(ctx)
   A.state.waiting.queue = nil
   A.state.waiting.at = 0
   if _loyals_any_active() then
-    local passive = _trim(tostring(A.cfg.off_passive_cmd or "order entourage passive"))
-    if passive ~= "" then
-      _emit_free(passive, "occ_aff:off_passive", _trim(A.state.last_target))
+    local C = _companions()
+    local sent = false
+    if C and type(C.passive) == "function" then
+      local ok = nil
+      ok, _ = C.passive({ emit = true, target = _trim(A.state.last_target) })
+      sent = (ok == true)
     end
-    _set_loyals_hostile(false)
+    if not sent then
+      local passive = _trim(tostring(A.cfg.off_passive_cmd or "order loyals passive"))
+      if passive ~= "" then
+        _emit_free(passive, "occ_aff:off_passive", _trim(A.state.last_target))
+      end
+      _set_loyals_hostile(false)
+    end
+  end
+  local C = _companions()
+  if C and type(C.reset_recovery) == "function" then
+    pcall(C.reset_recovery, "route_off")
   end
   if not (type(ctx) == "table" and ctx.silent == true) then
-    if A.cfg.echo == true then
-      if type(cecho) == "function" then
-        cecho("<HotPink>[Occultism] <reset>Aff loop OFF.\n")
-      elseif type(echo) == "function" then
-        echo("[Occultism] Aff loop OFF.\n")
-      end
-    end
+    _echo_toggle("AFF LOOP OFF.")
   end
   return true
 end
@@ -710,7 +751,22 @@ function A.attack_function(arg)
 
   -- 1 open
   if not _loyals_active_for(tgt) then
-    payload.free[#payload.free + 1] = string.format(A.cfg.loyals_on_cmd or "order entourage kill %s", tgt)
+    local C = _companions()
+    local opener = nil
+    if C and type(C.kill) == "function" then
+      local ok, res = pcall(C.kill, tgt, { include_stand = true, emit = false })
+      if ok then opener = res end
+    end
+    if type(opener) == "table" then
+      for i = 1, #opener do
+        local cmd = _trim(opener[i])
+        if cmd ~= "" then payload.free[#payload.free + 1] = cmd end
+      end
+    elseif type(opener) == "string" and _trim(opener) ~= "" then
+      payload.free[#payload.free + 1] = _trim(opener)
+    else
+      payload.free[#payload.free + 1] = string.format("order loyals kill %s", tgt)
+    end
   end
 
   local ra_ready = true
@@ -918,11 +974,16 @@ function A.on_sent(payload, ctx)
 
   local eq_cmd = _trim(payload.eq)
   local free = payload.free
-
-  if type(free) == "table" then
+  local C = _companions()
+  if C and type(C.note_order_sent) == "function" and type(free) == "table" then
+    for i = 1, #free do
+      local cmd = _trim(free[i])
+      if cmd ~= "" then pcall(C.note_order_sent, cmd, tgt) end
+    end
+  elseif type(free) == "table" then
     for i = 1, #free do
       local cmd = _trim(free[i]):lower()
-      if cmd == ("order entourage kill " .. tgt:lower()) or cmd == ("order loyals kill " .. tgt:lower()) then
+      if cmd == ("order loyals kill " .. tgt:lower()) then
         _set_loyals_hostile(true, tgt)
         break
       end

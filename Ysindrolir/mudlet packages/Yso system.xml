@@ -171,31 +171,41 @@ if cap._tid then killTimer(cap._tid); cap._tid = nil end
 local set = tostring(cap.set or Legacy.Curing.ActiveServerSet or "legacy"):lower()
 local applied = false
 
-if type(P.UseBaseline) == "function" then
-  local ok, res = pcall(P.UseBaseline, set)
-  applied = ok and (res ~= false)
-elseif type(Legacy.Curing.UseBaseline) == "function" then
-  local ok, res = pcall(Legacy.Curing.UseBaseline, set)
-  applied = ok and (res ~= false)
-end
-
-if not applied then
-  local base = type(P.baseSets) == "table" and P.baseSets[set] or nil
-  if type(base) == "table" then
-    P.legacy = base
-    if type(table) == "table" and type(table.deepcopy) == "function" then
-      local ok, tmp = pcall(table.deepcopy, base)
-      if ok and type(tmp) == "table" then
-        P.temp = tmp
-      end
-    end
-    applied = true
+if type(P.ApplyCapturedBaseline) == "function" then
+  local ok, res = pcall(P.ApplyCapturedBaseline, set, { warn = true })
+  applied = ok and (res == true)
+else
+  if type(P.UseBaseline) == "function" then
+    local ok, res = pcall(P.UseBaseline, set)
+    applied = ok and (res ~= false)
+  elseif type(Legacy.Curing.UseBaseline) == "function" then
+    local ok, res = pcall(Legacy.Curing.UseBaseline, set)
+    applied = ok and (res ~= false)
   end
-end
 
-if not applied and P._baseline_warned_once ~= true then
-  P._baseline_warned_once = true
-  cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Baseline sync warning: could not activate baseline for cureset '"..set.."'.")
+  if not applied then
+    local base = type(P.baseSets) == "table" and P.baseSets[set] or nil
+    if type(base) == "table" then
+      P.legacy = base
+      local temp_copy = nil
+      if type(table) == "table" and type(table.deepcopy) == "function" then
+        local ok, tmp = pcall(table.deepcopy, base)
+        if ok and type(tmp) == "table" then
+          temp_copy = tmp
+        end
+      end
+      P.temp = temp_copy
+      applied = true
+    end
+  end
+
+  if not applied then
+    P._baseline_warned_sets = type(P._baseline_warned_sets) == "table" and P._baseline_warned_sets or {}
+    if P._baseline_warned_sets[set] ~= true then
+      P._baseline_warned_sets[set] = true
+      cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Baseline sync warning: could not activate baseline for cureset '"..set.."'.")
+    end
+  end
 end
 
 if applied then
@@ -222,7 +232,7 @@ end
 				<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Arena challenged</name>
 					<script>deleteLine()
-cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt; TIME TO SPAR!.\n")
+cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TIME TO SPAR!).&lt;reset&gt;\n")
 </script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -693,6 +703,31 @@ send("curing predict brokenrightleg")
 					</regexCodeList>
 					<regexCodePropertyList>
 						<integer>0</integer>
+					</regexCodePropertyList>
+				</Trigger>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Mind locking</name>
+					<script>local who = tostring(matches[2] or ""):gsub("^%s+", ""):gsub("%s+$", "")
+if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(1, (who ~= "" and who or "Mindlock"), "MIND LOCKING")
+else
+  cecho(string.format("\n&lt;yellow&gt;[DEFENSE] &lt;HotPink&gt;MIND LOCKING: %s.\n", who ~= "" and who or "UNKNOWN"))
+end</script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile>C:/Windows/Media/Alarm01.wav</mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string>^You feel the probing mind of (.+) touch yours\.$</string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -1292,7 +1327,7 @@ Yso.occ.aura.last_attempt[who] = _now()
 deleteLine()
 
 cecho(string.format(
-  "\n&lt;dark_orchid&gt;[Occultism] &lt;gray&gt;(CLEANSEAURA attempt on %s).&lt;reset&gt;\n",
+  "\n&lt;dark_orchid&gt;[Occultism] &lt;chartreuse&gt;(CLEANSED: %s).&lt;reset&gt;\n",
   who
 ))
 resetFormat()
@@ -1454,7 +1489,7 @@ end
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Sun cleansed</name>
 						<script>deleteLine()
-cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt;(SELF-CLEANSED).\n")
+cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(SELF-CLEANSED).&lt;reset&gt;\n")
 --looks like it last 10-12 tics</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1632,8 +1667,8 @@ if who and who ~= "" then oc_death_fling_success(who) end
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Lusted target</name>
-						<script>cecho("&lt;yellow&gt;[Tarot] &lt;HotPink&gt;TARGET LUSTED!!.\n")
-cecho("&lt;yellow&gt;[Tarot] &lt;HotPink&gt;TARGET LUSTED!!.\n")</script>
+						<script>cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TARGET LUSTED!!).&lt;reset&gt;\n")
+cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TARGET LUSTED!!).&lt;reset&gt;\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -1653,8 +1688,8 @@ cecho("&lt;yellow&gt;[Tarot] &lt;HotPink&gt;TARGET LUSTED!!.\n")</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Sniff fail</name>
-						<script>cecho("&lt;yellow&gt;[Tarot] &lt;chartreuse&gt;LUST THE TARGET!\n")
-cecho("&lt;yellow&gt;[Tarot] &lt;chartreuse&gt;LUST THE TARGET!\n")</script>
+						<script>cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(LUST THE TARGET!).&lt;reset&gt;\n")
+cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(LUST THE TARGET!).&lt;reset&gt;\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -1674,8 +1709,8 @@ cecho("&lt;yellow&gt;[Tarot] &lt;chartreuse&gt;LUST THE TARGET!\n")</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Sniff success</name>
-						<script>cecho("&lt;yellow&gt;[Tarot] &lt;salmon&gt;CAN EMPRESS!\n")
-cecho("&lt;yellow&gt;[Tarot] &lt;salmon&gt;CAN EMPRESS!\n")</script>
+						<script>cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(CAN EMPRESS!).&lt;reset&gt;\n")
+cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(CAN EMPRESS!).&lt;reset&gt;\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2240,7 +2275,11 @@ if Yso and Yso.off and Yso.off.oc then
   end
 end
 
-cecho("&lt;HotPink&gt;[Domination] &lt;salmon&gt;(ATTEND STRIPPED DEAF+BLIND!).\n")</script>
+cecho(string.format(
+  "\n&lt;dark_orchid&gt;[Occultism] &lt;chartreuse&gt;(ATTENDED: %s).&lt;reset&gt;\n",
+  who
+))
+resetFormat()</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2253,6 +2292,33 @@ cecho("&lt;HotPink&gt;[Domination] &lt;salmon&gt;(ATTEND STRIPPED DEAF+BLIND!).\
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>^Focusing your will, you exert your aura at ([\w'\-]+) and snap your fingers, forcing [\w'\-]+ to pay attention to you\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Attend focus line</name>
+						<script>local who = matches[2] or "someone"
+
+deleteLine()
+cecho(string.format(
+  "\n&lt;dark_orchid&gt;[Occultism] &lt;chartreuse&gt;(ATTENDED: %s).&lt;reset&gt;\n",
+  who
+))
+resetFormat()</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^Focusing your will, you exert your aura at (.+?) and snap your fingers, forcing (?:his|her|their|its) mind open in a flash of indigo-violet light\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -3744,7 +3810,7 @@ if mode == "a" then
   end
 
   cecho(string.format(
-    "&lt;green&gt;[Tarot] &lt;green&gt;Hermit activated%s.\n",
+    "\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Hermit activated%s).&lt;reset&gt;\n",
     tag ~= "" and (" with tag "..tag) or ""
   ))
 
@@ -3762,12 +3828,12 @@ elseif mode == "f" then
   end
 
   cecho(string.format(
-    "&lt;green&gt;[Tarot] &lt;yellow&gt;Flinging Hermit at ground%s.\n",
+    "\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Flinging Hermit at ground%s).&lt;reset&gt;\n",
     tag ~= "" and (" with tag "..tag) or ""
   ))
 
 else
-  cecho("&lt;green&gt;[Tarot] &lt;red&gt;Usage:&lt;reset&gt; hera[#] / herf[#]\n")
+  cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Usage: hera[#] / herf[#]).&lt;reset&gt;\n")
 end
 </script>
 						<command></command>
@@ -3795,7 +3861,7 @@ else
   send(cmd)
 end
 
-cecho("&lt;gray&gt;[Tarot] &lt;yellow&gt;Flinging Sun at ground (periodic self-cleanse).\n")
+cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Flinging Sun at ground (periodic self-cleanse)).&lt;reset&gt;\n")
 </script>
 						<command></command>
 						<packageName></packageName>
@@ -7016,6 +7082,16 @@ function Q.install_lane(lane, cmd, opts)
     return true, &quot;unchanged&quot;, Q.get_owned(key)
   end
 
+  if key ~= &quot;free&quot; and opts.force_blocked ~= true then
+    -- Final recheck directly before queue send so late-tick writhe blocks
+    -- cannot leak staged lane payloads between commit assembly and install.
+    local blocked_now = type(Q.lane_blocked) == &quot;function&quot; and Q.lane_blocked(key) or false
+    if blocked_now == true then
+      Q._staged[key] = nil
+      return false, &quot;lane_blocked&quot;
+    end
+  end
+
   local existed = (type(Q.get_owned(key)) == &quot;table&quot;)
   local ok = Q.addclear(qtype, cmd)
   if not ok then
@@ -8931,7 +9007,7 @@ PA.cfg = PA.cfg or {
   utter_follow_s = 5.0,
   unnamable_lockout_s = 4.0,
 
-  loyals_on_cmd = &quot;order entourage kill %s&quot;,
+  loyals_on_cmd = &quot;order loyals kill %s&quot;,
 }
 
 local function _offense_state()
@@ -8968,6 +9044,11 @@ local function _now()
     return v
   end
   return os.time()
+end
+
+local function _companions()
+  local C = Yso and Yso.occ and Yso.occ.companions or nil
+  return type(C) == &quot;table&quot; and C or nil
 end
 
 local function _target()
@@ -9116,6 +9197,12 @@ local function _snapshot_view(tgt)
 end
 
 local function _loyals_active_for(tgt)
+  local C = _companions()
+  if C and type(C.is_active_for) == &quot;function&quot; then
+    local ok, v = pcall(C.is_active_for, tgt)
+    if ok then return v == true end
+  end
+
   tgt = _trim(tgt)
   if tgt == &quot;&quot; then return false end
   if type(Yso.loyals_attack) == &quot;function&quot; then
@@ -9126,6 +9213,17 @@ local function _loyals_active_for(tgt)
 end
 
 local function _set_loyals_hostile(v, tgt)
+  local C = _companions()
+  if C and type(C.note_order_sent) == &quot;function&quot; then
+    if v == true then
+      local ok, handled = pcall(C.note_order_sent, (&quot;order loyals kill %s&quot;):format(_trim(tgt)), tgt)
+      if ok and handled == true then return end
+    else
+      local ok, handled = pcall(C.note_order_sent, &quot;order loyals passive&quot;, tgt)
+      if ok and handled == true then return end
+    end
+  end
+
   local hostile = (v == true)
   tgt = _trim(tgt)
   if type(Yso.set_loyals_attack) == &quot;function&quot; then
@@ -9144,6 +9242,12 @@ local function _set_loyals_hostile(v, tgt)
 end
 
 local function _loyals_any_active()
+  local C = _companions()
+  if C and type(C.is_any_active) == &quot;function&quot; then
+    local ok, v = pcall(C.is_any_active)
+    if ok then return v == true end
+  end
+
   if type(Yso.loyals_attack) == &quot;function&quot; then
     local ok, v = pcall(Yso.loyals_attack)
     if ok and v == true then return true end
@@ -9336,6 +9440,16 @@ end
 local function _echo(msg)
   if not PA.cfg.echo then return end
   local line = string.format(&quot;&lt;dark_orchid&gt;[Occultism] &lt;reset&gt;%s&quot;, tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == &quot;function&quot; then
+    cecho(line .. &quot;\n&quot;)
+  end
+end
+
+local function _echo_toggle(msg)
+  if not PA.cfg.echo then return end
+  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;&quot;, tostring(msg))
   if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
     Yso.util.cecho_line(line)
   elseif type(cecho) == &quot;function&quot; then
@@ -9885,8 +9999,23 @@ end
 
 local function _plan_free(tgt)
   if _loyals_active_for(tgt) then return nil, nil end
-  local cmd = (tostring(PA.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
-  return cmd, &quot;team_coordination&quot;
+  local C = _companions()
+  if C and type(C.kill) == &quot;function&quot; then
+    local ok, opener = pcall(C.kill, tgt, { include_stand = true, emit = false })
+    if ok and type(opener) == &quot;table&quot; then
+      local out = {}
+      for i = 1, #opener do
+        local cmd = _trim(opener[i])
+        if cmd ~= &quot;&quot; then out[#out + 1] = cmd end
+      end
+      if #out &gt; 0 then
+        return table.concat(out, _command_sep()), &quot;team_coordination&quot;
+      end
+    elseif ok and type(opener) == &quot;string&quot; and _trim(opener) ~= &quot;&quot; then
+      return _trim(opener), &quot;team_coordination&quot;
+    end
+  end
+  return (&quot;stand%sorder loyals kill %s&quot;):format(_command_sep(), tgt), &quot;team_coordination&quot;
 end
 
 function PA.schedule_loop(delay)
@@ -9910,7 +10039,7 @@ end
 function PA.alias_loop_on_started(ctx)
   PA.state.busy = false
   _clear_waiting()
-  _echo(&quot;Party aff loop ON.&quot;)
+  _echo_toggle(&quot;PARTY AFF LOOP ON.&quot;)
   local tgt = _target()
   if tgt == &quot;&quot; then
     _echo(&quot;No target yet; holding.&quot;)
@@ -9923,8 +10052,16 @@ function PA.alias_loop_on_stopped(ctx)
   PA.init()
   ctx = ctx or {}
   local reason = tostring(ctx.reason or &quot;manual&quot;)
+  local C = _companions()
+  if C and type(C.passive) == &quot;function&quot; then
+    pcall(C.passive, { emit = true, target = _target() })
+    if type(C.reset_recovery) == &quot;function&quot; then
+      pcall(C.reset_recovery, &quot;route_off&quot;)
+    end
+  end
+  _set_loyals_hostile(false)
   if ctx.silent ~= true then
-    _echo(string.format(&quot;Party aff loop OFF (%s).&quot;, reason))
+    _echo_toggle(string.format(&quot;PARTY AFF LOOP OFF (%s).&quot;, tostring(reason):upper()))
   end
 end
 
@@ -10147,11 +10284,32 @@ function PA.on_sent(payload, ctx)
   if type(payload) ~= &quot;table&quot; then return true end
   local tgt = _trim(payload.target or (ctx and ctx.target) or &quot;&quot;)
   if tgt ~= &quot;&quot; then
-    local loyals_cmd = (tostring(PA.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
     local free = payload.lanes and payload.lanes.free or payload.free
-    if type(free) == &quot;string&quot; and free == loyals_cmd then
-      PA.state.loyals_sent_for = tgt
-      _set_loyals_hostile(true, tgt)
+    local C = _companions()
+    if C and type(C.note_order_sent) == &quot;function&quot; then
+      if type(free) == &quot;string&quot; then
+        local sep = _command_sep()
+        local idx = 1
+        while true do
+          local a, b = free:find(sep, idx, true)
+          local part = a and free:sub(idx, a - 1) or free:sub(idx)
+          part = _trim(part)
+          if part ~= &quot;&quot; then pcall(C.note_order_sent, part, tgt) end
+          if not a then break end
+          idx = b + 1
+        end
+      elseif type(free) == &quot;table&quot; then
+        for i = 1, #free do
+          local part = _trim(free[i])
+          if part ~= &quot;&quot; then pcall(C.note_order_sent, part, tgt) end
+        end
+      end
+    else
+      local loyals_cmd = (&quot;order loyals kill %s&quot;):format(tgt)
+      if type(free) == &quot;string&quot; and free:find(loyals_cmd, 1, true) then
+        PA.state.loyals_sent_for = tgt
+        _set_loyals_hostile(true, tgt)
+      end
     end
     local eq_lane = payload.lanes and payload.lanes.eq or payload.eq
     local readaura_cmd = (&quot;readaura %s&quot;):format(tgt)
@@ -10260,6 +10418,421 @@ do
 end
 
 return PA
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso Occultist companions</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso Occultist companions
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso/Combat/occultist/companions.lua
+--  * Shared Occultist companion-control helper.
+--  * Canonical automation commands:
+--      order loyals kill &lt;target&gt;
+--      order loyals passive
+--  * Companion control is free-lane only.
+--========================================================--
+
+Yso = Yso or {}
+Yso.occ = Yso.occ or {}
+
+local C = Yso.occ.companions or {}
+Yso.occ.companions = C
+
+C.cfg = C.cfg or {
+  recall_timeout_s = 6.0,
+}
+
+C.state = C.state or {
+  recovering = false,
+  recall_pending = false,
+  last_target = &quot;&quot;,
+  last_failure = &quot;&quot;,
+  last_failure_at = 0,
+  last_recall_at = 0,
+  last_recovery = &quot;&quot;,
+  last_recovery_at = 0,
+  invalidated_at = 0,
+  invalidated_by = &quot;&quot;,
+  recall_timer_id = nil,
+}
+
+C._tr = C._tr or {}
+C._hooks_installed = (C._hooks_installed == true)
+
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _lc(s)
+  return _trim(s):lower()
+end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local v = tonumber(getEpoch()) or os.time()
+    if v &gt; 1e12 then v = v / 1000 end
+    return v
+  end
+  return os.time()
+end
+
+local function _debug_on()
+  if C.cfg and C.cfg.debug == true then return true end
+  if Yso and Yso.queue and Yso.queue.cfg and Yso.queue.cfg.debug == true then return true end
+  return false
+end
+
+local function _dbg(msg)
+  if not _debug_on() then return end
+  local line = string.format(&quot;&lt;dim_grey&gt;[Yso:Occ:companions] &lt;reset&gt;%s&quot;, tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == &quot;function&quot; then
+    cecho(line .. &quot;\n&quot;)
+  end
+end
+
+local function _kill_trigger(id)
+  if id and type(killTrigger) == &quot;function&quot; then
+    pcall(killTrigger, id)
+  end
+end
+
+local function _clear_recall_timer()
+  local st = C.state
+  if st.recall_timer_id and type(killTimer) == &quot;function&quot; then
+    pcall(killTimer, st.recall_timer_id)
+  end
+  st.recall_timer_id = nil
+end
+
+local function _set_loyals_hostile(v, tgt)
+  local hostile = (v == true)
+  tgt = _trim(tgt)
+  if type(Yso.set_loyals_attack) == &quot;function&quot; then
+    pcall(Yso.set_loyals_attack, hostile, tgt)
+  elseif Yso and Yso.state then
+    Yso.state.loyals_hostile = hostile
+    if hostile and tgt ~= &quot;&quot; then
+      Yso.state.loyals_target = tgt
+    elseif not hostile then
+      Yso.state.loyals_target = nil
+    end
+  end
+  rawset(_G, &quot;loyals_attack&quot;, hostile)
+end
+
+local function _emit_free(cmds, reason, target)
+  local payload = { free = cmds, target = _trim(target) }
+
+  if type(Yso.emit) == &quot;function&quot; then
+    local ok, sent = pcall(Yso.emit, payload, {
+      reason = reason or &quot;occ.companions&quot;,
+      kind = &quot;offense&quot;,
+      commit = true,
+      target = _trim(target),
+    })
+    return ok == true and sent == true
+  end
+
+  if Yso and Yso.queue and type(Yso.queue.emit) == &quot;function&quot; then
+    local ok, sent = pcall(Yso.queue.emit, payload, {
+      reason = reason or &quot;occ.companions&quot;,
+      kind = &quot;offense&quot;,
+      commit = true,
+      target = _trim(target),
+    })
+    return ok == true and sent == true
+  end
+
+  if type(send) == &quot;function&quot; then
+    local sep = (Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;
+    if type(cmds) == &quot;string&quot; then
+      cmds = { cmds }
+    end
+    local out = {}
+    for i = 1, #(cmds or {}) do
+      local cmd = _trim(cmds[i])
+      if cmd ~= &quot;&quot; then out[#out + 1] = cmd end
+    end
+    if #out == 0 then return false end
+    local body = table.concat(out, sep)
+    local ok, sent = pcall(send, body)
+    return ok == true and sent ~= false
+  end
+
+  return false
+end
+
+function C.is_route_active()
+  local M = Yso and Yso.mode or nil
+  if type(M) == &quot;table&quot; and type(M.route_loop_active) == &quot;function&quot; then
+    local routes = { &quot;occ_aff&quot;, &quot;party_aff&quot;, &quot;group_damage&quot; }
+    for i = 1, #routes do
+      local ok, v = pcall(M.route_loop_active, routes[i])
+      if ok and v == true then return true end
+    end
+  end
+
+  if type(M) == &quot;table&quot; and type(M.active_route_id) == &quot;function&quot; then
+    local ok, rid = pcall(M.active_route_id)
+    rid = ok and _lc(rid) or &quot;&quot;
+    if rid == &quot;occ_aff&quot; or rid == &quot;party_aff&quot; or rid == &quot;group_damage&quot; then
+      return true
+    end
+  end
+
+  local Off = Yso and Yso.off and Yso.off.oc or nil
+  if type(Off) == &quot;table&quot; then
+    local a = Off.occ_aff
+    if type(a) == &quot;table&quot; and type(a.state) == &quot;table&quot; and a.state.loop_enabled == true then return true end
+    local p = Off.party_aff
+    if type(p) == &quot;table&quot; and type(p.state) == &quot;table&quot; and p.state.loop_enabled == true then return true end
+    local g = Off.group_damage
+    if type(g) == &quot;table&quot; and type(g.state) == &quot;table&quot; and g.state.loop_enabled == true then return true end
+  end
+
+  return false
+end
+
+function C.is_active_for(tgt)
+  tgt = _trim(tgt)
+  if tgt ~= &quot;&quot; and type(Yso.loyals_attack) == &quot;function&quot; then
+    local ok, v = pcall(Yso.loyals_attack, tgt)
+    if ok and v == true then return true end
+  elseif tgt == &quot;&quot; and type(Yso.loyals_attack) == &quot;function&quot; then
+    local ok, v = pcall(Yso.loyals_attack)
+    if ok and v == true then return true end
+  end
+
+  local st = Yso and Yso.state or nil
+  if type(st) == &quot;table&quot; then
+    local hostile = (st.loyals_hostile == true)
+    if not hostile then return false end
+    if tgt == &quot;&quot; then return true end
+    local keyed = _lc(st.loyals_target)
+    return keyed == &quot;&quot; or keyed == _lc(tgt)
+  end
+
+  return false
+end
+
+function C.is_any_active()
+  return C.is_active_for(&quot;&quot;)
+end
+
+function C.can_order()
+  return C.state.recovering ~= true
+end
+
+function C.mark_recovering(reason)
+  reason = _trim(reason)
+  local st = C.state
+  st.recovering = true
+  st.last_failure = reason
+  st.last_failure_at = _now()
+  _dbg(&quot;companion order suppressed: recovering&quot;)
+  return true
+end
+
+function C.reset_recovery(reason)
+  local st = C.state
+  _clear_recall_timer()
+  st.recovering = false
+  st.recall_pending = false
+  st.last_recovery = _trim(reason)
+  st.last_recovery_at = _now()
+  return true
+end
+
+function C.note_recovery(kind, line)
+  kind = _trim(kind)
+  if C.state.recovering == true or C.state.recall_pending == true then
+    C.reset_recovery(kind ~= &quot;&quot; and kind or &quot;recovered&quot;)
+    _dbg(&quot;companion recovery: &quot; .. tostring(kind ~= &quot;&quot; and kind or line or &quot;unknown&quot;))
+  end
+  return true
+end
+
+function C.note_failure(kind, line)
+  if not C.is_route_active() then return false, &quot;inactive&quot; end
+
+  kind = _trim(kind)
+  C.mark_recovering(kind ~= &quot;&quot; and kind or &quot;failure&quot;)
+  _set_loyals_hostile(false)
+
+  local st = C.state
+  if st.recall_pending == true then
+    _dbg(&quot;call entities skipped: recovery already pending&quot;)
+    return false, &quot;recall_pending&quot;
+  end
+
+  st.recall_pending = true
+  st.last_failure_at = _now()
+
+  local sent = _emit_free({ &quot;call entities&quot; }, &quot;occ.companions.recall&quot;, st.last_target)
+  if sent then
+    st.last_recall_at = _now()
+    _dbg(&quot;call entities fired: one-shot recovery&quot;)
+  end
+
+  _clear_recall_timer()
+  local timeout_s = tonumber(C.cfg.recall_timeout_s or 6.0) or 6.0
+  if timeout_s &lt; 1.0 then timeout_s = 1.0 end
+  if type(tempTimer) == &quot;function&quot; then
+    st.recall_timer_id = tempTimer(timeout_s, function()
+      C.reset_recovery(&quot;timer_fallback&quot;)
+    end)
+  end
+
+  return sent, (sent and &quot;recall_sent&quot; or &quot;recall_emit_failed&quot;)
+end
+
+function C.note_order_sent(cmd, target)
+  cmd = _lc(cmd)
+  target = _trim(target)
+  if cmd == &quot;&quot; then return false end
+
+  if cmd == &quot;order loyals passive&quot; then
+    _set_loyals_hostile(false)
+    C.note_recovery(&quot;passive_sent&quot;)
+    return true
+  end
+
+  local t = cmd:match(&quot;^order%s+loyals%s+kill%s+(.+)$&quot;)
+  if t and t ~= &quot;&quot; then
+    t = _trim(target ~= &quot;&quot; and target or t)
+    C.state.last_target = t
+    _set_loyals_hostile(true, t)
+    if C.state.recovering == true or C.state.recall_pending == true then
+      C.note_recovery(&quot;loyals_sent&quot;)
+    end
+    return true
+  end
+
+  return false
+end
+
+function C.invalidate(kind, meta)
+  kind = _trim(kind)
+  C.state.invalidated_at = _now()
+  C.state.invalidated_by = kind ~= &quot;&quot; and kind or &quot;unknown&quot;
+  _set_loyals_hostile(false)
+  if type(raiseEvent) == &quot;function&quot; then
+    raiseEvent(&quot;yso.occ.companions.invalidated&quot;, C.state.invalidated_by, meta)
+  end
+  _dbg(&quot;companion invalidated: &quot; .. tostring(C.state.invalidated_by))
+  return true
+end
+
+function C.kill(target, opts)
+  opts = type(opts) == &quot;table&quot; and opts or {}
+  target = _trim(target)
+  if target == &quot;&quot; then return nil, &quot;no_target&quot; end
+
+  if C.can_order() ~= true and opts.force ~= true then
+    _dbg(&quot;companion order suppressed: recovering&quot;)
+    return nil, &quot;recovering&quot;
+  end
+
+  C.state.last_target = target
+  local cmd = string.format(&quot;order loyals kill %s&quot;, target)
+  local out = {}
+  if opts.include_stand == true then out[#out + 1] = &quot;stand&quot; end
+  out[#out + 1] = cmd
+
+  if opts.emit == true then
+    local ok = _emit_free(out, &quot;occ.companions.kill&quot;, target)
+    if ok then C.note_order_sent(cmd, target) end
+    if not ok then return false, &quot;emit_failed&quot; end
+    return true, cmd
+  end
+
+  return out, &quot;team_coordination&quot;
+end
+
+function C.passive(opts)
+  opts = type(opts) == &quot;table&quot; and opts or {}
+  local target = _trim(opts.target or C.state.last_target)
+  local cmd = &quot;order loyals passive&quot;
+
+  if opts.emit == true then
+    local ok = _emit_free({ cmd }, &quot;occ.companions.passive&quot;, target)
+    if ok then C.note_order_sent(cmd, target) end
+    if not ok then return false, &quot;emit_failed&quot; end
+    return true, cmd
+  end
+
+  return cmd, &quot;route_off_cleanup&quot;
+end
+
+function C.install_hooks()
+  if C._hooks_installed == true then return true end
+  if type(tempRegexTrigger) ~= &quot;function&quot; then return false end
+
+  _kill_trigger(C._tr.no_loyal_single)
+  C._tr.no_loyal_single = tempRegexTrigger(
+    [[^You have no loyal companion here\.$]],
+    function() C.note_failure(&quot;no_loyal&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.no_loyal_plural)
+  C._tr.no_loyal_plural = tempRegexTrigger(
+    [[^You have no loyal companions here\.$]],
+    function() C.note_failure(&quot;no_loyal&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.no_entourage)
+  C._tr.no_entourage = tempRegexTrigger(
+    [[^You have no entourage\.$]],
+    function() C.note_failure(&quot;no_entourage&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.no_beings)
+  C._tr.no_beings = tempRegexTrigger(
+    [[^There are no beings in your entourage\.$]],
+    function() C.note_failure(&quot;no_entourage&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.recall_ready)
+  C._tr.recall_ready = tempRegexTrigger(
+    [[^You may call your pacted minions once more\.$]],
+    function() C.note_recovery(&quot;recall_ready&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.tumble)
+  C._tr.tumble = tempRegexTrigger(
+    [[^You tumble .+\.$]],
+    function() C.invalidate(&quot;tumble:text&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.starburst)
+  C._tr.starburst = tempRegexTrigger(
+    [[^[Yy]our starburst tattoo .+$]],
+    function() C.invalidate(&quot;starburst:text&quot;, line or getCurrentLine()) end
+  )
+
+  _kill_trigger(C._tr.astralform)
+  C._tr.astralform = tempRegexTrigger(
+    [[^[Yy]ou .*astralform.*$]],
+    function() C.invalidate(&quot;astralform:text&quot;, line or getCurrentLine()) end
+  )
+
+  C._hooks_installed = true
+  return true
+end
+
+C.install_hooks()
+
+return C
 </script>
 					<eventHandlerList />
 				</Script>
@@ -10378,6 +10951,7 @@ GD.cfg = GD.cfg or {
   opener_cmd = nil,
 
   -- Route-off cleanup (all loyals, every time), gated by a ready wake.
+  loyals_on_cmd = &quot;order loyals kill %s&quot;,
   off_passive_cmd = &quot;order loyals passive&quot;,
 
   -- Entity pool used by this route when an entity can contribute required/follow-up value.
@@ -10438,6 +11012,11 @@ GD.state.justice_once = GD.state.justice_once or {}
 local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
 local function _lc(s) return _trim(s):lower() end
 local function _tkey(s) return _lc(s) end
+
+local function _companions()
+  local C = Yso and Yso.occ and Yso.occ.companions or nil
+  return type(C) == &quot;table&quot; and C or nil
+end
 
 local function _now()
   -- Use canonical clock (seconds, handles getEpoch ms) to keep worm timers sane.
@@ -10566,6 +11145,21 @@ local function _tgt_valid(tgt)
 end
 
 local function _set_loyals_hostile(v)
+  local C = _companions()
+  if C and type(C.note_order_sent) == &quot;function&quot; then
+    if v == true then
+      local tgt = _trim(GD.state and GD.state.last_target or &quot;&quot;)
+      if tgt == &quot;&quot; then
+        tgt = _trim(rawget(_G, &quot;target&quot;) or &quot;&quot;)
+      end
+      local ok, handled = pcall(C.note_order_sent, (&quot;order loyals kill %s&quot;):format(tgt), tgt)
+      if ok and handled == true then return end
+    else
+      local ok, handled = pcall(C.note_order_sent, &quot;order loyals passive&quot;, _trim(GD.state and GD.state.last_target or &quot;&quot;))
+      if ok and handled == true then return end
+    end
+  end
+
   if not Yso.state then return end
   if type(Yso.state.loyals_hostile) == &quot;function&quot; then
     pcall(Yso.state.loyals_hostile, v)
@@ -10741,6 +11335,36 @@ local function _command_sep()
   local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;)
   if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
   return sep
+end
+
+local function _each_sep_part(text, sep, fn)
+  text = tostring(text or &quot;&quot;)
+  sep = tostring(sep or &quot;&amp;&amp;&quot;)
+  if text == &quot;&quot; then return end
+  if sep == &quot;&quot; then
+    fn(text)
+    return
+  end
+  local i = 1
+  while true do
+    local s, e = text:find(sep, i, true)
+    if not s then
+      fn(text:sub(i))
+      break
+    end
+    fn(text:sub(i, s - 1))
+    i = e + 1
+  end
+end
+
+local function _echo_toggle(msg)
+  if not GD.cfg.echo then return end
+  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;&quot;, tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == &quot;function&quot; then
+    cecho(line .. string.char(10))
+  end
 end
 
 local _tarot_entity_payload
@@ -11319,6 +11943,12 @@ local function _pick_entity_cmd(tgt, st, opts)
 end
 
 local function _loyals_active_for(tgt)
+  local C = _companions()
+  if C and type(C.is_active_for) == &quot;function&quot; then
+    local ok, v = pcall(C.is_active_for, tgt)
+    if ok then return v == true end
+  end
+
   local Off = Yso and Yso.off and Yso.off.oc or nil
   if Off and type(Off.loyals_active_for) == &quot;function&quot; then
     local ok, v = pcall(Off.loyals_active_for, tgt)
@@ -11328,14 +11958,33 @@ local function _loyals_active_for(tgt)
 end
 
 local function _plan_free(tgt)
+  if _loyals_active_for(tgt) then return nil, nil end
+
+  local C = _companions()
+  if C and type(C.kill) == &quot;function&quot; then
+    local ok, res = pcall(C.kill, tgt, {
+      include_stand = (Yso and Yso.legality and Yso.legality.queue_stand == true),
+      emit = false,
+    })
+    if ok and type(res) == &quot;table&quot; then
+      local parts = {}
+      for i = 1, #res do
+        local cmd = _trim(res[i])
+        if cmd ~= &quot;&quot; then parts[#parts + 1] = cmd end
+      end
+      if #parts &gt; 0 then
+        return table.concat(parts, _command_sep()), &quot;team_coordination&quot;
+      end
+    elseif ok and type(res) == &quot;string&quot; and _trim(res) ~= &quot;&quot; then
+      return _trim(res), &quot;team_coordination&quot;
+    end
+  end
+
   local parts = {}
   if Yso and Yso.legality and Yso.legality.queue_stand == true then
     parts[#parts + 1] = &quot;stand&quot;
   end
-  if not _loyals_active_for(tgt) then
-    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;)):format(tgt)
-  end
-  if #parts == 0 then return nil, nil end
+  parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or &quot;order loyals kill %s&quot;)):format(tgt)
   return table.concat(parts, _command_sep()), &quot;team_coordination&quot;
 end
 
@@ -11831,6 +12480,26 @@ function GD.on_sent(payload, ctx)
     }
   end
   GD.state.template.last_emitted_payload = payload
+  do
+    local C = _companions()
+    if C and type(C.note_order_sent) == &quot;function&quot; and type(payload) == &quot;table&quot; then
+      local free = payload.free or (payload.lanes and payload.lanes.free) or nil
+      local tgt = _trim(payload.target or (payload.lanes and payload.lanes.target) or GD.state.last_target)
+      local sep = _command_sep()
+      local function note_one(cmd)
+        cmd = _trim(cmd)
+        if cmd ~= &quot;&quot; then pcall(C.note_order_sent, cmd, tgt) end
+      end
+      if type(free) == &quot;table&quot; then
+        for i = 1, #free do
+          local raw = _trim(free[i])
+          _each_sep_part(raw, sep, note_one)
+        end
+      elseif type(free) == &quot;string&quot; and _trim(free) ~= &quot;&quot; then
+        _each_sep_part(free, sep, note_one)
+      end
+    end
+  end
   return GD.on_payload_sent(legacy)
 end
 
@@ -11947,7 +12616,7 @@ function GD.alias_loop_on_started(ctx)
   GD.state.busy = false
   _clear_waiting()
 
-  _echo(&quot;Group damage loop ON.&quot;)
+  _echo_toggle(&quot;GROUP DAMAGE LOOP ON.&quot;)
   local tgt = _target()
   if tgt == &quot;&quot; then
     _echo(&quot;No target yet; holding.&quot;)
@@ -11962,14 +12631,26 @@ function GD.alias_loop_on_stopped(ctx)
   local reason = tostring(ctx.reason or &quot;manual&quot;)
   GD.state.stop_pending = false
 
-  local passive = _trim(tostring(GD.cfg.off_passive_cmd or &quot;order loyals passive&quot;))
-  if passive ~= &quot;&quot; then
-    _emit_lanes({ lanes = { free = passive }, target = _target() }, &quot;group_damage:off_passive&quot;)
+  local C = _companions()
+  local sent_passive = false
+  if C and type(C.passive) == &quot;function&quot; then
+    local ok = nil
+    ok, _ = C.passive({ emit = true, target = _target() })
+    sent_passive = (ok == true)
   end
-  _set_loyals_hostile(false)
+  if not sent_passive then
+    local passive = _trim(tostring(GD.cfg.off_passive_cmd or &quot;order loyals passive&quot;))
+    if passive ~= &quot;&quot; then
+      _emit_lanes({ lanes = { free = passive }, target = _target() }, &quot;group_damage:off_passive&quot;)
+    end
+    _set_loyals_hostile(false)
+  end
+  if C and type(C.reset_recovery) == &quot;function&quot; then
+    pcall(C.reset_recovery, &quot;route_off&quot;)
+  end
 
   if ctx.silent ~= true then
-    _echo(string.format(&quot;Group damage loop OFF (%s).&quot;, reason))
+    _echo_toggle(string.format(&quot;GROUP DAMAGE LOOP OFF (%s).&quot;, tostring(reason):upper()))
   end
 end
 
@@ -12017,6 +12698,10 @@ function GD.mark_tumble(tgt, dir)
   T.at      = now
   T.until_t = now + 0.75
   T.fired   = false
+  local C = _companions()
+  if C and type(C.invalidate) == &quot;function&quot; then
+    pcall(C.invalidate, &quot;tumble_begin&quot;, { target = tgt, dir = dir })
+  end
   if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
     Yso.pulse.wake(&quot;gd:tumble_begin&quot;)
   end
@@ -12032,6 +12717,10 @@ function GD.mark_tumble_out(tgt, diru)
   E.target     = tgt
   E.dir        = diru
   E.started_at = now
+  local C = _companions()
+  if C and type(C.invalidate) == &quot;function&quot; then
+    pcall(C.invalidate, &quot;tumble_out&quot;, { target = tgt, dir = diru })
+  end
   -- don&apos;t clear fail_until here: if we just failed empress, keep the backoff
   if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
     Yso.pulse.wake(&quot;gd:tumble_out&quot;)
@@ -20308,6 +20997,64 @@ function Legacy.Curing.UseBaseline(set)
   Legacy.Curing.Prios.temp   = table.deepcopy(Legacy.Curing.Prios.legacy)
   return true
 end
+
+local function _warn_baseline_missing_once_per_set(set)
+  local P = Legacy.Curing.Prios
+  P._baseline_warned_sets = type(P._baseline_warned_sets) == &quot;table&quot; and P._baseline_warned_sets or {}
+  if P._baseline_warned_sets[set] == true then return false end
+  P._baseline_warned_sets[set] = true
+  return true
+end
+
+function Legacy.Curing.Prios.ApplyCapturedBaseline(set, opts)
+  opts = type(opts) == &quot;table&quot; and opts or {}
+  local warn = (opts.warn ~= false)
+
+  local P = Legacy.Curing.Prios
+  set = tostring(set or Legacy.Curing.ActiveServerSet or &quot;legacy&quot;):lower()
+
+  local applied = false
+
+  if type(P.UseBaseline) == &quot;function&quot; then
+    local ok, res = pcall(P.UseBaseline, set)
+    applied = ok and (res ~= false)
+  end
+
+  if not applied and type(Legacy.Curing.UseBaseline) == &quot;function&quot; then
+    local ok, res = pcall(Legacy.Curing.UseBaseline, set)
+    applied = ok and (res ~= false)
+  end
+
+  if not applied then
+    local base = type(P.baseSets) == &quot;table&quot; and P.baseSets[set] or nil
+    if type(base) == &quot;table&quot; then
+      P.legacy = base
+
+      local temp_copy = nil
+      if type(table) == &quot;table&quot; and type(table.deepcopy) == &quot;function&quot; then
+        local ok, tmp = pcall(table.deepcopy, base)
+        if ok and type(tmp) == &quot;table&quot; then
+          temp_copy = tmp
+        end
+      end
+      -- Never alias temp to legacy when deepcopy is unavailable.
+      P.temp = temp_copy
+      applied = true
+    end
+  end
+
+  local warned = false
+  if not applied and warn then
+    if _warn_baseline_missing_once_per_set(set) then
+      warned = true
+      if type(cecho) == &quot;function&quot; then
+        cecho(&quot;\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Baseline sync warning: could not activate baseline for cureset &apos;&quot; .. set .. &quot;&apos;.&quot;)
+      end
+    end
+  end
+
+  return applied, set, warned
+end
 </script>
 					<eventHandlerList />
 				</Script>
@@ -23432,6 +24179,27 @@ for aff in pairs(_writhe_affs) do
   end
 end
 
+SA.arm_damage_family = SA.arm_damage_family or {
+  brokenleftarm = true,
+  brokenrightarm = true,
+  damagedleftarm = true,
+  damagedrightarm = true,
+  mangledleftarm = true,
+  mangledrightarm = true,
+  crippledleftarm = true,
+  crippledrightarm = true,
+  brokenarm = true,
+  damagedarm = true,
+  mangledarm = true,
+  crippledarm = true,
+  brokenlimb = true,
+  damagedlimb = true,
+  mangledlimb = true,
+  crippledlimb = true,
+}
+
+local _arm_damage_affs = SA.arm_damage_family
+
 function SA.normalize(name)
   local s = tostring(name or &quot;&quot;):lower()
   if s == &quot;&quot; then return &quot;&quot; end
@@ -23893,6 +24661,30 @@ function SA.ingest_text_cure(name, opts)
   return SA.cure(name, source)
 end
 
+local function _arm_damage_active()
+  for aff in pairs(_arm_damage_affs) do
+    if SA.has_aff(aff) then
+      return true, aff
+    end
+  end
+  return false, &quot;&quot;
+end
+
+function SA.ingest_text_arms_unusable(opts)
+  local source = &quot;text.hardblock.bound&quot;
+  if type(opts) == &quot;table&quot; and _trim(opts.source) ~= &quot;&quot; then
+    source = tostring(opts.source)
+  end
+
+  local blocked, aff = _arm_damage_active()
+  if blocked == true then
+    _echo(string.format(&quot;arms-unusable hardblock ignored (arm damage aff active: %s)&quot;, tostring(aff)))
+    return false, &quot;arm_damage_active&quot;
+  end
+
+  return SA.ingest_text_gain(&quot;bound&quot;, { source = source, force = true })
+end
+
 function SA.has_aff(aff)
   local key = SA.normalize(aff)
   if key == &quot;&quot; then return false end
@@ -24059,7 +24851,7 @@ function SA.install_hooks()
     SA._tr.hardblock_bound = tempRegexTrigger(
       [[^You cannot do that because both of your arms must be whole and unbound\.$]],
       function()
-        SA.ingest_text_gain(&quot;bound&quot;, { source = &quot;text.hardblock.bound&quot;, force = true })
+        SA.ingest_text_arms_unusable({ source = &quot;text.hardblock.bound&quot; })
       end
     )
   end
@@ -25084,6 +25876,8 @@ function P.note_tree_attempt(source)
 end
 
 function P.note_tree_unchanged(source)
+  -- State-only tree model: unchanged is informational only.
+  -- No cooldown/suppression state machine is owned here in phase one.
   if type(raiseEvent) == &quot;function&quot; then
     raiseEvent(&quot;yso.curing.tree_unchanged&quot;, tostring(source or &quot;tree_unchanged&quot;))
   end
@@ -25523,6 +26317,7 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   &quot;Yso.Combat.parry&quot;,
   &quot;Yso.Combat.offense_driver&quot;,
   &quot;Yso.Combat.occultist.entity_registry&quot;,
+  &quot;Yso.Combat.occultist.companions&quot;,
   &quot;Yso.xml.yso_occultist_affmap&quot;,
   &quot;Yso.Combat.occultist.aeon&quot;,
   &quot;Yso.Combat.routes.group_damage&quot;,
@@ -25604,6 +26399,13 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     modules = { &quot;Yso.Combat.route_interface&quot; },
     probe = function()
       return type((((_G.Yso or {}).Combat or {}).RouteInterface)) == &quot;table&quot;
+    end,
+  },
+  {
+    name = &quot;occultist_companions&quot;,
+    modules = { &quot;Yso.Combat.occultist.companions&quot;, &quot;Yso.xml.yso_occultist_companions&quot; },
+    probe = function()
+      return type((((_G.Yso or {}).occ or {}).companions)) == &quot;table&quot;
     end,
   },
   {
@@ -29459,6 +30261,30 @@ local function _Aff()
   return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
 end
 
+local function _self_has_aff(aff)
+  local S = Yso and Yso.self or nil
+  if not (S and type(S.has_aff) == &quot;function&quot;) then
+    return false, false
+  end
+  local ok, v = pcall(S.has_aff, aff)
+  if not ok then
+    return false, false
+  end
+  return (v == true), true
+end
+
+local function _self_list_affs()
+  local S = Yso and Yso.self or nil
+  if not (S and type(S.list_affs) == &quot;function&quot;) then
+    return nil
+  end
+  local ok, list = pcall(S.list_affs)
+  if not ok or type(list) ~= &quot;table&quot; then
+    return nil
+  end
+  return list
+end
+
 local function _trim(s)
   return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
 end
@@ -29475,6 +30301,10 @@ local function _normalize_cureset_name(v)
 end
 
 local function _has(aff)
+  local has, known = _self_has_aff(aff)
+  if known then
+    return has
+  end
   local A = _Aff()
   return A[aff] == true
 end
@@ -29548,13 +30378,13 @@ end
 
 -- Aff count, optionally ignoring blind/deaf
 local function _aff_count()
-  local A = _Aff()
+  local list = _self_list_affs()
   local n = 0
   local ignore_bd = Legacy.Fool.ignore_blind_deaf
   local counted_tendon = false
 
-  for k, v in pairs(A) do
-    if v == true and k ~= &quot;softlocked&quot; and k ~= &quot;truelocked&quot; then
+  local function _count_one(k)
+    if k ~= &quot;softlocked&quot; and k ~= &quot;truelocked&quot; then
       if _is_tendon_key(k) then
         if not counted_tendon then
           n = n + _tendon_severity()
@@ -29569,6 +30399,20 @@ local function _aff_count()
       else
         n = n + 1
       end
+    end
+  end
+
+  if type(list) == &quot;table&quot; then
+    for i = 1, #list do
+      _count_one(tostring(list[i] or &quot;&quot;))
+    end
+    return n
+  end
+
+  local A = _Aff()
+  for k, v in pairs(A) do
+    if v == true then
+      _count_one(tostring(k or &quot;&quot;))
     end
   end
   return n
@@ -29618,12 +30462,23 @@ local function _pending_owner_state()
   end
 
   local token = tostring(F.state.pending_owner_token or &quot;&quot;)
+  local cmd = _trim(F.state.pending_cmd)
+  local cmd_match = (cmd ~= &quot;&quot; and _trim(rec.cmd) == cmd)
+
   if token ~= &quot;&quot; then
-    return tostring(rec.note or &quot;&quot;) == token
+    local note_match = (tostring(rec.note or &quot;&quot;) == token)
+    if note_match then
+      return true
+    end
+    -- Token can drift if a lane owner row is rewritten by adjacent queue paths.
+    -- If command still matches pending Fool, keep cancelability.
+    if cmd_match then
+      return true
+    end
+    return false
   end
 
-  local cmd = _trim(F.state.pending_cmd)
-  return (cmd ~= &quot;&quot; and _trim(rec.cmd) == cmd)
+  return cmd_match
 end
 
 local function _clear_pending(reason)
@@ -29639,8 +30494,13 @@ local function _clear_pending(reason)
     local Q = Yso and Yso.queue or nil
     if Q and type(Q.get_owned) == &quot;function&quot; and type(Q.clear_owned) == &quot;function&quot; then
       local rec = Q.get_owned(lane)
-      if type(rec) == &quot;table&quot; and tostring(rec.note or &quot;&quot;) == token then
-        Q.clear_owned(lane)
+      if type(rec) == &quot;table&quot; then
+        local note_match = (tostring(rec.note or &quot;&quot;) == token)
+        local cmd = _trim(F.state.pending_cmd)
+        local cmd_match = (cmd ~= &quot;&quot; and _trim(rec.cmd) == cmd)
+        if note_match or cmd_match then
+          Q.clear_owned(lane)
+        end
       end
     end
   end
@@ -29773,6 +30633,7 @@ local _is_lock_state
 local _min_affs_for_current_set
 local _evaluate_fool
 local _cancel_pending_fool
+local _recheck_pending_fool
 
 function F.status()
   local curset = _current_cureset() or &quot;legacy&quot;
@@ -29833,9 +30694,7 @@ end
 
 -- Lock detector (still used for non-hunt curesets)
 _is_lock_state = function()
-  local A = _Aff()
-
-  if A.softlocked or A.truelocked then
+  if _has(&quot;softlocked&quot;) or _has(&quot;truelocked&quot;) then
     return true
   end
 
@@ -29935,16 +30794,20 @@ _cancel_pending_fool = function(reason)
     return true
   end
 
-  if owner_state ~= true then
-    _fool_echo(&quot;Pending Fool cancel skipped: queue ownership unknown.&quot;)
-    return false
-  end
-
+  local lane = _trim(F.state.pending_lane)
   local qtype = tostring(F.state.pending_qtype or Legacy.Fool.queue_type or &quot;bal&quot;)
   local ok = false
+  local Q = Yso and Yso.queue or nil
 
-  if Yso.queue and type(Yso.queue.raw) == &quot;function&quot; then
-    ok = (Yso.queue.raw(&quot;CLEARQUEUE &quot; .. qtype) == true)
+  if owner_state ~= true then
+    _fool_echo(&quot;Pending Fool ownership unknown; attempting best-effort queue clear.&quot;)
+  end
+
+  if Q and lane ~= &quot;&quot; and type(Q.clear_lane) == &quot;function&quot; then
+    local cleared = Q.clear_lane(lane, { qtype = qtype })
+    ok = (cleared == true)
+  elseif Q and type(Q.raw) == &quot;function&quot; then
+    ok = (Q.raw(&quot;CLEARQUEUE &quot; .. qtype) == true)
   elseif type(send) == &quot;function&quot; then
     send(&quot;CLEARQUEUE &quot; .. qtype, false)
     ok = true
@@ -29960,6 +30823,23 @@ _cancel_pending_fool = function(reason)
 
   return ok
 end
+
+_recheck_pending_fool = function(source)
+  if not _has_pending() then
+    return false, &quot;no_pending&quot;
+  end
+
+  local ok, ctx = _evaluate_fool(F.state.pending_source or source or &quot;pending&quot;)
+  if ok then
+    return false, &quot;still_valid&quot;
+  end
+
+  _fool_echo(&quot;Pending Fool became stale: &quot;..tostring(ctx.reason or &quot;unknown&quot;)..&quot;.&quot;)
+  _cancel_pending_fool(ctx.reason or &quot;stale&quot;)
+  return true, tostring(ctx.reason or &quot;stale&quot;)
+end
+
+F.recheck_pending = _recheck_pending_fool
 
 -- Queue helper
 local function _queue_fool(source)
@@ -30059,13 +30939,7 @@ end
 --  Auto driver #1: GMCP vitals tick
 --========================================================--
 function F.on_vitals()
-  if _has_pending() then
-    local ok, ctx = _evaluate_fool(F.state.pending_source or &quot;pending&quot;)
-    if not ok then
-      _fool_echo(&quot;Pending Fool became stale: &quot;..tostring(ctx.reason or &quot;unknown&quot;)..&quot;.&quot;)
-      _cancel_pending_fool(ctx.reason or &quot;stale&quot;)
-    end
-  end
+  _recheck_pending_fool(&quot;vitals&quot;)
 
   if not F.cfg.enabled then return end
   if not _is_occultist() then return end
@@ -30075,9 +30949,14 @@ function F.on_vitals()
 
   -- quick check: any affs at all?
   local A = _Aff()
+  local list = _self_list_affs()
   local has_any = false
-  for _, v in pairs(A) do
-    if v == true then has_any = true; break end
+  if type(list) == &quot;table&quot; then
+    has_any = (#list &gt; 0)
+  else
+    for _, v in pairs(A) do
+      if v == true then has_any = true; break end
+    end
   end
   if not has_any then return end
 
@@ -30136,6 +31015,12 @@ Yso._trig.fool_success = tempRegexTrigger(
     F.state.last_used = _now()
     _clear_pending(&quot;success&quot;)
     _release_basher_hold(&quot;success&quot;)
+    if type(cecho) == &quot;function&quot; then
+      cecho(&quot;\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(PURGED!).&lt;reset&gt;\n&quot;)
+      if type(resetFormat) == &quot;function&quot; then
+        resetFormat()
+      end
+    end
   end)
 )
 
@@ -30228,7 +31113,39 @@ Yso._eh.fool_vitals = registerAnonymousEventHandler(
   _safe(F.on_vitals)
 )
 
-_fool_echo(&quot;Yso Fool auto module loaded (GMCP+diagnose hooks active).&quot;)
+if Yso._eh.fool_aff_add then
+  killAnonymousEventHandler(Yso._eh.fool_aff_add)
+end
+Yso._eh.fool_aff_add = registerAnonymousEventHandler(
+  &quot;gmcp.Char.Afflictions.Add&quot;,
+  _safe(function() _recheck_pending_fool(&quot;gmcp.aff.add&quot;) end)
+)
+
+if Yso._eh.fool_aff_remove then
+  killAnonymousEventHandler(Yso._eh.fool_aff_remove)
+end
+Yso._eh.fool_aff_remove = registerAnonymousEventHandler(
+  &quot;gmcp.Char.Afflictions.Remove&quot;,
+  _safe(function() _recheck_pending_fool(&quot;gmcp.aff.remove&quot;) end)
+)
+
+if Yso._eh.fool_aff_list then
+  killAnonymousEventHandler(Yso._eh.fool_aff_list)
+end
+Yso._eh.fool_aff_list = registerAnonymousEventHandler(
+  &quot;gmcp.Char.Afflictions.List&quot;,
+  _safe(function() _recheck_pending_fool(&quot;gmcp.aff.list&quot;) end)
+)
+
+if Yso._eh.fool_self_aff_changed then
+  killAnonymousEventHandler(Yso._eh.fool_self_aff_changed)
+end
+Yso._eh.fool_self_aff_changed = registerAnonymousEventHandler(
+  &quot;yso.self.aff.changed&quot;,
+  _safe(function() _recheck_pending_fool(&quot;yso.self.aff.changed&quot;) end)
+)
+
+_fool_echo(&quot;Yso Fool auto module loaded (GMCP+aff-change+diagnose hooks active).&quot;)
 --========================================================--
 </script>
 						<eventHandlerList />
@@ -30663,8 +31580,8 @@ A.cfg = A.cfg or {
   max_observe = 3,
   enlighten_target = 5,
   unravel_mentals = 4,
-  loyals_on_cmd = &quot;order entourage kill %s&quot;,
-  off_passive_cmd = &quot;order entourage passive&quot;,
+  loyals_on_cmd = &quot;order loyals kill %s&quot;,
+  off_passive_cmd = &quot;order loyals passive&quot;,
 
   -- Instill priority list for the EQ slot during open/pressure phase.
   -- Each entry is a plain aff name (string) or
@@ -30743,6 +31660,23 @@ local function _now()
   return os.time()
 end
 
+local function _companions()
+  local C = Yso and Yso.occ and Yso.occ.companions or nil
+  return type(C) == &quot;table&quot; and C or nil
+end
+
+local function _echo_toggle(msg)
+  if A.cfg.echo ~= true then return end
+  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;&quot;, tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == &quot;function&quot; then
+    cecho(line .. &quot;\n&quot;)
+  elseif type(echo) == &quot;function&quot; then
+    echo((&quot;[Yso:Occultist] %s\n&quot;):format(tostring(msg)))
+  end
+end
+
 local function _eq()
   if Yso and Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
     local ok, v = pcall(Yso.state.eq_ready)
@@ -30807,6 +31741,12 @@ local function _same_attack_is_hot(cmd)
 end
 
 local function _loyals_active_for(tgt)
+  local C = _companions()
+  if C and type(C.is_active_for) == &quot;function&quot; then
+    local ok, v = pcall(C.is_active_for, tgt)
+    if ok then return v == true end
+  end
+
   tgt = _trim(tgt)
   if tgt == &quot;&quot; then return false end
   if type(Yso.loyals_attack) == &quot;function&quot; then
@@ -30824,6 +31764,12 @@ local function _loyals_active_for(tgt)
 end
 
 local function _loyals_any_active()
+  local C = _companions()
+  if C and type(C.is_any_active) == &quot;function&quot; then
+    local ok, v = pcall(C.is_any_active)
+    if ok then return v == true end
+  end
+
   if type(Yso.loyals_attack) == &quot;function&quot; then
     local ok, v = pcall(Yso.loyals_attack)
     if ok and v == true then return true end
@@ -30832,6 +31778,17 @@ local function _loyals_any_active()
 end
 
 local function _set_loyals_hostile(v, tgt)
+  local C = _companions()
+  if C and type(C.note_order_sent) == &quot;function&quot; then
+    if v == true then
+      local ok, handled = pcall(C.note_order_sent, (&quot;order loyals kill %s&quot;):format(_trim(tgt)), tgt)
+      if ok and handled == true then return end
+    else
+      local ok, handled = pcall(C.note_order_sent, &quot;order loyals passive&quot;, tgt)
+      if ok and handled == true then return end
+    end
+  end
+
   local hostile = (v == true)
   tgt = _trim(tgt)
   if type(Yso.set_loyals_attack) == &quot;function&quot; then
@@ -31177,13 +32134,7 @@ function A.alias_loop_prepare_start(ctx)
 end
 
 function A.alias_loop_on_started(ctx)
-  if A.cfg.echo == true then
-    if type(cecho) == &quot;function&quot; then
-      cecho(&quot;&lt;HotPink&gt;[Occultism] &lt;reset&gt;Aff loop ON.\n&quot;)
-    elseif type(echo) == &quot;function&quot; then
-      echo(&quot;[Occultism] Aff loop ON.\n&quot;)
-    end
-  end
+  _echo_toggle(&quot;AFF LOOP ON.&quot;)
   return true
 end
 
@@ -31193,20 +32144,27 @@ function A.alias_loop_on_stopped(ctx)
   A.state.waiting.queue = nil
   A.state.waiting.at = 0
   if _loyals_any_active() then
-    local passive = _trim(tostring(A.cfg.off_passive_cmd or &quot;order entourage passive&quot;))
-    if passive ~= &quot;&quot; then
-      _emit_free(passive, &quot;occ_aff:off_passive&quot;, _trim(A.state.last_target))
+    local C = _companions()
+    local sent = false
+    if C and type(C.passive) == &quot;function&quot; then
+      local ok = nil
+      ok, _ = C.passive({ emit = true, target = _trim(A.state.last_target) })
+      sent = (ok == true)
     end
-    _set_loyals_hostile(false)
+    if not sent then
+      local passive = _trim(tostring(A.cfg.off_passive_cmd or &quot;order loyals passive&quot;))
+      if passive ~= &quot;&quot; then
+        _emit_free(passive, &quot;occ_aff:off_passive&quot;, _trim(A.state.last_target))
+      end
+      _set_loyals_hostile(false)
+    end
+  end
+  local C = _companions()
+  if C and type(C.reset_recovery) == &quot;function&quot; then
+    pcall(C.reset_recovery, &quot;route_off&quot;)
   end
   if not (type(ctx) == &quot;table&quot; and ctx.silent == true) then
-    if A.cfg.echo == true then
-      if type(cecho) == &quot;function&quot; then
-        cecho(&quot;&lt;HotPink&gt;[Occultism] &lt;reset&gt;Aff loop OFF.\n&quot;)
-      elseif type(echo) == &quot;function&quot; then
-        echo(&quot;[Occultism] Aff loop OFF.\n&quot;)
-      end
-    end
+    _echo_toggle(&quot;AFF LOOP OFF.&quot;)
   end
   return true
 end
@@ -31300,7 +32258,22 @@ function A.attack_function(arg)
 
   -- 1 open
   if not _loyals_active_for(tgt) then
-    payload.free[#payload.free + 1] = string.format(A.cfg.loyals_on_cmd or &quot;order entourage kill %s&quot;, tgt)
+    local C = _companions()
+    local opener = nil
+    if C and type(C.kill) == &quot;function&quot; then
+      local ok, res = pcall(C.kill, tgt, { include_stand = true, emit = false })
+      if ok then opener = res end
+    end
+    if type(opener) == &quot;table&quot; then
+      for i = 1, #opener do
+        local cmd = _trim(opener[i])
+        if cmd ~= &quot;&quot; then payload.free[#payload.free + 1] = cmd end
+      end
+    elseif type(opener) == &quot;string&quot; and _trim(opener) ~= &quot;&quot; then
+      payload.free[#payload.free + 1] = _trim(opener)
+    else
+      payload.free[#payload.free + 1] = string.format(&quot;order loyals kill %s&quot;, tgt)
+    end
   end
 
   local ra_ready = true
@@ -31508,11 +32481,16 @@ function A.on_sent(payload, ctx)
 
   local eq_cmd = _trim(payload.eq)
   local free = payload.free
-
-  if type(free) == &quot;table&quot; then
+  local C = _companions()
+  if C and type(C.note_order_sent) == &quot;function&quot; and type(free) == &quot;table&quot; then
+    for i = 1, #free do
+      local cmd = _trim(free[i])
+      if cmd ~= &quot;&quot; then pcall(C.note_order_sent, cmd, tgt) end
+    end
+  elseif type(free) == &quot;table&quot; then
     for i = 1, #free do
       local cmd = _trim(free[i]):lower()
-      if cmd == (&quot;order entourage kill &quot; .. tgt:lower()) or cmd == (&quot;order loyals kill &quot; .. tgt:lower()) then
+      if cmd == (&quot;order loyals kill &quot; .. tgt:lower()) then
         _set_loyals_hostile(true, tgt)
         break
       end

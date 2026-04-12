@@ -97,6 +97,30 @@ local function _Aff()
   return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
 end
 
+local function _self_has_aff(aff)
+  local S = Yso and Yso.self or nil
+  if not (S and type(S.has_aff) == "function") then
+    return false, false
+  end
+  local ok, v = pcall(S.has_aff, aff)
+  if not ok then
+    return false, false
+  end
+  return (v == true), true
+end
+
+local function _self_list_affs()
+  local S = Yso and Yso.self or nil
+  if not (S and type(S.list_affs) == "function") then
+    return nil
+  end
+  local ok, list = pcall(S.list_affs)
+  if not ok or type(list) ~= "table" then
+    return nil
+  end
+  return list
+end
+
 local function _trim(s)
   return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
@@ -113,6 +137,10 @@ local function _normalize_cureset_name(v)
 end
 
 local function _has(aff)
+  local has, known = _self_has_aff(aff)
+  if known then
+    return has
+  end
   local A = _Aff()
   return A[aff] == true
 end
@@ -186,13 +214,13 @@ end
 
 -- Aff count, optionally ignoring blind/deaf
 local function _aff_count()
-  local A = _Aff()
+  local list = _self_list_affs()
   local n = 0
   local ignore_bd = Legacy.Fool.ignore_blind_deaf
   local counted_tendon = false
 
-  for k, v in pairs(A) do
-    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+  local function _count_one(k)
+    if k ~= "softlocked" and k ~= "truelocked" then
       if _is_tendon_key(k) then
         if not counted_tendon then
           n = n + _tendon_severity()
@@ -207,6 +235,20 @@ local function _aff_count()
       else
         n = n + 1
       end
+    end
+  end
+
+  if type(list) == "table" then
+    for i = 1, #list do
+      _count_one(tostring(list[i] or ""))
+    end
+    return n
+  end
+
+  local A = _Aff()
+  for k, v in pairs(A) do
+    if v == true then
+      _count_one(tostring(k or ""))
     end
   end
   return n
@@ -256,12 +298,23 @@ local function _pending_owner_state()
   end
 
   local token = tostring(F.state.pending_owner_token or "")
+  local cmd = _trim(F.state.pending_cmd)
+  local cmd_match = (cmd ~= "" and _trim(rec.cmd) == cmd)
+
   if token ~= "" then
-    return tostring(rec.note or "") == token
+    local note_match = (tostring(rec.note or "") == token)
+    if note_match then
+      return true
+    end
+    -- Token can drift if a lane owner row is rewritten by adjacent queue paths.
+    -- If command still matches pending Fool, keep cancelability.
+    if cmd_match then
+      return true
+    end
+    return false
   end
 
-  local cmd = _trim(F.state.pending_cmd)
-  return (cmd ~= "" and _trim(rec.cmd) == cmd)
+  return cmd_match
 end
 
 local function _clear_pending(reason)
@@ -277,8 +330,13 @@ local function _clear_pending(reason)
     local Q = Yso and Yso.queue or nil
     if Q and type(Q.get_owned) == "function" and type(Q.clear_owned) == "function" then
       local rec = Q.get_owned(lane)
-      if type(rec) == "table" and tostring(rec.note or "") == token then
-        Q.clear_owned(lane)
+      if type(rec) == "table" then
+        local note_match = (tostring(rec.note or "") == token)
+        local cmd = _trim(F.state.pending_cmd)
+        local cmd_match = (cmd ~= "" and _trim(rec.cmd) == cmd)
+        if note_match or cmd_match then
+          Q.clear_owned(lane)
+        end
       end
     end
   end
@@ -411,6 +469,7 @@ local _is_lock_state
 local _min_affs_for_current_set
 local _evaluate_fool
 local _cancel_pending_fool
+local _recheck_pending_fool
 
 function F.status()
   local curset = _current_cureset() or "legacy"
@@ -471,9 +530,7 @@ end
 
 -- Lock detector (still used for non-hunt curesets)
 _is_lock_state = function()
-  local A = _Aff()
-
-  if A.softlocked or A.truelocked then
+  if _has("softlocked") or _has("truelocked") then
     return true
   end
 
@@ -573,16 +630,20 @@ _cancel_pending_fool = function(reason)
     return true
   end
 
-  if owner_state ~= true then
-    _fool_echo("Pending Fool cancel skipped: queue ownership unknown.")
-    return false
-  end
-
+  local lane = _trim(F.state.pending_lane)
   local qtype = tostring(F.state.pending_qtype or Legacy.Fool.queue_type or "bal")
   local ok = false
+  local Q = Yso and Yso.queue or nil
 
-  if Yso.queue and type(Yso.queue.raw) == "function" then
-    ok = (Yso.queue.raw("CLEARQUEUE " .. qtype) == true)
+  if owner_state ~= true then
+    _fool_echo("Pending Fool ownership unknown; attempting best-effort queue clear.")
+  end
+
+  if Q and lane ~= "" and type(Q.clear_lane) == "function" then
+    local cleared = Q.clear_lane(lane, { qtype = qtype })
+    ok = (cleared == true)
+  elseif Q and type(Q.raw) == "function" then
+    ok = (Q.raw("CLEARQUEUE " .. qtype) == true)
   elseif type(send) == "function" then
     send("CLEARQUEUE " .. qtype, false)
     ok = true
@@ -598,6 +659,23 @@ _cancel_pending_fool = function(reason)
 
   return ok
 end
+
+_recheck_pending_fool = function(source)
+  if not _has_pending() then
+    return false, "no_pending"
+  end
+
+  local ok, ctx = _evaluate_fool(F.state.pending_source or source or "pending")
+  if ok then
+    return false, "still_valid"
+  end
+
+  _fool_echo("Pending Fool became stale: "..tostring(ctx.reason or "unknown")..".")
+  _cancel_pending_fool(ctx.reason or "stale")
+  return true, tostring(ctx.reason or "stale")
+end
+
+F.recheck_pending = _recheck_pending_fool
 
 -- Queue helper
 local function _queue_fool(source)
@@ -697,13 +775,7 @@ end
 --  Auto driver #1: GMCP vitals tick
 --========================================================--
 function F.on_vitals()
-  if _has_pending() then
-    local ok, ctx = _evaluate_fool(F.state.pending_source or "pending")
-    if not ok then
-      _fool_echo("Pending Fool became stale: "..tostring(ctx.reason or "unknown")..".")
-      _cancel_pending_fool(ctx.reason or "stale")
-    end
-  end
+  _recheck_pending_fool("vitals")
 
   if not F.cfg.enabled then return end
   if not _is_occultist() then return end
@@ -713,9 +785,14 @@ function F.on_vitals()
 
   -- quick check: any affs at all?
   local A = _Aff()
+  local list = _self_list_affs()
   local has_any = false
-  for _, v in pairs(A) do
-    if v == true then has_any = true; break end
+  if type(list) == "table" then
+    has_any = (#list > 0)
+  else
+    for _, v in pairs(A) do
+      if v == true then has_any = true; break end
+    end
   end
   if not has_any then return end
 
@@ -774,6 +851,12 @@ Yso._trig.fool_success = tempRegexTrigger(
     F.state.last_used = _now()
     _clear_pending("success")
     _release_basher_hold("success")
+    if type(cecho) == "function" then
+      cecho("\n<yellow>[Tarot] <DeepSkyBlue>(PURGED!).<reset>\n")
+      if type(resetFormat) == "function" then
+        resetFormat()
+      end
+    end
   end)
 )
 
@@ -866,5 +949,37 @@ Yso._eh.fool_vitals = registerAnonymousEventHandler(
   _safe(F.on_vitals)
 )
 
-_fool_echo("Yso Fool auto module loaded (GMCP+diagnose hooks active).")
+if Yso._eh.fool_aff_add then
+  killAnonymousEventHandler(Yso._eh.fool_aff_add)
+end
+Yso._eh.fool_aff_add = registerAnonymousEventHandler(
+  "gmcp.Char.Afflictions.Add",
+  _safe(function() _recheck_pending_fool("gmcp.aff.add") end)
+)
+
+if Yso._eh.fool_aff_remove then
+  killAnonymousEventHandler(Yso._eh.fool_aff_remove)
+end
+Yso._eh.fool_aff_remove = registerAnonymousEventHandler(
+  "gmcp.Char.Afflictions.Remove",
+  _safe(function() _recheck_pending_fool("gmcp.aff.remove") end)
+)
+
+if Yso._eh.fool_aff_list then
+  killAnonymousEventHandler(Yso._eh.fool_aff_list)
+end
+Yso._eh.fool_aff_list = registerAnonymousEventHandler(
+  "gmcp.Char.Afflictions.List",
+  _safe(function() _recheck_pending_fool("gmcp.aff.list") end)
+)
+
+if Yso._eh.fool_self_aff_changed then
+  killAnonymousEventHandler(Yso._eh.fool_self_aff_changed)
+end
+Yso._eh.fool_self_aff_changed = registerAnonymousEventHandler(
+  "yso.self.aff.changed",
+  _safe(function() _recheck_pending_fool("yso.self.aff.changed") end)
+)
+
+_fool_echo("Yso Fool auto module loaded (GMCP+aff-change+diagnose hooks active).")
 --========================================================--

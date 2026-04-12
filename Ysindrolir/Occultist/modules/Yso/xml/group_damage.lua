@@ -110,6 +110,7 @@ GD.cfg = GD.cfg or {
   opener_cmd = nil,
 
   -- Route-off cleanup (all loyals, every time), gated by a ready wake.
+  loyals_on_cmd = "order loyals kill %s",
   off_passive_cmd = "order loyals passive",
 
   -- Entity pool used by this route when an entity can contribute required/follow-up value.
@@ -170,6 +171,11 @@ GD.state.justice_once = GD.state.justice_once or {}
 local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
 local function _lc(s) return _trim(s):lower() end
 local function _tkey(s) return _lc(s) end
+
+local function _companions()
+  local C = Yso and Yso.occ and Yso.occ.companions or nil
+  return type(C) == "table" and C or nil
+end
 
 local function _now()
   -- Use canonical clock (seconds, handles getEpoch ms) to keep worm timers sane.
@@ -298,6 +304,21 @@ local function _tgt_valid(tgt)
 end
 
 local function _set_loyals_hostile(v)
+  local C = _companions()
+  if C and type(C.note_order_sent) == "function" then
+    if v == true then
+      local tgt = _trim(GD.state and GD.state.last_target or "")
+      if tgt == "" then
+        tgt = _trim(rawget(_G, "target") or "")
+      end
+      local ok, handled = pcall(C.note_order_sent, ("order loyals kill %s"):format(tgt), tgt)
+      if ok and handled == true then return end
+    else
+      local ok, handled = pcall(C.note_order_sent, "order loyals passive", _trim(GD.state and GD.state.last_target or ""))
+      if ok and handled == true then return end
+    end
+  end
+
   if not Yso.state then return end
   if type(Yso.state.loyals_hostile) == "function" then
     pcall(Yso.state.loyals_hostile, v)
@@ -473,6 +494,36 @@ local function _command_sep()
   local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or "&&")
   if sep == "" then sep = "&&" end
   return sep
+end
+
+local function _each_sep_part(text, sep, fn)
+  text = tostring(text or "")
+  sep = tostring(sep or "&&")
+  if text == "" then return end
+  if sep == "" then
+    fn(text)
+    return
+  end
+  local i = 1
+  while true do
+    local s, e = text:find(sep, i, true)
+    if not s then
+      fn(text:sub(i))
+      break
+    end
+    fn(text:sub(i, s - 1))
+    i = e + 1
+  end
+end
+
+local function _echo_toggle(msg)
+  if not GD.cfg.echo then return end
+  local line = string.format("<orange>[Yso:Occultist] <HotPink>%s<reset>", tostring(msg))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == "function" then
+    Yso.util.cecho_line(line)
+  elseif type(cecho) == "function" then
+    cecho(line .. string.char(10))
+  end
 end
 
 local _tarot_entity_payload
@@ -1051,6 +1102,12 @@ local function _pick_entity_cmd(tgt, st, opts)
 end
 
 local function _loyals_active_for(tgt)
+  local C = _companions()
+  if C and type(C.is_active_for) == "function" then
+    local ok, v = pcall(C.is_active_for, tgt)
+    if ok then return v == true end
+  end
+
   local Off = Yso and Yso.off and Yso.off.oc or nil
   if Off and type(Off.loyals_active_for) == "function" then
     local ok, v = pcall(Off.loyals_active_for, tgt)
@@ -1060,14 +1117,33 @@ local function _loyals_active_for(tgt)
 end
 
 local function _plan_free(tgt)
+  if _loyals_active_for(tgt) then return nil, nil end
+
+  local C = _companions()
+  if C and type(C.kill) == "function" then
+    local ok, res = pcall(C.kill, tgt, {
+      include_stand = (Yso and Yso.legality and Yso.legality.queue_stand == true),
+      emit = false,
+    })
+    if ok and type(res) == "table" then
+      local parts = {}
+      for i = 1, #res do
+        local cmd = _trim(res[i])
+        if cmd ~= "" then parts[#parts + 1] = cmd end
+      end
+      if #parts > 0 then
+        return table.concat(parts, _command_sep()), "team_coordination"
+      end
+    elseif ok and type(res) == "string" and _trim(res) ~= "" then
+      return _trim(res), "team_coordination"
+    end
+  end
+
   local parts = {}
   if Yso and Yso.legality and Yso.legality.queue_stand == true then
     parts[#parts + 1] = "stand"
   end
-  if not _loyals_active_for(tgt) then
-    parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or "order entourage kill %s")):format(tgt)
-  end
-  if #parts == 0 then return nil, nil end
+  parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or "order loyals kill %s")):format(tgt)
   return table.concat(parts, _command_sep()), "team_coordination"
 end
 
@@ -1563,6 +1639,26 @@ function GD.on_sent(payload, ctx)
     }
   end
   GD.state.template.last_emitted_payload = payload
+  do
+    local C = _companions()
+    if C and type(C.note_order_sent) == "function" and type(payload) == "table" then
+      local free = payload.free or (payload.lanes and payload.lanes.free) or nil
+      local tgt = _trim(payload.target or (payload.lanes and payload.lanes.target) or GD.state.last_target)
+      local sep = _command_sep()
+      local function note_one(cmd)
+        cmd = _trim(cmd)
+        if cmd ~= "" then pcall(C.note_order_sent, cmd, tgt) end
+      end
+      if type(free) == "table" then
+        for i = 1, #free do
+          local raw = _trim(free[i])
+          _each_sep_part(raw, sep, note_one)
+        end
+      elseif type(free) == "string" and _trim(free) ~= "" then
+        _each_sep_part(free, sep, note_one)
+      end
+    end
+  end
   return GD.on_payload_sent(legacy)
 end
 
@@ -1679,7 +1775,7 @@ function GD.alias_loop_on_started(ctx)
   GD.state.busy = false
   _clear_waiting()
 
-  _echo("Group damage loop ON.")
+  _echo_toggle("GROUP DAMAGE LOOP ON.")
   local tgt = _target()
   if tgt == "" then
     _echo("No target yet; holding.")
@@ -1694,14 +1790,26 @@ function GD.alias_loop_on_stopped(ctx)
   local reason = tostring(ctx.reason or "manual")
   GD.state.stop_pending = false
 
-  local passive = _trim(tostring(GD.cfg.off_passive_cmd or "order loyals passive"))
-  if passive ~= "" then
-    _emit_lanes({ lanes = { free = passive }, target = _target() }, "group_damage:off_passive")
+  local C = _companions()
+  local sent_passive = false
+  if C and type(C.passive) == "function" then
+    local ok = nil
+    ok, _ = C.passive({ emit = true, target = _target() })
+    sent_passive = (ok == true)
   end
-  _set_loyals_hostile(false)
+  if not sent_passive then
+    local passive = _trim(tostring(GD.cfg.off_passive_cmd or "order loyals passive"))
+    if passive ~= "" then
+      _emit_lanes({ lanes = { free = passive }, target = _target() }, "group_damage:off_passive")
+    end
+    _set_loyals_hostile(false)
+  end
+  if C and type(C.reset_recovery) == "function" then
+    pcall(C.reset_recovery, "route_off")
+  end
 
   if ctx.silent ~= true then
-    _echo(string.format("Group damage loop OFF (%s).", reason))
+    _echo_toggle(string.format("GROUP DAMAGE LOOP OFF (%s).", tostring(reason):upper()))
   end
 end
 
@@ -1749,6 +1857,10 @@ function GD.mark_tumble(tgt, dir)
   T.at      = now
   T.until_t = now + 0.75
   T.fired   = false
+  local C = _companions()
+  if C and type(C.invalidate) == "function" then
+    pcall(C.invalidate, "tumble_begin", { target = tgt, dir = dir })
+  end
   if Yso.pulse and type(Yso.pulse.wake) == "function" then
     Yso.pulse.wake("gd:tumble_begin")
   end
@@ -1764,6 +1876,10 @@ function GD.mark_tumble_out(tgt, diru)
   E.target     = tgt
   E.dir        = diru
   E.started_at = now
+  local C = _companions()
+  if C and type(C.invalidate) == "function" then
+    pcall(C.invalidate, "tumble_out", { target = tgt, dir = diru })
+  end
   -- don't clear fail_until here: if we just failed empress, keep the backoff
   if Yso.pulse and type(Yso.pulse.wake) == "function" then
     Yso.pulse.wake("gd:tumble_out")

@@ -687,6 +687,8 @@ function P.note_tree_attempt(source)
 end
 
 function P.note_tree_unchanged(source)
+  -- State-only tree model: unchanged is informational only.
+  -- No cooldown/suppression state machine is owned here in phase one.
   if type(raiseEvent) == "function" then
     raiseEvent("yso.curing.tree_unchanged", tostring(source or "tree_unchanged"))
   end

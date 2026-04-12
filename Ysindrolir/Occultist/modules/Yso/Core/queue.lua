@@ -595,6 +595,16 @@ function Q.install_lane(lane, cmd, opts)
     return true, "unchanged", Q.get_owned(key)
   end
 
+  if key ~= "free" and opts.force_blocked ~= true then
+    -- Final recheck directly before queue send so late-tick writhe blocks
+    -- cannot leak staged lane payloads between commit assembly and install.
+    local blocked_now = type(Q.lane_blocked) == "function" and Q.lane_blocked(key) or false
+    if blocked_now == true then
+      Q._staged[key] = nil
+      return false, "lane_blocked"
+    end
+  end
+
   local existed = (type(Q.get_owned(key)) == "table")
   local ok = Q.addclear(qtype, cmd)
   if not ok then

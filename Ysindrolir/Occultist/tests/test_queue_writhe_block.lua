@@ -140,13 +140,33 @@ Q.lane_blocked = original_lane_blocked
 assert_false("4c: commit suppressed when lane blocks mid-cycle", ok_commit_race == true)
 assert_eq("4d: no queue send for blocked race payload", #_send_lines, before_race_send)
 
-print("\n=== Test 5: unblock rebuilds from fresh payload ===")
+print("\n=== Test 5: final pre-send lane recheck blocks late race ===")
 assert_true("5a: lane unblock stable", Q.unblock_lane("eq", "writhe_clear"))
-assert_true("5b: stage fresh eq command", Q.stage("eq", "instill target with slickness"))
+assert_true("5b: stage eq command for final recheck", Q.stage("eq", "instill target with dizziness"))
+local original_lane_blocked_2 = Q.lane_blocked
+local lane_blocked_calls_2 = 0
+Q.lane_blocked = function(lane)
+  if tostring(lane or "") == "eq" then
+    lane_blocked_calls_2 = lane_blocked_calls_2 + 1
+    if lane_blocked_calls_2 >= 3 then
+      return true, "webbed"
+    end
+  end
+  return false, ""
+end
+local before_race_send_2 = #_send_lines
+local ok_commit_race_2 = Q.commit({ allow_eqbal = true })
+Q.lane_blocked = original_lane_blocked_2
+assert_false("5c: final pre-send recheck suppresses leak", ok_commit_race_2 == true)
+assert_eq("5d: no queue send after late lane block", #_send_lines, before_race_send_2)
+
+print("\n=== Test 6: unblock rebuilds from fresh payload ===")
+assert_true("6a: lane unblock stable", Q.unblock_lane("eq", "writhe_clear"))
+assert_true("6b: stage fresh eq command", Q.stage("eq", "instill target with slickness"))
 local ok_commit_2 = Q.commit({ allow_eqbal = true })
-assert_true("5c: commit fresh eq command", ok_commit_2 == true)
+assert_true("6c: commit fresh eq command", ok_commit_2 == true)
 local last_line = _send_lines[#_send_lines] or ""
-assert_true("5d: last queue send is refreshed command", last_line:find("slickness", 1, true) ~= nil)
+assert_true("6d: last queue send is refreshed command", last_line:find("slickness", 1, true) ~= nil)
 
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then

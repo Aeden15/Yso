@@ -5,6 +5,39 @@ Last updated: April 10, 2026
 
 Current fixes
 -------------
+  Occultist companion-control unification + loop-toggle visibility (April 11, 2026):
+    Added shared companion helper:
+      modules/Yso/Combat/occultist/companions.lua
+    Occultist route automation now uses canonical free-lane commands:
+      order loyals kill <target>
+      order loyals passive
+    Hard-failure lines for missing loyal/entourage now route through one-shot
+    `call entities` recovery with recall-pending suppression and recovery reset.
+    Companion state now invalidates on tumble/starburst/astralform text hooks.
+    Loop ON/OFF echoes across occ_aff / party_aff / group_damage now keep:
+      [Yso:Occultist]
+    in orange with uppercase HotPink wording for better visibility.
+
+  Mind-locking alert trigger added under Miscellaneous stuff (April 11, 2026):
+    `Yso system.xml` now includes trigger:
+      Mind locking
+    in the Miscellaneous stuff folder with regex:
+      ^You feel the probing mind of (.+) touch yours\.$
+    using `Alarm01.wav` and:
+      Yso.radianceAlert.fire(1, who, "MIND LOCKING")
+
+  diagnostic remediation pass (April 11, 2026):
+    strict arms-unusable guard in self_aff now skips force-bound when arm-damage
+    affs are active, preserving writhe-family lane blocking for true writhe
+    cases while avoiding false positives.
+    queue commit/install now performs a final pre-send blocked-lane recheck for
+    EQ/BAL payloads to close late-tick writhe race windows.
+    tree remains Yso state-only (ready true/false); policy keeps touch-tree as
+    `tree_state_only` no-send and unchanged line remains informational only.
+    baseline capture fallback now supports per-set warning cadence and safe
+    no-alias temp handling when `table.deepcopy` is unavailable.
+    no-action (stale/non-applicable in current branch): diagnostic IDs #3, #5, #10.
+
   serverside curing coordinator refactor (April 11, 2026):
     Yso now owns self-affliction truth and broader curing-relevant self state
     through:

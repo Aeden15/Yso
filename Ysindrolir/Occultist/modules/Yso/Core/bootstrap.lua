@@ -122,6 +122,7 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.Combat.parry",
   "Yso.Combat.offense_driver",
   "Yso.Combat.occultist.entity_registry",
+  "Yso.Combat.occultist.companions",
   "Yso.xml.yso_occultist_affmap",
   "Yso.Combat.occultist.aeon",
   "Yso.Combat.routes.group_damage",
@@ -203,6 +204,13 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     modules = { "Yso.Combat.route_interface" },
     probe = function()
       return type((((_G.Yso or {}).Combat or {}).RouteInterface)) == "table"
+    end,
+  },
+  {
+    name = "occultist_companions",
+    modules = { "Yso.Combat.occultist.companions", "Yso.xml.yso_occultist_companions" },
+    probe = function()
+      return type((((_G.Yso or {}).occ or {}).companions)) == "table"
     end,
   },
   {

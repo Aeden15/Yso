@@ -238,6 +238,13 @@ local function make_world(opts)
         triggers[id].fn()
       end
     end,
+    emit_event = function(name, ...)
+      for _, row in pairs(events) do
+        if row and row.name == name and type(row.fn) == "function" then
+          row.fn(name, ...)
+        end
+      end
+    end,
   }
 end
 
@@ -339,7 +346,7 @@ do
   assert_true("6c: basher hold remains while pending clear failed", world.F.blocks_basher())
 end
 
-print("\n=== Test 7: ownership mismatch clears pending without CLEARQUEUE ===")
+print("\n=== Test 7: stale cancel also fires on aff-change event (no vitals wait) ===")
 do
   local affs = { brokenleftarm = true, clumsiness = true }
   local world = make_world({
@@ -347,6 +354,26 @@ do
   })
 
   assert_true("7a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  affs.clumsiness = nil
+  world.emit_event("gmcp.Char.Afflictions.Remove")
+
+  assert_ops("7b: aff-change event clears stale pending Fool queue", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+    "queue:raw:CLEARQUEUE bal",
+  })
+  assert_false("7c: stale pending cleared on aff-change event", world.F.state.pending)
+  assert_false("7d: hold released on aff-change event", world.F.blocks_basher())
+end
+
+print("\n=== Test 8: ownership mismatch clears pending without CLEARQUEUE ===")
+do
+  local affs = { brokenleftarm = true, clumsiness = true }
+  local world = make_world({
+    affs = affs,
+  })
+
+  assert_true("8a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
   world.owned.bal = {
     cmd = "cast bloodboil",
     note = "someone_else",
@@ -354,15 +381,15 @@ do
   affs.clumsiness = nil
   world.F.on_vitals()
 
-  assert_ops("7b: ownership mismatch avoids clearqueue", world.ops, {
+  assert_ops("8b: ownership mismatch avoids clearqueue", world.ops, {
     "send:cq freestand",
     "queue:addclearfull:bal:fling fool at me",
   })
-  assert_false("7c: mismatch clears pending marker", world.F.state.pending)
-  assert_false("7d: mismatch releases hold", world.F.blocks_basher())
+  assert_false("8c: mismatch clears pending marker", world.F.state.pending)
+  assert_false("8d: mismatch releases hold", world.F.blocks_basher())
 end
 
-print("\n=== Test 8: attack-package retry stays suppressed until Fool releases ===")
+print("\n=== Test 9: attack-package retry stays suppressed until Fool releases ===")
 do
   local world = make_world({
     affs = { brokenleftarm = true, clumsiness = true },
@@ -381,20 +408,44 @@ do
     return true
   end
 
-  assert_true("8a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
-  assert_false("8b: hold suppresses attack-package requeue", queue_attack_package("command orb"))
-  assert_eq("8c: basher queued stays false while suppressed", Legacy.Settings.Basher.queued, false)
-  assert_count("8d: no extra ops while hold active", world.ops, 2)
+  assert_true("9a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  assert_false("9b: hold suppresses attack-package requeue", queue_attack_package("command orb"))
+  assert_eq("9c: basher queued stays false while suppressed", Legacy.Settings.Basher.queued, false)
+  assert_count("9d: no extra ops while hold active", world.ops, 2)
 
   world.run_trigger(Yso._trig.fool_success)
-  assert_true("8e: attack package resumes after success", queue_attack_package("command orb"))
-  assert_eq("8f: basher queued becomes true after release", Legacy.Settings.Basher.queued, true)
-  assert_ops("8g: resumed attack package queues paired work", world.ops, {
+  assert_true("9e: attack package resumes after success", queue_attack_package("command orb"))
+  assert_eq("9f: basher queued becomes true after release", Legacy.Settings.Basher.queued, true)
+  assert_ops("9g: resumed attack package queues paired work", world.ops, {
     "send:cq freestand",
     "queue:addclearfull:bal:fling fool at me",
     "send:queue add freestand command orb",
     "send:queue add freestand basher",
   })
+end
+
+print("\n=== Test 10: token drift still cancels pending Fool when cmd matches ===")
+do
+  local affs = { brokenleftarm = true, clumsiness = true }
+  local world = make_world({
+    affs = affs,
+  })
+
+  assert_true("10a: manual use queues Fool", Legacy.FoolSelfCleanse("manual"))
+  world.owned.bal = {
+    cmd = "fling fool at me",
+    note = "rewritten_owner_note",
+  }
+  affs.clumsiness = nil
+  world.F.on_vitals()
+
+  assert_ops("10b: stale pending still clears queue with cmd-match fallback", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+    "queue:raw:CLEARQUEUE bal",
+  })
+  assert_false("10c: pending cleared after cmd-match fallback cancel", world.F.state.pending)
+  assert_false("10d: hold released after cmd-match fallback cancel", world.F.blocks_basher())
 end
 
 io.write(string.format("PASS: %d\n", pass_count))
