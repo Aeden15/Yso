@@ -115,6 +115,7 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.Core.queue",
   "Yso.Core.wake_bus",
   "Yso.Combat.route_registry",
+  "Yso.Combat.offense_core",
   "Yso.Combat.route_interface",
   "Yso.Combat.hinder",
   "Yso.Combat.entities",
@@ -221,10 +222,11 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     end,
   },
   {
-    name = "party_aff",
+    name = "group_aff",
     modules = { "Yso.Combat.routes.party_aff" },
     probe = function()
-      return type((((_G.Yso or {}).off or {}).oc or {}).party_aff) == "table"
+      local oc = (((_G.Yso or {}).off or {}).oc or {})
+      return type(oc.group_aff) == "table" or type(oc.party_aff) == "table"
     end,
   },
   {

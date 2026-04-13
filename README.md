@@ -1,9 +1,10 @@
 # Yso
 
-Current workspace snapshot: April 12, 2026.
+Current workspace snapshot: April 13, 2026.
 
 ## Current fixes
 
+- **`occ_aff` phase bootstrap regression fix (April 13, 2026)** — `modules/Yso/Combat/routes/occ_aff.lua` now limits loyals opener bootstrap gating to the `open` phase. Pressure/cleanse/convert/finish planning no longer short-circuits behind opener staging, restoring expected EQ/BAL/class payload generation and convert->finish transition behavior (`test_loyals_bootstrap_readaura.lua`). XML mirrors were refreshed and `Yso system.xml` was rebuilt.
 - **Fool hunt/bash cureset gate fix (April 12, 2026)** — `fool_logic.lua` now resolves curesets in this order: dev override -> `Legacy.Curing.ActiveServerSet` -> `_G.CurrentCureset` -> mode fallback -> `legacy`, so bash mode no longer overrides explicit non-hunt curesets. In `hunt`, Fool is now a strict live gate (cooldown ready, balance ready now, 3+ current affs, and no `paralysis`/`prone`/`webbed`/both-arms-broken hard fail). The old permissive 2-aff hunt behavior was removed, and `test_fool_basher_preempt.lua` now covers hunt threshold/timing/hard-fail regressions plus cureset precedence.
 - **Occultist direct-call loop-state compatibility fix (April 12, 2026)** — `occ_aff.can_run()` now enforces enabled/active route-loop state only when a route-loop manager is present (or explicitly requested), so direct `build_payload()`/`attack_function()` calls keep working in standalone/test contexts. This resolves the regression surfaced in `test_loyals_bootstrap_readaura.lua` and `test_occ_aff_loop_requeue.lua`. XML mirrors were refreshed and `Yso system.xml` was rebuilt.
 - **Occultist `occ_aff` Sunder-template alignment (April 12, 2026)** — Converted `occ_aff` attack flow to the lane-table Sunder route shape used by `party_aff`/`group_damage`: route payloads now carry `lanes` + `meta`, include dual `entity`/`class` keys, pass through `Yso.route_gate.finalize(...)`, and emit via the same commit-ready lane adapter path. Added route-local in-flight/debug/template state (`waiting/main_lane/fingerprint`, `in_flight`, last no-send/retry reason) while keeping existing affliction decision logic intact.

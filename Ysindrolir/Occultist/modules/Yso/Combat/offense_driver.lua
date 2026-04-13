@@ -9,22 +9,41 @@ Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
-if type(Yso.off.oc.toggle) ~= "function" then
-  function Yso.off.oc.toggle(on)
+local function _off_core()
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.toggle) == "function" then return core end
+  if type(require) == "function" then
+    pcall(require, "Yso.Combat.offense_core")
+  end
+  core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.toggle) == "function" then return core end
+  return nil
+end
+
+function Yso.off.oc.toggle(on)
+  local core = _off_core()
+  if core then
     if on == nil then
-      Yso.off.oc.enabled = not (Yso.off.oc.enabled == true)
-    else
-      Yso.off.oc.enabled = (on == true)
+      return core.toggle("oc_aff")
+    elseif on == true then
+      return core.on("oc_aff")
     end
-    if Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
-      Yso.pulse.wake("oc:toggle")
-    end
-    local msg = string.format("<orange>[Yso] Occultist offense %s.", Yso.off.oc.enabled and "ON" or "OFF")
-    if Yso.util and type(Yso.util.cecho_line) == "function" then
-      Yso.util.cecho_line(msg)
-    else
-      cecho(msg .. "\n")
-    end
+    return core.off("oc_aff")
+  end
+
+  if on == nil then
+    Yso.off.oc.enabled = not (Yso.off.oc.enabled == true)
+  else
+    Yso.off.oc.enabled = (on == true)
+  end
+  if Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
+    Yso.pulse.wake("oc:toggle")
+  end
+  local msg = string.format("<orange>[Yso] Occultist offense %s.", Yso.off.oc.enabled and "ON" or "OFF")
+  if Yso.util and type(Yso.util.cecho_line) == "function" then
+    Yso.util.cecho_line(msg)
+  else
+    cecho(msg .. "\n")
   end
 end
 
@@ -244,8 +263,9 @@ function Yso.off.oc.on_enemy_kelp_eat(who)
   _mark(E.kelp_eat_at, E.kelp_eat_n, who)
   _note_target_herb(who, "kelp")
   _party_observe_note(who, "kelp", { bucket = "kelp" })
-  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_kelp_eat)=="function" then
-    pcall(Yso.off.oc.group_damage.on_enemy_kelp_eat, who)
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.on_enemy_kelp_eat) == "function" then
+    pcall(core.on_enemy_kelp_eat, who)
   end
 end
 
@@ -254,8 +274,9 @@ function Yso.off.oc.on_enemy_aurum_eat(who)
   _mark(E.aurum_eat_at, E.aurum_eat_n, who)
   _note_target_herb(who, "aurum")
   _party_observe_note(who, "aurum", { bucket = "aurum" })
-  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_aurum_eat)=="function" then
-    pcall(Yso.off.oc.group_damage.on_enemy_aurum_eat, who)
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.on_enemy_aurum_eat) == "function" then
+    pcall(core.on_enemy_aurum_eat, who)
   end
 end
 
@@ -270,8 +291,9 @@ function Yso.off.oc.on_enemy_tree_touch(who)
       r.meta.last_tree_touch_at = E.tree_touch_at[tostring(who or ""):lower()]
     end
   end
-  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.group_damage and type(Yso.off.oc.group_damage.on_enemy_tree_touch)=="function" then
-    pcall(Yso.off.oc.group_damage.on_enemy_tree_touch, who)
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.on_enemy_tree_touch) == "function" then
+    pcall(core.on_enemy_tree_touch, who)
   end
 end
 

@@ -51,7 +51,9 @@ Current fixes
   Magi combat now also includes a duel affliction / convergence route:
     Yso.off.magi.focus
   The route key and debug key are both:
-    focus
+    magi_focus
+  Legacy alias compatibility still maps:
+    focus -> magi_focus
   It opens through horripilation / freeze, revisits bombard when needed,
   swaps Fulminate continuation in on kelp pressure, drives Dissonance toward
   stage 4 with live Magi-local tracking, then casts convergence immediately
@@ -64,6 +66,9 @@ Current Magi helpers
 
   magi_focus.lua
     Provides Yso.off.magi.focus for the Magi duel convergence route.
+
+  Magi_duel_dam.lua
+    Provides Yso.off.magi.dmg for the Magi duel damage route (key: magi_dmg).
 
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.
@@ -109,9 +114,9 @@ Notes
   and only then mixes fire-side pressure from AK frozen/frostbite/scalded/
   aflame/conflagrate state.
   Magi focus lives in the same route family and debug surface:
-    yrdebug on focus
-    yrshow focus
-    yrshow focus full
+    yrdebug on magi_focus
+    yrshow magi_focus
+    yrshow magi_focus full
   Focus uses live Yso.magi.resonance state, observes Crystalism focus without
   auto-casting it, and exposes Dissonance stage/confidence/last evidence in
   the shared YsoDevtools package rather than inventing a fixed timer.

@@ -1,12 +1,20 @@
 Yso Systems Workspace
 =====================
-Last updated: April 12, 2026
+Last updated: April 13, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  occ_aff phase bootstrap regression fix (April 13, 2026) --
+  modules/Yso/Combat/routes/occ_aff.lua now limits loyals opener bootstrap
+  gating to the open phase. Pressure/cleanse/convert/finish planning no longer
+  short-circuits behind opener staging, restoring expected EQ/BAL/class payload
+  generation and convert->finish transitions in
+  test_loyals_bootstrap_readaura.lua. XML mirrors were refreshed and Yso
+  system.xml was rebuilt.
+
   Fool hunt/bash cureset gate fix (April 12, 2026) --
   fool_logic.lua now resolves curesets in this order:
     dev override

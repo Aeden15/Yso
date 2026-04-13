@@ -149,7 +149,7 @@ end
 function C.is_route_active()
   local M = Yso and Yso.mode or nil
   if type(M) == "table" and type(M.route_loop_active) == "function" then
-    local routes = { "occ_aff", "occ_aff_burst", "aff", "party_aff", "group_damage" }
+    local routes = { "oc_aff", "occ_aff", "aff", "group_aff", "party_aff", "group_damage" }
     for i = 1, #routes do
       local ok, v = pcall(M.route_loop_active, routes[i])
       if ok and v == true then return true end
@@ -159,16 +159,16 @@ function C.is_route_active()
   if type(M) == "table" and type(M.active_route_id) == "function" then
     local ok, rid = pcall(M.active_route_id)
     rid = ok and _lc(rid) or ""
-    if rid == "occ_aff" or rid == "occ_aff_burst" or rid == "aff" or rid == "party_aff" or rid == "group_damage" then
+    if rid == "oc_aff" or rid == "occ_aff" or rid == "aff" or rid == "group_aff" or rid == "party_aff" or rid == "group_damage" then
       return true
     end
   end
 
   local Off = Yso and Yso.off and Yso.off.oc or nil
   if type(Off) == "table" then
-    local a = Off.occ_aff
+    local a = Off.oc_aff or Off.occ_aff
     if type(a) == "table" and type(a.state) == "table" and a.state.loop_enabled == true then return true end
-    local p = Off.party_aff
+    local p = Off.group_aff or Off.party_aff
     if type(p) == "table" and type(p.state) == "table" and p.state.loop_enabled == true then return true end
     local g = Off.group_damage
     if type(g) == "table" and type(g.state) == "table" and g.state.loop_enabled == true then return true end

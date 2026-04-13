@@ -733,31 +733,39 @@ function Q.commit(opts)
 
   if type(payload.free) == "table" and #payload.free > 0 then
     local free_cmd = table_concat(payload.free, _command_sep())
-    local ok = Q.install_lane("free", free_cmd, opts)
+    local ok, result = Q.install_lane("free", free_cmd, opts)
     if not ok then return false end
-    queued.free = payload.free
-    any = true
+    if result ~= "unchanged" then
+      queued.free = payload.free
+      any = true
+    end
   end
 
   if _lane_send_allowed("eq", payload.eq) then
-    local ok = Q.install_lane("eq", payload.eq, opts)
+    local ok, result = Q.install_lane("eq", payload.eq, opts)
     if not ok then return false end
-    queued.eq = payload.eq
-    any = true
+    if result ~= "unchanged" then
+      queued.eq = payload.eq
+      any = true
+    end
   end
 
   if _lane_send_allowed("bal", payload.bal) then
-    local ok = Q.install_lane("bal", payload.bal, opts)
+    local ok, result = Q.install_lane("bal", payload.bal, opts)
     if not ok then return false end
-    queued.bal = payload.bal
-    any = true
+    if result ~= "unchanged" then
+      queued.bal = payload.bal
+      any = true
+    end
   end
 
   if _lane_send_allowed("class", payload.class) then
-    local ok = Q.install_lane("class", payload.class, opts)
+    local ok, result = Q.install_lane("class", payload.class, opts)
     if not ok then return false end
-    queued.class = payload.class
-    any = true
+    if result ~= "unchanged" then
+      queued.class = payload.class
+      any = true
+    end
   end
 
   if not any then return false end

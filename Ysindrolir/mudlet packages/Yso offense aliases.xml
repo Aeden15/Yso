@@ -19,12 +19,11 @@
 					<name>Offense toggle</name>
 					<script>-- ^occ$  -&gt;  toggle Occultist offense on/off
 Yso = Yso or {}
-Yso.off = Yso.off or {}
-Yso.off.oc = Yso.off.oc or {}
-if type(Yso.off.oc.toggle) == "function" then
-  Yso.off.oc.toggle()
+local core = Yso and Yso.off and Yso.off.core or nil
+if core and type(core.toggle) == "function" then
+  core.toggle("oc_aff")
 else
-  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense core not loaded.\n")
 end</script>
 					<command />
 					<packageName />
@@ -34,24 +33,11 @@ end</script>
 					<name>Offense on</name>
 					<script>-- ^occon$  -&gt;  force offense ON
 Yso = Yso or {}
-Yso.off = Yso.off or {}
-Yso.off.oc = Yso.off.oc or {}
-Yso.off.driver = Yso.off.driver or {}
-
-local called = false
-if type(Yso.off.oc.on) == "function" then
-  local ok = pcall(Yso.off.oc.on)
-  called = (ok == true)
-elseif type(Yso.off.oc.toggle) == "function" then
-  pcall(Yso.off.oc.toggle, true)
-  called = true
-elseif type(Yso.off.driver.toggle) == "function" then
-  pcall(Yso.off.driver.toggle, true)
-  called = true
-end
-
-if not called then
-  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+local core = Yso and Yso.off and Yso.off.core or nil
+if core and type(core.on) == "function" then
+  pcall(core.on, "oc_aff")
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense core not loaded.\n")
 end</script>
 					<command />
 					<packageName />
@@ -61,24 +47,11 @@ end</script>
 					<name>Offense off</name>
 					<script>-- ^occoff$  -&gt;  force offense OFF
 Yso = Yso or {}
-Yso.off = Yso.off or {}
-Yso.off.oc = Yso.off.oc or {}
-Yso.off.driver = Yso.off.driver or {}
-
-local called = false
-if type(Yso.off.oc.off) == "function" then
-  local ok = pcall(Yso.off.oc.off)
-  called = (ok == true)
-elseif type(Yso.off.oc.toggle) == "function" then
-  pcall(Yso.off.oc.toggle, false)
-  called = true
-elseif type(Yso.off.driver.toggle) == "function" then
-  pcall(Yso.off.driver.toggle, false)
-  called = true
-end
-
-if not called then
-  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense module not loaded.\n")
+local core = Yso and Yso.off and Yso.off.core or nil
+if core and type(core.off) == "function" then
+  pcall(core.off, "oc_aff")
+else
+  cecho("&lt;red&gt;[YSO]&lt;reset&gt; Offense core not loaded.\n")
 end</script>
 					<command />
 					<packageName />
@@ -123,7 +96,7 @@ for _, l in ipairs(lines) do
   cecho(string.format("&lt;white&gt;%s\n", l))
 end
 
-local AB = Off.occ_aff or Off.occ_aff_burst
+local AB = Off.oc_aff or Off.occ_aff or Off.occ_aff_burst
 if AB and AB.state then
   cecho(string.format("&lt;white&gt;  aff     : %s\n", yn(AB.state.enabled)))
 end
@@ -133,9 +106,9 @@ if GD and GD.state then
   cecho(string.format("&lt;white&gt;  gd      : %s\n", yn(GD.state.enabled)))
 end
 
-local PA = Off.party_aff
+local PA = Off.group_aff or Off.party_aff
 if PA and PA.state then
-  cecho(string.format("&lt;white&gt;  partyaff : %s\n", yn(PA.state.enabled)))
+  cecho(string.format("&lt;white&gt;  groupaff : %s\n", yn(PA.state.enabled)))
 end</script>
 					<command />
 					<packageName />

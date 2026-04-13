@@ -33,7 +33,9 @@ Yso.cfg      = Yso.cfg or {}
 -- Boot defaults: Devtools/DRY must be OFF by default each load.
 Yso.net = Yso.net or {}
 Yso.net.cfg = Yso.net.cfg or {}
-Yso.net.cfg.dry_run = false
+if type(Yso.net.cfg.dry_run) ~= "boolean" then
+  Yso.net.cfg.dry_run = false
+end
 -- Default command separator (Achaea CONFIG SEPARATOR) for all payload pipelines.
 -- User preference: "&&" (override by setting Yso.cfg.pipe_sep before load).
 Yso.cfg.pipe_sep = Yso.cfg.pipe_sep or "&&"
@@ -270,25 +272,9 @@ do
       if ER and type(ER.note_payload_sent) == "function" then
         pcall(ER.note_payload_sent, payload)
       end
-      local GD = (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.group_damage or Yso.off.oc.dmg)) or nil
-      if GD and type(GD.on_payload_sent) == "function" then
-        pcall(GD.on_payload_sent, payload)
-      end
-      local PA = (Yso and Yso.off and Yso.off.oc and Yso.off.oc.party_aff) or nil
-      if PA and type(PA.on_payload_sent) == "function" then
-        pcall(PA.on_payload_sent, payload)
-      end
-      local OA = (Yso and Yso.off and Yso.off.oc and (Yso.off.oc.occ_aff or Yso.off.oc.aff)) or nil
-      if OA and type(OA.on_payload_sent) == "function" then
-        pcall(OA.on_payload_sent, payload)
-      end
-      local MGD = (Yso and Yso.off and Yso.off.magi and (Yso.off.magi.group_damage or Yso.off.magi.dmg)) or nil
-      if MGD and type(MGD.on_payload_sent) == "function" then
-        pcall(MGD.on_payload_sent, payload)
-      end
-      local MF = (Yso and Yso.off and Yso.off.magi and Yso.off.magi.focus) or nil
-      if MF and type(MF.on_payload_sent) == "function" then
-        pcall(MF.on_payload_sent, payload)
+      local core = Yso and Yso.off and Yso.off.core or nil
+      if core and type(core.on_payload_sent) == "function" then
+        pcall(core.on_payload_sent, payload, "locks:payload")
       end
 
     end
@@ -408,17 +394,26 @@ end
 
 -- ----------------- global payload mode -----------------
 Yso.cfg = Yso.cfg or {}
--- Single-payload policy: Occultist offense uses ONLY as_available.
-Yso.cfg.payload_mode = "as_available"
+-- Default payload mode unless user/devtools already chose one.
+if type(Yso.cfg.payload_mode) ~= "string" or Yso.cfg.payload_mode == "" then
+  Yso.cfg.payload_mode = "as_available"
+end
 
 function Yso.get_payload_mode()
-  return "as_available"
+  Yso.cfg = Yso.cfg or {}
+  local mode = tostring(Yso.cfg.payload_mode or ""):lower()
+  if mode ~= "paired" then mode = "as_available" end
+  Yso.cfg.payload_mode = mode
+  return mode
 end
 
 function Yso.set_payload_mode(mode, quiet)
-  -- Ignore requested mode and enforce as_available.
   Yso.cfg = Yso.cfg or {}
-  Yso.cfg.payload_mode = "as_available"
+  local next_mode = tostring(mode or ""):lower()
+  if next_mode ~= "paired" and next_mode ~= "as_available" then
+    next_mode = "as_available"
+  end
+  Yso.cfg.payload_mode = next_mode
 
   if Yso.pulse and type(Yso.pulse.wake) == "function" then
     Yso.pulse.wake("payload_mode")

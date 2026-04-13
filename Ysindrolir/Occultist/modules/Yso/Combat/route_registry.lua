@@ -76,23 +76,35 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
-  occ_aff = {
-    id = "occ_aff",
+  oc_aff = {
+    id = "oc_aff",
     mode = "combat",
     party_route = nil,
-    namespace = "Yso.off.oc.occ_aff",
+    namespace = "Yso.off.oc.oc_aff",
     description = "Duel affliction loop",
     priority = 60,
+    class = "occultist",
     active = true,
   },
-  focus = {
-    id = "focus",
+  magi_focus = {
+    id = "magi_focus",
     mode = "combat",
     party_route = nil,
     namespace = "Yso.off.magi.focus",
     description = "Magi duel convergence",
     priority = 61,
     class = "magi",
+    active = true,
+  },
+  magi_dmg = {
+    id = "magi_dmg",
+    mode = "combat",
+    party_route = nil,
+    namespace = "Yso.off.magi.dmg",
+    description = "Magi duel damage",
+    priority = 62,
+    class = "magi",
+    driver = "core",
     active = true,
   },
   group_damage = {
@@ -102,6 +114,7 @@ local ROUTES = {
     namespace = "Yso.off.oc.group_damage",
     description = "Party damage",
     priority = 55,
+    class = "occultist",
     active = true,
   },
   magi_group_damage = {
@@ -114,33 +127,39 @@ local ROUTES = {
     class = "magi",
     active = true,
   },
-  party_aff = {
-    id = "party_aff",
+  group_aff = {
+    id = "group_aff",
     mode = "party",
     party_route = "aff",
-    namespace = "Yso.off.oc.party_aff",
+    namespace = "Yso.off.oc.group_aff",
     description = "Party affliction pressure",
     priority = 53,
+    class = "occultist",
     active = true,
   },
 }
 
 local ALIASES = {
-  aff = "occ_aff",
-  occ = "occ_aff",
-  occ_aff = "occ_aff",
-  occ_aff_burst = "occ_aff",
-  occultist_offense = "occ_aff",
-  burst = "occ_aff",
-  focus = { magi = "focus" },
-  magi_focus = { magi = "focus" },
+  aff = "oc_aff",
+  oc = "oc_aff",
+  occ = "oc_aff",
+  oc_aff = "oc_aff",
+  occ_aff = "oc_aff",
+  occ_aff_burst = "oc_aff",
+  occultist_offense = "oc_aff",
+  burst = "oc_aff",
+  focus = { magi = "magi_focus" },
+  magi_focus = { magi = "magi_focus" },
+  mdam = { magi = "magi_dmg" },
+  magi_dmg = { magi = "magi_dmg" },
   gd = { magi = "magi_group_damage", default = "group_damage" },
   dmg = { magi = "magi_group_damage", default = "group_damage" },
   dam = { magi = "magi_group_damage", default = "group_damage" },
   party_dam = { magi = "magi_group_damage", default = "group_damage" },
   party_damage = { magi = "magi_group_damage", default = "group_damage" },
-  party_aff = "party_aff",
-  team_aff = "party_aff",
+  group_aff = "group_aff",
+  party_aff = "group_aff",
+  team_aff = "group_aff",
 }
 
 local function _route_id(name)

@@ -141,8 +141,9 @@ if Yso and Yso.devtools and type(Yso.devtools.reset)=="function" then Yso.devtoo
 			</Alias>
 			<Alias isActive="yes" isFolder="no">
 				<name>Emergency halt</name>
-				<script>if Yso and Yso.off and Yso.off.oc and type(Yso.off.oc.off) == "function" then
-  Yso.off.oc.off()
+				<script>local core = Yso and Yso.off and Yso.off.core or nil
+if core and type(core.off) == "function" then
+  pcall(core.off)
 elseif Yso and Yso.off and Yso.off.oc then
   Yso.off.oc.enabled = false
 end;
@@ -171,16 +172,23 @@ if Yso and Yso.targeting then
 end
 
 -- enable occultist offense
-if Yso and Yso.off and Yso.off.oc then
-  if type(Yso.off.oc.on) == "function" then
-    Yso.off.oc.on()
-  else
-    Yso.off.oc.enabled = true
-  end
+local core = Yso and Yso.off and Yso.off.core or nil
+if core and type(core.on) == "function" then
+  pcall(core.on, "oc_aff")
+elseif Yso and Yso.off and Yso.off.oc then
+  Yso.off.oc.enabled = true
 end
 
 -- quick status line
-local oc = (Yso and Yso.off and Yso.off.oc and Yso.off.oc.enabled) and "ON" or "OFF"
+local oc_on = false
+if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
+  local ok, v = pcall(Yso.mode.route_loop_active, "oc_aff")
+  if ok and v == true then oc_on = true end
+end
+if not oc_on and Yso and Yso.off and Yso.off.oc and Yso.off.oc.enabled then
+  oc_on = true
+end
+local oc = oc_on and "ON" or "OFF"
 cecho(string.format("&lt;red&gt;[Yso] &lt;white&gt;Target: %s  &lt;red&gt;Occultist offense: %s\n", tgt, oc))</script>
 				<command />
 				<packageName />
@@ -1541,8 +1549,8 @@ function RD.show(route)
   if name == "aff" then
     _tprint(string.format(" aff  | stage=%s next=%s blocker=%s focus=%s mana=%s",
       _s(finish.stage), _s(finish.next_action), _s(finish.blocker), _s(ex.focus_lock_count), _s(ex.mana_pct)))
-    _tprint(string.format(" wait | active=%s lane=%s age=%.2f q=%s",
-      _b(waiting.active == true), _s(waiting.main_lane), tonumber(waiting.age or 0) or 0, _s(waiting.queue)))
+    _tprint(string.format(" wait | active=%s lane=%s q=%s",
+      _b(waiting.active == true), _s(waiting.main_lane), _s(waiting.queue)))
     _tprint(string.format(" para | allow=%s lane=%s cure=%s p=%.2f why=%s",
       _b(para.allowed == true), _s(para.lane), _s(para.predicted_next_cure), tonumber(para.confidence or 0) or 0, _s(para.block_reason)))
     _tprint(string.format(" bm   | state=%s branch=%s/%s passive=%s",

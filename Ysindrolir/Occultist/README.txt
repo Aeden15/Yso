@@ -232,23 +232,24 @@ Key components:
 
 Active routes
 -------------
-  occ_aff         - duel affliction loop (combat mode)
+  oc_aff          - duel affliction loop (combat mode)
                     mana bury -> cleanseaura -> truename -> utter
   group_damage    - group/team damage loop (team dam)
                     healthleech + sensitivity + clumsiness + warp/firelord burst
-  party_aff       - group/team affliction pressure (team aff)
+  group_aff       - group/team affliction pressure (team aff)
                     loyals/readaura opener -> deaf gate (attend + chimera) -> unnamable
                     chimera + moon pressure, then cleanseaura -> speed strip -> utter truename
                     tarot-first rule: if bal is ready before entity, emit tarot-only this tick
 
   route_registry.lua also now carries class-scoped Magi routes such as:
-    focus            - Magi duel convergence route (combat mode, Magi only)
+    magi_focus       - Magi duel convergence route (combat mode, Magi only)
+    magi_dmg         - Magi duel damage route (combat mode, Magi only)
     magi_group_damage - Magi team damage route (team dam, Magi only)
 
 Mode-to-route mapping:
-  combat          -> occ_aff
+  combat          -> oc_aff
   team dam        -> group_damage
-  team aff        -> party_aff
+  team aff        -> group_aff
   bash            -> Legacy bashing (not a Yso route)
 
 Inactive legacy route stubs:
@@ -280,7 +281,7 @@ File layout
         routes/
           occ_aff.lua               - duel aff route
           group_damage.lua          - team damage route
-          party_aff.lua             - team aff route
+          party_aff.lua             - team aff route (key: group_aff)
         occultist/
           aeon.lua                  - AEON speed-strip module
           domination_reference.lua  - Domination entity reference data
@@ -336,9 +337,10 @@ AK integration mirrors enemy aff tracking through Yso.ak.
 
 Aliases
 -------
-  ^aff$         - toggle the duel affliction loop (occ_aff)
+  ^aff$         - toggle the duel affliction loop (oc_aff)
   ^dam$         - toggle the group damage loop
-  ^focus$       - toggle the Magi duel focus route when playing Magi
+  ^focus$       - toggle the Magi duel focus route (magi_focus) when playing Magi
+  ^mdam$        - toggle the Magi duel damage route (magi_dmg) when playing Magi
   ^hunt$        - switch to bash mode without a noop entourage reset
   ^bash$        - same as hunt
   ^mbash$       - switch to bash mode
@@ -348,8 +350,8 @@ Aliases
   ^teamroute (.+)$ - set team route directly (aff | dam)
 
 Notes:
-  ^aff$ owns occ_aff directly (legacy alias `occ_aff_burst` also resolves).
-  ^team aff$ selects party_aff support pressure + chimera/tarot sequence.
+  ^aff$ owns oc_aff directly (legacy aliases `occ_aff` / `occ_aff_burst` resolve).
+  ^team aff$ selects group_aff support pressure + chimera/tarot sequence.
   cleanse queues CLEANSEAURA through the shared queue path instead of bypassing
   lane staging.
 

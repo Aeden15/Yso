@@ -27,7 +27,7 @@ Canonical source locations (edit these):
   Combat routes:
   - modules/Yso/Combat/routes/group_damage.lua            -> xml/group_damage.lua
   - modules/Yso/Combat/routes/occ_aff.lua                 -> xml/occ_aff.lua
-  - modules/Yso/Combat/routes/party_aff.lua               -> xml/party_aff.lua
+  - modules/Yso/Combat/routes/party_aff.lua               -> xml/party_aff.lua (route key: group_aff)
 
   Occultist offense:
   - modules/Yso/Combat/occultist/offense_helpers.lua      -> xml/yso_occultist_offense.lua
@@ -73,7 +73,7 @@ Rebuild notes (2026-04-11):
 
   Active files that intentionally have no dedicated script slot in
   Yso system.xml and therefore report as no-slot rather than skipped:
-  - xml/party_aff.lua
+  - xml/party_aff.lua (route key: group_aff)
   - xml/route_interface.lua
   - xml/route_registry.lua
   - xml/skillset_reference_chart.lua

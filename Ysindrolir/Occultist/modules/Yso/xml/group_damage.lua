@@ -1447,6 +1447,10 @@ function GD.can_run(ctx)
   if not GD.is_active() then return false, "inactive" end
   if not _automation_allowed() then return false, "policy" end
   if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
+  if Yso and type(Yso.is_occultist) == "function" then
+    local ok_class, is_occ = pcall(Yso.is_occultist)
+    if ok_class and is_occ ~= true then return false, "wrong_class" end
+  end
   local tgt = _trim((ctx and ctx.target) or _target())
   if tgt == "" then return false, "no_target" end
   if not _tgt_valid(tgt) then return false, "invalid_target" end
@@ -1630,6 +1634,11 @@ end
 
 function GD.build_payload(ctx)
   return GD.attack_function({ ctx = ctx, preview = true })
+end
+
+function GD.build(reason)
+  local ctx = type(reason) == "table" and reason or { reason = tostring(reason or "") }
+  return GD.build_payload(ctx)
 end
 function GD.on_sent(payload, ctx)
   GD.init()
@@ -2126,5 +2135,10 @@ function GD.status()
   return snapshot
 end
 
+if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == "function" then
+  pcall(Yso.off.core.register, "group_damage", GD)
+  pcall(Yso.off.core.register, "dam", GD)
+  pcall(Yso.off.core.register, "gd", GD)
+end
 
 

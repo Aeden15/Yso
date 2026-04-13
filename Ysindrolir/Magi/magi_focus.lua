@@ -57,7 +57,7 @@ local PENDING_SLOTS = {
 }
 
 MF.route_contract = MF.route_contract or {
-  id = "focus",
+  id = "magi_focus",
   interface_version = 1,
   shared_categories = { "defense_break", "anti_tumble" },
   route_local_categories = {
@@ -226,7 +226,7 @@ end
 local function _route_is_active()
   if not _combat_focus_context_active() then return false end
   if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("focus") == true
+    return Yso.mode.route_loop_active("magi_focus") == true
   end
   return MF.state and MF.state.loop_enabled == true
 end
@@ -869,7 +869,7 @@ end
 local function _update_explain(tgt, st, choice, rejects, blocker)
   local route = _route_slot()
   MF.state.explain = RC.build_explain({
-    route = "focus",
+    route = "magi_focus",
     target = tgt,
     active = MF.is_active and MF.is_active() or false,
     route_enabled = MF.is_enabled and MF.is_enabled() or false,
@@ -1009,7 +1009,7 @@ function MF.attack_function(arg)
   end
 
   local payload = {
-    route = "focus",
+    route = "magi_focus",
     target = tgt,
     lanes = { eq = choice.cmd },
     meta = {
@@ -1044,6 +1044,11 @@ function MF.build_payload(ctx)
   return MF.attack_function({ ctx = ctx, preview = true })
 end
 
+function MF.build(reason)
+  local ctx = type(reason) == "table" and reason or { reason = tostring(reason or "") }
+  return MF.build_payload(ctx)
+end
+
 function MF.evaluate(ctx)
   local payload, why = MF.build_payload(ctx)
   if not payload then return { ok = false, reason = why } end
@@ -1056,7 +1061,7 @@ function MF.explain()
   local tgt = _target()
   local st = _snapshot(tgt)
   local route = _route_slot()
-  ex.route = "focus"
+  ex.route = "magi_focus"
   ex.enabled = MF.is_enabled()
   ex.route_enabled = MF.is_enabled()
   ex.active = MF.is_active()
@@ -1195,7 +1200,7 @@ end
 
 function MF.on_exit(ctx)
   if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
-    Yso.mode.stop_route_loop("focus", "exit", true)
+    Yso.mode.stop_route_loop("magi_focus", "exit", true)
   end
   MF.reset("exit")
   _clear_eq_queue()
@@ -1241,7 +1246,7 @@ end
 
 function MF.schedule_loop(delay)
   if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
-    return Yso.mode.schedule_route_loop("focus", delay)
+    return Yso.mode.schedule_route_loop("magi_focus", delay)
   end
   return false
 end
@@ -1299,6 +1304,11 @@ end
 
 function MF.alias_loop_on_error(err)
   _echo("Magi focus loop error: " .. tostring(err))
+end
+
+if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == "function" then
+  pcall(Yso.off.core.register, "magi_focus", MF)
+  pcall(Yso.off.core.register, "focus", MF)
 end
 
 return MF

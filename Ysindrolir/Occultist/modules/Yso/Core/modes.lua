@@ -155,7 +155,7 @@ local function _ensure_route_module(entry)
   local bootstrap = Yso and Yso.bootstrap or nil
   local id = type(entry) == "table" and tostring(entry.id or "") or ""
   if type(bootstrap) == "table" then
-    if (id == "occ_aff" or id == "occ_aff_burst") then
+    if (id == "oc_aff" or id == "occ_aff" or id == "occ_aff_burst") then
       if type(bootstrap.occ_aff) == "function" then
         pcall(bootstrap.occ_aff, true)
       elseif type(bootstrap.occ_aff_burst) == "function" then
@@ -806,6 +806,17 @@ local function _set_party_mode(route, reason)
   return ok
 end
 
+local function _off_core()
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.toggle) == "function" then return core end
+  if type(require) == "function" then
+    pcall(require, "Yso.Combat.offense_core")
+  end
+  core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.toggle) == "function" then return core end
+  return nil
+end
+
 M._alias = M._alias or {}
 local function _kill_alias(id) if id then pcall(killAlias, id) end end
 
@@ -827,8 +838,12 @@ if type(tempAlias) == "function" then
     if r and r ~= "" then
       local route = _route_norm(r)
       if route == "aff" or route == "dam" then
-        if Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
-          Yso.mode.toggle_route_loop(route, "alias")
+        local core = _off_core()
+        if core and type(core.toggle) == "function" then
+          local key = (route == "aff") and "group_aff" or "dam"
+          core.toggle(key)
+        else
+          _echo("offense core unavailable for team route toggle.")
         end
       else
         _set_party_mode(r, "alias:team")

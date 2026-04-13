@@ -964,6 +964,11 @@ function MGD.build_payload(ctx)
   return MGD.attack_function({ ctx = ctx, preview = true })
 end
 
+function MGD.build(reason)
+  local ctx = type(reason) == "table" and reason or { reason = tostring(reason or "") }
+  return MGD.build_payload(ctx)
+end
+
 function MGD.evaluate(ctx)
   local payload, why = MGD.build_payload(ctx)
   if not payload then return { ok = false, reason = why } end
@@ -1212,6 +1217,10 @@ end
 
 function MGD.alias_loop_on_error(err)
   _echo("Magi team damage loop error: " .. tostring(err))
+end
+
+if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == "function" then
+  pcall(Yso.off.core.register, "magi_group_damage", MGD)
 end
 
 return MGD

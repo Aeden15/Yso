@@ -1,5 +1,5 @@
 --========================================================--
--- party_aff.lua  (Achaea / Occultist / Yso)
+-- group_aff.lua  (Achaea / Occultist / Yso)
 --  Party/group affliction pressure route for Occultist.
 --
 --  Strategy:
@@ -21,13 +21,14 @@ Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
-Yso.off.oc.party_aff = Yso.off.oc.party_aff or {}
-local PA = Yso.off.oc.party_aff
+Yso.off.oc.group_aff = Yso.off.oc.group_aff or {}
+Yso.off.oc.party_aff = Yso.off.oc.group_aff
+local PA = Yso.off.oc.group_aff
 local AP = Yso.off.oc.aura_planner or {}
 PA.alias_owned = true
 
 PA.route_contract = PA.route_contract or {
-  id = "party_aff",
+  id = "group_aff",
   interface_version = 1,
   shared_categories = { "defense_break", "anti_tumble" },
   route_local_categories = {
@@ -133,7 +134,7 @@ PA.state = PA.state or {
   busy = false,
   waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 },
   last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" },
-  in_flight = { fingerprint = "", target = "", route = "party_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" },
+  in_flight = { fingerprint = "", target = "", route = "group_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" },
   debug = { last_no_send_reason = "", last_retry_reason = "" },
   template = { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" },
   last_target = "",
@@ -518,7 +519,7 @@ local function _entity_cmd_for_aff(aff, tgt)
   return nil
 end
 
-local function _party_aff_context_active()
+local function _group_aff_context_active()
   local M = Yso and Yso.mode or nil
   if type(M) ~= "table" then return true end
   if type(M.is_party) == "function" then
@@ -538,9 +539,9 @@ local function _party_aff_context_active()
 end
 
 local function _route_is_active()
-  if not _party_aff_context_active() then return false end
+  if not _group_aff_context_active() then return false end
   if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("party_aff") == true
+    return Yso.mode.route_loop_active("group_aff") == true
   end
   return PA.state and PA.state.loop_enabled == true
 end
@@ -623,7 +624,7 @@ local function _action_fingerprint(payload)
   local lanes = payload.lanes or payload
   if type(lanes) ~= "table" then return "" end
   return table.concat({
-    "party_aff",
+    "group_aff",
     _lc(payload.target or ""),
     _trim(lanes.eq),
     _trim(lanes.entity or lanes.class or lanes.ent),
@@ -665,7 +666,7 @@ local function _emit_payload(payload)
   if _trim(cmd) == "" then return false, "empty" end
   if type(Yso.emit) == "function" then
     local ok = Yso.emit(emit_payload, {
-      reason = "party_aff:emit",
+      reason = "group_aff:emit",
       kind = "offense",
       target = target,
       commit = true,
@@ -677,7 +678,7 @@ local function _emit_payload(payload)
       return false, "queue_emit_unavailable"
     end
     local ok, res = pcall(Q.emit, emit_payload, {
-      reason = "party_aff:emit",
+      reason = "group_aff:emit",
       kind = "offense",
       target = target,
       commit = true,
@@ -696,7 +697,7 @@ local function _set_loop_enabled(on)
   PA.state.loop_delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
   PA.state.waiting = PA.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
   PA.state.last_attack = PA.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
-  PA.state.in_flight = PA.state.in_flight or { fingerprint = "", target = "", route = "party_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  PA.state.in_flight = PA.state.in_flight or { fingerprint = "", target = "", route = "group_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
   PA.state.debug = PA.state.debug or { last_no_send_reason = "", last_retry_reason = "" }
   return enabled
 end
@@ -784,7 +785,7 @@ local function _route_gate_finalize(payload, ctx, tgt)
     return payload, nil
   end
   return Yso.route_gate.finalize(payload, {
-    route = "party_aff",
+    route = "group_aff",
     target = tgt,
     lane_ready = {
       eq = _eq_ready(),
@@ -889,7 +890,7 @@ local function _remember_attack(cmd, payload)
   PA.state.in_flight = PA.state.in_flight or {}
   PA.state.in_flight.fingerprint = fingerprint
   PA.state.in_flight.target = PA.state.last_attack.target
-  PA.state.in_flight.route = "party_aff"
+  PA.state.in_flight.route = "group_aff"
   PA.state.in_flight.at = PA.state.last_attack.at
   PA.state.in_flight.lanes = lanes
   PA.state.in_flight.eq = _trim(type(payload) == "table" and payload.lanes and payload.lanes.eq or "")
@@ -1136,7 +1137,7 @@ end
 
 function PA.schedule_loop(delay)
   if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
-    return Yso.mode.schedule_route_loop("party_aff", delay)
+    return Yso.mode.schedule_route_loop("group_aff", delay)
   end
   return false
 end
@@ -1205,7 +1206,7 @@ function PA.init()
   PA.state.template = PA.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   PA.state.waiting = PA.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
   PA.state.last_attack = PA.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
-  PA.state.in_flight = PA.state.in_flight or { fingerprint = "", target = "", route = "party_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  PA.state.in_flight = PA.state.in_flight or { fingerprint = "", target = "", route = "group_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
   PA.state.debug = PA.state.debug or { last_no_send_reason = "", last_retry_reason = "" }
   PA.state.busy = (PA.state.busy == true)
   PA.state.loop_delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
@@ -1222,7 +1223,7 @@ function PA.reset(reason)
   PA.state.busy = false
   _clear_waiting()
   PA.state.last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
-  PA.state.in_flight = { fingerprint = "", target = "", route = "party_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  PA.state.in_flight = { fingerprint = "", target = "", route = "group_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
   PA.state.debug = { last_no_send_reason = "", last_retry_reason = "" }
   PA.state.template.last_reason = tostring(reason or "manual")
   PA.state.template.last_payload = nil
@@ -1238,6 +1239,10 @@ function PA.can_run(ctx)
   if not PA.is_active() then return false, "inactive" end
   if not _automation_allowed() then return false, "policy" end
   if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
+  if Yso and type(Yso.is_occultist) == "function" then
+    local ok_class, is_occ = pcall(Yso.is_occultist)
+    if ok_class and is_occ ~= true then return false, "wrong_class" end
+  end
   if Yso and Yso.mode and type(Yso.mode.is_hunt) == "function" and Yso.mode.is_hunt() then return false, "hunt_mode" end
   local tgt = _trim((ctx and ctx.target) or _target())
   if tgt == "" then return false, "no_target" end
@@ -1295,7 +1300,7 @@ function PA.attack_function(arg)
   if main_lane == "" and _trim(class_cmd) ~= "" then main_lane = "entity" end
   if main_lane == "" and _trim(free_cmd) ~= "" then main_lane = "free" end
   local payload = {
-    route = "party_aff",
+    route = "group_aff",
     target = tgt,
     lanes = { free = free_cmd, eq = selected_eq, bal = selected_bal, entity = class_cmd },
     meta = {
@@ -1315,7 +1320,7 @@ function PA.attack_function(arg)
   PA.state.last_target = tgt
   local gate = type(payload) == "table" and (payload._route_gate or (payload.meta and payload.meta.route_gate)) or nil
   PA.state.explain = {
-    route = "party_aff",
+    route = "group_aff",
     target = tgt,
     focus_lock_count = _focus_lock_count(tgt),
     lock_stable = _lock_stable(tgt),
@@ -1383,7 +1388,7 @@ function PA.attack_function(arg)
     if S and type(S.note) == "function" then
       pcall(S.note, emit_payload.meta.shieldbreak_override, cmd, {
         lockout = tonumber(PA.cfg.shieldbreak_lockout_s or 1.0) or 1.0,
-        state_sig = "party_aff:shieldbreak",
+        state_sig = "group_aff:shieldbreak",
       })
     end
   end
@@ -1431,7 +1436,7 @@ function PA.on_sent(payload, ctx)
     local readaura_cmd = ("readaura %s"):format(tgt)
     if type(eq_lane) == "string" and eq_lane == readaura_cmd and Yso and Yso.occ then
       if type(Yso.occ.aura_begin) == "function" then
-        pcall(Yso.occ.aura_begin, tgt, "party_aff_send")
+        pcall(Yso.occ.aura_begin, tgt, "group_aff_send")
       end
       if type(Yso.occ.set_readaura_ready) == "function" then
         pcall(Yso.occ.set_readaura_ready, false, "sent")
@@ -1451,6 +1456,11 @@ function PA.build_payload(ctx)
   return PA.attack_function({ ctx = ctx, preview = true })
 end
 
+function PA.build(reason)
+  local ctx = type(reason) == "table" and reason or { reason = tostring(reason or "") }
+  return PA.build_payload(ctx)
+end
+
 function PA.evaluate(ctx)
   local payload, why = PA.build_payload(ctx)
   if not payload then return { ok = false, reason = why } end
@@ -1459,7 +1469,7 @@ end
 
 function PA.explain()
   local ex = PA.state and PA.state.explain or {}
-  ex.route = ex.route or "party_aff"
+  ex.route = ex.route or "group_aff"
   ex.route_enabled = PA.is_enabled()
   ex.active = PA.is_active()
   ex.waiting = PA.state and PA.state.waiting or {}
@@ -1471,7 +1481,7 @@ end
 
 function PA.status()
   local snapshot = {
-    route = "party_aff",
+    route = "group_aff",
     enabled = PA.is_enabled(),
     active = PA.is_active(),
     target = _target(),
@@ -1495,7 +1505,7 @@ end
 function PA.on_enter(ctx)   PA.init(); return true end
 function PA.on_exit(ctx)
   if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
-    Yso.mode.stop_route_loop("party_aff", "exit", true)
+    Yso.mode.stop_route_loop("group_aff", "exit", true)
   end
   PA.reset("exit")
   return true
@@ -1533,4 +1543,11 @@ do
   end
 end
 
+if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == "function" then
+  pcall(Yso.off.core.register, "group_aff", PA)
+  pcall(Yso.off.core.register, "party_aff", PA)
+  pcall(Yso.off.core.register, "team_aff", PA)
+end
+
 return PA
+
