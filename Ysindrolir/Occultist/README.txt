@@ -5,6 +5,13 @@ Last updated: April 16, 2026
 
 Current fixes
 -------------
+  Group damage planner simplification (April 16, 2026):
+    Occultist group_damage route planning was reduced to a lean setup+bust flow:
+      setup order focuses on sensitivity -> clumsiness -> healthleech
+      burst path is explicit warp + firelord (healthleech)
+    Legacy anti-tumble / empress rescue hooks were kept, and companion-safe
+    stop/passive behavior remains intact.
+
   Occultist bugfix sync bundle (April 16, 2026):
     occ_aff entity-balance fallback now checks GMCP class/entity before
     defaulting true; cfg now exposes attend_lock_s / unnamable_lock_s /

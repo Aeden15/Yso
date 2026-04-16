@@ -1214,142 +1214,82 @@ local function _plan_route(tgt)
     eq_aff = nil,
   }
 
-  local miss_hl = not st.healthleech
-  local miss_sens = not st.sensitivity
-  local miss_clum = not st.clumsiness
-  local miss_slick = not st.slickness
-  local need_addiction = _primebonded("humbug") and (not _has_aff(tgt, "addiction"))
+  local miss_hl = (st.healthleech ~= true)
+  local miss_sens = (st.sensitivity ~= true)
+  local miss_clum = (st.clumsiness ~= true)
+  local miss_slick = (st.slickness ~= true)
+  local eq_ready = _eq_ready()
+  local ent_ready = _ent_ready()
 
-  local ER = _ER()
-  local bootstrap_done = true
-  if ER and type(ER.bootstrap_done) == "function" then
-    local ok, v = pcall(ER.bootstrap_done, tgt, {
-      target = tgt,
-      target_valid = _tgt_valid(tgt),
-      ent_ready = _ent_ready(),
-      eq_ready = _eq_ready(),
-      has_aff = function(aff_name) return _has_aff(tgt, aff_name) end,
-      route_state = st,
-      need = { healthleech = miss_hl, clumsiness = miss_clum },
-    })
-    if ok then bootstrap_done = (v == true) end
+  -- Keep this route intentionally lean:
+  -- 1) setup core affs
+  -- 2) pair warp + firelord
+
+  -- Burst pairing once healthleech is online.
+  if st.healthleech and eq_ready and ent_ready then
+    p.eq = ("warp %s"):format(tgt)
+    p.eq_category = "reserved_paired_burst"
+    p.class = _cmd_entity("firelord", tgt, "healthleech")
+    p.class_category = "reserved_paired_burst"
+    return p
   end
 
-  local function pick_class(category)
-    local cmd, solved = _pick_entity_cmd(tgt, st, {
-      category = category,
-      need_healthleech = miss_hl,
-      need_sensitivity = miss_sens,
-      need_clumsiness = miss_clum,
-      need_slickness = miss_slick,
-      need_addiction = need_addiction,
-      skip_aff = p.eq_aff,
-    })
-    if cmd and not p.class then
-      p.class = cmd
-      p.class_category = solved or category
-    end
-    return p.class
-  end
-
-  local function apply_bal_support()
-    local bal_cmd, bal_class_cmd, bal_class_category = _plan_bal_support(tgt, st, p.eq, p.class, {
-      need_healthleech = miss_hl,
-      need_sensitivity = miss_sens,
-      need_clumsiness = miss_clum,
-      need_slickness = miss_slick,
-      need_addiction = need_addiction,
-    })
-    if bal_class_cmd and not p.class then
-      p.class = bal_class_cmd
-      p.class_category = bal_class_category or "fallback_support"
-    end
-    p.bal = bal_cmd
-    if p.bal then p.bal_category = "fallback_support" end
-  end
-
-  -- Reserved paired burst is the only category allowed to outrank a dropped core.
-  if st.healthleech and _eq_ready() and _ent_ready() then
-    local burst_cmd, solved = _pick_entity_cmd(tgt, st, {
-      category = "reserved_paired_burst",
-      need_healthleech = false,
-      need_sensitivity = false,
-      need_clumsiness = false,
-      need_slickness = miss_slick,
-      need_addiction = need_addiction,
-    })
-    if burst_cmd then
-      p.eq = ("warp %s"):format(tgt)
-      p.eq_category = "reserved_paired_burst"
-      p.class = burst_cmd
-      p.class_category = solved or "reserved_paired_burst"
-      return p
-    end
-  end
-
-  if not bootstrap_done then
-    pick_class("bootstrap_setup")
-  end
-
-  -- Core refresh/application wins after any reserved burst and bootstrap work.
+  -- Setup ordering: sensitivity -> clumsiness -> healthleech.
   if miss_sens then
-    if _eq_ready() then
+    if eq_ready then
       p.eq = ("instill %s with sensitivity"):format(tgt)
       p.eq_category = "required_core_refresh"
       p.eq_aff = "sensitivity"
     end
-    if not p.class then pick_class("required_core_refresh") end
-    if not p.class then pick_class("required_core_application") end
-    apply_bal_support()
+    if ent_ready and miss_hl then
+      p.class = _cmd_entity("worm", tgt)
+      p.class_category = "required_core_application"
+    elseif ent_ready and miss_clum then
+      p.class = _cmd_entity("storm", tgt)
+      p.class_category = "required_core_refresh"
+    end
     return p
   end
 
   if miss_clum then
-    if not p.class then pick_class("required_core_refresh") end
-    if not p.class then pick_class("required_core_application") end
-    if not p.class and _eq_ready() then
+    if ent_ready then
+      p.class = _cmd_entity("storm", tgt)
+      p.class_category = "required_core_refresh"
+    elseif eq_ready then
       p.eq = ("instill %s with clumsiness"):format(tgt)
       p.eq_category = "required_core_refresh"
       p.eq_aff = "clumsiness"
     end
-    apply_bal_support()
     return p
   end
 
   if miss_hl then
-    if st.count >= 2 and _eq_ready() then
-      p.eq = ("warp %s"):format(tgt)
-      p.eq_category = "required_core_application"
-    elseif _eq_ready() and not _ent_ready() then
+    if ent_ready then
+      p.class = _cmd_entity("worm", tgt)
+      p.class_category = "required_core_application"
+      if eq_ready and st.count >= 2 then
+        p.eq = ("warp %s"):format(tgt)
+        p.eq_category = "required_core_application"
+      end
+    elseif eq_ready then
       p.eq = ("instill %s with healthleech"):format(tgt)
       p.eq_category = "required_core_application"
       p.eq_aff = "healthleech"
     end
-    if not p.class then pick_class("required_core_refresh") end
-    if not p.class then pick_class("required_core_application") end
-    apply_bal_support()
     return p
   end
 
-  -- Full core present: reserve paired burst when EQ is ready; otherwise use support lanes only.
-  if st.healthleech and _eq_ready() then
-    -- Hold EQ for burst reservation until entity lane can pair with Firelord.
-    apply_bal_support()
-    return p
-  end
-
-  -- Optional support: addiction (primebonded humbug) and general fallback entity pressure.
-  if not p.class then pick_class("fallback_support") end
-  if not p.class then pick_class("passive_pressure_only") end
-
-  -- Optional slickness is lower than missing-core work, but higher than fallback BAL support when EQ is free.
-  if miss_slick and _eq_ready() then
+  -- Optional support when core is online but we cannot burst yet.
+  if miss_slick and eq_ready then
     p.eq = ("instill %s with slickness"):format(tgt)
     p.eq_category = "fallback_support"
     p.eq_aff = "slickness"
   end
+  if ent_ready and miss_clum then
+    p.class = _cmd_entity("storm", tgt)
+    p.class_category = "fallback_support"
+  end
 
-  apply_bal_support()
   return p
 end
 
@@ -1776,6 +1716,9 @@ GD.alias_loop_stop_details = GD.alias_loop_stop_details or {
   inactive = true,
   disabled = true,
   policy = true,
+  wrong_class = true,
+  no_target = true,
+  invalid_target = true,
 }
 
 function GD.alias_loop_prepare_start(ctx)
