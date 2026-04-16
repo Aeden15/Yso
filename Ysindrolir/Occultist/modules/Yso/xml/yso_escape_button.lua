@@ -156,13 +156,22 @@ local function _queue_clear(qtype, payload)
       nil
 
     if type(fn) == "function" then
-      fn(payload)
+      -- pcall guard: if the queue function throws the escape silently fails.
+      local ok, err = pcall(fn, payload)
+      if not ok then
+        _cecho("Queue fn error (" .. tostring(qtype) .. "): " .. tostring(err) .. " — sending direct.")
+        _send_compound(payload)
+      end
       return
     end
 
     -- Fallback: addclear(qtype, payload)
     if type(Q.addclear) == "function" then
-      Q.addclear(qtype, payload)
+      local ok, err = pcall(Q.addclear, qtype, payload)
+      if not ok then
+        _cecho("addclear error: " .. tostring(err) .. " — sending direct.")
+        _send_compound(payload)
+      end
       return
     end
   end
@@ -338,6 +347,13 @@ function E.press()
     return
   end
 
+  -- Debounce: ignore rapid re-presses within 0.5s to prevent stacking
+  -- commands on the BAL lane under panic conditions.
+  -- (last_press was previously recorded but never enforced.)
+  local now = _now()
+  local debounce_s = tonumber(E.cfg.press_debounce_s or 0.5) or 0.5
+  if (now - (tonumber(E.state.last_press or 0) or 0)) < debounce_s then return end
+
   -- threshold gate
   local v = _vitals()
   local hp_pct = _pct(v.hp, v.maxhp)
@@ -361,10 +377,17 @@ function E.press()
   if touch_to ~= "" and not _blocked_for_cards() then
     if E.state.uni_up then
       _queue_clear("bal", ("touch %s"):format(touch_to))
-    else
-      -- fling consumes BAL; touch will either execute after or ride the server queue depending on separator behavior
-      _queue_clear("bal", ("fling universe at ground%s touch %s"):format(sep, touch_to))
+      E.state.last_press = _now()
+      return
     end
+    -- Guard: don't re-fling if Universe is already in flight (flung but map not yet up).
+    -- Without this check, the window between fling-trigger and map-rise-trigger would
+    -- double-queue a second fling command on BAL, desyncing the queue state machine.
+    if E.state.uni_pending then
+      E.state.last_press = _now()
+      return
+    end
+    _queue_clear("bal", ("fling universe at ground%s touch %s"):format(sep, touch_to))
     E.state.last_press = _now()
     return
   end

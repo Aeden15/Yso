@@ -108,14 +108,32 @@ local function _send_chain(cmds)
   for _,c in ipairs(cmds) do
     _dbg("SEND: " .. c)
   end
-  local combined = table.concat(cmds, "&&")
-  send(combined)
+  -- Use configured separator, not a hardcoded "&&".
+  -- Changing Dop.cfg.sep would have had no effect before this fix.
+  local sep = _trim(Dop.cfg.sep or "&&")
+  if sep == "" then sep = "&&" end
+  local combined = table.concat(cmds, sep)
+  if type(send) ~= "function" then
+    _echo("ERROR: send() not available — command not sent.")
+    return
+  end
+  local ok, err = pcall(send, combined)
+  if not ok then
+    _echo("ERROR sending command: " .. tostring(err))
+  end
 end
 
 -- parse optional "at"
+-- Returns the target string, or nil if nothing follows "at" (with a warning).
 local function _parse_tgt(words, idx)
   local a = _lower(words[idx] or "")
-  if a == "at" then return words[idx+1] end
+  if a == "at" then
+    local tgt = words[idx+1]
+    if tgt == nil then
+      _echo("Warning: 'at' keyword found but no target followed — using active target.")
+    end
+    return tgt  -- nil is handled gracefully by Dop.getTarget()
+  end
   return words[idx]
 end
 
@@ -196,12 +214,22 @@ function Dop.do_tarot_fling(card, tgt_override)
   _send_chain(cmds)
 end
 
+-- Verbs that operate on the doppleganger itself and never need a player target.
+local _TARGET_FREE_VERBS = { cloak = true, exits = true, look = true, ["return"] = true }
+
 function Dop.do_piridon_util(verb, arg)
+  -- Only require a target when the command actually uses one.
+  -- cloak / exits / look / return work on the doppleganger itself — no target needed.
+  local needs_target = not _TARGET_FREE_VERBS[verb]
   local tgt = Dop.getTarget()
-  if not tgt then _echo("No target set. Use: t <name>  or  dop target <name>"); return end
+  if needs_target and not tgt then
+    _echo("No target set. Use: t <name>  or  dop target <name>")
+    return
+  end
 
   local cmds = {}
-  if Dop.cfg.prepend_seeklook then
+  -- Seek+look preamble only makes sense when we have a target to seek.
+  if Dop.cfg.prepend_seeklook and tgt then
     for _,c in ipairs(_pre_seeklook(tgt)) do cmds[#cmds+1] = c end
   end
 
@@ -210,7 +238,10 @@ function Dop.do_piridon_util(verb, arg)
   elseif verb == "exits" then
     cmds[#cmds+1] = "order doppleganger exits"
   elseif verb == "look" then
-    if not Dop.cfg.prepend_seeklook then cmds[#cmds+1] = "order doppleganger look" end
+    -- Only add explicit look if seek+look preamble didn't already include it.
+    if not (Dop.cfg.prepend_seeklook and tgt) then
+      cmds[#cmds+1] = "order doppleganger look"
+    end
   elseif verb == "return" then
     cmds[#cmds+1] = "order doppleganger return"
   elseif verb == "move" then
@@ -233,8 +264,10 @@ function Dop.seek(who)
   if type(expandAlias) == "function" then
     expandAlias("t " .. who)
   else
-    rawset(_G, "target", who)
-    _echo("Warning: AK target alias unavailable; using raw global target fallback.")
+    -- _ak_target() intentionally ignores the raw global `target` to prevent
+    -- poisoning, so rawset(_G, "target", ...) is unread by this system.
+    -- Just warn — Dop._last_target below is still set correctly.
+    _echo("Warning: expandAlias unavailable; AK target not synced. Dop target set locally only.")
   end
 
   local tgt = Dop.getTarget(who) or who

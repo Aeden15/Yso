@@ -1,10 +1,24 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: April 12, 2026
+Last updated: April 16, 2026
 
 
 Current fixes
 -------------
+  Occultist bugfix sync bundle (April 16, 2026):
+    occ_aff entity-balance fallback now checks GMCP class/entity before
+    defaulting true; cfg now exposes attend_lock_s / unnamable_lock_s /
+    mana_burst_pct; loop stop table now includes wrong_class; attack-step
+    comments were renumbered for execution order; and free-lane clear avoids
+    empty-table false positives.
+    fool_logic now enforces cooldown across curesets, blocks zero-aff stale-lock
+    fires, and aligns on_vitals quick-aff checks with ignore_blind_deaf.
+    doppleganger_things now honors Dop.cfg.sep in _send_chain, wraps send() with
+    availability/error handling, allows target-free utility verbs, removes dead
+    raw global target fallback in seek(), and warns when "at" is trailing.
+    yso_escape_button now guards uni_pending to prevent double-queue windows,
+    enforces configurable press debounce, and wraps queue clear calls with
+    pcall + direct-send fallback.
   Combined reliability sweep (April 12, 2026):
     Hardened Fool timer safety paths: pending now auto-clears if tempTimer is
     unavailable, and basher-hold generation invalidation now protects against
@@ -375,3 +389,5 @@ Working notes
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
+
+

@@ -22672,13 +22672,22 @@ local function _queue_clear(qtype, payload)
       nil
 
     if type(fn) == &quot;function&quot; then
-      fn(payload)
+      -- pcall guard: if the queue function throws the escape silently fails.
+      local ok, err = pcall(fn, payload)
+      if not ok then
+        _cecho(&quot;Queue fn error (&quot; .. tostring(qtype) .. &quot;): &quot; .. tostring(err) .. &quot; — sending direct.&quot;)
+        _send_compound(payload)
+      end
       return
     end
 
     -- Fallback: addclear(qtype, payload)
     if type(Q.addclear) == &quot;function&quot; then
-      Q.addclear(qtype, payload)
+      local ok, err = pcall(Q.addclear, qtype, payload)
+      if not ok then
+        _cecho(&quot;addclear error: &quot; .. tostring(err) .. &quot; — sending direct.&quot;)
+        _send_compound(payload)
+      end
       return
     end
   end
@@ -22854,6 +22863,13 @@ function E.press()
     return
   end
 
+  -- Debounce: ignore rapid re-presses within 0.5s to prevent stacking
+  -- commands on the BAL lane under panic conditions.
+  -- (last_press was previously recorded but never enforced.)
+  local now = _now()
+  local debounce_s = tonumber(E.cfg.press_debounce_s or 0.5) or 0.5
+  if (now - (tonumber(E.state.last_press or 0) or 0)) &lt; debounce_s then return end
+
   -- threshold gate
   local v = _vitals()
   local hp_pct = _pct(v.hp, v.maxhp)
@@ -22877,10 +22893,17 @@ function E.press()
   if touch_to ~= &quot;&quot; and not _blocked_for_cards() then
     if E.state.uni_up then
       _queue_clear(&quot;bal&quot;, (&quot;touch %s&quot;):format(touch_to))
-    else
-      -- fling consumes BAL; touch will either execute after or ride the server queue depending on separator behavior
-      _queue_clear(&quot;bal&quot;, (&quot;fling universe at ground%s touch %s&quot;):format(sep, touch_to))
+      E.state.last_press = _now()
+      return
     end
+    -- Guard: don&apos;t re-fling if Universe is already in flight (flung but map not yet up).
+    -- Without this check, the window between fling-trigger and map-rise-trigger would
+    -- double-queue a second fling command on BAL, desyncing the queue state machine.
+    if E.state.uni_pending then
+      E.state.last_press = _now()
+      return
+    end
+    _queue_clear(&quot;bal&quot;, (&quot;fling universe at ground%s touch %s&quot;):format(sep, touch_to))
     E.state.last_press = _now()
     return
   end
@@ -28329,14 +28352,32 @@ local function _send_chain(cmds)
   for _,c in ipairs(cmds) do
     _dbg(&quot;SEND: &quot; .. c)
   end
-  local combined = table.concat(cmds, &quot;&amp;&amp;&quot;)
-  send(combined)
+  -- Use configured separator, not a hardcoded &quot;&amp;&amp;&quot;.
+  -- Changing Dop.cfg.sep would have had no effect before this fix.
+  local sep = _trim(Dop.cfg.sep or &quot;&amp;&amp;&quot;)
+  if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
+  local combined = table.concat(cmds, sep)
+  if type(send) ~= &quot;function&quot; then
+    _echo(&quot;ERROR: send() not available — command not sent.&quot;)
+    return
+  end
+  local ok, err = pcall(send, combined)
+  if not ok then
+    _echo(&quot;ERROR sending command: &quot; .. tostring(err))
+  end
 end
 
 -- parse optional &quot;at&quot;
+-- Returns the target string, or nil if nothing follows &quot;at&quot; (with a warning).
 local function _parse_tgt(words, idx)
   local a = _lower(words[idx] or &quot;&quot;)
-  if a == &quot;at&quot; then return words[idx+1] end
+  if a == &quot;at&quot; then
+    local tgt = words[idx+1]
+    if tgt == nil then
+      _echo(&quot;Warning: &apos;at&apos; keyword found but no target followed — using active target.&quot;)
+    end
+    return tgt  -- nil is handled gracefully by Dop.getTarget()
+  end
   return words[idx]
 end
 
@@ -28417,12 +28458,22 @@ function Dop.do_tarot_fling(card, tgt_override)
   _send_chain(cmds)
 end
 
+-- Verbs that operate on the doppleganger itself and never need a player target.
+local _TARGET_FREE_VERBS = { cloak = true, exits = true, look = true, [&quot;return&quot;] = true }
+
 function Dop.do_piridon_util(verb, arg)
+  -- Only require a target when the command actually uses one.
+  -- cloak / exits / look / return work on the doppleganger itself — no target needed.
+  local needs_target = not _TARGET_FREE_VERBS[verb]
   local tgt = Dop.getTarget()
-  if not tgt then _echo(&quot;No target set. Use: t &lt;name&gt;  or  dop target &lt;name&gt;&quot;); return end
+  if needs_target and not tgt then
+    _echo(&quot;No target set. Use: t &lt;name&gt;  or  dop target &lt;name&gt;&quot;)
+    return
+  end
 
   local cmds = {}
-  if Dop.cfg.prepend_seeklook then
+  -- Seek+look preamble only makes sense when we have a target to seek.
+  if Dop.cfg.prepend_seeklook and tgt then
     for _,c in ipairs(_pre_seeklook(tgt)) do cmds[#cmds+1] = c end
   end
 
@@ -28431,7 +28482,10 @@ function Dop.do_piridon_util(verb, arg)
   elseif verb == &quot;exits&quot; then
     cmds[#cmds+1] = &quot;order doppleganger exits&quot;
   elseif verb == &quot;look&quot; then
-    if not Dop.cfg.prepend_seeklook then cmds[#cmds+1] = &quot;order doppleganger look&quot; end
+    -- Only add explicit look if seek+look preamble didn&apos;t already include it.
+    if not (Dop.cfg.prepend_seeklook and tgt) then
+      cmds[#cmds+1] = &quot;order doppleganger look&quot;
+    end
   elseif verb == &quot;return&quot; then
     cmds[#cmds+1] = &quot;order doppleganger return&quot;
   elseif verb == &quot;move&quot; then
@@ -28454,8 +28508,10 @@ function Dop.seek(who)
   if type(expandAlias) == &quot;function&quot; then
     expandAlias(&quot;t &quot; .. who)
   else
-    rawset(_G, &quot;target&quot;, who)
-    _echo(&quot;Warning: AK target alias unavailable; using raw global target fallback.&quot;)
+    -- _ak_target() intentionally ignores the raw global `target` to prevent
+    -- poisoning, so rawset(_G, &quot;target&quot;, ...) is unread by this system.
+    -- Just warn — Dop._last_target below is still set correctly.
+    _echo(&quot;Warning: expandAlias unavailable; AK target not synced. Dop target set locally only.&quot;)
   end
 
   local tgt = Dop.getTarget(who) or who
@@ -30988,17 +31044,32 @@ _evaluate_fool = function(source)
     return false, ctx
   end
 
+  -- Cooldown applies to all curesets, not just hunt.
+  -- Previously only checked inside the hunt block, which meant non-hunt curesets
+  -- (e.g. &quot;legacy&quot; when bash mode doesn&apos;t override ActiveServerSet) could bypass it.
+  if not _cooldown_ready() then
+    ctx.reason = &quot;cooldown&quot;
+    ctx.message = &quot;Not using Fool: cooldown not ready.&quot;
+    return false, ctx
+  end
+
   if ctx.curset == &quot;hunt&quot; then
-    if not _cooldown_ready() then
-      ctx.reason = &quot;cooldown&quot;
-      ctx.message = &quot;Not using Fool: cooldown not ready.&quot;
-      return false, ctx
-    end
     if not _bal_ready_now() then
       ctx.reason = &quot;bal_not_ready&quot;
       ctx.message = &quot;Not using Fool: balance lane not ready.&quot;
       return false, ctx
     end
+  end
+
+  -- Zero-aff sanity guard: lock_ok can bypass the count threshold, but a
+  -- genuine lock always has at least the four core affs in play.  A zero count
+  -- with lock_ok = true means Legacy.Curing.Affs has stale PvP data (e.g. you
+  -- just switched from combat to bash without affs clearing).  Block here so
+  -- stale lock state can&apos;t fire Fool in bash with no real afflictions.
+  if ctx.count == 0 then
+    ctx.reason = &quot;zero_affs&quot;
+    ctx.message = &quot;Not using Fool: no afflictions detected (zero_affs guard).&quot;
+    return false, ctx
   end
 
   if ctx.count &lt; ctx.min_affs and not ctx.lock_ok then
@@ -31186,14 +31257,28 @@ function F.on_vitals()
   if not _gcd_ready() then return end
 
   -- quick check: any affs at all?
+  -- Must apply ignore_blind_deaf here to stay consistent with _aff_count().
+  -- Without this, having blind/deaf in bash (common from mobs) would pass this
+  -- check but _aff_count() would return 0, wasting an _evaluate_fool call.
   local A = _Aff()
   local list = _self_list_affs()
+  local ignore_bd = Legacy.Fool.ignore_blind_deaf
   local has_any = false
+  local function _is_bd(k)
+    local kk = tostring(k or &quot;&quot;):lower()
+    return kk == &quot;blind&quot; or kk == &quot;blindness&quot; or kk == &quot;deaf&quot; or kk == &quot;deafness&quot;
+  end
   if type(list) == &quot;table&quot; then
-    has_any = (#list &gt; 0)
+    for i = 1, #list do
+      if not ignore_bd or not _is_bd(list[i]) then
+        has_any = true; break
+      end
+    end
   else
-    for _, v in pairs(A) do
-      if v == true then has_any = true; break end
+    for k, v in pairs(A) do
+      if v == true and (not ignore_bd or not _is_bd(k)) then
+        has_any = true; break
+      end
     end
   end
   if not has_any then return end
@@ -31822,6 +31907,11 @@ A.cfg = A.cfg or {
   loyals_on_cmd = &quot;order loyals kill %s&quot;,
   off_passive_cmd = &quot;order loyals passive&quot;,
 
+  -- Cleanse/truename phase timing and mana threshold.
+  attend_lock_s    = 2.4,   -- seconds between attend commands
+  unnamable_lock_s = 2.4,   -- seconds between unnamable speak commands
+  mana_burst_pct   = 40,    -- target mana % at or below which cleanse/burst is considered ready
+
   -- Instill priority list for the EQ slot during open/pressure phase.
   -- Each entry is a plain aff name (string) or
   -- { aff = &quot;name&quot;, cond = function(tgt, has) return bool end }
@@ -31896,60 +31986,6 @@ local function _lc(s)
   return _trim(s):lower()
 end
 
--- #region agent log
-local _DBG_FILE = &quot;debug-c8972a.log&quot;
-local _DBG_SESSION = &quot;c8972a&quot;
-local _DBG_RUN = &quot;pre-fix-1&quot;
-
-local function _dbg_json(v)
-  local t = type(v)
-  if t == &quot;nil&quot; then return &quot;null&quot; end
-  if t == &quot;boolean&quot; then return v and &quot;true&quot; or &quot;false&quot; end
-  if t == &quot;number&quot; then return tostring(v) end
-  if t == &quot;string&quot; then
-    return &apos;&quot;&apos; .. v:gsub(&apos;[\\&quot;\r\n]&apos;, {
-      [&apos;\\&apos;] = &apos;\\\\&apos;,
-      [&apos;&quot;&apos;]  = &apos;\\&quot;&apos;,
-      [&apos;\r&apos;] = &apos;\\r&apos;,
-      [&apos;\n&apos;] = &apos;\\n&apos;,
-    }) .. &apos;&quot;&apos;
-  end
-  if t == &quot;table&quot; then
-    local is_arr = true
-    local max_i = 0
-    for k, _ in pairs(v) do
-      if type(k) ~= &quot;number&quot; then is_arr = false break end
-      if k &gt; max_i then max_i = k end
-    end
-    local out = {}
-    if is_arr then
-      for i = 1, max_i do out[#out + 1] = _dbg_json(v[i]) end
-      return &quot;[&quot; .. table.concat(out, &quot;,&quot;) .. &quot;]&quot;
-    end
-    for k, vv in pairs(v) do
-      out[#out + 1] = _dbg_json(tostring(k)) .. &quot;:&quot; .. _dbg_json(vv)
-    end
-    return &quot;{&quot; .. table.concat(out, &quot;,&quot;) .. &quot;}&quot;
-  end
-  return _dbg_json(tostring(v))
-end
-
-local function _dbg_log(hypothesis_id, location, message, data)
-  local row = {
-    sessionId = _DBG_SESSION,
-    runId = _DBG_RUN,
-    hypothesisId = tostring(hypothesis_id or &quot;&quot;),
-    location = tostring(location or &quot;occ_aff.lua&quot;),
-    message = tostring(message or &quot;&quot;),
-    data = type(data) == &quot;table&quot; and data or { value = tostring(data or &quot;&quot;) },
-    timestamp = math.floor((os.time() or 0) * 1000),
-  }
-  local fh = io.open(_DBG_FILE, &quot;a&quot;)
-  if not fh then return end
-  fh:write(_dbg_json(row), &quot;\n&quot;)
-  fh:close()
-end
--- #endregion
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
@@ -32007,6 +32043,13 @@ local function _ent()
   if Yso and Yso.state and type(Yso.state.ent_ready) == &quot;function&quot; then
     local ok, v = pcall(Yso.state.ent_ready)
     if ok then return v == true end
+  end
+  -- Fall back to GMCP vitals if available (mirrors _eq/_bal pattern).
+  -- Only return true unconditionally if GMCP gives us no class/entity field at all.
+  local vit = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  if vit.class ~= nil or vit.entity ~= nil then
+    return tostring(vit.class or vit.entity or &quot;&quot;) == &quot;1&quot;
+        or vit.class == true or vit.entity == true
   end
   return true
 end
@@ -32503,15 +32546,9 @@ local function _burst_ready(tgt, ctx)
   local cap = tonumber(A.cfg.mana_burst_pct or 40) or 40
   local in_cleanseaura_window = (mana ~= nil and mana &lt;= cap) or false
   if eq_cmd:match(&quot;^cleanseaura%s+&quot;) then
-    -- #region agent log
-    _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;eq_cleanseaura&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
-    -- #endregion
     return true
   end
   if eq_cmd:match(&quot;^utter%s+truename%s+&quot;) then
-    -- #region agent log
-    _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;eq_utter_truename&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
-    -- #endregion
     return true
   end
 
@@ -32520,22 +32557,13 @@ local function _burst_ready(tgt, ctx)
   if Yso and Yso.occ and Yso.occ.truebook and type(Yso.occ.truebook.can_utter) == &quot;function&quot; then
     local ok, v = pcall(Yso.occ.truebook.can_utter, tgt)
     if ok and v == true then
-      -- #region agent log
-      _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;truebook_can_utter&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
-      -- #endregion
       return true
     end
   end
 
   if in_cleanseaura_window then
-    -- #region agent log
-    _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_true&quot;, { reason = &quot;mana_window&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window })
-    -- #endregion
     return true
   end
-  -- #region agent log
-  _dbg_log(&quot;H12&quot;, &quot;occ_aff.lua:_burst_ready&quot;, &quot;burst_ready_false&quot;, { reason = &quot;no_convert_window&quot;, target = tgt, mana = mana, cap = cap, in_window = in_cleanseaura_window, eq_cmd = eq_cmd })
-  -- #endregion
   return false
 end
 
@@ -32593,18 +32621,12 @@ local function _pick_convert(tgt, ctx)
 
   local has_wm = _tgt_has(tgt, &quot;whisperingmadness&quot;) or _tgt_has(tgt, &quot;whispering_madness&quot;)
   if not has_wm then
-    -- #region agent log
-    _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;missing_whisperingmadness&quot;, cmd = (&quot;whisperingmadness %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
-    -- #endregion
     return (&quot;whisperingmadness %s&quot;):format(tgt)
   end
 
   local enlightened = _tgt_has(tgt, &quot;enlightened&quot;)
   if not enlightened then
     if mental &gt;= enlighten_target then
-      -- #region agent log
-      _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;enlighten_threshold&quot;, cmd = (&quot;enlighten %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
-      -- #endregion
       return (&quot;enlighten %s&quot;):format(tgt)
     end
     local ra_ready = true
@@ -32613,14 +32635,8 @@ local function _pick_convert(tgt, ctx)
       ra_ready = (ok and v == true)
     end
     if ra_ready then
-      -- #region agent log
-      _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;prep_readaura&quot;, cmd = (&quot;readaura %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
-      -- #endregion
       return (&quot;readaura %s&quot;):format(tgt)
     end
-    -- #region agent log
-    _dbg_log(&quot;H13&quot;, &quot;occ_aff.lua:_pick_convert&quot;, &quot;convert_choice&quot;, { target = tgt, phase = phase, reason = &quot;fallback_whisperingmadness&quot;, cmd = (&quot;whisperingmadness %s&quot;):format(tgt), mental = mental, enlighten_target = enlighten_target, unravel_mentals = unravel_mentals })
-    -- #endregion
     return (&quot;whisperingmadness %s&quot;):format(tgt)
   end
 
@@ -32696,33 +32712,12 @@ function A.can_run(ctx)
   local enabled = A.is_enabled()
   local active = A.is_active()
   if enforce_loop_state and not enabled then
-    -- #region agent log
-    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, {
-      reason = &quot;disabled&quot;,
-      enabled = enabled,
-      active = active,
-      enforce_loop_state = enforce_loop_state,
-      has_route_loop_manager = has_route_loop_manager,
-    })
-    -- #endregion
     return false, &quot;disabled&quot;
   end
   if enforce_loop_state and not active then
-    -- #region agent log
-    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, {
-      reason = &quot;inactive&quot;,
-      enabled = enabled,
-      active = active,
-      enforce_loop_state = enforce_loop_state,
-      has_route_loop_manager = has_route_loop_manager,
-    })
-    -- #endregion
     return false, &quot;inactive&quot;
   end
   if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() == true then
-    -- #region agent log
-    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, { reason = &quot;paused&quot;, enabled = enabled, active = active })
-    -- #endregion
     return false, &quot;paused&quot;
   end
   if Yso and type(Yso.is_occultist) == &quot;function&quot; then
@@ -32743,23 +32738,14 @@ function A.can_run(ctx)
     end
   end
   if tgt == &quot;&quot; then
-    -- #region agent log
-    _dbg_log(&quot;H2&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, { reason = &quot;no_target&quot;, enabled = enabled, active = active })
-    -- #endregion
     return false, &quot;no_target&quot;
   end
   if type(Yso.target_is_valid) == &quot;function&quot; then
     local ok, valid = pcall(Yso.target_is_valid, tgt)
     if ok and valid ~= true then
-      -- #region agent log
-      _dbg_log(&quot;H2&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_blocked&quot;, { reason = &quot;target_invalid&quot;, target = tgt, enabled = enabled, active = active })
-      -- #endregion
       return false, &quot;target_invalid&quot;
     end
   end
-  -- #region agent log
-  _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:can_run&quot;, &quot;can_run_ok&quot;, { target = tgt, enabled = enabled, active = active })
-  -- #endregion
   return true, tgt
 end
 
@@ -32778,6 +32764,7 @@ A.alias_loop_stop_details = A.alias_loop_stop_details or {
   target_invalid = true,
   target_slain = true,
   route_off = true,
+  wrong_class = true,  -- stop cleanly when can_run returns wrong_class
 }
 
 function A.alias_loop_prepare_start(ctx)
@@ -32882,9 +32869,6 @@ function A.alias_loop_waiting_blocks()
   if queue ~= &quot;&quot; then
     local age = _now() - (tonumber(A.state.waiting and A.state.waiting.at) or 0)
     local stale_s = math.max(0.45, (tonumber(A.state.loop_delay or A.cfg.loop_delay or 0.15) or 0.15) * 6)
-    -- #region agent log
-    _dbg_log(&quot;H3&quot;, &quot;occ_aff.lua:alias_loop_waiting_blocks&quot;, &quot;waiting_present&quot;, { queue = queue, age = age, stale_s = stale_s, reason = A.state and A.state.waiting and A.state.waiting.reason or &quot;&quot; })
-    -- #endregion
     if age &gt;= stale_s then
       A.alias_loop_clear_waiting()
     end
@@ -32907,14 +32891,8 @@ end
 
 function A.attack_function(arg)
   local ctx, preview = _attack_opts(arg)
-  -- #region agent log
-  _dbg_log(&quot;H2&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;attack_enter&quot;, { preview = preview == true, ctx_target = _trim(ctx and ctx.target or &quot;&quot;) })
-  -- #endregion
   local ok, info = A.can_run(ctx)
   if not ok then
-    -- #region agent log
-    _dbg_log(&quot;H1&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;attack_blocked&quot;, { reason = info, preview = preview == true })
-    -- #endregion
     if preview then return nil, info end
     return false, info
   end
@@ -33077,9 +33055,6 @@ function A.attack_function(arg)
       if need_attend and payload.eq == &quot;&quot; and _eq() and attend_ready then
         payload.eq = &quot;attend &quot; .. tgt
       elseif need_attend and payload.eq == &quot;&quot; and _eq() and not attend_ready then
-        -- #region agent log
-        _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;attend_suppressed_cooldown&quot;, { target = tgt, tkey = tkey, now = now_ts, last_attend = last_attend, lock_s = attend_lock_s })
-        -- #endregion
       end
 
       if need_attend and payload.class == &quot;&quot; and _ent() then
@@ -33091,9 +33066,6 @@ function A.attack_function(arg)
         if not preview then
           A.state.last_attend_at[tkey] = now_ts
         end
-        -- #region agent log
-        _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;attend_selected&quot;, { target = tgt, tkey = tkey, now = now_ts, lock_s = attend_lock_s, preview = preview == true })
-        -- #endregion
       end
 
       if A.state.defer_unnamable == tkey and payload.bal == &quot;&quot; and _bal() and unnamable_ready then
@@ -33102,13 +33074,7 @@ function A.attack_function(arg)
           A.state.last_unnamable_at[tkey] = now_ts
           A.state.defer_unnamable = nil
         end
-        -- #region agent log
-        _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;unnamable_selected&quot;, { target = tgt, tkey = tkey, now = now_ts, lock_s = unnamable_lock_s, preview = preview == true })
-        -- #endregion
       elseif A.state.defer_unnamable == tkey and payload.bal == &quot;&quot; and _bal() and not unnamable_ready then
-        -- #region agent log
-        _dbg_log(&quot;H14&quot;, &quot;occ_aff.lua:cleanse&quot;, &quot;unnamable_suppressed_cooldown&quot;, { target = tgt, tkey = tkey, now = now_ts, last_unnamable = last_unnamable, lock_s = unnamable_lock_s })
-        -- #endregion
       end
 
       local can_utter = false
@@ -33158,7 +33124,7 @@ function A.attack_function(arg)
       selector_diag.fallback_missing_snapshot = true
     end
 
-    -- 5 whisperingmadness-&gt;enlighten / unravel
+    -- 4 whisperingmadness-&gt;enlighten / unravel (convert/finish EQ)
     if payload.eq == &quot;&quot; and _eq() and (phase == &quot;convert&quot; or phase == &quot;finish&quot;) then
       payload.eq = _trim(_pick_convert(tgt, {
         phase = phase,
@@ -33181,7 +33147,7 @@ function A.attack_function(arg)
       end
     end
 
-    -- 4 maintain pressure (entity fallback -- runs after cleanse so chimera roar gets priority)
+    -- 5 maintain pressure (entity fallback -- runs after cleanse so chimera roar gets priority)
     if payload.class == &quot;&quot; and _ent() then
       payload.class = _trim(_pick_entity(tgt, phase) or &quot;&quot;)
       selector_diag.entity_cmd = payload.class
@@ -33261,16 +33227,6 @@ function A.attack_function(arg)
   }
 
   route_payload, _ = _route_gate_finalize(route_payload, ctx, tgt)
-  -- #region agent log
-  _dbg_log(&quot;H4&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;payload_planned&quot;, {
-    target = tgt,
-    phase = phase,
-    eq = _trim(route_payload and route_payload.lanes and route_payload.lanes.eq or &quot;&quot;),
-    bal = _trim(route_payload and route_payload.lanes and route_payload.lanes.bal or &quot;&quot;),
-    entity = _trim(route_payload and route_payload.lanes and (route_payload.lanes.entity or route_payload.lanes.class) or &quot;&quot;),
-    free = _trim(route_payload and route_payload.lanes and route_payload.lanes.free or &quot;&quot;),
-  })
-  -- #endregion
   A.state.template.last_payload = route_payload
   A.state.template.last_target = tgt
   A.state.template.selector = selector_diag
@@ -33313,36 +33269,15 @@ function A.attack_function(arg)
 
   local sent, cmd_or_err = _emit(emit_payload)
   if not sent then
-    -- #region agent log
-    _dbg_log(&quot;H5&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;emit_failed&quot;, { reason = tostring(cmd_or_err or &quot;&quot;), target = tgt })
-    -- #endregion
     return false, cmd_or_err
   end
-  -- #region agent log
-  _dbg_log(&quot;H5&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;emit_ok&quot;, { target = tgt, cmd = tostring(cmd_or_err or &quot;&quot;) })
-  -- #endregion
 
   A.state.template.last_emitted_payload = emit_payload
   if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == &quot;function&quot; then
     pcall(Yso.route_gate.note_emitted, route_payload, emit_payload, ctx)
   end
   local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == &quot;function&quot;
-  -- #region agent log
-  _dbg_log(&quot;H11&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;post_emit_ack_path&quot;, {
-    target = tgt,
-    has_ack_bus = has_ack_bus == true,
-    eq = _trim(emit_payload and emit_payload.lanes and emit_payload.lanes.eq or &quot;&quot;),
-  })
-  -- #endregion
   local on_sent_ok, on_sent_res = pcall(A.on_sent, emit_payload, { target = tgt, via_ack_bus = has_ack_bus == true })
-  -- #region agent log
-  _dbg_log(&quot;H11&quot;, &quot;occ_aff.lua:attack_function&quot;, &quot;post_emit_on_sent_result&quot;, {
-    target = tgt,
-    has_ack_bus = has_ack_bus == true,
-    ok = on_sent_ok == true,
-    result = on_sent_res == true,
-  })
-  -- #endregion
   return true, cmd_or_err, route_payload
 end
 
@@ -33363,7 +33298,11 @@ local function _clear_owned_lanes(payload)
   end
 
   local free_lane = lanes.free or lanes.pre
-  if (type(free_lane) == &quot;table&quot; and #free_lane &gt; 0) or _trim(free_lane) ~= &quot;&quot; then
+  -- Guard against empty-table false-positive: _trim on a table returns its
+  -- tostring() address, which is never &quot;&quot; and would always trigger the clear.
+  local free_has_content = (type(free_lane) == &quot;table&quot; and #free_lane &gt; 0)
+                        or (type(free_lane) == &quot;string&quot; and _trim(free_lane) ~= &quot;&quot;)
+  if free_has_content then
     clear_lane(&quot;free&quot;)
   end
   if _trim(lanes.eq) ~= &quot;&quot; then
@@ -33524,7 +33463,7 @@ local function _queue_owned_lanes(tgt)
     local cmd = _trim(rec.cmd)
     if cmd == &quot;&quot; then return &quot;&quot; end
     local rec_route = _trim(rec.route):lower()
-    if rec_route ~= &quot;&quot; and rec_route ~= &quot;oc_aff&quot; then return &quot;&quot; end
+    if rec_route ~= &quot;&quot; and rec_route ~= &quot;oc_aff&quot; and rec_route ~= &quot;occ_aff&quot; and rec_route ~= &quot;aff&quot; then return &quot;&quot; end
     local rec_target = _trim(rec.target):lower()
     if tgt_lc ~= &quot;&quot; and rec_target ~= &quot;&quot; and rec_target ~= tgt_lc then return &quot;&quot; end
     return cmd
@@ -33859,7 +33798,6 @@ if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == &quot;fun
 end
 
 return A
-
 </script>
 						<eventHandlerList />
 					</Script>

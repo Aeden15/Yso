@@ -668,17 +668,32 @@ _evaluate_fool = function(source)
     return false, ctx
   end
 
+  -- Cooldown applies to all curesets, not just hunt.
+  -- Previously only checked inside the hunt block, which meant non-hunt curesets
+  -- (e.g. "legacy" when bash mode doesn't override ActiveServerSet) could bypass it.
+  if not _cooldown_ready() then
+    ctx.reason = "cooldown"
+    ctx.message = "Not using Fool: cooldown not ready."
+    return false, ctx
+  end
+
   if ctx.curset == "hunt" then
-    if not _cooldown_ready() then
-      ctx.reason = "cooldown"
-      ctx.message = "Not using Fool: cooldown not ready."
-      return false, ctx
-    end
     if not _bal_ready_now() then
       ctx.reason = "bal_not_ready"
       ctx.message = "Not using Fool: balance lane not ready."
       return false, ctx
     end
+  end
+
+  -- Zero-aff sanity guard: lock_ok can bypass the count threshold, but a
+  -- genuine lock always has at least the four core affs in play.  A zero count
+  -- with lock_ok = true means Legacy.Curing.Affs has stale PvP data (e.g. you
+  -- just switched from combat to bash without affs clearing).  Block here so
+  -- stale lock state can't fire Fool in bash with no real afflictions.
+  if ctx.count == 0 then
+    ctx.reason = "zero_affs"
+    ctx.message = "Not using Fool: no afflictions detected (zero_affs guard)."
+    return false, ctx
   end
 
   if ctx.count < ctx.min_affs and not ctx.lock_ok then
@@ -866,14 +881,28 @@ function F.on_vitals()
   if not _gcd_ready() then return end
 
   -- quick check: any affs at all?
+  -- Must apply ignore_blind_deaf here to stay consistent with _aff_count().
+  -- Without this, having blind/deaf in bash (common from mobs) would pass this
+  -- check but _aff_count() would return 0, wasting an _evaluate_fool call.
   local A = _Aff()
   local list = _self_list_affs()
+  local ignore_bd = Legacy.Fool.ignore_blind_deaf
   local has_any = false
+  local function _is_bd(k)
+    local kk = tostring(k or ""):lower()
+    return kk == "blind" or kk == "blindness" or kk == "deaf" or kk == "deafness"
+  end
   if type(list) == "table" then
-    has_any = (#list > 0)
+    for i = 1, #list do
+      if not ignore_bd or not _is_bd(list[i]) then
+        has_any = true; break
+      end
+    end
   else
-    for _, v in pairs(A) do
-      if v == true then has_any = true; break end
+    for k, v in pairs(A) do
+      if v == true and (not ignore_bd or not _is_bd(k)) then
+        has_any = true; break
+      end
     end
   end
   if not has_any then return end
