@@ -50,6 +50,12 @@ local expected_no_slot = {
   ["yso_predict_cure.lua"] = true,
 }
 
+local route_promoted_files = {
+  "group_damage.lua",
+  "occ_aff.lua",
+  "party_aff.lua",
+}
+
 local function fail(msg)
   io.stderr:write("rebuild_yso_system_xml.lua: " .. tostring(msg) .. "\n")
   os.exit(1)
@@ -451,6 +457,7 @@ local ysindrolir_dir = path_dirname(occultist_dir)
 
 local xml_path = path_resolve(arg and arg[1] or path_join(ysindrolir_dir, "mudlet packages", "Yso system.xml"), get_cwd())
 local mirror_root = path_resolve(arg and arg[2] or path_join(occultist_dir, "modules", "Yso", "xml"), get_cwd())
+local route_root = path_resolve(arg and arg[3] or path_join(occultist_dir, "modules", "Yso", "Combat", "routes"), get_cwd())
 
 local xml = read_all(xml_path)
 local updated = {}
@@ -458,7 +465,15 @@ local no_slot = {}
 local skipped = {}
 local removed = {}
 
-for _, path in ipairs(list_lua_files(mirror_root)) do
+local source_files = list_lua_files(mirror_root)
+for _, file_name in ipairs(route_promoted_files) do
+  local promoted = path_join(route_root, file_name)
+  if path_exists(promoted) then
+    source_files[#source_files + 1] = promoted
+  end
+end
+
+for _, path in ipairs(source_files) do
   local name = basename(path)
   local body = read_all(path)
   local escaped_body = xml_escape(body)
