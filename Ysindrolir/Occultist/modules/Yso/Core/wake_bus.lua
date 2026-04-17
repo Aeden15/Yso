@@ -35,6 +35,15 @@ P.cfg = P.cfg or {
   q_free  = "free",
 
   replace_when_pending = true,
+
+  line_echo = {
+    enabled = true,
+    gag = true,
+    prefix = "<SlateBlue>[Yso] <reset>",
+    eq_color = "<SpringGreen>",
+    bal_color = "<DarkOrange>",
+    ent_color = "<DeepSkyBlue>",
+  },
 }
 
 P.state = P.state or {
@@ -139,6 +148,74 @@ function P.is_ready(lane)
   elseif lane == "class" and Yso.state and type(Yso.state.ent_ready)=="function" then
     local ok,v = pcall(Yso.state.ent_ready); if ok then return v==true end
   end
+  return true
+end
+
+local _LINE_EVENT_MAP = {
+  ["line:eq_recovered"] = { lane = "eq", ready = true, kind = "eq", label = "EQ", state = "" },
+  ["line:bal_recovered"] = { lane = "bal", ready = true, kind = "bal", label = "BAL", state = "" },
+  ["line:eq_blocked"] = { lane = "eq", ready = false, kind = "eq", label = "EQ", state = "blocked" },
+  ["line:bal_blocked"] = { lane = "bal", ready = false, kind = "bal", label = "BAL", state = "blocked" },
+  ["line:eq_queued"] = { lane = "eq", ready = false, kind = "eq", label = "EQ", state = "queued" },
+  ["line:bal_queued"] = { lane = "bal", ready = false, kind = "bal", label = "BAL", state = "queued" },
+  ["line:eq_run"] = { lane = "eq", ready = false, kind = "eq", label = "EQ", state = "run" },
+  ["line:bal_run"] = { lane = "bal", ready = false, kind = "bal", label = "BAL", state = "run" },
+  ["line:entity_ready"] = { lane = "entity", ready = true, kind = "ent", label = "ENT", state = "ready" },
+  ["line:entity_down"] = { lane = "entity", ready = false, kind = "ent", label = "ENT", state = "down" },
+  ["line:entity_missing"] = { lane = "entity", ready = false, kind = "ent", label = "ENT", state = "missing" },
+}
+
+local function _line_color(kind)
+  local cfg = P.cfg.line_echo or {}
+  if kind == "bal" then return tostring(cfg.bal_color or "<DarkOrange>") end
+  if kind == "ent" then return tostring(cfg.ent_color or "<DeepSkyBlue>") end
+  return tostring(cfg.eq_color or "<SpringGreen>")
+end
+
+local function _line_prefix()
+  local cfg = P.cfg.line_echo or {}
+  return tostring(cfg.prefix or "<SlateBlue>[Yso] <reset>")
+end
+
+local function _line_emit(text, kind)
+  local line = string.format("%s%s%s<reset>", _line_prefix(), _line_color(kind), tostring(text or ""))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == "function" then
+    pcall(Yso.util.cecho_line, line)
+  elseif type(cecho) == "function" then
+    cecho(line .. "\n")
+  end
+end
+
+function P.handle_line_event(source, opts)
+  source = _trim(source)
+  if source == "" then return false, "missing_source" end
+  opts = opts or {}
+
+  local row = _LINE_EVENT_MAP[source]
+  if not row then
+    P.wake(source)
+    return false, "unknown_source"
+  end
+
+  local cfg = P.cfg.line_echo or {}
+  local do_gag = opts.gag
+  if do_gag == nil then do_gag = (cfg.gag == true) end
+  if do_gag and type(deleteLine) == "function" then
+    pcall(deleteLine)
+  end
+
+  P.set_ready(row.lane, row.ready, source)
+
+  local do_echo = opts.echo
+  if do_echo == nil then do_echo = (cfg.enabled ~= false) end
+  if do_echo then
+    local text = row.label
+    if row.state ~= "" then
+      text = text .. " " .. row.state
+    end
+    _line_emit(text, row.kind)
+  end
+
   return true
 end
 

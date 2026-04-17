@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
 	<TriggerPackage>
@@ -157,60 +157,16 @@ end
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Ignored affs</name>
-					<script>Legacy = Legacy or {}
-Legacy.Curing = Legacy.Curing or {}
-Legacy.Curing.Prios = Legacy.Curing.Prios or {}
-
-local P = Legacy.Curing.Prios
-local cap = P.capture
+					<script>local cap = Legacy.Curing.Prios.capture
 if not (cap and cap.active) then return end
 
 cap.active = false
 if cap._tid then killTimer(cap._tid); cap._tid = nil end
 
-local set = tostring(cap.set or Legacy.Curing.ActiveServerSet or "legacy"):lower()
-local applied = false
+-- Activate baseline for current set so Reprio() restores correctly.
+Legacy.Curing.Prios.UseBaseline(cap.set)
 
-if type(P.ApplyCapturedBaseline) == "function" then
-  local ok, res = pcall(P.ApplyCapturedBaseline, set, { warn = true })
-  applied = ok and (res == true)
-else
-  if type(P.UseBaseline) == "function" then
-    local ok, res = pcall(P.UseBaseline, set)
-    applied = ok and (res ~= false)
-  elseif type(Legacy.Curing.UseBaseline) == "function" then
-    local ok, res = pcall(Legacy.Curing.UseBaseline, set)
-    applied = ok and (res ~= false)
-  end
-
-  if not applied then
-    local base = type(P.baseSets) == "table" and P.baseSets[set] or nil
-    if type(base) == "table" then
-      P.legacy = base
-      local temp_copy = nil
-      if type(table) == "table" and type(table.deepcopy) == "function" then
-        local ok, tmp = pcall(table.deepcopy, base)
-        if ok and type(tmp) == "table" then
-          temp_copy = tmp
-        end
-      end
-      P.temp = temp_copy
-      applied = true
-    end
-  end
-
-  if not applied then
-    P._baseline_warned_sets = type(P._baseline_warned_sets) == "table" and P._baseline_warned_sets or {}
-    if P._baseline_warned_sets[set] ~= true then
-      P._baseline_warned_sets[set] = true
-      cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Baseline sync warning: could not activate baseline for cureset '"..set.."'.")
-    end
-  end
-end
-
-if applied then
-  cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios for cureset '"..set.."'.")
-end
+cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios for cureset '"..cap.set.."'.")
 </script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -232,7 +188,7 @@ end
 				<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Arena challenged</name>
 					<script>deleteLine()
-cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TIME TO SPAR!).&lt;reset&gt;\n")
+cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt; TIME TO SPAR!.\n")
 </script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -308,18 +264,17 @@ cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TIME TO SPAR!).&lt;reset&gt;\
 local who  = matches[2] or ""
 if who == "" then return end
 
-local core = Yso and Yso.off and Yso.off.core or nil
 if line:find("eats an aurum flake") then
-  if core and type(core.on_enemy_aurum_eat) == "function" then
-    core.on_enemy_aurum_eat(who)
+  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.on_enemy_aurum_eat then
+    Yso.off.oc.on_enemy_aurum_eat(who)
   end
 elseif line:find("eats a piece of kelp") then
-  if core and type(core.on_enemy_kelp_eat) == "function" then
-    core.on_enemy_kelp_eat(who)
+  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.on_enemy_kelp_eat then
+    Yso.off.oc.on_enemy_kelp_eat(who)
   end
 elseif line:find("touches a tree") then
-  if core and type(core.on_enemy_tree_touch) == "function" then
-    core.on_enemy_tree_touch(who)
+  if Yso and Yso.off and Yso.off.oc and Yso.off.oc.on_enemy_tree_touch then
+    Yso.off.oc.on_enemy_tree_touch(who)
   end
 end</script>
 							<triggerType>0</triggerType>
@@ -361,9 +316,7 @@ end</script>
 						<regexCodePropertyList />
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 1</name>
-							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
-  Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
-end
+							<script>Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -384,9 +337,7 @@ end
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 2</name>
-							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
-  Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
-end
+							<script>Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -407,9 +358,7 @@ end
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 3</name>
-							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
-  Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
-end
+							<script>Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -430,9 +379,7 @@ end
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Last stage</name>
-							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
-  Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
-end
+							<script>Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -454,22 +401,15 @@ end
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>The monk's radiancing</name>
 							<script>local who = matches[2] or "Monk"
-local msg = ("%s is setting something up..."):format(who)
-local padded = ("#          " .. msg):sub(1, 56)
-local pad = string.rep(" ", math.max(0, 56 - #msg))
+Yso.radianceAlert.banner({
+  "########################################################",
+  "#                 RADIANCE  PRE-TELL                   #",
+  ("#          %s is setting something up..."):format(who):sub(1,56) .. string.rep(" ", math.max(0, 56-#(("%s is setting something up..."):format(who)))) .. "#",
+  "########################################################",
+}, "&lt;yellow&gt;")
 
-if Yso and Yso.radianceAlert and type(Yso.radianceAlert.banner) == "function" then
-  Yso.radianceAlert.banner({
-    "########################################################",
-    "#                 RADIANCE  PRE-TELL                   #",
-    padded .. pad .. "#",
-    "########################################################",
-  }, "&lt;yellow&gt;")
-end
-
-if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
-  Yso.radianceAlert.fire(0, who, "pre-tell")
-end
+-- Stage 0 does not emit the standard staged banner, but still raises the event.
+Yso.radianceAlert.fire(0, who, "pre-tell")
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -721,31 +661,6 @@ send("curing predict brokenrightleg")
 						<integer>0</integer>
 					</regexCodePropertyList>
 				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Mind locking</name>
-					<script>local who = tostring(matches[2] or ""):gsub("^%s+", ""):gsub("%s+$", "")
-if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
-  Yso.radianceAlert.fire(1, (who ~= "" and who or "Mindlock"), "MIND LOCKING")
-else
-  cecho(string.format("\n&lt;yellow&gt;[DEFENSE] &lt;HotPink&gt;MIND LOCKING: %s.\n", who ~= "" and who or "UNKNOWN"))
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand></mCommand>
-					<packageName></packageName>
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile>C:/Windows/Media/Alarm01.wav</mSoundFile>
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^You feel the probing mind of (.+) touch yours\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Pulse wake lines</name>
 					<script></script>
@@ -763,8 +678,11 @@ end</script>
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ recovered</name>
-						<script>if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("eq", true, "line:eq_recovered")
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:eq_recovered&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;eq&quot;, true, &quot;line:eq_recovered&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -785,8 +703,11 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL recovered</name>
-						<script>if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("bal", true, "line:bal_recovered")
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:bal_recovered&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;bal&quot;, true, &quot;line:bal_recovered&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -807,8 +728,11 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL blocked</name>
-						<script>if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("bal", false, "line:bal_blocked")
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:bal_blocked&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;bal&quot;, false, &quot;line:bal_blocked&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -829,9 +753,12 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
-						<script>if Yso and Yso.pulse then
-  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_queued") end
-  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_queued") end
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:eq_queued&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)==&quot;function&quot; then Yso.pulse.set_ready(&quot;eq&quot;, false, &quot;line:eq_queued&quot;) end
+  if type(Yso.pulse.wake)==&quot;function&quot; then Yso.pulse.wake(&quot;line:eq_queued&quot;) end
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -854,9 +781,12 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL queued (serverside)</name>
-						<script>if Yso and Yso.pulse then
-  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_queued") end
-  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_queued") end
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:bal_queued&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)==&quot;function&quot; then Yso.pulse.set_ready(&quot;bal&quot;, false, &quot;line:bal_queued&quot;) end
+  if type(Yso.pulse.wake)==&quot;function&quot; then Yso.pulse.wake(&quot;line:bal_queued&quot;) end
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -879,9 +809,12 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ running queued cmd</name>
-						<script>if Yso and Yso.pulse then
-  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_run") end
-  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_run") end
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:eq_run&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)==&quot;function&quot; then Yso.pulse.set_ready(&quot;eq&quot;, false, &quot;line:eq_run&quot;) end
+  if type(Yso.pulse.wake)==&quot;function&quot; then Yso.pulse.wake(&quot;line:eq_run&quot;) end
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -904,9 +837,12 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL running queued cmd</name>
-						<script>if Yso and Yso.pulse then
-  if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_run") end
-  if Yso and Yso.pulse and type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_run") end
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:bal_run&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)==&quot;function&quot; then Yso.pulse.set_ready(&quot;bal&quot;, false, &quot;line:bal_run&quot;) end
+  if type(Yso.pulse.wake)==&quot;function&quot; then Yso.pulse.wake(&quot;line:bal_run&quot;) end
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -929,8 +865,11 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ blocked</name>
-						<script>if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("eq", false, "line:eq_blocked")
+						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:eq_blocked&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;eq&quot;, false, &quot;line:eq_blocked&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1233,9 +1172,9 @@ local pct  = math.floor((cur / maxm) * 100 + 0.5)
 
 -- track it for the system (optional)
 Yso.occ.mana_pct[name:lower()] = cur / maxm
-if Yso and Yso.occ and type(Yso.occ.aura_note_mana) == "function" then
+if type(Yso.occ.aura_note_mana) == "function" then
   pcall(Yso.occ.aura_note_mana, name, cur, maxm)
-elseif Yso and Yso.occ and type(Yso.occ.set_target_mana_pct) == "function" then
+elseif type(Yso.occ.set_target_mana_pct) == "function" then
   pcall(Yso.occ.set_target_mana_pct, name, pct)
 end
 
@@ -1268,7 +1207,7 @@ cecho("\n" .. string.format(
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Simulacrum dusted</name>
 						<script>deleteLine()
-cecho("\n&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW SIMULACRUM).\n")
+cecho("&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW SIMULACRUM).\n")
 </script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1343,7 +1282,7 @@ Yso.occ.aura.last_attempt[who] = _now()
 deleteLine()
 
 cecho(string.format(
-  "\n&lt;dark_orchid&gt;[Occultism] &lt;chartreuse&gt;(CLEANSED: %s).&lt;reset&gt;\n",
+  "\n&lt;dark_orchid&gt;[Occultism] &lt;gray&gt;(CLEANSEAURA attempt on %s).&lt;reset&gt;\n",
   who
 ))
 resetFormat()
@@ -1407,7 +1346,7 @@ cecho(string.format(
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Heartstone dusted</name>
 						<script>deleteLine()
-cecho("\n&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW HEARTSTONE).\n")
+cecho("&lt;dark_orchid&gt;[Occultism] &lt;aquamarine&gt;(CREATE A NEW HEARTSTONE).\n")
 </script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1505,7 +1444,7 @@ end
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Sun cleansed</name>
 						<script>deleteLine()
-cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(SELF-CLEANSED).&lt;reset&gt;\n")
+cecho("&lt;yellow&gt;[Tarot] &lt;aquamarine&gt;(SELF-CLEANSED).\n")
 --looks like it last 10-12 tics</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1683,8 +1622,8 @@ if who and who ~= "" then oc_death_fling_success(who) end
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Lusted target</name>
-						<script>cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TARGET LUSTED!!).&lt;reset&gt;\n")
-cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TARGET LUSTED!!).&lt;reset&gt;\n")</script>
+						<script>cecho("&lt;yellow&gt;[Tarot] &lt;HotPink&gt;TARGET LUSTED!!.\n")
+cecho("&lt;yellow&gt;[Tarot] &lt;HotPink&gt;TARGET LUSTED!!.\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -1704,8 +1643,8 @@ cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(TARGET LUSTED!!).&lt;reset&gt
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Sniff fail</name>
-						<script>cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(LUST THE TARGET!).&lt;reset&gt;\n")
-cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(LUST THE TARGET!).&lt;reset&gt;\n")</script>
+						<script>cecho("&lt;yellow&gt;[Tarot] &lt;chartreuse&gt;LUST THE TARGET!\n")
+cecho("&lt;yellow&gt;[Tarot] &lt;chartreuse&gt;LUST THE TARGET!\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -1725,8 +1664,8 @@ cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(LUST THE TARGET!).&lt;reset&g
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Sniff success</name>
-						<script>cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(CAN EMPRESS!).&lt;reset&gt;\n")
-cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(CAN EMPRESS!).&lt;reset&gt;\n")</script>
+						<script>cecho("&lt;yellow&gt;[Tarot] &lt;salmon&gt;CAN EMPRESS!\n")
+cecho("&lt;yellow&gt;[Tarot] &lt;salmon&gt;CAN EMPRESS!\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -1861,10 +1800,12 @@ Yso.occ   = Yso.occ   or {}
 Yso.occ.entity_ready = true
 Yso.occ.entities_missing = false
 Yso.occ.entities_missing_ts = nil
-if Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("entity", true, "line:entity_ready")
-end
-</script>
+if Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:entity_ready&quot;, { gag = true, echo = true })
+elseif Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;entity&quot;, true, &quot;line:entity_ready&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
+end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -1889,18 +1830,20 @@ Yso.occ   = Yso.occ   or {}
 Yso.occ.entity_ready = false
 Yso.occ.entities_missing = false
 Yso.occ.entities_missing_ts = nil
-if Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("entity", false, "line:entity_down")
+if Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:entity_down&quot;, { gag = true, echo = true })
+elseif Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;entity&quot;, false, &quot;line:entity_down&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end
 
 -- Inform pulse bus about entity outcome (success vs cooldown).
-local l = tostring(line or (matches and matches[1]) or ""):lower()
-local fail = l:find("you may not command another entity so soon", 1, true)
-          or l:find("recover from commanding your minions", 1, true)
-if Yso and Yso.pulse and type(Yso.pulse.entity_ack)=="function" then
-  if fail then Yso.pulse.entity_ack("fail") else Yso.pulse.entity_ack("sent") end
-end
-</script>
+local l = tostring(line or (matches and matches[1]) or &quot;&quot;):lower()
+local fail = l:find(&quot;you may not command another entity so soon&quot;, 1, true)
+          or l:find(&quot;recover from commanding your minions&quot;, 1, true)
+if Yso and Yso.pulse and type(Yso.pulse.entity_ack)==&quot;function&quot; then
+  if fail then Yso.pulse.entity_ack(&quot;fail&quot;) else Yso.pulse.entity_ack(&quot;sent&quot;) end
+end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2291,11 +2234,7 @@ if Yso and Yso.off and Yso.off.oc then
   end
 end
 
-cecho(string.format(
-  "\n&lt;dark_orchid&gt;[Occultism] &lt;chartreuse&gt;(ATTENDED: %s).&lt;reset&gt;\n",
-  who
-))
-resetFormat()</script>
+cecho("&lt;HotPink&gt;[Domination] &lt;salmon&gt;(ATTEND STRIPPED DEAF+BLIND!).\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2308,33 +2247,6 @@ resetFormat()</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>^Focusing your will, you exert your aura at ([\w'\-]+) and snap your fingers, forcing [\w'\-]+ to pay attention to you\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Attend focus line</name>
-						<script>local who = matches[2] or "someone"
-
-deleteLine()
-cecho(string.format(
-  "\n&lt;dark_orchid&gt;[Occultism] &lt;chartreuse&gt;(ATTENDED: %s).&lt;reset&gt;\n",
-  who
-))
-resetFormat()</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand></mCommand>
-						<packageName></packageName>
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile></mSoundFile>
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Focusing your will, you exert your aura at (.+?) and snap your fingers, forcing (?:his|her|their|its) mind open in a flash of indigo-violet light\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2435,7 +2347,7 @@ end
 						<script>Yso = Yso or {}
 Yso.occ = Yso.occ or {}
 
-local now = (type(getEpoch) == "function") and getEpoch() or os.time()
+local now = (type(getEpoch) == &quot;function&quot;) and getEpoch() or os.time()
 Yso.occ.entities_missing = true
 Yso.occ.entities_missing_ts = now
 
@@ -2443,16 +2355,18 @@ Yso.occ.entities_missing_ts = now
 Yso.occ._call_entities_cd = Yso.occ._call_entities_cd or 0
 if (now - Yso.occ._call_entities_cd) &gt;= 2 then
   Yso.occ._call_entities_cd = now
-  send("call entities")
+  send(&quot;call entities&quot;)
 end
 
-if Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
-  Yso.pulse.set_ready("entity", false, "line:entity_missing")
+if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)==&quot;function&quot; then
+  Yso.pulse.handle_line_event(&quot;line:entity_missing&quot;, { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)==&quot;function&quot; then
+  Yso.pulse.set_ready(&quot;entity&quot;, false, &quot;line:entity_missing&quot;)
+  if type(deleteLine)==&quot;function&quot; then pcall(deleteLine) end
 end
-if Yso and Yso.pulse and type(Yso.pulse.entity_ack)=="function" then
-  Yso.pulse.entity_ack("missing")
-end
-</script>
+if Yso and Yso.pulse and type(Yso.pulse.entity_ack)==&quot;function&quot; then
+  Yso.pulse.entity_ack(&quot;missing&quot;)
+end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -3388,18 +3302,14 @@ Yso.queue.eq("ATTEND " .. tgt)</script>
 					<Alias isActive="yes" isFolder="no">
 						<name>Affliction automation</name>
 						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.toggle) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
-  end
-end
-if not (core and type(core.toggle) == "function") then
-  cecho("&lt;red&gt;[YSO] offense core unavailable.\n")
+local mode = Yso.mode or nil
+
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  cecho("&lt;red&gt;[YSO] aff loop controller unavailable.\n")
   return
 end
-local ok, err = pcall(core.toggle, "oc_aff")
+
+local ok, err = pcall(mode.toggle_route_loop, "aff", "alias")
 if not ok then
   cecho(string.format("&lt;red&gt;[YSO] aff alias failed: %s\n", tostring(err)))
 end</script>
@@ -3471,20 +3381,25 @@ end</script>
 					<Alias isActive="yes" isFolder="no">
 						<name>Focus automation</name>
 						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.toggle) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
+local mode = Yso.mode or nil
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
   end
 end
-if not (core and type(core.toggle) == "function") then
+
+if not (mode and type(mode.toggle_route_loop) == "function") then
   if type(cecho) == "function" then
-    cecho("[YSO] offense core unavailable.\n")
+    cecho("[YSO] focus loop controller unavailable.\n")
   end
   return
 end
-local ok, err = pcall(core.toggle, "magi_focus")
+
+local ok, err = pcall(mode.toggle_route_loop, "focus", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] focus alias failed: %s\n", tostring(err)))
 end</script>
@@ -3531,46 +3446,30 @@ end</script>
 						<regex>^ra(?:\s+(?!status(?:\s|$))(.+))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
-						<name>Magi duel damage</name>
-						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.toggle) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
-  end
-end
-if not (core and type(core.toggle) == "function") then
-  if type(cecho) == "function" then
-    cecho("[YSO] offense core unavailable.\n")
-  end
-  return
-end
-local ok, err = pcall(core.toggle, "magi_dmg")
-if not ok and type(cecho) == "function" then
-  cecho(string.format("[YSO] mdam alias failed: %s\n", tostring(err)))
-end</script>
-						<command></command>
-						<packageName></packageName>
-						<regex>^mdam$</regex>
-					</Alias>
-					<Alias isActive="yes" isFolder="no">
 						<name>Group damage  automation</name>
 						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.toggle) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+
+local mode = Yso.mode or nil
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
   end
 end
-if not (core and type(core.toggle) == "function") then
+
+if not (mode and type(mode.toggle_route_loop) == "function") then
   if type(cecho) == "function" then
-    cecho("[YSO] offense core unavailable.\n")
+    cecho("[YSO] group damage loop controller unavailable.\n")
   end
   return
 end
-local ok, err = pcall(core.toggle, "dam")
+
+local ok, err = pcall(mode.toggle_route_loop, "dam", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] dam alias failed: %s\n", tostring(err)))
 end</script>
@@ -3841,7 +3740,7 @@ if mode == "a" then
   end
 
   cecho(string.format(
-    "\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Hermit activated%s).&lt;reset&gt;\n",
+    "&lt;green&gt;[Tarot] &lt;green&gt;Hermit activated%s.\n",
     tag ~= "" and (" with tag "..tag) or ""
   ))
 
@@ -3859,12 +3758,12 @@ elseif mode == "f" then
   end
 
   cecho(string.format(
-    "\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Flinging Hermit at ground%s).&lt;reset&gt;\n",
+    "&lt;green&gt;[Tarot] &lt;yellow&gt;Flinging Hermit at ground%s.\n",
     tag ~= "" and (" with tag "..tag) or ""
   ))
 
 else
-  cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Usage: hera[#] / herf[#]).&lt;reset&gt;\n")
+  cecho("&lt;green&gt;[Tarot] &lt;red&gt;Usage:&lt;reset&gt; hera[#] / herf[#]\n")
 end
 </script>
 						<command></command>
@@ -3892,7 +3791,7 @@ else
   send(cmd)
 end
 
-cecho("\n&lt;yellow&gt;[Tarot] &lt;DeepSkyBlue&gt;(Flinging Sun at ground (periodic self-cleanse)).&lt;reset&gt;\n")
+cecho("&lt;gray&gt;[Tarot] &lt;yellow&gt;Flinging Sun at ground (periodic self-cleanse).\n")
 </script>
 						<command></command>
 						<packageName></packageName>
@@ -4055,7 +3954,7 @@ if mode == "k" then
     return
   end
 
-  send("order loyals kill " .. tgt)
+  send("order entourage kill " .. tgt)
   if Yso and type(Yso.set_loyals_attack) == "function" then
     Yso.set_loyals_attack(true, tgt)
   else
@@ -4064,7 +3963,7 @@ if mode == "k" then
 
 elseif mode == "p" then
   send("unenemy all")
-  send("order loyals passive")
+  send("order entourage passive")
   if Yso and type(Yso.set_loyals_attack) == "function" then
     Yso.set_loyals_attack(false)
   else
@@ -4195,20 +4094,28 @@ end
 					<Alias isActive="yes" isFolder="no">
 						<name>Group offense</name>
 						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.toggle) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+
+local mode = Yso.mode or nil
+if not (mode and type(mode.toggle_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
   end
 end
-if not (core and type(core.toggle) == "function") then
+
+if not (mode and type(mode.toggle_route_loop) == "function") then
   if type(cecho) == "function" then
-    cecho("[YSO] offense core unavailable.\n")
+    cecho("[YSO] group damage loop controller unavailable.\n")
   end
   return
 end
-local ok, err = pcall(core.toggle, "dam")
+
+local ok, err = pcall(mode.toggle_route_loop, "dam", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] gd alias failed: %s\n", tostring(err)))
 end</script>
@@ -4219,20 +4126,28 @@ end</script>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group offense on(Alt)</name>
 						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.on) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+
+local mode = Yso.mode or nil
+if not (mode and type(mode.start_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
   end
 end
-if not (core and type(core.on) == "function") then
+
+if not (mode and type(mode.start_route_loop) == "function") then
   if type(cecho) == "function" then
-    cecho("[YSO] offense core unavailable.\n")
+    cecho("[YSO] group damage loop controller unavailable.\n")
   end
   return
 end
-local ok, err = pcall(core.on, "dam")
+
+local ok, err = pcall(mode.start_route_loop, "dam", "alias")
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] gdon failed: %s\n", tostring(err)))
 end</script>
@@ -4243,20 +4158,28 @@ end</script>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group offense off(Alt)</name>
 						<script>Yso = Yso or {}
-local core = Yso and Yso.off and Yso.off.core or nil
-if not (core and type(core.off) == "function") then
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-    core = Yso and Yso.off and Yso.off.core or nil
+Yso.off = Yso.off or {}
+Yso.off.oc = Yso.off.oc or {}
+
+local mode = Yso.mode or nil
+if not (mode and type(mode.stop_route_loop) == "function") then
+  if Yso.bootstrap and type(Yso.bootstrap.entry) == "function" then
+    pcall(Yso.bootstrap.entry, true)
+    mode = Yso.mode or nil
+  elseif type(require) == "function" then
+    pcall(require, "Yso")
+    mode = Yso.mode or nil
   end
 end
-if not (core and type(core.off) == "function") then
+
+if not (mode and type(mode.stop_route_loop) == "function") then
   if type(cecho) == "function" then
-    cecho("[YSO] offense core unavailable.\n")
+    cecho("[YSO] group damage loop controller unavailable.\n")
   end
   return
 end
-local ok, err = pcall(core.off, "dam")
+
+local ok, err = pcall(mode.stop_route_loop, "dam", "alias", false)
 if not ok and type(cecho) == "function" then
   cecho(string.format("[YSO] gdoff failed: %s\n", tostring(err)))
 end</script>
@@ -6505,6 +6428,9 @@ _akwire_echo(&quot;Yso / Achaea wiring loaded (Legacy + AK bridge)&quot;)
 --    for older XML-resident helpers that still expect addclear/addclearfull.
 --========================================================--
 
+------------------------------------------------------------
+-- Locals
+------------------------------------------------------------
 local _G = _G
 local rawget = rawget
 local type = type
@@ -6548,20 +6474,46 @@ Q._blocked = Q._blocked or {}
 
 Q._impl_version = &quot;2026-04-05.1&quot;
 
+------------------------------------------------------------
+-- Constants
+------------------------------------------------------------
+
+-- Maps canonical lane keys to Achaea QUEUE command type strings.
+local _QTYPE_MAP = {
+  eq    = &quot;e!p!w!t&quot;,
+  bal   = &quot;b!p!w!t&quot;,
+  class = &quot;c!p!w!t&quot;,
+  free  = &quot;eb!w!p!t&quot;,
+}
+-- Lanes that can act as the wake trigger in a commit (free is never a wake lane).
+local _VALID_WAKE_LANES = { eq = true, bal = true, class = true }
+
+------------------------------------------------------------
+-- Internal helpers
+------------------------------------------------------------
+
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
     local ok, v = pcall(Yso.util.now)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
-  if t and t &gt; 1e12 then t = t / 1000 end
-  return t or os.time()
+  if type(getEpoch) == &quot;function&quot; then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v &gt; 1e12 then v = v / 1000 end
+      return v
+    end
+  end
+  return os.time()
 end
 
 local function _trim(s)
   return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
 end
 
+-- Normalises any lane alias (including raw Achaea queue-type strings like
+-- &quot;e!p!w!t&quot;) to one of the four canonical keys: eq / bal / class / free.
 local function _lane_key(lane)
   lane = _trim(lane):lower()
   if lane == &quot;&quot; then return nil end
@@ -6579,14 +6531,6 @@ local function _lane_key(lane)
   end
   return nil
 end
-
-local _QTYPE_MAP = {
-  eq = &quot;e!p!w!t&quot;,
-  bal = &quot;b!p!w!t&quot;,
-  class = &quot;c!p!w!t&quot;,
-  free = &quot;eb!w!p!t&quot;,
-}
-local _VALID_WAKE_LANES = { eq = true, bal = true, class = true }
 
 local function _route_from_opts(opts)
   if type(opts) ~= &quot;table&quot; then return &quot;&quot; end
@@ -6632,6 +6576,10 @@ local function _infer_lane_from_payload(payload)
   return &quot;eq&quot;
 end
 
+-- Resolves (lane, payload) into (canonical_key, payload, compat_note).
+--  • &quot;swapped&quot;  – caller passed args in reverse order; we silently correct it.
+--  • &quot;inferred&quot; – no lane was given; lane was guessed from the payload string.
+--  • nil note   – normal path.
 local function _coerce_stage_args(lane, payload)
   local key = _lane_key(lane)
   if key then return key, payload, nil end
@@ -6926,6 +6874,10 @@ local function _owned_table()
   return Yso._queued
 end
 
+------------------------------------------------------------
+-- Public: ownership tracking
+------------------------------------------------------------
+
 function Q.qtype_for_lane(lane)
   local key = _lane_key(lane)
   if key and _QTYPE_MAP[key] then return _QTYPE_MAP[key] end
@@ -6996,6 +6948,10 @@ local function _lane_send_allowed(lane, cmd)
   end
   return true
 end
+
+------------------------------------------------------------
+-- Public: lane block / unblock
+------------------------------------------------------------
 
 function Q.lane_blocked(lane)
   local key = _lane_key(lane)
@@ -7074,6 +7030,10 @@ function Q.unblock_lane(lane, reason, opts)
   end
   return true
 end
+
+------------------------------------------------------------
+-- Public: lane install / staging / clearing
+------------------------------------------------------------
 
 function Q.install_lane(lane, cmd, opts)
   opts = opts or {}
@@ -7211,6 +7171,7 @@ function Q.stage(lane, payload, opts)
   return true
 end
 
+-- Q.push is an alias for Q.stage (older call sites use push).
 function Q.push(lane, payload, opts)
   return Q.stage(lane, payload, opts)
 end
@@ -7221,6 +7182,10 @@ function Q.replace(lane, payload, opts)
   opts.replace = true
   return Q.stage(lane, payload, opts)
 end
+
+------------------------------------------------------------
+-- Public: commit and emit
+------------------------------------------------------------
 
 function Q.commit(opts)
   local payload = _commit_payload(opts)
@@ -7309,7 +7274,12 @@ function Q.emit(payload, opts)
   return ok == true
 end
 
--- Raw QUEUE compatibility wrappers for older XML-resident helpers.
+------------------------------------------------------------
+-- Raw QUEUE compatibility wrappers
+--  These send QUEUE ADDCLEAR / ADDCLEARFULL directly and exist for
+--  older XML-resident helpers that haven&apos;t migrated to stage/commit.
+------------------------------------------------------------
+
 function Q.addclear(qtype, payload)
   return _raw_queue(&quot;ADDCLEAR&quot;, qtype, payload)
 end
@@ -7351,13 +7321,34 @@ function Q.raw(mode, qtype, payload)
   return _send_compound(body)
 end
 
-Q.mark_payload_fired = _mark_payload_fired
+-- Expose _mark_payload_fired as a public entry point so external modules
+-- (e.g. route drivers that fire payloads through their own path) can still
+-- notify Yso.locks without going through Q.commit.
+function Q.mark_payload_fired(payload)
+  _mark_payload_fired(payload)
+end
+
+------------------------------------------------------------
+-- Startup initialisation
+------------------------------------------------------------
 
 do
-  local is_writhed = Yso and Yso.self and type(Yso.self.is_writhed) == &quot;function&quot; and Yso.self.is_writhed() == true
-  if is_writhed then
-    Q.block_lane(&quot;eq&quot;, &quot;writhe&quot;, { source = &quot;queue.init&quot;, clear_owned = true, clear_staged = true })
-    Q.block_lane(&quot;bal&quot;, &quot;writhe&quot;, { source = &quot;queue.init&quot;, clear_owned = true, clear_staged = true })
+  -- Deferred one tick so Yso.self and other modules finish loading before
+  -- the writhe check runs.  Falls back to immediate check if tempTimer is
+  -- not yet available (e.g. in a bare test environment).
+  local function _init_writhe_check()
+    local is_writhed = Yso and Yso.self
+      and type(Yso.self.is_writhed) == &quot;function&quot;
+      and Yso.self.is_writhed() == true
+    if is_writhed then
+      Q.block_lane(&quot;eq&quot;,  &quot;writhe&quot;, { source = &quot;queue.init&quot;, clear_owned = true, clear_staged = true })
+      Q.block_lane(&quot;bal&quot;, &quot;writhe&quot;, { source = &quot;queue.init&quot;, clear_owned = true, clear_staged = true })
+    end
+  end
+  if type(tempTimer) == &quot;function&quot; then
+    tempTimer(0, _init_writhe_check)
+  else
+    _init_writhe_check()
   end
 end
 
@@ -7405,6 +7396,15 @@ P.cfg = P.cfg or {
   q_free  = &quot;free&quot;,
 
   replace_when_pending = true,
+
+  line_echo = {
+    enabled = true,
+    gag = true,
+    prefix = &quot;&lt;SlateBlue&gt;[Yso] &lt;reset&gt;&quot;,
+    eq_color = &quot;&lt;SpringGreen&gt;&quot;,
+    bal_color = &quot;&lt;DarkOrange&gt;&quot;,
+    ent_color = &quot;&lt;DeepSkyBlue&gt;&quot;,
+  },
 }
 
 P.state = P.state or {
@@ -7509,6 +7509,74 @@ function P.is_ready(lane)
   elseif lane == &quot;class&quot; and Yso.state and type(Yso.state.ent_ready)==&quot;function&quot; then
     local ok,v = pcall(Yso.state.ent_ready); if ok then return v==true end
   end
+  return true
+end
+
+local _LINE_EVENT_MAP = {
+  [&quot;line:eq_recovered&quot;] = { lane = &quot;eq&quot;, ready = true, kind = &quot;eq&quot;, label = &quot;EQ&quot;, state = &quot;&quot; },
+  [&quot;line:bal_recovered&quot;] = { lane = &quot;bal&quot;, ready = true, kind = &quot;bal&quot;, label = &quot;BAL&quot;, state = &quot;&quot; },
+  [&quot;line:eq_blocked&quot;] = { lane = &quot;eq&quot;, ready = false, kind = &quot;eq&quot;, label = &quot;EQ&quot;, state = &quot;blocked&quot; },
+  [&quot;line:bal_blocked&quot;] = { lane = &quot;bal&quot;, ready = false, kind = &quot;bal&quot;, label = &quot;BAL&quot;, state = &quot;blocked&quot; },
+  [&quot;line:eq_queued&quot;] = { lane = &quot;eq&quot;, ready = false, kind = &quot;eq&quot;, label = &quot;EQ&quot;, state = &quot;queued&quot; },
+  [&quot;line:bal_queued&quot;] = { lane = &quot;bal&quot;, ready = false, kind = &quot;bal&quot;, label = &quot;BAL&quot;, state = &quot;queued&quot; },
+  [&quot;line:eq_run&quot;] = { lane = &quot;eq&quot;, ready = false, kind = &quot;eq&quot;, label = &quot;EQ&quot;, state = &quot;run&quot; },
+  [&quot;line:bal_run&quot;] = { lane = &quot;bal&quot;, ready = false, kind = &quot;bal&quot;, label = &quot;BAL&quot;, state = &quot;run&quot; },
+  [&quot;line:entity_ready&quot;] = { lane = &quot;entity&quot;, ready = true, kind = &quot;ent&quot;, label = &quot;ENT&quot;, state = &quot;ready&quot; },
+  [&quot;line:entity_down&quot;] = { lane = &quot;entity&quot;, ready = false, kind = &quot;ent&quot;, label = &quot;ENT&quot;, state = &quot;down&quot; },
+  [&quot;line:entity_missing&quot;] = { lane = &quot;entity&quot;, ready = false, kind = &quot;ent&quot;, label = &quot;ENT&quot;, state = &quot;missing&quot; },
+}
+
+local function _line_color(kind)
+  local cfg = P.cfg.line_echo or {}
+  if kind == &quot;bal&quot; then return tostring(cfg.bal_color or &quot;&lt;DarkOrange&gt;&quot;) end
+  if kind == &quot;ent&quot; then return tostring(cfg.ent_color or &quot;&lt;DeepSkyBlue&gt;&quot;) end
+  return tostring(cfg.eq_color or &quot;&lt;SpringGreen&gt;&quot;)
+end
+
+local function _line_prefix()
+  local cfg = P.cfg.line_echo or {}
+  return tostring(cfg.prefix or &quot;&lt;SlateBlue&gt;[Yso] &lt;reset&gt;&quot;)
+end
+
+local function _line_emit(text, kind)
+  local line = string.format(&quot;%s%s%s&lt;reset&gt;&quot;, _line_prefix(), _line_color(kind), tostring(text or &quot;&quot;))
+  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
+    pcall(Yso.util.cecho_line, line)
+  elseif type(cecho) == &quot;function&quot; then
+    cecho(line .. &quot;\n&quot;)
+  end
+end
+
+function P.handle_line_event(source, opts)
+  source = _trim(source)
+  if source == &quot;&quot; then return false, &quot;missing_source&quot; end
+  opts = opts or {}
+
+  local row = _LINE_EVENT_MAP[source]
+  if not row then
+    P.wake(source)
+    return false, &quot;unknown_source&quot;
+  end
+
+  local cfg = P.cfg.line_echo or {}
+  local do_gag = opts.gag
+  if do_gag == nil then do_gag = (cfg.gag == true) end
+  if do_gag and type(deleteLine) == &quot;function&quot; then
+    pcall(deleteLine)
+  end
+
+  P.set_ready(row.lane, row.ready, source)
+
+  local do_echo = opts.echo
+  if do_echo == nil then do_echo = (cfg.enabled ~= false) end
+  if do_echo then
+    local text = row.label
+    if row.state ~= &quot;&quot; then
+      text = text .. &quot; &quot; .. row.state
+    end
+    _line_emit(text, row.kind)
+  end
+
   return true
 end
 
@@ -8441,7 +8509,16 @@ end
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
     local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v &gt; 1e12 then v = v / 1000 end
+      return v
+    end
   end
   return os.time()
 end
@@ -8569,15 +8646,16 @@ local function _sycophant_confirm_state(tgt)
     last_cure = tonumber(cures[aff_name] or cures[_lc(aff_name)] or 0) or 0
   end
 
-  local score = 0
-  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == &quot;function&quot; then
-    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff_name)
-    if ok then score = tonumber(v or 0) or 0 end
-  end
+  -- Check has_aff first; only call get_aff_score if has_aff didn&apos;t confirm.
   local has_aff = false
   if Yso and Yso.ak and type(Yso.ak.has) == &quot;function&quot; then
     local ok, v = pcall(Yso.ak.has, aff_name)
     if ok then has_aff = (v == true) end
+  end
+  local score = 0
+  if not has_aff and Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == &quot;function&quot; then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff_name)
+    if ok then score = tonumber(v or 0) or 0 end
   end
 
   local target_matches = _ak_enemy_matches(tgt)
@@ -8698,7 +8776,7 @@ function E.uninstall_hooks()
 end
 
 function E.collect(ctx)
-  pcall(E.install_hooks)
+  if not E.state.hooks_installed then pcall(E.install_hooks) end
   local payload = type(ctx) == &quot;table&quot; and ctx.payload or nil
   local tgt = _trim((type(ctx) == &quot;table&quot; and ctx.target) or (type(payload) == &quot;table&quot; and payload.target) or &quot;&quot;)
   local required = _required_map(ctx)
@@ -10607,9 +10685,12 @@ local function _now()
     if ok and tonumber(v) then return tonumber(v) end
   end
   if type(getEpoch) == &quot;function&quot; then
-    local v = tonumber(getEpoch()) or os.time()
-    if v &gt; 1e12 then v = v / 1000 end
-    return v
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v &gt; 1e12 then v = v / 1000 end
+      return v
+    end
   end
   return os.time()
 end
@@ -11185,20 +11266,6 @@ local function _worm_reset()
   GD.state.worm.target, GD.state.worm.until_t, GD.state.worm.proc_count, GD.state.worm.proc_window_until = &quot;&quot;, 0, 0, 0
 end
 
-local function _worm_is_active(tgt)
-  local w = GD.state.worm or {}
-  return _tkey(tgt) ~= &quot;&quot; and _tkey(tgt) == _tkey(w.target) and _now() &lt; (w.until_t or 0)
-end
-
-local function _worm_mark_used(tgt, dur)
-  local w = GD.state.worm or {}
-  GD.state.worm = w
-  w.target = tgt
-  w.until_t = _now() + (dur or GD.cfg.worm_duration_s)
-  w.proc_count = 0
-  w.proc_window_until = _now() + math.max(5, (dur or GD.cfg.worm_duration_s) + 15)
-end
-
 function GD.note_worm_sent(tgt)
   if _tkey(tgt) == &quot;&quot; then return end
   local ER = _ER()
@@ -11363,12 +11430,6 @@ end
 
 local function _worm_active(tgt)
   return not _worm_should_refresh(tgt)
-end
-
-local function _worm_mark(tgt, dur)
-  local ER = _ER()
-  if ER and type(ER.note_sent) == &quot;function&quot; then return pcall(ER.note_sent, &quot;worm&quot;, tgt, { source = &quot;mark&quot;, dur = dur }) end
-  return _worm_mark_used(tgt, dur)
 end
 
 local function _syc_mark(tgt, dur)
@@ -12417,6 +12478,7 @@ function GD.attack_function(arg)
         local clc = tostring(p.class or &quot;&quot;):lower()
         if clc:find(&quot;^%s*command%s+worm&quot;) or _worm_active(tgt) then
           p.eq = nil
+          p.eq_category = nil
         end
       end
     end
@@ -14189,10 +14251,10 @@ local function _instill_cmd(t, aff)
 end
 
 local function _support_instill(t, cfg, aff)
-  if cfg.keep_paralysis == false then
-    return _instill_cmd(t, aff)
+  if cfg.keep_paralysis == true then
+    return _instill_cmd(t, &quot;paralysis&quot;)
   end
-  return _instill_cmd(t, &quot;paralysis&quot;)
+  return _instill_cmd(t, aff)
 end
 
 -- ----------------------------
@@ -17786,18 +17848,33 @@ function D.toggle(on)
   return D.state.enabled
 end
 
-function D.set_policy(_p)
+function D.set_policy(p)
+  p = _lc(p or &quot;&quot;)
+  if p ~= &quot;&quot; then
+    D.state.policy = p
+    D.cfg.policy = p
+  end
   _sync_state()
   return D.state.policy
 end
 
-function D.set_active(_route)
+function D.set_active(route)
+  route = _lc(route or &quot;&quot;)
+  if route ~= &quot;&quot; then
+    D.state.active = route
+  end
   _sync_state()
   return D.state.active
 end
 
-function D.tick(_reasons)
+function D.tick(reasons)
   _sync_state()
+  -- Delegate to off.core when available; this driver is a compat shim.
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.tick) == &quot;function&quot; then
+    local ok, sent = pcall(core.tick, reasons)
+    return (ok and sent == true)
+  end
   return false
 end
 
@@ -18020,8 +18097,11 @@ local function _arm_candidate_for_restore()
 end
 
 local function _restore_finished()
-  local left_damaged = _self_has_aff(&quot;damagedleftleg&quot;) or (_self_score(&quot;damagedleftleg&quot;) &gt; 0)
-  local right_damaged = _self_has_aff(&quot;damagedrightleg&quot;) or (_self_score(&quot;damagedrightleg&quot;) &gt; 0)
+  -- _self_score uses plain limb keys (&quot;leftleg&quot;, &quot;rightleg&quot;) so
+  -- &quot;damagedleftleg&quot; / &quot;damagedrightleg&quot; would never match the score table.
+  -- Rely on _self_has_aff, which is the authoritative check here.
+  local left_damaged  = _self_has_aff(&quot;damagedleftleg&quot;)
+  local right_damaged = _self_has_aff(&quot;damagedrightleg&quot;)
   return (not left_damaged) and (not right_damaged) and _self_standing()
 end
 
@@ -18279,8 +18359,8 @@ C.cfg = C.cfg or {
   abom_gcd           = 2.0,
   abom_auto_disable  = true,
   abom_cmd           = "command abomination at %s",
-  clock_loyals_on_cmd  = "order loyals kill %s",
-  clock_loyals_off_cmd = "order loyals passive",
+  clock_loyals_on_cmd  = "order entourage kill %s",
+  clock_loyals_off_cmd = "order entourage passive",
 
   -- queues
   q_eq               = "ec!p!w!t",
@@ -18752,14 +18832,14 @@ local function _set_loyals_attack_state(state)
 end
 
 local function _clock_loyals_on(t)
-  local cmd = (C.cfg.clock_loyals_on_cmd or "order loyals kill %s"):format(t)
+  local cmd = (C.cfg.clock_loyals_on_cmd or "order entourage kill %s"):format(t)
   send(cmd)
   _set_loyals_attack_state(true)
   if C.cfg.debug and cecho then cecho(("&lt;gray&gt;[clock] loyals ON: %s\n"):format(cmd)) end
 end
 
 local function _clock_loyals_off()
-  local cmd = C.cfg.clock_loyals_off_cmd or "order loyals passive"
+  local cmd = C.cfg.clock_loyals_off_cmd or "order entourage passive"
   send(cmd)
   _set_loyals_attack_state(false)
   if C.cfg.debug and cecho then cecho(("&lt;gray&gt;[clock] loyals OFF: %s\n"):format(cmd)) end
@@ -20407,8 +20487,8 @@ local function _emit(payload, opts)
 
   local Q = Yso.queue
   if Q and type(Q.emit) == &quot;function&quot; then
-    local ok = pcall(Q.emit, payload)
-    return ok == true
+    local ok, result = pcall(Q.emit, payload)
+    return ok == true and result == true
   end
   return false
 end
@@ -22059,6 +22139,9 @@ function M.toggle(reason)
   elseif M.is_combat() then
     return M.set(&quot;bash&quot;, reason or &quot;toggle&quot;)
   else
+    -- Party mode: toggle (mt) does not apply. Give explicit feedback so the
+    -- player knows why nothing happened instead of silently returning false.
+    _echo(&quot;Toggle does not apply in party mode. Use &apos;mode combat&apos; or &apos;mode bash&apos; to leave.&quot;)
     return false
   end
 end
@@ -29497,7 +29580,7 @@ local function _firelord_convert_aff(tgt, has_aff)
     return _has_aff_target(tgt, aff)
   end
 
-  local pyr = _dom(&quot;firelord&quot;) or _dom(&quot;pyradius&quot;) or {}
+  local pyr = _dom(&quot;firelord&quot;) or {}  -- DOM_KEYS already maps &quot;firelord&quot; -&gt; &quot;pyradius&quot;
   local converts = type(pyr.converts) == &quot;table&quot; and pyr.converts or {}
 
   local wm_dest = _lc(converts.whisperingmadness or converts.whispering_madness or &quot;recklessness&quot;)
@@ -29624,8 +29707,19 @@ function ER.note_sent(entity, tgt, meta)
     T.established.worm = true
     T.effects.worm.target = tgt
     T.effects.worm.until_t = now + (tonumber(ER.cfg.worm_duration_s) or 20)
-    T.effects.worm.proc_count = 0
-    T.effects.worm.proc_window_until = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
+    local new_window = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
+    if now &gt;= (tonumber(T.effects.worm.proc_window_until) or 0) then
+      -- Previous proc window has expired; start tracking fresh.
+      T.effects.worm.proc_count = 0
+      T.effects.worm.proc_window_until = new_window
+    else
+      -- Still inside the proc window (early refresh): carry forward proc_count
+      -- so a second proc still correctly expires the worm, and extend the window.
+      T.effects.worm.proc_window_until = math.max(
+        tonumber(T.effects.worm.proc_window_until) or 0,
+        new_window
+      )
+    end
     T.effects.worm.last_proc_at = 0
   elseif entity == &quot;slime&quot; then
     T.effects.slime.target = tgt
@@ -29740,20 +29834,8 @@ function ER.bootstrap_done(tgt, ctx)
   return (#ranked == 0)
 end
 
-local function _candidate_sort(a, b)
-  if tonumber(a.score or 0) ~= tonumber(b.score or 0) then
-    return tonumber(a.score or 0) &gt; tonumber(b.score or 0)
-  end
-  local ar = tonumber(a.recast or 99) or 99
-  local br = tonumber(b.recast or 99) or 99
-  if ar ~= br then return ar &lt; br end
-  local ab = tonumber(a.burst_support or 0) or 0
-  local bb = tonumber(b.burst_support or 0) or 0
-  if ab ~= bb then return ab &gt; bb end
-  local ao = tonumber((ER.cfg.stable_order or {})[a.entity] or 999) or 999
-  local bo = tonumber((ER.cfg.stable_order or {})[b.entity] or 999) or 999
-  return ao &lt; bo
-end
+-- _candidate_sort is defined inline inside ER.rank() so it can close over
+-- a pre-captured stable_order local, avoiding repeated table lookups during sort.
 
 local function _skipped_set(skipped, entity, why)
   if skipped[entity] == nil then skipped[entity] = tostring(why or &quot;skip&quot;) end
@@ -29884,7 +29966,19 @@ function ER.rank(ctx)
     end
   end
 
-  table.sort(ranked, _candidate_sort)
+  local _order = ER.cfg.stable_order or {}
+  table.sort(ranked, function(a, b)
+    if tonumber(a.score or 0) ~= tonumber(b.score or 0) then
+      return tonumber(a.score or 0) &gt; tonumber(b.score or 0)
+    end
+    local ar = tonumber(a.recast or 99) or 99
+    local br = tonumber(b.recast or 99) or 99
+    if ar ~= br then return ar &lt; br end
+    local ab = tonumber(a.burst_support or 0) or 0
+    local bb = tonumber(b.burst_support or 0) or 0
+    if ab ~= bb then return ab &gt; bb end
+    return (tonumber(_order[a.entity] or 999) or 999) &lt; (tonumber(_order[b.entity] or 999) or 999)
+  end)
   ER.state.last_debug = {
     at = now,
     target = tkey,
@@ -32628,11 +32722,11 @@ local function _burst_ready(tgt, ctx)
   local mana = _target_mana_pct(tgt)
   local cap = tonumber(A.cfg.mana_burst_pct or 40) or 40
   local in_cleanseaura_window = (mana ~= nil and mana &lt;= cap) or false
-  if eq_cmd:match(&quot;^cleanseaura%s+&quot;) then
-    return true
-  end
-  if eq_cmd:match(&quot;^utter%s+truename%s+&quot;) then
-    return true
+  -- If the current cycle already committed to a burst command, confirm the
+  -- cleanse gate still holds before approving burst.  Skipping _cleanse_ready
+  -- here could mark burst active even when mana or attend conditions changed.
+  if eq_cmd:match(&quot;^cleanseaura%s+&quot;) or eq_cmd:match(&quot;^utter%s+truename%s+&quot;) then
+    return _cleanse_ready(tgt) == true
   end
 
   if _cleanse_ready(tgt) ~= true then return false end
@@ -33138,6 +33232,10 @@ function A.attack_function(arg)
       if need_attend and payload.eq == &quot;&quot; and _eq() and attend_ready then
         payload.eq = &quot;attend &quot; .. tgt
       elseif need_attend and payload.eq == &quot;&quot; and _eq() and not attend_ready then
+        -- Attend is on cooldown: hold EQ this cycle so nothing else overwrites
+        -- the slot before attend becomes available again.  __hold__ is stripped
+        -- before emission (see filter below at eq_cmd / bal_cmd extraction).
+        payload.eq = &quot;__hold__&quot;
       end
 
       if need_attend and payload.class == &quot;&quot; and _ent() then
@@ -33158,6 +33256,9 @@ function A.attack_function(arg)
           A.state.defer_unnamable = nil
         end
       elseif A.state.defer_unnamable == tkey and payload.bal == &quot;&quot; and _bal() and not unnamable_ready then
+        -- Unnamable is deferred but still on cooldown: hold BAL this cycle so
+        -- nothing else claims the slot before the cooldown expires.
+        payload.bal = &quot;__hold__&quot;
       end
 
       local can_utter = false
@@ -33253,6 +33354,10 @@ function A.attack_function(arg)
   local eq_cmd = _trim(payload.eq)
   local bal_cmd = _trim(payload.bal)
   local class_cmd = _trim(payload.class)
+  -- Strip hold sentinels: __hold__ is used to reserve a lane slot during
+  -- cooldown without emitting any command to the server.
+  if eq_cmd  == &quot;__hold__&quot; then eq_cmd  = &quot;&quot; end
+  if bal_cmd == &quot;__hold__&quot; then bal_cmd = &quot;&quot; end
 
   local function _eq_category(cmd, p)
     local lc = _lc(cmd)
@@ -33653,9 +33758,12 @@ function A.explain()
   local gated = _copy_lanes(gate and gate.gated and gate.gated.lanes or (last_payload and last_payload.lanes) or {})
   local emitted = _copy_lanes(type(last_emitted) == &quot;table&quot; and (last_emitted.lanes or last_emitted) or {})
   if not _lane_has_value(planned) and not _lane_has_value(gated) and not _lane_has_value(emitted) then
-    local ok = pcall(A.build_payload, { target = tgt })
+    local ok, fresh_payload = pcall(A.build_payload, { target = tgt, preview = true })
     if ok then
-      last_payload = A.state and A.state.template and A.state.template.last_payload or nil
+      -- Prefer the direct return value; fall back to side-effect state.
+      last_payload = (type(fresh_payload) == &quot;table&quot; and fresh_payload)
+        or (A.state and A.state.template and A.state.template.last_payload)
+        or nil
       last_emitted = A.state and A.state.template and A.state.template.last_emitted_payload or nil
       gate = type(last_payload) == &quot;table&quot; and (last_payload._route_gate or (last_payload.meta and last_payload.meta.route_gate)) or nil
       planned = _copy_lanes(gate and gate.planned and gate.planned.lanes or (last_payload and last_payload.lanes) or {})
@@ -34314,72 +34422,207 @@ end</script>
 						<packageName></packageName>
 						<script>Yso = Yso or {}
 Yso.tree = Yso.tree or {}
-Yso.tree.state = Yso.tree.state or {}
 Yso._trig = Yso._trig or {}
+Yso._eh = Yso._eh or {}
 
 local T = Yso.tree
-if T.state.ready == nil then T.state.ready = false end
 
-local function _set_ready(v, source)
-  local ready = (v == true)
-  T.state.ready = ready
+T.cfg = T.cfg or {
+  enabled = true,
+  min_affs_hunt = 1,
+  debug = false,
+}
 
-  local forwarded = false
-  if type(Yso.set_tree_ready) == "function" then
-    local ok = pcall(Yso.set_tree_ready, ready)
-    forwarded = (ok == true)
+T.cfg.pvp = T.cfg.pvp or {
+  enabled = false,
+  min_affs_default = 2,
+  allow_lock_override = true,
+  curesets = {
+    depthswalker = { min_affs = 1, notes = "placeholder" },
+    bard         = { min_affs = 1, notes = "placeholder" },
+    monk         = { min_affs = 1, notes = "placeholder" },
+    dwc          = { min_affs = 2, notes = "dual wield cutting knights" },
+    dwb          = { min_affs = 2, notes = "dual wield blunt knights (future)" },
+    blademaster  = { min_affs = 2, notes = "placeholder" },
+    shaman       = { min_affs = 1, notes = "placeholder" },
+    airlord      = { min_affs = 1, notes = "elemental air spec" },
+  },
+}
+
+T.state = T.state or {
+  ready = true,
+  last_touch = 0,
+}
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 20000000000 then t = t / 1000 end
+  return t or os.time()
+end
+
+local function _debug(msg)
+  if T.cfg.debug and type(cecho) == "function" then
+    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _echo(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _Aff()
+  return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+end
+
+local function _has(aff)
+  return _Aff()[aff] == true
+end
+
+local function _aff_count()
+  local A = _Aff()
+  local n = 0
+  for k, v in pairs(A) do
+    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+      n = n + 1
+    end
+  end
+  return n
+end
+
+local function _current_cureset()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and set ~= "" then return set:lower() end
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and cur ~= "" then return cur:lower() end
+  return ""
+end
+
+function T.should_tree()
+  if T.cfg.enabled ~= true then return false, "disabled" end
+  if not T.state.ready then return false, "cooldown" end
+  if _has("paralysis") then return false, "paralysis" end
+
+  local curset = _current_cureset()
+  local count = _aff_count()
+
+  if curset == "hunt" then
+    local min_affs = tonumber(T.cfg.min_affs_hunt or 1) or 1
+    if count &lt; min_affs then return false, "affs", count, min_affs end
+    return true, "ok", count, min_affs
   end
 
-  if not forwarded then
-    Yso.state = Yso.state or {}
-    Yso.state.tree_ready = ready
-    Yso.state.tree_touched = (ready ~= true)
-    rawset(_G, "tree_ready", ready)
-    rawset(_G, "tree_touched", (ready ~= true))
-    if type(raiseEvent) == "function" then
-      raiseEvent("yso.tree.ready", ready, tostring(source or "tree_line"))
+  local pvp = T.cfg.pvp
+  if not (type(pvp) == "table" and pvp.enabled == true) then
+    return false, "pvp_disabled"
+  end
+
+  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+                   or tonumber(pvp.min_affs_default or 2) or 2
+
+  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  if count &lt; min_affs and not lock_ok then
+    return false, "affs_pvp", count, min_affs
+  end
+
+  return true, "ok_pvp", count, min_affs
+end
+
+function T.try_tree(source)
+  local ok, reason, count, min_affs = T.should_tree()
+  if not ok then
+    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
+    return false, reason
+  end
+
+  if type(send) == "function" then
+    send("touch tree", false)
+    _debug(string.format("touching tree src=%s affs=%d/%d", tostring(source or "?"), count or 0, min_affs or 0))
+    return true, reason
+  end
+
+  return false, "send_unavailable"
+end
+
+function T.on_touched()
+  T.state.ready = false
+  T.state.last_touch = _now()
+  _debug("tree touched, cooldown started")
+end
+
+function T.on_ready()
+  T.state.ready = true
+  _debug("tree ready")
+  T.try_tree("ready_line")
+end
+
+function T.on_vitals()
+  if not T.cfg.enabled then return end
+  if not T.state.ready then return end
+  T.try_tree("vitals")
+end
+
+function T.set_auto(v)
+  local on = nil
+  local t = type(v)
+  if t == "boolean" then on = v
+  elseif t == "number" then on = (v ~= 0)
+  elseif t == "string" then
+    local s = tostring(v):lower():gsub("^%s+", ""):gsub("%s+$", "")
+    if s == "on" or s == "1" or s == "true" then on = true
+    elseif s == "off" or s == "0" or s == "false" then on = false end
+  end
+  if on == nil then _echo("Usage: lua Yso.tree.set_auto(true|false)"); return end
+  T.cfg.enabled = on
+  _echo("Auto tree is now " .. (on and "ON." or "OFF."))
+end
+
+function T.status()
+  local ok, reason, count, min_affs = T.should_tree()
+  local curset = _current_cureset()
+  _echo(string.format(
+    "auto=%s ready=%s cureset=%s affs=%d min=%d reason=%s para=%s",
+    T.cfg.enabled and "on" or "off",
+    T.state.ready and "Y" or "N",
+    curset ~= "" and curset or "?",
+    count or _aff_count(),
+    min_affs or 0,
+    tostring(reason or "?"),
+    _has("paralysis") and "Y" or "N"
+  ))
+end
+
+local function _safe(fn)
+  return function(...)
+    local ok, err = pcall(fn, ...)
+    if not ok and T.cfg.debug then
+      _echo("ERROR: " .. tostring(err))
     end
   end
 end
 
-function T.ready()
-  return T.state.ready == true
-end
-
-function T.set_ready(v, source)
-  _set_ready(v, source or "manual")
-  return true
-end
-
-function T.set_auto(_)
-  if type(cecho) == "function" then
-    cecho("[Tree] Tree execution is serverside-owned; Yso tracks ready true/false only.\n")
-  end
-end
-
-function T.status()
-  if type(cecho) == "function" then
-    cecho(string.format("[Tree] ready=%s (state-only)\n", T.ready() and "true" or "false"))
-  end
-end
-
-if Yso._trig.tree_touched then pcall(killTrigger, Yso._trig.tree_touched) end
+if Yso._trig.tree_touched then killTrigger(Yso._trig.tree_touched) end
 Yso._trig.tree_touched = tempRegexTrigger(
   [[^You touch the tree of life tattoo\.$]],
-  function() _set_ready(false, "text_ack:tree_touch") end
+  _safe(function() T.on_touched() end)
 )
 
-if Yso._trig.tree_ready then pcall(killTrigger, Yso._trig.tree_ready) end
+if Yso._trig.tree_ready then killTrigger(Yso._trig.tree_ready) end
 Yso._trig.tree_ready = tempRegexTrigger(
-  [[^You may utilise the tree tattoo again\.$]],
-  function() _set_ready(true, "text_ack:tree_ready") end
+  [[^You may utilise the tree tattoo again\.]],
+  _safe(function() T.on_ready() end)
 )
 
-if Yso._trig.tree_unchanged then pcall(killTrigger, Yso._trig.tree_unchanged) end
-Yso._trig.tree_unchanged = tempRegexTrigger(
-  [[^Your tree of life tattoo glows faintly for a moment then fades, leaving you unchanged\.$]],
-  function() end
-)</script>
+if Yso._eh.tree_vitals then pcall(killAnonymousEventHandler, Yso._eh.tree_vitals) end
+Yso._eh.tree_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+  T.on_vitals()
+end)</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>

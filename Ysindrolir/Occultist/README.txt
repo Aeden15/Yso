@@ -370,6 +370,12 @@ Notes:
 Working notes
 -------------
   Edit canonical Lua first, then refresh mirrors, then rebuild packages.
+  Rebuild now hard-fails if forbidden control bytes exist in mirrored source
+  or final package XML, and the PowerShell wrapper performs strict XML parse
+  validation after rebuild.
+  Pulse wake-line trigger behavior (EQ/BAL/ENT line events) is centralized in
+  Yso.pulse.handle_line_event() to keep lane-state output and line gagging
+  consistent across routes/classes.
   For queue/debug issues, start by checking:
     route-loop ownership
     wake reasons

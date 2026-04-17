@@ -56,6 +56,147 @@ local route_promoted_files = {
   "party_aff.lua",
 }
 
+local pulse_trigger_updates = {
+  {
+    name = "Pulse: EQ recovered",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:eq_recovered", { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("eq", true, "line:eq_recovered")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: BAL recovered",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:bal_recovered", { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("bal", true, "line:bal_recovered")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: BAL blocked",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:bal_blocked", { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("bal", false, "line:bal_blocked")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: EQ queued (serverside)",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:eq_queued", { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_queued") end
+  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_queued") end
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: BAL queued (serverside)",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:bal_queued", { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_queued") end
+  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_queued") end
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: EQ running queued cmd",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:eq_run", { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("eq", false, "line:eq_run") end
+  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:eq_run") end
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: BAL running queued cmd",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:bal_run", { gag = true, echo = true })
+elseif Yso and Yso.pulse then
+  if type(Yso.pulse.set_ready)=="function" then Yso.pulse.set_ready("bal", false, "line:bal_run") end
+  if type(Yso.pulse.wake)=="function" then Yso.pulse.wake("line:bal_run") end
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Pulse: EQ blocked",
+    script = [[if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:eq_blocked", { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("eq", false, "line:eq_blocked")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Entity Balance ready",
+    script = [[Yso       = Yso       or {}
+Yso.occ   = Yso.occ   or {}
+Yso.occ.entity_ready = true
+Yso.occ.entities_missing = false
+Yso.occ.entities_missing_ts = nil
+if Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:entity_ready", { gag = true, echo = true })
+elseif Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("entity", true, "line:entity_ready")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end]],
+  },
+  {
+    name = "Entity balance down",
+    script = [[Yso       = Yso       or {}
+Yso.occ   = Yso.occ   or {}
+Yso.occ.entity_ready = false
+Yso.occ.entities_missing = false
+Yso.occ.entities_missing_ts = nil
+if Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:entity_down", { gag = true, echo = true })
+elseif Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("entity", false, "line:entity_down")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end
+
+-- Inform pulse bus about entity outcome (success vs cooldown).
+local l = tostring(line or (matches and matches[1]) or ""):lower()
+local fail = l:find("you may not command another entity so soon", 1, true)
+          or l:find("recover from commanding your minions", 1, true)
+if Yso and Yso.pulse and type(Yso.pulse.entity_ack)=="function" then
+  if fail then Yso.pulse.entity_ack("fail") else Yso.pulse.entity_ack("sent") end
+end]],
+  },
+  {
+    name = "Entity missing",
+    script = [[Yso = Yso or {}
+Yso.occ = Yso.occ or {}
+
+local now = (type(getEpoch) == "function") and getEpoch() or os.time()
+Yso.occ.entities_missing = true
+Yso.occ.entities_missing_ts = now
+
+-- rate-limit auto-recall
+Yso.occ._call_entities_cd = Yso.occ._call_entities_cd or 0
+if (now - Yso.occ._call_entities_cd) >= 2 then
+  Yso.occ._call_entities_cd = now
+  send("call entities")
+end
+
+if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
+  Yso.pulse.handle_line_event("line:entity_missing", { gag = true, echo = true })
+elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
+  Yso.pulse.set_ready("entity", false, "line:entity_missing")
+  if type(deleteLine)=="function" then pcall(deleteLine) end
+end
+if Yso and Yso.pulse and type(Yso.pulse.entity_ack)=="function" then
+  Yso.pulse.entity_ack("missing")
+end]],
+  },
+}
+
 local function fail(msg)
   io.stderr:write("rebuild_yso_system_xml.lua: " .. tostring(msg) .. "\n")
   os.exit(1)
@@ -201,6 +342,17 @@ local function xml_escape(text)
     :gsub("'", "&apos;"))
 end
 
+local function validate_text_chars(text, label)
+  text = tostring(text or "")
+  for i = 1, #text do
+    local b = text:byte(i)
+    if b and b < 32 and b ~= 9 and b ~= 10 and b ~= 13 then
+      fail(string.format("%s contains invalid control char 0x%02X at byte %d", tostring(label or "text"), b, i))
+    end
+  end
+  return true
+end
+
 local function get_script_title(path)
   local first = read_first_line(path)
   if not first then
@@ -312,8 +464,85 @@ local function parse_script_blocks(xml)
   return blocks
 end
 
+local function find_next_trigger_start(xml, pos)
+  local search_from = pos or 1
+  while true do
+    local start_pos = xml:find("<Trigger", search_from, true)
+    if not start_pos then
+      return nil
+    end
+
+    local next_char = xml:sub(start_pos + 8, start_pos + 8)
+    if next_char == " " or next_char == ">" then
+      return start_pos
+    end
+
+    search_from = start_pos + 8
+  end
+end
+
+local function parse_trigger_blocks(xml)
+  local blocks = {}
+  local pos = 1
+
+  while true do
+    local start_pos = find_next_trigger_start(xml, pos)
+    if not start_pos then
+      break
+    end
+
+    local open_end = xml:find(">", start_pos, true)
+    if not open_end then
+      fail("unterminated <Trigger> tag in XML")
+    end
+
+    local close_start, close_end = xml:find("</Trigger>", open_end + 1, true)
+    if not close_start then
+      fail("missing </Trigger> in XML")
+    end
+
+    local block = xml:sub(start_pos, close_end)
+    local name = block:match("<name>(.-)</name>") or ""
+    local script_open_start, script_open_end = block:find("<script>", 1, true)
+    local script_close_start = block:find("</script>", 1, true)
+
+    local body_start, body_end, body = nil, nil, nil
+    if script_open_end and script_close_start then
+      body_start = start_pos + script_open_end
+      body_end = start_pos + script_close_start - 2
+      if body_end < body_start then
+        body = ""
+      else
+        body = xml:sub(body_start, body_end)
+      end
+    end
+
+    blocks[#blocks + 1] = {
+      start_pos = start_pos,
+      close_end = close_end,
+      name = name,
+      body_start = body_start,
+      body_end = body_end,
+      body = body,
+    }
+
+    pos = close_end + 1
+  end
+
+  return blocks
+end
+
 local function replace_script_body_by_name(xml, name, escaped_body)
   for _, block in ipairs(parse_script_blocks(xml)) do
+    if block.name == name and block.body_start and block.body_end then
+      return xml:sub(1, block.body_start - 1) .. escaped_body .. xml:sub(block.body_end + 1), true
+    end
+  end
+  return xml, false
+end
+
+local function replace_trigger_script_by_name(xml, name, escaped_body)
+  for _, block in ipairs(parse_trigger_blocks(xml)) do
     if block.name == name and block.body_start and block.body_end then
       return xml:sub(1, block.body_start - 1) .. escaped_body .. xml:sub(block.body_end + 1), true
     end
@@ -460,10 +689,13 @@ local mirror_root = path_resolve(arg and arg[2] or path_join(occultist_dir, "mod
 local route_root = path_resolve(arg and arg[3] or path_join(occultist_dir, "modules", "Yso", "Combat", "routes"), get_cwd())
 
 local xml = read_all(xml_path)
+validate_text_chars(xml, "base XML: " .. xml_path)
 local updated = {}
 local no_slot = {}
 local skipped = {}
 local removed = {}
+local trigger_updated = {}
+local trigger_missing = {}
 
 local source_files = list_lua_files(mirror_root)
 for _, file_name in ipairs(route_promoted_files) do
@@ -476,6 +708,7 @@ end
 for _, path in ipairs(source_files) do
   local name = basename(path)
   local body = read_all(path)
+  validate_text_chars(body, "source Lua: " .. path)
   local escaped_body = xml_escape(body)
   local title = get_script_title(path)
   local candidates = unique_names(name, title, legacy_name_map[name] or {})
@@ -532,6 +765,21 @@ for file_name, slot_names in pairs(retired_script_name_map) do
   end
 end
 
+for i = 1, #pulse_trigger_updates do
+  local row = pulse_trigger_updates[i]
+  validate_text_chars(row.script, "trigger script: " .. tostring(row.name))
+  local escaped_body = xml_escape(row.script)
+  local new_xml, matched = replace_trigger_script_by_name(xml, row.name, escaped_body)
+  if matched then
+    xml = new_xml
+    trigger_updated[#trigger_updated + 1] = row.name
+  else
+    trigger_missing[#trigger_missing + 1] = row.name
+  end
+end
+
+validate_text_chars(xml, "rebuilt XML (pre-write)")
+
 local ok, err = validate_xml(xml)
 if not ok then
   fail("XML validation failed before write: " .. tostring(err))
@@ -540,6 +788,7 @@ end
 write_all(xml_path, xml)
 
 local reloaded = read_all(xml_path)
+validate_text_chars(reloaded, "rebuilt XML (post-write)")
 local ok_after, err_after = validate_xml(reloaded)
 if not ok_after then
   fail("XML validation failed after write: " .. tostring(err_after))
@@ -557,4 +806,10 @@ if #no_slot > 0 then
 end
 if #skipped > 0 then
   io.write("skipped_files=" .. table.concat(skipped, ", ") .. "\n")
+end
+if #trigger_updated > 0 then
+  io.write("updated_triggers=" .. table.concat(trigger_updated, ", ") .. "\n")
+end
+if #trigger_missing > 0 then
+  io.write("missing_triggers=" .. table.concat(trigger_missing, ", ") .. "\n")
 end

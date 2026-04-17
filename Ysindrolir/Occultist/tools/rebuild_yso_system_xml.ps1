@@ -32,4 +32,33 @@ if ($PSBoundParameters.ContainsKey('MirrorRoot')) {
 }
 
 & $LuaPath @args
-exit $LASTEXITCODE
+if ($LASTEXITCODE -ne 0) {
+  exit $LASTEXITCODE
+}
+
+$occultistDir = Split-Path -Parent $PSScriptRoot
+$ysindrolirDir = Split-Path -Parent $occultistDir
+
+$xmlToValidate = if ($PSBoundParameters.ContainsKey('XmlPath')) {
+  $XmlPath
+} else {
+  Join-Path $ysindrolirDir 'mudlet packages\Yso system.xml'
+}
+
+$xmlToValidate = [System.IO.Path]::GetFullPath($xmlToValidate)
+if (-not (Test-Path -LiteralPath $xmlToValidate)) {
+  throw "XML validation target does not exist: $xmlToValidate"
+}
+
+try {
+  $settings = New-Object System.Xml.XmlReaderSettings
+  $settings.DtdProcessing = [System.Xml.DtdProcessing]::Parse
+  $reader = [System.Xml.XmlReader]::Create($xmlToValidate, $settings)
+  while ($reader.Read()) { }
+  $reader.Close()
+}
+catch {
+  throw "XML validation failed for '$xmlToValidate': $($_.Exception.Message)"
+}
+
+exit 0
