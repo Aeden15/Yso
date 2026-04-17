@@ -9,7 +9,8 @@
 --      - GMCP: checks on gmcp.Char.Vitals
 --      - Diagnose snapshot: checks when a queued DIAGNOSE finishes
 --  • Requirements:
---      - in hunt cureset: cooldown ready + BAL ready now + 3+ current affs
+--      - in hunt cureset: cooldown ready + BAL ready now + 4+ current affs
+--      - in bash mode: self-aff state backed by a fresh GMCP aff-list snapshot
 --      - not prone
 --      - not paralysis
 --      - not webbed
@@ -28,7 +29,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or "addclearfull"  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or "bal"           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- compatibility field; hunt gate is fixed at 3+
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 4               -- compatibility field; hunt gate is fixed at 4+
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -45,6 +46,7 @@ F.cfg = F.cfg or {
   enabled = true,   -- auto (GMCP + diagnose snapshot) on/off
   cd      = 35,     -- Fool class cooldown, seconds
   gcd     = 1.0,    -- min seconds between auto attempts
+  gmcp_list_fresh_s = 2.0, -- bash safety: require recent gmcp.Char.Afflictions.List
   debug   = false,
 }
 
@@ -170,6 +172,27 @@ local function _mode_implies_hunt()
   end
   local state = _normalize_cureset_name(rawget(mode, "state"))
   return state == "hunt"
+end
+
+local function _gmcp_aff_list_fresh(max_age_s)
+  local max_age = tonumber(max_age_s or F.cfg.gmcp_list_fresh_s or 2.0) or 2.0
+  if max_age < 0 then max_age = 0 end
+
+  if Yso and Yso.self and type(Yso.self.gmcp_aff_list_fresh) == "function" then
+    local ok, v = pcall(Yso.self.gmcp_aff_list_fresh, max_age)
+    if ok then
+      return (v == true), "api"
+    end
+  end
+
+  local SA = Yso and Yso.selfaff or nil
+  local meta = SA and SA.meta or nil
+  local last_list = meta and tonumber(meta.last_gmcp_list_at or 0) or 0
+  if not last_list or last_list <= 0 then
+    return false, "missing"
+  end
+
+  return (_now() - last_list) <= max_age, "meta"
 end
 
 -- current cureset name from Legacy (e.g. "legacy", "hunt", "group")
@@ -612,13 +635,13 @@ _is_lock_state = function()
 end
 
 -- Resolve min_affs and whether "lock" is allowed to override the threshold
--- • HUNT cureset: fixed 3-aff threshold, lock does NOT override
+-- • HUNT cureset: fixed 4-aff threshold, lock does NOT override
 -- • Other curesets: min_affs_default, lock CAN override (for PvP)
 -- • Global Legacy.Fool.min_affs override (if set) always uses lock override.
 _min_affs_for_current_set = function()
   local cur = _current_cureset() or "legacy"
   if cur == "hunt" then
-    return 3, false -- Hunt is always a fixed 3-aff threshold with no lock override.
+    return 4, false -- Hunt is always a fixed 4-aff threshold with no lock override.
   end
 
   -- explicit global override wins
@@ -638,6 +661,7 @@ _evaluate_fool = function(source)
   local ctx = {
     source = tostring(source or "manual"),
     curset = _current_cureset() or "?",
+    in_bash_mode = (_mode_implies_hunt() == true),
     count = _aff_count(),
     is_locked = _is_lock_state(),
   }
@@ -675,6 +699,17 @@ _evaluate_fool = function(source)
     ctx.reason = "cooldown"
     ctx.message = "Not using Fool: cooldown not ready."
     return false, ctx
+  end
+
+  if ctx.in_bash_mode then
+    local fresh, via = _gmcp_aff_list_fresh()
+    ctx.gmcp_aff_list_fresh = (fresh == true)
+    ctx.gmcp_aff_list_fresh_via = tostring(via or "unknown")
+    if fresh ~= true then
+      ctx.reason = "gmcp_aff_list_stale"
+      ctx.message = "Not using Fool: bash aff snapshot is stale (waiting for GMCP aff list)."
+      return false, ctx
+    end
   end
 
   if ctx.curset == "hunt" then

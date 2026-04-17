@@ -1,12 +1,33 @@
 Yso Systems Workspace
 =====================
-Last updated: April 13, 2026
+Last updated: April 17, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
 
 Current fixes
 -------------
+  Fool bash anti-spam freshness gate + hunt threshold bump (April 17, 2026) --
+  fool_logic.lua now fail-closes Fool in bash mode unless self-aff state is
+  backed by a fresh gmcp.Char.Afflictions.List snapshot (manual + auto +
+  diagnose paths), preventing off-cooldown no-aff ghost fires.
+  Hunt Fool threshold is now fixed at:
+    4+ current affs
+  (previously 3+).
+  Regression coverage in test_fool_basher_preempt.lua now includes stale/fresh
+  GMCP-list gating plus 4-aff threshold/timing checks.
+
+  Magi/Occultist route compatibility hotfix (April 15, 2026) --
+  Restored focus route-loop compatibility in Magi/magi_focus.lua by accepting
+  both magi_focus and focus loop ids and reporting route key focus in explain
+  output. Restored dry-run queue acknowledgement state updates in
+  Magi/magi_group_damage.lua when ack bus hooks are present but no live
+  callback fires. Fixed occ_aff explain queue-owned filtering to accept route
+  aliases (oc_aff / occ_aff / aff), so class-lane plan display now clears
+  immediately after ack lane clear. Full regression sweep passed (luac, 17/17
+  Lua tests, XML parse), XML mirrors were refreshed, and Yso system.xml was
+  rebuilt.
+
   occ_aff phase bootstrap regression fix (April 13, 2026) --
   modules/Yso/Combat/routes/occ_aff.lua now limits loyals opener bootstrap
   gating to the open phase. Pressure/cleanse/convert/finish planning no longer
@@ -26,7 +47,7 @@ Current fixes
   Hunt Fool is now a strict live gate only:
     cooldown ready
     balance ready now
-    3+ current affs
+    4+ current affs
     no paralysis/prone/webbed/both-arms-broken hard fail
   The old permissive 2-aff hunt behavior was removed. Regression coverage was
   updated in test_fool_basher_preempt.lua for hunt threshold/timing/hard-fail
@@ -404,3 +425,6 @@ Syncing with OneDrive Desktop
     freestand work before queueing and suppress fresh basher attack-package
     requeues until the Fool self-use line or a timeout. Prone still blocks Fool
     before any queue clearing and remains visible in debug/status output.
+  - April 16 bug-check sync: fixed one export-manifest mirror drift pair
+    (occ_aff source -> xml mirror) and rebuilt mudlet packages/Yso system.xml;
+    post-sync syntax/tests/XML validation all pass.

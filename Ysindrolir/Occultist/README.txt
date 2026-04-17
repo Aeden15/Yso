@@ -1,31 +1,20 @@
 Yso System - Occultist Combat Automation for Achaea (Mudlet)
 ============================================================
-Last updated: April 16, 2026
+Last updated: April 17, 2026
 
 
 Current fixes
 -------------
-  Group damage planner simplification (April 16, 2026):
-    Occultist group_damage route planning was reduced to a lean setup+bust flow:
-      setup order focuses on sensitivity -> clumsiness -> healthleech
-      burst path is explicit warp + firelord (healthleech)
-    Legacy anti-tumble / empress rescue hooks were kept, and companion-safe
-    stop/passive behavior remains intact.
+  Fool bash anti-spam freshness gate + hunt threshold bump (April 17, 2026):
+    fool_logic.lua now fail-closes Fool in bash mode unless self-aff state is
+    backed by a fresh gmcp.Char.Afflictions.List snapshot (manual + auto +
+    diagnose paths), preventing off-cooldown no-aff ghost fires.
+    Hunt Fool threshold is now fixed at:
+      4+ current afflictions
+    (previously 3+).
+    tests/test_fool_basher_preempt.lua now includes stale/fresh GMCP-list
+    gating coverage plus 4-aff threshold/timing checks.
 
-  Occultist bugfix sync bundle (April 16, 2026):
-    occ_aff entity-balance fallback now checks GMCP class/entity before
-    defaulting true; cfg now exposes attend_lock_s / unnamable_lock_s /
-    mana_burst_pct; loop stop table now includes wrong_class; attack-step
-    comments were renumbered for execution order; and free-lane clear avoids
-    empty-table false positives.
-    fool_logic now enforces cooldown across curesets, blocks zero-aff stale-lock
-    fires, and aligns on_vitals quick-aff checks with ignore_blind_deaf.
-    doppleganger_things now honors Dop.cfg.sep in _send_chain, wraps send() with
-    availability/error handling, allows target-free utility verbs, removes dead
-    raw global target fallback in seek(), and warns when "at" is trailing.
-    yso_escape_button now guards uni_pending to prevent double-queue windows,
-    enforces configurable press debounce, and wraps queue clear calls with
-    pcall + direct-send fallback.
   Combined reliability sweep (April 12, 2026):
     Hardened Fool timer safety paths: pending now auto-clears if tempTimer is
     unavailable, and basher-hold generation invalidation now protects against
@@ -60,7 +49,7 @@ Current fixes
     In hunt cureset, Fool now requires all of:
       cooldown ready
       balance ready now
-      3+ current afflictions
+      4+ current afflictions
       no hard fail (paralysis/prone/webbed/both arms broken)
     The old permissive 2-aff hunt behavior was removed. Regression coverage in
     tests/test_fool_basher_preempt.lua now includes cureset precedence, hunt
@@ -167,9 +156,8 @@ Current fixes
   occ_aff repeat-queue fix (April 6, 2026): the duel aff route now clears
   queue lane ownership after successful sends, so repeated same-command
   pressure can requeue on later ticks instead of being treated as unchanged.
-  Canonical + XML mirror updated:
+  Canonical route updated:
     modules/Yso/Combat/routes/occ_aff.lua
-    modules/Yso/xml/occ_aff.lua
   Added regression test:
     tests/test_occ_aff_loop_requeue.lua
 
@@ -256,7 +244,9 @@ Active routes
   oc_aff          - duel affliction loop (combat mode)
                     mana bury -> cleanseaura -> truename -> utter
   group_damage    - group/team damage loop (team dam)
-                    healthleech + sensitivity + clumsiness + warp/firelord burst
+                    giving spam: paralysis -> asthma -> sensitivity -> haemophilia -> healthleech
+                    lane-first sends + opportunistic justice + warp/firelord healthleech conversions
+                    slime follow-up is asthma-gated and timered (recast at refresh/end; clear on slime-end text hook, with timeout fallback)
   group_aff       - group/team affliction pressure (team aff)
                     loyals/readaura opener -> deaf gate (attend + chimera) -> unnamable
                     chimera + moon pressure, then cleanseaura -> speed strip -> utter truename
@@ -396,5 +386,3 @@ Working notes
   the basher queue untouched. When eligible, it clears freestand, queues
   Fool, and suppresses new basher attack-package requeues until the Fool
   self-use line or a timeout releases the hold.
-
-

@@ -168,7 +168,7 @@ local function make_world(opts)
       debug = opts.debug == true,
       queue_mode = "addclearfull",
       queue_type = "bal",
-      min_affs_hunt = 3,
+      min_affs_hunt = 4,
       min_affs_default = 6,
       ignore_blind_deaf = true,
     },
@@ -242,6 +242,11 @@ local function make_world(opts)
         return opts.is_hunt ~= false
       end,
     },
+    self = {
+      gmcp_aff_list_fresh = function()
+        return opts.gmcp_list_fresh ~= false
+      end,
+    },
   }
   _G.yso = _G.Yso
 
@@ -285,7 +290,7 @@ end
 print("=== Test 1: manual Fool hard-preempts basher after eligibility checks ===")
 do
   local world = make_world({
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   local used = Legacy.FoolSelfCleanse("manual")
@@ -315,7 +320,7 @@ end
 print("\n=== Test 3: auto vitals path arms and releases basher hold ===")
 do
   local world = make_world({
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   world.F.on_vitals()
@@ -329,7 +334,7 @@ end
 print("\n=== Test 4: diagnose snapshot path arms hold and timeout releases ===")
 do
   local world = make_world({
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   world.F.mark_diag_pending()
@@ -342,7 +347,7 @@ end
 
 print("\n=== Test 5: pending Fool cancels when hunt threshold drops before fire ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true }
   local world = make_world({
     affs = affs,
   })
@@ -366,7 +371,7 @@ end
 
 print("\n=== Test 6: stale cancel fails closed if queue clear fails ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true }
   local world = make_world({
     affs = affs,
     raw_ok = false,
@@ -382,7 +387,7 @@ end
 
 print("\n=== Test 7: stale cancel also fires on aff-change event (no vitals wait) ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true }
   local world = make_world({
     affs = affs,
   })
@@ -402,7 +407,7 @@ end
 
 print("\n=== Test 8: ownership mismatch clears pending without CLEARQUEUE ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true }
   local world = make_world({
     affs = affs,
   })
@@ -426,7 +431,7 @@ end
 print("\n=== Test 9: attack-package retry stays suppressed until Fool releases ===")
 do
   local world = make_world({
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   local function queue_attack_package(primary_cmd)
@@ -460,7 +465,7 @@ end
 
 print("\n=== Test 10: token drift still cancels pending Fool when cmd matches ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true }
   local world = make_world({
     affs = affs,
   })
@@ -506,20 +511,20 @@ do
   })
 end
 
-print("\n=== Test 12: hunt Fool requires at least 3 current afflictions ===")
+print("\n=== Test 12: hunt Fool requires at least 4 current afflictions ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
   local world = make_world({
     cureset = "hunt",
     affs = affs,
   })
 
-  assert_false("12a: hunt with 2 affs does not use Fool", Legacy.FoolSelfCleanse("manual"))
-  assert_ops("12b: no queue at 2 affs", world.ops, {})
+  assert_false("12a: hunt with 3 affs does not use Fool", Legacy.FoolSelfCleanse("manual"))
+  assert_ops("12b: no queue at 3 affs", world.ops, {})
 
-  affs.nausea = true
-  assert_true("12c: hunt with 3 affs uses Fool", Legacy.FoolSelfCleanse("manual"))
-  assert_ops("12d: queue appears only after reaching 3 affs", world.ops, {
+  affs.stupidity = true
+  assert_true("12c: hunt with 4 affs uses Fool", Legacy.FoolSelfCleanse("manual"))
+  assert_ops("12d: queue appears only after reaching 4 affs", world.ops, {
     "send:cq freestand",
     "queue:addclearfull:bal:fling fool at me",
   })
@@ -527,7 +532,7 @@ end
 
 print("\n=== Test 13: hunt count is evaluated when balance is ready, not pre-armed ===")
 do
-  local affs = { brokenleftarm = true, clumsiness = true, nausea = true }
+  local affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true }
   local world = make_world({
     cureset = "hunt",
     bal_ready = false,
@@ -538,12 +543,12 @@ do
   assert_ops("13a: no pre-arm while balance is down", world.ops, {})
   assert_false("13b: no pending queue while balance is down", world.F.state.pending == true)
 
-  affs.nausea = nil
+  affs.stupidity = nil
   world.set_now(1002)
   world.set_bal_ready(true)
   world.F.on_vitals()
 
-  assert_ops("13c: dropping below 3 before balance returns prevents Fool", world.ops, {})
+  assert_ops("13c: dropping below 4 before balance returns prevents Fool", world.ops, {})
   assert_false("13d: still no pending after balance-ready recheck", world.F.state.pending == true)
 end
 
@@ -583,11 +588,11 @@ print("\n=== Test 15: one broken arm still allows hunt Fool and counts toward th
 do
   local world = make_world({
     cureset = "hunt",
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   assert_true("15a: one broken arm is not a hard fail", Legacy.FoolSelfCleanse("manual"))
-  assert_ops("15b: one broken arm case still queues Fool at 3 affs", world.ops, {
+  assert_ops("15b: one broken arm case still queues Fool at 4 affs", world.ops, {
     "send:cq freestand",
     "queue:addclearfull:bal:fling fool at me",
   })
@@ -623,7 +628,7 @@ do
   local world = make_world({
     cureset = "hunt",
     no_temp_timer = true,
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   assert_true("17a: hunt Fool still queues with timer fallback", Legacy.FoolSelfCleanse("manual"))
@@ -640,7 +645,7 @@ do
   local world = make_world({
     cureset = "hunt",
     kill_timer_returns_false = true,
-    affs = { brokenleftarm = true, clumsiness = true, nausea = true },
+    affs = { brokenleftarm = true, clumsiness = true, nausea = true, stupidity = true },
   })
 
   assert_true("18a: first Fool queues", Legacy.FoolSelfCleanse("manual"))
@@ -656,6 +661,71 @@ do
 
   world.run_timer(stale_timer)
   assert_true("18f: stale timer callback does not release new hold", world.F.blocks_basher())
+end
+
+print("\n=== Test 19: bash-mode stale gmcp-aff-list blocks manual Fool ===")
+do
+  local world = make_world({
+    cureset = "legacy",
+    gmcp_list_fresh = false,
+    bal_ready = false,
+    affs = {
+      clumsiness = true,
+      nausea = true,
+      stupidity = true,
+      weariness = true,
+      asthma = true,
+      anorexia = true,
+    },
+  })
+
+  local used = Legacy.FoolSelfCleanse("manual")
+  assert_false("19a: stale gmcp-aff-list blocks manual bash Fool", used)
+  assert_ops("19b: stale guard blocks queue side-effects", world.ops, {})
+end
+
+print("\n=== Test 20: bash-mode stale gmcp-aff-list blocks auto Fool ===")
+do
+  local world = make_world({
+    cureset = "legacy",
+    gmcp_list_fresh = false,
+    bal_ready = true,
+    affs = {
+      clumsiness = true,
+      nausea = true,
+      stupidity = true,
+      weariness = true,
+      asthma = true,
+      anorexia = true,
+    },
+  })
+
+  world.F.on_vitals()
+  assert_ops("20a: auto path also blocked by stale guard", world.ops, {})
+end
+
+print("\n=== Test 21: bash-mode fresh gmcp-aff-list allows normal non-hunt evaluation ===")
+do
+  local world = make_world({
+    cureset = "legacy",
+    gmcp_list_fresh = true,
+    bal_ready = false,
+    affs = {
+      clumsiness = true,
+      nausea = true,
+      stupidity = true,
+      weariness = true,
+      asthma = true,
+      anorexia = true,
+    },
+  })
+
+  local used = Legacy.FoolSelfCleanse("manual")
+  assert_true("21a: fresh gmcp-aff-list allows manual path", used)
+  assert_ops("21b: fresh path queues normally", world.ops, {
+    "send:cq freestand",
+    "queue:addclearfull:bal:fling fool at me",
+  })
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

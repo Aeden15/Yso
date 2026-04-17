@@ -4756,7 +4756,9 @@ end
 --  • Assumes: AK1 + AK Tracker track ENEMY afflictions only.
 --  • This file just defines the Yso.curing API and debug/status.
 --========================================================--
-setConsoleBufferSize(&quot;main&quot;, 300000, 1000)
+if type(setConsoleBufferSize) == &quot;function&quot; then
+  setConsoleBufferSize(&quot;main&quot;, 300000, 1000)
+end
 
 Yso          = Yso or {}
 Yso.affs     = Yso.affs or {}        -- our own afflictions (you can wire GMCP/text later)
@@ -4903,15 +4905,23 @@ do
   end
 
   Yso._eh = Yso._eh or {}
-  if Yso._eh.class_status then killAnonymousEventHandler(Yso._eh.class_status) end
-  Yso._eh.class_status = registerAnonymousEventHandler(&quot;gmcp.Char.Status&quot;, function()
-    _sync_from_status(&quot;gmcp.Char.Status&quot;)
-  end)
+  if Yso._eh.class_status and type(killAnonymousEventHandler) == &quot;function&quot; then
+    killAnonymousEventHandler(Yso._eh.class_status)
+  end
+  if type(registerAnonymousEventHandler) == &quot;function&quot; then
+    Yso._eh.class_status = registerAnonymousEventHandler(&quot;gmcp.Char.Status&quot;, function()
+      _sync_from_status(&quot;gmcp.Char.Status&quot;)
+    end)
+  end
 
-  if Yso._eh.class_vitals then killAnonymousEventHandler(Yso._eh.class_vitals) end
-  Yso._eh.class_vitals = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
-    _sync_from_status(&quot;gmcp.Char.Vitals&quot;)
-  end)
+  if Yso._eh.class_vitals and type(killAnonymousEventHandler) == &quot;function&quot; then
+    killAnonymousEventHandler(Yso._eh.class_vitals)
+  end
+  if type(registerAnonymousEventHandler) == &quot;function&quot; then
+    Yso._eh.class_vitals = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
+      _sync_from_status(&quot;gmcp.Char.Vitals&quot;)
+    end)
+  end
 
   Yso._trig = Yso._trig or {}
   if Yso._trig.class_swap then killTrigger(Yso._trig.class_swap) end
@@ -8459,6 +8469,56 @@ local function _target_state(tgt)
   return targets[_lc(tgt)]
 end
 
+local function _current_target()
+  if Yso and type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= &quot;&quot; then return _trim(v) end
+  end
+  return _trim(rawget(_G, &quot;target&quot;) or &quot;&quot;)
+end
+
+local function _note_slime_cleared(tgt, source)
+  tgt = _trim(tgt)
+  local ER = _er()
+  if tgt == &quot;&quot; or not ER or type(ER.note_slime_cleared) ~= &quot;function&quot; then return false end
+  local ok, cleared = pcall(ER.note_slime_cleared, tgt, source or &quot;entities&quot;)
+  return ok and cleared == true
+end
+
+local function _pick_slime_target(a, b, c)
+  local cur = _lc(_current_target())
+  local picks = { _trim(a), _trim(b), _trim(c) }
+  for i = 1, #picks do
+    if _lc(picks[i]) ~= &quot;&quot; and _lc(picks[i]) == cur then
+      return picks[i]
+    end
+  end
+  for i = 1, #picks do
+    local who = picks[i]
+    local T = _target_state(who)
+    local S = T and T.effects and T.effects.slime or nil
+    if _trim(who) ~= &quot;&quot; and type(S) == &quot;table&quot; and _lc(S.target) == _lc(who) and tonumber(S.until_t or 0) &gt; _now() then
+      return who
+    end
+  end
+  for i = 1, #picks do
+    if _trim(picks[i]) ~= &quot;&quot; then return picks[i] end
+  end
+  return &quot;&quot;
+end
+
+function E.note_slime_cleared(tgt, source)
+  return _note_slime_cleared(tgt, source or &quot;external&quot;)
+end
+
+function E.on_slime_end_line(a, b, c)
+  local tgt = _pick_slime_target(a, b, c)
+  if tgt ~= &quot;&quot; then
+    _note_slime_cleared(tgt, &quot;text_ack:slime_end&quot;)
+  end
+  return tgt
+end
+
 local function _entity_cmd(entity, tgt)
   entity = _lc(entity)
   tgt = _trim(tgt)
@@ -8610,6 +8670,13 @@ function E.install_hooks()
       end
     end
   )
+  if E._hook_ids.slime_end then pcall(killTrigger, E._hook_ids.slime_end) end
+  E._hook_ids.slime_end = tempRegexTrigger(
+    [[^([%w_&apos;-]+) finally rids ([%w_&apos;-]+) of the slime covering ([%w_&apos;-]+)\.$]],
+    function()
+      E.on_slime_end_line(matches[2], matches[3], matches[4])
+    end
+  )
 
   E.state.hooks_installed = true
   return true
@@ -8620,7 +8687,11 @@ function E.uninstall_hooks()
   if E._hook_ids.worm_chew and type(killTrigger) == &quot;function&quot; then
     pcall(killTrigger, E._hook_ids.worm_chew)
   end
+  if E._hook_ids.slime_end and type(killTrigger) == &quot;function&quot; then
+    pcall(killTrigger, E._hook_ids.slime_end)
+  end
   E._hook_ids.worm_chew = nil
+  E._hook_ids.slime_end = nil
   E.state = E.state or {}
   E.state.hooks_installed = false
   return true
@@ -10904,9 +10975,9 @@ return C
 --========================================================--
 -- group_damage.lua  (Achaea / Occultist / Yso)
 --  * Group damage automation (party / team damage):
---      Track: healthleech, sensitivity, clumsiness (core) + slickness (optional fourth)
---      Setup: build/refresh missing core pieces using EQ instills + entity pressure
---      Burst: paired WARP + FIRELORD(healthleech) when healthleech is tracked and both lanes are ready
+--      Giving priority: paralysis -&gt; asthma -&gt; sensitivity -&gt; haemophilia -&gt; healthleech
+--      Lane-first sends: use whichever lane is ready; no forced EQ+entity pairing
+--      Damage spam: WARP / FIRELORD(healthleech) when healthleech is tracked
 --
 --  * Uses Yso.emit() lane table =&gt; lane-table payload transport (default separator: &amp;&amp;)
 --  * Payload modes (GLOBAL, via Yso.cfg.payload_mode):
@@ -11033,6 +11104,9 @@ GD.cfg = GD.cfg or {
 
   -- minimum send throttles (milliseconds)
   dupe_window_ms = 120,
+
+  -- Canonical group damage giving order (lane-first planner).
+  giving_order = { &quot;paralysis&quot;, &quot;asthma&quot;, &quot;sensitivity&quot;, &quot;haemophilia&quot;, &quot;healthleech&quot; },
 }
 
 -- Lust/Empress reactive rescue automation (anti-tumble + empress pull)
@@ -11181,6 +11255,16 @@ local function _syc_should_refresh(tgt)
   end
   local s = GD.state.syc or {}
   return _now() &gt;= (s.until_t or 0)
+end
+
+local function _slime_should_refresh(tgt)
+  if _tkey(tgt) == &quot;&quot; then return false end
+  local ER = _ER()
+  if ER and type(ER.slime_should_refresh) == &quot;function&quot; then
+    local ok, v = pcall(ER.slime_should_refresh, tgt)
+    if ok then return v == true end
+  end
+  return true
 end
 
 -- Reset duration gates on target change.
@@ -11382,9 +11466,14 @@ local function _mark_justice_sent(tgt)
   GD.state.justice_once[k] = true
 end
 
-local function _echo(msg)
+local function _echo(msg, style)
   if not GD.cfg.echo then return end
-  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;reset&gt;%s&quot;, tostring(msg))
+  local line
+  if style == &quot;toggle&quot; then
+    line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;&quot;, tostring(msg))
+  else
+    line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;reset&gt;%s&quot;, tostring(msg))
+  end
   if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
     Yso.util.cecho_line(line)
   elseif type(cecho) == &quot;function&quot; then
@@ -11419,13 +11508,7 @@ local function _each_sep_part(text, sep, fn)
 end
 
 local function _echo_toggle(msg)
-  if not GD.cfg.echo then return end
-  local line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;&quot;, tostring(msg))
-  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
-    Yso.util.cecho_line(line)
-  elseif type(cecho) == &quot;function&quot; then
-    cecho(line .. string.char(10))
-  end
+  _echo(msg, &quot;toggle&quot;)
 end
 
 local _tarot_entity_payload
@@ -11733,6 +11816,11 @@ end
 local _core_state
 local _entity_pick
 local _primebonded
+-- Forward declarations for rescue helpers defined later in the file.
+-- Without these, attack_function() would resolve them as globals (nil) at runtime
+-- if rescue_lust_empress is ever enabled.
+local _rescue_antitumble_action
+local _rescue_empress_action
 
 local function _shield_is_up(tgt)
   if Yso and Yso.shield and type(Yso.shield.is_up) == &quot;function&quot; then
@@ -11773,10 +11861,11 @@ local function _entity_need_flags(tgt, st)
   st = type(st) == &quot;table&quot; and st or _core_state(tgt)
   return {
     healthleech = not (st.healthleech == true),
+    haemophilia = not (st.haemophilia == true),
+    paralysis = not (st.paralysis == true),
+    asthma = not (st.asthma == true),
     sensitivity = not (st.sensitivity == true),
-    clumsiness = not (st.clumsiness == true),
-    slickness = not (st.slickness == true),
-    addiction = _primebonded(&quot;humbug&quot;) and not _has_aff(tgt, &quot;addiction&quot;),
+    slickness = (st.asthma == true) and not (st.slickness == true),
   }
 end
 
@@ -11866,13 +11955,16 @@ local function _final_pre_emit_payload(payload)
       return payload, nil
     end
 
-    local category = (need.healthleech or need.clumsiness) and &quot;required_core_refresh&quot; or &quot;fallback_support&quot;
+    local category = (need.healthleech or need.haemophilia or need.paralysis or need.asthma or need.sensitivity)
+      and &quot;required_core_application&quot;
+      or &quot;fallback_support&quot;
     local entity_cmd, entity_cat, dbg = _entity_pick(tgt, st, category, {
       need_healthleech = need.healthleech == true,
+      need_haemophilia = need.haemophilia == true,
+      need_paralysis = need.paralysis == true,
+      need_asthma = need.asthma == true,
       need_sensitivity = need.sensitivity == true,
-      need_clumsiness = need.clumsiness == true,
       need_slickness = need.slickness == true,
-      need_addiction = need.addiction == true,
     })
     if _trim(entity_cmd) ~= &quot;&quot; then
       lanes.entity = entity_cmd
@@ -11908,16 +12000,19 @@ _core_state = function(tgt)
   local st = {
     healthleech = _has_aff(tgt, &quot;healthleech&quot;),
     sensitivity = _has_aff(tgt, &quot;sensitivity&quot;),
-    clumsiness  = _has_aff(tgt, &quot;clumsiness&quot;),
+    haemophilia = _has_aff(tgt, &quot;haemophilia&quot;),
+    paralysis   = _has_aff(tgt, &quot;paralysis&quot;),
     slickness   = _has_aff(tgt, &quot;slickness&quot;),
     asthma      = _has_aff(tgt, &quot;asthma&quot;),
     aeon        = _has_aff(tgt, &quot;aeon&quot;),
     entangled   = _has_aff(tgt, &quot;entangled&quot;),
   }
   local n = 0
+  if st.paralysis then n = n + 1 end
+  if st.asthma then n = n + 1 end
   if st.healthleech then n = n + 1 end
   if st.sensitivity then n = n + 1 end
-  if st.clumsiness then n = n + 1 end
+  if st.haemophilia then n = n + 1 end
   st.count = n
   return st
 end
@@ -11951,14 +12046,12 @@ end
 -- aff and (if cond is present) the condition passes. Entries with a &apos;cond&apos; that
 -- references _primebonded require that entity to be primebonded before firing.
 GD.cfg.ent_prio = GD.cfg.ent_prio or {
-  { aff = &quot;healthleech&quot;, cmd = &quot;command worm at %s&quot; },
-  { aff = &quot;clumsiness&quot;,  cmd = &quot;command storm at %s&quot; },
+  { aff = &quot;paralysis&quot;,   cmd = &quot;command slime at %s&quot;,      cond = function(tgt, has) return has(tgt, &quot;asthma&quot;) and _slime_should_refresh(tgt) end },
   { aff = &quot;asthma&quot;,      cmd = &quot;command bubonis at %s&quot; },
-  { aff = &quot;slickness&quot;,   cmd = &quot;command bubonis at %s&quot;,    cond = function(tgt, has) return has(tgt, &quot;asthma&quot;) end },
-  { aff = &quot;paralysis&quot;,   cmd = &quot;command slime at %s&quot;,      cond = function(tgt, has) return has(tgt, &quot;asthma&quot;) end },
-  { aff = &quot;addiction&quot;,   cmd = &quot;command humbug at %s&quot;,     cond = function(tgt, has) return _primebonded(&quot;humbug&quot;) end },
-  { aff = &quot;weariness&quot;,   cmd = &quot;command hound at %s&quot;,      cond = function(tgt, has) return _primebonded(&quot;hound&quot;) end },
   { aff = &quot;haemophilia&quot;, cmd = &quot;command bloodleech at %s&quot;, cond = function(tgt, has) return _primebonded(&quot;bloodleech&quot;) end },
+  { aff = &quot;healthleech&quot;, cmd = &quot;command worm at %s&quot; },
+  -- Opportunistic asthma follow-up.
+  { aff = &quot;slickness&quot;,   cmd = &quot;command bubonis at %s&quot;,    cond = function(tgt, has) return has(tgt, &quot;asthma&quot;) end },
 }
 
 -- Walk GD.cfg.ent_prio and return the first entity command for an aff the
@@ -11985,19 +12078,19 @@ local function _pick_entity_cmd(tgt, st, opts)
     return nil, nil
   end
   local skip_aff = _lc(opts.skip_aff)
-  if skip_aff == &quot;clumsiness&quot; then
-    return (&quot;command storm at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_refresh&quot;)
-  end
   if skip_aff == &quot;healthleech&quot; then
     return (&quot;command worm at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
+  end
+  if skip_aff == &quot;haemophilia&quot; and _primebonded(&quot;bloodleech&quot;) then
+    return (&quot;command bloodleech at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
   end
   if skip_aff == &quot;slickness&quot; and _has_aff(tgt, &quot;asthma&quot;) then
     return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;fallback_support&quot;)
   end
   if skip_aff == &quot;asthma&quot; then
-    return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_refresh&quot;)
+    return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
   end
-  if skip_aff == &quot;paralysis&quot; and _has_aff(tgt, &quot;asthma&quot;) then
+  if skip_aff == &quot;paralysis&quot; and _has_aff(tgt, &quot;asthma&quot;) and _slime_should_refresh(tgt) then
     return (&quot;command slime at %s&quot;):format(tgt), tostring(opts.category or &quot;fallback_support&quot;)
   end
   return _entity_pick(tgt, st, tostring(opts.category or &quot;fallback_support&quot;), opts)
@@ -12055,54 +12148,10 @@ end
 
 local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
   opts = opts or {}
+  if _trim(eq_cmd) ~= &quot;&quot; or _trim(class_cmd) ~= &quot;&quot; then return nil, nil, nil end
   if not _bal_ready() then return nil, nil, nil end
-  if eq_cmd or class_cmd then return nil, nil, nil end
-
-  if not st.aeon and _ak_speed_is_down() then
-    if _ent_ready() then
-      local filler_cmd, filler_category = _pick_entity_cmd(tgt, st, {
-        category = &quot;fallback_support&quot;,
-        need_healthleech = opts.need_healthleech == true,
-        need_sensitivity = opts.need_sensitivity == true,
-        need_clumsiness = opts.need_clumsiness == true,
-        need_slickness = opts.need_slickness == true,
-        need_addiction = opts.need_addiction == true,
-      })
-      if filler_cmd then
-        local A = Yso and Yso.occ and Yso.occ.aeon or nil
-        local aeon_bal = nil
-        if A and type(A.bal_payload) == &quot;function&quot; then
-          local ok, cmd = pcall(A.bal_payload, tgt, { request_if_needed = true })
-          if ok and type(cmd) == &quot;string&quot; and _trim(cmd) ~= &quot;&quot; then
-            aeon_bal = cmd
-          end
-        elseif A and type(A.request) == &quot;function&quot; and type(A.tick) == &quot;function&quot; and Yso and type(Yso.emit_capture) == &quot;function&quot; then
-          -- Fallback path if bal_payload is unavailable: attempt centralized tick via payload capture.
-          pcall(A.request, tgt, { finisher = false })
-          local ok_tick, payload = pcall(Yso.emit_capture, function()
-            return A.tick(tgt, &quot;group_damage_bal_support&quot;)
-          end)
-          if ok_tick and type(payload) == &quot;table&quot; then
-            local bal = _trim(payload.bal)
-            if bal ~= &quot;&quot; then aeon_bal = bal end
-          end
-        end
-        if aeon_bal then
-          return aeon_bal, filler_cmd, filler_category or &quot;fallback_support&quot;
-        end
-      end
-    end
-  elseif not st.entangled and _prone_is_forced(tgt) then
-    if _ent_ready() then
-      local sep = _command_sep()
-      return (&quot;outd hangedman%sfling hangedman at %s&quot;):format(sep, tgt),
-        (&quot;command crone at %s %s&quot;):format(tgt, _random_crone_arm(tgt)),
-        &quot;fallback_support&quot;
-    end
-  end
-
   if _justice_conversion_count(tgt) &gt;= 2 and not _justice_already_sent(tgt) then
-    return (&quot;ruinate justice %s&quot;):format(tgt), nil, nil
+    return (&quot;ruinate justice %s&quot;):format(tgt), nil, &quot;fallback_support&quot;
   end
 
   return nil, nil, nil
@@ -12116,79 +12165,80 @@ local function _plan_route(tgt)
     eq_aff = nil,
   }
 
-  local miss_hl = (st.healthleech ~= true)
-  local miss_sens = (st.sensitivity ~= true)
-  local miss_clum = (st.clumsiness ~= true)
-  local miss_slick = (st.slickness ~= true)
   local eq_ready = _eq_ready()
   local ent_ready = _ent_ready()
+  local giving_order = type(GD.cfg.giving_order) == &quot;table&quot;
+    and GD.cfg.giving_order
+    or { &quot;paralysis&quot;, &quot;asthma&quot;, &quot;sensitivity&quot;, &quot;haemophilia&quot;, &quot;healthleech&quot; }
 
-  -- Keep this route intentionally lean:
-  -- 1) setup core affs
-  -- 2) pair warp + firelord
-
-  -- Burst pairing once healthleech is online.
-  if st.healthleech and eq_ready and ent_ready then
-    p.eq = (&quot;warp %s&quot;):format(tgt)
-    p.eq_category = &quot;reserved_paired_burst&quot;
-    p.class = _cmd_entity(&quot;firelord&quot;, tgt, &quot;healthleech&quot;)
-    p.class_category = &quot;reserved_paired_burst&quot;
-    return p
-  end
-
-  -- Setup ordering: sensitivity -&gt; clumsiness -&gt; healthleech.
-  if miss_sens then
+  -- Damage spam takes precedence once healthleech is tracked.
+  if st.healthleech then
     if eq_ready then
-      p.eq = (&quot;instill %s with sensitivity&quot;):format(tgt)
-      p.eq_category = &quot;required_core_refresh&quot;
-      p.eq_aff = &quot;sensitivity&quot;
+      p.eq = (&quot;warp %s&quot;):format(tgt)
+      p.eq_category = &quot;reserved_burst&quot;
     end
-    if ent_ready and miss_hl then
-      p.class = _cmd_entity(&quot;worm&quot;, tgt)
-      p.class_category = &quot;required_core_application&quot;
-    elseif ent_ready and miss_clum then
-      p.class = _cmd_entity(&quot;storm&quot;, tgt)
-      p.class_category = &quot;required_core_refresh&quot;
+    if ent_ready then
+      p.class = _cmd_entity(&quot;firelord&quot;, tgt, &quot;healthleech&quot;)
+      p.class_category = &quot;reserved_burst&quot;
     end
-    return p
+    if _trim(p.eq) ~= &quot;&quot; or _trim(p.class) ~= &quot;&quot; then
+      return p
+    end
   end
 
-  if miss_clum then
-    if ent_ready then
-      p.class = _cmd_entity(&quot;storm&quot;, tgt)
-      p.class_category = &quot;required_core_refresh&quot;
-    elseif eq_ready then
-      p.eq = (&quot;instill %s with clumsiness&quot;):format(tgt)
-      p.eq_category = &quot;required_core_refresh&quot;
-      p.eq_aff = &quot;clumsiness&quot;
+  -- Primary giving pressure (lane-first): paralysis -&gt; asthma -&gt; sensitivity -&gt; haemophilia -&gt; healthleech.
+  local eq_aff = nil
+  for i = 1, #giving_order do
+    local aff = _lc(giving_order[i])
+    if aff ~= &quot;&quot; and not _has_aff(tgt, aff) then
+      eq_aff = aff
+      break
     end
-    return p
+  end
+  if eq_ready and eq_aff then
+    p.eq = (&quot;instill %s with %s&quot;):format(tgt, eq_aff)
+    p.eq_category = &quot;required_core_application&quot;
+    p.eq_aff = eq_aff
   end
 
-  if miss_hl then
-    if ent_ready then
-      p.class = _cmd_entity(&quot;worm&quot;, tgt)
-      p.class_category = &quot;required_core_application&quot;
-      if eq_ready and st.count &gt;= 2 then
-        p.eq = (&quot;warp %s&quot;):format(tgt)
-        p.eq_category = &quot;required_core_application&quot;
+  if ent_ready then
+    for i = 1, #giving_order do
+      local aff = _lc(giving_order[i])
+      if aff ~= &quot;&quot; and not _has_aff(tgt, aff) then
+        local cmd, cat = _pick_entity_cmd(tgt, st, {
+          category = &quot;required_core_application&quot;,
+          skip_aff = eq_aff or &quot;&quot;,  -- avoid entity covering same aff as the EQ lane
+        })
+        if _trim(cmd) ~= &quot;&quot; then
+          p.class = cmd
+          p.class_category = cat or &quot;required_core_application&quot;
+        end
+        break
       end
-    elseif eq_ready then
-      p.eq = (&quot;instill %s with healthleech&quot;):format(tgt)
-      p.eq_category = &quot;required_core_application&quot;
-      p.eq_aff = &quot;healthleech&quot;
     end
+  end
+
+  if _trim(p.eq) ~= &quot;&quot; or _trim(p.class) ~= &quot;&quot; then
     return p
   end
 
-  -- Optional support when core is online but we cannot burst yet.
-  if miss_slick and eq_ready then
+  -- Supplementary asthma follow-ups (opportunistic).
+  if eq_ready and st.asthma and not st.paralysis then
+    p.eq = (&quot;instill %s with paralysis&quot;):format(tgt)
+    p.eq_category = &quot;fallback_support&quot;
+    p.eq_aff = &quot;paralysis&quot;
+  end
+  if ent_ready and st.asthma and not st.paralysis and _slime_should_refresh(tgt) then
+    p.class = _cmd_entity(&quot;slime&quot;, tgt)
+    p.class_category = &quot;fallback_support&quot;
+  end
+  if eq_ready and st.asthma and not st.slickness and _trim(p.eq) == &quot;&quot; then
     p.eq = (&quot;instill %s with slickness&quot;):format(tgt)
     p.eq_category = &quot;fallback_support&quot;
     p.eq_aff = &quot;slickness&quot;
   end
-  if ent_ready and miss_clum then
-    p.class = _cmd_entity(&quot;storm&quot;, tgt)
+  if ent_ready and st.asthma and not st.slickness and _trim(p.class) == &quot;&quot; then
+    p.class = _cmd_entity(&quot;bubonis&quot;, tgt)
     p.class_category = &quot;fallback_support&quot;
   end
 
@@ -12255,6 +12305,7 @@ function GD.init()
 end
 function GD.reset(reason)
   GD.init()
+  GD.state.justice_once = {}  -- clear per-target justice flags so justice can fire again after target re-engagement
   GD.state.opener_sent_for = &quot;&quot;
   GD.state.rr_idx = 0
   GD.state.stop_pending = false
@@ -12326,7 +12377,9 @@ function GD.attack_function(arg)
   local bal_cmd, bal_cat = nil, nil
   local entity_cmd, entity_cat = nil, nil
   local free_cmd, free_cat = _plan_free(tgt)
-  local st = _core_state(tgt)
+  -- st is populated from _plan_route&apos;s result (which calls _core_state internally),
+  -- avoiding a redundant second call at this level.
+  local st = nil
   local p = nil
   local rescue = nil
 
@@ -12371,29 +12424,41 @@ function GD.attack_function(arg)
     eq_cmd, eq_cat = p.eq, p.eq_category
     bal_cmd, bal_cat = p.bal, p.bal_category
     entity_cmd, entity_cat = p.class, p.class_category
-    st = p.st or st
+    st = p.st or _core_state(tgt)
+  end
+
+  -- Opportunistic-only bal filler (Justice): never required, never higher priority than giving/damage.
+  if _trim(bal_cmd) == &quot;&quot; then
+    local bal_fill, class_fill, fill_cat = _plan_bal_support(tgt, st, eq_cmd, entity_cmd, {})
+    if _trim(bal_fill) ~= &quot;&quot; then
+      bal_cmd = bal_fill
+      bal_cat = fill_cat or &quot;fallback_support&quot;
+      if _trim(entity_cmd) == &quot;&quot; and _trim(class_fill) ~= &quot;&quot; then
+        entity_cmd = class_fill
+        entity_cat = fill_cat or entity_cat
+      end
+    end
   end
 
   -- D. Offensive conditions / overrides.
-  local main = _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
-  local selected_eq = (main.lane == &quot;eq&quot;) and main.cmd or nil
-  local selected_bal = (main.lane == &quot;bal&quot;) and main.cmd or nil
-  if main.lane == &quot;bal&quot; and _trim(entity_cmd) == &quot;&quot; and p and _trim(p.eq_aff) ~= &quot;&quot; then
-    local compensate_cmd, compensate_cat = _pick_entity_cmd(tgt, st, {
-      category = p.class_category or &quot;fallback_support&quot;,
-      skip_aff = p.eq_aff,
-    })
-    if _trim(compensate_cmd) ~= &quot;&quot; then
-      entity_cmd = compensate_cmd
-      entity_cat = compensate_cat or entity_cat
-    end
-  end
-  local main_lane = main.lane
+  local selected_eq = eq_cmd
+  local selected_bal = bal_cmd
+  local main_lane = _trim(eq_cmd) ~= &quot;&quot; and &quot;eq&quot; or (_trim(bal_cmd) ~= &quot;&quot; and &quot;bal&quot; or &quot;&quot;)
   if main_lane == &quot;&quot; and _trim(entity_cmd) ~= &quot;&quot; then
     main_lane = &quot;entity&quot;
   end
   if main_lane == &quot;&quot; and _trim(free_cmd) ~= &quot;&quot; then
     main_lane = &quot;free&quot;
+  end
+  local main_category = nil
+  if main_lane == &quot;eq&quot; then
+    main_category = eq_cat
+  elseif main_lane == &quot;bal&quot; then
+    main_category = bal_cat
+  elseif main_lane == &quot;entity&quot; then
+    main_category = entity_cat
+  elseif main_lane == &quot;free&quot; then
+    main_category = free_cat
   end
 
   -- E. Misc / bookkeeping / optional echoes.
@@ -12408,14 +12473,14 @@ function GD.attack_function(arg)
     },
     meta = {
       free_category = free_cat,
-      eq_category = (main.lane == &quot;eq&quot;) and main.category or nil,
-      bal_category = (main.lane == &quot;bal&quot;) and main.category or nil,
+      eq_category = eq_cat,
+      bal_category = bal_cat,
       entity_category = entity_cat,
       core_state = st,
       main_lane = main_lane,
-      main_category = main.category,
-      alt_lane = main.alt and main.alt.lane or nil,
-      alt_category = main.alt and main.alt.category or nil,
+      main_category = main_category,
+      alt_lane = nil,
+      alt_category = nil,
       rescue_tag = rescue and rescue.tag or nil,
     },
   }
@@ -12764,7 +12829,7 @@ function GD.mark_lust_landed(tgt)
   end
 end
 
-local function _rescue_antitumble_action(now)
+_rescue_antitumble_action = function(now)
   if GD.cfg.rescue_lust_empress ~= true then return nil end
 
   local T = GD.state.tumble
@@ -12814,7 +12879,7 @@ local function _rescue_antitumble_action(now)
   }
 end
 
-local function _rescue_empress_action(now)
+_rescue_empress_action = function(now)
   if GD.cfg.rescue_lust_empress ~= true then return nil end
 
   local E = GD.state.empress
@@ -12962,19 +13027,20 @@ function GD.status()
     active = tostring(GD.is_active()),
     target = tostring(tgt),
     core_count = st.count,
+    paralysis = st.paralysis,
+    asthma = st.asthma,
     healthleech = st.healthleech,
     sensitivity = st.sensitivity,
-    clumsiness = st.clumsiness,
+    haemophilia = st.haemophilia,
     slickness = st.slickness,
-    addiction = _has_aff(tgt, &quot;addiction&quot;),
     last_reason = GD.state and GD.state.template and GD.state.template.last_reason or &quot;&quot;,
     last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or &quot;&quot;,
     last_no_send_reason = GD.state and GD.state.debug and GD.state.debug.last_no_send_reason or &quot;&quot;,
     last_retry_reason = GD.state and GD.state.debug and GD.state.debug.last_retry_reason or &quot;&quot;,
   }
-  _echo(string.format(&quot;loop=%s active=%s target=%s core=%d/3 (hl=%s sens=%s clumsy=%s slick=%s addiction=%s) last_no_send=%s retry=%s&quot;,
+  _echo(string.format(&quot;loop=%s active=%s target=%s giving=%d/5 (para=%s asthma=%s sens=%s haemo=%s hl=%s slick=%s) last_no_send=%s retry=%s&quot;,
     snapshot.enabled, snapshot.active, snapshot.target, snapshot.core_count,
-    tostring(snapshot.healthleech), tostring(snapshot.sensitivity), tostring(snapshot.clumsiness), tostring(snapshot.slickness), tostring(snapshot.addiction),
+    tostring(snapshot.paralysis), tostring(snapshot.asthma), tostring(snapshot.sensitivity), tostring(snapshot.haemophilia), tostring(snapshot.healthleech), tostring(snapshot.slickness),
     tostring(snapshot.last_no_send_reason), tostring(snapshot.last_retry_reason)
   ))
   return snapshot
@@ -21388,6 +21454,9 @@ local function _ensure_route_module(entry)
 
   if type(require) == &quot;function&quot; then
     pcall(require, &quot;Yso._entry&quot;)
+    -- Try the route-specific module file if the registry advertises one.
+    local rmod = type(entry) == &quot;table&quot; and tostring(entry.module_name or &quot;&quot;) or &quot;&quot;
+    if rmod ~= &quot;&quot; then pcall(require, rmod) end
   end
 
   return _route_module(entry)
@@ -21811,7 +21880,7 @@ function M.stop_route_loop(name, reason, silent)
   end
 
   _loop_release(entry)
-  return false
+  return true
 end
 
 function M.toggle_route_loop(name, reason)
@@ -29241,6 +29310,8 @@ ER.cfg = ER.cfg or {
   invalidation_timeout_s = 8,
   worm_duration_s = 20,
   worm_refresh_lead_s = 1.0,
+  slime_duration_s = 14,
+  slime_refresh_lead_s = 0.75,
   sycophant_duration_s = 30,
   sycophant_refresh_lead_s = 1.0,
   phase_one = { &quot;worm&quot;, &quot;storm&quot;, &quot;slime&quot;, &quot;sycophant&quot;, &quot;humbug&quot;, &quot;firelord&quot; },
@@ -29328,6 +29399,7 @@ local function _tstate(tgt, create)
       reservation = nil,
       effects = {
         worm = { target = &quot;&quot;, until_t = 0, proc_count = 0, proc_window_until = 0, last_proc_at = 0 },
+        slime = { target = &quot;&quot;, until_t = 0, cleared_at = 0 },
         sycophant = { target = &quot;&quot;, until_t = 0 },
       },
       last_sent_at = {},
@@ -29336,6 +29408,11 @@ local function _tstate(tgt, create)
     }
     ER.state.targets[tkey] = T
   end
+  if not T then return nil end
+  T.effects = T.effects or {}
+  T.effects.worm = T.effects.worm or { target = &quot;&quot;, until_t = 0, proc_count = 0, proc_window_until = 0, last_proc_at = 0 }
+  T.effects.slime = T.effects.slime or { target = &quot;&quot;, until_t = 0, cleared_at = 0 }
+  T.effects.sycophant = T.effects.sycophant or { target = &quot;&quot;, until_t = 0 }
   return T
 end
 
@@ -29550,6 +29627,10 @@ function ER.note_sent(entity, tgt, meta)
     T.effects.worm.proc_count = 0
     T.effects.worm.proc_window_until = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
     T.effects.worm.last_proc_at = 0
+  elseif entity == &quot;slime&quot; then
+    T.effects.slime.target = tgt
+    T.effects.slime.until_t = now + (tonumber(ER.cfg.slime_duration_s) or 14)
+    T.effects.slime.cleared_at = 0
   elseif entity == &quot;sycophant&quot; then
     T.established.sycophant = true
     T.effects.sycophant.target = tgt
@@ -29618,6 +29699,30 @@ function ER.syc_should_refresh(tgt)
   local S = T.effects.sycophant
   local now = _now()
   return now &gt;= ((tonumber(S.until_t or 0) or 0) - (tonumber(ER.cfg.sycophant_refresh_lead_s) or 1.0))
+end
+
+function ER.note_slime_cleared(tgt, source)
+  local T = _tstate(tgt, false)
+  if not T then return false end
+  local S = T.effects and T.effects.slime or nil
+  if type(S) ~= &quot;table&quot; then return false end
+  if _lc(S.target) ~= _lc(tgt) then return false end
+  local now = _now()
+  S.until_t = 0
+  S.cleared_at = now
+  T.last_success_at.slime = math.max(tonumber(T.last_success_at.slime or 0) or 0, now)
+  _dbg((&quot;slime cleared for %s (%s)&quot;):format(_lc(tgt), tostring(source or &quot;manual&quot;)))
+  return true
+end
+
+function ER.slime_should_refresh(tgt)
+  local T = _tstate(tgt, false)
+  if not T then return true end
+  local S = T.effects and T.effects.slime or nil
+  if type(S) ~= &quot;table&quot; then return true end
+  if _lc(S.target) ~= _lc(tgt) then return true end
+  local now = _now()
+  return now &gt;= ((tonumber(S.until_t or 0) or 0) - (tonumber(ER.cfg.slime_refresh_lead_s) or 0.75))
 end
 
 function ER.bootstrap_done(tgt, ctx)
@@ -30328,7 +30433,8 @@ cecho(_tag_prefix() .. &quot;&lt;cyan&gt;Yso Magician module loaded (bu queue).&
 --      - GMCP: checks on gmcp.Char.Vitals
 --      - Diagnose snapshot: checks when a queued DIAGNOSE finishes
 --  • Requirements:
---      - in hunt cureset: cooldown ready + BAL ready now + 3+ current affs
+--      - in hunt cureset: cooldown ready + BAL ready now + 4+ current affs
+--      - in bash mode: self-aff state backed by a fresh GMCP aff-list snapshot
 --      - not prone
 --      - not paralysis
 --      - not webbed
@@ -30347,7 +30453,7 @@ Legacy.Fool.debug   = Legacy.Fool.debug   or false
 Legacy.Fool.queue_mode        = Legacy.Fool.queue_mode        or &quot;addclearfull&quot;  -- add / addclear / addclearfull
 Legacy.Fool.queue_type        = Legacy.Fool.queue_type        or &quot;bal&quot;           -- bal / eqbal / free / full / flags
 Legacy.Fool.min_affs_default  = Legacy.Fool.min_affs_default  or 6               -- non-hunt curesets
-Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 3               -- compatibility field; hunt gate is fixed at 3+
+Legacy.Fool.min_affs_hunt     = Legacy.Fool.min_affs_hunt     or 4               -- compatibility field; hunt gate is fixed at 4+
 Legacy.Fool.min_affs          = Legacy.Fool.min_affs          or nil             -- optional global override
 Legacy.Fool.ignore_blind_deaf = (Legacy.Fool.ignore_blind_deaf ~= false)         -- true = do NOT count blind/deaf
 
@@ -30364,6 +30470,7 @@ F.cfg = F.cfg or {
   enabled = true,   -- auto (GMCP + diagnose snapshot) on/off
   cd      = 35,     -- Fool class cooldown, seconds
   gcd     = 1.0,    -- min seconds between auto attempts
+  gmcp_list_fresh_s = 2.0, -- bash safety: require recent gmcp.Char.Afflictions.List
   debug   = false,
 }
 
@@ -30489,6 +30596,27 @@ local function _mode_implies_hunt()
   end
   local state = _normalize_cureset_name(rawget(mode, &quot;state&quot;))
   return state == &quot;hunt&quot;
+end
+
+local function _gmcp_aff_list_fresh(max_age_s)
+  local max_age = tonumber(max_age_s or F.cfg.gmcp_list_fresh_s or 2.0) or 2.0
+  if max_age &lt; 0 then max_age = 0 end
+
+  if Yso and Yso.self and type(Yso.self.gmcp_aff_list_fresh) == &quot;function&quot; then
+    local ok, v = pcall(Yso.self.gmcp_aff_list_fresh, max_age)
+    if ok then
+      return (v == true), &quot;api&quot;
+    end
+  end
+
+  local SA = Yso and Yso.selfaff or nil
+  local meta = SA and SA.meta or nil
+  local last_list = meta and tonumber(meta.last_gmcp_list_at or 0) or 0
+  if not last_list or last_list &lt;= 0 then
+    return false, &quot;missing&quot;
+  end
+
+  return (_now() - last_list) &lt;= max_age, &quot;meta&quot;
 end
 
 -- current cureset name from Legacy (e.g. &quot;legacy&quot;, &quot;hunt&quot;, &quot;group&quot;)
@@ -30931,13 +31059,13 @@ _is_lock_state = function()
 end
 
 -- Resolve min_affs and whether &quot;lock&quot; is allowed to override the threshold
--- • HUNT cureset: fixed 3-aff threshold, lock does NOT override
+-- • HUNT cureset: fixed 4-aff threshold, lock does NOT override
 -- • Other curesets: min_affs_default, lock CAN override (for PvP)
 -- • Global Legacy.Fool.min_affs override (if set) always uses lock override.
 _min_affs_for_current_set = function()
   local cur = _current_cureset() or &quot;legacy&quot;
   if cur == &quot;hunt&quot; then
-    return 3, false -- Hunt is always a fixed 3-aff threshold with no lock override.
+    return 4, false -- Hunt is always a fixed 4-aff threshold with no lock override.
   end
 
   -- explicit global override wins
@@ -30957,6 +31085,7 @@ _evaluate_fool = function(source)
   local ctx = {
     source = tostring(source or &quot;manual&quot;),
     curset = _current_cureset() or &quot;?&quot;,
+    in_bash_mode = (_mode_implies_hunt() == true),
     count = _aff_count(),
     is_locked = _is_lock_state(),
   }
@@ -30994,6 +31123,17 @@ _evaluate_fool = function(source)
     ctx.reason = &quot;cooldown&quot;
     ctx.message = &quot;Not using Fool: cooldown not ready.&quot;
     return false, ctx
+  end
+
+  if ctx.in_bash_mode then
+    local fresh, via = _gmcp_aff_list_fresh()
+    ctx.gmcp_aff_list_fresh = (fresh == true)
+    ctx.gmcp_aff_list_fresh_via = tostring(via or &quot;unknown&quot;)
+    if fresh ~= true then
+      ctx.reason = &quot;gmcp_aff_list_stale&quot;
+      ctx.message = &quot;Not using Fool: bash aff snapshot is stale (waiting for GMCP aff list).&quot;
+      return false, ctx
+    end
   end
 
   if ctx.curset == &quot;hunt&quot; then
