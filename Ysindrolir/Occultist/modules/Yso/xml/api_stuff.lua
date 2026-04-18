@@ -22,7 +22,9 @@ end
 --  • Assumes: AK1 + AK Tracker track ENEMY afflictions only.
 --  • This file just defines the Yso.curing API and debug/status.
 --========================================================--
-setConsoleBufferSize("main", 300000, 1000)
+if type(setConsoleBufferSize) == "function" then
+  setConsoleBufferSize("main", 300000, 1000)
+end
 
 Yso          = Yso or {}
 Yso.affs     = Yso.affs or {}        -- our own afflictions (you can wire GMCP/text later)
@@ -169,15 +171,23 @@ do
   end
 
   Yso._eh = Yso._eh or {}
-  if Yso._eh.class_status then killAnonymousEventHandler(Yso._eh.class_status) end
-  Yso._eh.class_status = registerAnonymousEventHandler("gmcp.Char.Status", function()
-    _sync_from_status("gmcp.Char.Status")
-  end)
+  if Yso._eh.class_status and type(killAnonymousEventHandler) == "function" then
+    killAnonymousEventHandler(Yso._eh.class_status)
+  end
+  if type(registerAnonymousEventHandler) == "function" then
+    Yso._eh.class_status = registerAnonymousEventHandler("gmcp.Char.Status", function()
+      _sync_from_status("gmcp.Char.Status")
+    end)
+  end
 
-  if Yso._eh.class_vitals then killAnonymousEventHandler(Yso._eh.class_vitals) end
-  Yso._eh.class_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
-    _sync_from_status("gmcp.Char.Vitals")
-  end)
+  if Yso._eh.class_vitals and type(killAnonymousEventHandler) == "function" then
+    killAnonymousEventHandler(Yso._eh.class_vitals)
+  end
+  if type(registerAnonymousEventHandler) == "function" then
+    Yso._eh.class_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+      _sync_from_status("gmcp.Char.Vitals")
+    end)
+  end
 
   Yso._trig = Yso._trig or {}
   if Yso._trig.class_swap then killTrigger(Yso._trig.class_swap) end
@@ -275,6 +285,10 @@ do
       local core = Yso and Yso.off and Yso.off.core or nil
       if core and type(core.on_payload_sent) == "function" then
         pcall(core.on_payload_sent, payload, "locks:payload")
+      end
+      local pulse = Yso and Yso.pulse or nil
+      if pulse and type(pulse.on_payload_ack) == "function" then
+        pcall(pulse.on_payload_ack, payload, "locks:payload")
       end
 
     end

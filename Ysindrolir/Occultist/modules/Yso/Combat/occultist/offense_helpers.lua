@@ -231,8 +231,8 @@ local function _emit(payload, opts)
 
   local Q = Yso.queue
   if Q and type(Q.emit) == "function" then
-    local ok = pcall(Q.emit, payload)
-    return ok == true
+    local ok, result = pcall(Q.emit, payload)
+    return ok == true and result == true
   end
   return false
 end

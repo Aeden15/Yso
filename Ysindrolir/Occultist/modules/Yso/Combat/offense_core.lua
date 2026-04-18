@@ -72,6 +72,18 @@ local function _namespace_lookup(ns)
   return type(cur) == "table" and cur or nil
 end
 
+local function _route_interface()
+  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+  if RI and type(RI.payload_has_route) == "function" then return RI end
+  if type(require) == "function" then
+    pcall(require, "Yso.Combat.route_interface")
+    pcall(require, "Yso.xml.route_interface")
+  end
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+  if RI and type(RI.payload_has_route) == "function" then return RI end
+  return nil
+end
+
 local function _current_class()
   local C = Yso and Yso.classinfo or nil
   if type(C) == "table" then
@@ -162,6 +174,9 @@ local function _ensure_route_module(entry)
 
   if type(require) == "function" then
     pcall(require, "Yso._entry")
+    -- Try the route-specific file if the registry advertises a module_name.
+    local rmod = tostring(entry.module_name or "")
+    if rmod ~= "" then pcall(require, rmod) end
   end
   mod = _namespace_lookup(entry.namespace)
   if mod then return _normalize_route_api(mod) end
@@ -346,7 +361,7 @@ function Core.off(key)
     local M = _mode()
     if M and type(M.stop_route_loop) == "function" then
       local call_ok, stopped = pcall(M.stop_route_loop, id, "off.core:off", false)
-      ok = (call_ok == true and stopped == false)
+      ok = (call_ok == true and stopped == true)
     end
   else
     if type(route) == "table" then
@@ -454,13 +469,23 @@ end
 
 function Core.on_payload_sent(payload, reason)
   local any = false
+  local RI = _route_interface()
+  local has_route_meta = RI and type(RI.payload_has_any_route) == "function" and RI.payload_has_any_route(payload)
   local ids = _route_ids()
   for i = 1, #ids do
     local id = ids[i]
     local entry = _resolve_entry(id)
     local route = _route_for(id, entry)
-    if type(route) == "table" and type(route.on_payload_sent) == "function" then
-      pcall(route.on_payload_sent, payload, { reason = reason or "off.core:payload" })
+    local should_notify = true
+    if has_route_meta then
+      should_notify = RI.payload_has_route(payload, id)
+    end
+    if should_notify and type(route) == "table" and type(route.on_payload_sent) == "function" then
+      local ctx = { reason = reason or "off.core:payload", route_id = id, has_route_meta = has_route_meta == true }
+      pcall(route.on_payload_sent, payload, ctx)
+      if type(route.on_send_result) == "function" and route.on_send_result ~= route.on_payload_sent then
+        pcall(route.on_send_result, payload, ctx)
+      end
       any = true
     end
   end

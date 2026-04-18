@@ -377,18 +377,33 @@ function D.toggle(on)
   return D.state.enabled
 end
 
-function D.set_policy(_p)
+function D.set_policy(p)
+  p = _lc(p or "")
+  if p ~= "" then
+    D.state.policy = p
+    D.cfg.policy = p
+  end
   _sync_state()
   return D.state.policy
 end
 
-function D.set_active(_route)
+function D.set_active(route)
+  route = _lc(route or "")
+  if route ~= "" then
+    D.state.active = route
+  end
   _sync_state()
   return D.state.active
 end
 
-function D.tick(_reasons)
+function D.tick(reasons)
   _sync_state()
+  -- Delegate to off.core when available; this driver is a compat shim.
+  local core = Yso and Yso.off and Yso.off.core or nil
+  if core and type(core.tick) == "function" then
+    local ok, sent = pcall(core.tick, reasons)
+    return (ok and sent == true)
+  end
   return false
 end
 

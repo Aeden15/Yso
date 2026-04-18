@@ -648,6 +648,7 @@ M.crystalism = {
 
   revelation = {
     name = "Revelation",
+    abadmin_id = 763,
     syntax = "EMBED REVELATION",
     shapes = { "cube", "diamond" },
     works_on = "room",

@@ -27,6 +27,13 @@ local PA = Yso.off.oc.group_aff
 local AP = Yso.off.oc.aura_planner or {}
 PA.alias_owned = true
 
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
+  pcall(require, "Yso.Combat.route_interface")
+  pcall(require, "Yso.xml.route_interface")
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+end
+
 PA.route_contract = PA.route_contract or {
   id = "group_aff",
   interface_version = 1,
@@ -664,10 +671,26 @@ local function _emit_payload(payload)
   }
   local cmd = _payload_line({ target = target, lanes = emit_payload })
   if _trim(cmd) == "" then return false, "empty" end
+  if RI and type(RI.emit_route_payload) == "function" then
+    local ok, cmd_or_err, ack_payload = RI.emit_route_payload("group_aff", {
+      target = target,
+      lanes = emit_payload,
+      meta = type(payload) == "table" and payload.meta or nil,
+    }, {
+      reason = "group_aff:emit",
+      kind = "offense",
+      route = "group_aff",
+      target = target,
+      commit = true,
+    })
+    if not ok then return false, cmd_or_err end
+    return true, cmd_or_err, ack_payload
+  end
   if type(Yso.emit) == "function" then
     local ok = Yso.emit(emit_payload, {
       reason = "group_aff:emit",
       kind = "offense",
+      route = "group_aff",
       target = target,
       commit = true,
     }) == true
@@ -680,6 +703,7 @@ local function _emit_payload(payload)
     local ok, res = pcall(Q.emit, emit_payload, {
       reason = "group_aff:emit",
       kind = "offense",
+      route = "group_aff",
       target = target,
       commit = true,
     })
@@ -687,7 +711,7 @@ local function _emit_payload(payload)
     if res ~= true then return false, "queue_emit_failed" end
   end
 
-  return true, cmd
+  return true, cmd, nil
 end
 
 local function _set_loop_enabled(on)
@@ -703,6 +727,9 @@ local function _set_loop_enabled(on)
 end
 
 local function _clear_waiting()
+  if RI and type(RI.clear_waiting) == "function" then
+    return RI.clear_waiting(PA.state, "group_aff")
+  end
   PA.state.waiting = PA.state.waiting or {}
   PA.state.waiting.queue = nil
   PA.state.waiting.main_lane = nil
@@ -718,6 +745,7 @@ local function _clear_waiting()
   PA.state.in_flight.eq = ""
   PA.state.in_flight.entity = ""
   PA.state.in_flight.reason = ""
+  return true
 end
 
 local function _kill_loop_timer()
@@ -1207,6 +1235,9 @@ function PA.init()
   PA.state.waiting = PA.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
   PA.state.last_attack = PA.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
   PA.state.in_flight = PA.state.in_flight or { fingerprint = "", target = "", route = "group_aff", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+  if RI and type(RI.ensure_waiting_state) == "function" then
+    RI.ensure_waiting_state(PA.state, "group_aff")
+  end
   PA.state.debug = PA.state.debug or { last_no_send_reason = "", last_retry_reason = "" }
   PA.state.busy = (PA.state.busy == true)
   PA.state.loop_delay = tonumber(PA.state.loop_delay or PA.cfg.loop_delay or 0.15) or 0.15
@@ -1374,7 +1405,7 @@ function PA.attack_function(arg)
     _note_no_send_reason("duplicate_action_suppressed")
     return false, "duplicate_action_suppressed"
   end
-  local sent, err = _emit_payload(emit_payload)
+  local sent, err, ack_payload = _emit_payload(emit_payload)
   if not sent then
     _note_retry_reason("retry_hard_fail")
     return false, err
@@ -1396,7 +1427,16 @@ function PA.attack_function(arg)
   if not has_ack_bus then
     PA.on_sent(emit_payload, ctx)
   end
-  _remember_attack(cmd, emit_payload)
+  if RI and type(RI.mark_waiting) == "function" then
+    RI.mark_waiting(PA.state, "group_aff", ack_payload or emit_payload, {
+      cmd = cmd,
+      target = _trim(type(payload) == "table" and payload.target or ""),
+      main_lane = type(payload) == "table" and type(payload.meta) == "table" and payload.meta.main_lane or nil,
+      fingerprint = _action_fingerprint(emit_payload),
+    })
+  else
+    _remember_attack(cmd, emit_payload)
+  end
   return true, cmd, payload
 end
 
@@ -1449,6 +1489,12 @@ function PA.on_sent(payload, ctx)
 end
 
 function PA.on_payload_sent(payload)
+  if RI and type(RI.payload_has_any_route) == "function" and RI.payload_has_any_route(payload) and not RI.payload_has_route(payload, "group_aff") then
+    return false
+  end
+  if RI and type(RI.clear_waiting_on_ack) == "function" then
+    RI.clear_waiting_on_ack(PA.state, "group_aff", payload, { require_route = false })
+  end
   return PA.on_sent(payload, nil)
 end
 
@@ -1537,7 +1583,6 @@ function PA.on_target_swap(old_target, new_target)
 end
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(PA, PA.route_contract)
   end

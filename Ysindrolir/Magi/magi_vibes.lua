@@ -70,15 +70,17 @@ local function _now()
   return os.time()
 end
 
-local function _echo(msg, color)
-  if type(cecho) == "function" then
-    if color then
-      cecho(string.format("%s[Yso:Magi:Vibes] %s<reset>\n", tostring(color), tostring(msg)))
-      return
-    end
-    if V.cfg and V.cfg.debug then
-      cecho(string.format("<gray>[Yso:Magi:Vibes] %s<reset>\n", tostring(msg)))
-    end
+-- color = explicit color tag  → always printed (errors, status)
+-- color = nil, always = true → always printed in white (normal status)
+-- color = nil, always = nil  → debug-only (verbose per-command noise)
+local function _echo(msg, color, always)
+  if type(cecho) ~= "function" then return end
+  if color then
+    cecho(string.format("%s[Yso:Magi:Vibes] %s<reset>\n", tostring(color), tostring(msg)))
+  elseif always == true then
+    cecho(string.format("<white>[Yso:Magi:Vibes] %s<reset>\n", tostring(msg)))
+  elseif V.cfg and V.cfg.debug then
+    cecho(string.format("<gray>[Yso:Magi:Vibes] %s<reset>\n", tostring(msg)))
   end
 end
 
@@ -168,7 +170,7 @@ end
 function V.stop()
   _clear_timers()
   V.state.running = false
-  _echo("stopped")
+  _echo("stopped", nil, true)
   return true
 end
 
@@ -176,7 +178,7 @@ function V.set_delay(seconds)
   seconds = tonumber(seconds)
   if not seconds or seconds <= 0 then return false end
   V.cfg.eq_delay = seconds
-  _echo(string.format("eq_delay=%.2f", seconds))
+  _echo(string.format("eq_delay=%.2f", seconds), nil, true)
   return true
 end
 
@@ -213,7 +215,7 @@ function V.run(commands, opts)
     if not cmd then
       V.state.running = false
       _clear_timers()
-      _echo("complete")
+      _echo("complete", nil, true)
       return
     end
 

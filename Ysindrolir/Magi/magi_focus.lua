@@ -44,6 +44,13 @@ local Dissonance = _ensure_magi_peer("magi_dissonance", "magi_dissonance.lua", f
   return Yso and Yso.magi and Yso.magi.dissonance or nil
 end)
 
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
+  pcall(require, "Yso.Combat.route_interface")
+  pcall(require, "Yso.xml.route_interface")
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+end
+
 local PENDING_SLOTS = {
   "horripilation",
   "freeze",
@@ -105,7 +112,6 @@ MF.route_contract = MF.route_contract or {
 }
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(MF, MF.route_contract)
   end
@@ -154,6 +160,9 @@ MF.state = MF.state or {
     postconv = false,
     last_reset_reason = "init",
   },
+  waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 },
+  last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" },
+  in_flight = { fingerprint = "", target = "", route = "magi_focus", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" },
 }
 
 local function _trim(s) return RC.trim(s) end
@@ -226,7 +235,9 @@ end
 local function _route_is_active()
   if not _combat_focus_context_active() then return false end
   if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("magi_focus") == true
+    if Yso.mode.route_loop_active("magi_focus") == true then return true end
+    if Yso.mode.route_loop_active("focus") == true then return true end
+    return false
   end
   return MF.state and MF.state.loop_enabled == true
 end
@@ -445,7 +456,9 @@ local function _snapshot(tgt)
     frozen = base.frozen == true,
     frostbite = base.frostbite == true,
     clumsiness = base.clumsiness == true or base.pending.bombard == true,
-    asthma = base.asthma == true or base.pending.bombard == true,
+    -- Bombard directly inflicts clumsiness, not asthma; asthma comes from Air
+    -- resonance procs, so only trust the actual aff state here.
+    asthma = base.asthma == true,
     fulminated = base.fulminated == true,
     epilepsy = base.epilepsy == true,
     paralysis = base.paralysis == true,
@@ -816,7 +829,21 @@ local function _emit_payload(payload, category)
     reason = "magi_focus:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
+    route = "magi_focus",
+    target = _trim(type(payload) == "table" and payload.target or ""),
   }
+
+  if RI and type(RI.emit_route_payload) == "function" then
+    return RI.emit_route_payload("magi_focus", {
+      target = opts.target,
+      lanes = { eq = payload and payload.eq },
+      meta = {
+        route = "magi_focus",
+        main_lane = "eq",
+        main_category = tostring(category or ""),
+      },
+    }, opts)
+  end
 
   if type(Yso.emit) == "function" then
     return Yso.emit(payload, opts) == true
@@ -869,7 +896,7 @@ end
 local function _update_explain(tgt, st, choice, rejects, blocker)
   local route = _route_slot()
   MF.state.explain = RC.build_explain({
-    route = "magi_focus",
+    route = "focus",
     target = tgt,
     active = MF.is_active and MF.is_active() or false,
     route_enabled = MF.is_enabled and MF.is_enabled() or false,
@@ -936,6 +963,9 @@ function MF.init()
   MF.state = MF.state or {}
   MF.state.template = MF.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   RC.ensure_pending(MF.state, PENDING_SLOTS)
+  if RI and type(RI.ensure_waiting_state) == "function" then
+    RI.ensure_waiting_state(MF.state, "magi_focus")
+  end
   _route_slot()
   MF.state.loop_delay = tonumber(MF.state.loop_delay or MF.cfg.loop_delay or 0.15) or 0.15
   MF.state.busy = (MF.state.busy == true)
@@ -948,6 +978,9 @@ function MF.reset(reason)
   _clear_pending_all()
   _reset_route(reason or "manual")
   _clear_runtime_state(reason or "manual")
+  if RI and type(RI.clear_waiting) == "function" then
+    RI.clear_waiting(MF.state, "magi_focus")
+  end
   Dissonance.reset()
   return true
 end
@@ -1027,12 +1060,19 @@ function MF.attack_function(arg)
 
   if preview then return payload end
 
-  local queued_payload = { eq = choice.cmd }
-  local sent = _emit_payload(queued_payload, choice.category)
-  if not sent then return false, "emit_failed" end
+  local queued_payload = { eq = choice.cmd, target = tgt }
+  local sent, emit_detail, ack_payload = _emit_payload(queued_payload, choice.category)
+  if sent ~= true then return false, emit_detail or "emit_failed" end
+  if RI and type(RI.mark_waiting) == "function" then
+    RI.mark_waiting(MF.state, "magi_focus", ack_payload or queued_payload, {
+      cmd = _trim(choice.cmd),
+      target = tgt,
+      main_lane = "eq",
+    })
+  end
   local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
   if not has_ack_bus and type(MF.on_payload_queued) == "function" then
-    pcall(MF.on_payload_queued, queued_payload)
+    pcall(MF.on_payload_queued, ack_payload or queued_payload)
   end
 
   MF.state.last_cmd = choice.cmd
@@ -1061,7 +1101,7 @@ function MF.explain()
   local tgt = _target()
   local st = _snapshot(tgt)
   local route = _route_slot()
-  ex.route = "magi_focus"
+  ex.route = "focus"
   ex.enabled = MF.is_enabled()
   ex.route_enabled = MF.is_enabled()
   ex.active = MF.is_active()
@@ -1184,6 +1224,14 @@ function MF.on_payload_queued(payload)
 end
 
 function MF.on_payload_sent(payload)
+  if RI and type(RI.payload_has_any_route) == "function" and RI.payload_has_any_route(payload)
+    and not RI.payload_has_route(payload, "magi_focus")
+  then
+    return false
+  end
+  if RI and type(RI.clear_waiting_on_ack) == "function" then
+    RI.clear_waiting_on_ack(MF.state, "magi_focus", payload, { require_route = false })
+  end
   return MF.on_payload_queued(payload)
 end
 
@@ -1299,6 +1347,9 @@ function MF.alias_loop_waiting_blocks()
 end
 
 function MF.alias_loop_clear_waiting()
+  if RI and type(RI.clear_waiting) == "function" then
+    return RI.clear_waiting(MF.state, "magi_focus")
+  end
   return true
 end
 

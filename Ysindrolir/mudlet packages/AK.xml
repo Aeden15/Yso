@@ -32265,13 +32265,6 @@ function ak.occie.aura.parse_unnamable(count, who)
 	if count &lt;= 0 then return end
 	who = who or target
 
-	-- #region agent log
-	if type(appendFile) == "function" then
-		pcall(appendFile, "c:/Users/shuji/OneDrive/Desktop/Yso systems/debug-c8972a.log",
-			string.format("{\"sessionId\":\"c8972a\",\"runId\":\"pre-fix-1\",\"hypothesisId\":\"H15\",\"location\":\"AK.xml:parse_unnamable\",\"message\":\"parse_unnamable_called\",\"data\":{\"count\":%d,\"who\":%q},\"timestamp\":%d}\n", count, tostring(who or ""), math.floor((os.time() or 0) * 1000)))
-	end
-	-- #endregion
-
 	ak.occie.aura.mental = (tonumber(ak.occie.aura.mental) or 0) + count
 	local addaffs = {"stupidity","dementia","confusion"}
 	if count == 3 then

@@ -186,6 +186,13 @@ local function _line_emit(text, kind)
   end
 end
 
+local function _nudge_route(route_id, reason)
+  local M = Yso and Yso.mode or nil
+  if M and type(M.nudge_route_loop) == "function" then
+    pcall(M.nudge_route_loop, route_id, reason or "pulse")
+  end
+end
+
 function P.handle_line_event(source, opts)
   source = _trim(source)
   if source == "" then return false, "missing_source" end
@@ -215,6 +222,8 @@ function P.handle_line_event(source, opts)
     end
     _line_emit(text, row.kind)
   end
+
+  _nudge_route(nil, source)
 
   return true
 end
@@ -254,6 +263,7 @@ function P.entity_ack(kind, src)
     end
 
     P.wake(reason)
+    _nudge_route(nil, reason)
   end
 
   if kind == "fail" or kind == "disregard" then
@@ -267,8 +277,45 @@ function P.entity_ack(kind, src)
     if Yso.state and type(Yso.state.set_ent_ready) == "function" then
       pcall(Yso.state.set_ent_ready, false, src)
     end
+    _nudge_route(nil, src .. ":" .. kind)
     return
   end
+end
+
+function P.on_payload_ack(payload, source)
+  source = tostring(source or "payload_ack")
+  payload = type(payload) == "table" and payload or {}
+
+  local routes = {}
+  local seen = {}
+  local function add(route_id)
+    route_id = _trim(route_id):lower()
+    if route_id == "" or seen[route_id] then return end
+    seen[route_id] = true
+    routes[#routes + 1] = route_id
+  end
+
+  add(payload.route)
+  local meta = type(payload.meta) == "table" and payload.meta or nil
+  add(meta and meta.route)
+  local by_lane = payload.route_by_lane or (meta and meta.route_by_lane)
+  if type(by_lane) == "table" then
+    add(by_lane.eq)
+    add(by_lane.bal)
+    add(by_lane.class)
+    add(by_lane.free)
+  end
+
+  if #routes == 0 then
+    _nudge_route(nil, source)
+  else
+    for i = 1, #routes do
+      _nudge_route(routes[i], source)
+    end
+  end
+
+  P.wake(source)
+  return true
 end
 
 

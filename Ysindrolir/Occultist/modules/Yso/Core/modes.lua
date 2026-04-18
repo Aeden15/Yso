@@ -117,6 +117,8 @@ M.route_loop = M.route_loop or {
   active = "",
   last_change = _now(),
   last_reason = "init",
+  nudges = {},
+  nudge_dedupe_s = 0.05,
 }
 
 local function _route_norm(r)
@@ -171,6 +173,9 @@ local function _ensure_route_module(entry)
 
   if type(require) == "function" then
     pcall(require, "Yso._entry")
+    -- Try the route-specific module file if the registry advertises one.
+    local rmod = type(entry) == "table" and tostring(entry.module_name or "") or ""
+    if rmod ~= "" then pcall(require, rmod) end
   end
 
   return _route_module(entry)
@@ -515,6 +520,38 @@ function M.schedule_route_loop(name, delay)
   return state.timer_id ~= nil
 end
 
+function M.nudge_route_loop(name, reason)
+  local target = _norm(name)
+  if target == "" then
+    target = _norm(M.active_route_id and M.active_route_id() or "")
+  end
+  if target == "" then return false, "inactive" end
+
+  local entry = _loop_entry(target)
+  if not entry then return false, "unknown_route" end
+  local mod = _ensure_route_module(entry)
+  if type(mod) ~= "table" then return false, "module_unavailable" end
+
+  local state = _loop_state(mod)
+  if state.loop_enabled ~= true then return false, "route_disabled" end
+  if state.busy == true then return false, "busy" end
+
+  M.route_loop = M.route_loop or {}
+  M.route_loop.nudges = M.route_loop.nudges or {}
+  local dedupe_s = tonumber(M.route_loop.nudge_dedupe_s or 0.05) or 0.05
+  if dedupe_s < 0 then dedupe_s = 0 end
+
+  local key = _norm(entry.id or target)
+  local now = _now()
+  local last = tonumber(M.route_loop.nudges[key] or 0) or 0
+  if dedupe_s > 0 and (now - last) < dedupe_s then
+    return false, "deduped"
+  end
+
+  M.route_loop.nudges[key] = now
+  return M.schedule_route_loop(entry.id, 0)
+end
+
 function M.start_route_loop(name, reason)
   local entry = _loop_entry(name)
   if not entry then
@@ -594,7 +631,7 @@ function M.stop_route_loop(name, reason, silent)
   end
 
   _loop_release(entry)
-  return false
+  return true
 end
 
 function M.toggle_route_loop(name, reason)
@@ -773,6 +810,9 @@ function M.toggle(reason)
   elseif M.is_combat() then
     return M.set("bash", reason or "toggle")
   else
+    -- Party mode: toggle (mt) does not apply. Give explicit feedback so the
+    -- player knows why nothing happened instead of silently returning false.
+    _echo("Toggle does not apply in party mode. Use 'mode combat' or 'mode bash' to leave.")
     return false
   end
 end

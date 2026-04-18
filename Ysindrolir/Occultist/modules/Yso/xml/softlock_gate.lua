@@ -169,10 +169,10 @@ local function _instill_cmd(t, aff)
 end
 
 local function _support_instill(t, cfg, aff)
-  if cfg.keep_paralysis == false then
-    return _instill_cmd(t, aff)
+  if cfg.keep_paralysis == true then
+    return _instill_cmd(t, "paralysis")
   end
-  return _instill_cmd(t, "paralysis")
+  return _instill_cmd(t, aff)
 end
 
 -- ----------------------------

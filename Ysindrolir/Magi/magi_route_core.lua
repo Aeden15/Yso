@@ -44,6 +44,21 @@ function RC.get_target()
     if ok and RC.trim(v) ~= "" then return RC.trim(v) end
   end
 
+  -- Yso.targeting subsystem (checked before global fallbacks so the routing
+  -- system agrees with whatever Magi_duel_dam.lua and other alias files see).
+  if type(Yso.targeting) == "table" then
+    if type(Yso.targeting.get) == "function" then
+      local ok, v = pcall(Yso.targeting.get)
+      if ok and RC.trim(v) ~= "" then return RC.trim(v) end
+    elseif type(Yso.targeting.get_target) == "function" then
+      local ok, v = pcall(Yso.targeting.get_target)
+      if ok and RC.trim(v) ~= "" then return RC.trim(v) end
+    elseif type(Yso.targeting.target) == "string" then
+      local v = RC.trim(Yso.targeting.target)
+      if v ~= "" then return v end
+    end
+  end
+
   local cur = rawget(_G, "target")
   if type(cur) == "string" and RC.trim(cur) ~= "" then return RC.trim(cur) end
 

@@ -20,6 +20,8 @@ ER.cfg = ER.cfg or {
   invalidation_timeout_s = 8,
   worm_duration_s = 20,
   worm_refresh_lead_s = 1.0,
+  slime_duration_s = 14,
+  slime_refresh_lead_s = 0.75,
   sycophant_duration_s = 30,
   sycophant_refresh_lead_s = 1.0,
   phase_one = { "worm", "storm", "slime", "sycophant", "humbug", "firelord" },
@@ -107,6 +109,7 @@ local function _tstate(tgt, create)
       reservation = nil,
       effects = {
         worm = { target = "", until_t = 0, proc_count = 0, proc_window_until = 0, last_proc_at = 0 },
+        slime = { target = "", until_t = 0, cleared_at = 0 },
         sycophant = { target = "", until_t = 0 },
       },
       last_sent_at = {},
@@ -115,6 +118,11 @@ local function _tstate(tgt, create)
     }
     ER.state.targets[tkey] = T
   end
+  if not T then return nil end
+  T.effects = T.effects or {}
+  T.effects.worm = T.effects.worm or { target = "", until_t = 0, proc_count = 0, proc_window_until = 0, last_proc_at = 0 }
+  T.effects.slime = T.effects.slime or { target = "", until_t = 0, cleared_at = 0 }
+  T.effects.sycophant = T.effects.sycophant or { target = "", until_t = 0 }
   return T
 end
 
@@ -199,7 +207,7 @@ local function _firelord_convert_aff(tgt, has_aff)
     return _has_aff_target(tgt, aff)
   end
 
-  local pyr = _dom("firelord") or _dom("pyradius") or {}
+  local pyr = _dom("firelord") or {}  -- DOM_KEYS already maps "firelord" -> "pyradius"
   local converts = type(pyr.converts) == "table" and pyr.converts or {}
 
   local wm_dest = _lc(converts.whisperingmadness or converts.whispering_madness or "recklessness")
@@ -326,9 +334,24 @@ function ER.note_sent(entity, tgt, meta)
     T.established.worm = true
     T.effects.worm.target = tgt
     T.effects.worm.until_t = now + (tonumber(ER.cfg.worm_duration_s) or 20)
-    T.effects.worm.proc_count = 0
-    T.effects.worm.proc_window_until = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
+    local new_window = now + math.max(5, (tonumber(ER.cfg.worm_duration_s) or 20) + 15)
+    if now >= (tonumber(T.effects.worm.proc_window_until) or 0) then
+      -- Previous proc window has expired; start tracking fresh.
+      T.effects.worm.proc_count = 0
+      T.effects.worm.proc_window_until = new_window
+    else
+      -- Still inside the proc window (early refresh): carry forward proc_count
+      -- so a second proc still correctly expires the worm, and extend the window.
+      T.effects.worm.proc_window_until = math.max(
+        tonumber(T.effects.worm.proc_window_until) or 0,
+        new_window
+      )
+    end
     T.effects.worm.last_proc_at = 0
+  elseif entity == "slime" then
+    T.effects.slime.target = tgt
+    T.effects.slime.until_t = now + (tonumber(ER.cfg.slime_duration_s) or 14)
+    T.effects.slime.cleared_at = 0
   elseif entity == "sycophant" then
     T.established.sycophant = true
     T.effects.sycophant.target = tgt
@@ -399,6 +422,30 @@ function ER.syc_should_refresh(tgt)
   return now >= ((tonumber(S.until_t or 0) or 0) - (tonumber(ER.cfg.sycophant_refresh_lead_s) or 1.0))
 end
 
+function ER.note_slime_cleared(tgt, source)
+  local T = _tstate(tgt, false)
+  if not T then return false end
+  local S = T.effects and T.effects.slime or nil
+  if type(S) ~= "table" then return false end
+  if _lc(S.target) ~= _lc(tgt) then return false end
+  local now = _now()
+  S.until_t = 0
+  S.cleared_at = now
+  T.last_success_at.slime = math.max(tonumber(T.last_success_at.slime or 0) or 0, now)
+  _dbg(("slime cleared for %s (%s)"):format(_lc(tgt), tostring(source or "manual")))
+  return true
+end
+
+function ER.slime_should_refresh(tgt)
+  local T = _tstate(tgt, false)
+  if not T then return true end
+  local S = T.effects and T.effects.slime or nil
+  if type(S) ~= "table" then return true end
+  if _lc(S.target) ~= _lc(tgt) then return true end
+  local now = _now()
+  return now >= ((tonumber(S.until_t or 0) or 0) - (tonumber(ER.cfg.slime_refresh_lead_s) or 0.75))
+end
+
 function ER.bootstrap_done(tgt, ctx)
   local T = _tstate(tgt, true)
   if not T then return true end
@@ -414,20 +461,8 @@ function ER.bootstrap_done(tgt, ctx)
   return (#ranked == 0)
 end
 
-local function _candidate_sort(a, b)
-  if tonumber(a.score or 0) ~= tonumber(b.score or 0) then
-    return tonumber(a.score or 0) > tonumber(b.score or 0)
-  end
-  local ar = tonumber(a.recast or 99) or 99
-  local br = tonumber(b.recast or 99) or 99
-  if ar ~= br then return ar < br end
-  local ab = tonumber(a.burst_support or 0) or 0
-  local bb = tonumber(b.burst_support or 0) or 0
-  if ab ~= bb then return ab > bb end
-  local ao = tonumber((ER.cfg.stable_order or {})[a.entity] or 999) or 999
-  local bo = tonumber((ER.cfg.stable_order or {})[b.entity] or 999) or 999
-  return ao < bo
-end
+-- _candidate_sort is defined inline inside ER.rank() so it can close over
+-- a pre-captured stable_order local, avoiding repeated table lookups during sort.
 
 local function _skipped_set(skipped, entity, why)
   if skipped[entity] == nil then skipped[entity] = tostring(why or "skip") end
@@ -558,7 +593,19 @@ function ER.rank(ctx)
     end
   end
 
-  table.sort(ranked, _candidate_sort)
+  local _order = ER.cfg.stable_order or {}
+  table.sort(ranked, function(a, b)
+    if tonumber(a.score or 0) ~= tonumber(b.score or 0) then
+      return tonumber(a.score or 0) > tonumber(b.score or 0)
+    end
+    local ar = tonumber(a.recast or 99) or 99
+    local br = tonumber(b.recast or 99) or 99
+    if ar ~= br then return ar < br end
+    local ab = tonumber(a.burst_support or 0) or 0
+    local bb = tonumber(b.burst_support or 0) or 0
+    if ab ~= bb then return ab > bb end
+    return (tonumber(_order[a.entity] or 999) or 999) < (tonumber(_order[b.entity] or 999) or 999)
+  end)
   ER.state.last_debug = {
     at = now,
     target = tkey,

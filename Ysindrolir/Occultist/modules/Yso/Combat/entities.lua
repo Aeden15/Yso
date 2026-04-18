@@ -25,7 +25,16 @@ end
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
     local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
+    v = ok and tonumber(v) or nil
+    if v then return v end
+  end
+  if type(getEpoch) == "function" then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v > 1e12 then v = v / 1000 end
+      return v
+    end
   end
   return os.time()
 end
@@ -51,6 +60,56 @@ local function _target_state(tgt)
   local targets = ER and ER.state and ER.state.targets or nil
   if type(targets) ~= "table" then return nil end
   return targets[_lc(tgt)]
+end
+
+local function _current_target()
+  if Yso and type(Yso.get_target) == "function" then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= "" then return _trim(v) end
+  end
+  return _trim(rawget(_G, "target") or "")
+end
+
+local function _note_slime_cleared(tgt, source)
+  tgt = _trim(tgt)
+  local ER = _er()
+  if tgt == "" or not ER or type(ER.note_slime_cleared) ~= "function" then return false end
+  local ok, cleared = pcall(ER.note_slime_cleared, tgt, source or "entities")
+  return ok and cleared == true
+end
+
+local function _pick_slime_target(a, b, c)
+  local cur = _lc(_current_target())
+  local picks = { _trim(a), _trim(b), _trim(c) }
+  for i = 1, #picks do
+    if _lc(picks[i]) ~= "" and _lc(picks[i]) == cur then
+      return picks[i]
+    end
+  end
+  for i = 1, #picks do
+    local who = picks[i]
+    local T = _target_state(who)
+    local S = T and T.effects and T.effects.slime or nil
+    if _trim(who) ~= "" and type(S) == "table" and _lc(S.target) == _lc(who) and tonumber(S.until_t or 0) > _now() then
+      return who
+    end
+  end
+  for i = 1, #picks do
+    if _trim(picks[i]) ~= "" then return picks[i] end
+  end
+  return ""
+end
+
+function E.note_slime_cleared(tgt, source)
+  return _note_slime_cleared(tgt, source or "external")
+end
+
+function E.on_slime_end_line(a, b, c)
+  local tgt = _pick_slime_target(a, b, c)
+  if tgt ~= "" then
+    _note_slime_cleared(tgt, "text_ack:slime_end")
+  end
+  return tgt
 end
 
 local function _entity_cmd(entity, tgt)
@@ -103,15 +162,16 @@ local function _sycophant_confirm_state(tgt)
     last_cure = tonumber(cures[aff_name] or cures[_lc(aff_name)] or 0) or 0
   end
 
-  local score = 0
-  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
-    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff_name)
-    if ok then score = tonumber(v or 0) or 0 end
-  end
+  -- Check has_aff first; only call get_aff_score if has_aff didn't confirm.
   local has_aff = false
   if Yso and Yso.ak and type(Yso.ak.has) == "function" then
     local ok, v = pcall(Yso.ak.has, aff_name)
     if ok then has_aff = (v == true) end
+  end
+  local score = 0
+  if not has_aff and Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff_name)
+    if ok then score = tonumber(v or 0) or 0 end
   end
 
   local target_matches = _ak_enemy_matches(tgt)
@@ -204,6 +264,13 @@ function E.install_hooks()
       end
     end
   )
+  if E._hook_ids.slime_end then pcall(killTrigger, E._hook_ids.slime_end) end
+  E._hook_ids.slime_end = tempRegexTrigger(
+    [[^([%w_'-]+) finally rids ([%w_'-]+) of the slime covering ([%w_'-]+)\.$]],
+    function()
+      E.on_slime_end_line(matches[2], matches[3], matches[4])
+    end
+  )
 
   E.state.hooks_installed = true
   return true
@@ -214,14 +281,18 @@ function E.uninstall_hooks()
   if E._hook_ids.worm_chew and type(killTrigger) == "function" then
     pcall(killTrigger, E._hook_ids.worm_chew)
   end
+  if E._hook_ids.slime_end and type(killTrigger) == "function" then
+    pcall(killTrigger, E._hook_ids.slime_end)
+  end
   E._hook_ids.worm_chew = nil
+  E._hook_ids.slime_end = nil
   E.state = E.state or {}
   E.state.hooks_installed = false
   return true
 end
 
 function E.collect(ctx)
-  pcall(E.install_hooks)
+  if not E.state.hooks_installed then pcall(E.install_hooks) end
   local payload = type(ctx) == "table" and ctx.payload or nil
   local tgt = _trim((type(ctx) == "table" and ctx.target) or (type(payload) == "table" and payload.target) or "")
   local required = _required_map(ctx)

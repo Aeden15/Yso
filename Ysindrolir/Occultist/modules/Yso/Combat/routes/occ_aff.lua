@@ -17,6 +17,13 @@ Yso.off.oc.occ_aff_burst = Yso.off.oc.oc_aff
 local A = Yso.off.oc.oc_aff
 A.alias_owned = true
 
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
+  pcall(require, "Yso.Combat.route_interface")
+  pcall(require, "Yso.xml.route_interface")
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+end
+
 A.route_contract = A.route_contract or {
   id = "oc_aff",
   interface_version = 1,
@@ -461,10 +468,29 @@ local function _emit_payload(payload)
   local cmd = _payload_line({ target = target, lanes = emit_payload })
   if _trim(cmd) == "" then return false, "empty" end
 
+  if RI and type(RI.emit_route_payload) == "function" then
+    local ok, cmd_or_err, ack_payload = RI.emit_route_payload("oc_aff", {
+      target = target,
+      lanes = emit_payload,
+      meta = type(payload) == "table" and payload.meta or nil,
+    }, {
+      reason = "occ_aff:emit",
+      kind = "offense",
+      route = "oc_aff",
+      target = target,
+      commit = true,
+      allow_eqbal = true,
+      prefer = "eq",
+    })
+    if not ok then return false, cmd_or_err end
+    return true, cmd_or_err, ack_payload
+  end
+
   if type(Yso.emit) == "function" then
     local ok = Yso.emit(emit_payload, {
       reason = "occ_aff:emit",
       kind = "offense",
+      route = "oc_aff",
       target = target,
       commit = true,
       allow_eqbal = true,
@@ -479,6 +505,7 @@ local function _emit_payload(payload)
     local ok, res = pcall(Q.emit, emit_payload, {
       reason = "occ_aff:emit",
       kind = "offense",
+      route = "oc_aff",
       target = target,
       commit = true,
       allow_eqbal = true,
@@ -488,7 +515,7 @@ local function _emit_payload(payload)
     if res ~= true then return false, "queue_emit_failed" end
   end
 
-  return true, cmd
+  return true, cmd, nil
 end
 
 local function _route_gate_finalize(payload, ctx, tgt)
@@ -596,7 +623,7 @@ local function _emit(payload)
     return false, "duplicate_action_suppressed"
   end
 
-  local sent, err = _emit_payload(payload)
+  local sent, err, ack_payload = _emit_payload(payload)
   if not sent then
     _note_retry_reason("retry_hard_fail")
     A.state.in_flight = {
@@ -612,7 +639,16 @@ local function _emit(payload)
     }
     return false, err
   end
-  _remember_attack(line, payload)
+  if RI and type(RI.mark_waiting) == "function" then
+    RI.mark_waiting(A.state, "oc_aff", ack_payload or payload, {
+      cmd = line,
+      target = _trim(type(payload) == "table" and payload.target or ""),
+      main_lane = type(payload) == "table" and type(payload.meta) == "table" and payload.meta.main_lane or nil,
+      fingerprint = _action_fingerprint(payload),
+    })
+  else
+    _remember_attack(line, payload)
+  end
   return true, line
 end
 
@@ -715,11 +751,11 @@ local function _burst_ready(tgt, ctx)
   local mana = _target_mana_pct(tgt)
   local cap = tonumber(A.cfg.mana_burst_pct or 40) or 40
   local in_cleanseaura_window = (mana ~= nil and mana <= cap) or false
-  if eq_cmd:match("^cleanseaura%s+") then
-    return true
-  end
-  if eq_cmd:match("^utter%s+truename%s+") then
-    return true
+  -- If the current cycle already committed to a burst command, confirm the
+  -- cleanse gate still holds before approving burst.  Skipping _cleanse_ready
+  -- here could mark burst active even when mana or attend conditions changed.
+  if eq_cmd:match("^cleanseaura%s+") or eq_cmd:match("^utter%s+truename%s+") then
+    return _cleanse_ready(tgt) == true
   end
 
   if _cleanse_ready(tgt) ~= true then return false end
@@ -1225,6 +1261,10 @@ function A.attack_function(arg)
       if need_attend and payload.eq == "" and _eq() and attend_ready then
         payload.eq = "attend " .. tgt
       elseif need_attend and payload.eq == "" and _eq() and not attend_ready then
+        -- Attend is on cooldown: hold EQ this cycle so nothing else overwrites
+        -- the slot before attend becomes available again.  __hold__ is stripped
+        -- before emission (see filter below at eq_cmd / bal_cmd extraction).
+        payload.eq = "__hold__"
       end
 
       if need_attend and payload.class == "" and _ent() then
@@ -1245,6 +1285,9 @@ function A.attack_function(arg)
           A.state.defer_unnamable = nil
         end
       elseif A.state.defer_unnamable == tkey and payload.bal == "" and _bal() and not unnamable_ready then
+        -- Unnamable is deferred but still on cooldown: hold BAL this cycle so
+        -- nothing else claims the slot before the cooldown expires.
+        payload.bal = "__hold__"
       end
 
       local can_utter = false
@@ -1340,6 +1383,10 @@ function A.attack_function(arg)
   local eq_cmd = _trim(payload.eq)
   local bal_cmd = _trim(payload.bal)
   local class_cmd = _trim(payload.class)
+  -- Strip hold sentinels: __hold__ is used to reserve a lane slot during
+  -- cooldown without emitting any command to the server.
+  if eq_cmd  == "__hold__" then eq_cmd  = "" end
+  if bal_cmd == "__hold__" then bal_cmd = "" end
 
   local function _eq_category(cmd, p)
     local lc = _lc(cmd)
@@ -1720,6 +1767,12 @@ function A.on_send_result(payload, ctx)
 end
 
 function A.on_payload_sent(payload)
+  if RI and type(RI.payload_has_any_route) == "function" and RI.payload_has_any_route(payload) and not RI.payload_has_route(payload, "oc_aff") then
+    return false
+  end
+  if RI and type(RI.clear_waiting_on_ack) == "function" then
+    RI.clear_waiting_on_ack(A.state, "oc_aff", payload, { require_route = false })
+  end
   return A.on_sent(payload, nil)
 end
 
@@ -1740,9 +1793,12 @@ function A.explain()
   local gated = _copy_lanes(gate and gate.gated and gate.gated.lanes or (last_payload and last_payload.lanes) or {})
   local emitted = _copy_lanes(type(last_emitted) == "table" and (last_emitted.lanes or last_emitted) or {})
   if not _lane_has_value(planned) and not _lane_has_value(gated) and not _lane_has_value(emitted) then
-    local ok = pcall(A.build_payload, { target = tgt })
+    local ok, fresh_payload = pcall(A.build_payload, { target = tgt, preview = true })
     if ok then
-      last_payload = A.state and A.state.template and A.state.template.last_payload or nil
+      -- Prefer the direct return value; fall back to side-effect state.
+      last_payload = (type(fresh_payload) == "table" and fresh_payload)
+        or (A.state and A.state.template and A.state.template.last_payload)
+        or nil
       last_emitted = A.state and A.state.template and A.state.template.last_emitted_payload or nil
       gate = type(last_payload) == "table" and (last_payload._route_gate or (last_payload.meta and last_payload.meta.route_gate)) or nil
       planned = _copy_lanes(gate and gate.planned and gate.planned.lanes or (last_payload and last_payload.lanes) or {})
@@ -1950,7 +2006,6 @@ function A.explain()
 end
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(A, A.route_contract)
   end

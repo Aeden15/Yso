@@ -6,6 +6,9 @@
 --    for older XML-resident helpers that still expect addclear/addclearfull.
 --========================================================--
 
+------------------------------------------------------------
+-- Locals
+------------------------------------------------------------
 local _G = _G
 local rawget = rawget
 local type = type
@@ -49,20 +52,46 @@ Q._blocked = Q._blocked or {}
 
 Q._impl_version = "2026-04-05.1"
 
+------------------------------------------------------------
+-- Constants
+------------------------------------------------------------
+
+-- Maps canonical lane keys to Achaea QUEUE command type strings.
+local _QTYPE_MAP = {
+  eq    = "e!p!w!t",
+  bal   = "b!p!w!t",
+  class = "c!p!w!t",
+  free  = "eb!w!p!t",
+}
+-- Lanes that can act as the wake trigger in a commit (free is never a wake lane).
+local _VALID_WAKE_LANES = { eq = true, bal = true, class = true }
+
+------------------------------------------------------------
+-- Internal helpers
+------------------------------------------------------------
+
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
     local ok, v = pcall(Yso.util.now)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
-  if t and t > 1e12 then t = t / 1000 end
-  return t or os.time()
+  if type(getEpoch) == "function" then
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v > 1e12 then v = v / 1000 end
+      return v
+    end
+  end
+  return os.time()
 end
 
 local function _trim(s)
   return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+-- Normalises any lane alias (including raw Achaea queue-type strings like
+-- "e!p!w!t") to one of the four canonical keys: eq / bal / class / free.
 local function _lane_key(lane)
   lane = _trim(lane):lower()
   if lane == "" then return nil end
@@ -81,17 +110,10 @@ local function _lane_key(lane)
   return nil
 end
 
-local _QTYPE_MAP = {
-  eq = "e!p!w!t",
-  bal = "b!p!w!t",
-  class = "c!p!w!t",
-  free = "eb!w!p!t",
-}
-local _VALID_WAKE_LANES = { eq = true, bal = true, class = true }
-
 local function _route_from_opts(opts)
   if type(opts) ~= "table" then return "" end
-  local route = _trim(opts.route or opts.reason or opts.src)
+  -- Route identity must be explicit. We do not infer it from free-form reason/src.
+  local route = _trim(opts.route)
   return route
 end
 
@@ -133,6 +155,10 @@ local function _infer_lane_from_payload(payload)
   return "eq"
 end
 
+-- Resolves (lane, payload) into (canonical_key, payload, compat_note).
+--  • "swapped"  – caller passed args in reverse order; we silently correct it.
+--  • "inferred" – no lane was given; lane was guessed from the payload string.
+--  • nil note   – normal path.
 local function _coerce_stage_args(lane, payload)
   local key = _lane_key(lane)
   if key then return key, payload, nil end
@@ -302,15 +328,92 @@ local function _mark_payload_queued(payload)
   end
 end
 
+local function _ack_payload(payload)
+  payload = type(payload) == "table" and payload or {}
+  local lanes = {
+    free = payload.free,
+    eq = payload.eq,
+    bal = payload.bal,
+    class = payload.class or payload.entity or payload.ent,
+  }
+
+  local route_by_lane, target_by_lane = {}, {}
+  local route, target = "", ""
+
+  local function bind_lane(lane)
+    local cmd = lanes[lane]
+    if lane == "free" then
+      if type(cmd) == "table" and #cmd == 0 then return end
+      if type(cmd) ~= "table" and _trim(cmd) == "" then return end
+    elseif _trim(cmd) == "" then
+      return
+    end
+
+    local rec = type(Q.get_owned) == "function" and Q.get_owned(lane) or nil
+    if type(rec) ~= "table" then return end
+    local lane_route = _trim(rec.route)
+    local lane_target = _trim(rec.target)
+    if lane_route ~= "" then
+      route_by_lane[lane] = lane_route
+      if route == "" then route = lane_route end
+    end
+    if lane_target ~= "" then
+      target_by_lane[lane] = lane_target
+      if target == "" then target = lane_target end
+    end
+  end
+
+  bind_lane("eq")
+  bind_lane("bal")
+  bind_lane("class")
+  bind_lane("free")
+
+  local ack = {
+    route = route,
+    target = target,
+    lanes = {
+      free = lanes.free,
+      eq = lanes.eq,
+      bal = lanes.bal,
+      class = lanes.class,
+      entity = lanes.class,
+    },
+    meta = {
+      route = route,
+      target = target,
+      route_by_lane = route_by_lane,
+      target_by_lane = target_by_lane,
+      source = "queue.commit",
+    },
+    route_by_lane = route_by_lane,
+    target_by_lane = target_by_lane,
+  }
+  ack.free = lanes.free
+  ack.eq = lanes.eq
+  ack.bal = lanes.bal
+  ack.class = lanes.class
+  ack.entity = lanes.class
+  ack.ent = lanes.class
+  ack.cmd = _payload_line(ack)
+  return ack
+end
+
 local function _mark_payload_fired(payload)
+  local ack_payload = _ack_payload(payload)
+  Q._last_ack_payload = ack_payload
+
   if Yso and Yso.locks then
     if type(Yso.locks.note_payload) == "function" then
-      pcall(Yso.locks.note_payload, payload)
+      pcall(Yso.locks.note_payload, ack_payload)
     elseif type(Yso.locks.note_send) == "function" then
-      if _trim(payload.eq) ~= "" then pcall(Yso.locks.note_send, "eq") end
-      if _trim(payload.bal) ~= "" then pcall(Yso.locks.note_send, "bal") end
-      if _trim(payload.class) ~= "" then pcall(Yso.locks.note_send, "class") end
+      if _trim(ack_payload.eq) ~= "" then pcall(Yso.locks.note_send, "eq") end
+      if _trim(ack_payload.bal) ~= "" then pcall(Yso.locks.note_send, "bal") end
+      if _trim(ack_payload.class) ~= "" then pcall(Yso.locks.note_send, "class") end
     end
+  end
+
+  if Yso and Yso.pulse and type(Yso.pulse.on_payload_ack) == "function" then
+    pcall(Yso.pulse.on_payload_ack, ack_payload, "queue.commit")
   end
 end
 
@@ -427,6 +530,10 @@ local function _owned_table()
   return Yso._queued
 end
 
+------------------------------------------------------------
+-- Public: ownership tracking
+------------------------------------------------------------
+
 function Q.qtype_for_lane(lane)
   local key = _lane_key(lane)
   if key and _QTYPE_MAP[key] then return _QTYPE_MAP[key] end
@@ -497,6 +604,10 @@ local function _lane_send_allowed(lane, cmd)
   end
   return true
 end
+
+------------------------------------------------------------
+-- Public: lane block / unblock
+------------------------------------------------------------
 
 function Q.lane_blocked(lane)
   local key = _lane_key(lane)
@@ -575,6 +686,10 @@ function Q.unblock_lane(lane, reason, opts)
   end
   return true
 end
+
+------------------------------------------------------------
+-- Public: lane install / staging / clearing
+------------------------------------------------------------
 
 function Q.install_lane(lane, cmd, opts)
   opts = opts or {}
@@ -712,6 +827,7 @@ function Q.stage(lane, payload, opts)
   return true
 end
 
+-- Q.push is an alias for Q.stage (older call sites use push).
 function Q.push(lane, payload, opts)
   return Q.stage(lane, payload, opts)
 end
@@ -722,6 +838,10 @@ function Q.replace(lane, payload, opts)
   opts.replace = true
   return Q.stage(lane, payload, opts)
 end
+
+------------------------------------------------------------
+-- Public: commit and emit
+------------------------------------------------------------
 
 function Q.commit(opts)
   local payload = _commit_payload(opts)
@@ -810,7 +930,12 @@ function Q.emit(payload, opts)
   return ok == true
 end
 
--- Raw QUEUE compatibility wrappers for older XML-resident helpers.
+------------------------------------------------------------
+-- Raw QUEUE compatibility wrappers
+--  These send QUEUE ADDCLEAR / ADDCLEARFULL directly and exist for
+--  older XML-resident helpers that haven't migrated to stage/commit.
+------------------------------------------------------------
+
 function Q.addclear(qtype, payload)
   return _raw_queue("ADDCLEAR", qtype, payload)
 end
@@ -852,13 +977,34 @@ function Q.raw(mode, qtype, payload)
   return _send_compound(body)
 end
 
-Q.mark_payload_fired = _mark_payload_fired
+-- Expose _mark_payload_fired as a public entry point so external modules
+-- (e.g. route drivers that fire payloads through their own path) can still
+-- notify Yso.locks without going through Q.commit.
+function Q.mark_payload_fired(payload)
+  _mark_payload_fired(payload)
+end
+
+------------------------------------------------------------
+-- Startup initialisation
+------------------------------------------------------------
 
 do
-  local is_writhed = Yso and Yso.self and type(Yso.self.is_writhed) == "function" and Yso.self.is_writhed() == true
-  if is_writhed then
-    Q.block_lane("eq", "writhe", { source = "queue.init", clear_owned = true, clear_staged = true })
-    Q.block_lane("bal", "writhe", { source = "queue.init", clear_owned = true, clear_staged = true })
+  -- Deferred one tick so Yso.self and other modules finish loading before
+  -- the writhe check runs.  Falls back to immediate check if tempTimer is
+  -- not yet available (e.g. in a bare test environment).
+  local function _init_writhe_check()
+    local is_writhed = Yso and Yso.self
+      and type(Yso.self.is_writhed) == "function"
+      and Yso.self.is_writhed() == true
+    if is_writhed then
+      Q.block_lane("eq",  "writhe", { source = "queue.init", clear_owned = true, clear_staged = true })
+      Q.block_lane("bal", "writhe", { source = "queue.init", clear_owned = true, clear_staged = true })
+    end
+  end
+  if type(tempTimer) == "function" then
+    tempTimer(0, _init_writhe_check)
+  else
+    _init_writhe_check()
   end
 end
 

@@ -204,8 +204,11 @@ local function _arm_candidate_for_restore()
 end
 
 local function _restore_finished()
-  local left_damaged = _self_has_aff("damagedleftleg") or (_self_score("damagedleftleg") > 0)
-  local right_damaged = _self_has_aff("damagedrightleg") or (_self_score("damagedrightleg") > 0)
+  -- _self_score uses plain limb keys ("leftleg", "rightleg") so
+  -- "damagedleftleg" / "damagedrightleg" would never match the score table.
+  -- Rely on _self_has_aff, which is the authoritative check here.
+  local left_damaged  = _self_has_aff("damagedleftleg")
+  local right_damaged = _self_has_aff("damagedrightleg")
   return (not left_damaged) and (not right_damaged) and _self_standing()
 end
 

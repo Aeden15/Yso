@@ -17,7 +17,10 @@ Yso.off.magi = Yso.off.magi or {}
 
 Yso.off.magi.group_damage = Yso.off.magi.group_damage or {}
 local MGD = Yso.off.magi.group_damage
-Yso.off.magi.dmg = MGD
+-- NOTE: do NOT alias Yso.off.magi.dmg here — that namespace is owned by
+-- Magi_duel_dam.lua (magi_dmg route). Aliasing it here caused both routes
+-- to share the same module table, making magi_dmg inherit MGD.is_active()
+-- which checks party-damage context and immediately kills the duel loop.
 MGD.alias_owned = true
 
 local function _load_magi_peer(file_name)
@@ -39,6 +42,13 @@ if type(RC) ~= "table" and _load_magi_peer("magi_route_core.lua") then
   RC = Yso.off.magi.route_core
 end
 assert(type(RC) == "table", "Yso.off.magi.route_core unavailable")
+
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
+  pcall(require, "Yso.Combat.route_interface")
+  pcall(require, "Yso.xml.route_interface")
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+end
 
 local PENDING_SLOTS = {
   "horripilation",
@@ -101,7 +111,6 @@ MGD.route_contract = MGD.route_contract or {
 }
 
 do
-  local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(MGD, MGD.route_contract)
   end
@@ -164,6 +173,9 @@ MGD.state = MGD.state or {
     branch_stage = "reset",
     last_reset_reason = "init",
   },
+  waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 },
+  last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" },
+  in_flight = { fingerprint = "", target = "", route = "magi_group_damage", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" },
 }
 
 local function _trim(s)
@@ -280,7 +292,9 @@ local function _set_loop_enabled(on)
   local enabled = (on == true)
   MGD.state.enabled = enabled
   MGD.state.loop_enabled = enabled
-  MGD.loop_enabled = enabled
+  -- Do NOT set MGD.loop_enabled on the module table directly — only MGD.state
+  -- is authoritative. Setting a module-level copy caused stale reads after a
+  -- state reset that didn't touch the module-level field.
   MGD.cfg.enabled = enabled
   MGD.state.loop_delay = tonumber(MGD.state.loop_delay or MGD.cfg.loop_delay or 0.15) or 0.15
   return enabled
@@ -442,6 +456,7 @@ local function _has_conflagrate()
   return _score_positive("conflagrate")
 end
 
+-- AK tracks ablaze stacks under the key "aflame"; "ablaze" is the in-game name.
 local function _has_ablaze()
   return _score_positive("aflame")
 end
@@ -497,6 +512,9 @@ end
 
 local function _can_cast_conflagrate(tgt)
   local cmd = ("cast conflagrate at %s"):format(tgt)
+  -- Two-stage check gives better diagnostics:
+  --   "ablaze_required"  = no ablaze stacks at all (aflame score = 0)
+  --   "aflame_not_ready" = ablaze started but fewer than 2 stacks (score < 200)
   if not _has_ablaze() then return false, "ablaze_required", cmd end
   if not _aflame_ready_for_conflagrate() then return false, "aflame_not_ready", cmd end
   local ok, why = _spell_guard("conflagrate", tgt, cmd)
@@ -776,14 +794,29 @@ local function _clear_eq_queue()
 end
 
 local function _emit_payload(payload, category)
+  local target = _trim(type(payload) == "table" and payload.target or "")
   local opts = {
     reason = "magi_group_damage:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
+    route = "magi_group_damage",
+    target = target,
   }
 
+  if RI and type(RI.emit_route_payload) == "function" then
+    return RI.emit_route_payload("magi_group_damage", {
+      target = target,
+      lanes = { eq = payload and payload.eq },
+      meta = {
+        route = "magi_group_damage",
+        main_lane = "eq",
+        main_category = tostring(category or ""),
+      },
+    }, opts)
+  end
+
   if type(Yso.emit) == "function" then
-    return Yso.emit(payload, opts) == true
+    return Yso.emit(payload, opts) == true, nil, nil
   end
 
   local Q = Yso and Yso.queue or nil
@@ -792,17 +825,26 @@ local function _emit_payload(payload, category)
     local ok = Q.commit(opts)
     if ok then
       Q._commit_hint = nil
-      return true
+      return true, nil, nil
     end
     Q._commit_hint = opts
     if Yso and Yso.pulse and type(Yso.pulse.wake) == "function"
       and not (Yso.pulse.state and Yso.pulse.state._in_flush) then
       pcall(Yso.pulse.wake, "emit:staged")
     end
-    return true
+    return true, nil, nil
   end
 
-  return false
+  -- Fallback: neither Yso.emit nor Yso.queue is available.
+  -- Send the EQ lane command directly so the loop fires in environments
+  -- where the queue/pulse pipeline is not yet initialised (e.g. solo testing).
+  local cmd = type(payload) == "table" and (payload.eq or (type(payload.lanes) == "table" and payload.lanes.eq)) or nil
+  if type(cmd) == "string" and cmd ~= "" and type(send) == "function" then
+    local ok = pcall(send, cmd)
+    return ok == true, nil, nil
+  end
+
+  return false, "emit_unavailable", nil
 end
 
 local function _payload_each_eq(payload, fn)
@@ -858,6 +900,9 @@ function MGD.init()
   MGD.state = MGD.state or {}
   MGD.state.template = MGD.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   RC.ensure_pending(MGD.state, PENDING_SLOTS)
+  if RI and type(RI.ensure_waiting_state) == "function" then
+    RI.ensure_waiting_state(MGD.state, "magi_group_damage")
+  end
   _cold_slot()
   _route_slot()
   MGD.state.loop_delay = tonumber(MGD.state.loop_delay or MGD.cfg.loop_delay or 0.15) or 0.15
@@ -872,6 +917,9 @@ function MGD.reset(reason)
   _reset_cold(reason or "manual")
   _reset_route(reason or "manual")
   _clear_runtime_state(reason or "manual")
+  if RI and type(RI.clear_waiting) == "function" then
+    RI.clear_waiting(MGD.state, "magi_group_damage")
+  end
   return true
 end
 
@@ -947,12 +995,20 @@ function MGD.attack_function(arg)
 
   if preview then return payload end
 
-  local queued_payload = { eq = cmd }
-  local sent = _emit_payload(queued_payload, category)
-  if not sent then return false, "emit_failed" end
+  local queued_payload = { eq = cmd, target = tgt }
+  local sent, emit_detail, ack_payload = _emit_payload(queued_payload, category)
+  if sent ~= true then return false, emit_detail or "emit_failed" end
+  if RI and type(RI.mark_waiting) == "function" then
+    RI.mark_waiting(MGD.state, "magi_group_damage", ack_payload or queued_payload, {
+      cmd = _trim(cmd),
+      target = tgt,
+      main_lane = "eq",
+    })
+  end
   local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
-  if not has_ack_bus and type(MGD.on_payload_queued) == "function" then
-    pcall(MGD.on_payload_queued, queued_payload)
+  local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
+  if (not has_ack_bus or dry_run) and type(MGD.on_payload_queued) == "function" then
+    pcall(MGD.on_payload_queued, ack_payload or queued_payload)
   end
 
   MGD.state.last_cmd = cmd
@@ -1097,6 +1153,14 @@ function MGD.on_payload_queued(payload)
 end
 
 function MGD.on_payload_sent(payload)
+  if RI and type(RI.payload_has_any_route) == "function" and RI.payload_has_any_route(payload)
+    and not RI.payload_has_route(payload, "magi_group_damage")
+  then
+    return false
+  end
+  if RI and type(RI.clear_waiting_on_ack) == "function" then
+    RI.clear_waiting_on_ack(MGD.state, "magi_group_damage", payload, { require_route = false })
+  end
   return MGD.on_payload_queued(payload)
 end
 
@@ -1212,6 +1276,9 @@ function MGD.alias_loop_waiting_blocks()
 end
 
 function MGD.alias_loop_clear_waiting()
+  if RI and type(RI.clear_waiting) == "function" then
+    return RI.clear_waiting(MGD.state, "magi_group_damage")
+  end
   return true
 end
 

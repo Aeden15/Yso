@@ -95,6 +95,7 @@ local ROUTES = {
     priority = 61,
     class = "magi",
     active = true,
+    module_name = "magi_focus",
   },
   magi_dmg = {
     id = "magi_dmg",
@@ -104,8 +105,8 @@ local ROUTES = {
     description = "Magi duel damage",
     priority = 62,
     class = "magi",
-    driver = "core",
     active = true,
+    module_name = "Magi_duel_dam",
   },
   group_damage = {
     id = "group_damage",
@@ -126,6 +127,7 @@ local ROUTES = {
     priority = 56,
     class = "magi",
     active = true,
+    module_name = "magi_group_damage",
   },
   group_aff = {
     id = "group_aff",

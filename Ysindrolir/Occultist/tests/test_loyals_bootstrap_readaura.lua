@@ -72,6 +72,7 @@ end
 
 local function setup_world(opts)
   opts = opts or {}
+  local now_s = tonumber(opts.now_s or 1) or 1
 
   local timers = {}
   local emitted = {}
@@ -79,7 +80,7 @@ local function setup_world(opts)
   local set_ready_calls = 0
   local starting_attack_calls = 0
 
-  function getEpoch() return 1000 end
+  function getEpoch() return now_s * 1000 end
   function send() return true end
   function cecho() end
   function echo() end
@@ -120,6 +121,9 @@ local function setup_world(opts)
     sep = "&&",
     waiting = { queue = "GLOBAL_WAIT" },
     class = "Occultist",
+    util = {
+      now = function() return now_s end,
+    },
     state = {
       eq_ready = function() return opts.eq_ready ~= false end,
       bal_ready = function() return opts.bal_ready == true end,
@@ -231,6 +235,9 @@ local function setup_world(opts)
       aura_begin = function() return readaura_begins end,
       set_ready = function() return set_ready_calls end,
     },
+    set_now = function(v)
+      now_s = tonumber(v or now_s) or now_s
+    end,
   }
 end
 
@@ -341,6 +348,24 @@ do
   W.AB.state.last_readaura = 0
   local preview = W.AB.build_payload({ target = W.target })
   assert_true("8a: cleanse path still issues eq action", type(preview.lanes.eq) == "string" and preview.lanes.eq ~= "")
+end
+
+print("\n=== Test 9: slime timer starts, clears by trigger, and expires by fallback ===")
+do
+  local W = setup_world({ target = "foe", now_s = 1 })
+  local ER = Yso.off.oc.entity_registry
+
+  ER.note_sent("slime", "foe", { source = "test" })
+  assert_false("9a: slime active window suppresses recast", ER.slime_should_refresh("foe"))
+
+  W.set_now(ER.cfg.slime_duration_s + 2)
+  assert_true("9b: fallback timeout allows recast when clear line missed", ER.slime_should_refresh("foe"))
+
+  W.set_now(3)
+  ER.note_sent("slime", "foe", { source = "test_recast" })
+  assert_false("9c: second cast restarts active window", ER.slime_should_refresh("foe"))
+  assert_true("9d: trigger clear acknowledges active target", ER.note_slime_cleared("foe", "test_trigger"))
+  assert_true("9e: trigger clear allows immediate recast", ER.slime_should_refresh("foe"))
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

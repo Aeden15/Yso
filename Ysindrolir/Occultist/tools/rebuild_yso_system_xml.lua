@@ -83,6 +83,11 @@ elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
   Yso.pulse.set_ready("bal", false, "line:bal_blocked")
   if type(deleteLine)=="function" then pcall(deleteLine) end
 end]],
+    regexes = {
+      "You must regain balance first.",
+      "Balance used:",
+    },
+    regex_props = { 3, 0 },
   },
   {
     name = "Pulse: EQ queued (serverside)",
@@ -550,6 +555,45 @@ local function replace_trigger_script_by_name(xml, name, escaped_body)
   return xml, false
 end
 
+local function build_trigger_regex_xml(regexes, props, indent)
+  indent = indent or "\t\t\t\t\t\t\t\t"
+  local out = {}
+
+  out[#out + 1] = indent .. "<regexCodeList>"
+  if type(regexes) == "table" then
+    for i = 1, #regexes do
+      out[#out + 1] = indent .. "\t<string>" .. xml_escape(tostring(regexes[i] or "")) .. "</string>"
+    end
+  end
+  out[#out + 1] = indent .. "</regexCodeList>"
+
+  out[#out + 1] = indent .. "<regexCodePropertyList>"
+  if type(props) == "table" then
+    for i = 1, #props do
+      out[#out + 1] = indent .. "\t<integer>" .. tostring(tonumber(props[i] or 0) or 0) .. "</integer>"
+    end
+  end
+  out[#out + 1] = indent .. "</regexCodePropertyList>"
+
+  return table.concat(out, "\n")
+end
+
+local function replace_trigger_regex_by_name(xml, name, regexes, props)
+  for _, row in ipairs(parse_trigger_blocks(xml)) do
+    if row.name == name then
+      local block = xml:sub(row.start_pos, row.close_end)
+      local indent = block:match("\n([ \t]*)<regexCodeList>") or "\t\t\t\t\t\t\t\t"
+      local replacement = build_trigger_regex_xml(regexes, props, indent)
+      local updated = block:gsub("<regexCodeList>[%s%S]-</regexCodePropertyList>", replacement, 1)
+      if updated == block then
+        return xml, false
+      end
+      return xml:sub(1, row.start_pos - 1) .. updated .. xml:sub(row.close_end + 1), true
+    end
+  end
+  return xml, false
+end
+
 local function replace_script_body_by_signature(xml, signature_pattern, escaped_body)
   for _, block in ipairs(parse_script_blocks(xml)) do
     if block.body and block.body:find(signature_pattern) then
@@ -775,6 +819,14 @@ for i = 1, #pulse_trigger_updates do
     trigger_updated[#trigger_updated + 1] = row.name
   else
     trigger_missing[#trigger_missing + 1] = row.name
+  end
+  if matched and type(row.regexes) == "table" and type(row.regex_props) == "table" then
+    local regex_xml, regex_matched = replace_trigger_regex_by_name(xml, row.name, row.regexes, row.regex_props)
+    if regex_matched then
+      xml = regex_xml
+    else
+      trigger_missing[#trigger_missing + 1] = row.name .. " (regex)"
+    end
   end
 end
 

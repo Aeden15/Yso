@@ -51,9 +51,12 @@ local function _now()
     if ok and tonumber(v) then return tonumber(v) end
   end
   if type(getEpoch) == "function" then
-    local v = tonumber(getEpoch()) or os.time()
-    if v > 1e12 then v = v / 1000 end
-    return v
+    local ok, v = pcall(getEpoch)
+    v = ok and tonumber(v) or nil
+    if v then
+      if v > 1e12 then v = v / 1000 end
+      return v
+    end
   end
   return os.time()
 end
