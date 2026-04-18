@@ -843,29 +843,7 @@ end</script>
 				<name>Shield True</name>
 				<script>if Legacy.Settings.Basher.status ~= true then return end
 
-local function _norm_name(name)
-  name = tostring(name or ""):lower()
-  name = name:gsub("^%s+", ""):gsub("%s+$", "")
-  name = name:gsub("%s+", " ")
-  return name
-end
-
-local function _current_target_name()
-  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info or nil
-  local name = ""
-  if type(info) == "table" then
-    name = info.short_desc or info.shortdesc or info.name or ""
-  end
-  if name == "" then
-    name = Legacy.Settings.Basher.desc or ""
-  end
-  return tostring(name or "")
-end
-
 local shield_target = tostring(matches[2] or "")
-if shield_target ~= "" and _norm_name(shield_target) ~= _norm_name(_current_target_name()) then
-  return
-end
 
 local class = tostring(gmcp.Char.Status.class or "")
 local class_cfg = Legacy.Settings.Basher.Classes[class] or {}

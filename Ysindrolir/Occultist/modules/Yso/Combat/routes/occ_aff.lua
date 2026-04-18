@@ -1250,8 +1250,10 @@ function A.attack_function(arg)
       local unnamable_lock_s = tonumber(A.cfg.unnamable_lock_s or 2.4) or 2.4
       local last_attend = tonumber(A.state.last_attend_at[tkey] or 0) or 0
       local last_unnamable = tonumber(A.state.last_unnamable_at[tkey] or 0) or 0
-      local attend_ready = ((now_ts - last_attend) >= attend_lock_s)
-      local unnamable_ready = ((now_ts - last_unnamable) >= unnamable_lock_s)
+      -- Zero timestamps mean "never sent": first-cycle cleanse should not be
+      -- blocked by cooldown math using a fresh now() baseline.
+      local attend_ready = (last_attend <= 0) or ((now_ts - last_attend) >= attend_lock_s)
+      local unnamable_ready = (last_unnamable <= 0) or ((now_ts - last_unnamable) >= unnamable_lock_s)
       local need_attend = false
       if Yso.occ and type(Yso.occ.aura_need_attend) == "function" then
         local ok, v = pcall(Yso.occ.aura_need_attend, tgt)

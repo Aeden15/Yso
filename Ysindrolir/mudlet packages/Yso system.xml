@@ -157,17 +157,46 @@ end
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Ignored affs</name>
-					<script>local cap = Legacy.Curing.Prios.capture
-if not (cap and cap.active) then return end
+					<script>local LegacyRef = rawget(_G, &quot;Legacy&quot;)
+local curing = LegacyRef and LegacyRef.Curing or nil
+local prios = curing and curing.Prios or nil
+local cap = prios and prios.capture or nil
+if not (type(cap) == &quot;table&quot; and cap.active) then return end
 
 cap.active = false
-if cap._tid then killTimer(cap._tid); cap._tid = nil end
+if cap._tid and type(killTimer) == &quot;function&quot; then
+  pcall(killTimer, cap._tid)
+end
+cap._tid = nil
 
--- Activate baseline for current set so Reprio() restores correctly.
-Legacy.Curing.Prios.UseBaseline(cap.set)
+local set = tostring(cap.set or (curing and curing.ActiveServerSet) or &quot;legacy&quot;):lower()
+local applied = false
 
-cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios for cureset '"..cap.set.."'.")
-</script>
+if prios and type(prios.ApplyCapturedBaseline) == &quot;function&quot; then
+  local ok, res = pcall(prios.ApplyCapturedBaseline, set, { warn = false })
+  applied = ok and (res == true)
+end
+
+if not applied and prios and type(prios.UseBaseline) == &quot;function&quot; then
+  local ok, res = pcall(prios.UseBaseline, set)
+  applied = ok and (res ~= false)
+end
+
+if not applied and curing and type(curing.UseBaseline) == &quot;function&quot; then
+  local ok, res = pcall(curing.UseBaseline, set)
+  applied = ok and (res ~= false)
+end
+
+if not applied and type(cecho) == &quot;function&quot; then
+  cecho(&quot;\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Baseline sync warning: could not activate baseline for cureset &apos;&quot; .. set .. &quot;&apos;.&quot;)
+end
+
+if type(cecho) == &quot;function&quot; then
+  local msg = applied and
+    (&quot;\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Synced baseline prios for cureset &apos;&quot; .. set .. &quot;&apos;.&quot;) or
+    (&quot;\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: Reprio baseline not updated for cureset &apos;&quot; .. set .. &quot;&apos;.&quot;)
+  cecho(msg)
+end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
@@ -316,7 +345,9 @@ end</script>
 						<regexCodePropertyList />
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 1</name>
-							<script>Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(1, "Monk", "Sparks (T-4)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -337,7 +368,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 2</name>
-							<script>Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(2, "Monk", "Warmth (T-3)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -358,7 +391,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stage 3</name>
-							<script>Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(3, "Monk", "White arcs (T-2)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -379,7 +414,9 @@ end</script>
 						</Trigger>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Last stage</name>
-							<script>Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
+							<script>if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(4, "Monk", "IMMINENT (T-1)")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -401,15 +438,20 @@ end</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>The monk's radiancing</name>
 							<script>local who = matches[2] or "Monk"
+local msg = ("%s is setting something up..."):format(who)
+if Yso and Yso.radianceAlert and type(Yso.radianceAlert.banner) == "function" then
 Yso.radianceAlert.banner({
   "########################################################",
   "#                 RADIANCE  PRE-TELL                   #",
-  ("#          %s is setting something up..."):format(who):sub(1,56) .. string.rep(" ", math.max(0, 56-#(("%s is setting something up..."):format(who)))) .. "#",
+  ("#          %s"):format(msg):sub(1,56) .. string.rep(" ", math.max(0, 56-#msg)) .. "#",
   "########################################################",
 }, "&lt;yellow&gt;")
+end
 
 -- Stage 0 does not emit the standard staged banner, but still raises the event.
-Yso.radianceAlert.fire(0, who, "pre-tell")
+if Yso and Yso.radianceAlert and type(Yso.radianceAlert.fire) == "function" then
+  Yso.radianceAlert.fire(0, who, "pre-tell")
+end
 </script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
@@ -744,14 +786,14 @@ end</script>
 						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-																								<regexCodeList>
-													<string>You must regain balance first.</string>
-													<string>Balance used:</string>
-												</regexCodeList>
-												<regexCodePropertyList>
-													<integer>3</integer>
-													<integer>0</integer>
-												</regexCodePropertyList>
+																																																																																																<regexCodeList>
+																																																	<string>You must regain balance first.</string>
+																																																	<string>Balance used:</string>
+																																																</regexCodeList>
+																																																<regexCodePropertyList>
+																																																	<integer>3</integer>
+																																																	<integer>0</integer>
+																																																</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
@@ -18311,11 +18353,10 @@ local function _arm_candidate_for_restore()
 end
 
 local function _restore_finished()
-  -- _self_score uses plain limb keys (&quot;leftleg&quot;, &quot;rightleg&quot;) so
-  -- &quot;damagedleftleg&quot; / &quot;damagedrightleg&quot; would never match the score table.
-  -- Rely on _self_has_aff, which is the authoritative check here.
-  local left_damaged  = _self_has_aff(&quot;damagedleftleg&quot;)
-  local right_damaged = _self_has_aff(&quot;damagedrightleg&quot;)
+  -- Prefer tracker truth, but keep a score-key fallback for harnesses / partial
+  -- integrations that only provide damaged-leg score entries.
+  local left_damaged  = _self_has_aff(&quot;damagedleftleg&quot;) or (_self_score(&quot;damagedleftleg&quot;) &gt; 0)
+  local right_damaged = _self_has_aff(&quot;damagedrightleg&quot;) or (_self_score(&quot;damagedrightleg&quot;) &gt; 0)
   return (not left_damaged) and (not right_damaged) and _self_standing()
 end
 
@@ -33505,8 +33546,10 @@ function A.attack_function(arg)
       local unnamable_lock_s = tonumber(A.cfg.unnamable_lock_s or 2.4) or 2.4
       local last_attend = tonumber(A.state.last_attend_at[tkey] or 0) or 0
       local last_unnamable = tonumber(A.state.last_unnamable_at[tkey] or 0) or 0
-      local attend_ready = ((now_ts - last_attend) &gt;= attend_lock_s)
-      local unnamable_ready = ((now_ts - last_unnamable) &gt;= unnamable_lock_s)
+      -- Zero timestamps mean &quot;never sent&quot;: first-cycle cleanse should not be
+      -- blocked by cooldown math using a fresh now() baseline.
+      local attend_ready = (last_attend &lt;= 0) or ((now_ts - last_attend) &gt;= attend_lock_s)
+      local unnamable_ready = (last_unnamable &lt;= 0) or ((now_ts - last_unnamable) &gt;= unnamable_lock_s)
       local need_attend = false
       if Yso.occ and type(Yso.occ.aura_need_attend) == &quot;function&quot; then
         local ok, v = pcall(Yso.occ.aura_need_attend, tgt)
@@ -34719,6 +34762,7 @@ local T = Yso.tree
 T.cfg = T.cfg or {
   enabled = true,
   min_affs_hunt = 1,
+  unchanged_cooldown_s = 4.0,
   debug = false,
 }
 
@@ -34727,41 +34771,49 @@ T.cfg.pvp = T.cfg.pvp or {
   min_affs_default = 2,
   allow_lock_override = true,
   curesets = {
-    depthswalker = { min_affs = 1, notes = "placeholder" },
-    bard         = { min_affs = 1, notes = "placeholder" },
-    monk         = { min_affs = 1, notes = "placeholder" },
-    dwc          = { min_affs = 2, notes = "dual wield cutting knights" },
-    dwb          = { min_affs = 2, notes = "dual wield blunt knights (future)" },
-    blademaster  = { min_affs = 2, notes = "placeholder" },
-    shaman       = { min_affs = 1, notes = "placeholder" },
-    airlord      = { min_affs = 1, notes = "elemental air spec" },
+    depthswalker = { min_affs = 1, notes = &quot;placeholder&quot; },
+    bard         = { min_affs = 1, notes = &quot;placeholder&quot; },
+    monk         = { min_affs = 1, notes = &quot;placeholder&quot; },
+    dwc          = { min_affs = 2, notes = &quot;dual wield cutting knights&quot; },
+    dwb          = { min_affs = 2, notes = &quot;dual wield blunt knights (future)&quot; },
+    blademaster  = { min_affs = 2, notes = &quot;placeholder&quot; },
+    shaman       = { min_affs = 1, notes = &quot;placeholder&quot; },
+    airlord      = { min_affs = 1, notes = &quot;elemental air spec&quot; },
   },
 }
 
 T.state = T.state or {
   ready = true,
   last_touch = 0,
+  cooldown_until = 0,
+  last_event = &quot;&quot;,
 }
 
 local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == "function" then
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
     local ok, v = pcall(Yso.util.now)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
   if t and t &gt; 20000000000 then t = t / 1000 end
   return t or os.time()
 end
 
+local function _cooldown_seconds()
+  local v = tonumber(T.cfg.unchanged_cooldown_s or 4.0) or 4.0
+  if v &lt; 0.25 then v = 0.25 end
+  return v
+end
+
 local function _debug(msg)
-  if T.cfg.debug and type(cecho) == "function" then
-    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  if T.cfg.debug and type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;green&gt;[Tree] &lt;white&gt;%s\n&quot;, tostring(msg)))
   end
 end
 
 local function _echo(msg)
-  if type(cecho) == "function" then
-    cecho(string.format("&lt;green&gt;[Tree] &lt;white&gt;%s\n", tostring(msg)))
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;green&gt;[Tree] &lt;white&gt;%s\n&quot;, tostring(msg)))
   end
 end
 
@@ -34777,113 +34829,199 @@ local function _aff_count()
   local A = _Aff()
   local n = 0
   for k, v in pairs(A) do
-    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+    if v == true and k ~= &quot;softlocked&quot; and k ~= &quot;truelocked&quot; then
       n = n + 1
     end
   end
   return n
 end
 
+local function _norm_cureset(v)
+  v = tostring(v or &quot;&quot;):lower()
+  v = v:gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+  if v == &quot;bash&quot; or v == &quot;bashing&quot; or v == &quot;hunt&quot; or v == &quot;hunting&quot; or v == &quot;pve&quot; then
+    return &quot;hunt&quot;
+  end
+  return v
+end
+
 local function _current_cureset()
   local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
-  if type(set) == "string" and set ~= "" then return set:lower() end
-  local cur = rawget(_G, "CurrentCureset")
-  if type(cur) == "string" and cur ~= "" then return cur:lower() end
-  return ""
+  if type(set) == &quot;string&quot; and set ~= &quot;&quot; then return _norm_cureset(set) end
+  local cur = rawget(_G, &quot;CurrentCureset&quot;)
+  if type(cur) == &quot;string&quot; and cur ~= &quot;&quot; then return _norm_cureset(cur) end
+  return &quot;&quot;
+end
+
+local function _mode_implies_hunt()
+  local mode = Yso and Yso.mode or nil
+  if type(mode) ~= &quot;table&quot; then return false end
+
+  if type(mode.is_bash) == &quot;function&quot; then
+    local ok, v = pcall(mode.is_bash)
+    if ok and v == true then return true end
+  end
+  if type(mode.is_hunt) == &quot;function&quot; then
+    local ok, v = pcall(mode.is_hunt)
+    if ok and v == true then return true end
+  end
+
+  return (_norm_cureset(rawget(mode, &quot;state&quot;)) == &quot;hunt&quot;)
+end
+
+local function _auto_tree_disabled_context()
+  if _mode_implies_hunt() then
+    return true, &quot;mode_hunt_bash&quot;
+  end
+  if _current_cureset() == &quot;hunt&quot; then
+    return true, &quot;cureset_hunt&quot;
+  end
+  return false, &quot;&quot;
+end
+
+local function _start_cooldown(source, seconds)
+  local now = _now()
+  local wait = tonumber(seconds) or _cooldown_seconds()
+  if wait &lt; 0 then wait = 0 end
+  T.state.ready = false
+  T.state.last_touch = now
+  T.state.cooldown_until = now + wait
+  T.state.last_event = tostring(source or &quot;cooldown&quot;)
+end
+
+local function _release_failsafe(now)
+  now = tonumber(now) or _now()
+  if T.state.ready == true then return false end
+  local due = tonumber(T.state.cooldown_until or 0) or 0
+  if due &lt;= 0 or now &lt; due then return false end
+  T.state.ready = true
+  T.state.cooldown_until = 0
+  T.state.last_event = &quot;failsafe_ready&quot;
+  _debug(&quot;tree ready via failsafe timeout&quot;)
+  return true
 end
 
 function T.should_tree()
-  if T.cfg.enabled ~= true then return false, "disabled" end
-  if not T.state.ready then return false, "cooldown" end
-  if _has("paralysis") then return false, "paralysis" end
+  if T.cfg.enabled ~= true then return false, &quot;disabled&quot; end
+
+  local disabled, disabled_reason = _auto_tree_disabled_context()
+  if disabled then
+    return false, &quot;hunt_bash_disabled:&quot; .. tostring(disabled_reason or &quot;&quot;)
+  end
+
+  local now = _now()
+  _release_failsafe(now)
+
+  if not T.state.ready then
+    return false, &quot;cooldown&quot;
+  end
+  if _has(&quot;paralysis&quot;) then return false, &quot;paralysis&quot; end
 
   local curset = _current_cureset()
   local count = _aff_count()
 
-  if curset == "hunt" then
+  if curset == &quot;hunt&quot; then
     local min_affs = tonumber(T.cfg.min_affs_hunt or 1) or 1
-    if count &lt; min_affs then return false, "affs", count, min_affs end
-    return true, "ok", count, min_affs
+    if count &lt; min_affs then return false, &quot;affs&quot;, count, min_affs end
+    return true, &quot;ok&quot;, count, min_affs
   end
 
   local pvp = T.cfg.pvp
-  if not (type(pvp) == "table" and pvp.enabled == true) then
-    return false, "pvp_disabled"
+  if not (type(pvp) == &quot;table&quot; and pvp.enabled == true) then
+    return false, &quot;pvp_disabled&quot;
   end
 
-  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
-  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+  local entry = type(pvp.curesets) == &quot;table&quot; and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == &quot;table&quot; and tonumber(entry.min_affs))
                    or tonumber(pvp.min_affs_default or 2) or 2
 
-  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  local lock_ok = pvp.allow_lock_override and _has(&quot;softlocked&quot;)
   if count &lt; min_affs and not lock_ok then
-    return false, "affs_pvp", count, min_affs
+    return false, &quot;affs_pvp&quot;, count, min_affs
   end
 
-  return true, "ok_pvp", count, min_affs
+  return true, &quot;ok_pvp&quot;, count, min_affs
 end
 
 function T.try_tree(source)
   local ok, reason, count, min_affs = T.should_tree()
   if not ok then
-    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
+    _debug(string.format(&quot;skip src=%s reason=%s&quot;, tostring(source or &quot;?&quot;), tostring(reason or &quot;?&quot;)))
     return false, reason
   end
 
-  if type(send) == "function" then
-    send("touch tree", false)
-    _debug(string.format("touching tree src=%s affs=%d/%d", tostring(source or "?"), count or 0, min_affs or 0))
+  if type(send) == &quot;function&quot; then
+    send(&quot;touch tree&quot;, false)
+    _start_cooldown(&quot;send:&quot; .. tostring(source or &quot;?&quot;), _cooldown_seconds())
+    _debug(string.format(&quot;touching tree src=%s affs=%d/%d&quot;, tostring(source or &quot;?&quot;), count or 0, min_affs or 0))
     return true, reason
   end
 
-  return false, "send_unavailable"
+  return false, &quot;send_unavailable&quot;
 end
 
 function T.on_touched()
-  T.state.ready = false
-  T.state.last_touch = _now()
-  _debug("tree touched, cooldown started")
+  _start_cooldown(&quot;line:touched&quot;, _cooldown_seconds())
+  _debug(&quot;tree touched, cooldown started&quot;)
+end
+
+function T.on_unchanged()
+  _start_cooldown(&quot;line:unchanged&quot;, _cooldown_seconds())
+  _debug(&quot;tree unchanged, cooldown started&quot;)
 end
 
 function T.on_ready()
   T.state.ready = true
-  _debug("tree ready")
-  T.try_tree("ready_line")
+  T.state.cooldown_until = 0
+  T.state.last_event = &quot;line:ready&quot;
+  _debug(&quot;tree ready&quot;)
+  local disabled = _auto_tree_disabled_context()
+  if disabled then
+    _debug(&quot;skip src=ready_line reason=hunt_bash_disabled&quot;)
+    return
+  end
+  T.try_tree(&quot;ready_line&quot;)
 end
 
 function T.on_vitals()
   if not T.cfg.enabled then return end
+  local disabled = _auto_tree_disabled_context()
+  if disabled then return end
+  _release_failsafe(_now())
   if not T.state.ready then return end
-  T.try_tree("vitals")
+  T.try_tree(&quot;vitals&quot;)
 end
 
 function T.set_auto(v)
   local on = nil
   local t = type(v)
-  if t == "boolean" then on = v
-  elseif t == "number" then on = (v ~= 0)
-  elseif t == "string" then
-    local s = tostring(v):lower():gsub("^%s+", ""):gsub("%s+$", "")
-    if s == "on" or s == "1" or s == "true" then on = true
-    elseif s == "off" or s == "0" or s == "false" then on = false end
+  if t == &quot;boolean&quot; then on = v
+  elseif t == &quot;number&quot; then on = (v ~= 0)
+  elseif t == &quot;string&quot; then
+    local s = tostring(v):lower():gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+    if s == &quot;on&quot; or s == &quot;1&quot; or s == &quot;true&quot; then on = true
+    elseif s == &quot;off&quot; or s == &quot;0&quot; or s == &quot;false&quot; then on = false end
   end
-  if on == nil then _echo("Usage: lua Yso.tree.set_auto(true|false)"); return end
+  if on == nil then _echo(&quot;Usage: lua Yso.tree.set_auto(true|false)&quot;); return end
   T.cfg.enabled = on
-  _echo("Auto tree is now " .. (on and "ON." or "OFF."))
+  _echo(&quot;Auto tree is now &quot; .. (on and &quot;ON.&quot; or &quot;OFF.&quot;))
 end
 
 function T.status()
   local ok, reason, count, min_affs = T.should_tree()
   local curset = _current_cureset()
+  local now = _now()
+  local cd_remain = math.max(0, (tonumber(T.state.cooldown_until or 0) or 0) - now)
   _echo(string.format(
-    "auto=%s ready=%s cureset=%s affs=%d min=%d reason=%s para=%s",
-    T.cfg.enabled and "on" or "off",
-    T.state.ready and "Y" or "N",
-    curset ~= "" and curset or "?",
+    &quot;auto=%s ready=%s cureset=%s affs=%d min=%d reason=%s para=%s cd=%.1fs&quot;,
+    T.cfg.enabled and &quot;on&quot; or &quot;off&quot;,
+    T.state.ready and &quot;Y&quot; or &quot;N&quot;,
+    curset ~= &quot;&quot; and curset or &quot;?&quot;,
     count or _aff_count(),
     min_affs or 0,
-    tostring(reason or "?"),
-    _has("paralysis") and "Y" or "N"
+    tostring(reason or (ok and &quot;ok&quot; or &quot;?&quot;)),
+    _has(&quot;paralysis&quot;) and &quot;Y&quot; or &quot;N&quot;,
+    cd_remain
   ))
 end
 
@@ -34891,7 +35029,7 @@ local function _safe(fn)
   return function(...)
     local ok, err = pcall(fn, ...)
     if not ok and T.cfg.debug then
-      _echo("ERROR: " .. tostring(err))
+      _echo(&quot;ERROR: &quot; .. tostring(err))
     end
   end
 end
@@ -34908,8 +35046,14 @@ Yso._trig.tree_ready = tempRegexTrigger(
   _safe(function() T.on_ready() end)
 )
 
+if Yso._trig.tree_unchanged then killTrigger(Yso._trig.tree_unchanged) end
+Yso._trig.tree_unchanged = tempRegexTrigger(
+  [[^Your tree of life tattoo glows faintly for a moment then fades, leaving you unchanged\.$]],
+  _safe(function() T.on_unchanged() end)
+)
+
 if Yso._eh.tree_vitals then pcall(killAnonymousEventHandler, Yso._eh.tree_vitals) end
-Yso._eh.tree_vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+Yso._eh.tree_vitals = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, function()
   T.on_vitals()
 end)</script>
 						<eventHandlerList />

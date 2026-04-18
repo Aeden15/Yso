@@ -1,6 +1,6 @@
 Yso Systems Workspace
 =====================
-Last updated: April 17, 2026
+Last updated: April 18, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
@@ -428,3 +428,8 @@ Syncing with OneDrive Desktop
   - April 16 bug-check sync: fixed one export-manifest mirror drift pair
     (occ_aff source -> xml mirror) and rebuilt mudlet packages/Yso system.xml;
     post-sync syntax/tests/XML validation all pass.
+  - April 18 bug-check fixes: restored occ_aff cleanse first-cycle
+    attend/unnamable sequencing, restored parry Blademaster restore override
+    fallback for damaged-leg score feeds, and guarded Monk radiance trigger
+    calls in mudlet packages/Yso system.xml; full validation now passes
+    (luac, 20 tests, XML parse, mirror drift).
