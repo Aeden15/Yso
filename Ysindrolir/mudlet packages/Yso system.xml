@@ -786,14 +786,14 @@ end</script>
 						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-																																																																																																<regexCodeList>
-																																																	<string>You must regain balance first.</string>
-																																																	<string>Balance used:</string>
-																																																</regexCodeList>
-																																																<regexCodePropertyList>
-																																																	<integer>3</integer>
-																																																	<integer>0</integer>
-																																																</regexCodePropertyList>
+						<regexCodeList>
+							<string>You must regain balance first.</string>
+							<string>Balance used:</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+							<integer>0</integer>
+						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
@@ -2472,6 +2472,70 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
+				</TriggerGroup>
+			</TriggerGroup>
+			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Alchemy</name>
+				<script></script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList />
+				<regexCodePropertyList />
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Alchemy</name>
+					<script></script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+				</TriggerGroup>
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Physiology</name>
+					<script></script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+				</TriggerGroup>
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Formulation</name>
+					<script></script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
 				</TriggerGroup>
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -4258,6 +4322,588 @@ end
 						<regex>^fl$|^ld$
 	</regex>
 				</Alias>
+			</AliasGroup>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Alchemy</name>
+				<script></script>
+				<command></command>
+				<packageName></packageName>
+				<regex></regex>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Alchemy</name>
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>lead</name>
+						<script>send("educe lead")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^lead$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>lead &lt;target&gt;</name>
+						<script>send("educe lead " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^lead\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>iron &lt;target&gt;</name>
+						<script>send("educe iron " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^iron\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>salt</name>
+						<script>send("educe salt")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^salt$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>disp &lt;target&gt;</name>
+						<script>send("ether displace " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^disp\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>copper &lt;target&gt;</name>
+						<script>send("educe copper " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^copper\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>silver</name>
+						<script>send("educe silver")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^silver$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>silver &lt;target&gt;</name>
+						<script>send("educe silver " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^silver\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>phlog &lt;target&gt;</name>
+						<script>send("phlogisticate " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^phlog\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>vit &lt;target&gt;</name>
+						<script>send("vitrify " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^vit\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>revive &lt;target&gt;</name>
+						<script>send("revive " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^revive\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>aur &lt;target&gt;</name>
+						<script>send("aurify " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^aur\s+(\S+)$</regex>
+					</Alias>
+				</AliasGroup>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Physiology</name>
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>temper &lt;target&gt; &lt;humour&gt;</name>
+						<script>send("temper " .. matches[2] .. " " .. matches[3])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^temper\s+(\S+)\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>wrack &lt;target&gt; &lt;humour|affliction&gt;</name>
+						<script>send("wrack " .. matches[2] .. " " .. matches[3])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^wrack\s+(\S+)\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>twrack &lt;target&gt; &lt;one&gt; &lt;two&gt;</name>
+						<script>send("truewrack " .. matches[2] .. " " .. matches[3] .. " " .. matches[4])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^twrack\s+(\S+)\s+(\S+)\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>inundate &lt;target&gt; &lt;humour&gt;</name>
+						<script>send("inundate " .. matches[2] .. " " .. matches[3])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^inundate\s+(\S+)\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>reave &lt;target&gt;</name>
+						<script>send("reave " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^reave\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>eval &lt;target&gt;</name>
+						<script>send("evaluate " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^eval\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>evalh &lt;target&gt;</name>
+						<script>send("evaluate " .. matches[2] .. " humours")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^evalh\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>cultivate</name>
+						<script>send("cultivate nucleus")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^cultivate$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>germ &lt;prime&gt;</name>
+						<script>send("germinate nucleus " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^germ\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>followh</name>
+						<script>send("homunculus follow")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^followh$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>returnh</name>
+						<script>send("homunculus return")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^returnh$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hatk &lt;target&gt;</name>
+						<script>send("homunculus attack " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hatk\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hpac</name>
+						<script>send("homunculus pacify")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hpac$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hlook</name>
+						<script>send("homunculus look")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hlook$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hexits</name>
+						<script>send("homunculus exits")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hexits$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hmove &lt;dir&gt;</name>
+						<script>send("homunculus move " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hmove\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hlisten on</name>
+						<script>send("homunculus listen on")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hlisten on$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hlisten off</name>
+						<script>send("homunculus listen off")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hlisten off$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hinv</name>
+						<script>send("homunculus inventory")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hinv$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hgive &lt;item&gt; to &lt;person&gt;</name>
+						<script>send("homunculus give " .. matches[2] .. " to " .. matches[3])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hgive\s+(.+)\s+to\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hget &lt;item&gt;</name>
+						<script>send("homunculus get " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hget\s+(.+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hdrop &lt;item&gt;</name>
+						<script>send("homunculus drop " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hdrop\s+(.+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hsay &lt;text&gt;</name>
+						<script>send("homunculus say " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hsay\s+(.+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hadmin &lt;prime&gt;</name>
+						<script>send("homunculus administer " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hadmin\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hshriek &lt;target&gt;</name>
+						<script>send("homunculus shriek " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hshriek\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>hcorrupt &lt;target&gt;</name>
+						<script>send("homunculus corrupt " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^hcorrupt\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>incubate</name>
+						<script>send("incubate nucleus")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^incubate$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tstatus</name>
+						<script>send("transfuse status")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tstatus$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>trans</name>
+						<script>send("transfuse consciousness")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^trans$</regex>
+					</Alias>
+				</AliasGroup>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Formulation</name>
+					<script></script>
+					<command></command>
+					<packageName></packageName>
+					<regex></regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>endo</name>
+						<script>send("wield endorphin")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^endo$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>nutri</name>
+						<script>send("imbibe nutritional")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^nutri$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>cor</name>
+						<script>send("wield corrosive")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^cor$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>petri</name>
+						<script>send("imbibe petrifying")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^petri$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>incen</name>
+						<script>send("wield incendiary")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^incen$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>devit</name>
+						<script>send("wield devitalisation")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^devit$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>intox</name>
+						<script>send("wield intoxicant")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^intox$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>vap</name>
+						<script>send("wield vaporisation")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^vap$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>phos</name>
+						<script>send("wield phosphorous")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^phos$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>mono</name>
+						<script>send("wield monoxide")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^mono$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tox</name>
+						<script>send("wield toxin")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tox$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>conc</name>
+						<script>send("wield concussive")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^conc$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>dest</name>
+						<script>send("imbibe destructive")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^dest$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>enh</name>
+						<script>send("imbibe enhancement")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^enh$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>bol</name>
+						<script>send("bolster")</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^bol$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tendo &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw endorphin at ground")
+else
+  send("throw endorphin " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tendo\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tcor &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw corrosive at ground")
+else
+  send("throw corrosive " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tcor\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tinc &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw incendiary at ground")
+else
+  send("throw incendiary " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tinc\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tdev &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw devitalisation at ground")
+else
+  send("throw devitalisation " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tdev\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tint &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw intoxicant at ground")
+else
+  send("throw intoxicant " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tint\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tvap &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw vaporisation at ground")
+else
+  send("throw vaporisation " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tvap\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tphos &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw phosphorous at ground")
+else
+  send("throw phosphorous " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tphos\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tmono &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw monoxide at ground")
+else
+  send("throw monoxide " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tmono\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>ttox &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw toxin at ground")
+else
+  send("throw toxin " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^ttox\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>tconc &lt;arg&gt;</name>
+						<script>local arg = matches[2]
+if arg == "ground" then
+  send("throw concussive at ground")
+else
+  send("throw concussive " .. arg)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^tconc\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>pot+ &lt;compound&gt;</name>
+						<script>send("enhance potency of " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^pot\+\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>pot- &lt;compound&gt;</name>
+						<script>send("dilute potency of " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^pot-\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>stab+ &lt;compound&gt;</name>
+						<script>send("enhance stability of " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^stab\+\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>stab- &lt;compound&gt;</name>
+						<script>send("dilute stability of " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^stab-\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>vol+ &lt;compound&gt;</name>
+						<script>send("enhance volatility of " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^vol\+\s+(\S+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>vol- &lt;compound&gt;</name>
+						<script>send("dilute volatility of " .. matches[2])</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^vol-\s+(\S+)$</regex>
+					</Alias>
+				</AliasGroup>
 			</AliasGroup>
 			<AliasGroup isActive="yes" isFolder="yes">
 				<name>Magi</name>
@@ -34324,6 +34970,30 @@ return A
 </script>
 						<eventHandlerList />
 					</Script>
+				</ScriptGroup>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Alchemy</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Alchemy</name>
+					<packageName></packageName>
+					<script></script>
+					<eventHandlerList />
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Physiology</name>
+					<packageName></packageName>
+					<script></script>
+					<eventHandlerList />
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Formulation</name>
+					<packageName></packageName>
+					<script></script>
+					<eventHandlerList />
 				</ScriptGroup>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">

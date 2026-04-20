@@ -1,9 +1,12 @@
 # Yso
 
-Current workspace snapshot: April 18, 2026.
+Current workspace snapshot: April 19, 2026.
+
+Occultist is currently on hold. Primary active development is now focused on Magi and Alchemist.
 
 ## Current fixes
 
+- **Alchemist XML scaffold + thin alias pass (April 19, 2026)** — Added new `Alchemy` parent folders to `Yso Aliases`, `Yso Triggers`, and `Yso Scripts` in `Ysindrolir/mudlet packages/Yso system.xml`, with class subfolders `Alchemy`, `Physiology`, and `Formulation`. Added the requested thin Alchemist aliases under the alias tree only, created matching section-first workspace folders under `Ysindrolir/Alchemist`, and reserved `Ysindrolir/Alchemist/reference/Alchemy` for the future `Alchemical skill_reference chart`. Trigger/script scaffolding is intentionally empty in this pass.
 - **Fool bash anti-spam freshness gate + hunt threshold bump (April 17, 2026)** — `fool_logic.lua` now fail-closes Fool in bash mode unless self-aff state is backed by a fresh `gmcp.Char.Afflictions.List` snapshot (manual + auto + diagnose paths), preventing off-cooldown no-aff ghost fires. Hunt threshold is now fixed at `4+` current afflictions (was `3+`). Regression coverage was expanded in `test_fool_basher_preempt.lua` for stale/fresh GMCP-list gating and 4-aff hunt threshold/timing behavior.
 - **Magi/Occultist route compatibility hotfix (April 15, 2026)** — Restored `focus` route-loop compatibility in `Magi/magi_focus.lua` by accepting both `magi_focus` and `focus` loop ids and reporting route key `focus` in explain output; restored dry-run queue acknowledgement state updates in `Magi/magi_group_damage.lua` when ack bus hooks are present but no live callback fires; and fixed `occ_aff` explain queue-owned filtering to accept compatibility route aliases (`oc_aff`/`occ_aff`/`aff`) so class-lane plan display clears immediately after ack lane clear. Ran full regression sweep (`luac`, 17/17 Lua tests, XML parse), refreshed XML mirrors, and rebuilt `Yso system.xml`.
 - **`occ_aff` phase bootstrap regression fix (April 13, 2026)** — `modules/Yso/Combat/routes/occ_aff.lua` now limits loyals opener bootstrap gating to the `open` phase. Pressure/cleanse/convert/finish planning no longer short-circuits behind opener staging, restoring expected EQ/BAL/class payload generation and convert->finish transition behavior (`test_loyals_bootstrap_readaura.lua`). XML mirrors were refreshed and `Yso system.xml` was rebuilt.
@@ -200,3 +203,4 @@ Git-only files (`.git/`, `.gitignore`, etc.) are excluded automatically.
 - **April 16 bug-check sync** — Fixed one export-manifest mirror drift pair (`occ_aff` source -> xml mirror) and rebuilt `mudlet packages/Yso system.xml`; post-sync syntax/tests/XML validation all pass.
 - **April 17 recovery hardening** — Rebuild now rejects forbidden control bytes in mirrored Lua/XML content, validates final package XML with a strict parser, and centralizes pulse wake-line trigger output via `Yso.pulse.handle_line_event()` for consistent lane-state echoes and line gagging.
 - **April 18 bug-check fixes** — Restored `occ_aff` cleanse first-cycle attend/unnamable sequencing, restored parry Blademaster restore override fallback for damaged-leg score feeds, and guarded Monk radiance trigger calls in `mudlet packages/Yso system.xml`; full validation now passes (`luac`, 20 tests, XML parse, mirror drift).
+- **April 19 bug-check sync** — Detected one export-manifest mirror drift pair (`modules/Yso/Combat/parry.lua` -> `modules/Yso/xml/parry.lua`), refreshed XML mirrors, rebuilt `mudlet packages/Yso system.xml`, and re-validated the workspace (`luac`, 20 tests, XML parse, mirror drift).

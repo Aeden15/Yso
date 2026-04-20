@@ -1,12 +1,24 @@
 Yso Systems Workspace
 =====================
-Last updated: April 18, 2026
+Last updated: April 19, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
+Occultist is currently on hold. Primary active development is now focused on
+Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist XML scaffold + thin alias pass (April 19, 2026) --
+  Added new Alchemy parent folders to Yso Aliases, Yso Triggers, and
+  Yso Scripts in Ysindrolir/mudlet packages/Yso system.xml, with class
+  subfolders Alchemy, Physiology, and Formulation. Added the requested thin
+  Alchemist aliases under the alias tree only, created matching section-first
+  workspace folders under Ysindrolir/Alchemist, and reserved
+  Ysindrolir/Alchemist/reference/Alchemy for the future
+  "Alchemical skill_reference chart". Trigger/script scaffolding is
+  intentionally empty in this pass.
+
   Fool bash anti-spam freshness gate + hunt threshold bump (April 17, 2026) --
   fool_logic.lua now fail-closes Fool in bash mode unless self-aff state is
   backed by a fresh gmcp.Char.Afflictions.List snapshot (manual + auto +
@@ -433,3 +445,7 @@ Syncing with OneDrive Desktop
     fallback for damaged-leg score feeds, and guarded Monk radiance trigger
     calls in mudlet packages/Yso system.xml; full validation now passes
     (luac, 20 tests, XML parse, mirror drift).
+  - April 19 bug-check sync: detected one export-manifest mirror drift pair
+    (modules/Yso/Combat/parry.lua -> modules/Yso/xml/parry.lua), refreshed
+    XML mirrors, rebuilt mudlet packages/Yso system.xml, and re-validated
+    the workspace (luac, 20 tests, XML parse, mirror drift).
