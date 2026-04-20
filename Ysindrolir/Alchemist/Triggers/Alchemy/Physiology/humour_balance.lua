@@ -4,12 +4,17 @@ Yso.alc.phys = Yso.alc.phys or {}
 
 local P = Yso.alc.phys
 
-P.humour_success_lines = P.humour_success_lines or {
-  "tempering his choleric humour.",
-  "tempering his melancholic humour.",
-  "tempering his phlegmatic humour.",
-  "tempering his sanguine humour.",
-}
+P.humour_pronouns = P.humour_pronouns or { "his", "her", "their", "faes", "faen" }
+P.humour_types = P.humour_types or { "choleric", "melancholic", "phlegmatic", "sanguine" }
+P.humour_success_lines = P.humour_success_lines or {}
+
+if #P.humour_success_lines == 0 then
+  for _, pronoun in ipairs(P.humour_pronouns) do
+    for _, humour in ipairs(P.humour_types) do
+      P.humour_success_lines[#P.humour_success_lines + 1] = "tempering " .. pronoun .. " " .. humour .. " humour."
+    end
+  end
+end
 
 P.humour_ready_line = P.humour_ready_line or "You may manipulate another's humours once more."
 P.humour_fail_line = P.humour_fail_line or "You are unable to manipulate another's humours at this time."

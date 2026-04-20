@@ -42,3 +42,4 @@ Occultist is on hold. Primary active development is currently focused on Magi an
 - Vials are ignored as substitutes.
 - Missing phials fail safely and may request a `phiallist` refresh once.
 - Manual alteration values remain user-driven for now. No potency/stability/volatility caps are enforced in this pass.
+- Humour-balance success tracking accepts `his`, `her`, `their`, `faes`, and `faen` target pronouns.

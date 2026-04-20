@@ -15,9 +15,11 @@ Current fixes
   Alchemist workspace helpers under Ysindrolir/Alchemist/Core for formulation
   resolution/phial parsing/action building, added workspace trigger handlers
   for Physiology humour-balance and Formulation phiallist lines, mirrored the
-  same support layer into Ysindrolir/mudlet packages/Yso system.xml, and
+  same support layer into Ysindrolir/mudlet packages/Yso system.xml,
   refactored Formulation aliases to route through centralized helpers instead
-  of hardcoded delivery strings.
+  of hardcoded delivery strings, and widened humour-balance success matching
+  to accept:
+    his / her / their / faes / faen
 
   Alchemist XML scaffold + thin alias pass (April 19, 2026) --
   Added new Alchemy parent folders to Yso Aliases, Yso Triggers, and
