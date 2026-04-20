@@ -2520,6 +2520,116 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
 					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Choleric temper success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.*tempering his choleric humour\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Melancholic temper success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.*tempering his melancholic humour\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Phlegmatic temper success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.*tempering his phlegmatic humour\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Sanguine temper success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.*tempering his sanguine humour\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Humour balance ready</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You may manipulate another's humours once more\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Formulation</name>
@@ -2536,6 +2646,72 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
 					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Phiallist filled header</name>
+						<script>if Yso.alc and Yso.alc.form and type(Yso.alc.form.handle_phiallist_line) == "function" then
+  Yso.alc.form.handle_phiallist_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^Phial\s*\|\s*Compound\s*\|\s*Months\s*\|\s*Potency\s*\|\s*Volatility\s*\|\s*Stability$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Phiallist empty header</name>
+						<script>if Yso.alc and Yso.alc.form and type(Yso.alc.form.handle_phiallist_line) == "function" then
+  Yso.alc.form.handle_phiallist_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^Phial\s*\|\s*Compound\s*\|\s*Months left\s*\|\s*Quantity$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Phiallist row</name>
+						<script>if Yso.alc and Yso.alc.form and type(Yso.alc.form.handle_phiallist_line) == "function" then
+  Yso.alc.form.handle_phiallist_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^Phial[\w\d]+\s*\|.+$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
 				</TriggerGroup>
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -4638,116 +4814,169 @@ end
 					<regex></regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>endo</name>
-						<script>send("wield endorphin")</script>
+						<script>local phial = Yso.alc.form.require_phial("Endorphin")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^endo$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>nutri</name>
-						<script>send("imbibe nutritional")</script>
+						<script>local cmd = Yso.alc.form.build_use("Nutritional", matches[2])
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
-						<regex>^nutri$</regex>
+						<regex>^nutri(?:\s+(.+))?$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>cor</name>
-						<script>send("wield corrosive")</script>
+						<script>local phial = Yso.alc.form.require_phial("Corrosive")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^cor$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>petri</name>
-						<script>send("imbibe petrifying")</script>
+						<script>local cmd = Yso.alc.form.build_use("Petrifying")
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^petri$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>incen</name>
-						<script>send("wield incendiary")</script>
+						<script>local phial = Yso.alc.form.require_phial("Incendiary")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^incen$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>devit</name>
-						<script>send("wield devitalisation")</script>
+						<script>local phial = Yso.alc.form.require_phial("Devitalisation")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^devit$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>intox</name>
-						<script>send("wield intoxicant")</script>
+						<script>local phial = Yso.alc.form.require_phial("Intoxicant")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^intox$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>vap</name>
-						<script>send("wield vaporisation")</script>
+						<script>local phial = Yso.alc.form.require_phial("Vaporisation")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^vap$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>phos</name>
-						<script>send("wield phosphorous")</script>
+						<script>local phial = Yso.alc.form.require_phial("Phosphorous")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^phos$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>mono</name>
-						<script>send("wield monoxide")</script>
+						<script>local phial = Yso.alc.form.require_phial("Monoxide")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^mono$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tox</name>
-						<script>send("wield toxin")</script>
+						<script>local phial = Yso.alc.form.require_phial("Toxin")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^tox$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>conc</name>
-						<script>send("wield concussive")</script>
+						<script>local phial = Yso.alc.form.require_phial("Concussive")
+local cmd = phial and Yso.alc.form.ensure_wielded(phial)
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^conc$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>dest</name>
-						<script>send("imbibe destructive")</script>
+						<script>local cmd = Yso.alc.form.build_use("Destructive")
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^dest$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>enh</name>
-						<script>send("imbibe enhancement")</script>
+						<script>local cmd = Yso.alc.form.build_use("Enhancement")
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^enh$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>bol</name>
-						<script>send("bolster")</script>
+						<script>local cmd = Yso.alc.form.build_use("Bolster")
+if cmd then
+  send(cmd)
+end</script>
 						<command></command>
 						<packageName></packageName>
 						<regex>^bol$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tendo &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw endorphin at ground")
-else
-  send("throw endorphin " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Endorphin", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4755,11 +4984,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tcor &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw corrosive at ground")
-else
-  send("throw corrosive " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Corrosive", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4767,11 +4994,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tinc &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw incendiary at ground")
-else
-  send("throw incendiary " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Incendiary", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4779,11 +5004,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tdev &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw devitalisation at ground")
-else
-  send("throw devitalisation " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Devitalisation", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4791,11 +5014,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tint &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw intoxicant at ground")
-else
-  send("throw intoxicant " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Intoxicant", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4803,11 +5024,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tvap &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw vaporisation at ground")
-else
-  send("throw vaporisation " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Vaporisation", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4815,11 +5034,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tphos &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw phosphorous at ground")
-else
-  send("throw phosphorous " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Phosphorous", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4827,11 +5044,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tmono &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw monoxide at ground")
-else
-  send("throw monoxide " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Monoxide", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4839,11 +5054,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>ttox &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw toxin at ground")
-else
-  send("throw toxin " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Toxin", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -4851,11 +5064,9 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tconc &lt;arg&gt;</name>
-						<script>local arg = matches[2]
-if arg == "ground" then
-  send("throw concussive at ground")
-else
-  send("throw concussive " .. arg)
+						<script>local cmd = Yso.alc.form.build_use("Concussive", matches[2])
+if cmd then
+  send(cmd)
 end</script>
 						<command></command>
 						<packageName></packageName>
@@ -34977,6 +35188,108 @@ return A
 				<packageName></packageName>
 				<script></script>
 				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>Alchemist init</name>
+					<packageName></packageName>
+					<script>Yso = Yso or {}
+Yso.bal = Yso.bal or {}
+Yso.alc = Yso.alc or {}
+Yso.alc.phys = Yso.alc.phys or {}
+Yso.alc.form = Yso.alc.form or {}
+
+Yso.bal.humour = Yso.bal.humour ~= false
+
+local F = Yso.alc.form
+
+F.state = F.state or {}
+F.phials = F.phials or {}
+F.last_phiallist = F.last_phiallist or {}
+F.cfg = F.cfg or {}
+
+F.cfg.discovery = F.cfg.discovery ~= false
+
+local function _now()
+  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 1000000000000 then
+    t = t / 1000
+  end
+  return t or os.time()
+end
+
+local function _echo(msg)
+  local text = string.format("[Yso:Alchemist] %s", tostring(msg or ""))
+  if type(cecho) == "function" then
+    cecho("\n&lt;orange&gt;" .. text .. "\n")
+    return
+  end
+  if type(echo) == "function" then
+    echo("\n" .. text .. "\n")
+    return
+  end
+  if type(print) == "function" then
+    print(text)
+  end
+end
+
+local function _sep()
+  if type(Yso.sep) == "string" and Yso.sep ~= "" then
+    return Yso.sep
+  end
+  if type(Yso.cfg) == "table" and type(Yso.cfg.pipe_sep) == "string" and Yso.cfg.pipe_sep ~= "" then
+    return Yso.cfg.pipe_sep
+  end
+  return "&amp;&amp;"
+end
+
+function Yso.alc.set_humour_ready(ready, source)
+  Yso.bal.humour = ready and true or false
+  F.state.last_humour_source = source or "unknown"
+  F.state.last_humour_change = _now()
+  return Yso.bal.humour
+end
+
+function Yso.alc.humour_ready()
+  return Yso.bal.humour ~= false
+end
+
+function F.warn(msg)
+  _echo(msg)
+end
+
+function F.now()
+  return _now()
+end
+
+function F.sep()
+  return _sep()
+end
+
+function F.reset_phials()
+  F.phials = {}
+  F.last_phiallist = {}
+  F.state.discovery_requested = false
+  F.state.discovery_requested_at = nil
+  F.state.last_phiallist_at = _now()
+end
+
+function F.note_phiallist()
+  F.state.last_phiallist_at = _now()
+  F.state.discovery_requested = false
+end
+
+function F.request_discovery()
+  if F.state.discovery_requested then
+    return false
+  end
+  F.state.discovery_requested = true
+  F.state.discovery_requested_at = _now()
+  if type(send) == "function" then
+    send("phiallist")
+  end
+  return true
+end</script>
+					<eventHandlerList />
+				</Script>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Alchemy</name>
 					<packageName></packageName>
@@ -34988,12 +35301,564 @@ return A
 					<packageName></packageName>
 					<script></script>
 					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>humour_balance</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.alc = Yso.alc or {}
+Yso.alc.phys = Yso.alc.phys or {}
+
+local P = Yso.alc.phys
+
+P.humour_success_lines = P.humour_success_lines or {
+  "tempering his choleric humour.",
+  "tempering his melancholic humour.",
+  "tempering his phlegmatic humour.",
+  "tempering his sanguine humour.",
+}
+
+P.humour_ready_line = P.humour_ready_line or "You may manipulate another's humours once more."
+P.humour_fail_line = P.humour_fail_line or "You are unable to manipulate another's humours at this time."
+
+function P.handle_humour_balance_line(line)
+  line = tostring(line or "")
+  if line == "" then
+    return nil
+  end
+
+  if line == P.humour_ready_line then
+    if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+      Yso.alc.set_humour_ready(true, "humour_ready")
+    end
+    return true
+  end
+
+  if line == P.humour_fail_line then
+    return nil
+  end
+
+  for _, fragment in ipairs(P.humour_success_lines) do
+    if line:find(fragment, 1, true) then
+      if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+        Yso.alc.set_humour_ready(false, fragment)
+      end
+      return false
+    end
+  end
+
+  return nil
+end</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Formulation</name>
 					<packageName></packageName>
 					<script></script>
 					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_phials</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.alc = Yso.alc or {}
+Yso.alc.form = Yso.alc.form or {}
+
+local F = Yso.alc.form
+
+F.state = F.state or {}
+F.phials = F.phials or {}
+F.last_phiallist = F.last_phiallist or {}
+
+local function _trim(s)
+  s = tostring(s or "")
+  s = s:gsub("^%s+", "")
+  s = s:gsub("%s+$", "")
+  return s
+end
+
+local function _key(name)
+  return _trim(name):lower()
+end
+
+local function _append_raw(line)
+  table.insert(F.last_phiallist, line)
+  F.state.last_phiallist = table.concat(F.last_phiallist, "\n")
+end
+
+local function _clear_for_header(line)
+  if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months%s*|%s*Potency") then
+    F.reset_phials()
+    return true
+  end
+  if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity") then
+    if next(F.phials) == nil then
+      F.last_phiallist = {}
+    end
+    return true
+  end
+  return false
+end
+
+local function _store_filled(id, compound, months, potency, volatility, stability)
+  if not id:match("^Phial") then
+    return nil
+  end
+  local row = {
+    id = _trim(id),
+    container = _trim(id),
+    kind = "phial",
+    compound = _trim(compound),
+    compound_key = _key(compound),
+    empty = false,
+    months = tonumber(months) or _trim(months),
+    potency = tonumber(potency) or _trim(potency),
+    volatility = tonumber(volatility) or _trim(volatility),
+    stability = tonumber(stability) or _trim(stability),
+    seen_at = type(F.now) == "function" and F.now() or os.time(),
+  }
+  F.phials[row.id] = row
+  F.note_phiallist()
+  return row
+end
+
+local function _store_empty(id, months, quantity)
+  if not id:match("^Phial") then
+    return nil
+  end
+  local row = {
+    id = _trim(id),
+    container = _trim(id),
+    kind = "phial",
+    compound = "Empty",
+    compound_key = "empty",
+    empty = true,
+    months = tonumber(months) or _trim(months),
+    quantity = tonumber(quantity) or _trim(quantity),
+    seen_at = type(F.now) == "function" and F.now() or os.time(),
+  }
+  F.phials[row.id] = row
+  F.note_phiallist()
+  return row
+end
+
+function F.parse_phiallist(line_or_block)
+  if type(line_or_block) ~= "string" or line_or_block == "" then
+    return nil
+  end
+
+  if line_or_block:find("\n", 1, true) or line_or_block:find("\r", 1, true) then
+    local parsed
+    for line in line_or_block:gmatch("[^\r\n]+") do
+      parsed = F.parse_phiallist(line) or parsed
+    end
+    return parsed
+  end
+
+  local line = _trim(line_or_block)
+  if line == "" then
+    return nil
+  end
+
+  _append_raw(line)
+
+  if line:match("^%s*Vial") or line:find("| Vial", 1, true) then
+    return nil
+  end
+
+  if _clear_for_header(line) then
+    return nil
+  end
+
+  local id, compound, months, potency, volatility, stability =
+    line:match("^(Phial[%w%d]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$")
+  if id then
+    return _store_filled(id, compound, months, potency, volatility, stability)
+  end
+
+  local eid, emonths, quantity =
+    line:match("^(Phial[%w%d]+)%s*|%s*Empty%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$")
+  if eid then
+    return _store_empty(eid, emonths, quantity)
+  end
+
+  return nil
+end
+
+function F.find_phial(name)
+  if not name or name == "" then
+    return nil
+  end
+
+  local target = _key(name)
+  if type(F.resolve) == "function" then
+    local meta = F.resolve(name)
+    if meta and meta.use_name then
+      target = _key(meta.use_name)
+    elseif meta and meta.key then
+      target = meta.key
+    end
+  end
+
+  local ids = {}
+  for id, row in pairs(F.phials) do
+    if row.kind == "phial" and not row.empty and row.compound_key == target then
+      ids[#ids + 1] = id
+    end
+  end
+
+  table.sort(ids)
+  if ids[1] then
+    return F.phials[ids[1]]
+  end
+  return nil
+end
+
+function F.require_phial(name)
+  local phial = F.find_phial(name)
+  if phial then
+    return phial
+  end
+
+  local requested = tostring(name or "unknown")
+  if F.cfg and F.cfg.discovery ~= false and type(F.request_discovery) == "function" and F.request_discovery() then
+    if type(F.warn) == "function" then
+      F.warn("No phial found for " .. requested .. ". Requested phiallist refresh.")
+    end
+    return nil
+  end
+
+  if type(F.warn) == "function" then
+    F.warn("No phial found for " .. requested .. ".")
+  end
+  return nil
+end
+
+function F.show_phials()
+  local ids = {}
+  for id in pairs(F.phials) do
+    ids[#ids + 1] = id
+  end
+  table.sort(ids)
+
+  if #ids == 0 then
+    if type(F.warn) == "function" then
+      F.warn("No known phials.")
+    end
+    return {}
+  end
+
+  local lines = {}
+  for _, id in ipairs(ids) do
+    local row = F.phials[id]
+    if row.empty then
+      lines[#lines + 1] = string.format("%s -&gt; Empty (%s months, qty %s)", id, tostring(row.months or "?"), tostring(row.quantity or "?"))
+    else
+      lines[#lines + 1] = string.format(
+        "%s -&gt; %s (%s months, p%s v%s s%s)",
+        id,
+        tostring(row.compound or "?"),
+        tostring(row.months or "?"),
+        tostring(row.potency or "?"),
+        tostring(row.volatility or "?"),
+        tostring(row.stability or "?")
+      )
+    end
+  end
+
+  if type(F.warn) == "function" then
+    F.warn("Known phials:\n" .. table.concat(lines, "\n"))
+  end
+  return lines
+end
+
+function F.handle_phiallist_line(line)
+  return F.parse_phiallist(line)
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_resolve</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.alc = Yso.alc or {}
+Yso.alc.form = Yso.alc.form or {}
+
+local F = Yso.alc.form
+
+local function _trim(s)
+  s = tostring(s or "")
+  s = s:gsub("^%s+", "")
+  s = s:gsub("%s+$", "")
+  return s
+end
+
+local function _key(s)
+  return _trim(s):lower()
+end
+
+local function _shape(meta)
+  if not meta then
+    return nil
+  end
+
+  meta.key = meta.key or _key(meta.name)
+  meta.syntax = meta.syntax or {}
+  meta.delivery = meta.delivery or "utility"
+  meta.needs_wield = meta.delivery == "wield_throw" or meta.delivery == "room_throw"
+
+  if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
+    meta.target_mode = "ground_or_direction"
+  elseif meta.delivery == "imbibe_or_administer" then
+    meta.target_mode = "optional_target"
+  elseif meta.delivery == "imbibe" or meta.delivery == "special_self_imbibe" or meta.delivery == "enhanced_state_ability" then
+    meta.target_mode = "self"
+  else
+    meta.target_mode = "manual"
+  end
+
+  for _, syntax in ipairs(meta.syntax) do
+    local wield_name = syntax:match("^WIELD%s+([A-Z][A-Z]+)")
+    if wield_name then
+      meta.use_name = wield_name:sub(1, 1) .. wield_name:sub(2):lower()
+      break
+    end
+  end
+
+  if not meta.use_name then
+    for _, syntax in ipairs(meta.syntax) do
+      local imbibe_name = syntax:match("^IMBIBE%s+([A-Z][A-Z]+)")
+      if imbibe_name then
+        meta.use_name = imbibe_name:sub(1, 1) .. imbibe_name:sub(2):lower()
+        break
+      end
+    end
+  end
+
+  if not meta.use_name and meta.delivery == "enhanced_state_ability" then
+    meta.use_name = meta.name
+  end
+
+  meta.use_name = meta.use_name or meta.name
+  meta.use_key = _key(meta.use_name)
+
+  return meta
+end
+
+F.state = F.state or {}
+F.state.form_defs = F.state.form_defs or {
+  endorphin = _shape{ name = "Endorphin", syntax = { "WIELD ENDORPHIN", "THROW ENDORPHIN &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  nutritional = _shape{ name = "Nutritional", syntax = { "IMBIBE NUTRITIONAL", "ADMINISTER NUTRITIONAL &lt;target&gt;" }, delivery = "imbibe_or_administer" },
+  corrosive = _shape{ name = "Corrosive", syntax = { "WIELD CORROSIVE", "THROW CORROSIVE &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  petrifying = _shape{ name = "Petrifying", syntax = { "IMBIBE PETRIFYING" }, delivery = "imbibe" },
+  incendiary = _shape{ name = "Incendiary", syntax = { "WIELD INCENDIARY", "THROW INCENDIARY &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  alteration = _shape{ name = "Alteration", syntax = { "ENHANCE POTENCY|STABILITY|VOLATILITY OF &lt;compound&gt;", "DILUTE POTENCY|STABILITY|VOLATILITY OF &lt;compound&gt;", "AMALGAMATE &lt;compound&gt; &lt;type&gt; &lt;amount&gt; &lt;type&gt; &lt;amount&gt;..." }, delivery = "utility" },
+  devitalisation = _shape{ name = "Devitalisation", syntax = { "WIELD DEVITALISATION", "THROW DEVITALISATION &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  intoxicant = _shape{ name = "Intoxicant", syntax = { "WIELD INTOXICANT", "THROW INTOXICANT &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  vaporisation = _shape{ name = "Vaporisation", syntax = { "WIELD VAPORISATION", "THROW VAPORISATION &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  phosphorous = _shape{ name = "Phosphorous", syntax = { "WIELD PHOSPHOROUS", "THROW PHOSPHOROUS &lt;DIRECTION|AT GROUND&gt;" }, delivery = "wield_throw" },
+  monoxide = _shape{ name = "Monoxide", syntax = { "WIELD MONOXIDE", "THROW MONOXIDE &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  toxin = _shape{ name = "Toxin", syntax = { "WIELD TOXIN", "THROW TOXIN &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  concussive = _shape{ name = "Concussive", syntax = { "WIELD CONCUSSIVE", "THROW CONCUSSIVE &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
+  mayology = _shape{ name = "Mayology", syntax = { "AMALGAMATE DESTRUCTIVE", "IMBIBE DESTRUCTIVE" }, delivery = "special_self_imbibe" },
+  halophilic = _shape{ name = "Halophilic", syntax = { "WIELD HALOPHILIC", "THROW HALOPHILIC &lt;DIRECTION|AT GROUND&gt;" }, delivery = "room_throw" },
+  enhancement = _shape{ name = "Enhancement", syntax = { "IMBIBE ENHANCEMENT" }, delivery = "imbibe" },
+  bolster = _shape{ name = "Bolster", syntax = { "BOLSTER" }, delivery = "enhanced_state_ability" },
+}
+
+local aliases = {
+  endo = "endorphin",
+  endorphin = "endorphin",
+  nutri = "nutritional",
+  nutritional = "nutritional",
+  cor = "corrosive",
+  corrosive = "corrosive",
+  petri = "petrifying",
+  petrifying = "petrifying",
+  incen = "incendiary",
+  incendiary = "incendiary",
+  devit = "devitalisation",
+  devitalisation = "devitalisation",
+  intox = "intoxicant",
+  intoxicant = "intoxicant",
+  vap = "vaporisation",
+  vaporisation = "vaporisation",
+  phos = "phosphorous",
+  phosphorous = "phosphorous",
+  mono = "monoxide",
+  monoxide = "monoxide",
+  tox = "toxin",
+  toxin = "toxin",
+  conc = "concussive",
+  concussive = "concussive",
+  dest = "mayology",
+  destructive = "mayology",
+  mayology = "mayology",
+  enh = "enhancement",
+  enhancement = "enhancement",
+  bol = "bolster",
+  bolster = "bolster",
+  halophilic = "halophilic",
+  alteration = "alteration",
+}
+
+function F.resolve(name)
+  local key = _key(name)
+  if key == "" then
+    return nil
+  end
+
+  local canonical_key = aliases[key] or key
+  local meta = F.state.form_defs[canonical_key]
+  if not meta then
+    if type(F.warn) == "function" then
+      F.warn("No formulation reference entry found for " .. tostring(name) .. ".")
+    end
+    return nil
+  end
+
+  return {
+    name = meta.name,
+    key = meta.key,
+    use_name = meta.use_name,
+    use_key = meta.use_key,
+    syntax = meta.syntax,
+    delivery = meta.delivery,
+    needs_wield = meta.needs_wield,
+    target_mode = meta.target_mode,
+  }
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_build</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.alc = Yso.alc or {}
+Yso.alc.form = Yso.alc.form or {}
+
+local F = Yso.alc.form
+
+local function _trim(s)
+  s = tostring(s or "")
+  s = s:gsub("^%s+", "")
+  s = s:gsub("%s+$", "")
+  return s
+end
+
+local function _upper_words(s)
+  return tostring(s or ""):upper()
+end
+
+local function _combine(parts)
+  local out = {}
+  for _, part in ipairs(parts) do
+    if part and part ~= "" then
+      out[#out + 1] = part
+    end
+  end
+  return table.concat(out, " " .. ((type(F.sep) == "function" and F.sep()) or "&amp;&amp;") .. " ")
+end
+
+function F.ensure_wielded(phial)
+  if not phial or not phial.compound or phial.compound == "" then
+    return nil
+  end
+  F.state.last_wielded = {
+    id = phial.id,
+    compound = phial.compound,
+    at = type(F.now) == "function" and F.now() or os.time(),
+  }
+  return "WIELD " .. _upper_words(phial.compound)
+end
+
+local function _build_action(meta, arg)
+  local name = _upper_words(meta.use_name or meta.name)
+  local use_arg = _trim(arg)
+
+  if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
+    if use_arg == "" then
+      if type(F.warn) == "function" then
+        F.warn(meta.name .. " needs a direction or 'ground'.")
+      end
+      return nil
+    end
+    if use_arg:lower() == "ground" then
+      return "THROW " .. name .. " AT GROUND"
+    end
+    return "THROW " .. name .. " " .. _upper_words(use_arg)
+  end
+
+  if meta.delivery == "imbibe_or_administer" then
+    if use_arg == "" then
+      return "IMBIBE " .. name
+    end
+    return "ADMINISTER " .. name .. " " .. use_arg
+  end
+
+  if meta.delivery == "imbibe" then
+    if use_arg ~= "" and type(F.warn) == "function" then
+      F.warn(meta.name .. " does not take a target.")
+      return nil
+    end
+    return "IMBIBE " .. name
+  end
+
+  if meta.delivery == "special_self_imbibe" then
+    if use_arg ~= "" and type(F.warn) == "function" then
+      F.warn(meta.name .. " does not take a target.")
+      return nil
+    end
+    return "IMBIBE " .. name
+  end
+
+  if meta.delivery == "enhanced_state_ability" then
+    if use_arg ~= "" and type(F.warn) == "function" then
+      F.warn(meta.name .. " does not take a target.")
+      return nil
+    end
+    return name
+  end
+
+  if type(F.warn) == "function" then
+    F.warn(meta.name .. " is manual/utility right now.")
+  end
+  return nil
+end
+
+function F.build_use(name, arg)
+  local meta = type(F.resolve) == "function" and F.resolve(name) or nil
+  if not meta then
+    return nil
+  end
+
+  local needs_phial = meta.delivery ~= "enhanced_state_ability" and meta.delivery ~= "utility"
+  local phial
+  if needs_phial then
+    phial = type(F.require_phial) == "function" and F.require_phial(meta.use_name or meta.name) or nil
+    if not phial then
+      return nil
+    end
+  end
+
+  local action = _build_action(meta, arg)
+  if not action then
+    return nil
+  end
+
+  local parts = {}
+  if meta.needs_wield then
+    parts[#parts + 1] = F.ensure_wielded(phial)
+  end
+  parts[#parts + 1] = action
+
+  return _combine(parts), {
+    meta = meta,
+    phial = phial,
+    action = action,
+  }
+end</script>
+						<eventHandlerList />
+					</Script>
 				</ScriptGroup>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">

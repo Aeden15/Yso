@@ -9,6 +9,16 @@ Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist chart + humour lane + formulation support pass (April 20, 2026) --
+  Created Ysindrolir/Alchemist/Alchemical skill_reference chart directly under
+  the Alchemist folder from the supplied screenshots/text only, added editable
+  Alchemist workspace helpers under Ysindrolir/Alchemist/Core for formulation
+  resolution/phial parsing/action building, added workspace trigger handlers
+  for Physiology humour-balance and Formulation phiallist lines, mirrored the
+  same support layer into Ysindrolir/mudlet packages/Yso system.xml, and
+  refactored Formulation aliases to route through centralized helpers instead
+  of hardcoded delivery strings.
+
   Alchemist XML scaffold + thin alias pass (April 19, 2026) --
   Added new Alchemy parent folders to Yso Aliases, Yso Triggers, and
   Yso Scripts in Ysindrolir/mudlet packages/Yso system.xml, with class
