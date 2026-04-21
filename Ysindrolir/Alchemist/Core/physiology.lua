@@ -31,6 +31,11 @@ P.state.evaluate = P.state.evaluate or {
   started_at = 0,
 }
 P.state.corruption = P.state.corruption or {}
+P.state.homunculus_attack = P.state.homunculus_attack or {
+  active = false,
+  target = "",
+  changed_at = 0,
+}
 
 local function _now()
   local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
@@ -83,6 +88,10 @@ local function _current_target()
     return _trim(tgt)
   end
   return ""
+end
+
+local function _same_target(a, b)
+  return _lc(a) ~= "" and _lc(a) == _lc(b)
 end
 
 local function _has_aff(aff)
@@ -150,40 +159,6 @@ local function _pool_order(pools)
   return out
 end
 
-local function _humour_row(target_row, humour)
-  humour = _lc(humour)
-  if humour == "" then
-    return nil
-  end
-
-  target_row.humours = target_row.humours or {}
-  local row = target_row.humours[humour]
-  if row then
-    return row
-  end
-
-  row = {
-    name = humour,
-    inferred_count = 0,
-    steady_count = nil,
-    known = false,
-    tempered = false,
-    last_tempered_at = 0,
-    last_wracked_at = 0,
-    last_evaluated_at = 0,
-    eval_dirty = true,
-  }
-  target_row.humours[humour] = row
-  return row
-end
-
-local function _sync_tempered(row)
-  local inferred = tonumber(row.inferred_count or 0) or 0
-  local steady = tonumber(row.steady_count or 0) or 0
-  row.tempered = (inferred > 0) or (steady > 0)
-  return row.tempered
-end
-
 local function _target_row(name)
   local key = _target_key(name)
   if not key then
@@ -205,7 +180,6 @@ local function _target_row(name)
     last_evaluated_at = 0,
     last_wrack_at = 0,
     eval_dirty = true,
-    humours = {},
     vitals = {
       health_pct = nil,
       mana_pct = nil,
@@ -213,12 +187,52 @@ local function _target_row(name)
     },
   }
 
-  for i = 1, #P.humours do
-    _humour_row(row, P.humours[i])
-  end
-
   P.targets[key] = row
   return row
+end
+
+local function _ak_humour_table()
+  local ak = rawget(_G, "ak")
+  local alc = type(ak) == "table" and ak.alchemist or nil
+  local humours = type(alc) == "table" and alc.humour or nil
+  return type(humours) == "table" and humours or nil
+end
+
+local function _humour_missing_desired(target, humour, giving)
+  humour = _lc(humour)
+  if humour == "" then
+    return false
+  end
+  local pools = _giving_humour_pools(giving)
+  local affs = pools[humour]
+  if type(affs) ~= "table" then
+    return false
+  end
+  for i = 1, #affs do
+    local aff = _lc(affs[i])
+    if aff ~= "" and not _has_aff(aff) then
+      return true
+    end
+  end
+  return false
+end
+
+local function _humour_truth_trusted(name)
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" or not _same_target(target, _current_target()) then
+    return false
+  end
+  local row = _target_row(target)
+  if not row or row.eval_dirty == true then
+    return false
+  end
+  if tonumber(row.last_evaluated_at or 0) <= 0 then
+    return false
+  end
+  return _same_target(P.state.humour_eval_target or "", target)
 end
 
 function Yso.alc.set_humour_ready(ready, source)
@@ -254,6 +268,30 @@ function Yso.alc.homunculus_ready()
   return Yso.bal.homunculus ~= false
 end
 
+function Yso.set_homunculus_attack(v, tgt)
+  P.state.homunculus_attack = P.state.homunculus_attack or {}
+  P.state.homunculus_attack.active = v == true
+  P.state.homunculus_attack.changed_at = _now()
+  if v == true and _trim(tgt) ~= "" then
+    P.state.homunculus_attack.target = _trim(tgt)
+  elseif v ~= true then
+    P.state.homunculus_attack.target = ""
+  end
+  return P.state.homunculus_attack.active
+end
+
+function Yso.homunculus_attack(tgt)
+  local st = P.state.homunculus_attack or {}
+  if st.active ~= true then
+    return false
+  end
+  tgt = _trim(tgt)
+  if tgt == "" then
+    return true
+  end
+  return _same_target(st.target or "", tgt)
+end
+
 function P.now()
   return _now()
 end
@@ -266,14 +304,6 @@ function P.current_target()
   return _current_target()
 end
 
-function P.humour(name, humour)
-  local target_row = _target_row(name)
-  if not target_row then
-    return nil
-  end
-  return _humour_row(target_row, humour)
-end
-
 function P.mark_all_eval_dirty(name, source)
   local target_row = _target_row(name)
   if not target_row then
@@ -283,13 +313,9 @@ function P.mark_all_eval_dirty(name, source)
   target_row.eval_dirty = true
   target_row.last_dirty_source = tostring(source or "manual")
   target_row.last_dirty_at = _now()
-
-  for i = 1, #P.humours do
-    local row = _humour_row(target_row, P.humours[i])
-    row.eval_dirty = true
-    row.known = false
+  if _same_target(P.state.humour_eval_target or "", target_row.name) then
+    P.state.humour_eval_target = ""
   end
-
   return true
 end
 
@@ -315,7 +341,6 @@ function P.begin_evaluate(name)
   P.state.evaluate.target = target_row.name
   P.state.evaluate.active = true
   P.state.evaluate.started_at = now
-  target_row.last_evaluated_at = now
   return true
 end
 
@@ -347,44 +372,8 @@ function P.finish_evaluate(name)
 
   P.state.evaluate.active = false
   target_row.last_evaluated_at = _now()
-  return true
-end
-
-function P.note_steady_count(name, humour, count)
-  local target_row = _target_row(name)
-  local row = target_row and _humour_row(target_row, humour) or nil
-  if not row then
-    return false
-  end
-
-  local now = _now()
-  row.steady_count = tonumber(count) or 0
-  row.known = true
-  row.eval_dirty = false
-  row.last_evaluated_at = now
-  target_row.last_evaluated_at = now
   target_row.eval_dirty = false
-  _sync_tempered(row)
-  return true
-end
-
-function P.note_all_normal(name)
-  local target_row = _target_row(name)
-  if not target_row then
-    return false
-  end
-
-  local now = _now()
-  target_row.eval_dirty = false
-  target_row.last_evaluated_at = now
-  for i = 1, #P.humours do
-    local row = _humour_row(target_row, P.humours[i])
-    row.steady_count = 0
-    row.known = true
-    row.eval_dirty = false
-    row.last_evaluated_at = now
-    _sync_tempered(row)
-  end
+  P.state.humour_eval_target = target_row.name
   return true
 end
 
@@ -402,38 +391,6 @@ function P.note_evaluate_vitals(name, health_pct, mana_pct)
     target_row.vitals.mana_pct = math.max(0, math.min(100, tonumber(mana_pct)))
   end
   target_row.vitals.last_evaluated_at = now
-  target_row.last_evaluated_at = now
-  return true
-end
-
-function P.note_temper_success(name, humour)
-  local target_row = _target_row(name)
-  local row = target_row and _humour_row(target_row, humour) or nil
-  if not row then
-    return false
-  end
-
-  local now = _now()
-  row.inferred_count = math.min(8, (tonumber(row.inferred_count or 0) or 0) + 1)
-  row.last_tempered_at = now
-  _sync_tempered(row)
-  return true
-end
-
-function P.note_wrack_success(name, humour_one, humour_two)
-  local target_row = _target_row(name)
-  if not target_row then
-    return false
-  end
-
-  local now = _now()
-  target_row.last_wrack_at = now
-  for _, humour in ipairs({ humour_one, humour_two }) do
-    local row = _humour_row(target_row, humour)
-    if row then
-      row.last_wracked_at = now
-    end
-  end
   return true
 end
 
@@ -487,45 +444,46 @@ function P.corruption_active(name)
   return true
 end
 
-function P.count(name, humour, prefer_steady)
-  local row = P.humour(name, humour)
-  if not row then
-    return 0
+function P.ak_humour_count(target, humour)
+  target = _trim(target)
+  if target == "" then
+    target = _current_target()
+  end
+  humour = _lc(humour)
+  if target == "" or humour == "" or not _same_target(target, _current_target()) then
+    return nil
   end
 
-  local steady = tonumber(row.steady_count)
-  local inferred = tonumber(row.inferred_count or 0) or 0
-  if prefer_steady == true then
-    return steady or 0
+  local humours = _ak_humour_table()
+  local value = humours and tonumber(humours[humour]) or nil
+  if value == nil then
+    return nil
   end
-  if steady ~= nil then
-    return math.max(steady, inferred)
+  if value < 0 then
+    value = 0
   end
-  return inferred
+  return value
 end
 
-function P.steady_count(name, humour)
-  return P.count(name, humour, true)
+function P.current_humour_count(target, humour)
+  if not _humour_truth_trusted(target) then
+    return nil
+  end
+  return P.ak_humour_count(target, humour)
 end
 
 function P.target_needs_evaluate(name)
-  local target_row = _target_row(name)
-  if not target_row then
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
     return false
   end
-
-  if target_row.eval_dirty == true then
+  if not _same_target(target, _current_target()) then
     return true
   end
-
-  for i = 1, #P.humours do
-    local row = _humour_row(target_row, P.humours[i])
-    if row.eval_dirty == true or row.known ~= true then
-      return true
-    end
-  end
-
-  return false
+  return not _humour_truth_trusted(target)
 end
 
 function P.health_pct(name)
@@ -560,11 +518,11 @@ function P.pick_missing_aff(name, giving)
     target = _current_target()
   end
 
-  local steady_sanguine = tonumber(P.steady_count(target, "sanguine") or 0) or 0
+  local sanguine = tonumber(P.current_humour_count(target, "sanguine") or 0) or 0
   for i = 1, #_aff_list(giving) do
     local aff = _lc(giving[i])
     if aff ~= "" and not _has_aff(aff) then
-      if aff ~= "paralysis" or steady_sanguine >= 2 then
+      if aff ~= "paralysis" or sanguine >= 2 then
         return aff
       end
     end
@@ -584,8 +542,8 @@ function P.pick_filler_humour(name, forced_aff, giving)
 
   for i = 1, #options do
     local humour = options[i]
-    if humour ~= preferred then
-      local count = tonumber(P.count(target, humour) or 0) or 0
+    local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
+    if humour ~= preferred and count >= 1 and _humour_missing_desired(target, humour, giving) then
       if count > best_count then
         best_humour = humour
         best_count = count
@@ -593,10 +551,7 @@ function P.pick_filler_humour(name, forced_aff, giving)
     end
   end
 
-  if best_humour then
-    return best_humour
-  end
-  return preferred or "choleric"
+  return best_humour
 end
 
 function P.pick_temper_humour(name, giving)
@@ -611,8 +566,8 @@ function P.pick_temper_humour(name, giving)
     return nil
   end
 
-  local steady_sanguine = tonumber(P.steady_count(target, "sanguine") or 0) or 0
-  if _list_has_aff(giving, "paralysis") and not _has_aff("paralysis") and steady_sanguine < 2 then
+  local sanguine = tonumber(P.current_humour_count(target, "sanguine") or 0) or 0
+  if _list_has_aff(giving, "paralysis") and not _has_aff("paralysis") and sanguine < 2 then
     return "sanguine"
   end
 
@@ -627,7 +582,7 @@ function P.pick_temper_humour(name, giving)
     for j = 1, #affs do
       local aff = affs[j]
       local allowed = true
-      if aff == "paralysis" and steady_sanguine < 2 then
+      if aff == "paralysis" and sanguine < 2 then
         allowed = false
       end
       if allowed and not _has_aff(aff) then
@@ -636,7 +591,7 @@ function P.pick_temper_humour(name, giving)
     end
 
     if missing > 0 then
-      local count = tonumber(P.count(target, humour) or 0) or 0
+      local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
       if missing > best_missing or (missing == best_missing and count < best_count) then
         best_humour = humour
         best_missing = missing
@@ -672,7 +627,7 @@ function P.build_truewrack(name, giving)
   return string.format("truewrack %s %s %s", target, filler, forced), filler, forced
 end
 
-function P.build_wrack_fallback(name)
+function P.build_wrack_fallback(name, giving)
   local target = _trim(name)
   if target == "" then
     target = _current_target()
@@ -681,9 +636,9 @@ function P.build_wrack_fallback(name)
     return nil
   end
 
-  local humour = P.pick_temper_humour(target)
-  if humour == nil or humour == "" then
-    humour = "choleric"
+  local aff = P.pick_missing_aff(target, giving)
+  if aff == nil or aff == "" then
+    return nil
   end
-  return string.format("wrack %s %s", target, humour), humour
+  return string.format("wrack %s %s", target, aff), aff
 end

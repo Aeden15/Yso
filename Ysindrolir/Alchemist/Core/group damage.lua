@@ -94,7 +94,7 @@ GD.cfg = GD.cfg or {
 }
 
 GD.giving_default = GD.giving_default or {
-  "paralysis", -- Can only be given once sanguine is confirmed at two steady tempers.
+  "paralysis", -- Legal once AK's current-target sanguine count is at least two.
   "nausea",
   "sensitivity",
   "haemophilia",
@@ -447,7 +447,7 @@ local function _select_action(ctx)
     end
 
     if type(P.build_wrack_fallback) == "function" then
-      local cmd, humour = P.build_wrack_fallback(tgt)
+      local cmd, aff = P.build_wrack_fallback(tgt, giving)
       if cmd and cmd ~= "" then
         return {
           kind = "emit",
@@ -458,7 +458,7 @@ local function _select_action(ctx)
           category = "wrack_filler",
           explain = {
             target = tgt,
-            filler_humour = humour,
+            forced_aff = aff,
           },
         }
       end

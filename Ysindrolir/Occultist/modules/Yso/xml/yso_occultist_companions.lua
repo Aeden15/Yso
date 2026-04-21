@@ -45,6 +45,35 @@ local function _lc(s)
   return _trim(s):lower()
 end
 
+local function _normalize_class(cls)
+  cls = _trim(cls)
+  if cls == "" then return "" end
+  return cls:sub(1, 1):upper() .. cls:sub(2):lower()
+end
+
+local function _current_class()
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+    local ok, cls = pcall(Yso.classinfo.get)
+    if ok and _trim(cls) ~= "" then
+      return _normalize_class(cls)
+    end
+  end
+
+  local g = rawget(_G, "gmcp")
+  local cls = g and g.Char and g.Char.Status and g.Char.Status.class or nil
+  if (type(cls) ~= "string" or cls == "") and g and g.Char and g.Char.Vitals then
+    cls = g.Char.Vitals.class
+  end
+  if (type(cls) ~= "string" or cls == "") and type(Yso.class) == "string" then
+    cls = Yso.class
+  end
+  return _normalize_class(cls)
+end
+
+local function _is_occultist()
+  return _current_class() == "Occultist"
+end
+
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
     local ok, v = pcall(Yso.util.now)
@@ -242,6 +271,7 @@ function C.note_recovery(kind, line)
 end
 
 function C.note_failure(kind, line)
+  if not _is_occultist() then return false, "wrong_class" end
   if not C.is_route_active() then return false, "inactive" end
 
   kind = _trim(kind)

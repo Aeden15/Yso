@@ -16,6 +16,35 @@ Yso.dom._trig = Yso.dom._trig or {}
 
 local Ent = Yso.dom.ents
 
+local function _norm_class(cls)
+  cls = tostring(cls or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if cls == "" then return "" end
+  return cls:sub(1, 1):upper() .. cls:sub(2):lower()
+end
+
+local function _current_class()
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+    local ok, cls = pcall(Yso.classinfo.get)
+    if ok and tostring(cls or "") ~= "" then
+      return _norm_class(cls)
+    end
+  end
+
+  local g = rawget(_G, "gmcp")
+  local cls = g and g.Char and g.Char.Status and g.Char.Status.class or nil
+  if (type(cls) ~= "string" or cls == "") and g and g.Char and g.Char.Vitals then
+    cls = g.Char.Vitals.class
+  end
+  if (type(cls) ~= "string" or cls == "") and type(Yso.class) == "string" then
+    cls = Yso.class
+  end
+  return _norm_class(cls)
+end
+
+local function _is_occultist()
+  return _current_class() == "Occultist"
+end
+
 -- Ordered list of everything you can have in the entourage.
 -- (Display names – used for the echo, and lowercased for keys.)
 Ent.list = Ent.list or {
@@ -43,6 +72,7 @@ Ent.current = Ent.current or {}
 -- ---------- parser ----------
 
 local function parse_entourage_block(block)
+  if not _is_occultist() then return end
   if not block or block == "" then return end
 
   -- squash any newlines, just in case
@@ -103,6 +133,7 @@ if Yso.dom._trig.entourage then killTrigger(Yso.dom._trig.entourage) end
 Yso.dom._trig.entourage = tempRegexTrigger(
   [[^The following beings are in your entourage:]],
   function()
+    if not _is_occultist() then return end
     -- We’ll collect the next few lines (A chaos hound..., wraps, etc.)
     local buf, done = {}, false
 
@@ -128,6 +159,7 @@ if Yso.dom._trig.no_entourage then killTrigger(Yso.dom._trig.no_entourage) end
 Yso.dom._trig.no_entourage = tempRegexTrigger(
   [[^There are no beings in your entourage\.$]],
   function()
+    if not _is_occultist() then return end
     Ent.current = {}
     Ent.seen = true
     Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())
@@ -145,6 +177,7 @@ if Yso.dom._trig.no_loyals then killTrigger(Yso.dom._trig.no_loyals) end
 Yso.dom._trig.no_loyals = tempRegexTrigger(
   [[^You have no loyal companions here\.$]],
   function()
+    if not _is_occultist() then return end
     Ent.current = {}
     Ent.seen = true
     Ent.last_ts = (type(getEpoch)=="function" and math.floor(getEpoch()) or os.time())

@@ -2581,7 +2581,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^(?:His|Her|Their|Faer|Its) ([a-z]+) humour has been tempered a total of (\d+) times?\.$</string>
+							<string>^(?:His|Her|Their|Its|Faes|Faen) ([a-z]+) humour has been tempered a total of (\d+) times?\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2647,7 +2647,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^You redirect .+ internal fluids, tempering (?:his|her|their|faer|its) ([a-z]+) humour\.$</string>
+							<string>^You redirect .+ internal fluids, tempering (?:his|her|their|its|faes|faen) ([a-z]+) humour\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2669,7 +2669,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^You send ripples throughout .+ body, wracking (?:his|her|their|faer|its) ([a-z]+) humour\.$</string>
+							<string>^You send ripples throughout .+ body, wracking (?:his|her|their|its|faes|faen) ([a-z]+) humour\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2691,7 +2691,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^You send ripples throughout .+ body, wracking (?:his|her|their|faer|its) ([a-z]+) humour and (?:his|her|their|faer|its) ([a-z]+) humours?\.$</string>
+							<string>^You send ripples throughout .+ body, wracking (?:his|her|their|its|faes|faen) ([a-z]+) humour and (?:his|her|their|its|faes|faen) ([a-z]+) humours?\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2741,7 +2741,51 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Homunculus attack stance</name>
+								<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^A diminutive homunculus resembling Ysindrolir stares menacingly at ([\w&apos;\-]+), its eyes flashing brightly\.$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+								<name>Homunculus passive stance</name>
+								<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+								<triggerType>0</triggerType>
+								<conditonLineDelta>0</conditonLineDelta>
+								<mStayOpen>0</mStayOpen>
+								<mCommand></mCommand>
+								<packageName></packageName>
+								<mFgColor>#ff0000</mFgColor>
+								<mBgColor>#ffff00</mBgColor>
+								<mSoundFile></mSoundFile>
+								<colorTriggerFgColor>#000000</colorTriggerFgColor>
+								<colorTriggerBgColor>#000000</colorTriggerBgColor>
+								<regexCodeList>
+									<string>^A diminutive homunculus resembling Ysindrolir eases itself into a passive stance\.$</string>
+								</regexCodeList>
+								<regexCodePropertyList>
+									<integer>1</integer>
+								</regexCodePropertyList>
+							</Trigger>
+							<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Humour intel dirty</name>
 						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
   Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
@@ -2757,9 +2801,11 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^.+ eats (?:an antimony mineral|an antimony shard|a ginger root)\.$</string>
+							<string>^([\w&apos;\-]+) eats a ginger root\.$</string>
+							<string>^([\w&apos;\-]+) eats an antimony flake\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
@@ -12181,6 +12227,35 @@ local function _lc(s)
   return _trim(s):lower()
 end
 
+local function _normalize_class(cls)
+  cls = _trim(cls)
+  if cls == &quot;&quot; then return &quot;&quot; end
+  return cls:sub(1, 1):upper() .. cls:sub(2):lower()
+end
+
+local function _current_class()
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == &quot;function&quot; then
+    local ok, cls = pcall(Yso.classinfo.get)
+    if ok and _trim(cls) ~= &quot;&quot; then
+      return _normalize_class(cls)
+    end
+  end
+
+  local g = rawget(_G, &quot;gmcp&quot;)
+  local cls = g and g.Char and g.Char.Status and g.Char.Status.class or nil
+  if (type(cls) ~= &quot;string&quot; or cls == &quot;&quot;) and g and g.Char and g.Char.Vitals then
+    cls = g.Char.Vitals.class
+  end
+  if (type(cls) ~= &quot;string&quot; or cls == &quot;&quot;) and type(Yso.class) == &quot;string&quot; then
+    cls = Yso.class
+  end
+  return _normalize_class(cls)
+end
+
+local function _is_occultist()
+  return _current_class() == &quot;Occultist&quot;
+end
+
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
     local ok, v = pcall(Yso.util.now)
@@ -12378,6 +12453,7 @@ function C.note_recovery(kind, line)
 end
 
 function C.note_failure(kind, line)
+  if not _is_occultist() then return false, &quot;wrong_class&quot; end
   if not C.is_route_active() then return false, &quot;inactive&quot; end
 
   kind = _trim(kind)
@@ -28063,6 +28139,35 @@ Yso.dom._trig = Yso.dom._trig or {}
 
 local Ent = Yso.dom.ents
 
+local function _norm_class(cls)
+  cls = tostring(cls or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+  if cls == &quot;&quot; then return &quot;&quot; end
+  return cls:sub(1, 1):upper() .. cls:sub(2):lower()
+end
+
+local function _current_class()
+  if Yso and Yso.classinfo and type(Yso.classinfo.get) == &quot;function&quot; then
+    local ok, cls = pcall(Yso.classinfo.get)
+    if ok and tostring(cls or &quot;&quot;) ~= &quot;&quot; then
+      return _norm_class(cls)
+    end
+  end
+
+  local g = rawget(_G, &quot;gmcp&quot;)
+  local cls = g and g.Char and g.Char.Status and g.Char.Status.class or nil
+  if (type(cls) ~= &quot;string&quot; or cls == &quot;&quot;) and g and g.Char and g.Char.Vitals then
+    cls = g.Char.Vitals.class
+  end
+  if (type(cls) ~= &quot;string&quot; or cls == &quot;&quot;) and type(Yso.class) == &quot;string&quot; then
+    cls = Yso.class
+  end
+  return _norm_class(cls)
+end
+
+local function _is_occultist()
+  return _current_class() == &quot;Occultist&quot;
+end
+
 -- Ordered list of everything you can have in the entourage.
 -- (Display names – used for the echo, and lowercased for keys.)
 Ent.list = Ent.list or {
@@ -28090,6 +28195,7 @@ Ent.current = Ent.current or {}
 -- ---------- parser ----------
 
 local function parse_entourage_block(block)
+  if not _is_occultist() then return end
   if not block or block == &quot;&quot; then return end
 
   -- squash any newlines, just in case
@@ -28150,6 +28256,7 @@ if Yso.dom._trig.entourage then killTrigger(Yso.dom._trig.entourage) end
 Yso.dom._trig.entourage = tempRegexTrigger(
   [[^The following beings are in your entourage:]],
   function()
+    if not _is_occultist() then return end
     -- We’ll collect the next few lines (A chaos hound..., wraps, etc.)
     local buf, done = {}, false
 
@@ -28175,6 +28282,7 @@ if Yso.dom._trig.no_entourage then killTrigger(Yso.dom._trig.no_entourage) end
 Yso.dom._trig.no_entourage = tempRegexTrigger(
   [[^There are no beings in your entourage\.$]],
   function()
+    if not _is_occultist() then return end
     Ent.current = {}
     Ent.seen = true
     Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
@@ -28192,6 +28300,7 @@ if Yso.dom._trig.no_loyals then killTrigger(Yso.dom._trig.no_loyals) end
 Yso.dom._trig.no_loyals = tempRegexTrigger(
   [[^You have no loyal companions here\.$]],
   function()
+    if not _is_occultist() then return end
     Ent.current = {}
     Ent.seen = true
     Ent.last_ts = (type(getEpoch)==&quot;function&quot; and math.floor(getEpoch()) or os.time())
@@ -33966,6 +34075,11 @@ P.state.evaluate = P.state.evaluate or {
   started_at = 0,
 }
 P.state.corruption = P.state.corruption or {}
+P.state.homunculus_attack = P.state.homunculus_attack or {
+  active = false,
+  target = &quot;&quot;,
+  changed_at = 0,
+}
 
 local function _now()
   local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
@@ -34018,6 +34132,10 @@ local function _current_target()
     return _trim(tgt)
   end
   return &quot;&quot;
+end
+
+local function _same_target(a, b)
+  return _lc(a) ~= &quot;&quot; and _lc(a) == _lc(b)
 end
 
 local function _has_aff(aff)
@@ -34085,40 +34203,6 @@ local function _pool_order(pools)
   return out
 end
 
-local function _humour_row(target_row, humour)
-  humour = _lc(humour)
-  if humour == &quot;&quot; then
-    return nil
-  end
-
-  target_row.humours = target_row.humours or {}
-  local row = target_row.humours[humour]
-  if row then
-    return row
-  end
-
-  row = {
-    name = humour,
-    inferred_count = 0,
-    steady_count = nil,
-    known = false,
-    tempered = false,
-    last_tempered_at = 0,
-    last_wracked_at = 0,
-    last_evaluated_at = 0,
-    eval_dirty = true,
-  }
-  target_row.humours[humour] = row
-  return row
-end
-
-local function _sync_tempered(row)
-  local inferred = tonumber(row.inferred_count or 0) or 0
-  local steady = tonumber(row.steady_count or 0) or 0
-  row.tempered = (inferred &gt; 0) or (steady &gt; 0)
-  return row.tempered
-end
-
 local function _target_row(name)
   local key = _target_key(name)
   if not key then
@@ -34140,7 +34224,6 @@ local function _target_row(name)
     last_evaluated_at = 0,
     last_wrack_at = 0,
     eval_dirty = true,
-    humours = {},
     vitals = {
       health_pct = nil,
       mana_pct = nil,
@@ -34148,12 +34231,52 @@ local function _target_row(name)
     },
   }
 
-  for i = 1, #P.humours do
-    _humour_row(row, P.humours[i])
-  end
-
   P.targets[key] = row
   return row
+end
+
+local function _ak_humour_table()
+  local ak = rawget(_G, &quot;ak&quot;)
+  local alc = type(ak) == &quot;table&quot; and ak.alchemist or nil
+  local humours = type(alc) == &quot;table&quot; and alc.humour or nil
+  return type(humours) == &quot;table&quot; and humours or nil
+end
+
+local function _humour_missing_desired(target, humour, giving)
+  humour = _lc(humour)
+  if humour == &quot;&quot; then
+    return false
+  end
+  local pools = _giving_humour_pools(giving)
+  local affs = pools[humour]
+  if type(affs) ~= &quot;table&quot; then
+    return false
+  end
+  for i = 1, #affs do
+    local aff = _lc(affs[i])
+    if aff ~= &quot;&quot; and not _has_aff(aff) then
+      return true
+    end
+  end
+  return false
+end
+
+local function _humour_truth_trusted(name)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  if target == &quot;&quot; or not _same_target(target, _current_target()) then
+    return false
+  end
+  local row = _target_row(target)
+  if not row or row.eval_dirty == true then
+    return false
+  end
+  if tonumber(row.last_evaluated_at or 0) &lt;= 0 then
+    return false
+  end
+  return _same_target(P.state.humour_eval_target or &quot;&quot;, target)
 end
 
 function Yso.alc.set_humour_ready(ready, source)
@@ -34189,6 +34312,30 @@ function Yso.alc.homunculus_ready()
   return Yso.bal.homunculus ~= false
 end
 
+function Yso.set_homunculus_attack(v, tgt)
+  P.state.homunculus_attack = P.state.homunculus_attack or {}
+  P.state.homunculus_attack.active = v == true
+  P.state.homunculus_attack.changed_at = _now()
+  if v == true and _trim(tgt) ~= &quot;&quot; then
+    P.state.homunculus_attack.target = _trim(tgt)
+  elseif v ~= true then
+    P.state.homunculus_attack.target = &quot;&quot;
+  end
+  return P.state.homunculus_attack.active
+end
+
+function Yso.homunculus_attack(tgt)
+  local st = P.state.homunculus_attack or {}
+  if st.active ~= true then
+    return false
+  end
+  tgt = _trim(tgt)
+  if tgt == &quot;&quot; then
+    return true
+  end
+  return _same_target(st.target or &quot;&quot;, tgt)
+end
+
 function P.now()
   return _now()
 end
@@ -34201,14 +34348,6 @@ function P.current_target()
   return _current_target()
 end
 
-function P.humour(name, humour)
-  local target_row = _target_row(name)
-  if not target_row then
-    return nil
-  end
-  return _humour_row(target_row, humour)
-end
-
 function P.mark_all_eval_dirty(name, source)
   local target_row = _target_row(name)
   if not target_row then
@@ -34218,13 +34357,9 @@ function P.mark_all_eval_dirty(name, source)
   target_row.eval_dirty = true
   target_row.last_dirty_source = tostring(source or &quot;manual&quot;)
   target_row.last_dirty_at = _now()
-
-  for i = 1, #P.humours do
-    local row = _humour_row(target_row, P.humours[i])
-    row.eval_dirty = true
-    row.known = false
+  if _same_target(P.state.humour_eval_target or &quot;&quot;, target_row.name) then
+    P.state.humour_eval_target = &quot;&quot;
   end
-
   return true
 end
 
@@ -34250,7 +34385,6 @@ function P.begin_evaluate(name)
   P.state.evaluate.target = target_row.name
   P.state.evaluate.active = true
   P.state.evaluate.started_at = now
-  target_row.last_evaluated_at = now
   return true
 end
 
@@ -34282,44 +34416,8 @@ function P.finish_evaluate(name)
 
   P.state.evaluate.active = false
   target_row.last_evaluated_at = _now()
-  return true
-end
-
-function P.note_steady_count(name, humour, count)
-  local target_row = _target_row(name)
-  local row = target_row and _humour_row(target_row, humour) or nil
-  if not row then
-    return false
-  end
-
-  local now = _now()
-  row.steady_count = tonumber(count) or 0
-  row.known = true
-  row.eval_dirty = false
-  row.last_evaluated_at = now
-  target_row.last_evaluated_at = now
   target_row.eval_dirty = false
-  _sync_tempered(row)
-  return true
-end
-
-function P.note_all_normal(name)
-  local target_row = _target_row(name)
-  if not target_row then
-    return false
-  end
-
-  local now = _now()
-  target_row.eval_dirty = false
-  target_row.last_evaluated_at = now
-  for i = 1, #P.humours do
-    local row = _humour_row(target_row, P.humours[i])
-    row.steady_count = 0
-    row.known = true
-    row.eval_dirty = false
-    row.last_evaluated_at = now
-    _sync_tempered(row)
-  end
+  P.state.humour_eval_target = target_row.name
   return true
 end
 
@@ -34337,38 +34435,6 @@ function P.note_evaluate_vitals(name, health_pct, mana_pct)
     target_row.vitals.mana_pct = math.max(0, math.min(100, tonumber(mana_pct)))
   end
   target_row.vitals.last_evaluated_at = now
-  target_row.last_evaluated_at = now
-  return true
-end
-
-function P.note_temper_success(name, humour)
-  local target_row = _target_row(name)
-  local row = target_row and _humour_row(target_row, humour) or nil
-  if not row then
-    return false
-  end
-
-  local now = _now()
-  row.inferred_count = math.min(8, (tonumber(row.inferred_count or 0) or 0) + 1)
-  row.last_tempered_at = now
-  _sync_tempered(row)
-  return true
-end
-
-function P.note_wrack_success(name, humour_one, humour_two)
-  local target_row = _target_row(name)
-  if not target_row then
-    return false
-  end
-
-  local now = _now()
-  target_row.last_wrack_at = now
-  for _, humour in ipairs({ humour_one, humour_two }) do
-    local row = _humour_row(target_row, humour)
-    if row then
-      row.last_wracked_at = now
-    end
-  end
   return true
 end
 
@@ -34422,45 +34488,46 @@ function P.corruption_active(name)
   return true
 end
 
-function P.count(name, humour, prefer_steady)
-  local row = P.humour(name, humour)
-  if not row then
-    return 0
+function P.ak_humour_count(target, humour)
+  target = _trim(target)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  humour = _lc(humour)
+  if target == &quot;&quot; or humour == &quot;&quot; or not _same_target(target, _current_target()) then
+    return nil
   end
 
-  local steady = tonumber(row.steady_count)
-  local inferred = tonumber(row.inferred_count or 0) or 0
-  if prefer_steady == true then
-    return steady or 0
+  local humours = _ak_humour_table()
+  local value = humours and tonumber(humours[humour]) or nil
+  if value == nil then
+    return nil
   end
-  if steady ~= nil then
-    return math.max(steady, inferred)
+  if value &lt; 0 then
+    value = 0
   end
-  return inferred
+  return value
 end
 
-function P.steady_count(name, humour)
-  return P.count(name, humour, true)
+function P.current_humour_count(target, humour)
+  if not _humour_truth_trusted(target) then
+    return nil
+  end
+  return P.ak_humour_count(target, humour)
 end
 
 function P.target_needs_evaluate(name)
-  local target_row = _target_row(name)
-  if not target_row then
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  if target == &quot;&quot; then
     return false
   end
-
-  if target_row.eval_dirty == true then
+  if not _same_target(target, _current_target()) then
     return true
   end
-
-  for i = 1, #P.humours do
-    local row = _humour_row(target_row, P.humours[i])
-    if row.eval_dirty == true or row.known ~= true then
-      return true
-    end
-  end
-
-  return false
+  return not _humour_truth_trusted(target)
 end
 
 function P.health_pct(name)
@@ -34495,11 +34562,11 @@ function P.pick_missing_aff(name, giving)
     target = _current_target()
   end
 
-  local steady_sanguine = tonumber(P.steady_count(target, &quot;sanguine&quot;) or 0) or 0
+  local sanguine = tonumber(P.current_humour_count(target, &quot;sanguine&quot;) or 0) or 0
   for i = 1, #_aff_list(giving) do
     local aff = _lc(giving[i])
     if aff ~= &quot;&quot; and not _has_aff(aff) then
-      if aff ~= &quot;paralysis&quot; or steady_sanguine &gt;= 2 then
+      if aff ~= &quot;paralysis&quot; or sanguine &gt;= 2 then
         return aff
       end
     end
@@ -34519,8 +34586,8 @@ function P.pick_filler_humour(name, forced_aff, giving)
 
   for i = 1, #options do
     local humour = options[i]
-    if humour ~= preferred then
-      local count = tonumber(P.count(target, humour) or 0) or 0
+    local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
+    if humour ~= preferred and count &gt;= 1 and _humour_missing_desired(target, humour, giving) then
       if count &gt; best_count then
         best_humour = humour
         best_count = count
@@ -34528,10 +34595,7 @@ function P.pick_filler_humour(name, forced_aff, giving)
     end
   end
 
-  if best_humour then
-    return best_humour
-  end
-  return preferred or &quot;choleric&quot;
+  return best_humour
 end
 
 function P.pick_temper_humour(name, giving)
@@ -34546,8 +34610,8 @@ function P.pick_temper_humour(name, giving)
     return nil
   end
 
-  local steady_sanguine = tonumber(P.steady_count(target, &quot;sanguine&quot;) or 0) or 0
-  if _list_has_aff(giving, &quot;paralysis&quot;) and not _has_aff(&quot;paralysis&quot;) and steady_sanguine &lt; 2 then
+  local sanguine = tonumber(P.current_humour_count(target, &quot;sanguine&quot;) or 0) or 0
+  if _list_has_aff(giving, &quot;paralysis&quot;) and not _has_aff(&quot;paralysis&quot;) and sanguine &lt; 2 then
     return &quot;sanguine&quot;
   end
 
@@ -34562,7 +34626,7 @@ function P.pick_temper_humour(name, giving)
     for j = 1, #affs do
       local aff = affs[j]
       local allowed = true
-      if aff == &quot;paralysis&quot; and steady_sanguine &lt; 2 then
+      if aff == &quot;paralysis&quot; and sanguine &lt; 2 then
         allowed = false
       end
       if allowed and not _has_aff(aff) then
@@ -34571,7 +34635,7 @@ function P.pick_temper_humour(name, giving)
     end
 
     if missing &gt; 0 then
-      local count = tonumber(P.count(target, humour) or 0) or 0
+      local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
       if missing &gt; best_missing or (missing == best_missing and count &lt; best_count) then
         best_humour = humour
         best_missing = missing
@@ -34607,7 +34671,7 @@ function P.build_truewrack(name, giving)
   return string.format(&quot;truewrack %s %s %s&quot;, target, filler, forced), filler, forced
 end
 
-function P.build_wrack_fallback(name)
+function P.build_wrack_fallback(name, giving)
   local target = _trim(name)
   if target == &quot;&quot; then
     target = _current_target()
@@ -34616,11 +34680,11 @@ function P.build_wrack_fallback(name)
     return nil
   end
 
-  local humour = P.pick_temper_humour(target)
-  if humour == nil or humour == &quot;&quot; then
-    humour = &quot;choleric&quot;
+  local aff = P.pick_missing_aff(target, giving)
+  if aff == nil or aff == &quot;&quot; then
+    return nil
   end
-  return string.format(&quot;wrack %s %s&quot;, target, humour), humour
+  return string.format(&quot;wrack %s %s&quot;, target, aff), aff
 end
 </script>
 						<eventHandlerList />
@@ -34724,7 +34788,7 @@ GD.cfg = GD.cfg or {
 }
 
 GD.giving_default = GD.giving_default or {
-  &quot;paralysis&quot;, -- Can only be given once sanguine is confirmed at two steady tempers.
+  &quot;paralysis&quot;, -- Legal once AK&apos;s current-target sanguine count is at least two.
   &quot;nausea&quot;,
   &quot;sensitivity&quot;,
   &quot;haemophilia&quot;,
@@ -35077,7 +35141,7 @@ local function _select_action(ctx)
     end
 
     if type(P.build_wrack_fallback) == &quot;function&quot; then
-      local cmd, humour = P.build_wrack_fallback(tgt)
+      local cmd, aff = P.build_wrack_fallback(tgt, giving)
       if cmd and cmd ~= &quot;&quot; then
         return {
           kind = &quot;emit&quot;,
@@ -35088,7 +35152,7 @@ local function _select_action(ctx)
           category = &quot;wrack_filler&quot;,
           explain = {
             target = tgt,
-            filler_humour = humour,
+            forced_aff = aff,
           },
         }
       end
@@ -35293,7 +35357,7 @@ Yso.alc.phys = Yso.alc.phys or {}
 local P = Yso.alc.phys
 
 P.humour_types = P.humour_types or { &quot;choleric&quot;, &quot;melancholic&quot;, &quot;phlegmatic&quot;, &quot;sanguine&quot; }
-P.possessive_pronouns = P.possessive_pronouns or { &quot;his&quot;, &quot;her&quot;, &quot;their&quot;, &quot;faer&quot;, &quot;its&quot;, &quot;faes&quot;, &quot;faen&quot; }
+P.possessive_pronouns = P.possessive_pronouns or { &quot;his&quot;, &quot;her&quot;, &quot;their&quot;, &quot;its&quot;, &quot;faes&quot;, &quot;faen&quot; }
 
 P.humour_ready_line = P.humour_ready_line or &quot;You may manipulate another&apos;s humours once more.&quot;
 P.humour_fail_line = P.humour_fail_line or &quot;You are unable to manipulate another&apos;s humours at this time.&quot;
@@ -35338,14 +35402,6 @@ local function _looks_like_pronoun(word)
   return false
 end
 
-local function _extract_wrack_target(text)
-  local who = text:match(&quot;^You send ripples throughout (.+?)(?:&apos;s|&apos;) body, wracking &quot;)
-  if who then
-    return _trim(who)
-  end
-  return _current_target_fallback()
-end
-
 local function _parse_evaluate_vitals(line)
   local lower = _lc(line)
   if not lower:find(&quot;health&quot;, 1, true) or not lower:find(&quot;mana&quot;, 1, true) then
@@ -35376,7 +35432,7 @@ local function _parse_evaluate_vitals(line)
 end
 
 local function _parse_evaluate_count(line)
-  local prefixes = { &quot;His&quot;, &quot;Her&quot;, &quot;Their&quot;, &quot;Faer&quot;, &quot;Its&quot; }
+  local prefixes = { &quot;His&quot;, &quot;Her&quot;, &quot;Their&quot;, &quot;Its&quot;, &quot;Faes&quot;, &quot;Faen&quot; }
   for i = 1, #prefixes do
     local humour, count = line:match(&quot;^&quot; .. prefixes[i] .. &quot; ([a-z]+) humour has been tempered a total of (%d+) times?%.$&quot;)
     if humour and count then
@@ -35421,6 +35477,23 @@ function P.handle_humour_balance_line(line)
   end
 
   do
+    local target = line:match(&quot;^A diminutive homunculus resembling Ysindrolir stares menacingly at ([%w&apos;%-]+), its eyes flashing brightly%.$&quot;)
+    if target then
+      if type(Yso.set_homunculus_attack) == &quot;function&quot; then
+        Yso.set_homunculus_attack(true, target)
+      end
+      return &quot;homunculus_attack&quot;
+    end
+  end
+
+  if line:match(&quot;^A diminutive homunculus resembling Ysindrolir eases itself into a passive stance%.$&quot;) then
+    if type(Yso.set_homunculus_attack) == &quot;function&quot; then
+      Yso.set_homunculus_attack(false)
+    end
+    return &quot;homunculus_passive&quot;
+  end
+
+  do
     local eval_target = line:match(&quot;^Looking over (.+), you see that:$&quot;)
     if eval_target then
       if Yso.alc and type(Yso.alc.set_evaluate_ready) == &quot;function&quot; then
@@ -35436,20 +35509,12 @@ function P.handle_humour_balance_line(line)
   do
     local humour, count = _parse_evaluate_count(line)
     if humour and count then
-      local target = type(P.resolve_evaluate_target) == &quot;function&quot; and P.resolve_evaluate_target() or _current_target_fallback()
-      if type(P.note_steady_count) == &quot;function&quot; then
-        P.note_steady_count(target, humour, count)
-      end
       return &quot;evaluate_count&quot;
     end
   end
 
   do
     if line:match(&quot;^.+ humours are all at normal levels%.$&quot;) then
-      local target = type(P.resolve_evaluate_target) == &quot;function&quot; and P.resolve_evaluate_target() or _current_target_fallback()
-      if type(P.note_all_normal) == &quot;function&quot; then
-        P.note_all_normal(target)
-      end
       return &quot;evaluate_normal&quot;
     end
   end
@@ -35471,31 +35536,21 @@ function P.handle_humour_balance_line(line)
       if Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
         Yso.alc.set_humour_ready(false, &quot;temper_success&quot;)
       end
-      if type(P.note_temper_success) == &quot;function&quot; then
-        P.note_temper_success(_current_target_fallback(), humour)
-      end
       return &quot;temper_success&quot;
     end
   end
 
   do
-    local target = _extract_wrack_target(line)
     local humour_one, humour_two = line:match(&quot;^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humours?%.$&quot;)
     if not humour_one then
       humour_one, humour_two = line:match(&quot;^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humour%.$&quot;)
     end
     if humour_one then
-      if type(P.note_wrack_success) == &quot;function&quot; then
-        P.note_wrack_success(target, humour_one, humour_two)
-      end
       return &quot;truewrack_success&quot;
     end
 
     local single = line:match(&quot;^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour%.$&quot;)
     if single then
-      if type(P.note_wrack_success) == &quot;function&quot; then
-        P.note_wrack_success(target, single, nil)
-      end
       return &quot;wrack_success&quot;
     end
   end
@@ -35519,12 +35574,10 @@ function P.handle_humour_balance_line(line)
   end
 
   do
-    local who = line:match(&quot;^(.+) eats an antimony mineral%.$&quot;)
-      or line:match(&quot;^(.+) eats an antimony shard%.$&quot;)
-      or line:match(&quot;^(.+) eats a ginger root%.$&quot;)
-    if who and type(P.mark_all_eval_dirty) == &quot;function&quot; then
-      P.mark_all_eval_dirty(who, &quot;humour_reduction&quot;)
-      return &quot;humour_dirty&quot;
+    local who = line:match(&quot;^([%w&apos;%-]+) eats a ginger root%.$&quot;)
+      or line:match(&quot;^([%w&apos;%-]+) eats an antimony flake%.$&quot;)
+    if who then
+      return &quot;humour_eat_ak_owned&quot;
     end
   end
 

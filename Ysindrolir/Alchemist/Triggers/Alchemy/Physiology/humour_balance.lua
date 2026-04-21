@@ -5,7 +5,7 @@ Yso.alc.phys = Yso.alc.phys or {}
 local P = Yso.alc.phys
 
 P.humour_types = P.humour_types or { "choleric", "melancholic", "phlegmatic", "sanguine" }
-P.possessive_pronouns = P.possessive_pronouns or { "his", "her", "their", "faer", "its", "faes", "faen" }
+P.possessive_pronouns = P.possessive_pronouns or { "his", "her", "their", "its", "faes", "faen" }
 
 P.humour_ready_line = P.humour_ready_line or "You may manipulate another's humours once more."
 P.humour_fail_line = P.humour_fail_line or "You are unable to manipulate another's humours at this time."
@@ -50,14 +50,6 @@ local function _looks_like_pronoun(word)
   return false
 end
 
-local function _extract_wrack_target(text)
-  local who = text:match("^You send ripples throughout (.+?)(?:'s|') body, wracking ")
-  if who then
-    return _trim(who)
-  end
-  return _current_target_fallback()
-end
-
 local function _parse_evaluate_vitals(line)
   local lower = _lc(line)
   if not lower:find("health", 1, true) or not lower:find("mana", 1, true) then
@@ -88,7 +80,7 @@ local function _parse_evaluate_vitals(line)
 end
 
 local function _parse_evaluate_count(line)
-  local prefixes = { "His", "Her", "Their", "Faer", "Its" }
+  local prefixes = { "His", "Her", "Their", "Its", "Faes", "Faen" }
   for i = 1, #prefixes do
     local humour, count = line:match("^" .. prefixes[i] .. " ([a-z]+) humour has been tempered a total of (%d+) times?%.$")
     if humour and count then
@@ -133,6 +125,23 @@ function P.handle_humour_balance_line(line)
   end
 
   do
+    local target = line:match("^A diminutive homunculus resembling Ysindrolir stares menacingly at ([%w'%-]+), its eyes flashing brightly%.$")
+    if target then
+      if type(Yso.set_homunculus_attack) == "function" then
+        Yso.set_homunculus_attack(true, target)
+      end
+      return "homunculus_attack"
+    end
+  end
+
+  if line:match("^A diminutive homunculus resembling Ysindrolir eases itself into a passive stance%.$") then
+    if type(Yso.set_homunculus_attack) == "function" then
+      Yso.set_homunculus_attack(false)
+    end
+    return "homunculus_passive"
+  end
+
+  do
     local eval_target = line:match("^Looking over (.+), you see that:$")
     if eval_target then
       if Yso.alc and type(Yso.alc.set_evaluate_ready) == "function" then
@@ -148,20 +157,12 @@ function P.handle_humour_balance_line(line)
   do
     local humour, count = _parse_evaluate_count(line)
     if humour and count then
-      local target = type(P.resolve_evaluate_target) == "function" and P.resolve_evaluate_target() or _current_target_fallback()
-      if type(P.note_steady_count) == "function" then
-        P.note_steady_count(target, humour, count)
-      end
       return "evaluate_count"
     end
   end
 
   do
     if line:match("^.+ humours are all at normal levels%.$") then
-      local target = type(P.resolve_evaluate_target) == "function" and P.resolve_evaluate_target() or _current_target_fallback()
-      if type(P.note_all_normal) == "function" then
-        P.note_all_normal(target)
-      end
       return "evaluate_normal"
     end
   end
@@ -183,31 +184,21 @@ function P.handle_humour_balance_line(line)
       if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
         Yso.alc.set_humour_ready(false, "temper_success")
       end
-      if type(P.note_temper_success) == "function" then
-        P.note_temper_success(_current_target_fallback(), humour)
-      end
       return "temper_success"
     end
   end
 
   do
-    local target = _extract_wrack_target(line)
     local humour_one, humour_two = line:match("^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humours?%.$")
     if not humour_one then
       humour_one, humour_two = line:match("^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humour%.$")
     end
     if humour_one then
-      if type(P.note_wrack_success) == "function" then
-        P.note_wrack_success(target, humour_one, humour_two)
-      end
       return "truewrack_success"
     end
 
     local single = line:match("^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour%.$")
     if single then
-      if type(P.note_wrack_success) == "function" then
-        P.note_wrack_success(target, single, nil)
-      end
       return "wrack_success"
     end
   end
@@ -231,12 +222,10 @@ function P.handle_humour_balance_line(line)
   end
 
   do
-    local who = line:match("^(.+) eats an antimony mineral%.$")
-      or line:match("^(.+) eats an antimony shard%.$")
-      or line:match("^(.+) eats a ginger root%.$")
-    if who and type(P.mark_all_eval_dirty) == "function" then
-      P.mark_all_eval_dirty(who, "humour_reduction")
-      return "humour_dirty"
+    local who = line:match("^([%w'%-]+) eats a ginger root%.$")
+      or line:match("^([%w'%-]+) eats an antimony flake%.$")
+    if who then
+      return "humour_eat_ak_owned"
     end
   end
 

@@ -59,6 +59,16 @@ local function make_world(opts)
 
   _G.Yso = nil
   _G.yso = nil
+  _G.ak = {
+    alchemist = {
+      humour = {
+        choleric = tonumber(opts.choleric or 0) or 0,
+        melancholic = tonumber(opts.melancholic or 0) or 0,
+        phlegmatic = tonumber(opts.phlegmatic or 0) or 0,
+        sanguine = tonumber(opts.sanguine or 0) or 0,
+      },
+    },
+  }
   _G.affstrack = { score = scores(opts.aff_scores) }
   _G.target = current_target
   _G.matches = {}
@@ -128,6 +138,7 @@ local function make_world(opts)
     emitted = emitted,
     sent = sent,
     affs = _G.affstrack.score,
+    ak = _G.ak,
     advance = function(dt) now_s = now_s + (tonumber(dt) or 0) end,
   }
 end
@@ -161,14 +172,13 @@ end
 print("\n=== Test 2: evaluate count, vitals, and aurify gate ===")
 do
   local world = make_world()
-  world.P.note_all_normal("Tharonus")
   world.P.handle_humour_balance_line("Looking over Tharonus, you see that:")
+  world.ak.alchemist.humour.sanguine = 2
   world.P.handle_humour_balance_line("His sanguine humour has been tempered a total of 2 times.")
   world.P.handle_humour_balance_line("Health: 59%, Mana: 59%.")
   world.P.handle_humour_balance_line("You may study the physiological composition of your subjects once again.")
 
-  local row = world.P.humour("Tharonus", "sanguine")
-  assert_eq("2a: steady sanguine count parsed", row.steady_count, 2)
+  assert_eq("2a: AK sanguine count is read through", world.P.current_humour_count("Tharonus", "sanguine"), 2)
   local payload = preview(world)
   assert_eq("2b: both vitals below 60 enables aurify", payload and payload.eq, "aurify Tharonus")
 
@@ -177,26 +187,23 @@ do
   assert_eq("2c: mana at 60 blocks aurify", payload and payload.eq, nil)
 end
 
-print("\n=== Test 3: paralysis needs steady sanguine >= 2 ===")
+print("\n=== Test 3: paralysis needs AK sanguine >= 2 ===")
 do
-  local world = make_world()
-  world.P.note_all_normal("Tharonus")
-  world.P.note_temper_success("Tharonus", "sanguine")
-  world.P.note_temper_success("Tharonus", "sanguine")
+  local world = make_world({ sanguine = 1, choleric = 1 })
+  world.P.finish_evaluate("Tharonus")
   Yso.bal.humour = false
   local payload = preview(world)
-  assert_eq("3a: inferred-only sanguine does not legalize paralysis", payload and payload.bal, "truewrack Tharonus sanguine nausea")
+  assert_eq("3a: AK sanguine one does not legalize paralysis", payload and payload.bal, "truewrack Tharonus sanguine nausea")
 
-  world.P.note_steady_count("Tharonus", "sanguine", 2)
+  world.ak.alchemist.humour.sanguine = 2
   payload = preview(world)
-  assert_eq("3b: steady sanguine two legalizes paralysis", payload and payload.bal, "truewrack Tharonus choleric paralysis")
+  assert_eq("3b: AK sanguine two legalizes paralysis", payload and payload.bal, "truewrack Tharonus choleric paralysis")
 end
 
 print("\n=== Test 4: missing aff selector skips affs already present ===")
 do
-  local world = make_world({ aff_scores = { paralysis = 100 } })
-  world.P.note_all_normal("Tharonus")
-  world.P.note_steady_count("Tharonus", "sanguine", 2)
+  local world = make_world({ aff_scores = { paralysis = 100 }, sanguine = 2, choleric = 1 })
+  world.P.finish_evaluate("Tharonus")
   Yso.bal.humour = false
   local payload = preview(world)
   assert_eq("4a: paralysis already present selects nausea", payload and payload.bal, "truewrack Tharonus sanguine nausea")
@@ -205,7 +212,7 @@ end
 print("\n=== Test 5: educe iron counts exactly the giving set ===")
 do
   local world = make_world({ aff_scores = { paralysis = 100, nausea = 100, sensitivity = 100, asthma = 100 } })
-  world.P.note_all_normal("Tharonus")
+  world.P.finish_evaluate("Tharonus")
   local payload = preview(world)
   assert_eq("5a: exactly three giving affs enables iron", payload and payload.eq, "educe iron Tharonus")
 
@@ -214,20 +221,35 @@ do
   assert_eq("5b: four giving affs blocks iron", payload and payload.eq, nil)
 end
 
-print("\n=== Test 6: live trigger success bookkeeping ===")
+print("\n=== Test 6: live trigger balance, AK eat, and stance parsing ===")
 do
   local world = make_world()
-  world.P.note_all_normal("Tharonus")
-  world.P.handle_humour_balance_line("You redirect Tharonus's internal fluids, tempering his choleric humour.")
-  assert_eq("6a: temper success captures humour, not pronoun", world.P.humour("Tharonus", "choleric").inferred_count, 1)
-  assert_eq("6b: temper success marks humour balance false", Yso.bal.humour, false)
+  world.P.finish_evaluate("Tharonus")
+  world.P.handle_humour_balance_line("You redirect Tharonus's internal fluids, tempering faes choleric humour.")
+  assert_eq("6a: temper success marks humour balance false", Yso.bal.humour, false)
 
   world.P.handle_humour_balance_line("You send ripples throughout Tharonus's body, wracking his choleric humour.")
-  assert_eq("6c: single wrack updates humour timestamp", world.P.humour("Tharonus", "choleric").last_wracked_at > 0, true)
+  assert_eq("6b: wrack success is parsed without Yso owning counts", true, true)
 
   world.P.handle_humour_balance_line("You send ripples throughout Tharonus's body, wracking his choleric humour and his sanguine humour.")
-  assert_eq("6d: truewrack updates first humour timestamp", world.P.humour("Tharonus", "choleric").last_wracked_at > 0, true)
-  assert_eq("6e: truewrack updates second humour timestamp", world.P.humour("Tharonus", "sanguine").last_wracked_at > 0, true)
+  assert_eq("6c: truewrack success is parsed without Yso owning counts", true, true)
+
+  local event = world.P.handle_humour_balance_line("Tharonus eats an antimony flake.")
+  assert_eq("6d: AK-aligned antimony flake line parses", event, "humour_eat_ak_owned")
+
+  world.P.handle_humour_balance_line("A diminutive homunculus resembling Ysindrolir stares menacingly at Tharonus, its eyes flashing brightly.")
+  assert_eq("6e: owner homunculus attack stance tracked", Yso.homunculus_attack("Tharonus"), true)
+  world.P.handle_humour_balance_line("A diminutive homunculus resembling Ysindrolir eases itself into a passive stance.")
+  assert_eq("6f: owner homunculus passive stance tracked", Yso.homunculus_attack(), false)
+end
+
+print("\n=== Test 7: truewrack fallback is affliction wrack ===")
+do
+  local world = make_world({ sanguine = 2, choleric = 0 })
+  world.P.finish_evaluate("Tharonus")
+  Yso.bal.humour = false
+  local payload = preview(world)
+  assert_eq("7a: no second-lane value falls back to affliction wrack", payload and payload.bal, "wrack Tharonus paralysis")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

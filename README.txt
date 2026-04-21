@@ -9,6 +9,16 @@ Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist AK ownership remap + homunculus stance guard (April 21, 2026) --
+  Removed Yso-owned per-humour truth rows from Core/physiology.lua. Alchemist
+  planning now requires fresh current-target evaluate state and reads AK's
+  ak.alchemist.humour counts for legality. Group damage uses AK sanguine for
+  paralysis, truewracks only when the second lane has route value, and falls
+  back to deterministic wrack <target> <affliction>. Added owner-specific
+  homunculus attack/passive stance parsing, AK-aligned humour-eat parsing,
+  route ownership checklist, and Occultist class guards for entourage
+  missing-entity logic.
+
   Alchemist Physiology pool + route giving cleanup (April 21, 2026) --
   Filled Physiology's humour-affliction pools from the skillchart for all four
   humours, removed Physiology-owned giving defaults, and moved the Alchemist
