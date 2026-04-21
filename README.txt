@@ -9,12 +9,17 @@ Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist Physiology pool + route giving cleanup (April 21, 2026) --
+  Filled Physiology's humour-affliction pools from the skillchart for all four
+  humours, removed Physiology-owned giving defaults, and moved the Alchemist
+  group-damage pressure list into the group-damage route. Formulation throw
+  building now requires explicit ground or a direction instead of silently
+  defaulting to ground.
+
   Alchemist Physiology/Formulation boundary cleanup (April 21, 2026) --
   Split humour/evaluate/truewrack support out of Core/formulation.lua into
   Core/physiology.lua. Core/formulation.lua is now scoped to Formulation phial
-  skill usage and helper state only. Formulation thrown-phial actions default
-  to AT GROUND when no direction is supplied, matching the room-effect use case
-  from the Alchemist skillchart.
+  skill usage and helper state only.
 
   Occultist canonical module-tree restore (April 21, 2026) --
   Restored Ysindrolir/Occultist/modules/Yso from the live workspace

@@ -12,22 +12,18 @@ local P = Yso.alc.phys
 P.state = P.state or {}
 P.targets = P.targets or {}
 P.humours = P.humours or { "choleric", "melancholic", "phlegmatic", "sanguine" }
-P.aff_to_humour = P.aff_to_humour or {
-  paralysis = "sanguine",
-  nausea = "choleric",
-  sensitivity = "choleric",
-  haemophilia = "sanguine",
+P.humour_to_affs = {
+  choleric = { "nausea", "sensitivity", "slickness" },
+  melancholic = { "stupidity", "anorexia", "impatience" },
+  phlegmatic = { "clumsiness", "weariness", "asthma" },
+  sanguine = { "haemophilia", "recklessness", "paralysis" },
 }
-P.humour_to_affs = P.humour_to_affs or {
-  choleric = { "nausea", "sensitivity" },
-  sanguine = { "haemophilia", "paralysis" },
-}
-P.giving_default = P.giving_default or {
-  "paralysis",
-  "nausea",
-  "sensitivity",
-  "haemophilia",
-}
+P.aff_to_humour = {}
+for humour, affs in pairs(P.humour_to_affs) do
+  for i = 1, #affs do
+    P.aff_to_humour[affs[i]] = humour
+  end
+end
 P.state.evaluate = P.state.evaluate or {
   target = "",
   active = false,
@@ -116,6 +112,44 @@ local function _has_aff(aff)
   return false
 end
 
+local function _aff_list(list)
+  return type(list) == "table" and list or {}
+end
+
+local function _list_has_aff(list, aff)
+  aff = _lc(aff)
+  for i = 1, #_aff_list(list) do
+    if _lc(list[i]) == aff then
+      return true
+    end
+  end
+  return false
+end
+
+local function _giving_humour_pools(giving)
+  local pools = {}
+  for i = 1, #_aff_list(giving) do
+    local aff = _lc(giving[i])
+    local humour = P.aff_to_humour[aff]
+    if humour then
+      pools[humour] = pools[humour] or {}
+      pools[humour][#pools[humour] + 1] = aff
+    end
+  end
+  return pools
+end
+
+local function _pool_order(pools)
+  local out = {}
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    if pools[humour] and #pools[humour] > 0 then
+      out[#out + 1] = humour
+    end
+  end
+  return out
+end
+
 local function _humour_row(target_row, humour)
   humour = _lc(humour)
   if humour == "" then
@@ -185,21 +219,6 @@ local function _target_row(name)
 
   P.targets[key] = row
   return row
-end
-
-function Yso.giving(list)
-  local out = {}
-  if type(list) ~= "table" then
-    return out
-  end
-  for i = 1, #list do
-    local aff = _lc(list[i])
-    if aff ~= "" then
-      out[#out + 1] = aff
-    end
-  end
-  P.giving_default = out
-  return out
 end
 
 function Yso.alc.set_humour_ready(ready, source)
@@ -526,10 +545,9 @@ function P.can_aurify(name)
 end
 
 function P.iron_aff_count(name, giving)
-  local list = type(giving) == "table" and giving or P.giving_default
   local count = 0
-  for i = 1, #list do
-    if _has_aff(list[i]) then
+  for i = 1, #_aff_list(giving) do
+    if _has_aff(giving[i]) then
       count = count + 1
     end
   end
@@ -541,11 +559,10 @@ function P.pick_missing_aff(name, giving)
   if target == "" then
     target = _current_target()
   end
-  local list = type(giving) == "table" and giving or P.giving_default
 
   local steady_sanguine = tonumber(P.steady_count(target, "sanguine") or 0) or 0
-  for i = 1, #list do
-    local aff = _lc(list[i])
+  for i = 1, #_aff_list(giving) do
+    local aff = _lc(giving[i])
     if aff ~= "" and not _has_aff(aff) then
       if aff ~= "paralysis" or steady_sanguine >= 2 then
         return aff
@@ -555,14 +572,14 @@ function P.pick_missing_aff(name, giving)
   return nil
 end
 
-function P.pick_filler_humour(name, forced_aff)
+function P.pick_filler_humour(name, forced_aff, giving)
   local target = _trim(name)
   if target == "" then
     target = _current_target()
   end
 
   local preferred = P.aff_to_humour[_lc(forced_aff or "")]
-  local options = { "choleric", "sanguine" }
+  local options = _pool_order(_giving_humour_pools(giving))
   local best_humour, best_count = nil, -1
 
   for i = 1, #options do
@@ -588,9 +605,14 @@ function P.pick_temper_humour(name, giving)
     target = _current_target()
   end
 
-  local list = type(giving) == "table" and giving or P.giving_default
+  local pools = _giving_humour_pools(giving)
+  local options = _pool_order(pools)
+  if #options == 0 then
+    return nil
+  end
+
   local steady_sanguine = tonumber(P.steady_count(target, "sanguine") or 0) or 0
-  if not _has_aff("paralysis") and steady_sanguine < 2 then
+  if _list_has_aff(giving, "paralysis") and not _has_aff("paralysis") and steady_sanguine < 2 then
     return "sanguine"
   end
 
@@ -598,10 +620,12 @@ function P.pick_temper_humour(name, giving)
   local best_missing = -1
   local best_count = math.huge
 
-  for humour, affs in pairs(P.humour_to_affs) do
+  for i = 1, #options do
+    local humour = options[i]
+    local affs = pools[humour]
     local missing = 0
-    for i = 1, #affs do
-      local aff = affs[i]
+    for j = 1, #affs do
+      local aff = affs[j]
       local allowed = true
       if aff == "paralysis" and steady_sanguine < 2 then
         allowed = false
@@ -625,7 +649,7 @@ function P.pick_temper_humour(name, giving)
     return best_humour
   end
 
-  local first = P.pick_missing_aff(target, list)
+  local first = P.pick_missing_aff(target, giving)
   return P.aff_to_humour[_lc(first or "")] or "choleric"
 end
 
@@ -640,7 +664,7 @@ function P.build_truewrack(name, giving)
     return nil
   end
 
-  local filler = P.pick_filler_humour(target, forced)
+  local filler = P.pick_filler_humour(target, forced, giving)
   if filler == nil or filler == "" then
     return nil
   end

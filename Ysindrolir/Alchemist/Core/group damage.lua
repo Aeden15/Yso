@@ -93,6 +93,13 @@ GD.cfg = GD.cfg or {
   evaluate_pending_s = 1.2,
 }
 
+GD.giving_default = GD.giving_default or {
+  "paralysis", -- Can only be given once sanguine is confirmed at two steady tempers.
+  "nausea",
+  "sensitivity",
+  "haemophilia",
+}
+
 GD.state = GD.state or {
   enabled = false,
   loop_enabled = false,
@@ -275,16 +282,7 @@ local function _evaluate_pending_for(tgt)
 end
 
 local function _giving_set()
-  local P = _phys()
-  if P and type(P.giving_default) == "table" and #P.giving_default > 0 then
-    return P.giving_default
-  end
-  return {
-    "paralysis",
-    "nausea",
-    "sensitivity",
-    "haemophilia",
-  }
+  return type(GD.giving_default) == "table" and GD.giving_default or {}
 end
 
 local function _emit_payload(payload)

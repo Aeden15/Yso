@@ -136,6 +136,17 @@ local function preview(world)
   return world.GD.build_payload({})
 end
 
+print("=== Test 0: Physiology humour pools are skillchart-owned ===")
+do
+  local world = make_world()
+  assert_eq("0a: Physiology has no route giving default", world.P.giving_default, nil)
+  assert_eq("0b: route owns giving default", world.GD.giving_default[1], "paralysis")
+  assert_eq("0c: choleric includes slickness", world.P.humour_to_affs.choleric[3], "slickness")
+  assert_eq("0d: melancholic includes impatience", world.P.aff_to_humour.impatience, "melancholic")
+  assert_eq("0e: phlegmatic includes asthma", world.P.aff_to_humour.asthma, "phlegmatic")
+  assert_eq("0f: sanguine includes recklessness", world.P.aff_to_humour.recklessness, "sanguine")
+end
+
 print("=== Test 1: dirty intel evaluates once ===")
 do
   local world = make_world()
