@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
 	<TriggerPackage>
@@ -786,14 +786,14 @@ end</script>
 						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You must regain balance first.</string>
-							<string>Balance used:</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>3</integer>
-							<integer>0</integer>
-						</regexCodePropertyList>
+																								<regexCodeList>
+													<string>You must regain balance first.</string>
+													<string>Balance used:</string>
+												</regexCodeList>
+												<regexCodePropertyList>
+													<integer>3</integer>
+													<integer>0</integer>
+												</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
@@ -2520,9 +2520,10 @@ ak.last_chimera_cmd_id = (ak.last_chimera_cmd_id or 0) + 1</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
 					<regexCodePropertyList />
+					
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Choleric temper success</name>
-						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+						<name>Evaluate header</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
   Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
 end</script>
 						<triggerType>0</triggerType>
@@ -2536,15 +2537,15 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^.*tempering\s+(his|her|their|faes|faen)\s+choleric humour\.$</string>
+							<string>^Looking over (.+), you see that:$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Melancholic temper success</name>
-						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+						<name>Evaluate ready</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
   Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
 end</script>
 						<triggerType>0</triggerType>
@@ -2558,15 +2559,15 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^.*tempering\s+(his|her|their|faes|faen)\s+melancholic humour\.$</string>
+							<string>^You may study the physiological composition of your subjects once again\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Phlegmatic temper success</name>
-						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+						<name>Evaluate tempered count</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
   Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
 end</script>
 						<triggerType>0</triggerType>
@@ -2580,15 +2581,15 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^.*tempering\s+(his|her|their|faes|faen)\s+phlegmatic humour\.$</string>
+							<string>^(?:His|Her|Their|Faer|Its) ([a-z]+) humour has been tempered a total of (\d+) times?\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Sanguine temper success</name>
-						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+						<name>Evaluate normal humours</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
   Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
 end</script>
 						<triggerType>0</triggerType>
@@ -2602,7 +2603,161 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^.*tempering\s+(his|her|their|faes|faen)\s+sanguine humour\.$</string>
+							<string>^.+ humours are all at normal levels\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Evaluate vitals</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.*(?:Health|health).*\d+%.*(?:Mana|mana).*\d+%.*$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Temper success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You redirect .+ internal fluids, tempering (?:his|her|their|faer|its) ([a-z]+) humour\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Wrack success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You send ripples throughout .+ body, wracking (?:his|her|their|faer|its) ([a-z]+) humour\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Truewrack success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You send ripples throughout .+ body, wracking (?:his|her|their|faer|its) ([a-z]+) humour and (?:his|her|their|faer|its) ([a-z]+) humours?\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Homunculus corrupt success</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.*corrupt.*(?:melancholic.*sanguine|sanguine.*melancholic).*$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Homunculus ready</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You may order your homunculus once more\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Humour intel dirty</name>
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
+  Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^.+ eats (?:an antimony mineral|an antimony shard|a ginger root)\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2610,7 +2765,7 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Humour balance ready</name>
-						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == "function" then
+						<script>if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.handle_humour_balance_line) == &quot;function&quot; then
   Yso.alc.phys.handle_humour_balance_line(getCurrentLine())
 end</script>
 						<triggerType>0</triggerType>
@@ -2624,13 +2779,12 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^You may manipulate another's humours once more\.$</string>
+							<string>^You may manipulate another&apos;s humours once more\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
 						</regexCodePropertyList>
-					</Trigger>
-				</TriggerGroup>
+					</Trigger></TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Formulation</name>
 					<script></script>
@@ -4511,7 +4665,19 @@ end
 					<command></command>
 					<packageName></packageName>
 					<regex></regex>
+					
 					<Alias isActive="yes" isFolder="no">
+						<name>adam</name>
+						<script>if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == &quot;function&quot; then
+  Yso.mode.toggle_route_loop(&quot;alchemist_group_damage&quot;, &quot;alias:adam&quot;)
+else
+  cecho(&quot;&lt;orange&gt;[YSO] alchemist group damage loop controller unavailable.&lt;reset&gt;\n&quot;)
+end</script>
+						<command></command>
+						<packageName></packageName>
+						<regex>^adam$</regex>
+					</Alias>
+<Alias isActive="yes" isFolder="no">
 						<name>lead</name>
 						<script>send("educe lead")</script>
 						<command></command>
@@ -5713,9 +5879,11 @@ do
 
   function C.is_occultist() return C.is(&quot;Occultist&quot;) end
   function C.is_magi() return C.is(&quot;Magi&quot;) end
+  function C.is_alchemist() return C.is(&quot;Alchemist&quot;) end
 
   Yso.is_occultist = Yso.is_occultist or function() return C.is_occultist() end
   Yso.is_magi      = Yso.is_magi      or function() return C.is_magi() end
+  Yso.is_alchemist = Yso.is_alchemist or function() return C.is_alchemist() end
 
   local function _sync_from_status(src)
     local g = rawget(_G, &quot;gmcp&quot;)
@@ -6968,6 +7136,265 @@ end
 </script>
 					<eventHandlerList />
 				</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>route_registry.lua</name>
+						<packageName></packageName>
+						<script>--========================================================--
+-- Yso Combat Route Registry
+--  • Single source of truth for active Yso combat routes.
+--  • Keeps ids, aliases, namespaces, and mode/party mapping together.
+--========================================================--
+
+Yso = Yso or {}
+Yso.Combat = Yso.Combat or {}
+Yso.Combat.RouteRegistry = Yso.Combat.RouteRegistry or {}
+
+local RR = Yso.Combat.RouteRegistry
+
+local function _trim(s)
+  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
+end
+
+local function _norm(s)
+  return _trim(s):lower()
+end
+
+local function _copy(entry)
+  local out = {}
+  if type(entry) ~= &quot;table&quot; then return out end
+  for k, v in pairs(entry) do out[k] = v end
+  return out
+end
+
+local function _current_class()
+  local C = Yso and Yso.classinfo or nil
+  if type(C) == &quot;table&quot; then
+    if type(C.get) == &quot;function&quot; then
+      local ok, v = pcall(C.get)
+      if ok and type(v) == &quot;string&quot; and _trim(v) ~= &quot;&quot; then return _norm(v) end
+    end
+    if type(C.current_class) == &quot;function&quot; then
+      local ok, v = pcall(C.current_class)
+      if ok and type(v) == &quot;string&quot; and _trim(v) ~= &quot;&quot; then return _norm(v) end
+    end
+  end
+
+  local gmcp = rawget(_G, &quot;gmcp&quot;)
+  local status = gmcp and gmcp.Char and gmcp.Char.Status or nil
+  local cls = status and (status.class or status.classname) or nil
+  if type(cls) == &quot;string&quot; and _trim(cls) ~= &quot;&quot; then return _norm(cls) end
+
+  if type(Yso.class) == &quot;string&quot; and _trim(Yso.class) ~= &quot;&quot; then
+    return _norm(Yso.class)
+  end
+
+  return &quot;&quot;
+end
+
+local function _entry_class(entry)
+  return type(entry) == &quot;table&quot; and _norm(entry.class or &quot;&quot;) or &quot;&quot;
+end
+
+local function _class_rank(entry, cls)
+  local needed = _entry_class(entry)
+  if needed == &quot;&quot; then return 1 end
+  if cls ~= &quot;&quot; and needed == cls then return 2 end
+  return 0
+end
+
+local function _alias_target(value)
+  if type(value) == &quot;string&quot; then return value end
+  if type(value) ~= &quot;table&quot; then return nil end
+
+  local cls = _current_class()
+  local target = cls ~= &quot;&quot; and value[cls] or nil
+  if type(target) == &quot;string&quot; and target ~= &quot;&quot; then return target end
+
+  target = value.default or value.any or value[&quot;*&quot;]
+  if type(target) == &quot;string&quot; and target ~= &quot;&quot; then return target end
+
+  return nil
+end
+
+local ROUTES = {
+  oc_aff = {
+    id = &quot;oc_aff&quot;,
+    mode = &quot;combat&quot;,
+    party_route = nil,
+    namespace = &quot;Yso.off.oc.oc_aff&quot;,
+    description = &quot;Duel affliction loop&quot;,
+    priority = 60,
+    class = &quot;occultist&quot;,
+    active = true,
+  },
+  magi_focus = {
+    id = &quot;magi_focus&quot;,
+    mode = &quot;combat&quot;,
+    party_route = nil,
+    namespace = &quot;Yso.off.magi.focus&quot;,
+    description = &quot;Magi duel convergence&quot;,
+    priority = 61,
+    class = &quot;magi&quot;,
+    active = true,
+    module_name = &quot;magi_focus&quot;,
+  },
+  magi_dmg = {
+    id = &quot;magi_dmg&quot;,
+    mode = &quot;combat&quot;,
+    party_route = nil,
+    namespace = &quot;Yso.off.magi.dmg&quot;,
+    description = &quot;Magi duel damage&quot;,
+    priority = 62,
+    class = &quot;magi&quot;,
+    active = true,
+    module_name = &quot;Magi_duel_dam&quot;,
+  },
+  group_damage = {
+    id = &quot;group_damage&quot;,
+    mode = &quot;party&quot;,
+    party_route = &quot;dam&quot;,
+    namespace = &quot;Yso.off.oc.group_damage&quot;,
+    description = &quot;Party damage&quot;,
+    priority = 55,
+    class = &quot;occultist&quot;,
+    active = true,
+  },
+  magi_group_damage = {
+    id = &quot;magi_group_damage&quot;,
+    mode = &quot;party&quot;,
+    party_route = &quot;dam&quot;,
+    namespace = &quot;Yso.off.magi.group_damage&quot;,
+    description = &quot;Magi party damage&quot;,
+    priority = 56,
+    class = &quot;magi&quot;,
+    active = true,
+    module_name = &quot;magi_group_damage&quot;,
+  },
+  alchemist_group_damage = {
+    id = &quot;alchemist_group_damage&quot;,
+    mode = &quot;party&quot;,
+    party_route = &quot;dam&quot;,
+    namespace = &quot;Yso.off.alc.group_damage&quot;,
+    description = &quot;Alchemist party damage&quot;,
+    priority = 57,
+    class = &quot;alchemist&quot;,
+    active = true,
+    module_name = &quot;alchemist_group_damage&quot;,
+  },
+  group_aff = {
+    id = &quot;group_aff&quot;,
+    mode = &quot;party&quot;,
+    party_route = &quot;aff&quot;,
+    namespace = &quot;Yso.off.oc.group_aff&quot;,
+    description = &quot;Party affliction pressure&quot;,
+    priority = 53,
+    class = &quot;occultist&quot;,
+    active = true,
+  },
+}
+
+local ALIASES = {
+  aff = &quot;oc_aff&quot;,
+  oc = &quot;oc_aff&quot;,
+  occ = &quot;oc_aff&quot;,
+  oc_aff = &quot;oc_aff&quot;,
+  occ_aff = &quot;oc_aff&quot;,
+  occ_aff_burst = &quot;oc_aff&quot;,
+  occultist_offense = &quot;oc_aff&quot;,
+  burst = &quot;oc_aff&quot;,
+  focus = { magi = &quot;magi_focus&quot; },
+  magi_focus = { magi = &quot;magi_focus&quot; },
+  mdam = { magi = &quot;magi_dmg&quot; },
+  magi_dmg = { magi = &quot;magi_dmg&quot; },
+  adam = { alchemist = &quot;alchemist_group_damage&quot; },
+  alchemist_group_damage = { alchemist = &quot;alchemist_group_damage&quot; },
+  gd = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot;, default = &quot;group_damage&quot; },
+  dmg = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot;, default = &quot;group_damage&quot; },
+  dam = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot;, default = &quot;group_damage&quot; },
+  party_dam = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot;, default = &quot;group_damage&quot; },
+  party_damage = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot;, default = &quot;group_damage&quot; },
+  group_aff = &quot;group_aff&quot;,
+  party_aff = &quot;group_aff&quot;,
+  team_aff = &quot;group_aff&quot;,
+}
+
+local function _route_id(name)
+  name = _norm(name)
+  if name == &quot;&quot; or name == &quot;none&quot; then return nil end
+  if ROUTES[name] then return name end
+  return _alias_target(ALIASES[name])
+end
+
+local function _sorted_rows(filter)
+  local out = {}
+  local cls = _current_class()
+  for _, entry in pairs(ROUTES) do
+    if entry.active ~= false and (not filter or filter(entry)) then
+      out[#out + 1] = _copy(entry)
+    end
+  end
+  table.sort(out, function(a, b)
+    local ar = _class_rank(a, cls)
+    local br = _class_rank(b, cls)
+    if ar ~= br then
+      return ar &gt; br
+    end
+    if (a.priority or 0) ~= (b.priority or 0) then
+      return (a.priority or 0) &gt; (b.priority or 0)
+    end
+    return tostring(a.id or &quot;&quot;) &lt; tostring(b.id or &quot;&quot;)
+  end)
+  return out
+end
+
+function RR.resolve(name)
+  local id = _route_id(name)
+  local entry = id and ROUTES[id] or nil
+  if not entry or entry.active == false then return nil end
+  return _copy(entry)
+end
+
+function RR.active_ids()
+  local rows = _sorted_rows()
+  local out = {}
+  for i = 1, #rows do out[i] = rows[i].id end
+  return out
+end
+
+function RR.for_mode(mode)
+  mode = _norm(mode)
+  return _sorted_rows(function(entry)
+    return _norm(entry.mode) == mode
+  end)
+end
+
+function RR.for_party_route(route)
+  route = _norm(route)
+  if route == &quot;dmg&quot; then route = &quot;dam&quot; end
+  local cls = _current_class()
+  local best, best_rank, best_priority = nil, -1, -math.huge
+  for _, entry in pairs(ROUTES) do
+    if entry.active ~= false and _norm(entry.party_route) == route then
+      local rank = _class_rank(entry, cls)
+      if rank &gt; 0 and (not best or rank &gt; best_rank or (rank == best_rank and (entry.priority or 0) &gt; best_priority)) then
+        best = entry
+        best_rank = rank
+        best_priority = entry.priority or 0
+      end
+    end
+  end
+  return best and _copy(best) or nil
+end
+
+function RR.primary_for_mode(mode)
+  local rows = RR.for_mode(mode)
+  return rows[1]
+end
+
+return RR
+</script>
+						<eventHandlerList />
+					</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>AK+Legacy wiring</name>
 					<packageName></packageName>
@@ -12127,41 +12554,21 @@ return C
 				<Script isActive="yes" isFolder="no">
 					<name>group_damage.lua</name>
 					<packageName></packageName>
-					<script>--Group damage offense logic
---========================================================--
--- group_damage.lua  (Achaea / Occultist / Yso)
---  * Group damage automation (party / team damage):
---      Giving priority: paralysis -&gt; asthma -&gt; sensitivity -&gt; haemophilia -&gt; healthleech
---      Lane-first sends: use whichever lane is ready; no forced EQ+entity pairing
---      Damage spam: WARP / FIRELORD(healthleech) when healthleech is tracked
---
---  * Uses Yso.emit() lane table =&gt; lane-table payload transport (default separator: &amp;&amp;)
---  * Payload modes (GLOBAL, via Yso.cfg.payload_mode):
---      - &quot;as_available&quot; semantics are enforced by Yso.queue.commit() lane isolation (wake_lane)
---
---  Requirement (freestyle update):
---    - Freestyle combined payloads are allowed, with one action per lane.
+					<script>--========================================================--
+-- group_damage.lua
+--  Party damage route for Occultist.
+--  Alias-controlled loop ownership is handled by Yso.mode.
 --========================================================--
 
-Yso = Yso or {}
+_G.Yso = _G.Yso or _G.yso or {}
+_G.yso = _G.Yso
+
+Yso = _G.Yso
 Yso.off = Yso.off or {}
 Yso.off.oc = Yso.off.oc or {}
 
--- Canonical group damage driver lives here:
 Yso.off.oc.group_damage = Yso.off.oc.group_damage or {}
 local GD = Yso.off.oc.group_damage
---========================================================--
--- Occultist ENTITY pool (defaulted)
---  * Shared across Occultist offense routes (duel / party / utilities).
---  * The pool is intended to be stable; routes may READ from it, not redefine it.
---========================================================--
-Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
-  rotation = { &quot;worm&quot;, &quot;storm&quot;, &quot;bubonis&quot;, &quot;slime&quot;, &quot;sycophant&quot;, &quot;bloodleech&quot;, &quot;hound&quot;, &quot;humbug&quot;, &quot;chimera&quot;, &quot;firelord&quot; },
-}
-
--- Compatibility aliases (callers may refer to these):
-Yso.off.oc.dmg = GD
-Yso.off.oc.gd_simple = GD
 GD.alias_owned = true
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
@@ -12175,37 +12582,25 @@ GD.route_contract = GD.route_contract or {
   id = &quot;group_damage&quot;,
   interface_version = 1,
   shared_categories = { &quot;defense_break&quot;, &quot;anti_tumble&quot; },
-  route_local_categories = {
-    &quot;bootstrap&quot;,
-    &quot;required_core_refresh&quot;,
-    &quot;required_core_application&quot;,
-    &quot;fallback_support&quot;,
-    &quot;reserved_burst&quot;,
-    &quot;passive_pressure_only&quot;,
-  },
+  route_local_categories = { &quot;giving_pressure&quot;, &quot;entity_pressure&quot;, &quot;damage_conversion&quot;, &quot;filler&quot; },
   capabilities = {
     uses_eq = true,
     uses_bal = true,
     uses_entity = true,
-    supports_burst = true,
+    supports_burst = false,
     supports_bootstrap = true,
     needs_target = true,
-    uses_primebond_scoring = true,
     shares_defense_break = true,
     shares_anti_tumble = true,
   },
   override_policy = {
     mode = &quot;narrow_global_only&quot;,
     allowed = {
-      reserved_burst = true,
       target_invalid = true,
       target_slain = true,
       route_off = true,
       pause = true,
       manual_suppression = true,
-      target_swap_bootstrap = true,
-      defense_break = true,
-      anti_tumble = true,
     },
   },
   lifecycle = {
@@ -12221,268 +12616,58 @@ GD.route_contract = GD.route_contract or {
   },
 }
 
-do
-  if RI and type(RI.ensure_hooks) == &quot;function&quot; then
-    RI.ensure_hooks(GD, GD.route_contract)
-  end
-end
-
-local function _ER()
-  return Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
-end
-
-local function _offense_state()
-  return Yso and Yso.off and Yso.off.state or nil
-end
-
 GD.cfg = GD.cfg or {
   enabled = false,
   echo = true,
   loop_delay = 0.15,
-
-  -- No entourage opener in Occultist group damage.
-  opener_enable = false,
-  opener_cmd = nil,
-
-  -- Route-off cleanup (all loyals, every time), gated by a ready wake.
-  loyals_on_cmd = &quot;order loyals kill %s&quot;,
-  off_passive_cmd = &quot;order loyals passive&quot;,
-
-  -- Entity pool used by this route when an entity can contribute required/follow-up value.
-  entity_rotation = { &quot;worm&quot;, &quot;storm&quot;, &quot;bubonis&quot;, &quot;slime&quot;, &quot;sycophant&quot;, &quot;bloodleech&quot;, &quot;hound&quot;, &quot;humbug&quot;, &quot;chimera&quot;, &quot;firelord&quot; },
-
-  -- Entity duration / refresh policy.
-  prefer_storm_clumsiness = true,
-  prefer_worm_for_healthleech = true,
-  prefer_sycophant_rixil = true,
-  avoid_overlap = true,
-  worm_duration_s = 20,
-  worm_refresh_lead_s = 1.0,
-  sycophant_duration_s = 30,
-  sycophant_refresh_lead_s = 1.0,
-
-  -- Commit semantics: freestyle combined payload, one action per lane.
-  freestyle_isolate_lanes = false,
-
-  -- minimum send throttles (milliseconds)
-  dupe_window_ms = 120,
-
-  -- Canonical group damage giving order (lane-first planner).
-  giving_order = { &quot;paralysis&quot;, &quot;asthma&quot;, &quot;sensitivity&quot;, &quot;haemophilia&quot;, &quot;healthleech&quot; },
+  giving_priority = {
+    &quot;paralysis&quot;,
+    &quot;asthma&quot;,
+    &quot;sensitivity&quot;,
+    &quot;haemophilia&quot;,
+    &quot;healthleech&quot;,
+  },
 }
-
--- Lust/Empress reactive rescue automation (anti-tumble + empress pull)
--- CANCELLED by default per project decision (2026-03-01).
-GD.cfg.rescue_lust_empress = false  -- CANCELLED per project decision (2026-03-01).
-
-
--- Entity pool policy: default + lock to the shared Occultist pool unless explicitly unlocked.
-if GD.cfg.lock_entity_pool == nil then GD.cfg.lock_entity_pool = true end
-if GD.cfg.lock_entity_pool == true then
-  GD.cfg.entity_rotation = (Yso.off.oc.entity_pool and Yso.off.oc.entity_pool.rotation) or GD.cfg.entity_rotation
-end
 
 GD.state = GD.state or {
   enabled = false,
   loop_enabled = false,
   timer_id = nil,
   busy = false,
-  waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = &quot;&quot;, reason = &quot;&quot;, at = 0 },
-  last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; },
-  in_flight = { fingerprint = &quot;&quot;, target = &quot;&quot;, route = &quot;group_damage&quot;, at = 0, resolved_at = 0, lanes = nil, eq = &quot;&quot;, entity = &quot;&quot;, reason = &quot;&quot; },
-  debug = { last_no_send_reason = &quot;&quot;, last_retry_reason = &quot;&quot;, entity_no_send_reasons = {}, last_shield_target = &quot;&quot; },
-  loop_delay = tonumber(GD.cfg.loop_delay or 0.15) or 0.15,
-  opener_sent_for = &quot;&quot;,
-  rr_idx = 0,
-  stop_pending = false,
-  last_room_id = &quot;&quot;,
-  last_target = &quot;&quot;,
-  entity_target = &quot;&quot;,
-  worm = { target = &quot;&quot;, until_t = 0, proc_count = 0, proc_window_until = 0 },
-  syc = { target = &quot;&quot;, until_t = 0 },
+  waiting = { queue = nil, main_lane = nil, lanes = nil, at = 0 },
+  last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil },
+  template = { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; },
+  explain = {},
 }
 
--- Anti-tumble / Empress rescue state (Lust+Empress recovery)
-GD.state.tumble = GD.state.tumble or { target = &quot;&quot;, dir = &quot;&quot;, at = 0, until_t = 0, fired = false }
-GD.state.empress = GD.state.empress or { pending = false, target = &quot;&quot;, dir = &quot;&quot;, started_at = 0, last_try = 0, fail_until = 0 }
-GD.state.justice_once = GD.state.justice_once or {}
-local function _trim(s) return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;,&quot;&quot;):gsub(&quot;%s+$&quot;,&quot;&quot;)) end
-local function _lc(s) return _trim(s):lower() end
-local function _tkey(s) return _lc(s) end
+local function _trim(s)
+  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
+end
 
-local function _companions()
-  local C = Yso and Yso.occ and Yso.occ.companions or nil
-  return type(C) == &quot;table&quot; and C or nil
+local function _lc(s)
+  return _trim(s):lower()
 end
 
 local function _now()
-  -- Use canonical clock (seconds, handles getEpoch ms) to keep worm timers sane.
   if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
-    local ok,v = pcall(Yso.util.now)
-    v = ok and tonumber(v) or nil
-    if v then return v end
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
   end
   if type(getEpoch) == &quot;function&quot; then
-    local ok,v = pcall(getEpoch)
-    v = ok and tonumber(v) or nil
-    if v then
-      if v &gt; 1e12 then v = v / 1000 end
-      return v
-    end
+    local v = tonumber(getEpoch()) or os.time()
+    if v &gt; 20000000000 then v = v / 1000 end
+    return v
   end
   return os.time()
 end
 
--- Worm (Domination: COMMAND WORM) behaves like a ~20s DoT.
--- We gate re-commanding per-target using a simple timer so we don&apos;t spam entity balance.
---========================================================--
--- Entity effect duration gates (route-local)
---  * worm:     20s infestation window (fallback: 2nd chew-proc line)
---  * sycophant:30s rixil window
---  * Entities retarget to the current target; duration gates reset on target change.
---========================================================--
-
-local function _worm_reset()
-  GD.state.worm = GD.state.worm or { target = &quot;&quot;, until_t = 0, proc_count = 0, proc_window_until = 0 }
-  GD.state.worm.target, GD.state.worm.until_t, GD.state.worm.proc_count, GD.state.worm.proc_window_until = &quot;&quot;, 0, 0, 0
-end
-
-function GD.note_worm_sent(tgt)
-  if _tkey(tgt) == &quot;&quot; then return end
-  local ER = _ER()
-  if ER and type(ER.note_sent) == &quot;function&quot; then pcall(ER.note_sent, &quot;worm&quot;, tgt, { source = &quot;gd&quot; }) end
-end
-
-local function _worm_should_refresh(tgt)
-  if _tkey(tgt) == &quot;&quot; then return false end
-  local ER = _ER()
-  if ER and type(ER.worm_should_refresh) == &quot;function&quot; then
-    local ok, v = pcall(ER.worm_should_refresh, tgt)
-    if ok then return v == true end
+local function _echo(msg)
+  if GD.cfg.echo ~= true then return end
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;\n&quot;, tostring(msg)))
+  elseif type(echo) == &quot;function&quot; then
+    echo(string.format(&quot;[Yso:Occultist] %s\n&quot;, tostring(msg)))
   end
-  local w = GD.state.worm or {}
-  if _tkey(w.target) ~= _tkey(tgt) then return true end
-  return _now() &gt;= (w.until_t or 0)
-end
-
-function GD.note_worm_proc(tgt)
-  if _tkey(tgt) == &quot;&quot; then return end
-  local ER = _ER()
-  if ER and type(ER.note_worm_proc) == &quot;function&quot; then pcall(ER.note_worm_proc, tgt) end
-end
-
-local function _syc_reset()
-  GD.state.syc = GD.state.syc or { target = &quot;&quot;, until_t = 0 }
-  GD.state.syc.target, GD.state.syc.until_t = &quot;&quot;, 0
-end
-
-local function _syc_is_active(tgt)
-  local s = GD.state.syc or {}
-  return _tkey(tgt) ~= &quot;&quot; and _tkey(tgt) == _tkey(s.target) and _now() &lt; (s.until_t or 0)
-end
-
-local function _syc_mark_used(tgt, dur)
-  local s = GD.state.syc or {}
-  GD.state.syc = s
-  s.target = tgt
-  s.until_t = _now() + (dur or GD.cfg.sycophant_duration_s)
-end
-
-function GD.note_syc_sent(tgt)
-  if _tkey(tgt) == &quot;&quot; then return end
-  local ER = _ER()
-  if ER and type(ER.note_sent) == &quot;function&quot; then pcall(ER.note_sent, &quot;sycophant&quot;, tgt, { source = &quot;gd&quot; }) end
-end
-
-local function _syc_should_refresh(tgt)
-  if _tkey(tgt) == &quot;&quot; then return false end
-  local ER = _ER()
-  if ER and type(ER.syc_should_refresh) == &quot;function&quot; then
-    local ok, v = pcall(ER.syc_should_refresh, tgt)
-    if ok then return v == true end
-  end
-  local s = GD.state.syc or {}
-  return _now() &gt;= (s.until_t or 0)
-end
-
-local function _slime_should_refresh(tgt)
-  if _tkey(tgt) == &quot;&quot; then return false end
-  local ER = _ER()
-  if ER and type(ER.slime_should_refresh) == &quot;function&quot; then
-    local ok, v = pcall(ER.slime_should_refresh, tgt)
-    if ok then return v == true end
-  end
-  return true
-end
-
--- Reset duration gates on target change.
-local function _reset_entity_gates_on_target_change(tgt)
-  local last = GD.state.entity_target or &quot;&quot;
-  if _tkey(last) ~= _tkey(tgt) then
-    GD.state.entity_target = tgt
-    GD.state.rr_idx = 0
-    GD.state.opener_sent_for = &quot;&quot;
-    local ER = _ER()
-    if ER and type(ER.target_swap) == &quot;function&quot; then pcall(ER.target_swap, tgt) end
-  end
-end
-
-local function _tgt_valid(tgt)
-  tgt = _trim(tgt)
-  if tgt == &quot;&quot; then return false end
-  if type(Yso.target_is_valid) == &quot;function&quot; then
-    local ok, v = pcall(Yso.target_is_valid, tgt)
-    if ok then return v == true end
-  end
-  return true
-end
-
-local function _set_loyals_hostile(v)
-  local C = _companions()
-  if C and type(C.note_order_sent) == &quot;function&quot; then
-    if v == true then
-      local tgt = _trim(GD.state and GD.state.last_target or &quot;&quot;)
-      if tgt == &quot;&quot; then
-        tgt = _trim(rawget(_G, &quot;target&quot;) or &quot;&quot;)
-      end
-      local ok, handled = pcall(C.note_order_sent, (&quot;order loyals kill %s&quot;):format(tgt), tgt)
-      if ok and handled == true then return end
-    else
-      local ok, handled = pcall(C.note_order_sent, &quot;order loyals passive&quot;, _trim(GD.state and GD.state.last_target or &quot;&quot;))
-      if ok and handled == true then return end
-    end
-  end
-
-  if not Yso.state then return end
-  if type(Yso.state.loyals_hostile) == &quot;function&quot; then
-    pcall(Yso.state.loyals_hostile, v)
-  else
-    Yso.state.loyals_hostile = (v == true)
-  end
-end
-
-local function _vitals()
-  return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
-end
-
-local function _eq_ready()
-  if Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
-    local ok, v = pcall(Yso.state.eq_ready)
-    if ok then return v == true end
-  end
-  local v = _vitals()
-  local eq = v.eq or v.equilibrium
-  return eq == true or tostring(eq or &quot;&quot;) == &quot;1&quot;
-end
-
-local function _bal_ready()
-  if Yso.state and type(Yso.state.bal_ready) == &quot;function&quot; then
-    local ok, v = pcall(Yso.state.bal_ready)
-    if ok then return v == true end
-  end
-  local v = _vitals()
-  local bal = v.bal or v.balance
-  return bal == true or tostring(bal or &quot;&quot;) == &quot;1&quot;
 end
 
 local function _target()
@@ -12490,1743 +12675,299 @@ local function _target()
     local ok, v = pcall(Yso.get_target)
     if ok and _trim(v) ~= &quot;&quot; then return _trim(v) end
   end
-  local cur = rawget(_G, &quot;target&quot;)
-  if type(cur) == &quot;string&quot; and _trim(cur) ~= &quot;&quot; then return _trim(cur) end
-  local ak = rawget(_G, &quot;ak&quot;)
-  if type(ak) == &quot;table&quot; then
-    if type(ak.target) == &quot;string&quot; and _trim(ak.target) ~= &quot;&quot; then return _trim(ak.target) end
-    if type(ak.tgt) == &quot;string&quot; and _trim(ak.tgt) ~= &quot;&quot; then return _trim(ak.tgt) end
-    if type(ak.Target) == &quot;string&quot; and _trim(ak.Target) ~= &quot;&quot; then return _trim(ak.Target) end
+  local t = rawget(_G, &quot;target&quot;)
+  if type(t) == &quot;string&quot; and _trim(t) ~= &quot;&quot; then return _trim(t) end
+  return &quot;&quot;
+end
+
+local function _target_valid(tgt)
+  if type(Yso.target_is_valid) == &quot;function&quot; then
+    local ok, v = pcall(Yso.target_is_valid, tgt)
+    if ok then return v == true end
   end
-  return &quot;&quot;
+  return _trim(tgt) ~= &quot;&quot;
 end
 
-local function _room_id()
-  local g = rawget(_G, &quot;gmcp&quot;)
-  local info = g and g.Room and g.Room.Info
-  if info and info.num ~= nil then return tostring(info.num) end
-  if info and info.id ~= nil then return tostring(info.id) end
-  return &quot;&quot;
+local function _is_occultist()
+  if type(Yso.is_occultist) == &quot;function&quot; then
+    local ok, v = pcall(Yso.is_occultist)
+    if ok then return v == true end
+  end
+  local cls = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or &quot;&quot;
+  return _lc(cls) == &quot;occultist&quot;
 end
 
-local function _worm_active(tgt)
-  return not _worm_should_refresh(tgt)
+local function _eq_ready()
+  if Yso and Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then return v == true end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.eq or v.equilibrium or &quot;&quot;) == &quot;1&quot; or (v.eq == true or v.equilibrium == true)
 end
 
-local function _syc_mark(tgt, dur)
-  local ER = _ER()
-  if ER and type(ER.note_sent) == &quot;function&quot; then return pcall(ER.note_sent, &quot;sycophant&quot;, tgt, { source = &quot;mark&quot;, dur = dur }) end
-  return _syc_mark_used(tgt, dur)
+local function _bal_ready()
+  if Yso and Yso.state and type(Yso.state.bal_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.bal_ready)
+    if ok then return v == true end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.bal or v.balance or &quot;&quot;) == &quot;1&quot; or (v.bal == true or v.balance == true)
 end
 
 local function _ent_ready()
-  if Yso.state and type(Yso.state.ent_ready) == &quot;function&quot; then
-    local ok,v = pcall(Yso.state.ent_ready); if ok then return v==true end
+  if Yso and Yso.state and type(Yso.state.ent_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.ent_ready)
+    if ok then return v == true end
   end
-  -- fallback: allow, but lane throttling in Yso.emit / locks should backoff if the server rejects
   return true
 end
 
-local function _target_matches_active(tgt)
-  tgt = _trim(tgt)
-  return tgt ~= &quot;&quot; and _lc(tgt) == _lc(_target())
-end
-
-local function _affstrack_score_is_fresh(A)
-  if type(A) ~= &quot;table&quot; then return false end
-  local ts = tonumber(A.score_updated_at or A.updated_at or A.last_updated_at or A.last_update_at or A.ts)
-  if not ts then return true end
-  if ts &gt; 1e12 then ts = ts / 1000 end
-  local max_age = tonumber(GD.cfg.aff_score_max_age_s or 1.25) or 1.25
-  return (_now() - ts) &lt;= max_age
-end
-
--- Prefer AK score exports for the active designated target only.
--- For non-target observations, fall back to target-scoped tracking.
-local function _aff_score(tgt, aff)
-  aff = _lc(aff)
-  tgt = _trim(tgt)
+local function _aff_score(aff)
+  aff = tostring(aff or &quot;&quot;)
   if aff == &quot;&quot; then return 0 end
-
-  if _target_matches_active(tgt) then
-    if Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == &quot;function&quot; then
-      local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
-      if ok and tonumber(v) then return tonumber(v) end
+  local A = rawget(_G, &quot;affstrack&quot;)
+  if type(A) == &quot;table&quot; then
+    if type(A.score) == &quot;table&quot; and tonumber(A.score[aff]) then
+      return tonumber(A.score[aff]) or 0
     end
-    if type(affstrack) == &quot;table&quot; and type(affstrack.score) == &quot;table&quot; and _affstrack_score_is_fresh(affstrack) then
-      return tonumber(affstrack.score[aff] or 0) or 0
+    local row = A[aff]
+    if type(row) == &quot;table&quot; and tonumber(row.score) then
+      return tonumber(row.score) or 0
     end
-  end
-
-  if tgt ~= &quot;&quot; and Yso.tgt and type(Yso.tgt.has_aff) == &quot;function&quot; then
-    local ok, v = pcall(Yso.tgt.has_aff, tgt, aff)
-    if ok and v == true then return 100 end
   end
   return 0
 end
 
-local function _has_aff(tgt, aff) return (tonumber(_aff_score(tgt, aff)) or 0) &gt;= 100 end
-
-local function _ak_speed_is_down()
-  local A = rawget(_G, &quot;ak&quot;)
-  return type(A) == &quot;table&quot; and type(A.defs) == &quot;table&quot; and A.defs.speed == false
+local function _has_aff(aff)
+  return _aff_score(aff) &gt;= 100
 end
 
-local function _prone_is_forced(tgt)
-  return _aff_score(tgt, &quot;prone&quot;) &gt;= 100
-end
-
-local function _random_crone_arm(tgt)
-  local salt = math.floor((_now() * 1000) + (#_trim(tgt) * 17))
-  return ((salt % 2) == 0) and &quot;left arm&quot; or &quot;right arm&quot;
-end
-
-local JUSTICE_CONVERSION_AFFS = {
-  &quot;paralysis&quot;, &quot;sensitivity&quot;, &quot;healthleech&quot;,
-  &quot;haemophilia&quot;, &quot;weariness&quot;, &quot;asthma&quot;, &quot;clumsiness&quot;,
-}
-
-local function _justice_conversion_count(tgt)
-  local n = 0
-  for i = 1, #JUSTICE_CONVERSION_AFFS do
-    if _aff_score(tgt, JUSTICE_CONVERSION_AFFS[i]) &gt;= 100 then
-      n = n + 1
-    end
+local function _slime_should_refresh(tgt)
+  local ER = Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry or nil
+  if type(ER) == &quot;table&quot; and type(ER.slime_should_refresh) == &quot;function&quot; then
+    local ok, v = pcall(ER.slime_should_refresh, tgt)
+    if ok then return v == true end
   end
-  return n
-end
-
-local function _justice_already_sent(tgt)
-  local k = _lc(tgt)
-  return k ~= &quot;&quot; and GD.state and GD.state.justice_once and GD.state.justice_once[k] == true
-end
-
-local function _mark_justice_sent(tgt)
-  local k = _lc(tgt)
-  if k == &quot;&quot; then return end
-  GD.state.justice_once = GD.state.justice_once or {}
-  GD.state.justice_once[k] = true
-end
-
-local function _echo(msg, style)
-  if not GD.cfg.echo then return end
-  local line
-  if style == &quot;toggle&quot; then
-    line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;HotPink&gt;%s&lt;reset&gt;&quot;, tostring(msg))
-  else
-    line = string.format(&quot;&lt;orange&gt;[Yso:Occultist] &lt;reset&gt;%s&quot;, tostring(msg))
-  end
-  if Yso and Yso.util and type(Yso.util.cecho_line) == &quot;function&quot; then
-    Yso.util.cecho_line(line)
-  elseif type(cecho) == &quot;function&quot; then
-    cecho(line .. string.char(10))
-  end
-end
-
-local function _command_sep()
-  local sep = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or &quot;&amp;&amp;&quot;)
-  if sep == &quot;&quot; then sep = &quot;&amp;&amp;&quot; end
-  return sep
-end
-
-local function _each_sep_part(text, sep, fn)
-  text = tostring(text or &quot;&quot;)
-  sep = tostring(sep or &quot;&amp;&amp;&quot;)
-  if text == &quot;&quot; then return end
-  if sep == &quot;&quot; then
-    fn(text)
-    return
-  end
-  local i = 1
-  while true do
-    local s, e = text:find(sep, i, true)
-    if not s then
-      fn(text:sub(i))
-      break
-    end
-    fn(text:sub(i, s - 1))
-    i = e + 1
-  end
-end
-
-local function _echo_toggle(msg)
-  _echo(msg, &quot;toggle&quot;)
-end
-
-local _tarot_entity_payload
-local _payload_line
-
-local function _emit_lanes(payload, reason)
-  local lanes = type(payload) == &quot;table&quot; and payload.lanes or payload
-  if type(lanes) ~= &quot;table&quot; then return false, &quot;invalid_payload&quot; end
-  local emit_payload = {
-    free = lanes.free or lanes.pre,
-    eq = lanes.eq,
-    bal = lanes.bal,
-    class = lanes.class or lanes.ent or lanes.entity,
-    target = _trim(type(payload) == &quot;table&quot; and payload.target or &quot;&quot;),
-  }
-  if RI and type(RI.emit_route_payload) == &quot;function&quot; then
-    local ok, cmd_or_err, ack_payload = RI.emit_route_payload(&quot;group_damage&quot;, {
-      target = emit_payload.target,
-      lanes = emit_payload,
-      meta = type(payload) == &quot;table&quot; and payload.meta or nil,
-    }, {
-      reason = reason or &quot;group_damage:emit&quot;,
-      kind = &quot;offense&quot;,
-      route = &quot;group_damage&quot;,
-      target = emit_payload.target,
-      commit = true,
-    })
-    if not ok then return false, cmd_or_err end
-    return true, cmd_or_err, ack_payload
-  end
-  if type(Yso.emit) == &quot;function&quot; then
-    local ok = Yso.emit(emit_payload, {
-      reason = reason or &quot;group_damage:emit&quot;,
-      kind = &quot;offense&quot;,
-      route = &quot;group_damage&quot;,
-      commit = true,
-      target = emit_payload.target,
-    }) == true
-    if not ok then return false, &quot;emit_failed&quot; end
-    return true, _payload_line({ target = emit_payload.target, lanes = emit_payload })
-  end
-  local Q = Yso and Yso.queue or nil
-  if Q and type(Q.emit) == &quot;function&quot; then
-    local ok, res = pcall(Q.emit, emit_payload, {
-      reason = reason or &quot;group_damage:emit&quot;,
-      kind = &quot;offense&quot;,
-      route = &quot;group_damage&quot;,
-      commit = true,
-      target = emit_payload.target,
-    })
-    if not ok then return false, res end
-    if res ~= true then return false, &quot;queue_emit_failed&quot; end
-    return true, _payload_line({ target = emit_payload.target, lanes = emit_payload }), nil
-  end
-  return false, &quot;queue_emit_unavailable&quot;
-end
-
-local function _set_debug_field(key, value)
-  GD.state.debug = GD.state.debug or { last_no_send_reason = &quot;&quot;, last_retry_reason = &quot;&quot;, entity_no_send_reasons = {}, last_shield_target = &quot;&quot; }
-  GD.state.debug[key] = value
-  return value
-end
-
-local function _note_no_send_reason(reason)
-  return _set_debug_field(&quot;last_no_send_reason&quot;, _trim(reason))
-end
-
-local function _note_retry_reason(reason)
-  return _set_debug_field(&quot;last_retry_reason&quot;, _trim(reason))
-end
-
-local function _reset_entity_no_send_reasons()
-  GD.state.debug = GD.state.debug or {}
-  GD.state.debug.entity_no_send_reasons = {}
-end
-
-local function _note_entity_no_send(reason)
-  reason = _trim(reason)
-  if reason == &quot;&quot; then return end
-  GD.state.debug = GD.state.debug or {}
-  local rows = GD.state.debug.entity_no_send_reasons
-  if type(rows) ~= &quot;table&quot; then
-    rows = {}
-    GD.state.debug.entity_no_send_reasons = rows
-  end
-  for i = 1, #rows do
-    if rows[i] == reason then return end
-  end
-  rows[#rows + 1] = reason
-end
-
-local function _locks_class_reason()
-  local L = Yso and Yso.locks or nil
-  local lane = L and L._lane and L._lane.class or nil
-  if type(lane) ~= &quot;table&quot; then return nil end
-  local now = _now()
-  if tonumber(lane.pending_until or 0) &gt; now then return &quot;blocked_by_pending&quot; end
-  if tonumber(lane.backoff_until or 0) &gt; now then return &quot;blocked_by_backoff&quot; end
-  return nil
-end
-
-local function _waiting_lanes_from_payload(payload)
-  local lanes, seen = {}, {}
-  local lane_tbl = type(payload) == &quot;table&quot; and payload.lanes or payload
-
-  local function add(name, cmd)
-    name = _lc(name)
-    if name == &quot;entity&quot; then name = &quot;class&quot; end
-    if name == &quot;&quot; or name == &quot;free&quot; or seen[name] then return end
-    if _trim(cmd) == &quot;&quot; then return end
-    seen[name] = true
-    lanes[#lanes + 1] = name
-  end
-
-  if type(lane_tbl) == &quot;table&quot; then
-    add(&quot;eq&quot;, lane_tbl.eq)
-    add(&quot;bal&quot;, lane_tbl.bal)
-    add(&quot;class&quot;, lane_tbl.class or lane_tbl.ent or lane_tbl.entity)
-  end
-  if #lanes == 0 and type(payload) == &quot;table&quot; and type(payload.meta) == &quot;table&quot; then
-    add(payload.meta.main_lane, &quot;__fallback__&quot;)
-  end
-
-  return lanes
-end
-
-local function _lane_ready(lane)
-  lane = _lc(lane)
-  if lane == &quot;eq&quot; then return _eq_ready() end
-  if lane == &quot;bal&quot; then return _bal_ready() end
-  if lane == &quot;entity&quot; or lane == &quot;class&quot; then return _ent_ready() end
   return true
 end
 
-local function _action_fingerprint(payload)
-  if type(payload) ~= &quot;table&quot; then return &quot;&quot; end
-  local lanes = payload.lanes or payload
-  if type(lanes) ~= &quot;table&quot; then return &quot;&quot; end
-  local eq = _trim(lanes.eq)
-  local entity = _trim(lanes.entity or lanes.class or lanes.ent)
-  local bal = _trim(lanes.bal)
-  local free = _trim(lanes.free)
-  return table.concat({
-    &quot;group_damage&quot;,
-    _lc(payload.target or &quot;&quot;),
-    eq,
-    entity,
-    bal,
-    free,
-  }, &quot;|&quot;)
-end
-
-local function _set_loop_enabled(on)
-  local enabled = (on == true)
-  GD.state.enabled = enabled
-  GD.state.loop_enabled = enabled
-  GD.loop_enabled = enabled
-  GD.cfg.enabled = enabled
-  GD.state.loop_delay = tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15
-  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = &quot;&quot;, reason = &quot;&quot;, at = 0 }
-  GD.state.last_attack = GD.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; }
-  GD.state.in_flight = GD.state.in_flight or { fingerprint = &quot;&quot;, target = &quot;&quot;, route = &quot;group_damage&quot;, at = 0, resolved_at = 0, lanes = nil, eq = &quot;&quot;, entity = &quot;&quot;, reason = &quot;&quot; }
-  GD.state.debug = GD.state.debug or { last_no_send_reason = &quot;&quot;, last_retry_reason = &quot;&quot;, entity_no_send_reasons = {}, last_shield_target = &quot;&quot; }
-  return enabled
-end
-
-local function _clear_waiting()
-  GD.state.waiting = GD.state.waiting or {}
-  GD.state.waiting.queue = nil
-  GD.state.waiting.main_lane = nil
-  GD.state.waiting.lanes = nil
-  GD.state.waiting.fingerprint = &quot;&quot;
-  GD.state.waiting.reason = &quot;&quot;
-  GD.state.waiting.at = 0
-  GD.state.in_flight = GD.state.in_flight or {}
-  GD.state.in_flight.resolved_at = _now()
-  GD.state.in_flight.fingerprint = &quot;&quot;
-  GD.state.in_flight.target = &quot;&quot;
-  GD.state.in_flight.lanes = nil
-  GD.state.in_flight.eq = &quot;&quot;
-  GD.state.in_flight.entity = &quot;&quot;
-  GD.state.in_flight.reason = &quot;&quot;
-end
-
-local function _remember_attack(cmd, payload)
-  local meta = type(payload) == &quot;table&quot; and (payload.meta or {}) or {}
-  local main_lane = _lc(meta.main_lane or &quot;&quot;)
-  local lanes = _waiting_lanes_from_payload(payload)
-  local fingerprint = _action_fingerprint(payload)
-  local wait_reason = &quot;waiting_outcome&quot;
-  if #lanes == 1 then
-    if lanes[1] == &quot;eq&quot; then
-      wait_reason = &quot;waiting_eq&quot;
-    elseif lanes[1] == &quot;class&quot; then
-      wait_reason = &quot;waiting_ent&quot;
+local function _next_giving()
+  local prio = GD.cfg.giving_priority or {}
+  for i = 1, #prio do
+    local aff = tostring(prio[i] or &quot;&quot;)
+    if aff ~= &quot;&quot; and not _has_aff(aff) then
+      return aff
     end
   end
-  GD.state.last_attack = GD.state.last_attack or {}
-  GD.state.last_attack.cmd = _trim(cmd)
-  GD.state.last_attack.at = _now()
-  GD.state.last_attack.target = _trim(type(payload) == &quot;table&quot; and payload.target or &quot;&quot;)
-  GD.state.last_attack.main_lane = main_lane
-  GD.state.last_attack.lanes = lanes
-  GD.state.last_attack.fingerprint = fingerprint
-  GD.state.waiting = GD.state.waiting or {}
-  GD.state.waiting.queue = GD.state.last_attack.cmd
-  GD.state.waiting.main_lane = main_lane
-  GD.state.waiting.lanes = lanes
-  GD.state.waiting.fingerprint = fingerprint
-  GD.state.waiting.reason = wait_reason
-  GD.state.waiting.at = GD.state.last_attack.at
-  GD.state.in_flight = GD.state.in_flight or {}
-  GD.state.in_flight.fingerprint = fingerprint
-  GD.state.in_flight.target = GD.state.last_attack.target
-  GD.state.in_flight.route = &quot;group_damage&quot;
-  GD.state.in_flight.at = GD.state.last_attack.at
-  GD.state.in_flight.lanes = lanes
-  GD.state.in_flight.eq = _trim(type(payload) == &quot;table&quot; and payload.lanes and payload.lanes.eq or &quot;&quot;)
-  GD.state.in_flight.entity = _trim(type(payload) == &quot;table&quot; and payload.lanes and (payload.lanes.entity or payload.lanes.class) or &quot;&quot;)
-  GD.state.in_flight.reason = wait_reason
+  return &quot;&quot;
 end
 
-local function _waiting_blocks_tick()
-  -- Keep offense loop reevaluating continuously; queued ownership handles replacement.
-  -- We keep wait state for explain/debug, but do not hard-block route ticks.
-  return false
-end
-
-local function _same_attack_is_hot(cmd)
-  cmd = _trim(cmd)
-  if cmd == &quot;&quot; then return false end
-  local last = GD.state.last_attack or {}
-  if _trim(last.cmd) ~= cmd then return false end
-  local hot_window = math.max(0.10, (tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15) * 0.75)
-  return (_now() - (tonumber(last.at) or 0)) &lt; hot_window
-end
-
-local function _eq_lane_score(cat)
-  cat = tostring(cat or &quot;&quot;)
-  if cat == &quot;anti_tumble&quot; then return 120 end
-  return 30
-end
-
-local function _bal_lane_score(cat)
-  cat = tostring(cat or &quot;&quot;)
-  if cat == &quot;anti_tumble&quot; then return 118 end
-  return 12
-end
-
-local function _choose_main_lane(eq_cmd, eq_cat, bal_cmd, bal_cat)
-  local pick_eq = { lane = &quot;eq&quot;, cmd = eq_cmd, category = eq_cat, score = _eq_lane_score(eq_cat) }
-  local pick_bal = { lane = &quot;bal&quot;, cmd = bal_cmd, category = bal_cat, score = _bal_lane_score(bal_cat) }
-
-  if _trim(eq_cmd) == &quot;&quot; and _trim(bal_cmd) == &quot;&quot; then
-    return { lane = &quot;&quot;, cmd = nil, category = nil, score = 0, alt = nil }
-  end
-  if _trim(eq_cmd) == &quot;&quot; then
-    return { lane = pick_bal.lane, cmd = pick_bal.cmd, category = pick_bal.category, score = pick_bal.score, alt = nil }
-  end
-  if _trim(bal_cmd) == &quot;&quot; then
-    return { lane = pick_eq.lane, cmd = pick_eq.cmd, category = pick_eq.category, score = pick_eq.score, alt = nil }
-  end
-
-  if pick_bal.score &gt; pick_eq.score then
-    pick_bal.alt = pick_eq
-    return pick_bal
-  end
-
-  pick_eq.alt = pick_bal
-  return pick_eq
-end
-
-_tarot_entity_payload = function(bal_cmd, entity_cmd, tgt)
-  bal_cmd = _trim(bal_cmd)
-  entity_cmd = _trim(entity_cmd)
-  tgt = _trim(tgt)
-  if bal_cmd == &quot;&quot; or entity_cmd == &quot;&quot; or tgt == &quot;&quot; then return nil end
-  local sep = _command_sep()
-  local sep_pat = sep:gsub(&quot;(%W)&quot;, &quot;%%%1&quot;)
-  local card_a, card_b, card_tgt = bal_cmd:match(&quot;^outd%s+([%w_%-]+)%s*&quot; .. sep_pat .. &quot;%s*fling%s+([%w_%-]+)%s+at%s+(.+)$&quot;)
-  if _trim(card_a) == &quot;&quot; or card_a ~= card_b or _lc(card_tgt or &quot;&quot;) ~= _lc(tgt) then return nil end
-  return (&quot;outd %s%s%s%sfling %s at %s&quot;):format(card_a, sep, entity_cmd, sep, card_a, tgt)
-end
-
-_payload_line = function(payload)
-  if type(payload) ~= &quot;table&quot; or type(payload.lanes) ~= &quot;table&quot; then return &quot;&quot; end
-  local lanes = payload.lanes
-  local entity_cmd = _trim(lanes.entity or lanes.class)
-  local compound = _tarot_entity_payload(lanes.bal, entity_cmd, payload.target)
-  local cmds = {}
-  if _trim(lanes.free) ~= &quot;&quot; then cmds[#cmds + 1] = _trim(lanes.free) end
-  if _trim(lanes.eq) ~= &quot;&quot; then cmds[#cmds + 1] = _trim(lanes.eq) end
-  if compound then
-    cmds[#cmds + 1] = compound
-    return table.concat(cmds, _command_sep())
-  end
-  if _trim(lanes.bal) ~= &quot;&quot; then cmds[#cmds + 1] = _trim(lanes.bal) end
-  if entity_cmd ~= &quot;&quot; then cmds[#cmds + 1] = entity_cmd end
-  return table.concat(cmds, _command_sep())
-end
-
-local function _route_gate_finalize(payload, ctx)
-  if not (Yso and Yso.route_gate and type(Yso.route_gate.finalize) == &quot;function&quot;) then
-    return payload, nil
-  end
-  return Yso.route_gate.finalize(payload, {
-    route = &quot;group_damage&quot;,
-    target = type(payload) == &quot;table&quot; and payload.target or &quot;&quot;,
-    lane_ready = {
-      eq = _eq_ready(),
-      bal = _bal_ready(),
-      entity = _ent_ready(),
-    },
-    required_entities = {
-      worm = true,
-      sycophant = true,
-    },
-    ctx = ctx,
-  })
-end
-
-local _core_state
-local _entity_pick
-local _primebonded
--- Forward declarations for rescue helpers defined later in the file.
--- Without these, attack_function() would resolve them as globals (nil) at runtime
--- if rescue_lust_empress is ever enabled.
-local _rescue_antitumble_action
-local _rescue_empress_action
-
-local function _shield_is_up(tgt)
-  if Yso and Yso.shield and type(Yso.shield.is_up) == &quot;function&quot; then
-    local ok, v = pcall(Yso.shield.is_up, tgt)
-    if ok then return v == true end
-  end
-  return false
-end
-
-local function _shieldbreak_tag(tgt)
-  return &quot;gd:eq:shieldbreak:&quot; .. _lc(tgt)
-end
-
-local function _shieldbreak_pending(tgt)
-  local S = _offense_state()
-  if not S then return false end
-  local tag = _shieldbreak_tag(tgt)
-  if type(S.locked) == &quot;function&quot; then
-    local ok, locked = pcall(S.locked, tag)
-    if ok and locked == true then return true end
-  end
-  if type(S.recent) == &quot;function&quot; then
-    local window = math.max(1.0, (tonumber(GD.cfg.dupe_window_ms or 120) or 120) / 1000)
-    local ok, seen = pcall(S.recent, tag, window)
-    if ok and seen == true then return true end
-  end
-  return false
-end
-
-local function _note_shieldbreak_sent(tgt, cmd)
-  local S = _offense_state()
-  if not (S and type(S.note) == &quot;function&quot;) then return end
-  local window = math.max(1.0, (tonumber(GD.cfg.dupe_window_ms or 120) or 120) / 1000)
-  pcall(S.note, _shieldbreak_tag(tgt), cmd, { lockout = window, state_sig = &quot;group_damage:shieldbreak&quot; })
-end
-
-local function _entity_need_flags(tgt, st)
-  st = type(st) == &quot;table&quot; and st or _core_state(tgt)
-  return {
-    healthleech = not (st.healthleech == true),
-    haemophilia = not (st.haemophilia == true),
-    paralysis = not (st.paralysis == true),
-    asthma = not (st.asthma == true),
-    sensitivity = not (st.sensitivity == true),
-    slickness = (st.asthma == true) and not (st.slickness == true),
-  }
-end
-
-local function _entity_need_any(need)
-  if type(need) ~= &quot;table&quot; then return false end
-  for _, v in pairs(need) do
-    if v == true then return true end
-  end
-  return false
-end
-
-local function _entity_debug_reason_from_pick(need, dbg)
-  if not _entity_need_any(need) then return &quot;target_not_missing&quot; end
-  local lock_reason = _locks_class_reason()
-  if lock_reason then return lock_reason end
-  if not _ent_ready() then return &quot;precommit_ent_not_ready&quot; end
-  if type(dbg) == &quot;table&quot; and dbg.global == &quot;target_invalid&quot; then return &quot;target_not_missing&quot; end
-  return &quot;no_valid_pick&quot;
-end
-
-local function _same_fingerprint_in_flight(payload)
-  local fingerprint = _action_fingerprint(payload)
-  local flight = GD.state and GD.state.in_flight or nil
-  if fingerprint == &quot;&quot; or type(flight) ~= &quot;table&quot; then return false end
-  if _trim(flight.fingerprint) == &quot;&quot; or _trim(flight.target) == &quot;&quot; then return false end
-  if _lc(payload.target or &quot;&quot;) ~= _lc(flight.target) then return false end
-  if fingerprint ~= _trim(flight.fingerprint) then return false end
-  return (_now() - (tonumber(flight.at) or 0)) &lt; 3.0
-end
-
-local function _final_pre_emit_payload(payload)
-  if type(payload) ~= &quot;table&quot; or type(payload.lanes) ~= &quot;table&quot; then return payload, nil end
-  local tgt = _trim(payload.target)
-  if tgt == &quot;&quot; then return payload, nil end
-
-  payload.meta = payload.meta or {}
-  local lanes = payload.lanes
-
-  if _shield_is_up(tgt) then
-    _set_debug_field(&quot;last_shield_target&quot;, tgt)
-    _note_entity_no_send(&quot;shieldbreak_override&quot;)
-    _note_no_send_reason(&quot;shieldbreak_override&quot;)
-    if _shieldbreak_pending(tgt) then
-      _note_no_send_reason(&quot;duplicate_action_suppressed&quot;)
-      return nil, &quot;duplicate_action_suppressed&quot;
-    end
-
-    local cmd = (&quot;command gremlin at %s&quot;):format(tgt)
-    if Yso and Yso.off and Yso.off.util and type(Yso.off.util.maybe_shieldbreak) == &quot;function&quot; then
-      local ok, v = pcall(Yso.off.util.maybe_shieldbreak, tgt)
-      local alt = _trim(ok and v or &quot;&quot;)
-      if alt ~= &quot;&quot; then cmd = alt end
-    end
-
-    lanes.eq = cmd
-    lanes.bal = nil
-    lanes.entity = nil
-    lanes.class = nil
-    payload.meta.eq_category = &quot;defense_break&quot;
-    payload.meta.bal_category = nil
-    payload.meta.entity_category = nil
-    payload.meta.main_lane = &quot;eq&quot;
-    payload.meta.main_category = &quot;defense_break&quot;
-    payload.meta.shieldbreak_override = true
-    _note_retry_reason(&quot;retry_shieldbreak&quot;)
-    return payload, nil
-  end
-
-  if _trim(lanes.eq) ~= &quot;&quot; and _trim(lanes.entity or lanes.class) == &quot;&quot; then
-    local st = payload.meta.core_state or _core_state(tgt)
-    local need = _entity_need_flags(tgt, st)
-    if not _entity_need_any(need) then
-      _note_entity_no_send(&quot;target_not_missing&quot;)
-      return payload, nil
-    end
-
-    local lock_reason = _locks_class_reason()
-    if lock_reason then
-      _note_entity_no_send(lock_reason)
-      _note_entity_no_send(&quot;degraded_to_eq_only&quot;)
-      return payload, nil
-    end
-
-    if not _ent_ready() then
-      _note_entity_no_send(&quot;precommit_ent_not_ready&quot;)
-      _note_entity_no_send(&quot;degraded_to_eq_only&quot;)
-      return payload, nil
-    end
-
-    local category = (need.healthleech or need.haemophilia or need.paralysis or need.asthma or need.sensitivity)
-      and &quot;required_core_application&quot;
-      or &quot;fallback_support&quot;
-    local entity_cmd, entity_cat, dbg = _entity_pick(tgt, st, category, {
-      need_healthleech = need.healthleech == true,
-      need_haemophilia = need.haemophilia == true,
-      need_paralysis = need.paralysis == true,
-      need_asthma = need.asthma == true,
-      need_sensitivity = need.sensitivity == true,
-      need_slickness = need.slickness == true,
-    })
-    if _trim(entity_cmd) ~= &quot;&quot; then
-      lanes.entity = entity_cmd
-      payload.meta.entity_category = entity_cat or category
-      _note_retry_reason(&quot;retry_entity_ready&quot;)
-      return payload, nil
-    end
-
-    _note_entity_no_send(_entity_debug_reason_from_pick(need, dbg))
-    _note_entity_no_send(&quot;degraded_to_eq_only&quot;)
-  end
-
-  return payload, nil
-end
-
-------------------------------------------------------------
--- Opener helper disabled for this route
--- NOTE: retained as no-op helpers for compatibility.
-------------------------------------------------------------
-local function _want_opener(tgt)
-  return nil
-end
-
-local function _mark_opener_sent(tgt)
-  return nil
-end
-
-
-------------------------------------------------------------
--- Route helpers
-------------------------------------------------------------
-_core_state = function(tgt)
-  local st = {
-    healthleech = _has_aff(tgt, &quot;healthleech&quot;),
-    sensitivity = _has_aff(tgt, &quot;sensitivity&quot;),
-    haemophilia = _has_aff(tgt, &quot;haemophilia&quot;),
-    paralysis   = _has_aff(tgt, &quot;paralysis&quot;),
-    slickness   = _has_aff(tgt, &quot;slickness&quot;),
-    asthma      = _has_aff(tgt, &quot;asthma&quot;),
-    aeon        = _has_aff(tgt, &quot;aeon&quot;),
-    entangled   = _has_aff(tgt, &quot;entangled&quot;),
-  }
-  local n = 0
-  if st.paralysis then n = n + 1 end
-  if st.asthma then n = n + 1 end
-  if st.healthleech then n = n + 1 end
-  if st.sensitivity then n = n + 1 end
-  if st.haemophilia then n = n + 1 end
-  st.count = n
-  return st
-end
-
-local function _count_core_affs(tgt)
-  return _core_state(tgt).count
-end
-
-local function _cmd_entity(ent, tgt, extra)
-  ent = tostring(ent or &quot;&quot;):lower()
-  tgt = tostring(tgt or &quot;&quot;)
-  if ent == &quot;&quot; or tgt == &quot;&quot; then return nil end
-  if ent == &quot;firelord&quot; and extra and extra ~= &quot;&quot; then
-    return (&quot;command %s at %s %s&quot;):format(ent, tgt, extra)
-  end
-  return (&quot;command %s at %s&quot;):format(ent, tgt)
-end
-
-
-_primebonded = function(ent)
-  local ER = _ER()
-  if ER and type(ER.is_primebonded) == &quot;function&quot; then
-    local ok, v = pcall(ER.is_primebonded, ent)
-    if ok then return v == true end
-  end
-  return false
-end
-
--- Inline entity priority list — edit this table to change which entities are
--- commanded and in what order. Each entry fires when the target is missing that
--- aff and (if cond is present) the condition passes. Entries with a &apos;cond&apos; that
--- references _primebonded require that entity to be primebonded before firing.
-GD.cfg.ent_prio = GD.cfg.ent_prio or {
-  { aff = &quot;paralysis&quot;,   cmd = &quot;command slime at %s&quot;,      cond = function(tgt, has) return has(tgt, &quot;asthma&quot;) and _slime_should_refresh(tgt) end },
-  { aff = &quot;asthma&quot;,      cmd = &quot;command bubonis at %s&quot; },
-  { aff = &quot;haemophilia&quot;, cmd = &quot;command bloodleech at %s&quot;, cond = function(tgt, has) return _primebonded(&quot;bloodleech&quot;) end },
-  { aff = &quot;healthleech&quot;, cmd = &quot;command worm at %s&quot; },
-  -- Opportunistic asthma follow-up.
-  { aff = &quot;slickness&quot;,   cmd = &quot;command bubonis at %s&quot;,    cond = function(tgt, has) return has(tgt, &quot;asthma&quot;) end },
-}
-
--- Walk GD.cfg.ent_prio and return the first entity command for an aff the
--- target is missing. skip_aff (from opts) is excluded so EQ and entity don&apos;t
--- redundantly cover the same aff when the caller already has an explicit pair.
-_entity_pick = function(tgt, st, category, opts)
-  opts = opts or {}
-  if not _ent_ready() then return nil, nil, nil end
-  local skip = _lc(opts.skip_aff or &quot;&quot;)
-  for _, entry in ipairs(GD.cfg.ent_prio or {}) do
-    if entry.aff ~= skip and not _has_aff(tgt, entry.aff) then
-      if not entry.cond or entry.cond(tgt, _has_aff) then
-        return (entry.cmd):format(tgt), entry.category or category, nil
-      end
-    end
-  end
-  return nil, nil, nil
-end
-
-local function _pick_entity_cmd(tgt, st, opts)
-  opts = opts or {}
-  if not _ent_ready() then
-    _note_entity_no_send(&quot;snapshot_ent_not_ready&quot;)
-    return nil, nil
-  end
-  local skip_aff = _lc(opts.skip_aff)
-  if skip_aff == &quot;healthleech&quot; then
-    return (&quot;command worm at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
-  end
-  if skip_aff == &quot;haemophilia&quot; and _primebonded(&quot;bloodleech&quot;) then
-    return (&quot;command bloodleech at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
-  end
-  if skip_aff == &quot;slickness&quot; and _has_aff(tgt, &quot;asthma&quot;) then
-    return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;fallback_support&quot;)
-  end
-  if skip_aff == &quot;asthma&quot; then
-    return (&quot;command bubonis at %s&quot;):format(tgt), tostring(opts.category or &quot;required_core_application&quot;)
-  end
-  if skip_aff == &quot;paralysis&quot; and _has_aff(tgt, &quot;asthma&quot;) and _slime_should_refresh(tgt) then
-    return (&quot;command slime at %s&quot;):format(tgt), tostring(opts.category or &quot;fallback_support&quot;)
-  end
-  return _entity_pick(tgt, st, tostring(opts.category or &quot;fallback_support&quot;), opts)
-end
-
-local function _loyals_active_for(tgt)
-  local C = _companions()
-  if C and type(C.is_active_for) == &quot;function&quot; then
-    local ok, v = pcall(C.is_active_for, tgt)
-    if ok then return v == true end
-  end
-
-  local Off = Yso and Yso.off and Yso.off.oc or nil
-  if Off and type(Off.loyals_active_for) == &quot;function&quot; then
-    local ok, v = pcall(Off.loyals_active_for, tgt)
-    if ok then return v == true end
-  end
-  return false
-end
-
-local function _plan_free(tgt)
-  if _loyals_active_for(tgt) then return nil, nil end
-
-  local C = _companions()
-  if C and type(C.kill) == &quot;function&quot; then
-    local ok, res, why = pcall(C.kill, tgt, {
-      include_stand = (Yso and Yso.legality and Yso.legality.queue_stand == true),
-      emit = false,
-    })
-    local open_reason = ok and _trim(why) or &quot;&quot;
-    if ok and type(res) == &quot;table&quot; then
-      local parts = {}
-      for i = 1, #res do
-        local cmd = _trim(res[i])
-        if cmd ~= &quot;&quot; then parts[#parts + 1] = cmd end
-      end
-      if #parts &gt; 0 then
-        return table.concat(parts, _command_sep()), &quot;team_coordination&quot;
-      end
-    elseif ok and type(res) == &quot;string&quot; and _trim(res) ~= &quot;&quot; then
-      return _trim(res), &quot;team_coordination&quot;
-    elseif open_reason == &quot;recovering&quot; then
-      -- Companion helper intentionally suppresses kill orders while recovering.
-      return nil, nil
-    end
-  end
-
-  local parts = {}
-  if Yso and Yso.legality and Yso.legality.queue_stand == true then
-    parts[#parts + 1] = &quot;stand&quot;
-  end
-  parts[#parts + 1] = (tostring(GD.cfg.loyals_on_cmd or &quot;order loyals kill %s&quot;)):format(tgt)
-  return table.concat(parts, _command_sep()), &quot;team_coordination&quot;
-end
-
-local function _plan_bal_support(tgt, st, eq_cmd, class_cmd, opts)
-  opts = opts or {}
-  if _trim(eq_cmd) ~= &quot;&quot; or _trim(class_cmd) ~= &quot;&quot; then return nil, nil, nil end
-  if not _bal_ready() then return nil, nil, nil end
-  if _justice_conversion_count(tgt) &gt;= 2 and not _justice_already_sent(tgt) then
-    return (&quot;ruinate justice %s&quot;):format(tgt), nil, &quot;fallback_support&quot;
-  end
-
-  return nil, nil, nil
-end
-
-local function _plan_route(tgt)
-  local st = _core_state(tgt)
-  local p = {
-    eq = nil, bal = nil, class = nil, st = st,
-    eq_category = nil, bal_category = nil, class_category = nil,
-    eq_aff = nil,
-  }
-
-  local eq_ready = _eq_ready()
-  local ent_ready = _ent_ready()
-  local giving_order = type(GD.cfg.giving_order) == &quot;table&quot;
-    and GD.cfg.giving_order
-    or { &quot;paralysis&quot;, &quot;asthma&quot;, &quot;sensitivity&quot;, &quot;haemophilia&quot;, &quot;healthleech&quot; }
-
-  -- Damage spam takes precedence once healthleech is tracked.
-  if st.healthleech then
-    if eq_ready then
-      p.eq = (&quot;warp %s&quot;):format(tgt)
-      p.eq_category = &quot;reserved_burst&quot;
-    end
-    if ent_ready then
-      p.class = _cmd_entity(&quot;firelord&quot;, tgt, &quot;healthleech&quot;)
-      p.class_category = &quot;reserved_burst&quot;
-    end
-    if _trim(p.eq) ~= &quot;&quot; or _trim(p.class) ~= &quot;&quot; then
-      return p
-    end
-  end
-
-  -- Primary giving pressure (lane-first): paralysis -&gt; asthma -&gt; sensitivity -&gt; haemophilia -&gt; healthleech.
-  local eq_aff = nil
-  for i = 1, #giving_order do
-    local aff = _lc(giving_order[i])
-    if aff ~= &quot;&quot; and not _has_aff(tgt, aff) then
-      eq_aff = aff
-      break
-    end
-  end
-  if eq_ready and eq_aff then
-    p.eq = (&quot;instill %s with %s&quot;):format(tgt, eq_aff)
-    p.eq_category = &quot;required_core_application&quot;
-    p.eq_aff = eq_aff
-  end
-
-  if ent_ready then
-    for i = 1, #giving_order do
-      local aff = _lc(giving_order[i])
-      if aff ~= &quot;&quot; and not _has_aff(tgt, aff) then
-        local cmd, cat = _pick_entity_cmd(tgt, st, {
-          category = &quot;required_core_application&quot;,
-          skip_aff = eq_aff or &quot;&quot;,  -- avoid entity covering same aff as the EQ lane
-        })
-        if _trim(cmd) ~= &quot;&quot; then
-          p.class = cmd
-          p.class_category = cat or &quot;required_core_application&quot;
-        end
-        break
-      end
-    end
-  end
-
-  if _trim(p.eq) ~= &quot;&quot; or _trim(p.class) ~= &quot;&quot; then
-    return p
-  end
-
-  -- Supplementary asthma follow-ups (opportunistic).
-  if eq_ready and st.asthma and not st.paralysis then
-    p.eq = (&quot;instill %s with paralysis&quot;):format(tgt)
-    p.eq_category = &quot;fallback_support&quot;
-    p.eq_aff = &quot;paralysis&quot;
-  end
-  if ent_ready and st.asthma and not st.paralysis and _slime_should_refresh(tgt) then
-    p.class = _cmd_entity(&quot;slime&quot;, tgt)
-    p.class_category = &quot;fallback_support&quot;
-  end
-  if eq_ready and st.asthma and not st.slickness and _trim(p.eq) == &quot;&quot; then
-    p.eq = (&quot;instill %s with slickness&quot;):format(tgt)
-    p.eq_category = &quot;fallback_support&quot;
-    p.eq_aff = &quot;slickness&quot;
-  end
-  if ent_ready and st.asthma and not st.slickness and _trim(p.class) == &quot;&quot; then
-    p.class = _cmd_entity(&quot;bubonis&quot;, tgt)
-    p.class_category = &quot;fallback_support&quot;
-  end
-
-  return p
-end
-
-------------------------------------------------------------
--- Public API
-------------------------------------------------------------
-------------------------------------------------------------
--- Template Contract Facade
---  * Standardized surface matching the Offense Template guidance.
---  * Keeps legacy propose/tick behavior intact while exposing a uniform
---    route API for future routes and tooling.
-------------------------------------------------------------
-local function _party_damage_context_active()
+local function _is_party_damage_route()
   local M = Yso and Yso.mode or nil
-  if type(M) ~= &quot;table&quot; then return true end
-
-  local is_party = true
+  if not (type(M) == &quot;table&quot;) then return false end
   if type(M.is_party) == &quot;function&quot; then
     local ok, v = pcall(M.is_party)
-    if ok then is_party = (v == true) end
-  else
-    is_party = (_lc(M.state or &quot;&quot;) == &quot;party&quot;)
+    if ok and v ~= true then return false end
   end
-  if not is_party then return false end
-
-  local route = &quot;&quot;
   if type(M.party_route) == &quot;function&quot; then
     local ok, v = pcall(M.party_route)
-    if ok then route = _lc(v or &quot;&quot;) end
-  elseif M.party then
-    route = _lc(M.party.route or &quot;&quot;)
+    local route = ok and _lc(v) or &quot;&quot;
+    if route ~= &quot;&quot; and route ~= &quot;dam&quot; and route ~= &quot;dmg&quot; then return false end
   end
-  if route == &quot;dmg&quot; then route = &quot;dam&quot; end
-  return route == &quot;&quot; or route == &quot;dam&quot;
+  if type(M.route_loop_active) == &quot;function&quot; then
+    local ok, v = pcall(M.route_loop_active, &quot;group_damage&quot;)
+    if ok and v ~= true then return false end
+  end
+  return true
 end
 
-local function _route_is_active()
-  if not _party_damage_context_active() then return false end
-  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
-    return Yso.mode.route_loop_active(&quot;group_damage&quot;) == true
-  end
-  return GD.state and GD.state.loop_enabled == true
-end
-local function _automation_allowed()
-  return _route_is_active()
+local function _pick_main_lane(lanes)
+  if lanes.eq then return &quot;eq&quot; end
+  if lanes.entity then return &quot;entity&quot; end
+  if lanes.bal then return &quot;bal&quot; end
+  return &quot;&quot;
 end
 
 function GD.init()
   GD.cfg = GD.cfg or {}
   GD.state = GD.state or {}
-  GD.state.justice_once = GD.state.justice_once or {}
-  GD.state.template = GD.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = GD.state.last_target or &quot;&quot; }
-  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = &quot;&quot;, reason = &quot;&quot;, at = 0 }
-  GD.state.last_attack = GD.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; }
-  GD.state.in_flight = GD.state.in_flight or { fingerprint = &quot;&quot;, target = &quot;&quot;, route = &quot;group_damage&quot;, at = 0, resolved_at = 0, lanes = nil, eq = &quot;&quot;, entity = &quot;&quot;, reason = &quot;&quot; }
-  GD.state.debug = GD.state.debug or { last_no_send_reason = &quot;&quot;, last_retry_reason = &quot;&quot;, entity_no_send_reasons = {}, last_shield_target = &quot;&quot; }
+  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, lanes = nil, at = 0 }
+  GD.state.last_attack = GD.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil }
+  GD.state.template = GD.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; }
+  GD.state.explain = GD.state.explain or {}
+  GD.state.loop_enabled = (GD.state.loop_enabled == true)
+  GD.state.enabled = (GD.state.enabled == true)
   GD.state.busy = (GD.state.busy == true)
-  GD.state.loop_delay = tonumber(GD.state.loop_delay or GD.cfg.loop_delay or 0.15) or 0.15
-  _set_loop_enabled((GD.state.loop_enabled == true) or (GD.state.enabled == true))
-  return true
-end
-function GD.reset(reason)
-  GD.init()
-  GD.state.justice_once = {}  -- clear per-target justice flags so justice can fire again after target re-engagement
-  GD.state.opener_sent_for = &quot;&quot;
-  GD.state.rr_idx = 0
-  GD.state.stop_pending = false
-  GD.state.last_room_id = &quot;&quot;
-  GD.state.last_target = &quot;&quot;
-  GD.state.entity_target = &quot;&quot;
-  GD.state.busy = false
-  _clear_waiting()
-  GD.state.last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; }
-  GD.state.in_flight = { fingerprint = &quot;&quot;, target = &quot;&quot;, route = &quot;group_damage&quot;, at = 0, resolved_at = 0, lanes = nil, eq = &quot;&quot;, entity = &quot;&quot;, reason = &quot;&quot; }
-  GD.state.debug = { last_no_send_reason = &quot;&quot;, last_retry_reason = &quot;&quot;, entity_no_send_reasons = {}, last_shield_target = &quot;&quot; }
-  GD.state.template.last_reason = tostring(reason or &quot;manual&quot;)
-  GD.state.template.last_payload = nil
-  _worm_reset()
-  _syc_reset()
-  GD.state.tumble = { target = &quot;&quot;, dir = &quot;&quot;, at = 0, until_t = 0, fired = false }
-  GD.state.empress = { pending = false, target = &quot;&quot;, dir = &quot;&quot;, started_at = 0, last_try = 0, fail_until = 0 }
-  return true
-end
+  GD.state.timer_id = GD.state.timer_id
+  GD.cfg.loop_delay = tonumber(GD.cfg.loop_delay or 0.15) or 0.15
 
-function GD.is_enabled()
-  return GD.state and GD.state.enabled == true
+  if RI and type(RI.ensure_hooks) == &quot;function&quot; then
+    RI.ensure_hooks(GD, GD.route_contract)
+  end
+  if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == &quot;function&quot; then
+    pcall(Yso.off.core.register, &quot;group_damage&quot;, GD)
+  end
+  return true
 end
 
 function GD.is_active()
-  return _route_is_active()
+  if not _is_occultist() then return false end
+  if GD.cfg.enabled ~= true or GD.state.enabled ~= true or GD.state.loop_enabled ~= true then
+    return false
+  end
+  if type(Yso.offense_paused) == &quot;function&quot; then
+    local ok, v = pcall(Yso.offense_paused)
+    if ok and v == true then return false end
+  end
+  return _is_party_damage_route()
 end
 
-function GD.can_run(ctx)
-  GD.init()
-  if not GD.is_enabled() then return false, &quot;disabled&quot; end
-  if not GD.is_active() then return false, &quot;inactive&quot; end
-  if not _automation_allowed() then return false, &quot;policy&quot; end
-  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return false, &quot;paused&quot; end
-  if Yso and type(Yso.is_occultist) == &quot;function&quot; then
-    local ok_class, is_occ = pcall(Yso.is_occultist)
-    if ok_class and is_occ ~= true then return false, &quot;wrong_class&quot; end
-  end
-  local tgt = _trim((ctx and ctx.target) or _target())
-  if tgt == &quot;&quot; then return false, &quot;no_target&quot; end
-  if not _tgt_valid(tgt) then return false, &quot;invalid_target&quot; end
-  return true, tgt
-end
-
-local function _attack_opts(arg)
-  if type(arg) == &quot;table&quot; and (arg.preview ~= nil or arg.ctx ~= nil) then
-    return arg.ctx, (arg.preview == true)
-  end
-  return arg, false
-end
-
-function GD.attack_function(arg)
-  local ctx, preview = _attack_opts(arg)
-  local ok, info = GD.can_run(ctx)
-  if not ok then
-    if preview then return nil, info end
-    return false, info
-  end
-
-  local tgt = info
-  local now = (ctx and tonumber(ctx.now)) or _now()
-  _reset_entity_gates_on_target_change(tgt)
-  if not preview and _waiting_blocks_tick() then
-    return false, GD.state and GD.state.waiting and GD.state.waiting.reason or &quot;waiting_outcome&quot;
-  end
-  _reset_entity_no_send_reasons()
-
-  local eq_cmd, eq_cat = nil, nil
-  local bal_cmd, bal_cat = nil, nil
-  local entity_cmd, entity_cat = nil, nil
-  local free_cmd, free_cat = _plan_free(tgt)
-  -- st is populated from _plan_route&apos;s result (which calls _core_state internally),
-  -- avoiding a redundant second call at this level.
-  local st = nil
-  local p = nil
-  local rescue = nil
-
-  -- A. Anti-defensive measures on target.
-  if GD.cfg.rescue_lust_empress == true then
-    local anti = _rescue_antitumble_action(now)
-    local empress = _rescue_empress_action(now)
-    rescue = anti
-    if empress and (not rescue or tonumber(empress.score or 0) &gt; tonumber(rescue.score or 0)) then
-      rescue = empress
-    end
-    if rescue then
-      if rescue.qtype == &quot;eq&quot; then
-        eq_cmd, eq_cat = rescue.cmd, rescue.category or &quot;anti_tumble&quot;
-      elseif rescue.qtype == &quot;bal&quot; then
-        bal_cmd, bal_cat = rescue.cmd, rescue.category or &quot;anti_tumble&quot;
-      end
-    end
-  end
-
-  -- B. Defensive measures on me.
-  -- No self-defense pre-send branch lives in this route today.
-
-  -- C. Main offensive spam logic.
-  if not eq_cmd and not bal_cmd then
-    p = _plan_route(tgt)
-    if not p then
-      if preview then return nil, &quot;no_plan&quot; end
-      return false, &quot;no_plan&quot;
-    end
-
-    if GD.cfg.avoid_overlap and p.eq and type(p.eq) == &quot;string&quot; then
-      local eqlc = p.eq:lower()
-      if eqlc:match(&quot;^%s*instill%s+&quot;) and eqlc:find(&quot;with%s+healthleech&quot;) then
-        local clc = tostring(p.class or &quot;&quot;):lower()
-        if clc:find(&quot;^%s*command%s+worm&quot;) or _worm_active(tgt) then
-          p.eq = nil
-          p.eq_category = nil
-        end
-      end
-    end
-
-    eq_cmd, eq_cat = p.eq, p.eq_category
-    bal_cmd, bal_cat = p.bal, p.bal_category
-    entity_cmd, entity_cat = p.class, p.class_category
-    st = p.st or _core_state(tgt)
-  end
-
-  -- Opportunistic-only bal filler (Justice): never required, never higher priority than giving/damage.
-  if _trim(bal_cmd) == &quot;&quot; then
-    local bal_fill, class_fill, fill_cat = _plan_bal_support(tgt, st, eq_cmd, entity_cmd, {})
-    if _trim(bal_fill) ~= &quot;&quot; then
-      bal_cmd = bal_fill
-      bal_cat = fill_cat or &quot;fallback_support&quot;
-      if _trim(entity_cmd) == &quot;&quot; and _trim(class_fill) ~= &quot;&quot; then
-        entity_cmd = class_fill
-        entity_cat = fill_cat or entity_cat
-      end
-    end
-  end
-
-  -- D. Offensive conditions / overrides.
-  local selected_eq = eq_cmd
-  local selected_bal = bal_cmd
-  local main_lane = _trim(eq_cmd) ~= &quot;&quot; and &quot;eq&quot; or (_trim(bal_cmd) ~= &quot;&quot; and &quot;bal&quot; or &quot;&quot;)
-  if main_lane == &quot;&quot; and _trim(entity_cmd) ~= &quot;&quot; then
-    main_lane = &quot;entity&quot;
-  end
-  if main_lane == &quot;&quot; and _trim(free_cmd) ~= &quot;&quot; then
-    main_lane = &quot;free&quot;
-  end
-  local main_category = nil
-  if main_lane == &quot;eq&quot; then
-    main_category = eq_cat
-  elseif main_lane == &quot;bal&quot; then
-    main_category = bal_cat
-  elseif main_lane == &quot;entity&quot; then
-    main_category = entity_cat
-  elseif main_lane == &quot;free&quot; then
-    main_category = free_cat
-  end
-
-  -- E. Misc / bookkeeping / optional echoes.
-  local payload = {
-    route = &quot;group_damage&quot;,
-    target = tgt,
-    lanes = {
-      free = free_cmd,
-      eq = selected_eq,
-      bal = selected_bal,
-      entity = entity_cmd,
-    },
-    meta = {
-      free_category = free_cat,
-      eq_category = eq_cat,
-      bal_category = bal_cat,
-      entity_category = entity_cat,
-      core_state = st,
-      main_lane = main_lane,
-      main_category = main_category,
-      alt_lane = nil,
-      alt_category = nil,
-      rescue_tag = rescue and rescue.tag or nil,
-    },
-  }
-  payload, _ = _route_gate_finalize(payload, ctx)
-  GD.state.template.last_payload = payload
-  GD.state.template.last_target = tgt
-
-  local emit_payload = (Yso and Yso.route_gate and type(Yso.route_gate.payload_for_emit) == &quot;function&quot;)
-    and Yso.route_gate.payload_for_emit(payload)
-    or payload
-  local planner_empty = not payload.lanes.free and not payload.lanes.eq and not payload.lanes.bal and not payload.lanes.entity
-  local emit_empty = not emit_payload.lanes.free and not emit_payload.lanes.eq and not emit_payload.lanes.bal and not emit_payload.lanes.entity
-
-  if preview then
-    if planner_empty then return nil, &quot;empty&quot; end
-    return payload
-  end
-
-  if emit_empty then return false, &quot;empty&quot; end
-  local emit_err = nil
-  emit_payload, emit_err = _final_pre_emit_payload(emit_payload)
-  if not emit_payload then
-    _note_no_send_reason(emit_err or &quot;empty&quot;)
-    return false, emit_err or &quot;empty&quot;
-  end
-  local cmd = _payload_line(emit_payload)
-  if _trim(cmd) == &quot;&quot; then return false, &quot;empty&quot; end
-  if _same_fingerprint_in_flight(emit_payload) then
-    _note_no_send_reason(&quot;duplicate_action_suppressed&quot;)
-    return false, &quot;duplicate_action_suppressed&quot;
-  end
-  if _same_attack_is_hot(cmd) then
-    _note_no_send_reason(&quot;duplicate_action_suppressed&quot;)
-    return false, &quot;duplicate_action_suppressed&quot;
-  end
-
-  local sent, err, ack_payload = _emit_lanes(emit_payload, &quot;group_damage:attack&quot;)
-  if not sent then
-    _note_retry_reason(&quot;retry_hard_fail&quot;)
-    return false, err
-  end
-  if emit_payload.meta and emit_payload.meta.shieldbreak_override == true then
-    _note_shieldbreak_sent(tgt, cmd)
-  end
-
-  GD.state.template.last_emitted_payload = emit_payload
-  if Yso and Yso.route_gate and type(Yso.route_gate.note_emitted) == &quot;function&quot; then
-    pcall(Yso.route_gate.note_emitted, payload, emit_payload, ctx)
-  end
-  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == &quot;function&quot;
-  if not has_ack_bus then
-    GD.on_sent(emit_payload, ctx)
-  end
-
-  if RI and type(RI.mark_waiting) == &quot;function&quot; then
-    RI.mark_waiting(GD.state, &quot;group_damage&quot;, ack_payload or emit_payload, {
-      cmd = cmd,
-      target = _trim(tgt),
-      main_lane = type(payload) == &quot;table&quot; and type(payload.meta) == &quot;table&quot; and payload.meta.main_lane or nil,
-      fingerprint = _action_fingerprint(emit_payload),
-    })
-  else
-    _remember_attack(cmd, emit_payload)
-  end
-  return true, cmd, payload
-end
-
-function GD.build_payload(ctx)
-  return GD.attack_function({ ctx = ctx, preview = true })
-end
-
-function GD.build(reason)
-  local ctx = type(reason) == &quot;table&quot; and reason or { reason = tostring(reason or &quot;&quot;) }
-  return GD.build_payload(ctx)
-end
-function GD.on_sent(payload, ctx)
-  GD.init()
-  local legacy = payload
-  if type(payload) == &quot;table&quot; and payload.lanes then
-    legacy = {
-      eq = payload.lanes.eq,
-      bal = payload.lanes.bal,
-      class = payload.lanes.entity,
-      free = payload.lanes.free,
-    }
-  end
-  GD.state.template.last_emitted_payload = payload
-  do
-    local C = _companions()
-    if C and type(C.note_order_sent) == &quot;function&quot; and type(payload) == &quot;table&quot; then
-      local free = payload.free or (payload.lanes and payload.lanes.free) or nil
-      local tgt = _trim(payload.target or (payload.lanes and payload.lanes.target) or GD.state.last_target)
-      local sep = _command_sep()
-      local function note_one(cmd)
-        cmd = _trim(cmd)
-        if cmd ~= &quot;&quot; then pcall(C.note_order_sent, cmd, tgt) end
-      end
-      if type(free) == &quot;table&quot; then
-        for i = 1, #free do
-          local raw = _trim(free[i])
-          _each_sep_part(raw, sep, note_one)
-        end
-      elseif type(free) == &quot;string&quot; and _trim(free) ~= &quot;&quot; then
-        _each_sep_part(free, sep, note_one)
-      end
-    end
-  end
-  return GD.on_payload_sent(legacy)
-end
-
-function GD.evaluate(ctx)
-  local payload, why = GD.build_payload(ctx)
-  if not payload then return { ok = false, reason = why } end
-  return { ok = true, payload = payload }
-end
-
-function GD.explain()
-  local tgt = _target()
-  local st = _core_state(tgt)
-  local last_payload = GD.state and GD.state.template and GD.state.template.last_payload or nil
-  local gate = type(last_payload) == &quot;table&quot; and (last_payload._route_gate or (last_payload.meta and last_payload.meta.route_gate)) or nil
-  return {
-    route = &quot;group_damage&quot;,
-    enabled = GD.is_enabled(),
-    active = GD.is_active(),
-    target = tgt,
-    core = st,
-    last_reason = GD.state and GD.state.template and GD.state.template.last_reason or &quot;&quot;,
-    last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or &quot;&quot;,
-    last_no_send_reason = GD.state and GD.state.debug and GD.state.debug.last_no_send_reason or &quot;&quot;,
-    last_retry_reason = GD.state and GD.state.debug and GD.state.debug.last_retry_reason or &quot;&quot;,
-    entity_no_send_reasons = GD.state and GD.state.debug and GD.state.debug.entity_no_send_reasons or {},
-    waiting = GD.state and GD.state.waiting or {},
-    in_flight = GD.state and GD.state.in_flight or {},
-    last_entity_debug = GD.state and GD.state.last_entity_debug or nil,
-    planned = gate and gate.planned and gate.planned.lanes or {},
-    gated = gate and gate.gated and gate.gated.lanes or (last_payload and last_payload.lanes) or {},
-    blocked_reasons = gate and gate.blocked_reasons or {},
-    hindrance = gate and gate.hinder or {},
-    required_entities = gate and gate.entities and gate.entities.required or {},
-    entity_obligations = gate and gate.entities and gate.entities.obligations or {},
-    emitted = gate and gate.emitted or {},
-    confirmed = gate and gate.confirmed or {},
-    last_payload = last_payload,
-  }
-end
-
-function GD.on_enter(ctx)
-  GD.init()
-  return true
-end
-
-function GD.on_exit(ctx)
-  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == &quot;function&quot; then
-    Yso.mode.stop_route_loop(&quot;group_damage&quot;, &quot;exit&quot;, true)
-  end
-  GD.reset(&quot;exit&quot;)
-  return true
-end
-
-function GD.on_target_swap(old_target, new_target)
-  if _lc(old_target) ~= _lc(new_target) then
-    GD.reset(&quot;target_swap&quot;)
-    GD.state.last_target = _trim(new_target)
-    if GD.state.loop_enabled == true then
-      GD.schedule_loop(0)
-    end
-  end
-  return true
-end
-
-function GD.on_pause(ctx)
-  return true
-end
-
-function GD.on_resume(ctx)
-  if GD.state and GD.state.loop_enabled == true then
-    GD.schedule_loop(0)
-  end
-  return true
-end
-
-function GD.on_manual_success(ctx)
-  if GD.state and GD.state.loop_enabled == true then
-    GD.schedule_loop(GD.state.loop_delay)
-  end
-  return true
-end
-
-function GD.on_send_result(payload, ctx)
-  return GD.on_sent(payload, ctx)
-end
-
-local function _kill_loop_timer()
-  if GD.state and GD.state.timer_id then
-    pcall(killTimer, GD.state.timer_id)
-    GD.state.timer_id = nil
-  end
-end
-
-function GD.schedule_loop(delay)
-  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == &quot;function&quot; then
-    return Yso.mode.schedule_route_loop(&quot;group_damage&quot;, delay)
-  end
-  return false
-end
-
-GD.alias_loop_stop_details = GD.alias_loop_stop_details or {
-  inactive = true,
-  disabled = true,
-  policy = true,
-  wrong_class = true,
-  no_target = true,
-  invalid_target = true,
-}
-
-function GD.alias_loop_prepare_start(ctx)
-  GD.init()
-  return ctx or {}
-end
-
-function GD.alias_loop_on_started(ctx)
-  GD.state.stop_pending = false
-  GD.state.busy = false
-  _clear_waiting()
-
-  _echo_toggle(&quot;GROUP DAMAGE LOOP ON.&quot;)
-  local tgt = _target()
-  if tgt == &quot;&quot; then
-    _echo(&quot;No target yet; holding.&quot;)
-  elseif not _tgt_valid(tgt) then
-    _echo(string.format(&quot;%s is not in room; holding.&quot;, tgt))
-  end
+function GD.alias_loop_on_started()
+  _echo(&quot;Group damage loop ON.&quot;)
 end
 
 function GD.alias_loop_on_stopped(ctx)
-  GD.init()
   ctx = ctx or {}
-  local reason = tostring(ctx.reason or &quot;manual&quot;)
-  GD.state.stop_pending = false
-
-  local C = _companions()
-  local sent_passive = false
-  if C and type(C.passive) == &quot;function&quot; then
-    local ok = nil
-    ok, _ = C.passive({ emit = true, target = _target() })
-    sent_passive = (ok == true)
-  end
-  if not sent_passive then
-    local passive = _trim(tostring(GD.cfg.off_passive_cmd or &quot;order loyals passive&quot;))
-    if passive ~= &quot;&quot; then
-      _emit_lanes({ lanes = { free = passive }, target = _target() }, &quot;group_damage:off_passive&quot;)
-    end
-    _set_loyals_hostile(false)
-  end
-  if C and type(C.reset_recovery) == &quot;function&quot; then
-    pcall(C.reset_recovery, &quot;route_off&quot;)
-  end
-
   if ctx.silent ~= true then
-    _echo_toggle(string.format(&quot;GROUP DAMAGE LOOP OFF (%s).&quot;, tostring(reason):upper()))
+    _echo(string.format(&quot;Group damage loop OFF (%s).&quot;, tostring(ctx.reason or &quot;manual&quot;)))
   end
 end
 
 function GD.alias_loop_clear_waiting()
-  return _clear_waiting()
+  GD.state.waiting = GD.state.waiting or {}
+  GD.state.waiting.queue = nil
+  GD.state.waiting.main_lane = nil
+  GD.state.waiting.lanes = nil
+  GD.state.waiting.at = 0
 end
 
 function GD.alias_loop_waiting_blocks()
-  return _waiting_blocks_tick()
-end
-
-function GD.alias_loop_on_error(err)
-  _echo(&quot;Group damage loop error: &quot; .. tostring(err))
-end
-------------------------------------------------------------
--- Anti-tumble / Empress rescue (stateful)
---  * Wired by triggers in yso_offense_coordination.lua:
---      - tumble_begin -&gt; GD.mark_tumble(tgt, dir)
---      - tumble_out   -&gt; GD.mark_tumble_out(tgt, DIRU)
---  * Wired by Tarot triggers:
---      - Empress fail  -&gt; GD.mark_empress_fail()
---      - Lust success  -&gt; GD.mark_lust_landed(tgt)
-------------------------------------------------------------
-local function _tgt_present(tgt)
-  tgt = _trim(tgt)
-  if tgt == &quot;&quot; then return false end
-  if Yso and Yso.room and type(Yso.room.has) == &quot;function&quot; then
-    local ok, v = pcall(Yso.room.has, tgt)
-    if ok then return v == true end
-  end
-  if type(Yso.target_is_valid) == &quot;function&quot; then
-    local ok, v = pcall(Yso.target_is_valid, tgt)
-    if ok then return v == true end
-  end
   return false
 end
 
-function GD.mark_tumble(tgt, dir)
-  tgt = _trim(tgt); dir = _trim(dir)
-  if tgt == &quot;&quot; then return end
-  local now = _now()
-  local T = GD.state.tumble
-  T.target  = tgt
-  T.dir     = dir
-  T.at      = now
-  T.until_t = now + 0.75
-  T.fired   = false
-  local C = _companions()
-  if C and type(C.invalidate) == &quot;function&quot; then
-    pcall(C.invalidate, &quot;tumble_begin&quot;, { target = tgt, dir = dir })
-  end
-  if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    Yso.pulse.wake(&quot;gd:tumble_begin&quot;)
-  end
-end
-
-function GD.mark_tumble_out(tgt, diru)
-  tgt = _trim(tgt); diru = _trim(diru)
-  if tgt == &quot;&quot; then return end
-  GD.mark_tumble(tgt, diru)
-  local now = _now()
-  local E = GD.state.empress
-  E.pending    = true
-  E.target     = tgt
-  E.dir        = diru
-  E.started_at = now
-  local C = _companions()
-  if C and type(C.invalidate) == &quot;function&quot; then
-    pcall(C.invalidate, &quot;tumble_out&quot;, { target = tgt, dir = diru })
-  end
-  -- don&apos;t clear fail_until here: if we just failed empress, keep the backoff
-  if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-    Yso.pulse.wake(&quot;gd:tumble_out&quot;)
-  end
-end
-
-function GD.mark_empress_fail()
-  local now = _now()
-  local E = GD.state.empress
-  E.fail_until = now + 10.0
-  -- keep pending true so we retry after backoff (once Lust lands)
-  if GD.cfg.echo then _echo(&quot;Empress failed: backing off 10s (need Lust).&quot;) end
-end
-
-function GD.mark_lust_landed(tgt)
-  tgt = _trim(tgt)
-  if tgt == &quot;&quot; then return end
-  local E = GD.state.empress
-  if E.pending and _lc(E.target) == _lc(tgt) then
-    E.fail_until = 0
-    if Yso.pulse and type(Yso.pulse.wake) == &quot;function&quot; then
-      Yso.pulse.wake(&quot;gd:lust_landed&quot;)
-    end
-  end
-end
-
-_rescue_antitumble_action = function(now)
-  if GD.cfg.rescue_lust_empress ~= true then return nil end
-
-  local T = GD.state.tumble
-  if T.target == &quot;&quot; then return nil end
-  if now &gt; (tonumber(T.until_t) or 0) then
-    T.target = &quot;&quot;; T.dir = &quot;&quot;; T.fired = false
-    return nil
-  end
-  if T.fired then return nil end
+function GD.build_payload(ctx)
+  ctx = ctx or {}
+  GD.init()
 
   local tgt = _target()
-  if tgt == &quot;&quot; or _lc(tgt) ~= _lc(T.target) then return nil end
+  if tgt == &quot;&quot; then return nil, &quot;no_target&quot; end
+  if not _target_valid(tgt) then return nil, &quot;invalid_target&quot; end
 
-  local sm_ready = false
-  if Yso and type(Yso.soulmaster_ready) == &quot;function&quot; then
-    local ok, v = pcall(Yso.soulmaster_ready)
-    if ok then sm_ready = (v == true) end
-  else
-    sm_ready = (rawget(_G, &quot;soulmaster_ready&quot;) == true)
-  end
+  local lanes = {}
+  local has_healthleech = _has_aff(&quot;healthleech&quot;)
+  local has_paralysis = _has_aff(&quot;paralysis&quot;)
+  local has_asthma = _has_aff(&quot;asthma&quot;)
 
-  if sm_ready and Yso and Yso.occ and type(Yso.occ.sm_cmd_tumble) == &quot;function&quot; and _eq_ready() then
-    local ok, cmd = pcall(Yso.occ.sm_cmd_tumble, tgt, T.dir)
-    cmd = _trim(ok and cmd or &quot;&quot;)
-    if cmd ~= &quot;&quot; then
-      return {
-        cmd = cmd,
-        qtype = &quot;eq&quot;,
-        kind = &quot;offense&quot;,
-        score = 120,
-        tag = &quot;gd:anti:eq:&quot; .. _lc(tgt) .. &quot;:&quot; .. _lc(T.dir),
-        category = &quot;anti_tumble&quot;,
-        lockout = 0.75,
-      }
-    end
-  end
-
-  if not _bal_ready() then return nil end
-  return {
-    cmd = (&quot;fling lust at %s&quot;):format(tgt),
-    qtype = &quot;bal&quot;,
-    kind = &quot;offense&quot;,
-    score = 118,
-    tag = &quot;gd:anti:bal:&quot; .. _lc(tgt) .. &quot;:&quot; .. _lc(T.dir),
-    category = &quot;anti_tumble&quot;,
-    lockout = 0.75,
-  }
-end
-
-_rescue_empress_action = function(now)
-  if GD.cfg.rescue_lust_empress ~= true then return nil end
-
-  local E = GD.state.empress
-  if not E.pending then return nil end
-
-  local tgt = _trim(E.target)
-  if tgt == &quot;&quot; then E.pending = false; return nil end
-  if _tgt_present(tgt) then E.pending = false; return nil end
-  if E.started_at ~= 0 and (now - (tonumber(E.started_at) or 0)) &gt; 15.0 then
-    E.pending = false
-    return nil
-  end
-  if now &lt; (tonumber(E.fail_until) or 0) then return nil end
-  if not _bal_ready() then return nil end
-  if (now - (tonumber(E.last_try) or 0)) &lt; 0.9 then return nil end
-
-  return {
-    cmd = (&quot;outd empress%sfling empress %s&quot;):format(_command_sep(), tgt),
-    qtype = &quot;bal&quot;,
-    kind = &quot;offense&quot;,
-    score = 116,
-    tag = &quot;gd:empress:&quot; .. _lc(tgt) .. &quot;:&quot; .. _lc(E.dir),
-    category = &quot;anti_tumble&quot;,
-    lockout = 0.9,
-    no_repeat = false,
-  }
-end
--- Main tick
-------------------------------------------------------------
-function GD.tick(reasons)
-  -- Alias-owned loop is the primary automated driver for this route.
-  return false
-end
-
-
--- =========================================================
--- Commit hook (called from Yso.locks.note_payload)
--- Used for per-target timers that must only latch on *actual* send.
--- =========================================================
-local function _payload_contains_cmd(payload, lane, cmd)
-  if type(payload) ~= &quot;table&quot; then return false end
-  local row = payload[lane]
-  if row == nil then return false end
-  if type(row) == &quot;string&quot; then return row == cmd end
-  if type(row) == &quot;table&quot; then
-    for i=1,#row do
-      if row[i] == cmd then return true end
-    end
-  end
-  return false
-end
-
-local function _mark_justice_payload(payload)
-  local function note(cmd)
-    cmd = _trim(cmd)
-    local tgt = cmd:match(&quot;^ruinate%s+justice%s+(.+)$&quot;)
-    if tgt and tgt ~= &quot;&quot; then
-      _mark_justice_sent(tgt)
-    end
-  end
-
-  local bal = payload.bal
-  if type(bal) == &quot;string&quot; then
-    note(bal)
-  elseif type(bal) == &quot;table&quot; then
-    for i = 1, #bal do
-      note(bal[i])
-    end
-  end
-end
-
-function GD.on_payload_sent(payload)
-  if type(payload) ~= &quot;table&quot; then return end
-  if RI and type(RI.payload_has_any_route) == &quot;function&quot; and RI.payload_has_any_route(payload) and not RI.payload_has_route(payload, &quot;group_damage&quot;) then
-    return false
-  end
-  if RI and type(RI.clear_waiting_on_ack) == &quot;function&quot; then
-    RI.clear_waiting_on_ack(GD.state, &quot;group_damage&quot;, payload, { require_route = false })
-  end
-  _mark_justice_payload(payload)
-
-  -- OFF-cleanup bookkeeping: if we successfully sent the passive command, finalize shutdown.
-  if GD.state.stop_pending then
-    local want = tostring(GD.cfg.off_passive_cmd or &quot;order loyals passive&quot;)
-    local free = payload.free
-    local ok = false
-    if type(free) == &quot;string&quot; then
-      ok = (free == want)
-    elseif type(free) == &quot;table&quot; then
-      for i=1,#free do if free[i] == want then ok = true; break end end
-    end
-
-    if ok then
-      _set_loyals_hostile(false)
-      GD.state.stop_pending = false
-      GD.state.enabled = false
-      GD.state.opener_sent_for = &quot;&quot;
-      GD.state.last_room_id = &quot;&quot;
-      GD.state.last_target = &quot;&quot;
-      _echo(&quot;Group damage OFF. loyals passive.&quot;)
-    end
-  end
-
-  local now = _now()
-  local T = GD.state and GD.state.tumble or nil
-  if type(T) == &quot;table&quot; and T.target ~= &quot;&quot; and T.fired ~= true then
-    local lust_cmd = (&quot;fling lust at %s&quot;):format(T.target)
-    if _payload_contains_cmd(payload, &quot;bal&quot;, lust_cmd) then
-      T.fired = true
-    elseif Yso and Yso.occ and type(Yso.occ.sm_cmd_tumble) == &quot;function&quot; then
-      local ok, cmd = pcall(Yso.occ.sm_cmd_tumble, T.target, T.dir)
-      cmd = _trim(ok and cmd or &quot;&quot;)
-      if cmd ~= &quot;&quot; and _payload_contains_cmd(payload, &quot;eq&quot;, cmd) then
-        T.fired = true
+  if _eq_ready() then
+    if has_healthleech then
+      lanes.eq = string.format(&quot;warp %s&quot;, tgt)
+    else
+      local nxt = _next_giving()
+      if nxt ~= &quot;&quot; then
+        lanes.eq = string.format(&quot;instill %s with %s&quot;, tgt, nxt)
       end
     end
   end
 
-  local E = GD.state and GD.state.empress or nil
-  if type(E) == &quot;table&quot; and E.pending then
-    local empress_cmd = (&quot;outd empress%sfling empress %s&quot;):format(_command_sep(), _trim(E.target))
-    if _payload_contains_cmd(payload, &quot;bal&quot;, empress_cmd) then
-      E.last_try = now
+  if _ent_ready() then
+    if has_healthleech then
+      lanes.entity = string.format(&quot;command firelord at %s healthleech&quot;, tgt)
+    elseif has_asthma and not has_paralysis then
+      if _slime_should_refresh(tgt) then
+        lanes.entity = string.format(&quot;command slime at %s&quot;, tgt)
+      else
+        lanes.entity = string.format(&quot;command worm at %s&quot;, tgt)
+      end
+    else
+      lanes.entity = string.format(&quot;command bubonis at %s&quot;, tgt)
     end
   end
 
-  -- Opener sent bookkeeping (best-effort).
-  local pend = GD.state and GD.state._pending_opener
-  if pend and type(pend) == &quot;table&quot; and pend.cmd and pend.tkey then
-    local free = payload.free
-    local sent = false
-    if type(free) == &quot;string&quot; then
-      sent = (free == pend.cmd)
-    elseif type(free) == &quot;table&quot; then
-      for i=1,#free do if free[i] == pend.cmd then sent = true; break end end
-    end
-    if sent then
-      _mark_opener_sent(pend.tkey)
-      GD.state._pending_opener = nil
-    end
+  if _bal_ready() and not lanes.eq and not lanes.entity and has_paralysis and has_asthma then
+    lanes.bal = string.format(&quot;ruinate justice %s&quot;, tgt)
   end
-end
 
--- Mudlet/party-mode friendly surface:
-function GD.status()
-  local tgt = _target()
-  local st = _core_state(tgt)
-  local snapshot = {
+  if not (lanes.eq or lanes.entity or lanes.bal) then
+    return nil, &quot;no_lanes_ready&quot;
+  end
+
+  local payload = {
     route = &quot;group_damage&quot;,
-    enabled = tostring(GD.state and GD.state.loop_enabled == true),
-    active = tostring(GD.is_active()),
-    target = tostring(tgt),
-    core_count = st.count,
-    paralysis = st.paralysis,
-    asthma = st.asthma,
-    healthleech = st.healthleech,
-    sensitivity = st.sensitivity,
-    haemophilia = st.haemophilia,
-    slickness = st.slickness,
-    last_reason = GD.state and GD.state.template and GD.state.template.last_reason or &quot;&quot;,
-    last_disable_reason = GD.state and GD.state.template and GD.state.template.last_disable_reason or &quot;&quot;,
-    last_no_send_reason = GD.state and GD.state.debug and GD.state.debug.last_no_send_reason or &quot;&quot;,
-    last_retry_reason = GD.state and GD.state.debug and GD.state.debug.last_retry_reason or &quot;&quot;,
+    target = tgt,
+    lanes = lanes,
+    main_lane = _pick_main_lane(lanes),
+    category = &quot;party_damage&quot;,
+    allow_eqbal = true,
   }
-  _echo(string.format(&quot;loop=%s active=%s target=%s giving=%d/5 (para=%s asthma=%s sens=%s haemo=%s hl=%s slick=%s) last_no_send=%s retry=%s&quot;,
-    snapshot.enabled, snapshot.active, snapshot.target, snapshot.core_count,
-    tostring(snapshot.paralysis), tostring(snapshot.asthma), tostring(snapshot.sensitivity), tostring(snapshot.haemophilia), tostring(snapshot.healthleech), tostring(snapshot.slickness),
-    tostring(snapshot.last_no_send_reason), tostring(snapshot.last_retry_reason)
-  ))
-  return snapshot
+  return payload, payload.main_lane
 end
 
-if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == &quot;function&quot; then
-  pcall(Yso.off.core.register, &quot;group_damage&quot;, GD)
-  pcall(Yso.off.core.register, &quot;dam&quot;, GD)
-  pcall(Yso.off.core.register, &quot;gd&quot;, GD)
+function GD.attack_function(ctx)
+  GD.init()
+  if not GD.is_active() then return false, &quot;route_inactive&quot; end
+
+  local payload, why = GD.build_payload(ctx)
+  if not payload then return false, why end
+
+  if type(Yso.emit) == &quot;function&quot; then
+    local ok, sent = pcall(Yso.emit, payload)
+    if not ok or sent ~= true then
+      return false, &quot;emit_failed&quot;
+    end
+  else
+    local cmds = {}
+    if payload.lanes.eq then cmds[#cmds + 1] = payload.lanes.eq end
+    if payload.lanes.bal then cmds[#cmds + 1] = payload.lanes.bal end
+    if payload.lanes.entity then cmds[#cmds + 1] = payload.lanes.entity end
+    if #cmds == 0 then return false, &quot;no_lanes_ready&quot; end
+    local line = table.concat(cmds, &quot; / &quot;)
+    if type(send) == &quot;function&quot; then
+      local ok = send(line, false)
+      if ok == false then return false, &quot;send_failed&quot; end
+    else
+      return false, &quot;send_unavailable&quot;
+    end
+  end
+
+  GD.state.last_attack = GD.state.last_attack or {}
+  GD.state.last_attack.at = _now()
+  GD.state.last_attack.target = payload.target
+  GD.state.last_attack.main_lane = payload.main_lane
+  GD.state.last_attack.lanes = payload.lanes
+  GD.state.template = GD.state.template or {}
+  GD.state.template.last_payload = payload
+  GD.state.template.last_target = payload.target
+  GD.state.template.last_reason = &quot;attack_sent&quot;
+  return true, payload.main_lane
 end
 
+function GD.start()
+  GD.init()
+  GD.cfg.enabled = true
+  GD.state.enabled = true
+  GD.state.loop_enabled = true
+  GD.state.busy = false
+  GD.alias_loop_clear_waiting()
+  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == &quot;function&quot; then
+    pcall(Yso.mode.schedule_route_loop, &quot;group_damage&quot;, 0)
+  end
+  return true
+end
+
+function GD.stop(reason)
+  GD.init()
+  GD.state.loop_enabled = false
+  GD.state.enabled = false
+  GD.cfg.enabled = false
+  GD.state.busy = false
+  GD.alias_loop_clear_waiting()
+  GD.state.template = GD.state.template or {}
+  GD.state.template.last_disable_reason = tostring(reason or &quot;manual&quot;)
+  return true
+end
+
+return GD
 
 </script>
 					<eventHandlerList />
@@ -27689,6 +26430,7 @@ do
   local sibling = root:gsub(&quot;/Occultist/modules$&quot;, &quot;&quot;)
   if sibling ~= root then
     _pp(sibling .. &quot;/Magi/?.lua&quot;)
+    _pp(sibling .. &quot;/Alchemist/?.lua&quot;)
   end
 end
 
@@ -35198,7 +33940,10 @@ Yso.alc.phys = Yso.alc.phys or {}
 Yso.alc.form = Yso.alc.form or {}
 
 Yso.bal.humour = Yso.bal.humour ~= false
+Yso.bal.evaluate = Yso.bal.evaluate ~= false
+Yso.bal.homunculus = Yso.bal.homunculus ~= false
 
+local P = Yso.alc.phys
 local F = Yso.alc.form
 
 F.state = F.state or {}
@@ -35206,10 +33951,38 @@ F.phials = F.phials or {}
 F.last_phiallist = F.last_phiallist or {}
 F.cfg = F.cfg or {}
 
+P.state = P.state or {}
+P.targets = P.targets or {}
+P.humours = P.humours or { &quot;choleric&quot;, &quot;melancholic&quot;, &quot;phlegmatic&quot;, &quot;sanguine&quot; }
+P.aff_to_humour = P.aff_to_humour or {
+  paralysis = &quot;sanguine&quot;,
+  nausea = &quot;choleric&quot;,
+  sensitivity = &quot;choleric&quot;,
+  haemophilia = &quot;sanguine&quot;,
+}
+P.humour_to_affs = P.humour_to_affs or {
+  choleric = { &quot;nausea&quot;, &quot;sensitivity&quot; },
+  sanguine = { &quot;haemophilia&quot;, &quot;paralysis&quot; },
+}
+P.giving_default = P.giving_default or {
+  &quot;paralysis&quot;,
+  &quot;nausea&quot;,
+  &quot;sensitivity&quot;,
+  &quot;haemophilia&quot;,
+}
+P.state.evaluate = P.state.evaluate or {
+  target = &quot;&quot;,
+  active = false,
+  requested_at = 0,
+  started_at = 0,
+}
+P.state.corruption = P.state.corruption or {}
+
 F.cfg.discovery = F.cfg.discovery ~= false
+F.cfg.chart_path = F.cfg.chart_path or &quot;Ysindrolir/Alchemist/Alchemical skill_reference chart&quot;
 
 local function _now()
-  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
   if t and t &gt; 1000000000000 then
     t = t / 1000
   end
@@ -35217,39 +33990,204 @@ local function _now()
 end
 
 local function _echo(msg)
-  local text = string.format("[Yso:Alchemist] %s", tostring(msg or ""))
-  if type(cecho) == "function" then
-    cecho("\n&lt;orange&gt;" .. text .. "\n")
+  local text = string.format(&quot;[Yso:Alchemist] %s&quot;, tostring(msg or &quot;&quot;))
+  if type(cecho) == &quot;function&quot; then
+    cecho(&quot;\n&lt;orange&gt;&quot; .. text .. &quot;\n&quot;)
     return
   end
-  if type(echo) == "function" then
-    echo("\n" .. text .. "\n")
+  if type(echo) == &quot;function&quot; then
+    echo(&quot;\n&quot; .. text .. &quot;\n&quot;)
     return
   end
-  if type(print) == "function" then
+  if type(print) == &quot;function&quot; then
     print(text)
   end
 end
 
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _lc(s)
+  return _trim(s):lower()
+end
+
 local function _sep()
-  if type(Yso.sep) == "string" and Yso.sep ~= "" then
+  if type(Yso.sep) == &quot;string&quot; and Yso.sep ~= &quot;&quot; then
     return Yso.sep
   end
-  if type(Yso.cfg) == "table" and type(Yso.cfg.pipe_sep) == "string" and Yso.cfg.pipe_sep ~= "" then
+  if type(Yso.cfg) == &quot;table&quot; and type(Yso.cfg.pipe_sep) == &quot;string&quot; and Yso.cfg.pipe_sep ~= &quot;&quot; then
     return Yso.cfg.pipe_sep
   end
-  return "&amp;&amp;"
+  return &quot;&amp;&amp;&quot;
+end
+
+local function _target_key(name)
+  local key = _lc(name)
+  return key ~= &quot;&quot; and key or nil
+end
+
+local function _current_target()
+  if type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= &quot;&quot; then
+      return _trim(v)
+    end
+  end
+  if type(Yso.target) == &quot;string&quot; and _trim(Yso.target) ~= &quot;&quot; then
+    return _trim(Yso.target)
+  end
+  local tgt = rawget(_G, &quot;target&quot;)
+  if type(tgt) == &quot;string&quot; and _trim(tgt) ~= &quot;&quot; then
+    return _trim(tgt)
+  end
+  return &quot;&quot;
+end
+
+local function _has_aff(aff)
+  aff = _lc(aff)
+  if aff == &quot;&quot; then
+    return false
+  end
+
+  local A = rawget(_G, &quot;affstrack&quot;)
+  if type(A) == &quot;table&quot; then
+    if type(A.score) == &quot;table&quot; and tonumber(A.score[aff]) then
+      return tonumber(A.score[aff]) &gt;= 100
+    end
+    local row = A[aff]
+    if type(row) == &quot;table&quot; and tonumber(row.score) then
+      return tonumber(row.score) &gt;= 100
+    end
+  end
+
+  if Yso and Yso.tgt and type(Yso.tgt.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(Yso.tgt.has_aff, _current_target(), aff)
+    if ok and v == true then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function _humour_row(target_row, humour)
+  humour = _lc(humour)
+  if humour == &quot;&quot; then
+    return nil
+  end
+
+  target_row.humours = target_row.humours or {}
+  local row = target_row.humours[humour]
+  if row then
+    return row
+  end
+
+  row = {
+    name = humour,
+    inferred_count = 0,
+    steady_count = nil,
+    known = false,
+    tempered = false,
+    last_tempered_at = 0,
+    last_wracked_at = 0,
+    last_evaluated_at = 0,
+    eval_dirty = true,
+  }
+  target_row.humours[humour] = row
+  return row
+end
+
+local function _sync_tempered(row)
+  local inferred = tonumber(row.inferred_count or 0) or 0
+  local steady = tonumber(row.steady_count or 0) or 0
+  row.tempered = (inferred &gt; 0) or (steady &gt; 0)
+  return row.tempered
+end
+
+local function _target_row(name)
+  local key = _target_key(name)
+  if not key then
+    return nil
+  end
+
+  local row = P.targets[key]
+  if row then
+    row.name = _trim(name)
+    row.last_seen_at = _now()
+    return row
+  end
+
+  row = {
+    name = _trim(name),
+    key = key,
+    created_at = _now(),
+    last_seen_at = _now(),
+    last_evaluated_at = 0,
+    last_wrack_at = 0,
+    eval_dirty = true,
+    humours = {},
+    vitals = {
+      health_pct = nil,
+      mana_pct = nil,
+      last_evaluated_at = 0,
+    },
+  }
+
+  for i = 1, #P.humours do
+    _humour_row(row, P.humours[i])
+  end
+
+  P.targets[key] = row
+  return row
+end
+
+function Yso.giving(list)
+  local out = {}
+  if type(list) ~= &quot;table&quot; then
+    return out
+  end
+  for i = 1, #list do
+    local aff = _lc(list[i])
+    if aff ~= &quot;&quot; then
+      out[#out + 1] = aff
+    end
+  end
+  P.giving_default = out
+  return out
 end
 
 function Yso.alc.set_humour_ready(ready, source)
   Yso.bal.humour = ready and true or false
-  F.state.last_humour_source = source or "unknown"
+  F.state.last_humour_source = source or &quot;unknown&quot;
   F.state.last_humour_change = _now()
   return Yso.bal.humour
 end
 
 function Yso.alc.humour_ready()
   return Yso.bal.humour ~= false
+end
+
+function Yso.alc.set_evaluate_ready(ready, source)
+  Yso.bal.evaluate = ready and true or false
+  P.state.last_evaluate_source = source or &quot;unknown&quot;
+  P.state.last_evaluate_change = _now()
+  return Yso.bal.evaluate
+end
+
+function Yso.alc.evaluate_ready()
+  return Yso.bal.evaluate ~= false
+end
+
+function Yso.alc.set_homunculus_ready(ready, source)
+  Yso.bal.homunculus = ready and true or false
+  P.state.last_homunculus_source = source or &quot;unknown&quot;
+  P.state.last_homunculus_change = _now()
+  return Yso.bal.homunculus
+end
+
+function Yso.alc.homunculus_ready()
+  return Yso.bal.homunculus ~= false
 end
 
 function F.warn(msg)
@@ -35262,6 +34200,435 @@ end
 
 function F.sep()
   return _sep()
+end
+
+function P.now()
+  return _now()
+end
+
+function P.target(name)
+  return _target_row(name)
+end
+
+function P.current_target()
+  return _current_target()
+end
+
+function P.humour(name, humour)
+  local target_row = _target_row(name)
+  if not target_row then
+    return nil
+  end
+  return _humour_row(target_row, humour)
+end
+
+function P.mark_all_eval_dirty(name, source)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  target_row.eval_dirty = true
+  target_row.last_dirty_source = tostring(source or &quot;manual&quot;)
+  target_row.last_dirty_at = _now()
+
+  for i = 1, #P.humours do
+    local row = _humour_row(target_row, P.humours[i])
+    row.eval_dirty = true
+    row.known = false
+  end
+
+  return true
+end
+
+function P.note_evaluate_request(name, source)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  P.state.evaluate.target = target_row.name
+  P.state.evaluate.requested_at = _now()
+  P.state.evaluate.request_source = tostring(source or &quot;route&quot;)
+  return true
+end
+
+function P.begin_evaluate(name)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  local now = _now()
+  P.state.evaluate.target = target_row.name
+  P.state.evaluate.active = true
+  P.state.evaluate.started_at = now
+  target_row.last_evaluated_at = now
+  return true
+end
+
+function P.active_evaluate_target()
+  local name = _trim(P.state.evaluate and P.state.evaluate.target or &quot;&quot;)
+  return name
+end
+
+function P.resolve_evaluate_target(default_target)
+  local target = _trim(default_target)
+  if target ~= &quot;&quot; then
+    return target
+  end
+
+  target = _trim(P.state.evaluate and P.state.evaluate.target or &quot;&quot;)
+  if target ~= &quot;&quot; then
+    return target
+  end
+
+  return _current_target()
+end
+
+function P.finish_evaluate(name)
+  local target = P.resolve_evaluate_target(name)
+  local target_row = _target_row(target)
+  if not target_row then
+    return false
+  end
+
+  P.state.evaluate.active = false
+  target_row.last_evaluated_at = _now()
+  return true
+end
+
+function P.note_steady_count(name, humour, count)
+  local target_row = _target_row(name)
+  local row = target_row and _humour_row(target_row, humour) or nil
+  if not row then
+    return false
+  end
+
+  local now = _now()
+  row.steady_count = tonumber(count) or 0
+  row.known = true
+  row.eval_dirty = false
+  row.last_evaluated_at = now
+  target_row.last_evaluated_at = now
+  target_row.eval_dirty = false
+  _sync_tempered(row)
+  return true
+end
+
+function P.note_all_normal(name)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  local now = _now()
+  target_row.eval_dirty = false
+  target_row.last_evaluated_at = now
+  for i = 1, #P.humours do
+    local row = _humour_row(target_row, P.humours[i])
+    row.steady_count = 0
+    row.known = true
+    row.eval_dirty = false
+    row.last_evaluated_at = now
+    _sync_tempered(row)
+  end
+  return true
+end
+
+function P.note_evaluate_vitals(name, health_pct, mana_pct)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  local now = _now()
+  if tonumber(health_pct) then
+    target_row.vitals.health_pct = math.max(0, math.min(100, tonumber(health_pct)))
+  end
+  if tonumber(mana_pct) then
+    target_row.vitals.mana_pct = math.max(0, math.min(100, tonumber(mana_pct)))
+  end
+  target_row.vitals.last_evaluated_at = now
+  target_row.last_evaluated_at = now
+  return true
+end
+
+function P.note_temper_success(name, humour)
+  local target_row = _target_row(name)
+  local row = target_row and _humour_row(target_row, humour) or nil
+  if not row then
+    return false
+  end
+
+  local now = _now()
+  row.inferred_count = math.min(8, (tonumber(row.inferred_count or 0) or 0) + 1)
+  row.last_tempered_at = now
+  _sync_tempered(row)
+  return true
+end
+
+function P.note_wrack_success(name, humour_one, humour_two)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  local now = _now()
+  target_row.last_wrack_at = now
+  for _, humour in ipairs({ humour_one, humour_two }) do
+    local row = _humour_row(target_row, humour)
+    if row then
+      row.last_wracked_at = now
+    end
+  end
+  return true
+end
+
+function P.note_corrupt_success(name, seconds)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  if target == &quot;&quot; then
+    return false
+  end
+
+  local now = _now()
+  local duration = tonumber(seconds) or 45
+  local key = _target_key(target)
+  P.state.corruption[key] = {
+    target = target,
+    applied_at = now,
+    expected_expires_at = now + duration,
+  }
+  return true
+end
+
+function P.clear_corruption(name, source)
+  local key = _target_key(name)
+  if not key then
+    return false
+  end
+  P.state.corruption[key] = nil
+  P.state.last_corruption_clear = {
+    target = name,
+    source = tostring(source or &quot;manual&quot;),
+    at = _now(),
+  }
+  return true
+end
+
+function P.corruption_active(name)
+  local key = _target_key(name)
+  if not key then
+    return false
+  end
+  local row = P.state.corruption[key]
+  if type(row) ~= &quot;table&quot; then
+    return false
+  end
+  if tonumber(row.expected_expires_at or 0) &lt;= _now() then
+    P.state.corruption[key] = nil
+    return false
+  end
+  return true
+end
+
+function P.count(name, humour, prefer_steady)
+  local row = P.humour(name, humour)
+  if not row then
+    return 0
+  end
+
+  local steady = tonumber(row.steady_count)
+  local inferred = tonumber(row.inferred_count or 0) or 0
+  if prefer_steady == true then
+    return steady or 0
+  end
+  if steady ~= nil then
+    return math.max(steady, inferred)
+  end
+  return inferred
+end
+
+function P.steady_count(name, humour)
+  return P.count(name, humour, true)
+end
+
+function P.target_needs_evaluate(name)
+  local target_row = _target_row(name)
+  if not target_row then
+    return false
+  end
+
+  if target_row.eval_dirty == true then
+    return true
+  end
+
+  for i = 1, #P.humours do
+    local row = _humour_row(target_row, P.humours[i])
+    if row.eval_dirty == true or row.known ~= true then
+      return true
+    end
+  end
+
+  return false
+end
+
+function P.health_pct(name)
+  local target_row = _target_row(name)
+  return target_row and target_row.vitals and target_row.vitals.health_pct or nil
+end
+
+function P.mana_pct(name)
+  local target_row = _target_row(name)
+  return target_row and target_row.vitals and target_row.vitals.mana_pct or nil
+end
+
+function P.can_aurify(name)
+  local hp = tonumber(P.health_pct(name))
+  local mp = tonumber(P.mana_pct(name))
+  return hp ~= nil and mp ~= nil and hp &lt; 60 and mp &lt; 60
+end
+
+function P.iron_aff_count(name, giving)
+  local list = type(giving) == &quot;table&quot; and giving or P.giving_default
+  local count = 0
+  for i = 1, #list do
+    if _has_aff(list[i]) then
+      count = count + 1
+    end
+  end
+  return count
+end
+
+function P.pick_missing_aff(name, giving)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  local list = type(giving) == &quot;table&quot; and giving or P.giving_default
+
+  local steady_sanguine = tonumber(P.steady_count(target, &quot;sanguine&quot;) or 0) or 0
+  for i = 1, #list do
+    local aff = _lc(list[i])
+    if aff ~= &quot;&quot; and not _has_aff(aff) then
+      if aff ~= &quot;paralysis&quot; or steady_sanguine &gt;= 2 then
+        return aff
+      end
+    end
+  end
+  return nil
+end
+
+function P.pick_filler_humour(name, forced_aff)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+
+  local preferred = P.aff_to_humour[_lc(forced_aff or &quot;&quot;)]
+  local options = { &quot;choleric&quot;, &quot;sanguine&quot; }
+  local best_humour, best_count = nil, -1
+
+  for i = 1, #options do
+    local humour = options[i]
+    if humour ~= preferred then
+      local count = tonumber(P.count(target, humour) or 0) or 0
+      if count &gt; best_count then
+        best_humour = humour
+        best_count = count
+      end
+    end
+  end
+
+  if best_humour then
+    return best_humour
+  end
+  return preferred or &quot;choleric&quot;
+end
+
+function P.pick_temper_humour(name, giving)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+
+  local list = type(giving) == &quot;table&quot; and giving or P.giving_default
+  local steady_sanguine = tonumber(P.steady_count(target, &quot;sanguine&quot;) or 0) or 0
+  if not _has_aff(&quot;paralysis&quot;) and steady_sanguine &lt; 2 then
+    return &quot;sanguine&quot;
+  end
+
+  local best_humour = nil
+  local best_missing = -1
+  local best_count = math.huge
+
+  for humour, affs in pairs(P.humour_to_affs) do
+    local missing = 0
+    for i = 1, #affs do
+      local aff = affs[i]
+      local allowed = true
+      if aff == &quot;paralysis&quot; and steady_sanguine &lt; 2 then
+        allowed = false
+      end
+      if allowed and not _has_aff(aff) then
+        missing = missing + 1
+      end
+    end
+
+    if missing &gt; 0 then
+      local count = tonumber(P.count(target, humour) or 0) or 0
+      if missing &gt; best_missing or (missing == best_missing and count &lt; best_count) then
+        best_humour = humour
+        best_missing = missing
+        best_count = count
+      end
+    end
+  end
+
+  if best_humour then
+    return best_humour
+  end
+
+  local first = P.pick_missing_aff(target, list)
+  return P.aff_to_humour[_lc(first or &quot;&quot;)] or &quot;choleric&quot;
+end
+
+function P.build_truewrack(name, giving)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+
+  local forced = P.pick_missing_aff(target, giving)
+  if not forced then
+    return nil
+  end
+
+  local filler = P.pick_filler_humour(target, forced)
+  if filler == nil or filler == &quot;&quot; then
+    return nil
+  end
+
+  return string.format(&quot;truewrack %s %s %s&quot;, target, filler, forced), filler, forced
+end
+
+function P.build_wrack_fallback(name)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  if target == &quot;&quot; then
+    return nil
+  end
+
+  local humour = P.pick_temper_humour(target)
+  if humour == nil or humour == &quot;&quot; then
+    humour = &quot;choleric&quot;
+  end
+  return string.format(&quot;wrack %s %s&quot;, target, humour), humour
 end
 
 function F.reset_phials()
@@ -35283,13 +34650,663 @@ function F.request_discovery()
   end
   F.state.discovery_requested = true
   F.state.discovery_requested_at = _now()
-  if type(send) == "function" then
-    send("phiallist")
+  if type(send) == &quot;function&quot; then
+    send(&quot;phiallist&quot;)
   end
   return true
-end</script>
+end
+</script>
 					<eventHandlerList />
 				</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Alchemist group damage</name>
+						<packageName></packageName>
+						<script>--========================================================--
+-- Alchemist / group damage.lua
+--  Party damage route for Alchemist.
+--  Alias-controlled loop ownership is handled by Yso.mode via ^adam$.
+--========================================================--
+
+_G.Yso = _G.Yso or _G.yso or {}
+_G.yso = _G.Yso
+
+Yso = _G.Yso
+Yso.off = Yso.off or {}
+Yso.off.alc = Yso.off.alc or {}
+
+Yso.off.alc.group_damage = Yso.off.alc.group_damage or {}
+local GD = Yso.off.alc.group_damage
+GD.alias_owned = true
+
+local function _load_alchemist_peer(file_name)
+  local info = debug.getinfo(1, &quot;S&quot;)
+  local source = info and info.source or &quot;&quot;
+  if source:sub(1, 1) ~= &quot;@&quot; then
+    return false
+  end
+  local dir = source:sub(2):match(&quot;^(.*)[/\\][^/\\]+$&quot;) or &quot;.&quot;
+  local path = dir .. &quot;/&quot; .. tostring(file_name or &quot;&quot;)
+  local ok = pcall(dofile, path)
+  return ok
+end
+
+if type(require) == &quot;function&quot; then
+  pcall(require, &quot;Yso&quot;)
+end
+if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == &quot;function&quot;) then
+  _load_alchemist_peer(&quot;formulation.lua&quot;)
+end
+
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+if not (RI and type(RI.ensure_hooks) == &quot;function&quot;) and type(require) == &quot;function&quot; then
+  pcall(require, &quot;Yso.Combat.route_interface&quot;)
+  pcall(require, &quot;Yso.xml.route_interface&quot;)
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+end
+
+GD.route_contract = GD.route_contract or {
+  id = &quot;alchemist_group_damage&quot;,
+  interface_version = 1,
+  shared_categories = { &quot;defense_break&quot;, &quot;anti_tumble&quot; },
+  route_local_categories = {
+    &quot;evaluate&quot;,
+    &quot;eq_finisher&quot;,
+    &quot;temper&quot;,
+    &quot;truewrack&quot;,
+    &quot;wrack_filler&quot;,
+    &quot;hold&quot;,
+  },
+  capabilities = {
+    uses_eq = true,
+    uses_bal = true,
+    uses_entity = false,
+    supports_burst = false,
+    supports_bootstrap = true,
+    needs_target = true,
+    shares_defense_break = false,
+    shares_anti_tumble = false,
+  },
+  override_policy = {
+    mode = &quot;narrow_global_only&quot;,
+    allowed = {
+      target_invalid = true,
+      target_slain = true,
+      route_off = true,
+      pause = true,
+      manual_suppression = true,
+    },
+  },
+  lifecycle = {
+    on_enter = true,
+    on_exit = true,
+    on_target_swap = true,
+    on_pause = true,
+    on_resume = true,
+    on_manual_success = true,
+    on_send_result = true,
+    evaluate = true,
+    explain = true,
+  },
+}
+
+GD.cfg = GD.cfg or {
+  enabled = false,
+  echo = true,
+  loop_delay = 0.15,
+  evaluate_pending_s = 1.2,
+}
+
+GD.state = GD.state or {
+  enabled = false,
+  loop_enabled = false,
+  timer_id = nil,
+  busy = false,
+  waiting = { queue = nil, main_lane = nil, lanes = nil, at = 0 },
+  last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil },
+  template = { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; },
+  explain = {},
+}
+
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+end
+
+local function _lc(s)
+  return _trim(s):lower()
+end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then
+      return tonumber(v)
+    end
+  end
+  if type(getEpoch) == &quot;function&quot; then
+    local v = tonumber(getEpoch()) or os.time()
+    if v &gt; 20000000000 then
+      v = v / 1000
+    end
+    return v
+  end
+  return os.time()
+end
+
+local function _echo(msg)
+  if GD.cfg.echo ~= true then
+    return
+  end
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;orange&gt;[Yso:Alchemist] &lt;reset&gt;%s\n&quot;, tostring(msg)))
+  elseif type(echo) == &quot;function&quot; then
+    echo(string.format(&quot;[Yso:Alchemist] %s\n&quot;, tostring(msg)))
+  end
+end
+
+local function _phys()
+  return Yso and Yso.alc and Yso.alc.phys or nil
+end
+
+local function _target()
+  if type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= &quot;&quot; then
+      return _trim(v)
+    end
+  end
+  local t = rawget(_G, &quot;target&quot;)
+  if type(t) == &quot;string&quot; and _trim(t) ~= &quot;&quot; then
+    return _trim(t)
+  end
+  return &quot;&quot;
+end
+
+local function _target_valid(tgt)
+  if type(Yso.target_is_valid) == &quot;function&quot; then
+    local ok, v = pcall(Yso.target_is_valid, tgt)
+    if ok then
+      return v == true
+    end
+  end
+  return _trim(tgt) ~= &quot;&quot;
+end
+
+local function _is_alchemist()
+  if type(Yso.is_alchemist) == &quot;function&quot; then
+    local ok, v = pcall(Yso.is_alchemist)
+    if ok then
+      return v == true
+    end
+  end
+  if Yso and Yso.classinfo and type(Yso.classinfo.is) == &quot;function&quot; then
+    local ok, v = pcall(Yso.classinfo.is, &quot;Alchemist&quot;)
+    if ok then
+      return v == true
+    end
+  end
+  local cls = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or &quot;&quot;
+  return _lc(cls) == &quot;alchemist&quot;
+end
+
+local function _eq_ready()
+  if Yso and Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then
+      return v == true
+    end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.eq or v.equilibrium or &quot;&quot;) == &quot;1&quot; or (v.eq == true or v.equilibrium == true)
+end
+
+local function _bal_ready()
+  if Yso and Yso.state and type(Yso.state.bal_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.state.bal_ready)
+    if ok then
+      return v == true
+    end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.bal or v.balance or &quot;&quot;) == &quot;1&quot; or (v.bal == true or v.balance == true)
+end
+
+local function _evaluate_ready()
+  if Yso.alc and type(Yso.alc.evaluate_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.alc.evaluate_ready)
+    if ok then
+      return v == true
+    end
+  end
+  return Yso and Yso.bal and Yso.bal.evaluate ~= false
+end
+
+local function _humour_ready()
+  if Yso.alc and type(Yso.alc.humour_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.alc.humour_ready)
+    if ok then
+      return v == true
+    end
+  end
+  return Yso and Yso.bal and Yso.bal.humour ~= false
+end
+
+local function _same_target(a, b)
+  return _lc(a) ~= &quot;&quot; and _lc(a) == _lc(b)
+end
+
+local function _is_party_damage_route()
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= &quot;table&quot; then
+    return false
+  end
+  if type(M.is_party) == &quot;function&quot; then
+    local ok, v = pcall(M.is_party)
+    if ok and v ~= true then
+      return false
+    end
+  end
+  if type(M.party_route) == &quot;function&quot; then
+    local ok, v = pcall(M.party_route)
+    local route = ok and _lc(v) or &quot;&quot;
+    if route ~= &quot;&quot; and route ~= &quot;dam&quot; and route ~= &quot;dmg&quot; then
+      return false
+    end
+  end
+  if type(M.route_loop_active) == &quot;function&quot; then
+    local ok, v = pcall(M.route_loop_active, &quot;alchemist_group_damage&quot;)
+    if ok and v ~= true then
+      return false
+    end
+  end
+  return true
+end
+
+local function _evaluate_pending_for(tgt)
+  local P = _phys()
+  local row = P and P.state and P.state.evaluate or nil
+  if type(row) ~= &quot;table&quot; then
+    return false
+  end
+  if not _same_target(row.target, tgt) then
+    return false
+  end
+  local at = tonumber(row.requested_at or 0) or 0
+  if at &lt;= 0 then
+    return false
+  end
+  return (_now() - at) &lt;= (tonumber(GD.cfg.evaluate_pending_s or 1.2) or 1.2)
+end
+
+local function _giving_set()
+  local P = _phys()
+  if P and type(P.giving_default) == &quot;table&quot; and #P.giving_default &gt; 0 then
+    return P.giving_default
+  end
+  return {
+    &quot;paralysis&quot;,
+    &quot;nausea&quot;,
+    &quot;sensitivity&quot;,
+    &quot;haemophilia&quot;,
+  }
+end
+
+local function _emit_payload(payload)
+  if type(Yso.emit) == &quot;function&quot; then
+    return Yso.emit(payload, {
+      reason = &quot;alchemist_group_damage:&quot; .. tostring(payload.category or &quot;action&quot;),
+      kind = &quot;offense&quot;,
+      commit = true,
+      route = &quot;alchemist_group_damage&quot;,
+      target = payload.target,
+    }) == true
+  end
+
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.stage) == &quot;function&quot; and type(Q.commit) == &quot;function&quot; then
+    if payload.free then
+      Q.stage(&quot;free&quot;, payload.free, { route = &quot;alchemist_group_damage&quot;, target = payload.target })
+    end
+    if payload.eq then
+      Q.stage(&quot;eq&quot;, payload.eq, { route = &quot;alchemist_group_damage&quot;, target = payload.target })
+    end
+    if payload.bal then
+      Q.stage(&quot;bal&quot;, payload.bal, { route = &quot;alchemist_group_damage&quot;, target = payload.target })
+    end
+    local ok = Q.commit({ route = &quot;alchemist_group_damage&quot;, target = payload.target, allow_eqbal = true })
+    return ok == true
+  end
+
+  if payload.free and type(send) == &quot;function&quot; then
+    return pcall(send, payload.free, false) == true
+  end
+  if payload.eq and type(send) == &quot;function&quot; then
+    return pcall(send, payload.eq, false) == true
+  end
+  if payload.bal and type(send) == &quot;function&quot; then
+    return pcall(send, payload.bal, false) == true
+  end
+
+  return false
+end
+
+local function _make_payload(tgt, lane, cmd, category, reason)
+  local payload = {
+    route = &quot;alchemist_group_damage&quot;,
+    target = tgt,
+    category = category,
+    reason = reason,
+    lanes = {},
+  }
+  payload[lane] = cmd
+  payload.lanes[lane] = cmd
+  return payload
+end
+
+local function _select_action(ctx)
+  GD.init()
+
+  local tgt = _trim((ctx and ctx.target) or _target())
+  if tgt == &quot;&quot; then
+    return nil, &quot;no_target&quot;
+  end
+  if not _target_valid(tgt) then
+    return nil, &quot;invalid_target&quot;
+  end
+
+  local P = _phys()
+  if not P then
+    return nil, &quot;phys_unavailable&quot;
+  end
+
+  local giving = _giving_set()
+  local needs_eval = (type(P.target_needs_evaluate) == &quot;function&quot;) and (P.target_needs_evaluate(tgt) == true) or false
+  if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
+    local cmd = string.format(&quot;evaluate %s humours&quot;, tgt)
+    if type(P.note_evaluate_request) == &quot;function&quot; then
+      P.note_evaluate_request(tgt, &quot;route&quot;)
+    end
+    return {
+      kind = &quot;emit&quot;,
+      lane = &quot;free&quot;,
+      cmd = cmd,
+      payload = _make_payload(tgt, &quot;free&quot;, cmd, &quot;evaluate&quot;, &quot;humour_intel_dirty&quot;),
+      reason = &quot;humour_intel_dirty&quot;,
+      category = &quot;evaluate&quot;,
+      explain = {
+        target = tgt,
+        needs_eval = true,
+      },
+    }
+  end
+
+  if _eq_ready() and type(P.can_aurify) == &quot;function&quot; and P.can_aurify(tgt) then
+    local cmd = string.format(&quot;aurify %s&quot;, tgt)
+    return {
+      kind = &quot;emit&quot;,
+      lane = &quot;eq&quot;,
+      cmd = cmd,
+      payload = _make_payload(tgt, &quot;eq&quot;, cmd, &quot;eq_finisher&quot;, &quot;aurify_window&quot;),
+      reason = &quot;aurify_window&quot;,
+      category = &quot;eq_finisher&quot;,
+      explain = {
+        target = tgt,
+        aurify = true,
+        health_pct = P.health_pct and P.health_pct(tgt) or nil,
+        mana_pct = P.mana_pct and P.mana_pct(tgt) or nil,
+      },
+    }
+  end
+
+  if _eq_ready() and type(P.iron_aff_count) == &quot;function&quot; and P.iron_aff_count(tgt, giving) == 3 then
+    local cmd = string.format(&quot;educe iron %s&quot;, tgt)
+    return {
+      kind = &quot;emit&quot;,
+      lane = &quot;eq&quot;,
+      cmd = cmd,
+      payload = _make_payload(tgt, &quot;eq&quot;, cmd, &quot;eq_finisher&quot;, &quot;iron_window&quot;),
+      reason = &quot;iron_window&quot;,
+      category = &quot;eq_finisher&quot;,
+      explain = {
+        target = tgt,
+        iron_aff_count = 3,
+      },
+    }
+  end
+
+  if _humour_ready() and type(P.pick_temper_humour) == &quot;function&quot; then
+    local humour = _trim(P.pick_temper_humour(tgt, giving))
+    if humour ~= &quot;&quot; then
+      local cmd = string.format(&quot;temper %s %s&quot;, tgt, humour)
+      return {
+        kind = &quot;direct&quot;,
+        lane = &quot;humour&quot;,
+        cmd = cmd,
+        reason = &quot;temper_window&quot;,
+        category = &quot;temper&quot;,
+        explain = {
+          target = tgt,
+          humour = humour,
+        },
+      }
+    end
+  end
+
+  if _bal_ready() then
+    if type(P.build_truewrack) == &quot;function&quot; then
+      local cmd, filler, forced = P.build_truewrack(tgt, giving)
+      if cmd and cmd ~= &quot;&quot; then
+        return {
+          kind = &quot;emit&quot;,
+          lane = &quot;bal&quot;,
+          cmd = cmd,
+          payload = _make_payload(tgt, &quot;bal&quot;, cmd, &quot;truewrack&quot;, &quot;missing_aff_pressure&quot;),
+          reason = &quot;missing_aff_pressure&quot;,
+          category = &quot;truewrack&quot;,
+          explain = {
+            target = tgt,
+            filler_humour = filler,
+            forced_aff = forced,
+          },
+        }
+      end
+    end
+
+    if type(P.build_wrack_fallback) == &quot;function&quot; then
+      local cmd, humour = P.build_wrack_fallback(tgt)
+      if cmd and cmd ~= &quot;&quot; then
+        return {
+          kind = &quot;emit&quot;,
+          lane = &quot;bal&quot;,
+          cmd = cmd,
+          payload = _make_payload(tgt, &quot;bal&quot;, cmd, &quot;wrack_filler&quot;, &quot;hybrid_not_useful&quot;),
+          reason = &quot;hybrid_not_useful&quot;,
+          category = &quot;wrack_filler&quot;,
+          explain = {
+            target = tgt,
+            filler_humour = humour,
+          },
+        }
+      end
+    end
+  end
+
+  return nil, &quot;no_legal_action&quot;
+end
+
+function GD.init()
+  GD.cfg = GD.cfg or {}
+  GD.state = GD.state or {}
+  GD.state.waiting = GD.state.waiting or { queue = nil, main_lane = nil, lanes = nil, at = 0 }
+  GD.state.last_attack = GD.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil }
+  GD.state.template = GD.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; }
+  GD.state.explain = GD.state.explain or {}
+  GD.state.loop_enabled = (GD.state.loop_enabled == true)
+  GD.state.enabled = (GD.state.enabled == true)
+  GD.state.busy = (GD.state.busy == true)
+  GD.cfg.loop_delay = tonumber(GD.cfg.loop_delay or 0.15) or 0.15
+
+  if RI and type(RI.ensure_hooks) == &quot;function&quot; then
+    RI.ensure_hooks(GD, GD.route_contract)
+  end
+  if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == &quot;function&quot; then
+    pcall(Yso.off.core.register, &quot;alchemist_group_damage&quot;, GD)
+    pcall(Yso.off.core.register, &quot;adam&quot;, GD)
+  end
+  return true
+end
+
+function GD.is_active()
+  if not _is_alchemist() then
+    return false
+  end
+  if GD.cfg.enabled ~= true or GD.state.enabled ~= true or GD.state.loop_enabled ~= true then
+    return false
+  end
+  if type(Yso.offense_paused) == &quot;function&quot; then
+    local ok, v = pcall(Yso.offense_paused)
+    if ok and v == true then
+      return false
+    end
+  end
+  return _is_party_damage_route()
+end
+
+function GD.alias_loop_on_started()
+  _echo(&quot;Alchemist group damage loop ON.&quot;)
+end
+
+function GD.alias_loop_on_stopped(ctx)
+  ctx = ctx or {}
+  if ctx.silent ~= true then
+    _echo(string.format(&quot;Alchemist group damage loop OFF (%s).&quot;, tostring(ctx.reason or &quot;manual&quot;)))
+  end
+end
+
+function GD.alias_loop_clear_waiting()
+  GD.state.waiting = GD.state.waiting or {}
+  GD.state.waiting.queue = nil
+  GD.state.waiting.main_lane = nil
+  GD.state.waiting.lanes = nil
+  GD.state.waiting.at = 0
+end
+
+function GD.alias_loop_waiting_blocks()
+  return false
+end
+
+GD.alias_loop_stop_details = GD.alias_loop_stop_details or {
+  no_target = true,
+  invalid_target = true,
+  wrong_class = true,
+  route_inactive = true,
+}
+
+function GD.build_payload(ctx)
+  local action, why = _select_action(ctx or {})
+  if not action then
+    return nil, why
+  end
+  if action.kind == &quot;emit&quot; then
+    return action.payload, action.reason
+  end
+  return {
+    route = &quot;alchemist_group_damage&quot;,
+    target = action.explain and action.explain.target or _target(),
+    direct = action.cmd,
+    lane = action.lane,
+    category = action.category,
+  }, action.reason
+end
+
+function GD.attack_function(ctx)
+  GD.init()
+  if not GD.is_active() then
+    return false, &quot;route_inactive&quot;
+  end
+
+  local action, why = _select_action(ctx or {})
+  if not action then
+    GD.state.template.last_reason = why or &quot;no_legal_action&quot;
+    return false, why
+  end
+
+  local sent = false
+  if action.kind == &quot;emit&quot; then
+    sent = (_emit_payload(action.payload) == true)
+  elseif action.kind == &quot;direct&quot; then
+    if type(send) == &quot;function&quot; then
+      sent = pcall(send, action.cmd, false) == true
+    end
+    if sent == true and Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
+      Yso.alc.set_humour_ready(false, &quot;temper_sent&quot;)
+    end
+  end
+
+  if sent ~= true then
+    return false, &quot;send_failed&quot;
+  end
+
+  local tgt = action.explain and action.explain.target or _target()
+  GD.state.last_attack = GD.state.last_attack or {}
+  GD.state.last_attack.at = _now()
+  GD.state.last_attack.target = tgt
+  GD.state.last_attack.main_lane = action.lane
+  GD.state.last_attack.lanes = action.payload and action.payload.lanes or nil
+  GD.state.last_attack.cmd = action.cmd
+  GD.state.template = GD.state.template or {}
+  GD.state.template.last_payload = action.payload or { direct = action.cmd }
+  GD.state.template.last_target = tgt
+  GD.state.template.last_reason = action.reason
+  GD.state.explain = action.explain or {}
+  GD.state.explain.kind = action.kind
+  GD.state.explain.cmd = action.cmd
+  GD.state.explain.category = action.category
+  GD.state.explain.reason = action.reason
+  return true, action.lane
+end
+
+function GD.start()
+  GD.init()
+  GD.cfg.enabled = true
+  GD.state.enabled = true
+  GD.state.loop_enabled = true
+  GD.state.busy = false
+  GD.alias_loop_clear_waiting()
+  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == &quot;function&quot; then
+    pcall(Yso.mode.schedule_route_loop, &quot;alchemist_group_damage&quot;, 0)
+  end
+  return true
+end
+
+function GD.stop(reason)
+  GD.init()
+  GD.state.loop_enabled = false
+  GD.state.enabled = false
+  GD.cfg.enabled = false
+  GD.state.busy = false
+  GD.alias_loop_clear_waiting()
+  GD.state.template = GD.state.template or {}
+  GD.state.template.last_disable_reason = tostring(reason or &quot;manual&quot;)
+  return true
+end
+
+function GD.evaluate(ctx)
+  local payload, why = GD.build_payload(ctx)
+  if not payload then
+    return { ok = false, reason = why }
+  end
+  return { ok = true, payload = payload, reason = why }
+end
+
+function GD.explain()
+  GD.init()
+  return GD.state.explain or {}
+end
+
+return GD
+</script>
+						<eventHandlerList />
+					</Script>
 				<ScriptGroup isActive="yes" isFolder="yes">
 					<name>Alchemy</name>
 					<packageName></packageName>
@@ -35310,30 +35327,126 @@ Yso.alc.phys = Yso.alc.phys or {}
 
 local P = Yso.alc.phys
 
-P.humour_pronouns = P.humour_pronouns or { "his", "her", "their", "faes", "faen" }
-P.humour_types = P.humour_types or { "choleric", "melancholic", "phlegmatic", "sanguine" }
-P.humour_success_lines = P.humour_success_lines or {}
+P.humour_types = P.humour_types or { &quot;choleric&quot;, &quot;melancholic&quot;, &quot;phlegmatic&quot;, &quot;sanguine&quot; }
+P.possessive_pronouns = P.possessive_pronouns or { &quot;his&quot;, &quot;her&quot;, &quot;their&quot;, &quot;faer&quot;, &quot;its&quot;, &quot;faes&quot;, &quot;faen&quot; }
 
-if #P.humour_success_lines == 0 then
-  for _, pronoun in ipairs(P.humour_pronouns) do
-    for _, humour in ipairs(P.humour_types) do
-      P.humour_success_lines[#P.humour_success_lines + 1] = "tempering " .. pronoun .. " " .. humour .. " humour."
-    end
-  end
+P.humour_ready_line = P.humour_ready_line or &quot;You may manipulate another&apos;s humours once more.&quot;
+P.humour_fail_line = P.humour_fail_line or &quot;You are unable to manipulate another&apos;s humours at this time.&quot;
+P.evaluate_ready_line = P.evaluate_ready_line or &quot;You may study the physiological composition of your subjects once again.&quot;
+P.homunculus_ready_line = P.homunculus_ready_line or &quot;You may order your homunculus once more.&quot;
+
+local function _trim(s)
+  return tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
 end
 
-P.humour_ready_line = P.humour_ready_line or "You may manipulate another's humours once more."
-P.humour_fail_line = P.humour_fail_line or "You are unable to manipulate another's humours at this time."
+local function _lc(s)
+  return _trim(s):lower()
+end
+
+local function _current_target_fallback()
+  if type(P.current_target) == &quot;function&quot; then
+    local tgt = _trim(P.current_target())
+    if tgt ~= &quot;&quot; then
+      return tgt
+    end
+  end
+  if type(Yso.get_target) == &quot;function&quot; then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= &quot;&quot; then
+      return _trim(v)
+    end
+  end
+  local tgt = rawget(_G, &quot;target&quot;)
+  if type(tgt) == &quot;string&quot; and _trim(tgt) ~= &quot;&quot; then
+    return _trim(tgt)
+  end
+  return &quot;&quot;
+end
+
+local function _looks_like_pronoun(word)
+  local key = _lc(word)
+  for i = 1, #P.possessive_pronouns do
+    if key == P.possessive_pronouns[i] then
+      return true
+    end
+  end
+  return false
+end
+
+local function _extract_wrack_target(text)
+  local who = text:match(&quot;^You send ripples throughout (.+?)(?:&apos;s|&apos;) body, wracking &quot;)
+  if who then
+    return _trim(who)
+  end
+  return _current_target_fallback()
+end
+
+local function _parse_evaluate_vitals(line)
+  local lower = _lc(line)
+  if not lower:find(&quot;health&quot;, 1, true) or not lower:find(&quot;mana&quot;, 1, true) then
+    return nil
+  end
+
+  local hp, mp = lower:match(&quot;health[^%%]*(%d+)%%%s*[,;/|%- ]+%s*mana[^%%]*(%d+)%%&quot;)
+  if hp and mp then
+    return tonumber(hp), tonumber(mp)
+  end
+
+  mp, hp = lower:match(&quot;mana[^%%]*(%d+)%%%s*[,;/|%- ]+%s*health[^%%]*(%d+)%%&quot;)
+  if hp and mp then
+    return tonumber(hp), tonumber(mp)
+  end
+
+  hp, mp = lower:match(&quot;(%d+)%%%s+health.-(%d+)%%%s+mana&quot;)
+  if hp and mp then
+    return tonumber(hp), tonumber(mp)
+  end
+
+  mp, hp = lower:match(&quot;(%d+)%%%s+mana.-(%d+)%%%s+health&quot;)
+  if hp and mp then
+    return tonumber(hp), tonumber(mp)
+  end
+
+  return nil
+end
+
+local function _parse_evaluate_count(line)
+  local prefixes = { &quot;His&quot;, &quot;Her&quot;, &quot;Their&quot;, &quot;Faer&quot;, &quot;Its&quot; }
+  for i = 1, #prefixes do
+    local humour, count = line:match(&quot;^&quot; .. prefixes[i] .. &quot; ([a-z]+) humour has been tempered a total of (%d+) times?%.$&quot;)
+    if humour and count then
+      return humour, tonumber(count) or 0
+    end
+  end
+  return nil, nil
+end
 
 function P.handle_humour_balance_line(line)
-  line = tostring(line or "")
-  if line == "" then
+  line = tostring(line or &quot;&quot;)
+  if line == &quot;&quot; then
     return nil
   end
 
   if line == P.humour_ready_line then
-    if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
-      Yso.alc.set_humour_ready(true, "humour_ready")
+    if Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
+      Yso.alc.set_humour_ready(true, &quot;humour_ready&quot;)
+    end
+    return true
+  end
+
+  if line == P.evaluate_ready_line then
+    if Yso.alc and type(Yso.alc.set_evaluate_ready) == &quot;function&quot; then
+      Yso.alc.set_evaluate_ready(true, &quot;evaluate_ready&quot;)
+    end
+    if type(P.finish_evaluate) == &quot;function&quot; then
+      P.finish_evaluate()
+    end
+    return true
+  end
+
+  if line == P.homunculus_ready_line then
+    if Yso.alc and type(Yso.alc.set_homunculus_ready) == &quot;function&quot; then
+      Yso.alc.set_homunculus_ready(true, &quot;homunculus_ready&quot;)
     end
     return true
   end
@@ -35342,17 +35455,117 @@ function P.handle_humour_balance_line(line)
     return nil
   end
 
-  for _, fragment in ipairs(P.humour_success_lines) do
-    if line:find(fragment, 1, true) then
-      if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
-        Yso.alc.set_humour_ready(false, fragment)
+  do
+    local eval_target = line:match(&quot;^Looking over (.+), you see that:$&quot;)
+    if eval_target then
+      if Yso.alc and type(Yso.alc.set_evaluate_ready) == &quot;function&quot; then
+        Yso.alc.set_evaluate_ready(false, &quot;evaluate_header&quot;)
       end
-      return false
+      if type(P.begin_evaluate) == &quot;function&quot; then
+        P.begin_evaluate(eval_target)
+      end
+      return &quot;evaluate_header&quot;
+    end
+  end
+
+  do
+    local humour, count = _parse_evaluate_count(line)
+    if humour and count then
+      local target = type(P.resolve_evaluate_target) == &quot;function&quot; and P.resolve_evaluate_target() or _current_target_fallback()
+      if type(P.note_steady_count) == &quot;function&quot; then
+        P.note_steady_count(target, humour, count)
+      end
+      return &quot;evaluate_count&quot;
+    end
+  end
+
+  do
+    if line:match(&quot;^.+ humours are all at normal levels%.$&quot;) then
+      local target = type(P.resolve_evaluate_target) == &quot;function&quot; and P.resolve_evaluate_target() or _current_target_fallback()
+      if type(P.note_all_normal) == &quot;function&quot; then
+        P.note_all_normal(target)
+      end
+      return &quot;evaluate_normal&quot;
+    end
+  end
+
+  do
+    local hp, mp = _parse_evaluate_vitals(line)
+    if hp and mp then
+      local target = type(P.resolve_evaluate_target) == &quot;function&quot; and P.resolve_evaluate_target() or _current_target_fallback()
+      if type(P.note_evaluate_vitals) == &quot;function&quot; then
+        P.note_evaluate_vitals(target, hp, mp)
+      end
+      return &quot;evaluate_vitals&quot;
+    end
+  end
+
+  do
+    local pronoun, humour = line:match(&quot;^You redirect .-, tempering (%a+) ([a-z]+) humour%.$&quot;)
+    if humour and pronoun and _looks_like_pronoun(pronoun) then
+      if Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
+        Yso.alc.set_humour_ready(false, &quot;temper_success&quot;)
+      end
+      if type(P.note_temper_success) == &quot;function&quot; then
+        P.note_temper_success(_current_target_fallback(), humour)
+      end
+      return &quot;temper_success&quot;
+    end
+  end
+
+  do
+    local target = _extract_wrack_target(line)
+    local humour_one, humour_two = line:match(&quot;^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humours?%.$&quot;)
+    if not humour_one then
+      humour_one, humour_two = line:match(&quot;^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humour%.$&quot;)
+    end
+    if humour_one then
+      if type(P.note_wrack_success) == &quot;function&quot; then
+        P.note_wrack_success(target, humour_one, humour_two)
+      end
+      return &quot;truewrack_success&quot;
+    end
+
+    local single = line:match(&quot;^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour%.$&quot;)
+    if single then
+      if type(P.note_wrack_success) == &quot;function&quot; then
+        P.note_wrack_success(target, single, nil)
+      end
+      return &quot;wrack_success&quot;
+    end
+  end
+
+  do
+    local target = line:match(&quot;^Your homunculus .- ([A-Z][%a&apos;-]+), corrupting &quot;)
+      or line:match(&quot;^Your homunculus .- (.+?)(?:&apos;s|&apos;) body, corrupting &quot;)
+      or _current_target_fallback()
+    local found = line:lower():find(&quot;corrupt&quot;, 1, true)
+    local mel = line:lower():find(&quot;melancholic&quot;, 1, true)
+    local san = line:lower():find(&quot;sanguine&quot;, 1, true)
+    if found and mel and san then
+      if Yso.alc and type(Yso.alc.set_homunculus_ready) == &quot;function&quot; then
+        Yso.alc.set_homunculus_ready(false, &quot;homunculus_corrupt&quot;)
+      end
+      if type(P.note_corrupt_success) == &quot;function&quot; then
+        P.note_corrupt_success(target, 45)
+      end
+      return &quot;homunculus_corrupt&quot;
+    end
+  end
+
+  do
+    local who = line:match(&quot;^(.+) eats an antimony mineral%.$&quot;)
+      or line:match(&quot;^(.+) eats an antimony shard%.$&quot;)
+      or line:match(&quot;^(.+) eats a ginger root%.$&quot;)
+    if who and type(P.mark_all_eval_dirty) == &quot;function&quot; then
+      P.mark_all_eval_dirty(who, &quot;humour_reduction&quot;)
+      return &quot;humour_dirty&quot;
     end
   end
 
   return nil
-end</script>
+end
+</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>

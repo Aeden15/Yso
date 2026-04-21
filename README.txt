@@ -1,6 +1,6 @@
 Yso Systems Workspace
 =====================
-Last updated: April 19, 2026
+Last updated: April 21, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
@@ -9,6 +9,15 @@ Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist group damage + Physiology intel route pass (April 21, 2026) --
+  Added alchemist_group_damage under the existing adam on/off toggle and wired
+  it into the shared route registry/mode loop. The route keeps evaluate as
+  free/intel, temper as a direct humour-lane send, and truewrack as the normal
+  BAL spender. Physiology live parsing in Yso system.xml now covers evaluate
+  headers/results/vitals, rolled-up pronoun temper success, wrack/truewrack
+  success, homunculus corrupt/ready, humour ready, and dirtying lines. Steady
+  evaluate counts gate paralysis; live temper success records inferred counts.
+
   Alchemist chart + humour lane + formulation support pass (April 20, 2026) --
   Created Ysindrolir/Alchemist/Alchemical skill_reference chart directly under
   the Alchemist folder from the supplied screenshots/text only, added editable
@@ -461,3 +470,8 @@ Syncing with OneDrive Desktop
     (modules/Yso/Combat/parry.lua -> modules/Yso/xml/parry.lua), refreshed
     XML mirrors, rebuilt mudlet packages/Yso system.xml, and re-validated
     the workspace (luac, 20 tests, XML parse, mirror drift).
+  - April 20 bug-check fix: replaced
+    Occultist/modules/Yso/Combat/routes/group_damage.lua placeholder logic
+    with a proper route module (party damage payload planning + Occultist loop
+    echoes), rebuilt mudlet packages/Yso system.xml, and re-validated the
+    workspace (luac, 20 tests, XML parse, mirror drift).

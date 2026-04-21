@@ -155,9 +155,11 @@ do
 
   function C.is_occultist() return C.is("Occultist") end
   function C.is_magi() return C.is("Magi") end
+  function C.is_alchemist() return C.is("Alchemist") end
 
   Yso.is_occultist = Yso.is_occultist or function() return C.is_occultist() end
   Yso.is_magi      = Yso.is_magi      or function() return C.is_magi() end
+  Yso.is_alchemist = Yso.is_alchemist or function() return C.is_alchemist() end
 
   local function _sync_from_status(src)
     local g = rawget(_G, "gmcp")

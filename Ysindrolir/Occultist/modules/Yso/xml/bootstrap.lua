@@ -76,6 +76,7 @@ do
   local sibling = root:gsub("/Occultist/modules$", "")
   if sibling ~= root then
     _pp(sibling .. "/Magi/?.lua")
+    _pp(sibling .. "/Alchemist/?.lua")
   end
 end
 
