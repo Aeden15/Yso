@@ -786,14 +786,14 @@ end</script>
 						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-																								<regexCodeList>
-													<string>You must regain balance first.</string>
-													<string>Balance used:</string>
-												</regexCodeList>
-												<regexCodePropertyList>
-													<integer>3</integer>
-													<integer>0</integer>
-												</regexCodePropertyList>
+																																																<regexCodeList>
+																									<string>You must regain balance first.</string>
+																									<string>Balance used:</string>
+																								</regexCodeList>
+																								<regexCodePropertyList>
+																									<integer>3</integer>
+																									<integer>0</integer>
+																								</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
@@ -33930,26 +33930,19 @@ return A
 				<packageName></packageName>
 				<script></script>
 				<eventHandlerList />
-				<Script isActive="yes" isFolder="no">
-					<name>Alchemist init</name>
-					<packageName></packageName>
-					<script>Yso = Yso or {}
+					<Script isActive="yes" isFolder="no">
+						<name>Alchemist physiology</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
 Yso.bal = Yso.bal or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.phys = Yso.alc.phys or {}
-Yso.alc.form = Yso.alc.form or {}
 
 Yso.bal.humour = Yso.bal.humour ~= false
 Yso.bal.evaluate = Yso.bal.evaluate ~= false
 Yso.bal.homunculus = Yso.bal.homunculus ~= false
 
 local P = Yso.alc.phys
-local F = Yso.alc.form
-
-F.state = F.state or {}
-F.phials = F.phials or {}
-F.last_phiallist = F.last_phiallist or {}
-F.cfg = F.cfg or {}
 
 P.state = P.state or {}
 P.targets = P.targets or {}
@@ -33977,9 +33970,6 @@ P.state.evaluate = P.state.evaluate or {
   started_at = 0,
 }
 P.state.corruption = P.state.corruption or {}
-
-F.cfg.discovery = F.cfg.discovery ~= false
-F.cfg.chart_path = F.cfg.chart_path or &quot;Ysindrolir/Alchemist/Alchemical skill_reference chart&quot;
 
 local function _now()
   local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
@@ -34010,16 +34000,6 @@ end
 
 local function _lc(s)
   return _trim(s):lower()
-end
-
-local function _sep()
-  if type(Yso.sep) == &quot;string&quot; and Yso.sep ~= &quot;&quot; then
-    return Yso.sep
-  end
-  if type(Yso.cfg) == &quot;table&quot; and type(Yso.cfg.pipe_sep) == &quot;string&quot; and Yso.cfg.pipe_sep ~= &quot;&quot; then
-    return Yso.cfg.pipe_sep
-  end
-  return &quot;&amp;&amp;&quot;
 end
 
 local function _target_key(name)
@@ -34159,8 +34139,8 @@ end
 
 function Yso.alc.set_humour_ready(ready, source)
   Yso.bal.humour = ready and true or false
-  F.state.last_humour_source = source or &quot;unknown&quot;
-  F.state.last_humour_change = _now()
+  P.state.last_humour_source = source or &quot;unknown&quot;
+  P.state.last_humour_change = _now()
   return Yso.bal.humour
 end
 
@@ -34188,18 +34168,6 @@ end
 
 function Yso.alc.homunculus_ready()
   return Yso.bal.homunculus ~= false
-end
-
-function F.warn(msg)
-  _echo(msg)
-end
-
-function F.now()
-  return _now()
-end
-
-function F.sep()
-  return _sep()
 end
 
 function P.now()
@@ -34630,34 +34598,9 @@ function P.build_wrack_fallback(name)
   end
   return string.format(&quot;wrack %s %s&quot;, target, humour), humour
 end
-
-function F.reset_phials()
-  F.phials = {}
-  F.last_phiallist = {}
-  F.state.discovery_requested = false
-  F.state.discovery_requested_at = nil
-  F.state.last_phiallist_at = _now()
-end
-
-function F.note_phiallist()
-  F.state.last_phiallist_at = _now()
-  F.state.discovery_requested = false
-end
-
-function F.request_discovery()
-  if F.state.discovery_requested then
-    return false
-  end
-  F.state.discovery_requested = true
-  F.state.discovery_requested_at = _now()
-  if type(send) == &quot;function&quot; then
-    send(&quot;phiallist&quot;)
-  end
-  return true
-end
 </script>
-					<eventHandlerList />
-				</Script>
+						<eventHandlerList />
+					</Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Alchemist group damage</name>
 						<packageName></packageName>
@@ -34694,7 +34637,7 @@ if type(require) == &quot;function&quot; then
   pcall(require, &quot;Yso&quot;)
 end
 if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == &quot;function&quot;) then
-  _load_alchemist_peer(&quot;formulation.lua&quot;)
+  _load_alchemist_peer(&quot;physiology.lua&quot;)
 end
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
@@ -35575,6 +35518,95 @@ end
 					<script></script>
 					<eventHandlerList />
 					<Script isActive="yes" isFolder="no">
+						<name>formulation</name>
+						<packageName></packageName>
+						<script>Yso = Yso or {}
+Yso.alc = Yso.alc or {}
+Yso.alc.form = Yso.alc.form or {}
+
+local F = Yso.alc.form
+
+F.state = F.state or {}
+F.phials = F.phials or {}
+F.last_phiallist = F.last_phiallist or {}
+F.cfg = F.cfg or {}
+
+F.cfg.discovery = F.cfg.discovery ~= false
+F.cfg.chart_path = F.cfg.chart_path or &quot;Ysindrolir/Alchemist/Alchemical skill_reference chart&quot;
+
+local function _now()
+  local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 1000000000000 then
+    t = t / 1000
+  end
+  return t or os.time()
+end
+
+local function _echo(msg)
+  local text = string.format(&quot;[Yso:Alchemist] %s&quot;, tostring(msg or &quot;&quot;))
+  if type(cecho) == &quot;function&quot; then
+    cecho(&quot;\n&lt;orange&gt;&quot; .. text .. &quot;\n&quot;)
+    return
+  end
+  if type(echo) == &quot;function&quot; then
+    echo(&quot;\n&quot; .. text .. &quot;\n&quot;)
+    return
+  end
+  if type(print) == &quot;function&quot; then
+    print(text)
+  end
+end
+
+local function _sep()
+  if type(Yso.sep) == &quot;string&quot; and Yso.sep ~= &quot;&quot; then
+    return Yso.sep
+  end
+  if type(Yso.cfg) == &quot;table&quot; and type(Yso.cfg.pipe_sep) == &quot;string&quot; and Yso.cfg.pipe_sep ~= &quot;&quot; then
+    return Yso.cfg.pipe_sep
+  end
+  return &quot;&amp;&amp;&quot;
+end
+
+function F.warn(msg)
+  _echo(msg)
+end
+
+function F.now()
+  return _now()
+end
+
+function F.sep()
+  return _sep()
+end
+
+function F.reset_phials()
+  F.phials = {}
+  F.last_phiallist = {}
+  F.state.discovery_requested = false
+  F.state.discovery_requested_at = nil
+  F.state.last_phiallist_at = _now()
+end
+
+function F.note_phiallist()
+  F.state.last_phiallist_at = _now()
+  F.state.discovery_requested = false
+end
+
+function F.request_discovery()
+  if F.state.discovery_requested then
+    return false
+  end
+  F.state.discovery_requested = true
+  F.state.discovery_requested_at = _now()
+  if type(send) == &quot;function&quot; then
+    send(&quot;phiallist&quot;)
+  end
+  return true
+end
+</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
 						<name>formulation_phials</name>
 						<packageName></packageName>
 						<script>Yso = Yso or {}
@@ -35957,102 +35989,99 @@ Yso.alc.form = Yso.alc.form or {}
 local F = Yso.alc.form
 
 local function _trim(s)
-  s = tostring(s or "")
-  s = s:gsub("^%s+", "")
-  s = s:gsub("%s+$", "")
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;^%s+&quot;, &quot;&quot;)
+  s = s:gsub(&quot;%s+$&quot;, &quot;&quot;)
   return s
 end
 
 local function _upper_words(s)
-  return tostring(s or ""):upper()
+  return tostring(s or &quot;&quot;):upper()
 end
 
 local function _combine(parts)
   local out = {}
   for _, part in ipairs(parts) do
-    if part and part ~= "" then
+    if part and part ~= &quot;&quot; then
       out[#out + 1] = part
     end
   end
-  return table.concat(out, " " .. ((type(F.sep) == "function" and F.sep()) or "&amp;&amp;") .. " ")
+  return table.concat(out, &quot; &quot; .. ((type(F.sep) == &quot;function&quot; and F.sep()) or &quot;&amp;&amp;&quot;) .. &quot; &quot;)
 end
 
 function F.ensure_wielded(phial)
-  if not phial or not phial.compound or phial.compound == "" then
+  if not phial or not phial.compound or phial.compound == &quot;&quot; then
     return nil
   end
   F.state.last_wielded = {
     id = phial.id,
     compound = phial.compound,
-    at = type(F.now) == "function" and F.now() or os.time(),
+    at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
-  return "WIELD " .. _upper_words(phial.compound)
+  return &quot;WIELD &quot; .. _upper_words(phial.compound)
 end
 
 local function _build_action(meta, arg)
   local name = _upper_words(meta.use_name or meta.name)
   local use_arg = _trim(arg)
 
-  if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
-    if use_arg == "" then
-      if type(F.warn) == "function" then
-        F.warn(meta.name .. " needs a direction or 'ground'.")
-      end
+  if meta.delivery == &quot;wield_throw&quot; or meta.delivery == &quot;room_throw&quot; then
+    if use_arg == &quot;&quot; then
+      use_arg = &quot;ground&quot;
+    end
+    if use_arg:lower() == &quot;ground&quot; then
+      return &quot;THROW &quot; .. name .. &quot; AT GROUND&quot;
+    end
+    return &quot;THROW &quot; .. name .. &quot; &quot; .. _upper_words(use_arg)
+  end
+
+  if meta.delivery == &quot;imbibe_or_administer&quot; then
+    if use_arg == &quot;&quot; then
+      return &quot;IMBIBE &quot; .. name
+    end
+    return &quot;ADMINISTER &quot; .. name .. &quot; &quot; .. use_arg
+  end
+
+  if meta.delivery == &quot;imbibe&quot; then
+    if use_arg ~= &quot;&quot; and type(F.warn) == &quot;function&quot; then
+      F.warn(meta.name .. &quot; does not take a target.&quot;)
       return nil
     end
-    if use_arg:lower() == "ground" then
-      return "THROW " .. name .. " AT GROUND"
-    end
-    return "THROW " .. name .. " " .. _upper_words(use_arg)
+    return &quot;IMBIBE &quot; .. name
   end
 
-  if meta.delivery == "imbibe_or_administer" then
-    if use_arg == "" then
-      return "IMBIBE " .. name
-    end
-    return "ADMINISTER " .. name .. " " .. use_arg
-  end
-
-  if meta.delivery == "imbibe" then
-    if use_arg ~= "" and type(F.warn) == "function" then
-      F.warn(meta.name .. " does not take a target.")
+  if meta.delivery == &quot;special_self_imbibe&quot; then
+    if use_arg ~= &quot;&quot; and type(F.warn) == &quot;function&quot; then
+      F.warn(meta.name .. &quot; does not take a target.&quot;)
       return nil
     end
-    return "IMBIBE " .. name
+    return &quot;IMBIBE &quot; .. name
   end
 
-  if meta.delivery == "special_self_imbibe" then
-    if use_arg ~= "" and type(F.warn) == "function" then
-      F.warn(meta.name .. " does not take a target.")
-      return nil
-    end
-    return "IMBIBE " .. name
-  end
-
-  if meta.delivery == "enhanced_state_ability" then
-    if use_arg ~= "" and type(F.warn) == "function" then
-      F.warn(meta.name .. " does not take a target.")
+  if meta.delivery == &quot;enhanced_state_ability&quot; then
+    if use_arg ~= &quot;&quot; and type(F.warn) == &quot;function&quot; then
+      F.warn(meta.name .. &quot; does not take a target.&quot;)
       return nil
     end
     return name
   end
 
-  if type(F.warn) == "function" then
-    F.warn(meta.name .. " is manual/utility right now.")
+  if type(F.warn) == &quot;function&quot; then
+    F.warn(meta.name .. &quot; is manual/utility right now.&quot;)
   end
   return nil
 end
 
 function F.build_use(name, arg)
-  local meta = type(F.resolve) == "function" and F.resolve(name) or nil
+  local meta = type(F.resolve) == &quot;function&quot; and F.resolve(name) or nil
   if not meta then
     return nil
   end
 
-  local needs_phial = meta.delivery ~= "enhanced_state_ability" and meta.delivery ~= "utility"
+  local needs_phial = meta.delivery ~= &quot;enhanced_state_ability&quot; and meta.delivery ~= &quot;utility&quot;
   local phial
   if needs_phial then
-    phial = type(F.require_phial) == "function" and F.require_phial(meta.use_name or meta.name) or nil
+    phial = type(F.require_phial) == &quot;function&quot; and F.require_phial(meta.use_name or meta.name) or nil
     if not phial then
       return nil
     end
@@ -36074,7 +36103,8 @@ function F.build_use(name, arg)
     phial = phial,
     action = action,
   }
-end</script>
+end
+</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>

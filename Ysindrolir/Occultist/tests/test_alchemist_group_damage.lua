@@ -22,7 +22,7 @@ local function join_path(...)
 end
 
 local SCRIPT_DIR = script_dir()
-local FORM_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Core", "formulation.lua")
+local PHYS_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Core", "physiology.lua")
 local TRIGGER_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Triggers", "Alchemy", "Physiology", "humour_balance.lua")
 local ROUTE_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Core", "group damage.lua")
 
@@ -112,7 +112,7 @@ local function make_world(opts)
   }
   _G.yso = _G.Yso
 
-  dofile(FORM_PATH)
+  dofile(PHYS_PATH)
   dofile(TRIGGER_PATH)
   dofile(ROUTE_PATH)
 

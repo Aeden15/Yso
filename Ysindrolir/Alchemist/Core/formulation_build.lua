@@ -43,10 +43,7 @@ local function _build_action(meta, arg)
 
   if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
     if use_arg == "" then
-      if type(F.warn) == "function" then
-        F.warn(meta.name .. " needs a direction or 'ground'.")
-      end
-      return nil
+      use_arg = "ground"
     end
     if use_arg:lower() == "ground" then
       return "THROW " .. name .. " AT GROUND"

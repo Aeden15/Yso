@@ -9,6 +9,23 @@ Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist Physiology/Formulation boundary cleanup (April 21, 2026) --
+  Split humour/evaluate/truewrack support out of Core/formulation.lua into
+  Core/physiology.lua. Core/formulation.lua is now scoped to Formulation phial
+  skill usage and helper state only. Formulation thrown-phial actions default
+  to AT GROUND when no direction is supplied, matching the room-effect use case
+  from the Alchemist skillchart.
+
+  Occultist canonical module-tree restore (April 21, 2026) --
+  Restored Ysindrolir/Occultist/modules/Yso from the live workspace
+  Ysindrolir/Yso tree so test/export-manifest paths resolve again
+  (../modules/Yso/... from Occultist/tests). Re-ran mirror/package sync
+  (refresh_xml_mirrors.lua + rebuild_yso_system_xml.lua) and validated green:
+    luac
+    21/21 Lua tests
+    XML parse
+    mirror drift 0
+
   Alchemist group damage + Physiology intel route pass (April 21, 2026) --
   Added alchemist_group_damage under the existing adam on/off toggle and wired
   it into the shared route registry/mode loop. The route keeps evaluate as

@@ -31,7 +31,7 @@ if type(require) == "function" then
   pcall(require, "Yso")
 end
 if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
-  _load_alchemist_peer("formulation.lua")
+  _load_alchemist_peer("physiology.lua")
 end
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
