@@ -501,14 +501,17 @@
 - **Syntax:**
   - `ENHANCE POTENCY|STABILITY|VOLATILITY OF <compound>`
   - `DILUTE POTENCY|STABILITY|VOLATILITY OF <compound>`
-  - `AMALGAMATE <compound> <type> <amount> <type> <amount>...`
+  - `AMALGAMATE <compound>`
+- **Cooldown / lane:** free / balanceless (`AMALGAMATE`)
 - **Delivery type:** `utility`
 - **Notes:**
+  - Alteration is the enhancement/dilution/value-adjustment layer.
+  - Amalgamate is the creation step and remains compound-driven.
+  - Destination phial is determined by empty-phial availability (no phial-targeted syntax confirmed here).
   - Alters potency, stability, and volatility of compounds.
   - Volatility generally means faster reaction.
   - Stability generally means longer-lasting reaction.
   - Potency generally means more concentrated effect.
-  - Potency, stability, and volatility may also be specified during amalgamation.
 
 ### Devitalisation
 - **Skillset:** Formulation

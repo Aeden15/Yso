@@ -11,6 +11,21 @@ F.cfg = F.cfg or {}
 
 F.cfg.discovery = F.cfg.discovery ~= false
 F.cfg.chart_path = F.cfg.chart_path or "Ysindrolir/Alchemist/Alchemical skill_reference chart"
+F.cfg.reserved_phials = F.cfg.reserved_phials or {
+  endorphin = "Phial658898",
+  enhancement = "Phial475762",
+}
+F.cfg.offensive_gas_pool = F.cfg.offensive_gas_pool or {
+  corrosive = true,
+  incendiary = true,
+  devitalisation = true,
+  intoxicant = true,
+  vaporisation = true,
+  phosphorous = true,
+  monoxide = true,
+  toxin = true,
+  concussive = true,
+}
 
 local function _now()
   local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
@@ -21,11 +36,12 @@ local function _now()
 end
 
 local function _echo(msg)
-  local text = string.format("[Yso:Alchemist] %s", tostring(msg or ""))
+  local payload = tostring(msg or "")
   if type(cecho) == "function" then
-    cecho("\n<orange>" .. text .. "\n")
+    cecho("\n<gold>[FORMULATION:] <aquamarine>" .. payload .. "\n")
     return
   end
+  local text = string.format("[FORMULATION:] %s", payload)
   if type(echo) == "function" then
     echo("\n" .. text .. "\n")
     return

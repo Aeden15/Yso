@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
 	<TriggerPackage>
@@ -786,14 +786,14 @@ end</script>
 						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-																																																<regexCodeList>
-																									<string>You must regain balance first.</string>
-																									<string>Balance used:</string>
-																								</regexCodeList>
-																								<regexCodePropertyList>
-																									<integer>3</integer>
-																									<integer>0</integer>
-																								</regexCodePropertyList>
+																																																																																																																																																																																																<regexCodeList>
+																																																																																																	<string>You must regain balance first.</string>
+																																																																																																	<string>Balance used:</string>
+																																																																																																</regexCodeList>
+																																																																																																<regexCodePropertyList>
+																																																																																																	<integer>3</integer>
+																																																																																																	<integer>0</integer>
+																																																																																																</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
@@ -31651,16 +31651,16 @@ _fool_echo(&quot;Yso Fool auto module loaded (GMCP+aff-change+diagnose hooks act
 						<name>occ_aura_planner</name>
 						<packageName></packageName>
 						<script>--========================================================--
--- Yso.occ.aura_planner — Centralized Readaura / Cleanseaura Planner
+-- Yso.occ.aura_planner â€” Centralized Readaura / Cleanseaura Planner
 --
 --  Shared surface for all Occultist offense routes (occ_aff_burst, party_aff,
 --  group_damage, etc.) to plan readaura and cleanseaura EQ actions.
 --
 --  Fixes:
---    • Unified lockout tags prevent cross-route double-sends (Bug #1, #2)
---    • Single _aura_txn_active_for() definition (Bug #3)
---    • Unified needs_readaura logic (Bug #4, #6)
---    • CS.snapshot() lives here — no fragile cross-module dep (Bug #5)
+--    â€¢ Unified lockout tags prevent cross-route double-sends (Bug #1, #2)
+--    â€¢ Single _aura_txn_active_for() definition (Bug #3)
+--    â€¢ Unified needs_readaura logic (Bug #4, #6)
+--    â€¢ CS.snapshot() lives here â€” no fragile cross-module dep (Bug #5)
 --
 --  Pattern: Sunder-style shared planner surface.
 --  Routes call AP.readaura_plan() / AP.cleanseaura_plan() instead of
@@ -35608,6 +35608,21 @@ F.cfg = F.cfg or {}
 
 F.cfg.discovery = F.cfg.discovery ~= false
 F.cfg.chart_path = F.cfg.chart_path or &quot;Ysindrolir/Alchemist/Alchemical skill_reference chart&quot;
+F.cfg.reserved_phials = F.cfg.reserved_phials or {
+  endorphin = &quot;Phial658898&quot;,
+  enhancement = &quot;Phial475762&quot;,
+}
+F.cfg.offensive_gas_pool = F.cfg.offensive_gas_pool or {
+  corrosive = true,
+  incendiary = true,
+  devitalisation = true,
+  intoxicant = true,
+  vaporisation = true,
+  phosphorous = true,
+  monoxide = true,
+  toxin = true,
+  concussive = true,
+}
 
 local function _now()
   local t = (type(getEpoch) == &quot;function&quot; and tonumber(getEpoch())) or os.time()
@@ -35618,11 +35633,12 @@ local function _now()
 end
 
 local function _echo(msg)
-  local text = string.format(&quot;[Yso:Alchemist] %s&quot;, tostring(msg or &quot;&quot;))
+  local payload = tostring(msg or &quot;&quot;)
   if type(cecho) == &quot;function&quot; then
-    cecho(&quot;\n&lt;orange&gt;&quot; .. text .. &quot;\n&quot;)
+    cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;&quot; .. payload .. &quot;\n&quot;)
     return
   end
+  local text = string.format(&quot;[FORMULATION:] %s&quot;, payload)
   if type(echo) == &quot;function&quot; then
     echo(&quot;\n&quot; .. text .. &quot;\n&quot;)
     return
@@ -35695,9 +35711,9 @@ F.phials = F.phials or {}
 F.last_phiallist = F.last_phiallist or {}
 
 local function _trim(s)
-  s = tostring(s or "")
-  s = s:gsub("^%s+", "")
-  s = s:gsub("%s+$", "")
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;^%s+&quot;, &quot;&quot;)
+  s = s:gsub(&quot;%s+$&quot;, &quot;&quot;)
   return s
 end
 
@@ -35705,17 +35721,98 @@ local function _key(name)
   return _trim(name):lower()
 end
 
+local function _normalize_phial_id(raw)
+  local value = _trim(raw)
+  if value == &quot;&quot; then
+    return nil
+  end
+  local digits = value:match(&quot;^[Pp][Hh][Ii][Aa][Ll](%d+)$&quot;) or value:match(&quot;^(%d+)$&quot;)
+  if not digits then
+    return nil
+  end
+  return &quot;Phial&quot; .. digits
+end
+
+local function _is_permanent_months(months)
+  return _trim(months) == &quot;--&quot;
+end
+
+local function _normalize_compound_key(name)
+  local key = _key(name)
+  local aliases = {
+    endo = &quot;endorphin&quot;,
+    endorphin = &quot;endorphin&quot;,
+    enh = &quot;enhancement&quot;,
+    enhancement = &quot;enhancement&quot;,
+    cor = &quot;corrosive&quot;,
+    corrosive = &quot;corrosive&quot;,
+    incen = &quot;incendiary&quot;,
+    incendiary = &quot;incendiary&quot;,
+    devit = &quot;devitalisation&quot;,
+    devitalisation = &quot;devitalisation&quot;,
+    intox = &quot;intoxicant&quot;,
+    intoxicant = &quot;intoxicant&quot;,
+    vap = &quot;vaporisation&quot;,
+    vaporisation = &quot;vaporisation&quot;,
+    phos = &quot;phosphorous&quot;,
+    phosphorous = &quot;phosphorous&quot;,
+    mono = &quot;monoxide&quot;,
+    monoxide = &quot;monoxide&quot;,
+    tox = &quot;toxin&quot;,
+    toxin = &quot;toxin&quot;,
+    conc = &quot;concussive&quot;,
+    concussive = &quot;concussive&quot;,
+    halophilic = &quot;halophilic&quot;,
+  }
+  return aliases[key] or key
+end
+
+local function _canonical_role(role)
+  local key = _key(role):gsub(&quot;%s+&quot;, &quot;_&quot;):gsub(&quot;%-&quot;, &quot;_&quot;)
+  local aliases = {
+    endo = &quot;endorphin&quot;,
+    endorphin = &quot;endorphin&quot;,
+    enhancement = &quot;enhancement&quot;,
+    enh = &quot;enhancement&quot;,
+    gas = &quot;offensive_flex&quot;,
+    offensive = &quot;offensive_flex&quot;,
+    flex = &quot;offensive_flex&quot;,
+    offensive_flex = &quot;offensive_flex&quot;,
+    offensive_gas = &quot;offensive_flex&quot;,
+    offensive_flex_slot = &quot;offensive_flex&quot;,
+  }
+  return aliases[key]
+end
+
+local function _role_label(role_key)
+  local labels = {
+    endorphin = &quot;Endorphin&quot;,
+    enhancement = &quot;Enhancement&quot;,
+    offensive_flex = &quot;Offensive gas flex&quot;,
+  }
+  return labels[role_key] or tostring(role_key or &quot;Unknown&quot;)
+end
+
+local function _join_ids(rows)
+  local ids = {}
+  for _, row in ipairs(rows or {}) do
+    ids[#ids + 1] = tostring(row.id)
+  end
+  table.sort(ids)
+  return table.concat(ids, &quot;, &quot;)
+end
+
 local function _append_raw(line)
   table.insert(F.last_phiallist, line)
-  F.state.last_phiallist = table.concat(F.last_phiallist, "\n")
+  F.state.last_phiallist = table.concat(F.last_phiallist, &quot;\n&quot;)
 end
 
 local function _clear_for_header(line)
-  if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months%s*|%s*Potency") then
+  if line:match(&quot;^%s*Phial%s*|%s*Compound%s*|%s*Months%s*|%s*Potency&quot;) then
     F.reset_phials()
     return true
   end
-  if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity") then
+  if line:match(&quot;^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity&quot;) then
     if next(F.phials) == nil then
       F.last_phiallist = {}
     end
@@ -35725,21 +35822,24 @@ local function _clear_for_header(line)
 end
 
 local function _store_filled(id, compound, months, potency, volatility, stability)
-  if not id:match("^Phial") then
+  if not id:match(&quot;^Phial&quot;) then
     return nil
   end
+  local compound_text = _trim(compound)
+  local compound_key = _key(compound_text)
   local row = {
     id = _trim(id),
     container = _trim(id),
-    kind = "phial",
-    compound = _trim(compound),
-    compound_key = _key(compound),
-    empty = false,
+    kind = &quot;phial&quot;,
+    compound = compound_text,
+    compound_key = compound_key,
+    empty = compound_key == &quot;empty&quot;,
     months = tonumber(months) or _trim(months),
     potency = tonumber(potency) or _trim(potency),
     volatility = tonumber(volatility) or _trim(volatility),
     stability = tonumber(stability) or _trim(stability),
-    seen_at = type(F.now) == "function" and F.now() or os.time(),
+    permanent = _is_permanent_months(months),
+    seen_at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
   F.phials[row.id] = row
   F.note_phiallist()
@@ -35747,19 +35847,20 @@ local function _store_filled(id, compound, months, potency, volatility, stabilit
 end
 
 local function _store_empty(id, months, quantity)
-  if not id:match("^Phial") then
+  if not id:match(&quot;^Phial&quot;) then
     return nil
   end
   local row = {
     id = _trim(id),
     container = _trim(id),
-    kind = "phial",
-    compound = "Empty",
-    compound_key = "empty",
+    kind = &quot;phial&quot;,
+    compound = &quot;Empty&quot;,
+    compound_key = &quot;empty&quot;,
     empty = true,
     months = tonumber(months) or _trim(months),
     quantity = tonumber(quantity) or _trim(quantity),
-    seen_at = type(F.now) == "function" and F.now() or os.time(),
+    permanent = _is_permanent_months(months),
+    seen_at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
   F.phials[row.id] = row
   F.note_phiallist()
@@ -35767,26 +35868,26 @@ local function _store_empty(id, months, quantity)
 end
 
 function F.parse_phiallist(line_or_block)
-  if type(line_or_block) ~= "string" or line_or_block == "" then
+  if type(line_or_block) ~= &quot;string&quot; or line_or_block == &quot;&quot; then
     return nil
   end
 
-  if line_or_block:find("\n", 1, true) or line_or_block:find("\r", 1, true) then
+  if line_or_block:find(&quot;\n&quot;, 1, true) or line_or_block:find(&quot;\r&quot;, 1, true) then
     local parsed
-    for line in line_or_block:gmatch("[^\r\n]+") do
+    for line in line_or_block:gmatch(&quot;[^\r\n]+&quot;) do
       parsed = F.parse_phiallist(line) or parsed
     end
     return parsed
   end
 
   local line = _trim(line_or_block)
-  if line == "" then
+  if line == &quot;&quot; then
     return nil
   end
 
   _append_raw(line)
 
-  if line:match("^%s*Vial") or line:find("| Vial", 1, true) then
+  if line:match(&quot;^%s*Vial&quot;) or line:find(&quot;| Vial&quot;, 1, true) then
     return nil
   end
 
@@ -35795,13 +35896,13 @@ function F.parse_phiallist(line_or_block)
   end
 
   local id, compound, months, potency, volatility, stability =
-    line:match("^(Phial[%w%d]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$")
+    line:match(&quot;^(Phial[%w%d]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$&quot;)
   if id then
     return _store_filled(id, compound, months, potency, volatility, stability)
   end
 
   local eid, emonths, quantity =
-    line:match("^(Phial[%w%d]+)%s*|%s*Empty%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$")
+    line:match(&quot;^(Phial[%w%d]+)%s*|%s*Empty%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$&quot;)
   if eid then
     return _store_empty(eid, emonths, quantity)
   end
@@ -35809,13 +35910,161 @@ function F.parse_phiallist(line_or_block)
   return nil
 end
 
+function F.normalize_phial_id(raw)
+  return _normalize_phial_id(raw)
+end
+
+function F.find_phial_by_id(raw)
+  local id = _normalize_phial_id(raw)
+  if not id then
+    return nil
+  end
+  return F.phials[id]
+end
+
+function F.permanent_phials()
+  local rows = {}
+  for _, row in pairs(F.phials) do
+    if row.kind == &quot;phial&quot; and row.permanent then
+      rows[#rows + 1] = row
+    end
+  end
+  table.sort(rows, function(a, b) return tostring(a.id) &lt; tostring(b.id) end)
+  return rows
+end
+
+function F.empty_phials()
+  local rows = {}
+  for _, row in pairs(F.phials) do
+    if row.kind == &quot;phial&quot; and row.empty then
+      rows[#rows + 1] = row
+    end
+  end
+  table.sort(rows, function(a, b) return tostring(a.id) &lt; tostring(b.id) end)
+  return rows
+end
+
+function F.is_offensive_gas(name)
+  local key = _normalize_compound_key(name)
+  local pool = (F.cfg and F.cfg.offensive_gas_pool) or {}
+  return pool[key] == true, key
+end
+
+function F.reserved_role(role)
+  local role_key = _canonical_role(role)
+  if not role_key then
+    return nil, &quot;Unknown reserved role &apos;&quot; .. tostring(role or &quot;&quot;) .. &quot;&apos;.&quot;
+  end
+
+  local reserved = (F.cfg and F.cfg.reserved_phials) or {}
+  if role_key == &quot;endorphin&quot; or role_key == &quot;enhancement&quot; then
+    local id = _normalize_phial_id(reserved[role_key])
+    if not id then
+      return nil, _role_label(role_key) .. &quot; slot policy is missing a phial ID.&quot;
+    end
+    return {
+      role = role_key,
+      label = _role_label(role_key),
+      id = id,
+      expected_compound = role_key,
+    }
+  end
+
+  local pinned = _normalize_phial_id(reserved.offensive_flex or reserved.offensive)
+  if pinned then
+    return {
+      role = role_key,
+      label = _role_label(role_key),
+      id = pinned,
+      expected_pool = (F.cfg and F.cfg.offensive_gas_pool) or {},
+    }
+  end
+
+  local permanent_rows = F.permanent_phials()
+  local fixed = {}
+  local endo_id = _normalize_phial_id(reserved.endorphin)
+  local enh_id = _normalize_phial_id(reserved.enhancement)
+  if endo_id then fixed[endo_id] = true end
+  if enh_id then fixed[enh_id] = true end
+
+  local candidates = {}
+  for _, row in ipairs(permanent_rows) do
+    if not fixed[row.id] then
+      candidates[#candidates + 1] = row.id
+    end
+  end
+  table.sort(candidates)
+
+  if #candidates == 1 then
+    return {
+      role = role_key,
+      label = _role_label(role_key),
+      id = candidates[1],
+      expected_pool = (F.cfg and F.cfg.offensive_gas_pool) or {},
+    }
+  end
+  if #candidates == 0 then
+    return nil, &quot;No permanent offensive flex slot found from phiallist. Keep one permanent phial outside Endorphin/Enhancement reserved IDs.&quot;
+  end
+  return nil, &quot;Multiple permanent offensive flex candidates found (&quot; .. table.concat(candidates, &quot;, &quot;) .. &quot;). Set one dedicated offensive flex slot.&quot;
+end
+
+function F.remind_reserved_mismatch(role)
+  local policy, err = F.reserved_role(role)
+  if not policy then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(err)
+    end
+    return nil, err
+  end
+
+  local row = F.phials[policy.id]
+  if not row then
+    local msg = policy.label .. &quot; slot state is unknown for &quot; .. policy.id .. &quot;. Run PHIALLIST.&quot;
+    if type(F.request_discovery) == &quot;function&quot; then
+      F.request_discovery()
+    end
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(msg)
+    end
+    return nil, msg
+  end
+
+  if row.empty then
+    return false
+  end
+
+  if policy.expected_compound and row.compound_key ~= policy.expected_compound then
+    local msg = string.format(&quot;%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.&quot;, policy.label, policy.id, tostring(row.compound or &quot;?&quot;), policy.id:upper())
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(msg)
+    end
+    return true, msg
+  end
+
+  if policy.expected_pool and not policy.expected_pool[row.compound_key] then
+    local msg = string.format(&quot;%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.&quot;, policy.label, policy.id, tostring(row.compound or &quot;?&quot;), policy.id:upper())
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(msg)
+    end
+    return true, msg
+  end
+
+  return false
+end
+
 function F.find_phial(name)
-  if not name or name == "" then
+  if not name or name == &quot;&quot; then
     return nil
   end
 
+  local by_id = F.find_phial_by_id(name)
+  if by_id then
+    return by_id
+  end
+
   local target = _key(name)
-  if type(F.resolve) == "function" then
+  if type(F.resolve) == &quot;function&quot; then
     local meta = F.resolve(name)
     if meta and meta.use_name then
       target = _key(meta.use_name)
@@ -35826,7 +36075,7 @@ function F.find_phial(name)
 
   local ids = {}
   for id, row in pairs(F.phials) do
-    if row.kind == "phial" and not row.empty and row.compound_key == target then
+    if row.kind == &quot;phial&quot; and not row.empty and row.compound_key == target then
       ids[#ids + 1] = id
     end
   end
@@ -35844,18 +36093,204 @@ function F.require_phial(name)
     return phial
   end
 
-  local requested = tostring(name or "unknown")
-  if F.cfg and F.cfg.discovery ~= false and type(F.request_discovery) == "function" and F.request_discovery() then
-    if type(F.warn) == "function" then
-      F.warn("No phial found for " .. requested .. ". Requested phiallist refresh.")
+  local requested = tostring(name or &quot;unknown&quot;)
+  if F.cfg and F.cfg.discovery ~= false and type(F.request_discovery) == &quot;function&quot; and F.request_discovery() then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;No phial found for &quot; .. requested .. &quot;. Requested phiallist refresh.&quot;)
     end
     return nil
   end
 
-  if type(F.warn) == "function" then
-    F.warn("No phial found for " .. requested .. ".")
+  if type(F.warn) == &quot;function&quot; then
+    F.warn(&quot;No phial found for &quot; .. requested .. &quot;.&quot;)
   end
   return nil
+end
+
+function F.build_adjustment(action, axis, target)
+  local action_key = _key(action)
+  if action_key ~= &quot;enhance&quot; and action_key ~= &quot;dilute&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Adjustment action must be ENHANCE or DILUTE.&quot;)
+    end
+    return nil
+  end
+
+  local axis_key = _key(axis)
+  local valid_axis = {
+    potency = true,
+    stability = true,
+    volatility = true,
+  }
+  if not valid_axis[axis_key] then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Adjustment axis must be POTENCY, STABILITY, or VOLATILITY.&quot;)
+    end
+    return nil
+  end
+
+  local target_text = _trim(target)
+  if target_text == &quot;&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Adjustment target is required.&quot;)
+    end
+    return nil
+  end
+
+  local phial_id = _normalize_phial_id(target_text)
+  if phial_id then
+    target_text = phial_id
+  else
+    target_text = _normalize_compound_key(target_text)
+  end
+
+  return string.format(&quot;%s %s OF %s&quot;, action_key:upper(), axis_key:upper(), target_text:upper())
+end
+
+function F.send_adjustment(action, axis, target)
+  local cmd = F.build_adjustment(action, axis, target)
+  if not cmd then
+    return nil
+  end
+  if type(send) == &quot;function&quot; then
+    send(cmd)
+  end
+  return cmd
+end
+
+function F.build_role_amalgamate(role, compound)
+  local policy, err = F.reserved_role(role)
+  if not policy then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(err)
+    end
+    return nil
+  end
+
+  if next(F.phials or {}) == nil then
+    if type(F.request_discovery) == &quot;function&quot; then
+      F.request_discovery()
+    end
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: phiallist is unknown. Run PHIALLIST.&quot;)
+    end
+    return nil
+  end
+
+  local desired_compound = _normalize_compound_key(compound or policy.expected_compound or &quot;&quot;)
+  if desired_compound == &quot;&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(policy.label .. &quot; helper needs a compound.&quot;)
+    end
+    return nil
+  end
+
+  if policy.expected_compound and desired_compound ~= policy.expected_compound then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(policy.label .. &quot; helper expects &quot; .. policy.expected_compound:sub(1, 1):upper() .. policy.expected_compound:sub(2) .. &quot;.&quot;)
+    end
+    return nil
+  end
+
+  if policy.expected_pool then
+    local ok = policy.expected_pool[desired_compound] == true
+    if not ok then
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Offensive gas flex pool excludes &quot; .. desired_compound:sub(1, 1):upper() .. desired_compound:sub(2) .. &quot;.&quot;)
+      end
+      return nil
+    end
+  end
+
+  local slot = F.phials[policy.id]
+  if not slot then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; is missing from current phiallist. Run PHIALLIST.&quot;)
+    end
+    if type(F.request_discovery) == &quot;function&quot; then
+      F.request_discovery()
+    end
+    return nil
+  end
+
+  if not slot.empty then
+    local msg = string.format(&quot;%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.&quot;, policy.label, policy.id, tostring(slot.compound or &quot;?&quot;), policy.id:upper())
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(msg)
+    end
+    return nil
+  end
+
+  local empties = F.empty_phials()
+  if #empties ~= 1 or empties[1].id ~= policy.id then
+    if #empties &gt; 1 then
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Unsafe Amalgamate state: multiple empty phials detected (&quot; .. _join_ids(empties) .. &quot;). Keep only &quot; .. policy.id .. &quot; empty before AMALGAMATE &quot; .. desired_compound:upper() .. &quot;.&quot;)
+      end
+      return nil
+    end
+    if #empties == 0 then
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; is not empty. Use EMPTY &quot; .. policy.id:upper() .. &quot; when ready.&quot;)
+      end
+      return nil
+    end
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; must be the only empty phial before AMALGAMATE &quot; .. desired_compound:upper() .. &quot;.&quot;)
+    end
+    return nil
+  end
+
+  return &quot;AMALGAMATE &quot; .. desired_compound:upper(), {
+    role = policy.role,
+    role_label = policy.label,
+    phial_id = policy.id,
+    compound = desired_compound,
+  }
+end
+
+function F.send_role_amalgamate(role, compound)
+  local cmd, context = F.build_role_amalgamate(role, compound)
+  if not cmd then
+    return nil
+  end
+
+  if type(send) == &quot;function&quot; then
+    send(cmd)
+    send(&quot;phiallist&quot;)
+  end
+  F.state.last_amalgamate = {
+    cmd = cmd,
+    role = context and context.role,
+    phial_id = context and context.phial_id,
+    compound = context and context.compound,
+    at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
+  }
+  return cmd, context
+end
+
+function F.build_endorphin_amalgamate()
+  return F.build_role_amalgamate(&quot;endorphin&quot;, &quot;endorphin&quot;)
+end
+
+function F.build_enhancement_amalgamate()
+  return F.build_role_amalgamate(&quot;enhancement&quot;, &quot;enhancement&quot;)
+end
+
+function F.build_offensive_gas_amalgamate(compound)
+  return F.build_role_amalgamate(&quot;offensive_flex&quot;, compound)
+end
+
+function F.send_endorphin_amalgamate()
+  return F.send_role_amalgamate(&quot;endorphin&quot;, &quot;endorphin&quot;)
+end
+
+function F.send_enhancement_amalgamate()
+  return F.send_role_amalgamate(&quot;enhancement&quot;, &quot;enhancement&quot;)
+end
+
+function F.send_offensive_gas_amalgamate(compound)
+  return F.send_role_amalgamate(&quot;offensive_flex&quot;, compound)
 end
 
 function F.show_phials()
@@ -35866,8 +36301,8 @@ function F.show_phials()
   table.sort(ids)
 
   if #ids == 0 then
-    if type(F.warn) == "function" then
-      F.warn("No known phials.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;No known phials.&quot;)
     end
     return {}
   end
@@ -35875,30 +36310,29 @@ function F.show_phials()
   local lines = {}
   for _, id in ipairs(ids) do
     local row = F.phials[id]
+    local permanence = row.permanent and &quot; permanent&quot; or &quot;&quot;
     if row.empty then
-      lines[#lines + 1] = string.format("%s -&gt; Empty (%s months, qty %s)", id, tostring(row.months or "?"), tostring(row.quantity or "?"))
+      lines[#lines + 1] = string.format(&quot;%s -&gt; Empty (%s months%s, qty %s)&quot;, id, tostring(row.months or &quot;?&quot;), permanence, tostring(row.quantity or &quot;?&quot;))
     else
       lines[#lines + 1] = string.format(
-        "%s -&gt; %s (%s months, p%s v%s s%s)",
+        &quot;%s -&gt; %s (%s months%s, p%s v%s s%s)&quot;,
         id,
-        tostring(row.compound or "?"),
-        tostring(row.months or "?"),
-        tostring(row.potency or "?"),
-        tostring(row.volatility or "?"),
-        tostring(row.stability or "?")
+        tostring(row.compound or &quot;?&quot;),
+        tostring(row.months or &quot;?&quot;),
+        permanence,
+        tostring(row.potency or &quot;?&quot;),
+        tostring(row.volatility or &quot;?&quot;),
+        tostring(row.stability or &quot;?&quot;)
       )
     end
   end
 
-  if type(F.warn) == "function" then
-    F.warn("Known phials:\n" .. table.concat(lines, "\n"))
+  if type(F.warn) == &quot;function&quot; then
+    F.warn(&quot;Known phials:\n&quot; .. table.concat(lines, &quot;\n&quot;))
   end
   return lines
 end
-
-function F.handle_phiallist_line(line)
-  return F.parse_phiallist(line)
-end</script>
+</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
@@ -35911,14 +36345,58 @@ Yso.alc.form = Yso.alc.form or {}
 local F = Yso.alc.form
 
 local function _trim(s)
-  s = tostring(s or "")
-  s = s:gsub("^%s+", "")
-  s = s:gsub("%s+$", "")
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;^%s+&quot;, &quot;&quot;)
+  s = s:gsub(&quot;%s+$&quot;, &quot;&quot;)
   return s
 end
 
 local function _key(s)
   return _trim(s):lower()
+end
+
+local function _source_dir()
+  local info = debug.getinfo(1, &quot;S&quot;)
+  local src = info and info.source or &quot;&quot;
+  if src:sub(1, 1) == &quot;@&quot; then
+    src = src:sub(2)
+  end
+  return src:match(&quot;^(.*)[/\\][^/\\]+$&quot;) or &quot;&quot;
+end
+
+local function _chart_paths()
+  local paths = {}
+  if F.cfg and F.cfg.chart_path then
+    paths[#paths + 1] = F.cfg.chart_path
+  end
+
+  local dir = _source_dir()
+  if dir ~= &quot;&quot; then
+    local base = dir:gsub(&quot;[/\\]Core$&quot;, &quot;&quot;)
+    paths[#paths + 1] = base .. &quot;\\Alchemical skill_reference chart&quot;
+    paths[#paths + 1] = base .. &quot;/Alchemical skill_reference chart&quot;
+  end
+
+  paths[#paths + 1] = &quot;Ysindrolir/Alchemist/Alchemical skill_reference chart&quot;
+  return paths
+end
+
+local function _read_chart()
+  local tried = {}
+  for _, path in ipairs(_chart_paths()) do
+    if path and path ~= &quot;&quot; and not tried[path] then
+      tried[path] = true
+      local handle = io.open(path, &quot;r&quot;)
+      if handle then
+        local text = handle:read(&quot;*a&quot;)
+        handle:close()
+        if text and text ~= &quot;&quot; then
+          return text, path
+        end
+      end
+    end
+  end
+  return nil, nil
 end
 
 local function _shape(meta)
@@ -35928,21 +36406,21 @@ local function _shape(meta)
 
   meta.key = meta.key or _key(meta.name)
   meta.syntax = meta.syntax or {}
-  meta.delivery = meta.delivery or "utility"
-  meta.needs_wield = meta.delivery == "wield_throw" or meta.delivery == "room_throw"
+  meta.delivery = meta.delivery or &quot;utility&quot;
+  meta.needs_wield = meta.delivery == &quot;wield_throw&quot; or meta.delivery == &quot;room_throw&quot;
 
-  if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
-    meta.target_mode = "ground_or_direction"
-  elseif meta.delivery == "imbibe_or_administer" then
-    meta.target_mode = "optional_target"
-  elseif meta.delivery == "imbibe" or meta.delivery == "special_self_imbibe" or meta.delivery == "enhanced_state_ability" then
-    meta.target_mode = "self"
+  if meta.delivery == &quot;wield_throw&quot; or meta.delivery == &quot;room_throw&quot; then
+    meta.target_mode = &quot;ground_or_direction&quot;
+  elseif meta.delivery == &quot;imbibe_or_administer&quot; then
+    meta.target_mode = &quot;optional_target&quot;
+  elseif meta.delivery == &quot;imbibe&quot; or meta.delivery == &quot;special_self_imbibe&quot; or meta.delivery == &quot;enhanced_state_ability&quot; then
+    meta.target_mode = &quot;self&quot;
   else
-    meta.target_mode = "manual"
+    meta.target_mode = &quot;manual&quot;
   end
 
   for _, syntax in ipairs(meta.syntax) do
-    local wield_name = syntax:match("^WIELD%s+([A-Z][A-Z]+)")
+    local wield_name = syntax:match(&quot;^WIELD%s+([A-Z][A-Z]+)&quot;)
     if wield_name then
       meta.use_name = wield_name:sub(1, 1) .. wield_name:sub(2):lower()
       break
@@ -35951,7 +36429,7 @@ local function _shape(meta)
 
   if not meta.use_name then
     for _, syntax in ipairs(meta.syntax) do
-      local imbibe_name = syntax:match("^IMBIBE%s+([A-Z][A-Z]+)")
+      local imbibe_name = syntax:match(&quot;^IMBIBE%s+([A-Z][A-Z]+)&quot;)
       if imbibe_name then
         meta.use_name = imbibe_name:sub(1, 1) .. imbibe_name:sub(2):lower()
         break
@@ -35959,7 +36437,7 @@ local function _shape(meta)
     end
   end
 
-  if not meta.use_name and meta.delivery == "enhanced_state_ability" then
+  if not meta.use_name and meta.delivery == &quot;enhanced_state_ability&quot; then
     meta.use_name = meta.name
   end
 
@@ -35969,74 +36447,108 @@ local function _shape(meta)
   return meta
 end
 
-F.state = F.state or {}
-F.state.form_defs = F.state.form_defs or {
-  endorphin = _shape{ name = "Endorphin", syntax = { "WIELD ENDORPHIN", "THROW ENDORPHIN &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  nutritional = _shape{ name = "Nutritional", syntax = { "IMBIBE NUTRITIONAL", "ADMINISTER NUTRITIONAL &lt;target&gt;" }, delivery = "imbibe_or_administer" },
-  corrosive = _shape{ name = "Corrosive", syntax = { "WIELD CORROSIVE", "THROW CORROSIVE &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  petrifying = _shape{ name = "Petrifying", syntax = { "IMBIBE PETRIFYING" }, delivery = "imbibe" },
-  incendiary = _shape{ name = "Incendiary", syntax = { "WIELD INCENDIARY", "THROW INCENDIARY &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  alteration = _shape{ name = "Alteration", syntax = { "ENHANCE POTENCY|STABILITY|VOLATILITY OF &lt;compound&gt;", "DILUTE POTENCY|STABILITY|VOLATILITY OF &lt;compound&gt;", "AMALGAMATE &lt;compound&gt; &lt;type&gt; &lt;amount&gt; &lt;type&gt; &lt;amount&gt;..." }, delivery = "utility" },
-  devitalisation = _shape{ name = "Devitalisation", syntax = { "WIELD DEVITALISATION", "THROW DEVITALISATION &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  intoxicant = _shape{ name = "Intoxicant", syntax = { "WIELD INTOXICANT", "THROW INTOXICANT &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  vaporisation = _shape{ name = "Vaporisation", syntax = { "WIELD VAPORISATION", "THROW VAPORISATION &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  phosphorous = _shape{ name = "Phosphorous", syntax = { "WIELD PHOSPHOROUS", "THROW PHOSPHOROUS &lt;DIRECTION|AT GROUND&gt;" }, delivery = "wield_throw" },
-  monoxide = _shape{ name = "Monoxide", syntax = { "WIELD MONOXIDE", "THROW MONOXIDE &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  toxin = _shape{ name = "Toxin", syntax = { "WIELD TOXIN", "THROW TOXIN &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  concussive = _shape{ name = "Concussive", syntax = { "WIELD CONCUSSIVE", "THROW CONCUSSIVE &lt;AT GROUND|DIRECTION&gt;" }, delivery = "wield_throw" },
-  mayology = _shape{ name = "Mayology", syntax = { "AMALGAMATE DESTRUCTIVE", "IMBIBE DESTRUCTIVE" }, delivery = "special_self_imbibe" },
-  halophilic = _shape{ name = "Halophilic", syntax = { "WIELD HALOPHILIC", "THROW HALOPHILIC &lt;DIRECTION|AT GROUND&gt;" }, delivery = "room_throw" },
-  enhancement = _shape{ name = "Enhancement", syntax = { "IMBIBE ENHANCEMENT" }, delivery = "imbibe" },
-  bolster = _shape{ name = "Bolster", syntax = { "BOLSTER" }, delivery = "enhanced_state_ability" },
-}
+local function _parse_chart(text)
+  local defs = {}
+  local in_formulation = false
+  local current
 
-local aliases = {
-  endo = "endorphin",
-  endorphin = "endorphin",
-  nutri = "nutritional",
-  nutritional = "nutritional",
-  cor = "corrosive",
-  corrosive = "corrosive",
-  petri = "petrifying",
-  petrifying = "petrifying",
-  incen = "incendiary",
-  incendiary = "incendiary",
-  devit = "devitalisation",
-  devitalisation = "devitalisation",
-  intox = "intoxicant",
-  intoxicant = "intoxicant",
-  vap = "vaporisation",
-  vaporisation = "vaporisation",
-  phos = "phosphorous",
-  phosphorous = "phosphorous",
-  mono = "monoxide",
-  monoxide = "monoxide",
-  tox = "toxin",
-  toxin = "toxin",
-  conc = "concussive",
-  concussive = "concussive",
-  dest = "mayology",
-  destructive = "mayology",
-  mayology = "mayology",
-  enh = "enhancement",
-  enhancement = "enhancement",
-  bol = "bolster",
-  bolster = "bolster",
-  halophilic = "halophilic",
-  alteration = "alteration",
-}
+  for raw in text:gmatch(&quot;[^\r\n]+&quot;) do
+    local line = _trim(raw)
+    if line == &quot;## Formulation&quot; then
+      in_formulation = true
+      current = nil
+    elseif in_formulation and line:match(&quot;^## &quot;) then
+      break
+    elseif in_formulation then
+      local heading = line:match(&quot;^###%s+(.+)$&quot;)
+      if heading then
+        current = {
+          name = _trim(heading),
+          key = _key(heading),
+          syntax = {},
+        }
+        defs[current.key] = current
+      elseif current then
+        local syntax = raw:match(&quot;^  %- `%s*(.-)%s*`$&quot;)
+        if syntax then
+          current.syntax[#current.syntax + 1] = syntax
+        end
+
+        local delivery = line:match(&quot;^%- %*%*Delivery type:%*%* `%s*([^`]+)%s*`$&quot;)
+        if delivery then
+          current.delivery = _trim(delivery)
+        end
+      end
+    end
+  end
+
+  for key, meta in pairs(defs) do
+    defs[key] = _shape(meta)
+  end
+
+  return defs
+end
+
+local function _alias_map()
+  return {
+    endo = &quot;endorphin&quot;,
+    endorphin = &quot;endorphin&quot;,
+    nutri = &quot;nutritional&quot;,
+    nutritional = &quot;nutritional&quot;,
+    cor = &quot;corrosive&quot;,
+    corrosive = &quot;corrosive&quot;,
+    petri = &quot;petrifying&quot;,
+    petrifying = &quot;petrifying&quot;,
+    incen = &quot;incendiary&quot;,
+    incendiary = &quot;incendiary&quot;,
+    devit = &quot;devitalisation&quot;,
+    devitalisation = &quot;devitalisation&quot;,
+    intox = &quot;intoxicant&quot;,
+    intoxicant = &quot;intoxicant&quot;,
+    vap = &quot;vaporisation&quot;,
+    vaporisation = &quot;vaporisation&quot;,
+    phos = &quot;phosphorous&quot;,
+    phosphorous = &quot;phosphorous&quot;,
+    mono = &quot;monoxide&quot;,
+    monoxide = &quot;monoxide&quot;,
+    tox = &quot;toxin&quot;,
+    toxin = &quot;toxin&quot;,
+    conc = &quot;concussive&quot;,
+    concussive = &quot;concussive&quot;,
+    dest = &quot;mayology&quot;,
+    destructive = &quot;mayology&quot;,
+    mayology = &quot;mayology&quot;,
+    enh = &quot;enhancement&quot;,
+    enhancement = &quot;enhancement&quot;,
+    bol = &quot;bolster&quot;,
+    bolster = &quot;bolster&quot;,
+    halophilic = &quot;halophilic&quot;,
+    alteration = &quot;alteration&quot;,
+  }
+end
 
 function F.resolve(name)
   local key = _key(name)
-  if key == "" then
+  if key == &quot;&quot; then
     return nil
   end
 
+  if not F.state.form_defs then
+    local text, path = _read_chart()
+    if text then
+      F.state.form_defs = _parse_chart(text)
+      F.state.chart_path = path
+    else
+      F.state.form_defs = {}
+    end
+  end
+
+  local aliases = _alias_map()
   local canonical_key = aliases[key] or key
   local meta = F.state.form_defs[canonical_key]
   if not meta then
-    if type(F.warn) == "function" then
-      F.warn("No formulation reference entry found for " .. tostring(name) .. ".")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;No formulation reference entry found for &quot; .. tostring(name) .. &quot;.&quot;)
     end
     return nil
   end
@@ -36051,7 +36563,8 @@ function F.resolve(name)
     needs_wield = meta.needs_wield,
     target_mode = meta.target_mode,
   }
-end</script>
+end
+</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
@@ -37138,3 +37651,6 @@ end
 		</Key>
 	</KeyPackage>
 </MudletPackage>
+
+
+
