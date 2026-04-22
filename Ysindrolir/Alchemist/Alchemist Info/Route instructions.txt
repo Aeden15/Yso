@@ -25,3 +25,21 @@ Future route notes
 [ ] Add only route intent, priority, and command selection in Yso.
 [ ] Let AK observe and own what happened after the command lands.
 [ ] Re-evaluate new targets before trusting humour-state planning.
+
+
+
+
+
+
+
+
+Alchemist strategy:
+===================
+According to https://ada-young.com/pastebin/bMKDPfjA in the Alchemist section, the class is mostly affliction based. The main usage is giving paralysis/x affliction to build humour
+levels and help of TEMPER'ing humours.
+
+Secondary afflictions include: asthma, impatience, and/or sensitivity. Depending on what you're going for, sensitivity will be great for damage route alongside the other afflictions
+from humours that support damage. Otherwise, the asthma and impatience are great for affliction lock route/vitals pressure instant kills.
+
+Using the inundate skill on the target's phlegmatic humour will nearly fully lock the target without impatience affliction. Inundating the choleric humor is paired with sensitivity for big damage bursts.
+Lastly and likely the most deadliest is inundating and corrupting the sanguine humor for massive bleeding. That can go spike vitals pressures into one of the instant kills the class has.

@@ -92,13 +92,26 @@ do
   assert_eq("1b: empty throw argument warns", warnings[1], "Monoxide needs 'ground' or a direction.")
 
   cmd = F.build_use("monoxide", "ground")
-  assert_eq("1c: ground builds room throw", cmd, "WIELD MONOXIDE && THROW MONOXIDE AT GROUND")
+  assert_eq("1c: ground builds room throw", cmd, "WIELD PHIAL123 && THROW MONOXIDE AT GROUND")
 
   cmd = F.build_use("monoxide", "at ground")
-  assert_eq("1d: at ground builds room throw", cmd, "WIELD MONOXIDE && THROW MONOXIDE AT GROUND")
+  assert_eq("1d: at ground builds room throw", cmd, "WIELD PHIAL123 && THROW MONOXIDE AT GROUND")
 
   cmd = F.build_use("monoxide", "east")
-  assert_eq("1e: direction builds directional throw", cmd, "WIELD MONOXIDE && THROW MONOXIDE EAST")
+  assert_eq("1e: direction builds directional throw", cmd, "WIELD PHIAL123 && THROW MONOXIDE EAST")
+end
+
+print("=== Test 1b: resolves Endorphin from embedded defaults when chart path is unavailable ===")
+do
+  local F = make_world()
+  F.state.form_defs = nil
+  local original_open = io.open
+  io.open = function()
+    return nil
+  end
+  local meta = F.resolve("endorphin")
+  io.open = original_open
+  assert_eq("1b: fallback resolver still knows Endorphin", meta and meta.name, "Endorphin")
 end
 
 print("=== Test 2: alteration helpers accept phial IDs directly ===")
@@ -106,6 +119,30 @@ do
   local F = make_world()
   local cmd = F.build_adjustment("enhance", "potency", "phial658898")
   assert_eq("2a: adjustment command targets explicit phial id", cmd, "ENHANCE POTENCY OF PHIAL658898")
+end
+
+print("=== Test 2b: parser accepts space-column phiallist rows ===")
+do
+  local F = make_world()
+  F.parse_phiallist("Phial   Compound       Months  Potency  Volatility  Stability")
+  F.parse_phiallist("Phial658898   Endorphin   ---   1   1   1")
+  local phial = F.find_phial("Endorphin")
+  assert_eq("2b: space-column row parsed for Endorphin", phial and phial.id, "Phial658898")
+end
+
+print("=== Test 2c: Endorphin fallback still resolves reserved slot without parsed rows ===")
+do
+  local F = make_world()
+  local phial = F.require_phial("Endorphin")
+  assert_eq("2c: fallback phial id is reserved Endorphin slot", phial and phial.id, "Phial658898")
+end
+
+print("=== Test 2d: parser captures prefixed phial rows with extra text ===")
+do
+  local F = make_world()
+  F.parse_phiallist("[Yso] Phial658898  Endorphin  ---  1  1  1")
+  local phial = F.find_phial("Endorphin")
+  assert_eq("2d: prefixed row still resolves Endorphin", phial and phial.id, "Phial658898")
 end
 
 print("=== Test 3: reserved enhancement mismatch warns without auto-correction ===")
@@ -124,6 +161,21 @@ do
     warnings[#warnings],
     "Enhancement slot mismatch: Phial475762 currently holds Endorphin. Use EMPTY PHIAL475762 when ready."
   )
+end
+
+print("=== Test 3b: eq-aware wield helper unwields foreign phial first ===")
+do
+  local F = make_world()
+  load_phials(F, {
+    "Phial658898 | Endorphin | -- | 1 | 1 | 1",
+    "Phial475762 | Enhancement | -- | 1 | 1 | 2",
+  })
+  F.handle_eq_line("You are holding:")
+  F.handle_eq_line("Wielded:")
+  F.handle_eq_line("  Left hand:  phial475762    some vial")
+  local phial = F.require_phial("Endorphin")
+  local cmd = F.ensure_wielded(phial)
+  assert_eq("3b: helper unwields foreign phial then wields target", cmd, "UNWIELD PHIAL475762 && WIELD PHIAL658898")
 end
 
 print("=== Test 4: unsafe Amalgamate blocks on multiple empty phials ===")

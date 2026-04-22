@@ -107,6 +107,29 @@ local function _shape(meta)
   return meta
 end
 
+local function _default_defs()
+  local defs = {
+    endorphin = _shape{ name = "Endorphin", syntax = { "WIELD ENDORPHIN", "THROW ENDORPHIN <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    nutritional = _shape{ name = "Nutritional", syntax = { "IMBIBE NUTRITIONAL", "ADMINISTER NUTRITIONAL <target>" }, delivery = "imbibe_or_administer" },
+    corrosive = _shape{ name = "Corrosive", syntax = { "WIELD CORROSIVE", "THROW CORROSIVE <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    petrifying = _shape{ name = "Petrifying", syntax = { "IMBIBE PETRIFYING" }, delivery = "imbibe" },
+    incendiary = _shape{ name = "Incendiary", syntax = { "WIELD INCENDIARY", "THROW INCENDIARY <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    alteration = _shape{ name = "Alteration", syntax = { "ENHANCE POTENCY|STABILITY|VOLATILITY OF <compound>", "DILUTE POTENCY|STABILITY|VOLATILITY OF <compound>", "AMALGAMATE <compound>" }, delivery = "utility" },
+    devitalisation = _shape{ name = "Devitalisation", syntax = { "WIELD DEVITALISATION", "THROW DEVITALISATION <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    intoxicant = _shape{ name = "Intoxicant", syntax = { "WIELD INTOXICANT", "THROW INTOXICANT <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    vaporisation = _shape{ name = "Vaporisation", syntax = { "WIELD VAPORISATION", "THROW VAPORISATION <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    phosphorous = _shape{ name = "Phosphorous", syntax = { "WIELD PHOSPHOROUS", "THROW PHOSPHOROUS <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    monoxide = _shape{ name = "Monoxide", syntax = { "WIELD MONOXIDE", "THROW MONOXIDE <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    toxin = _shape{ name = "Toxin", syntax = { "WIELD TOXIN", "THROW TOXIN <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    concussive = _shape{ name = "Concussive", syntax = { "WIELD CONCUSSIVE", "THROW CONCUSSIVE <AT GROUND|DIRECTION>" }, delivery = "wield_throw" },
+    mayology = _shape{ name = "Mayology", syntax = { "AMALGAMATE DESTRUCTIVE", "IMBIBE DESTRUCTIVE" }, delivery = "special_self_imbibe" },
+    halophilic = _shape{ name = "Halophilic", syntax = { "WIELD HALOPHILIC", "THROW HALOPHILIC <DIRECTION|AT GROUND>" }, delivery = "room_throw" },
+    enhancement = _shape{ name = "Enhancement", syntax = { "IMBIBE ENHANCEMENT" }, delivery = "imbibe" },
+    bolster = _shape{ name = "Bolster", syntax = { "BOLSTER" }, delivery = "enhanced_state_ability" },
+  }
+  return defs
+end
+
 local function _parse_chart(text)
   local defs = {}
   local in_formulation = false
@@ -187,27 +210,31 @@ local function _alias_map()
   }
 end
 
-function F.resolve(name)
+function F.resolve(name, opts)
   local key = _key(name)
   if key == "" then
     return nil
   end
 
   if not F.state.form_defs then
+    local defs
     local text, path = _read_chart()
     if text then
-      F.state.form_defs = _parse_chart(text)
+      defs = _parse_chart(text)
       F.state.chart_path = path
-    else
-      F.state.form_defs = {}
     end
+    if not defs or next(defs) == nil then
+      defs = _default_defs()
+      F.state.chart_path = "embedded_defaults"
+    end
+    F.state.form_defs = defs
   end
 
   local aliases = _alias_map()
   local canonical_key = aliases[key] or key
   local meta = F.state.form_defs[canonical_key]
   if not meta then
-    if type(F.warn) == "function" then
+    if not (opts and opts.silent) and type(F.warn) == "function" then
       F.warn("No formulation reference entry found for " .. tostring(name) .. ".")
     end
     return nil

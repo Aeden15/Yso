@@ -15,6 +15,18 @@ local function _trim(s)
   return s
 end
 
+local function _strip_ansi(s)
+  s = tostring(s or "")
+  s = s:gsub("\27%[[%d;]*[A-Za-z]", "")
+  s = s:gsub("[\194-\244][\128-\191]*", function(ch)
+    if ch == "\194\160" then
+      return " "
+    end
+    return ch
+  end)
+  return s
+end
+
 local function _key(name)
   return _trim(name):lower()
 end
@@ -91,6 +103,37 @@ local function _role_label(role_key)
   return labels[role_key] or tostring(role_key or "Unknown")
 end
 
+local function _reserved_compound_id(target_key)
+  local reserved = (F.cfg and F.cfg.reserved_phials) or {}
+  if target_key == "endorphin" then
+    return _normalize_phial_id(reserved.endorphin)
+  end
+  if target_key == "enhancement" then
+    return _normalize_phial_id(reserved.enhancement)
+  end
+  return nil
+end
+
+local function _reserved_compound_row(target_key)
+  local id = _reserved_compound_id(target_key)
+  if not id then
+    return nil
+  end
+  local row = F.phials[id]
+  if row then
+    return row
+  end
+  return {
+    id = id,
+    container = id,
+    kind = "phial",
+    compound = target_key:sub(1, 1):upper() .. target_key:sub(2),
+    compound_key = target_key,
+    empty = false,
+    reserved_fallback = true,
+  }
+end
+
 local function _join_ids(rows)
   local ids = {}
   for _, row in ipairs(rows or {}) do
@@ -110,7 +153,17 @@ local function _clear_for_header(line)
     F.reset_phials()
     return true
   end
+  if line:match("^%s*Phial%s+Compound%s+Months%s+Potency%s+Volatility%s+Stability%s*$") then
+    F.reset_phials()
+    return true
+  end
   if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity") then
+    if next(F.phials) == nil then
+      F.last_phiallist = {}
+    end
+    return true
+  end
+  if line:match("^%s*Phial%s+Compound%s+Months%s+left%s+Quantity%s*$") then
     if next(F.phials) == nil then
       F.last_phiallist = {}
     end
@@ -178,7 +231,7 @@ function F.parse_phiallist(line_or_block)
     return parsed
   end
 
-  local line = _trim(line_or_block)
+  local line = _trim(_strip_ansi(line_or_block))
   if line == "" then
     return nil
   end
@@ -205,7 +258,84 @@ function F.parse_phiallist(line_or_block)
     return _store_empty(eid, emonths, quantity)
   end
 
+  local columns = {}
+  for token in line:gmatch("%S+") do
+    columns[#columns + 1] = token
+  end
+  if #columns == 6 and columns[1]:match("^Phial[%w%d]+$") then
+    return _store_filled(columns[1], columns[2], columns[3], columns[4], columns[5], columns[6])
+  end
+  if #columns == 4 and columns[1]:match("^Phial[%w%d]+$") and _key(columns[2]) == "empty" then
+    return _store_empty(columns[1], columns[3], columns[4])
+  end
+
+  local any_id, any_compound, any_months, any_potency, any_volatility, any_stability =
+    line:match("(Phial[%w%d]+)%s+([A-Za-z]+)%s+([%-%d]+)%s+([%d]+)%s+([%d]+)%s+([%d]+)")
+  if any_id and _key(any_compound) ~= "empty" then
+    return _store_filled(any_id, any_compound, any_months, any_potency, any_volatility, any_stability)
+  end
+
+  local any_empty_id, any_empty_months, any_empty_qty =
+    line:match("(Phial[%w%d]+)%s+Empty%s+([%-%d]+)%s+([%d]+)")
+  if any_empty_id then
+    return _store_empty(any_empty_id, any_empty_months, any_empty_qty)
+  end
+
   return nil
+end
+
+local function _parse_eq_hand(line)
+  local hand, item = line:match("^%s*(Left%s+hand):%s+(.+)$")
+  if not hand then
+    hand, item = line:match("^%s*(Right%s+hand):%s+(.+)$")
+  end
+  if not hand then
+    return nil
+  end
+
+  local token = _trim(item):match("^([%w%d_%-']+)")
+  local phial_id = _normalize_phial_id(token or "")
+  return {
+    hand = _key(hand),
+    item = _trim(item),
+    token = token,
+    phial_id = phial_id,
+  }
+end
+
+function F.handle_eq_line(line_or_block)
+  if type(line_or_block) ~= "string" or line_or_block == "" then
+    return nil
+  end
+
+  if line_or_block:find("\n", 1, true) or line_or_block:find("\r", 1, true) then
+    local parsed
+    for line in line_or_block:gmatch("[^\r\n]+") do
+      parsed = F.handle_eq_line(line) or parsed
+    end
+    return parsed
+  end
+
+  local line = _trim(_strip_ansi(line_or_block))
+  if line == "" then
+    return nil
+  end
+
+  if line == "You are holding:" or line == "Wielded:" then
+    F.state.eq_hands = {}
+    F.state.last_eq_at = type(F.now) == "function" and F.now() or os.time()
+    return {}
+  end
+
+  local parsed = _parse_eq_hand(line)
+  if not parsed then
+    return nil
+  end
+
+  F.state.eq_hands = F.state.eq_hands or {}
+  F.state.eq_hands[parsed.hand] = parsed
+  F.state.last_eq_at = type(F.now) == "function" and F.now() or os.time()
+  return parsed
 end
 
 function F.normalize_phial_id(raw)
@@ -363,7 +493,7 @@ function F.find_phial(name)
 
   local target = _key(name)
   if type(F.resolve) == "function" then
-    local meta = F.resolve(name)
+    local meta = F.resolve(name, { silent = true })
     if meta and meta.use_name then
       target = _key(meta.use_name)
     elseif meta and meta.key then
@@ -381,6 +511,10 @@ function F.find_phial(name)
   table.sort(ids)
   if ids[1] then
     return F.phials[ids[1]]
+  end
+  local reserved = _reserved_compound_row(target)
+  if reserved then
+    return reserved
   end
   return nil
 end

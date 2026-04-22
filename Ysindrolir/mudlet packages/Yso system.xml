@@ -786,14 +786,14 @@ end</script>
 						<mSoundFile></mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-																																																																																																																																																																																																<regexCodeList>
-																																																																																																	<string>You must regain balance first.</string>
-																																																																																																	<string>Balance used:</string>
-																																																																																																</regexCodeList>
-																																																																																																<regexCodePropertyList>
-																																																																																																	<integer>3</integer>
-																																																																																																	<integer>0</integer>
-																																																																																																</regexCodePropertyList>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																<regexCodeList>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																	<string>You must regain balance first.</string>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																	<string>Balance used:</string>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																</regexCodeList>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																<regexCodePropertyList>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																	<integer>3</integer>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																	<integer>0</integer>
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ queued (serverside)</name>
@@ -2862,7 +2862,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^Phial\s*\|\s*Compound\s*\|\s*Months\s*\|\s*Potency\s*\|\s*Volatility\s*\|\s*Stability$</string>
+							<string>^.*Phial.*Compound.*Months.*Potency.*Volatility.*Stability.*$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2884,7 +2884,7 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^Phial\s*\|\s*Compound\s*\|\s*Months left\s*\|\s*Quantity$</string>
+							<string>^.*Phial.*Compound.*Months\s+left.*Quantity.*$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -2906,7 +2906,51 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^Phial[\w\d]+\s*\|.+$</string>
+							<string>^.*Phial[\w\d]+.*$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>EQ holding header (Formulation)</name>
+						<script>if Yso.alc and Yso.alc.form and type(Yso.alc.form.handle_eq_line) == "function" then
+  Yso.alc.form.handle_eq_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^(You are holding:|Wielded:)$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>EQ hand row (Formulation)</name>
+						<script>if Yso.alc and Yso.alc.form and type(Yso.alc.form.handle_eq_line) == "function" then
+  Yso.alc.form.handle_eq_line(getCurrentLine())
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand></mCommand>
+						<packageName></packageName>
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile></mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^\s*(Left|Right)\s+hand:\s+.+$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -35717,6 +35761,18 @@ local function _trim(s)
   return s
 end
 
+local function _strip_ansi(s)
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;\27%[[%d;]*[A-Za-z]&quot;, &quot;&quot;)
+  s = s:gsub(&quot;[\194-\244][\128-\191]*&quot;, function(ch)
+    if ch == &quot;\194\160&quot; then
+      return &quot; &quot;
+    end
+    return ch
+  end)
+  return s
+end
+
 local function _key(name)
   return _trim(name):lower()
 end
@@ -35793,6 +35849,37 @@ local function _role_label(role_key)
   return labels[role_key] or tostring(role_key or &quot;Unknown&quot;)
 end
 
+local function _reserved_compound_id(target_key)
+  local reserved = (F.cfg and F.cfg.reserved_phials) or {}
+  if target_key == &quot;endorphin&quot; then
+    return _normalize_phial_id(reserved.endorphin)
+  end
+  if target_key == &quot;enhancement&quot; then
+    return _normalize_phial_id(reserved.enhancement)
+  end
+  return nil
+end
+
+local function _reserved_compound_row(target_key)
+  local id = _reserved_compound_id(target_key)
+  if not id then
+    return nil
+  end
+  local row = F.phials[id]
+  if row then
+    return row
+  end
+  return {
+    id = id,
+    container = id,
+    kind = &quot;phial&quot;,
+    compound = target_key:sub(1, 1):upper() .. target_key:sub(2),
+    compound_key = target_key,
+    empty = false,
+    reserved_fallback = true,
+  }
+end
+
 local function _join_ids(rows)
   local ids = {}
   for _, row in ipairs(rows or {}) do
@@ -35812,7 +35899,17 @@ local function _clear_for_header(line)
     F.reset_phials()
     return true
   end
+  if line:match(&quot;^%s*Phial%s+Compound%s+Months%s+Potency%s+Volatility%s+Stability%s*$&quot;) then
+    F.reset_phials()
+    return true
+  end
   if line:match(&quot;^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity&quot;) then
+    if next(F.phials) == nil then
+      F.last_phiallist = {}
+    end
+    return true
+  end
+  if line:match(&quot;^%s*Phial%s+Compound%s+Months%s+left%s+Quantity%s*$&quot;) then
     if next(F.phials) == nil then
       F.last_phiallist = {}
     end
@@ -35880,7 +35977,7 @@ function F.parse_phiallist(line_or_block)
     return parsed
   end
 
-  local line = _trim(line_or_block)
+  local line = _trim(_strip_ansi(line_or_block))
   if line == &quot;&quot; then
     return nil
   end
@@ -35907,7 +36004,84 @@ function F.parse_phiallist(line_or_block)
     return _store_empty(eid, emonths, quantity)
   end
 
+  local columns = {}
+  for token in line:gmatch(&quot;%S+&quot;) do
+    columns[#columns + 1] = token
+  end
+  if #columns == 6 and columns[1]:match(&quot;^Phial[%w%d]+$&quot;) then
+    return _store_filled(columns[1], columns[2], columns[3], columns[4], columns[5], columns[6])
+  end
+  if #columns == 4 and columns[1]:match(&quot;^Phial[%w%d]+$&quot;) and _key(columns[2]) == &quot;empty&quot; then
+    return _store_empty(columns[1], columns[3], columns[4])
+  end
+
+  local any_id, any_compound, any_months, any_potency, any_volatility, any_stability =
+    line:match(&quot;(Phial[%w%d]+)%s+([A-Za-z]+)%s+([%-%d]+)%s+([%d]+)%s+([%d]+)%s+([%d]+)&quot;)
+  if any_id and _key(any_compound) ~= &quot;empty&quot; then
+    return _store_filled(any_id, any_compound, any_months, any_potency, any_volatility, any_stability)
+  end
+
+  local any_empty_id, any_empty_months, any_empty_qty =
+    line:match(&quot;(Phial[%w%d]+)%s+Empty%s+([%-%d]+)%s+([%d]+)&quot;)
+  if any_empty_id then
+    return _store_empty(any_empty_id, any_empty_months, any_empty_qty)
+  end
+
   return nil
+end
+
+local function _parse_eq_hand(line)
+  local hand, item = line:match(&quot;^%s*(Left%s+hand):%s+(.+)$&quot;)
+  if not hand then
+    hand, item = line:match(&quot;^%s*(Right%s+hand):%s+(.+)$&quot;)
+  end
+  if not hand then
+    return nil
+  end
+
+  local token = _trim(item):match(&quot;^([%w%d_%-&apos;]+)&quot;)
+  local phial_id = _normalize_phial_id(token or &quot;&quot;)
+  return {
+    hand = _key(hand),
+    item = _trim(item),
+    token = token,
+    phial_id = phial_id,
+  }
+end
+
+function F.handle_eq_line(line_or_block)
+  if type(line_or_block) ~= &quot;string&quot; or line_or_block == &quot;&quot; then
+    return nil
+  end
+
+  if line_or_block:find(&quot;\n&quot;, 1, true) or line_or_block:find(&quot;\r&quot;, 1, true) then
+    local parsed
+    for line in line_or_block:gmatch(&quot;[^\r\n]+&quot;) do
+      parsed = F.handle_eq_line(line) or parsed
+    end
+    return parsed
+  end
+
+  local line = _trim(_strip_ansi(line_or_block))
+  if line == &quot;&quot; then
+    return nil
+  end
+
+  if line == &quot;You are holding:&quot; or line == &quot;Wielded:&quot; then
+    F.state.eq_hands = {}
+    F.state.last_eq_at = type(F.now) == &quot;function&quot; and F.now() or os.time()
+    return {}
+  end
+
+  local parsed = _parse_eq_hand(line)
+  if not parsed then
+    return nil
+  end
+
+  F.state.eq_hands = F.state.eq_hands or {}
+  F.state.eq_hands[parsed.hand] = parsed
+  F.state.last_eq_at = type(F.now) == &quot;function&quot; and F.now() or os.time()
+  return parsed
 end
 
 function F.normalize_phial_id(raw)
@@ -36065,7 +36239,7 @@ function F.find_phial(name)
 
   local target = _key(name)
   if type(F.resolve) == &quot;function&quot; then
-    local meta = F.resolve(name)
+    local meta = F.resolve(name, { silent = true })
     if meta and meta.use_name then
       target = _key(meta.use_name)
     elseif meta and meta.key then
@@ -36083,6 +36257,10 @@ function F.find_phial(name)
   table.sort(ids)
   if ids[1] then
     return F.phials[ids[1]]
+  end
+  local reserved = _reserved_compound_row(target)
+  if reserved then
+    return reserved
   end
   return nil
 end
@@ -36447,6 +36625,29 @@ local function _shape(meta)
   return meta
 end
 
+local function _default_defs()
+  local defs = {
+    endorphin = _shape{ name = &quot;Endorphin&quot;, syntax = { &quot;WIELD ENDORPHIN&quot;, &quot;THROW ENDORPHIN &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    nutritional = _shape{ name = &quot;Nutritional&quot;, syntax = { &quot;IMBIBE NUTRITIONAL&quot;, &quot;ADMINISTER NUTRITIONAL &lt;target&gt;&quot; }, delivery = &quot;imbibe_or_administer&quot; },
+    corrosive = _shape{ name = &quot;Corrosive&quot;, syntax = { &quot;WIELD CORROSIVE&quot;, &quot;THROW CORROSIVE &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    petrifying = _shape{ name = &quot;Petrifying&quot;, syntax = { &quot;IMBIBE PETRIFYING&quot; }, delivery = &quot;imbibe&quot; },
+    incendiary = _shape{ name = &quot;Incendiary&quot;, syntax = { &quot;WIELD INCENDIARY&quot;, &quot;THROW INCENDIARY &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    alteration = _shape{ name = &quot;Alteration&quot;, syntax = { &quot;ENHANCE POTENCY|STABILITY|VOLATILITY OF &lt;compound&gt;&quot;, &quot;DILUTE POTENCY|STABILITY|VOLATILITY OF &lt;compound&gt;&quot;, &quot;AMALGAMATE &lt;compound&gt;&quot; }, delivery = &quot;utility&quot; },
+    devitalisation = _shape{ name = &quot;Devitalisation&quot;, syntax = { &quot;WIELD DEVITALISATION&quot;, &quot;THROW DEVITALISATION &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    intoxicant = _shape{ name = &quot;Intoxicant&quot;, syntax = { &quot;WIELD INTOXICANT&quot;, &quot;THROW INTOXICANT &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    vaporisation = _shape{ name = &quot;Vaporisation&quot;, syntax = { &quot;WIELD VAPORISATION&quot;, &quot;THROW VAPORISATION &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    phosphorous = _shape{ name = &quot;Phosphorous&quot;, syntax = { &quot;WIELD PHOSPHOROUS&quot;, &quot;THROW PHOSPHOROUS &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    monoxide = _shape{ name = &quot;Monoxide&quot;, syntax = { &quot;WIELD MONOXIDE&quot;, &quot;THROW MONOXIDE &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    toxin = _shape{ name = &quot;Toxin&quot;, syntax = { &quot;WIELD TOXIN&quot;, &quot;THROW TOXIN &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    concussive = _shape{ name = &quot;Concussive&quot;, syntax = { &quot;WIELD CONCUSSIVE&quot;, &quot;THROW CONCUSSIVE &lt;AT GROUND|DIRECTION&gt;&quot; }, delivery = &quot;wield_throw&quot; },
+    mayology = _shape{ name = &quot;Mayology&quot;, syntax = { &quot;AMALGAMATE DESTRUCTIVE&quot;, &quot;IMBIBE DESTRUCTIVE&quot; }, delivery = &quot;special_self_imbibe&quot; },
+    halophilic = _shape{ name = &quot;Halophilic&quot;, syntax = { &quot;WIELD HALOPHILIC&quot;, &quot;THROW HALOPHILIC &lt;DIRECTION|AT GROUND&gt;&quot; }, delivery = &quot;room_throw&quot; },
+    enhancement = _shape{ name = &quot;Enhancement&quot;, syntax = { &quot;IMBIBE ENHANCEMENT&quot; }, delivery = &quot;imbibe&quot; },
+    bolster = _shape{ name = &quot;Bolster&quot;, syntax = { &quot;BOLSTER&quot; }, delivery = &quot;enhanced_state_ability&quot; },
+  }
+  return defs
+end
+
 local function _parse_chart(text)
   local defs = {}
   local in_formulation = false
@@ -36527,27 +36728,31 @@ local function _alias_map()
   }
 end
 
-function F.resolve(name)
+function F.resolve(name, opts)
   local key = _key(name)
   if key == &quot;&quot; then
     return nil
   end
 
   if not F.state.form_defs then
+    local defs
     local text, path = _read_chart()
     if text then
-      F.state.form_defs = _parse_chart(text)
+      defs = _parse_chart(text)
       F.state.chart_path = path
-    else
-      F.state.form_defs = {}
     end
+    if not defs or next(defs) == nil then
+      defs = _default_defs()
+      F.state.chart_path = &quot;embedded_defaults&quot;
+    end
+    F.state.form_defs = defs
   end
 
   local aliases = _alias_map()
   local canonical_key = aliases[key] or key
   local meta = F.state.form_defs[canonical_key]
   if not meta then
-    if type(F.warn) == &quot;function&quot; then
+    if not (opts and opts.silent) and type(F.warn) == &quot;function&quot; then
       F.warn(&quot;No formulation reference entry found for &quot; .. tostring(name) .. &quot;.&quot;)
     end
     return nil
@@ -36597,16 +36802,66 @@ local function _combine(parts)
   return table.concat(out, &quot; &quot; .. ((type(F.sep) == &quot;function&quot; and F.sep()) or &quot;&amp;&amp;&quot;) .. &quot; &quot;)
 end
 
+local function _normalize_phial_id(raw)
+  if type(F.normalize_phial_id) == &quot;function&quot; then
+    return F.normalize_phial_id(raw)
+  end
+  local value = _trim(raw)
+  local digits = value:match(&quot;^[Pp][Hh][Ii][Aa][Ll](%d+)$&quot;) or value:match(&quot;^(%d+)$&quot;)
+  if not digits then
+    return nil
+  end
+  return &quot;Phial&quot; .. digits
+end
+
 function F.ensure_wielded(phial)
   if not phial or not phial.compound or phial.compound == &quot;&quot; then
     return nil
   end
+
+  local target_id = _normalize_phial_id(phial.id)
+  local eq_hands = F.state and F.state.eq_hands or nil
+  local held_target = false
+  local foreign_phials = {}
+  if type(eq_hands) == &quot;table&quot; then
+    for _, hand in pairs(eq_hands) do
+      local held = hand and _normalize_phial_id(hand.phial_id or hand.token or &quot;&quot;)
+      if held then
+        if held == target_id then
+          held_target = true
+        else
+          foreign_phials[#foreign_phials + 1] = held
+        end
+      end
+    end
+  end
+
+  local parts = {}
+  if #foreign_phials &gt; 0 then
+    table.sort(foreign_phials)
+    for _, held in ipairs(foreign_phials) do
+      parts[#parts + 1] = &quot;UNWIELD &quot; .. held:upper()
+    end
+  end
+
+  if not held_target or #foreign_phials &gt; 0 then
+    if target_id then
+      parts[#parts + 1] = &quot;WIELD &quot; .. target_id:upper()
+    else
+      parts[#parts + 1] = &quot;WIELD &quot; .. _upper_words(phial.compound)
+    end
+  end
+
   F.state.last_wielded = {
     id = phial.id,
     compound = phial.compound,
     at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
-  return &quot;WIELD &quot; .. _upper_words(phial.compound)
+
+  if #parts == 0 then
+    return nil
+  end
+  return _combine(parts)
 end
 
 local function _build_action(meta, arg)
@@ -37651,6 +37906,9 @@ end
 		</Key>
 	</KeyPackage>
 </MudletPackage>
+
+
+
 
 
 
