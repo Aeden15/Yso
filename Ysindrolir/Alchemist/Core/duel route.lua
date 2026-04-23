@@ -97,7 +97,7 @@ DR.cfg = DR.cfg or {
   inundate_min_temper = 2,
 }
 
-DR.giving_default = DR.giving_default or {
+Yso.giving = (type(Yso.giving) == "table" and Yso.giving) or {
   "paralysis",
   "asthma",
   "impatience",
@@ -295,7 +295,7 @@ local function _evaluate_pending_for(tgt)
 end
 
 local function _giving_set()
-  return type(DR.giving_default) == "table" and DR.giving_default or {}
+  return type(Yso.giving) == "table" and Yso.giving or {}
 end
 
 local function _emit_payload(payload)

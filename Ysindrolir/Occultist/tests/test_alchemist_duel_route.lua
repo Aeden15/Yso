@@ -159,9 +159,9 @@ end
 print("=== Test 0: route defaults ===")
 do
   local world = make_world()
-  assert_eq("0a: route id default list index 1", world.DR.giving_default[1], "paralysis")
-  assert_eq("0b: route id default list index 2", world.DR.giving_default[2], "asthma")
-  assert_eq("0c: route id default list index 3", world.DR.giving_default[3], "impatience")
+  assert_eq("0a: Yso giving default list index 1", Yso.giving[1], "paralysis")
+  assert_eq("0b: Yso giving default list index 2", Yso.giving[2], "asthma")
+  assert_eq("0c: Yso giving default list index 3", Yso.giving[3], "impatience")
 end
 
 print("=== Test 1: dirty intel evaluates once ===")
