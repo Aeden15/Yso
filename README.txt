@@ -1,6 +1,6 @@
 Yso Systems Workspace
 =====================
-Last updated: April 21, 2026
+Last updated: April 23, 2026
 
 This root README is now a workspace snapshot rather than a changelog.
 Class-specific detail lives in the class folders.
@@ -9,6 +9,15 @@ Magi and Alchemist.
 
 Current fixes
 -------------
+  Alchemist duel-route scaffold + aduel loop wiring (April 23, 2026) --
+  Added Alchemist/Core/duel route.lua with AK-aligned evaluate planning,
+  lock-pressure defaults (paralysis/asthma/impatience), aurify EQ windows,
+  conservative inundate phlegmatic + homunculus corrupt windows, and
+  deterministic wrack <target> <affliction> fallback. Added root loader shims
+  alchemist_duel_route.lua and alchemist_group_damage.lua, wired
+  alchemist_duel_route/aduel in route registry, and added regression test
+  Ysindrolir/Occultist/tests/test_alchemist_duel_route.lua.
+
   Alchemist AK ownership remap + homunculus stance guard (April 21, 2026) --
   Removed Yso-owned per-humour truth rows from Core/physiology.lua. Alchemist
   planning now requires fresh current-target evaluate state and reads AK's

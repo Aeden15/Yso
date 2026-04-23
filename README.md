@@ -1,11 +1,12 @@
 # Yso
 
-Current workspace snapshot: April 21, 2026.
+Current workspace snapshot: April 23, 2026.
 
 Occultist is currently on hold. Primary active development is now focused on Magi and Alchemist.
 
 ## Current fixes
 
+- **Alchemist duel-route scaffold + aduel loop wiring (April 23, 2026)** — Added `Alchemist/Core/duel route.lua` with AK-aligned evaluate planning, lock-pressure giving defaults (`paralysis`, `asthma`, `impatience`), aurify EQ windows, conservative `inundate phlegmatic`/`homunculus corrupt` windows, and deterministic `wrack <target> <affliction>` fallback. Added root loader shims (`alchemist_duel_route.lua`, restored `alchemist_group_damage.lua`), wired `alchemist_duel_route` + `aduel` in route registry, added `test_alchemist_duel_route.lua`, and documented active-route updates.
 - **Alchemist AK ownership remap + homunculus stance guard (April 21, 2026)** — Removed Yso-owned per-humour truth rows from `Core/physiology.lua`; Alchemist planning now requires fresh current-target evaluate state and reads AK's `ak.alchemist.humour` counts for legality. Group damage now uses AK sanguine for paralysis, only `truewrack`s when the second lane has real route value, and falls back to deterministic `wrack <target> <affliction>`. Added owner-specific homunculus attack/passive stance parsing, AK-aligned humour-eat parsing, route ownership checklist, and Occultist class guards for entourage missing-entity logic.
 - **Alchemist Physiology pool + route giving cleanup (April 21, 2026)** — Filled Physiology's humour-affliction pools from the skillchart for all four humours, removed Physiology-owned giving defaults, and moved the Alchemist group-damage pressure list into the group-damage route. Formulation throw building now requires explicit `ground` or a direction instead of silently defaulting to ground.
 - **Alchemist Physiology/Formulation boundary cleanup (April 21, 2026)** — Split the humour/evaluate/truewrack support out of `Core/formulation.lua` into `Core/physiology.lua`, leaving `formulation.lua` scoped to Formulation phial skill usage and helper state.
