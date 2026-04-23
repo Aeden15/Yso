@@ -23,8 +23,6 @@ Active routes
   magi_focus         - Magi duel convergence route
   magi_group_damage  - Magi party damage route (team dam)
   magi_dmg           - Magi duel damage route
-  alchemist_duel_route - Alchemist duel lock route (aduel)
-  alchemist_group_damage - Alchemist party damage route (adam / team dam)
 
 
 Wake + lane events
@@ -99,8 +97,6 @@ Primary regression suite (run from repository root):
   lua Ysindrolir/Occultist/tests/test_queue_writhe_block.lua
   lua Ysindrolir/Occultist/tests/test_magi_focus.lua
   lua Ysindrolir/Occultist/tests/test_magi_group_damage.lua
-  lua Ysindrolir/Occultist/tests/test_alchemist_group_damage.lua
-  lua Ysindrolir/Occultist/tests/test_alchemist_duel_route.lua
   lua Ysindrolir/Occultist/tests/test_reliability_sweep.lua
 
 Contract tests added for unified wake/ack flow:
