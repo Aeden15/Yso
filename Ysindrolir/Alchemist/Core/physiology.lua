@@ -499,7 +499,7 @@ end
 function P.can_aurify(name)
   local hp = tonumber(P.health_pct(name))
   local mp = tonumber(P.mana_pct(name))
-  return hp ~= nil and mp ~= nil and hp < 60 and mp < 60
+  return hp ~= nil and mp ~= nil and hp <= 60 and mp <= 60
 end
 
 function P.iron_aff_count(name, giving)

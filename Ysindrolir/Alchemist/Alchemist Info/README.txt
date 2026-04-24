@@ -41,3 +41,5 @@ Behavior expectations
     AMALGAMATE <compound>
 - Wield/throw/imbibe usage remains compound-name driven.
 - Phiallist remains the live source of truth for current contents.
+- Aurification execute checks are EQ-finisher priority and use
+  hp <= 60 and mp <= 60.

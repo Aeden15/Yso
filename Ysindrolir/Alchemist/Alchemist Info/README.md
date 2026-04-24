@@ -53,6 +53,7 @@ Occultist is on hold. Primary active development is currently focused on Magi an
 - Physiology humour intel is AK-owned; Yso keeps only evaluate freshness/vitals and reads `ak.alchemist.humour` for current-target planning.
 - Alchemist group damage route under `adam`, using `evaluate <target> humours`, `temper <target> <humour>`, useful `truewrack <target> <humour> <affliction>`, and deterministic `wrack <target> <affliction>` fallback.
 - Alchemist duel route under `aduel`, with lock-pressure defaults (`paralysis`, `asthma`, `impatience`), aurify finish windows, conservative `inundate <target> phlegmatic`, and conservative `homunculus corrupt <target>` timing.
+- Aurification execute window is treated as an EQ finisher before normal pressure progression (and before iron in group damage), with gate `hp <= 60` and `mp <= 60`.
 - Physiology humour-balance lane tracking as its own ready/not-ready state.
 - Formulation phial support that is delivery-aware, chart-driven, and separated from Physiology humour logic.
 - Physiology humour pools match the skillchart for choleric, melancholic, phlegmatic, and sanguine.

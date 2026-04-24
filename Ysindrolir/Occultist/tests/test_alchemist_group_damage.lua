@@ -182,9 +182,13 @@ do
   local payload = preview(world)
   assert_eq("2b: both vitals below 60 enables aurify", payload and payload.eq, "aurify Tharonus")
 
-  world.P.note_evaluate_vitals("Tharonus", 59, 60)
+  world.P.note_evaluate_vitals("Tharonus", 60, 60)
   payload = preview(world)
-  assert_eq("2c: mana at 60 blocks aurify", payload and payload.eq, nil)
+  assert_eq("2c: 60/60 still enables aurify", payload and payload.eq, "aurify Tharonus")
+
+  world.P.note_evaluate_vitals("Tharonus", 60, 61)
+  payload = preview(world)
+  assert_eq("2d: mana above 60 blocks aurify", payload and payload.eq, nil)
 end
 
 print("\n=== Test 3: paralysis needs AK sanguine >= 2 ===")

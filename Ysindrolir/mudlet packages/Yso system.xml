@@ -34611,7 +34611,7 @@ end
 function P.can_aurify(name)
   local hp = tonumber(P.health_pct(name))
   local mp = tonumber(P.mana_pct(name))
-  return hp ~= nil and mp ~= nil and hp &lt; 60 and mp &lt; 60
+  return hp ~= nil and mp ~= nil and hp &lt;= 60 and mp &lt;= 60
 end
 
 function P.iron_aff_count(name, giving)
@@ -35116,6 +35116,7 @@ local function _select_action(ctx)
   end
 
   local giving = _giving_set()
+  -- Evaluate refresh if needed.
   local needs_eval = (type(P.target_needs_evaluate) == &quot;function&quot;) and (P.target_needs_evaluate(tgt) == true) or false
   if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
     local cmd = string.format(&quot;evaluate %s humours&quot;, tgt)
@@ -35136,6 +35137,8 @@ local function _select_action(ctx)
     }
   end
 
+  -- Instant kills / eq finishers.
+  -- Aurification execute window outranks iron finisher.
   if _eq_ready() and type(P.can_aurify) == &quot;function&quot; and P.can_aurify(tgt) then
     local cmd = string.format(&quot;aurify %s&quot;, tgt)
     return {

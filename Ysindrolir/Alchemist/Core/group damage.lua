@@ -354,6 +354,7 @@ local function _select_action(ctx)
   end
 
   local giving = _giving_set()
+  -- Evaluate refresh if needed.
   local needs_eval = (type(P.target_needs_evaluate) == "function") and (P.target_needs_evaluate(tgt) == true) or false
   if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
     local cmd = string.format("evaluate %s humours", tgt)
@@ -374,6 +375,8 @@ local function _select_action(ctx)
     }
   end
 
+  -- Instant kills / eq finishers.
+  -- Aurification execute window outranks iron finisher.
   if _eq_ready() and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
     local cmd = string.format("aurify %s", tgt)
     return {
