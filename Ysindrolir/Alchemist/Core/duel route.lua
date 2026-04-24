@@ -151,8 +151,27 @@ local function _echo(msg)
   end
 end
 
+local function _debug(msg)
+  if not (Yso and Yso.ak and Yso.ak.debug == true) then
+    return
+  end
+  _echo(msg)
+end
+
 local function _phys()
   return Yso and Yso.alc and Yso.alc.phys or nil
+end
+
+local function _can_plan_bal()
+  local Q = Yso and Yso.queue or nil
+  if not (Q and type(Q.can_plan_lane) == "function") then
+    return true
+  end
+  local ok, allowed = pcall(Q.can_plan_lane, "bal")
+  if not ok then
+    return true
+  end
+  return allowed == true
 end
 
 local function _target()
@@ -281,6 +300,9 @@ end
 
 local function _evaluate_pending_for(tgt)
   local P = _phys()
+  if P and type(P.evaluate_staged_for_target) == "function" and P.evaluate_staged_for_target(tgt) then
+    return true
+  end
   local row = P and P.state and P.state.evaluate or nil
   if type(row) ~= "table" then
     return false
@@ -365,23 +387,20 @@ end
 local function _select_action(ctx)
   DR.init()
 
-  local tgt = _trim((ctx and ctx.target) or _target())
   local P = _phys()
-  if P and type(P.reave_sync_target) == "function" then
-    P.reave_sync_target(tgt, "duel_route_tick")
+  if not P then
+    return nil, "phys_unavailable"
+  end
+
+  local tgt = _trim((ctx and ctx.target) or _target())
+  if type(P.reave_sync_target) == "function" then
+    pcall(P.reave_sync_target, tgt, "duel_select_action")
   end
   if tgt == "" then
     return nil, "no_target"
   end
   if not _target_valid(tgt) then
-    if P and type(P.reave_sync_target) == "function" then
-      P.reave_sync_target("", "duel_invalid_target")
-    end
     return nil, "invalid_target"
-  end
-
-  if not P then
-    return nil, "phys_unavailable"
   end
 
   local giving = _giving_set()
@@ -389,8 +408,13 @@ local function _select_action(ctx)
   local needs_eval = (type(P.target_needs_evaluate) == "function") and (P.target_needs_evaluate(tgt) == true) or false
   if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
     local cmd = string.format("evaluate %s humours", tgt)
+    local noted = true
     if type(P.note_evaluate_request) == "function" then
-      P.note_evaluate_request(tgt, "route")
+      noted = (P.note_evaluate_request(tgt, "route") == true)
+    end
+    if noted ~= true then
+      _debug(string.format("[Alchemist] evaluate duplicate ignored for %s", tgt))
+      return nil, "evaluate_duplicate"
     end
     return {
       kind = "emit",
@@ -404,6 +428,8 @@ local function _select_action(ctx)
         needs_eval = true,
       },
     }
+  elseif needs_eval and _evaluate_ready() and _evaluate_pending_for(tgt) then
+    _debug(string.format("[Alchemist] evaluate duplicate ignored for %s", tgt))
   end
 
   -- Instant kills / eq finishers.
@@ -426,10 +452,9 @@ local function _select_action(ctx)
     }
   end
 
-  -- Reave execute window (channeled humour-balance finisher).
-  if _humour_ready() and type(P.can_reave) == "function" then
+  if type(P.can_reave) == "function" then
     local can_reave, profile = P.can_reave(tgt)
-    if can_reave then
+    if can_reave == true then
       local cmd = string.format("reave %s", tgt)
       return {
         kind = "direct",
@@ -440,7 +465,7 @@ local function _select_action(ctx)
         explain = {
           target = tgt,
           reave = true,
-          reave_profile = profile,
+          profile = profile,
         },
       }
     end
@@ -508,7 +533,7 @@ local function _select_action(ctx)
     end
   end
 
-  if _bal_ready() then
+  if _bal_ready() and _can_plan_bal() then
     if type(P.build_truewrack) == "function" then
       local cmd, filler, forced = P.build_truewrack(tgt, giving)
       if cmd and cmd ~= "" then
@@ -545,6 +570,8 @@ local function _select_action(ctx)
         }
       end
     end
+  elseif _bal_ready() and not _can_plan_bal() then
+    _debug("[Queue] BAL dispatched; suppressing same-tick re-entry")
   end
 
   return nil, "no_legal_action"
@@ -594,6 +621,11 @@ end
 
 function DR.alias_loop_on_stopped(ctx)
   ctx = ctx or {}
+  local P = _phys()
+  local tgt = _trim((DR.state and DR.state.last_attack and DR.state.last_attack.target) or _target())
+  if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
+    P.clear_staged_for_target(tgt, tostring(ctx.reason or "loop_stopped"))
+  end
   if ctx.silent ~= true then
     _echo(string.format("Alchemist duel route loop OFF (%s).", tostring(ctx.reason or "manual")))
   end
@@ -638,9 +670,16 @@ end
 function DR.attack_function(ctx)
   DR.init()
   if not DR.is_active() then
+    local P = _phys()
+    local tgt = _trim((DR.state and DR.state.last_attack and DR.state.last_attack.target) or _target())
+    if P and type(P.reave_sync_target) == "function" then
+      pcall(P.reave_sync_target, "", "route_inactive")
+    end
+    if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
+      P.clear_staged_for_target(tgt, "route_inactive")
+    end
     return false, "route_inactive"
   end
-  local P = _phys()
 
   local action, why = _select_action(ctx or {})
   if not action then
@@ -652,8 +691,10 @@ function DR.attack_function(ctx)
   if action.kind == "emit" then
     sent = (_emit_payload(action.payload) == true)
   elseif action.kind == "direct" then
+    local P = _phys()
     if action.category == "reave" and P and type(P.fire_reave) == "function" then
-      sent = (P.fire_reave(action.explain and action.explain.target or _target(), action.explain and action.explain.reave_profile or nil) == true)
+      local ok, fired = pcall(P.fire_reave, action.explain and action.explain.target or _target(), action.explain and action.explain.profile or nil)
+      sent = (ok and fired == true)
     elseif type(send) == "function" then
       sent = pcall(send, action.cmd, false) == true
     end
@@ -704,6 +745,14 @@ end
 
 function DR.stop(reason)
   DR.init()
+  local P = _phys()
+  local tgt = _trim((DR.state and DR.state.last_attack and DR.state.last_attack.target) or _target())
+  if P and type(P.reave_sync_target) == "function" then
+    pcall(P.reave_sync_target, "", "route_stop")
+  end
+  if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
+    P.clear_staged_for_target(tgt, tostring(reason or "manual_stop"))
+  end
   DR.state.loop_enabled = false
   DR.state.enabled = false
   DR.cfg.enabled = false

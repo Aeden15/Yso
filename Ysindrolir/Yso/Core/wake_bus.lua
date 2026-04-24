@@ -212,6 +212,21 @@ function P.handle_line_event(source, opts)
   end
 
   P.set_ready(row.lane, row.ready, source)
+  do
+    local Q = Yso and Yso.queue or nil
+    if Q and type(Q.clear_lane_dispatched) == "function" then
+      if source == "line:bal_recovered" then
+        pcall(Q.clear_lane_dispatched, "bal", "line:bal_recovered")
+      elseif source == "line:eq_recovered" then
+        pcall(Q.clear_lane_dispatched, "eq", "line:eq_recovered")
+      elseif source == "line:entity_ready" then
+        pcall(Q.clear_lane_dispatched, "class", "line:entity_ready")
+      end
+    end
+    if Q and type(Q.mark_lane_dispatched) == "function" and source == "line:bal_run" then
+      pcall(Q.mark_lane_dispatched, "bal", "line:bal_run")
+    end
+  end
 
   local do_echo = opts.echo
   if do_echo == nil then do_echo = (cfg.enabled ~= false) end
@@ -523,6 +538,21 @@ if not P.state._eh_vitals then _dbg("failed to register gmcp.Char.Vitals handler
 
 -- Prompt wake fallback: prevents "sleep" if GMCP/line triggers are missed.
 local function _on_prompt()
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.clear_lane_dispatched) == "function" then
+    if Yso.state and type(Yso.state.bal_ready) == "function" then
+      local ok_bal, bal_ready = pcall(Yso.state.bal_ready)
+      if ok_bal and bal_ready == true then
+        pcall(Q.clear_lane_dispatched, "bal", "prompt_ready")
+      end
+    end
+    if Yso.state and type(Yso.state.eq_ready) == "function" then
+      local ok_eq, eq_ready = pcall(Yso.state.eq_ready)
+      if ok_eq and eq_ready == true then
+        pcall(Q.clear_lane_dispatched, "eq", "prompt_ready")
+      end
+    end
+  end
   P.wake("prompt")
 end
 if P.state._eh_prompt then pcall(killAnonymousEventHandler, P.state._eh_prompt) end

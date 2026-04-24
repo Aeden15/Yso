@@ -90,6 +90,17 @@ local function _parse_evaluate_count(line)
   return nil, nil
 end
 
+local function _parse_insufficient_temper(line)
+  local target, pronoun, humour = line:match("^You send ripples throughout ([%w'%-]+)'s body, but (%a+) ([a-z]+) humour is insufficiently tempered%.$")
+  if not target or not pronoun or not humour then
+    return nil, nil
+  end
+  if not _looks_like_pronoun(pronoun) then
+    return nil, nil
+  end
+  return _trim(target), _lc(humour)
+end
+
 function P.handle_humour_balance_line(line)
   line = tostring(line or "")
   if line == "" then
@@ -125,17 +136,6 @@ function P.handle_humour_balance_line(line)
   end
 
   do
-    local slain = line:match("^You have slain ([%w'%-]+)%.$")
-      or line:match("^([%w'%-]+) has been slain by your hand%.$")
-      or line:match("^([%w'%-]+) is dead%.$")
-    if slain and type(P.reave_on_target_slain) == "function" then
-      if P.reave_on_target_slain(slain, "slain_line") then
-        return "reave_target_slain"
-      end
-    end
-  end
-
-  do
     local target = line:match("^A diminutive homunculus resembling Ysindrolir stares menacingly at ([%w'%-]+), its eyes flashing brightly%.$")
     if target then
       if type(Yso.set_homunculus_attack) == "function" then
@@ -168,6 +168,10 @@ function P.handle_humour_balance_line(line)
   do
     local humour, count = _parse_evaluate_count(line)
     if humour and count then
+      local target = type(P.resolve_evaluate_target) == "function" and P.resolve_evaluate_target() or _current_target_fallback()
+      if type(P.set_humour_level) == "function" then
+        P.set_humour_level(target, humour, count, "evaluate_count")
+      end
       return "evaluate_count"
     end
   end
@@ -192,10 +196,26 @@ function P.handle_humour_balance_line(line)
   do
     local pronoun, humour = line:match("^You redirect .-, tempering (%a+) ([a-z]+) humour%.$")
     if humour and pronoun and _looks_like_pronoun(pronoun) then
+      local target = type(P.current_target) == "function" and P.current_target() or _current_target_fallback()
+      if type(P.get_humour_level) == "function" and type(P.set_humour_level) == "function" then
+        local prior = tonumber(P.get_humour_level(target, humour))
+        local next_level = (prior ~= nil) and (prior + 1) or 1
+        P.set_humour_level(target, humour, next_level, "temper_success")
+      end
       if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
         Yso.alc.set_humour_ready(false, "temper_success")
       end
       return "temper_success"
+    end
+  end
+
+  do
+    local target, humour = _parse_insufficient_temper(line)
+    if target and humour then
+      if type(P.on_insufficient_temper) == "function" then
+        P.on_insufficient_temper(target, humour)
+      end
+      return "wrack_insufficient_temper"
     end
   end
 
@@ -205,11 +225,19 @@ function P.handle_humour_balance_line(line)
       humour_one, humour_two = line:match("^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour and [%a]+ ([a-z]+) humour%.$")
     end
     if humour_one then
+      local Q = Yso and Yso.queue or nil
+      if Q and type(Q.clear_lane_dispatched) == "function" then
+        pcall(Q.clear_lane_dispatched, "bal", "truewrack_success")
+      end
       return "truewrack_success"
     end
 
     local single = line:match("^You send ripples throughout .-, wracking [%a]+ ([a-z]+) humour%.$")
     if single then
+      local Q = Yso and Yso.queue or nil
+      if Q and type(Q.clear_lane_dispatched) == "function" then
+        pcall(Q.clear_lane_dispatched, "bal", "wrack_success")
+      end
       return "wrack_success"
     end
   end

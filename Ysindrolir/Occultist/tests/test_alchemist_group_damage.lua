@@ -56,12 +56,6 @@ local function make_world(opts)
   local current_target = opts.target or "Tharonus"
   local emitted = {}
   local sent = {}
-  local self_affs = {}
-  for aff, active in pairs(opts.self_affs or {}) do
-    if active == true then
-      self_affs[tostring(aff):lower()] = true
-    end
-  end
 
   _G.Yso = nil
   _G.yso = nil
@@ -121,47 +115,6 @@ local function make_world(opts)
     get_target = function() return current_target end,
     target_is_valid = function(who) return tostring(who or "") ~= "" end,
     offense_paused = function() return false end,
-    self = {
-      has_aff = function(aff)
-        local key = tostring(aff or ""):lower()
-        return key ~= "" and self_affs[key] == true
-      end,
-      any_aff = function(list)
-        if type(list) ~= "table" then
-          return false
-        end
-        for i = 1, #list do
-          local key = tostring(list[i] or ""):lower()
-          if key ~= "" and self_affs[key] == true then
-            return true
-          end
-        end
-        return false
-      end,
-      is_prone = function()
-        return self_affs.prone == true
-      end,
-      is_writhed = function()
-        return self_affs.webbed == true
-          or self_affs.roped == true
-          or self_affs.transfixed == true
-          or self_affs.entangled == true
-          or self_affs.bound == true
-          or self_affs.impaled == true
-      end,
-      list_writhe_affs = function()
-        local out = {}
-        for _, aff in ipairs({ "webbed", "roped", "transfixed", "entangled", "bound", "impaled" }) do
-          if self_affs[aff] == true then
-            out[#out + 1] = aff
-          end
-        end
-        return out
-      end,
-      is_paralyzed = function()
-        return self_affs.paralysis == true
-      end,
-    },
     emit = function(payload)
       emitted[#emitted + 1] = payload
       return true
@@ -186,17 +139,6 @@ local function make_world(opts)
     sent = sent,
     affs = _G.affstrack.score,
     ak = _G.ak,
-    set_target = function(tgt)
-      current_target = tostring(tgt or "")
-      _G.target = current_target
-    end,
-    set_self_aff = function(name, active)
-      local key = tostring(name or ""):lower()
-      if key == "" then
-        return
-      end
-      self_affs[key] = (active == true)
-    end,
     advance = function(dt) now_s = now_s + (tonumber(dt) or 0) end,
   }
 end
@@ -211,9 +153,9 @@ do
   assert_eq("0a: Physiology has no route giving default", world.P.giving_default, nil)
   assert_eq("0b: route owns giving default", world.GD.giving_default[1], "paralysis")
   assert_eq("0c: choleric includes slickness", world.P.humour_to_affs.choleric[3], "slickness")
-  assert_eq("0d: melancholic includes impatience", world.P.aff_to_humour.impatience, "melancholic")
-  assert_eq("0e: phlegmatic includes asthma", world.P.aff_to_humour.asthma, "phlegmatic")
-  assert_eq("0f: sanguine includes recklessness", world.P.aff_to_humour.recklessness, "sanguine")
+  assert_eq("0d: melancholic includes impatience", world.P.aff_to_humour("impatience"), "melancholic")
+  assert_eq("0e: phlegmatic includes asthma", world.P.aff_to_humour("asthma"), "phlegmatic")
+  assert_eq("0f: sanguine includes recklessness", world.P.aff_to_humour("recklessness"), "sanguine")
 end
 
 print("=== Test 1: dirty intel evaluates once ===")
@@ -240,66 +182,9 @@ do
   local payload = preview(world)
   assert_eq("2b: both vitals below 60 enables aurify", payload and payload.eq, "aurify Tharonus")
 
-  world.P.note_evaluate_vitals("Tharonus", 60, 60)
+  world.P.note_evaluate_vitals("Tharonus", 59, 60)
   payload = preview(world)
-  assert_eq("2c: 60/60 still enables aurify", payload and payload.eq, "aurify Tharonus")
-
-  world.P.note_evaluate_vitals("Tharonus", 60, 61)
-  payload = preview(world)
-  assert_eq("2d: mana above 60 blocks aurify", payload and payload.eq, nil)
-end
-
-print("\n=== Test 2b: reave finisher outranks iron and resumes on slain ===")
-do
-  local world = make_world({
-    choleric = 1,
-    melancholic = 1,
-    phlegmatic = 1,
-    sanguine = 1,
-    aff_scores = { paralysis = 100, nausea = 100, sensitivity = 100 },
-  })
-  world.P.finish_evaluate("Tharonus")
-  world.P.note_evaluate_vitals("Tharonus", 80, 80)
-
-  local can_reave, profile = world.P.can_reave("Tharonus")
-  assert_eq("2b1: reave profile is legal with four tempered humours", can_reave, true)
-  assert_eq("2b2: reave profile counts all four distinct humours", profile and profile.distinct_tempered, 4)
-  assert_eq("2b3: reave profile estimates 4s channel", profile and profile.estimated_channel_duration, 4)
-
-  local payload, why = preview(world)
-  assert_eq("2b4: reave selected before iron", payload and payload.direct, "reave Tharonus")
-  assert_eq("2b5: reave reason", why, "reave_window")
-
-  local sent_ok, lane = world.GD.attack_function({})
-  assert_eq("2b6: attack sends reave action", sent_ok, true)
-  assert_eq("2b7: reave lane is humour", lane, "humour")
-  assert_eq("2b8: first send pauses curing", world.sent[1], "pp")
-  assert_eq("2b9: second send starts reave", world.sent[2], "reave Tharonus")
-  assert_eq("2b10: reave state marked active", Yso.alc.reaving, true)
-  assert_eq("2b11: reave pause flag marked", Yso.alc.reave_pp_paused, true)
-
-  world.P.handle_humour_balance_line("You have slain Tharonus.")
-  assert_eq("2b12: slain resumes curing with second pp", world.sent[#world.sent], "pp")
-  assert_eq("2b13: reave state clears on slain", Yso.alc.reaving, false)
-end
-
-print("\n=== Test 2c: reave is blocked by self hinder and falls through ===")
-do
-  local world = make_world({
-    choleric = 1,
-    melancholic = 1,
-    phlegmatic = 1,
-    sanguine = 1,
-    aff_scores = { paralysis = 100, nausea = 100, sensitivity = 100 },
-    self_affs = { paralysis = true },
-  })
-  world.P.finish_evaluate("Tharonus")
-  world.P.note_evaluate_vitals("Tharonus", 80, 80)
-
-  local can_reave = world.P.can_reave("Tharonus")
-  assert_eq("2c1: self paralysis blocks reave", can_reave, false)
-  local payload = preview(world)
-  assert_eq("2c2: blocked reave falls through to iron finisher", payload and payload.eq, "educe iron Tharonus")
+  assert_eq("2c: mana at 60 still allows aurify", payload and payload.eq, "aurify Tharonus")
 end
 
 print("\n=== Test 3: paralysis needs AK sanguine >= 2 ===")

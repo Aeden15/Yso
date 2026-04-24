@@ -21,18 +21,15 @@ P.humour_to_affs = {
   phlegmatic = { "clumsiness", "weariness", "asthma" },
   sanguine = { "haemophilia", "recklessness", "paralysis" },
 }
-P.aff_to_humour = {}
-for humour, affs in pairs(P.humour_to_affs) do
-  for i = 1, #affs do
-    P.aff_to_humour[affs[i]] = humour
-  end
-end
+P.wrack_required_level = tonumber(P.wrack_required_level) or 1
+P.truewrack_required_level = tonumber(P.truewrack_required_level) or 1
 P.state.evaluate = P.state.evaluate or {
   target = "",
   active = false,
   requested_at = 0,
   started_at = 0,
 }
+P.state.aff_lookup = P.state.aff_lookup or {}
 P.state.corruption = P.state.corruption or {}
 P.state.homunculus_attack = P.state.homunculus_attack or {
   active = false,
@@ -146,11 +143,47 @@ local function _list_has_aff(list, aff)
   return false
 end
 
+local function _debug_enabled()
+  return Yso and Yso.ak and Yso.ak.debug == true
+end
+
+local function _debug(msg)
+  if _debug_enabled() ~= true then
+    return
+  end
+  _echo(msg)
+end
+
+local function _rebuild_aff_lookup()
+  local map = {}
+  for humour, affs in pairs(P.humour_to_affs or {}) do
+    local key = _lc(humour)
+    if key ~= "" and type(affs) == "table" then
+      for i = 1, #affs do
+        local aff = _lc(affs[i])
+        if aff ~= "" then
+          map[aff] = key
+        end
+      end
+    end
+  end
+  P.state.aff_lookup = map
+  return map
+end
+
+local function _aff_lookup()
+  local map = type(P.state.aff_lookup) == "table" and P.state.aff_lookup or nil
+  if not map or next(map) == nil then
+    map = _rebuild_aff_lookup()
+  end
+  return map
+end
+
 local function _giving_humour_pools(giving)
   local pools = {}
   for i = 1, #_aff_list(giving) do
     local aff = _lc(giving[i])
-    local humour = P.aff_to_humour[aff]
+    local humour = P.aff_to_humour(aff)
     if humour then
       pools[humour] = pools[humour] or {}
       pools[humour][#pools[humour] + 1] = aff
@@ -196,9 +229,32 @@ local function _target_row(name)
       mana_pct = nil,
       last_evaluated_at = 0,
     },
+    humours = {},
   }
 
   P.targets[key] = row
+  return row
+end
+
+local function _ensure_humour_row(target_row, humour)
+  if type(target_row) ~= "table" then
+    return nil
+  end
+  target_row.humours = type(target_row.humours) == "table" and target_row.humours or {}
+  humour = _lc(humour)
+  if humour == "" then
+    return nil
+  end
+  local row = target_row.humours[humour]
+  if type(row) ~= "table" then
+    row = {
+      level = nil,
+      dirty = true,
+      reason = "init",
+      updated_at = 0,
+    }
+    target_row.humours[humour] = row
+  end
   return row
 end
 
@@ -226,6 +282,19 @@ local function _humour_missing_desired(target, humour, giving)
     end
   end
   return false
+end
+
+local function _valid_humour(humour)
+  humour = _lc(humour)
+  if humour == "" then
+    return nil
+  end
+  for i = 1, #P.humours do
+    if P.humours[i] == humour then
+      return humour
+    end
+  end
+  return nil
 end
 
 local function _humour_truth_trusted(name)
@@ -411,6 +480,301 @@ function P.current_target()
   return _current_target()
 end
 
+function P.aff_to_humour(aff)
+  aff = _lc(aff)
+  if aff == "" then
+    return nil
+  end
+  return _aff_lookup()[aff]
+end
+
+function P.required_humour_level_for_wrack(kind, aff)
+  kind = _lc(kind)
+  local base = (kind == "truewrack") and tonumber(P.truewrack_required_level or 1) or tonumber(P.wrack_required_level or 1)
+  base = math.max(0, base or 1)
+  if _lc(aff) == "paralysis" then
+    return math.max(base, 2)
+  end
+  return base
+end
+
+function P.set_humour_level(target, humour, level, reason)
+  humour = _valid_humour(humour)
+  if not humour then
+    return false
+  end
+  local target_row = _target_row(target)
+  if not target_row then
+    return false
+  end
+
+  local hrow = _ensure_humour_row(target_row, humour)
+  if not hrow then
+    return false
+  end
+
+  level = tonumber(level)
+  if level ~= nil then
+    level = math.max(0, level)
+  end
+  hrow.level = level
+  hrow.dirty = (level == nil)
+  hrow.reason = tostring(reason or "manual")
+  hrow.updated_at = _now()
+  return true
+end
+
+function P.set_humour_dirty(target, humour, reason)
+  humour = _valid_humour(humour)
+  if not humour then
+    return false
+  end
+  local target_row = _target_row(target)
+  if not target_row then
+    return false
+  end
+
+  local hrow = _ensure_humour_row(target_row, humour)
+  hrow.level = nil
+  hrow.dirty = true
+  hrow.reason = tostring(reason or "dirty")
+  hrow.updated_at = _now()
+
+  target_row.eval_dirty = true
+  target_row.last_dirty_source = tostring(reason or "dirty")
+  target_row.last_dirty_at = _now()
+  if _same_target(P.state.humour_eval_target or "", target_row.name) then
+    P.state.humour_eval_target = ""
+  end
+  return true
+end
+
+function P.get_humour_level(target, humour)
+  humour = _valid_humour(humour)
+  if not humour then
+    return nil
+  end
+  local target_row = _target_row(target)
+  if not target_row then
+    return nil
+  end
+
+  local hrow = _ensure_humour_row(target_row, humour)
+  if _humour_truth_trusted(target_row.name) then
+    local current = tonumber(P.ak_humour_count(target_row.name, humour))
+    if current == nil then
+      return nil
+    end
+    current = math.max(0, current)
+    if hrow then
+      hrow.level = current
+      hrow.dirty = false
+      hrow.reason = "trusted_current"
+      hrow.updated_at = _now()
+    end
+    return current
+  end
+
+  if hrow and hrow.dirty ~= true and tonumber(hrow.level) ~= nil then
+    return math.max(0, tonumber(hrow.level))
+  end
+
+  return nil
+end
+
+function P.can_wrack(target, humour, required_level)
+  humour = _valid_humour(humour)
+  if not humour then
+    return false, nil
+  end
+  local need = tonumber(required_level) or tonumber(P.wrack_required_level or 1) or 1
+  need = math.max(0, need)
+  local known = tonumber(P.get_humour_level(target, humour))
+  if known == nil then
+    return false, nil
+  end
+  return known >= need, known
+end
+
+local function _same_target_cmd(cmd, target)
+  cmd = _lc(cmd)
+  target = _lc(target)
+  if cmd == "" or target == "" then
+    return false
+  end
+  return cmd:find(target, 1, true) ~= nil
+end
+
+function P.clear_staged_for_target(target, reason)
+  target = _trim(target)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return false
+  end
+
+  local lower_target = _lc(target)
+  local Q = Yso and Yso.queue or nil
+  local cleared_any = false
+
+  if type(P.resolve_evaluate_target) == "function" and _same_target(P.resolve_evaluate_target(), target) then
+    P.state.evaluate.active = false
+    P.state.evaluate.requested_at = 0
+    P.state.evaluate.started_at = 0
+  end
+
+  if Q and type(Q.list) == "function" and type(Q.clear) == "function" then
+    local bal = _trim(Q.list("bal") or "")
+    local bal_lc = _lc(bal)
+    if bal ~= "" and _same_target_cmd(bal_lc, lower_target)
+      and (bal_lc:match("^wrack%s+") or bal_lc:match("^truewrack%s+"))
+    then
+      Q.clear("bal")
+      cleared_any = true
+    end
+
+    local free = Q.list("free")
+    if type(free) == "table" then
+      local kept = {}
+      local removed = false
+      for i = 1, #free do
+        local cmd = _trim(free[i])
+        local cmd_lc = _lc(cmd)
+        if cmd_lc ~= "" and _same_target_cmd(cmd_lc, lower_target) and cmd_lc:match("^evaluate%s+") and cmd_lc:find("humours", 1, true) then
+          removed = true
+        else
+          kept[#kept + 1] = cmd
+        end
+      end
+      if removed then
+        Q._staged = Q._staged or {}
+        Q._staged.free = kept
+        cleared_any = true
+      end
+    end
+  end
+
+  if Q and type(Q.get_owned) == "function" then
+    local owned_bal = Q.get_owned("bal")
+    if type(owned_bal) == "table" then
+      local cmd = _lc(owned_bal.cmd or "")
+      local route = _lc(owned_bal.route or "")
+      local tgt = _lc(owned_bal.target or "")
+      if route:find("alchemist", 1, true) and (tgt == lower_target or _same_target_cmd(cmd, lower_target))
+        and (cmd:match("^wrack%s+") or cmd:match("^truewrack%s+"))
+      then
+        if type(Q.clear_lane) == "function" then
+          Q.clear_lane("bal")
+        elseif type(Q.clear_owned) == "function" then
+          Q.clear_owned("bal")
+        end
+        cleared_any = true
+      end
+    end
+
+    local owned_free = Q.get_owned("free")
+    if type(owned_free) == "table" then
+      local cmd = _lc(owned_free.cmd or "")
+      local route = _lc(owned_free.route or "")
+      local tgt = _lc(owned_free.target or "")
+      if route:find("alchemist", 1, true) and (tgt == lower_target or _same_target_cmd(cmd, lower_target))
+        and cmd:match("^evaluate%s+") and cmd:find("humours", 1, true)
+      then
+        if type(Q.clear_lane) == "function" then
+          Q.clear_lane("free")
+        elseif type(Q.clear_owned) == "function" then
+          Q.clear_owned("free")
+        end
+        cleared_any = true
+      end
+    end
+  end
+
+  P.state.last_staged_clear = {
+    target = target,
+    reason = tostring(reason or "manual"),
+    at = _now(),
+    cleared = (cleared_any == true),
+  }
+  return cleared_any
+end
+
+function P.on_insufficient_temper(target, humour)
+  local tgt = _trim(target)
+  if tgt == "" then
+    tgt = _current_target()
+  end
+  humour = _valid_humour(humour)
+  if tgt == "" or not humour then
+    return false
+  end
+
+  local required = P.required_humour_level_for_wrack("wrack")
+  local known = tonumber(P.get_humour_level(tgt, humour))
+  if known ~= nil and known >= required then
+    P.set_humour_level(tgt, humour, required - 1, "insufficient_temper_clamp")
+  end
+  P.set_humour_dirty(tgt, humour, "insufficient_temper")
+  P.clear_staged_for_target(tgt, "insufficient_temper")
+
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.clear_lane_dispatched) == "function" then
+    pcall(Q.clear_lane_dispatched, "bal", "insufficient_temper")
+  end
+
+  _debug(string.format("[Alchemist] insufficient temper: %s %s; clearing staged BAL", tgt, humour))
+  return true
+end
+
+function P.evaluate_staged_for_target(target)
+  target = _trim(target)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return false
+  end
+
+  if _same_target(P.state.evaluate and P.state.evaluate.target or "", target) then
+    local row = P.state.evaluate or {}
+    if row.active == true then
+      return true
+    end
+    if tonumber(row.requested_at or 0) > 0 then
+      return true
+    end
+  end
+
+  local q = Yso and Yso.queue or nil
+  if not q or type(q.list) ~= "function" then
+    return false
+  end
+
+  local target_lc = _lc(target)
+  local staged = q.list("free")
+  if type(staged) == "table" then
+    for i = 1, #staged do
+      local cmd = _lc(staged[i])
+      if cmd:match("^evaluate%s+") and cmd:find(target_lc, 1, true) and cmd:find("humours", 1, true) then
+        return true
+      end
+    end
+  end
+
+  if type(q.get_owned) == "function" then
+    local owned = q.get_owned("free")
+    if type(owned) == "table" then
+      local cmd = _lc(owned.cmd or "")
+      if cmd:match("^evaluate%s+") and cmd:find(target_lc, 1, true) and cmd:find("humours", 1, true) then
+        return true
+      end
+    end
+  end
+
+  return false
+end
+
 function P.mark_all_eval_dirty(name, source)
   local target_row = _target_row(name)
   if not target_row then
@@ -420,6 +784,17 @@ function P.mark_all_eval_dirty(name, source)
   target_row.eval_dirty = true
   target_row.last_dirty_source = tostring(source or "manual")
   target_row.last_dirty_at = _now()
+  target_row.humours = type(target_row.humours) == "table" and target_row.humours or {}
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    local hrow = _ensure_humour_row(target_row, humour)
+    if hrow then
+      hrow.level = nil
+      hrow.dirty = true
+      hrow.reason = tostring(source or "manual")
+      hrow.updated_at = _now()
+    end
+  end
   if _same_target(P.state.humour_eval_target or "", target_row.name) then
     P.state.humour_eval_target = ""
   end
@@ -432,9 +807,17 @@ function P.note_evaluate_request(name, source)
     return false
   end
 
+  if P.evaluate_staged_for_target(target_row.name) then
+    _debug(string.format("[Alchemist] evaluate duplicate ignored for %s", target_row.name))
+    return false
+  end
+
   P.state.evaluate.target = target_row.name
   P.state.evaluate.requested_at = _now()
+  P.state.evaluate.started_at = 0
+  P.state.evaluate.active = false
   P.state.evaluate.request_source = tostring(source or "route")
+  _debug(string.format("[Alchemist] evaluate staged for %s", target_row.name))
   return true
 end
 
@@ -478,9 +861,12 @@ function P.finish_evaluate(name)
   end
 
   P.state.evaluate.active = false
+  P.state.evaluate.requested_at = 0
+  P.state.evaluate.started_at = 0
   target_row.last_evaluated_at = _now()
   target_row.eval_dirty = false
   P.state.humour_eval_target = target_row.name
+  P.clear_staged_for_target(target_row.name, "evaluate_result")
   return true
 end
 
@@ -793,14 +1179,16 @@ function P.pick_filler_humour(name, forced_aff, giving)
     target = _current_target()
   end
 
-  local preferred = P.aff_to_humour[_lc(forced_aff or "")]
+  local preferred = P.aff_to_humour(forced_aff)
   local options = _pool_order(_giving_humour_pools(giving))
   local best_humour, best_count = nil, -1
 
   for i = 1, #options do
     local humour = options[i]
-    local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
-    if humour ~= preferred and count >= 1 and _humour_missing_desired(target, humour, giving) then
+    local required = P.required_humour_level_for_wrack("truewrack")
+    local legal, count = P.can_wrack(target, humour, required)
+    count = tonumber(count or 0) or 0
+    if humour ~= preferred and legal == true and _humour_missing_desired(target, humour, giving) then
       if count > best_count then
         best_humour = humour
         best_count = count
@@ -862,7 +1250,7 @@ function P.pick_temper_humour(name, giving)
   end
 
   local first = P.pick_missing_aff(target, giving)
-  return P.aff_to_humour[_lc(first or "")] or "choleric"
+  return P.aff_to_humour(first) or "choleric"
 end
 
 function P.build_truewrack(name, giving)
@@ -873,6 +1261,23 @@ function P.build_truewrack(name, giving)
 
   local forced = P.pick_missing_aff(target, giving)
   if not forced then
+    return nil
+  end
+
+  local forced_humour = P.aff_to_humour(forced)
+  if not forced_humour then
+    return nil
+  end
+  local required = P.required_humour_level_for_wrack("truewrack", forced)
+  local legal, known = P.can_wrack(target, forced_humour, required)
+  if legal ~= true then
+    _debug(string.format(
+      "[Alchemist] wrack blocked: %s requires %s level %d, known=%s",
+      tostring(forced),
+      tostring(forced_humour),
+      tonumber(required) or 0,
+      known == nil and "unknown" or tostring(known)
+    ))
     return nil
   end
 
@@ -895,6 +1300,23 @@ function P.build_wrack_fallback(name, giving)
 
   local aff = P.pick_missing_aff(target, giving)
   if aff == nil or aff == "" then
+    return nil
+  end
+
+  local humour = P.aff_to_humour(aff)
+  if not humour then
+    return nil
+  end
+  local required = P.required_humour_level_for_wrack("wrack", aff)
+  local legal, known = P.can_wrack(target, humour, required)
+  if legal ~= true then
+    _debug(string.format(
+      "[Alchemist] wrack blocked: %s requires %s level %d, known=%s",
+      tostring(aff),
+      tostring(humour),
+      tonumber(required) or 0,
+      known == nil and "unknown" or tostring(known)
+    ))
     return nil
   end
   return string.format("wrack %s %s", target, aff), aff

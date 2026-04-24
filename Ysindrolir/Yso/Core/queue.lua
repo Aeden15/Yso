@@ -40,6 +40,7 @@ local Q = Yso.queue
 Q.cfg = Q.cfg or {
   debug = false,
   legacy_autocommit = false,
+  lane_dispatch_debounce_s = 0.25,
 }
 
 Q._staged = Q._staged or {
@@ -49,6 +50,11 @@ Q._staged = Q._staged or {
   class = nil,
 }
 Q._blocked = Q._blocked or {}
+Q._lane_dispatched = Q._lane_dispatched or {
+  eq = nil,
+  bal = nil,
+  class = nil,
+}
 
 Q._impl_version = "2026-04-05.1"
 
@@ -292,6 +298,9 @@ local function _lane_ready(lane)
   if type(Q.lane_blocked) == "function" then
     local blocked = Q.lane_blocked(lane)
     if blocked == true then return false end
+  end
+  if type(Q.can_plan_lane) == "function" and Q.can_plan_lane(lane) ~= true then
+    return false
   end
 
   if Yso and Yso.locks and type(Yso.locks.ready) == "function" then
@@ -591,7 +600,58 @@ function Q.clear_lane(lane, opts)
   local ok = Q.raw("CLEARQUEUE " .. qtype)
   if not ok then return false, "clear_failed" end
   Q.clear_owned(key)
+  if type(Q.clear_lane_dispatched) == "function" and key ~= "free" then
+    Q.clear_lane_dispatched(key, "clear_lane")
+  end
   return true
+end
+
+function Q.mark_lane_dispatched(lane, reason)
+  local key = _lane_key(lane)
+  if not key or key == "free" then return false, "invalid_lane" end
+  local now = _now()
+  local debounce = tonumber(Q.cfg.lane_dispatch_debounce_s or 0.25) or 0.25
+  if debounce < 0.05 then debounce = 0.05 end
+  Q._lane_dispatched = Q._lane_dispatched or {}
+  Q._lane_dispatched[key] = {
+    active = true,
+    at = now,
+    until_at = now + debounce,
+    reason = _trim(reason),
+  }
+  if key == "bal" then
+    _debug("[Queue] BAL dispatched; suppressing same-tick re-entry")
+  end
+  return true
+end
+
+function Q.clear_lane_dispatched(lane, reason)
+  local key = _lane_key(lane)
+  if not key or key == "free" then return false, "invalid_lane" end
+  local row = Q._lane_dispatched and Q._lane_dispatched[key] or nil
+  if type(row) ~= "table" or row.active ~= true then
+    return true, "already_clear"
+  end
+  Q._lane_dispatched[key] = nil
+  if key == "bal" then
+    _debug("[Queue] BAL dispatch settled: " .. tostring(reason or "clear"))
+  end
+  return true
+end
+
+function Q.can_plan_lane(lane)
+  local key = _lane_key(lane)
+  if not key then return false end
+  if key == "free" then return true end
+  local row = Q._lane_dispatched and Q._lane_dispatched[key] or nil
+  if type(row) ~= "table" or row.active ~= true then
+    return true
+  end
+  if tonumber(row.until_at or 0) > 0 and _now() >= tonumber(row.until_at or 0) then
+    Q.clear_lane_dispatched(key, "debounce_timeout")
+    return true
+  end
+  return false
 end
 
 local function _lane_send_allowed(lane, cmd)
@@ -849,12 +909,14 @@ function Q.commit(opts)
 
   opts = opts or {}
   local queued = {}
+  local consumed = {}
   local any = false
 
   if type(payload.free) == "table" and #payload.free > 0 then
     local free_cmd = table_concat(payload.free, _command_sep())
     local ok, result = Q.install_lane("free", free_cmd, opts)
     if not ok then return false end
+    consumed.free = payload.free
     if result ~= "unchanged" then
       queued.free = payload.free
       any = true
@@ -864,6 +926,7 @@ function Q.commit(opts)
   if _lane_send_allowed("eq", payload.eq) then
     local ok, result = Q.install_lane("eq", payload.eq, opts)
     if not ok then return false end
+    consumed.eq = payload.eq
     if result ~= "unchanged" then
       queued.eq = payload.eq
       any = true
@@ -873,6 +936,7 @@ function Q.commit(opts)
   if _lane_send_allowed("bal", payload.bal) then
     local ok, result = Q.install_lane("bal", payload.bal, opts)
     if not ok then return false end
+    consumed.bal = payload.bal
     if result ~= "unchanged" then
       queued.bal = payload.bal
       any = true
@@ -882,15 +946,24 @@ function Q.commit(opts)
   if _lane_send_allowed("class", payload.class) then
     local ok, result = Q.install_lane("class", payload.class, opts)
     if not ok then return false end
+    consumed.class = payload.class
     if result ~= "unchanged" then
       queued.class = payload.class
       any = true
     end
   end
 
-  if not any then return false end
+  if not any then
+    _clear_payload(consumed)
+    return false
+  end
 
-  _clear_payload(payload)
+  _clear_payload(consumed)
+  if type(Q.mark_lane_dispatched) == "function" then
+    if _trim(queued.eq) ~= "" then pcall(Q.mark_lane_dispatched, "eq", "queue.commit") end
+    if _trim(queued.bal) ~= "" then pcall(Q.mark_lane_dispatched, "bal", "queue.commit") end
+    if _trim(queued.class) ~= "" then pcall(Q.mark_lane_dispatched, "class", "queue.commit") end
+  end
   _mark_payload_queued(queued)
   _mark_payload_fired(queued)
   _debug("commit queued => " .. _payload_line(queued))
