@@ -37,3 +37,9 @@ Expected state:
 - Magi and Alchemist remain functional.
 - Shared Yso infrastructure remains intact.
 - No active Lua or XML executable code should depend on the purged class stack.
+
+Patch Notes (April 24, 2026):
+- Fixed module resolution in Yso/_entry.lua death-helper shim to load
+  Yso.Integration.mudlet first, with a legacy fallback to Integration.mudlet.
+  This resolves Mudlet runtime errors where module 'Integration.mudlet' not found
+  could break trigger callbacks.

@@ -221,7 +221,11 @@ end
 
 -- Death helpers: route trigger calls to Integration.mudlet if present.
 local function _call_integration(fn, ...)
-  local ok, I = pcall(require, "Integration.mudlet")
+  local ok, I = pcall(require, "Yso.Integration.mudlet")
+  if (not ok or type(I) ~= "table") then
+    -- Legacy fallback for older package.path layouts.
+    ok, I = pcall(require, "Integration.mudlet")
+  end
   if not ok or type(I) ~= "table" then return false end
   local f = I[fn]
   if type(f) ~= "function" then return false end

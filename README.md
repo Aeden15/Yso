@@ -35,3 +35,10 @@ Package XML:
   executable support for the removed class stack.
 - `Ysindrolir/mudlet packages/YsoDevtools.xml` was reduced to generic/Magi/
   Alchemist-safe commands.
+
+## Patch Notes (April 24, 2026)
+
+- Fixed module resolution in `Yso/_entry.lua` death-helper shim to load
+  `Yso.Integration.mudlet` first, with a legacy fallback to `Integration.mudlet`.
+  This resolves Mudlet runtime errors where `module 'Integration.mudlet' not found`
+  could break trigger callbacks.
