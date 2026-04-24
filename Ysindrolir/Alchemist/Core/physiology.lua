@@ -648,9 +648,13 @@ function P.clear_staged_for_target(target, reason)
         end
       end
       if removed then
-        Q._staged = Q._staged or {}
-        Q._staged.free = kept
-        cleared_any = true
+        if type(Q.clear) == "function" and type(Q.stage) == "function" then
+          Q.clear("free")
+          if #kept > 0 then
+            Q.stage("free", kept, { replace = true })
+          end
+          cleared_any = true
+        end
       end
     end
   end

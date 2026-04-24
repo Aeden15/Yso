@@ -15,6 +15,10 @@ local legacy_name_map = {
   ["yso_queue.lua"] = { "Yso.queue" },
   ["yso_occultist_offense.lua"] = { "Yso.occ.offense" },
   ["yso_targeting.lua"] = { "Yso.targeting" },
+  ["group damage.lua"] = { "Alchemist group damage" },
+  ["duel route.lua"] = { "Alchemist duel route" },
+  ["physiology.lua"] = { "Alchemist physiology" },
+  ["humour_balance.lua"] = { "humour_balance" },
 }
 
 local body_signature_map = {
@@ -54,6 +58,13 @@ local route_promoted_files = {
   "group_damage.lua",
   "occ_aff.lua",
   "party_aff.lua",
+}
+
+local alchemist_promoted_files = {
+  { "Alchemist", "Core", "group damage.lua" },
+  { "Alchemist", "Core", "duel route.lua" },
+  { "Alchemist", "Core", "physiology.lua" },
+  { "Alchemist", "Triggers", "Alchemy", "Physiology", "humour_balance.lua" },
 }
 
 local script_body_updates = {
@@ -1099,6 +1110,17 @@ local trigger_missing = {}
 local source_files = list_lua_files(mirror_root)
 for _, file_name in ipairs(route_promoted_files) do
   local promoted = path_join(route_root, file_name)
+  if path_exists(promoted) then
+    source_files[#source_files + 1] = promoted
+  end
+end
+for i = 1, #alchemist_promoted_files do
+  local row = alchemist_promoted_files[i]
+  local parts = { ysindrolir_dir }
+  for j = 1, #row do
+    parts[#parts + 1] = row[j]
+  end
+  local promoted = path_join(table.unpack(parts))
   if path_exists(promoted) then
     source_files[#source_files + 1] = promoted
   end
