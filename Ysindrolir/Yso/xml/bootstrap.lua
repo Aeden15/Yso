@@ -40,9 +40,7 @@ local function _auto_roots()
   home = tostring(home or ""):gsub("\\", "/"):gsub("/+$", "")
   if home ~= "" then
     local extra = {
-      home .. "/Desktop/Yso systems/Ysindrolir/Occultist/modules",
       home .. "/Desktop/Yso systems/Ysindrolir/modules",
-      home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/Occultist/modules",
       home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/modules",
     }
     for i = 1, #extra do out[#out+1] = extra[i] end
@@ -73,11 +71,8 @@ do
   _pp(root .. "/Yso/?.lua")
   _pp(root .. "/Yso/?/init.lua")
 
-  local sibling = root:gsub("/Occultist/modules$", "")
-  if sibling ~= root then
-    _pp(sibling .. "/Magi/?.lua")
-    _pp(sibling .. "/Alchemist/?.lua")
-  end
+  _pp(root .. "/Magi/?.lua")
+  _pp(root .. "/Alchemist/?.lua")
 end
 
 if not package.searchpath then
@@ -123,17 +118,8 @@ Yso.bootstrap.core_order = Yso.bootstrap.core_order or {
   "Yso.Combat.route_gate",
   "Yso.Combat.parry",
   "Yso.Combat.offense_driver",
-  "Yso.Combat.occultist.entity_registry",
-  "Yso.Combat.occultist.companions",
-  "Yso.xml.yso_occultist_affmap",
-  "Yso.Combat.occultist.aeon",
-  "Yso.Combat.routes.group_damage",
-  "Yso.Combat.routes.occ_aff",
-  "Yso.Combat.routes.party_aff",
-  "Yso.Combat.occultist.offense_helpers",
   "Yso.Core.target_intel",
   "Yso.xml.yso_target_tattoos",
-  "Yso.Combat.occultist.softlock_gate",
   "Yso.xml.curebuckets",
   "Yso.Core.predict_cure",
   "Yso.Core.modes",
@@ -152,14 +138,6 @@ local function _bootstrap_entry(reload)
   local mod, ok = _bootstrap_require("Yso", reload)
   if ok then return mod, true end
   return _bootstrap_require("Yso._entry", reload)
-end
-
-local function _bootstrap_occ_aff(reload)
-  _bootstrap_entry(reload)
-  local order = Yso.bootstrap.core_order or {}
-  for i = 1, #order do _bootstrap_require(order[i], reload) end
-  local OC = ((_G.Yso or {}).off or {}).oc or {}
-  return OC.occ_aff or OC.occ_aff_burst
 end
 
 local function _bootstrap_require_any(mods, reload)
@@ -209,28 +187,6 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     end,
   },
   {
-    name = "occultist_companions",
-    modules = { "Yso.Combat.occultist.companions", "Yso.xml.yso_occultist_companions" },
-    probe = function()
-      return type((((_G.Yso or {}).occ or {}).companions)) == "table"
-    end,
-  },
-  {
-    name = "aeon",
-    modules = { "Yso.Combat.occultist.aeon", "Yso.xml.yso_aeon" },
-    probe = function()
-      return type((((_G.Yso or {}).occ or {}).aeon)) == "table"
-    end,
-  },
-  {
-    name = "group_aff",
-    modules = { "Yso.Combat.routes.party_aff" },
-    probe = function()
-      local oc = (((_G.Yso or {}).off or {}).oc or {})
-      return type(oc.group_aff) == "table" or type(oc.party_aff) == "table"
-    end,
-  },
-  {
     name = "predict_cure",
     modules = { "Yso.Core.predict_cure", "Yso.xml.yso_predict_cure" },
     probe = function()
@@ -244,20 +200,6 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
       local targeting = ((_G.Yso or {}).targeting or {})
       return type(targeting.get) == "function"
          and (type(targeting.set) == "function" or type(targeting.set_target) == "function")
-    end,
-  },
-  {
-    name = "primebond_selector",
-    modules = { "Yso.xml.hunt.shieldbreak" },
-    probe = function()
-      return type((((_G.Yso or {}).primebond or {}).request)) == "function"
-    end,
-  },
-  {
-    name = "skillset_reference_chart",
-    modules = { "Yso.xml.skillset_reference_chart" },
-    probe = function()
-      return type((((_G.Yso or {}).occultist or {}).build_affcap)) == "function"
     end,
   },
 }
@@ -299,8 +241,6 @@ end
 
 Yso.bootstrap.require = _bootstrap_require
 Yso.bootstrap.entry = _bootstrap_entry
-Yso.bootstrap.occ_aff = _bootstrap_occ_aff
-Yso.bootstrap.occ_aff_burst = _bootstrap_occ_aff
 
 local function _bootstrap_finish_autoload()
   if _bootstrap_package_runtime_seeded() then

@@ -2,7 +2,7 @@
 
 Current workspace snapshot: April 21, 2026.
 
-Occultist is on hold. Primary active development is currently focused on Magi and Alchemist.
+Primary active development is focused on Magi and Alchemist.
 
 ## What is here
 

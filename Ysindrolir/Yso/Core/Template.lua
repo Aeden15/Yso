@@ -11,13 +11,13 @@
 --========================================================================================================
 
 -- This section is for defensive measures on me.
--- My fool card logic goes here
+-- Class-specific route logic goes here.
 -- My shield logic goes here
 -- My tumbling/leaping and other "get the fuck out" escape methods go here
 --========================================================================================================
 -- This will serve as the main offensive "spam" attack logics
--- if S.loyals_target and not S.loyals_hostile then
---send("order loyals kill "..target)
+-- if route_needs_setup then
+--   send("prepare route for " .. target)
 --end
 
 --=======================================================================================================

@@ -152,20 +152,4 @@ function T.note_target_herb(name, herb)
   r.meta.last_herb_at = _now()
 end
 
--- ---------- optional: bridge AK -> Yso.tgt without requiring edits ----------
--- If AK calls Yso.occ.set_target_mana_pct(), keep that working, but also mirror into Yso.tgt.
-Yso.occ = Yso.occ or {}
-
--- prevent double-wrapping on script reload
-if not Yso.occ._yso_tgt_mana_wrapped then
-  Yso.occ._yso_tgt_mana_wrapped = true
-  Yso.occ._yso_tgt_mana_orig = Yso.occ.set_target_mana_pct
-
-  Yso.occ.set_target_mana_pct = function(name, pct)
-    if type(Yso.occ._yso_tgt_mana_orig) == "function" then
-      pcall(Yso.occ._yso_tgt_mana_orig, name, pct)
-    end
-    T.set_mana_pct(name, pct)
-  end
-end
 --========================================================--

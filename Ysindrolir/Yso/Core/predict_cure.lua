@@ -427,70 +427,6 @@ function C.dump(who)
 end
 
 -- ---------- Event wiring (deferred until toggle-on) ----------
-local _orig_kelp, _orig_aurum, _orig_tree
-
-local function _wire_offense_events()
-  local oc = Yso.off and Yso.off.oc
-  if not oc then return end
-
-  _orig_kelp = oc.on_enemy_kelp_eat
-  if type(_orig_kelp) == "function" then
-    oc.on_enemy_kelp_eat = function(who)
-      _orig_kelp(who)
-      local tgt = _current_target()
-      if tgt ~= "" then C.observe(tgt, "eat", { bucket = "kelp" }) end
-    end
-  end
-
-  _orig_aurum = oc.on_enemy_aurum_eat
-  if type(_orig_aurum) == "function" then
-    oc.on_enemy_aurum_eat = function(who)
-      _orig_aurum(who)
-      local tgt = _current_target()
-      if tgt ~= "" then C.observe(tgt, "eat", { bucket = "aurum" }) end
-    end
-  end
-
-  _orig_tree = oc.on_enemy_tree_touch
-  if type(_orig_tree) == "function" then
-    oc.on_enemy_tree_touch = function(who)
-      _orig_tree(who)
-      local tgt = _current_target()
-      if tgt ~= "" then C.observe(tgt, "tree", {}) end
-    end
-  end
-
-  _echo("wired kelp/aurum/tree")
-end
-
-local function _unwire_offense_events()
-  local oc = Yso.off and Yso.off.oc
-  if not oc then return end
-  if type(_orig_kelp) == "function" then oc.on_enemy_kelp_eat = _orig_kelp end
-  if type(_orig_aurum) == "function" then oc.on_enemy_aurum_eat = _orig_aurum end
-  if type(_orig_tree) == "function" then oc.on_enemy_tree_touch = _orig_tree end
-  _echo("unwired kelp/aurum/tree")
-end
-
-local function _wire_salve_sip()
-  if type(registerAnonymousEventHandler) ~= "function" then return end
-
-  C._eh = C._eh or {}
-  if C._eh.salve then pcall(killAnonymousEventHandler, C._eh.salve) end
-  C._eh.salve = registerAnonymousEventHandler("occultist.limb.salve.applied", function(ev, who, loc)
-    local tgt = _current_target()
-    if tgt ~= "" then C.observe(tgt, "salve", { loc = loc or "skin" }) end
-  end)
-
-  if C._eh.sip then pcall(killAnonymousEventHandler, C._eh.sip) end
-  C._eh.sip = registerAnonymousEventHandler("occultist.cure.sip", function(ev, who, item)
-    local tgt = _current_target()
-    if tgt ~= "" then C.observe(tgt, "sip", { item = item }) end
-  end)
-
-  _echo("wired salve/sip events")
-end
-
 local function _wire_lifecycle()
   if type(registerAnonymousEventHandler) ~= "function" then return end
   C._eh = C._eh or {}
@@ -531,13 +467,10 @@ local function _unwire_salve_sip()
 end
 
 function P.wire()
-  _wire_offense_events()
-  _wire_salve_sip()
   _wire_lifecycle()
 end
 
 function P.unwire()
-  _unwire_offense_events()
   _unwire_salve_sip()
   _unwire_lifecycle()
 end
@@ -555,3 +488,4 @@ end
 -- No init wiring: deferred until toggle-on
 
 --========================================================--
+

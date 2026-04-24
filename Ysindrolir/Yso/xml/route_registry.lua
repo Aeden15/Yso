@@ -76,16 +76,6 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
-  oc_aff = {
-    id = "oc_aff",
-    mode = "combat",
-    party_route = nil,
-    namespace = "Yso.off.oc.oc_aff",
-    description = "Duel affliction loop",
-    priority = 60,
-    class = "occultist",
-    active = true,
-  },
   magi_focus = {
     id = "magi_focus",
     mode = "combat",
@@ -119,16 +109,6 @@ local ROUTES = {
     active = true,
     module_name = "alchemist_duel_route",
   },
-  group_damage = {
-    id = "group_damage",
-    mode = "party",
-    party_route = "dam",
-    namespace = "Yso.off.oc.group_damage",
-    description = "Party damage",
-    priority = 55,
-    class = "occultist",
-    active = true,
-  },
   magi_group_damage = {
     id = "magi_group_damage",
     mode = "party",
@@ -151,27 +131,9 @@ local ROUTES = {
     active = true,
     module_name = "alchemist_group_damage",
   },
-  group_aff = {
-    id = "group_aff",
-    mode = "party",
-    party_route = "aff",
-    namespace = "Yso.off.oc.group_aff",
-    description = "Party affliction pressure",
-    priority = 53,
-    class = "occultist",
-    active = true,
-  },
 }
 
 local ALIASES = {
-  aff = "oc_aff",
-  oc = "oc_aff",
-  occ = "oc_aff",
-  oc_aff = "oc_aff",
-  occ_aff = "oc_aff",
-  occ_aff_burst = "oc_aff",
-  occultist_offense = "oc_aff",
-  burst = "oc_aff",
   focus = { magi = "magi_focus" },
   magi_focus = { magi = "magi_focus" },
   mdam = { magi = "magi_dmg" },
@@ -180,14 +142,11 @@ local ALIASES = {
   alchemist_duel_route = { alchemist = "alchemist_duel_route" },
   adam = { alchemist = "alchemist_group_damage" },
   alchemist_group_damage = { alchemist = "alchemist_group_damage" },
-  gd = { magi = "magi_group_damage", alchemist = "alchemist_group_damage", default = "group_damage" },
-  dmg = { magi = "magi_group_damage", alchemist = "alchemist_group_damage", default = "group_damage" },
-  dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage", default = "group_damage" },
-  party_dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage", default = "group_damage" },
-  party_damage = { magi = "magi_group_damage", alchemist = "alchemist_group_damage", default = "group_damage" },
-  group_aff = "group_aff",
-  party_aff = "group_aff",
-  team_aff = "group_aff",
+  gd = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
+  dmg = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
+  dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
+  party_dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
+  party_damage = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
 }
 
 local function _route_id(name)

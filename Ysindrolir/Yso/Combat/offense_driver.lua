@@ -1,309 +1,12 @@
 --========================================================--
--- Yso_Offense_Coordination.lua
---  • Compatibility shim for older aliases/debug surfaces.
---  • Authoritative alias-loop ownership now lives in Yso.mode.
---  • Target auto-clear and enemy cure telemetry still live here.
+-- Yso combat offense driver
+--  * Generic route-driver compatibility shim.
 --========================================================--
 
 Yso = Yso or {}
 Yso.off = Yso.off or {}
-Yso.off.oc = Yso.off.oc or {}
-
-local function _off_core()
-  local core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.toggle) == "function" then return core end
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-  end
-  core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.toggle) == "function" then return core end
-  return nil
-end
-
-function Yso.off.oc.toggle(on)
-  local core = _off_core()
-  if core then
-    if on == nil then
-      return core.toggle("oc_aff")
-    elseif on == true then
-      return core.on("oc_aff")
-    end
-    return core.off("oc_aff")
-  end
-
-  if on == nil then
-    Yso.off.oc.enabled = not (Yso.off.oc.enabled == true)
-  else
-    Yso.off.oc.enabled = (on == true)
-  end
-  if Yso and Yso.pulse and type(Yso.pulse.wake) == "function" then
-    Yso.pulse.wake("oc:toggle")
-  end
-  local msg = string.format("<orange>[Yso] Occultist offense %s.", Yso.off.oc.enabled and "ON" or "OFF")
-  if Yso.util and type(Yso.util.cecho_line) == "function" then
-    Yso.util.cecho_line(msg)
-  else
-    cecho(msg .. "\n")
-  end
-end
-
-Yso.off.coord = Yso.off.coord or {}
-local C = Yso.off.coord
-
-C.cfg = C.cfg or {}
-C.cfg.lust_empress_automation = false
-C.cfg.pause_on_leap_out = true
-
-C._ev = C._ev or {}
-C._tr = C._tr or {}
-C._st = C._st or { tumble_react = { last = {} }, dead = { pending = "", at = 0 } }
-
-local function _pkill(fn, id) if id then pcall(fn, id) end end
-local function _trim(s) return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$","")) end
-local function _lc(s) return _trim(s):lower() end
-
-local function _now()
-  if Yso and Yso.util and type(Yso.util.now) == "function" then
-    local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  if type(getEpoch) == "function" then
-    local t = tonumber(getEpoch()) or os.time()
-    if t > 20000000000 then t = t / 1000 end
-    return t
-  end
-  return os.time()
-end
-
-local function _hotpink(msg)
-  if type(cecho) == "function" then
-    local text = string.format("<HotPink>[OFFENSE:] %s", msg)
-    if Yso.util and type(Yso.util.cecho_line) == "function" then
-      Yso.util.cecho_line(text)
-    else
-      cecho(text .. "\n")
-    end
-  else
-    echo(string.format("[OFFENSE:] %s\n", msg))
-  end
-end
-
-local function _cur_target()
-  if type(Yso.get_target) == "function" then return _trim(Yso.get_target() or "") end
-  return _trim((type(Yso.target) == "string" and Yso.target) or (Yso.state and type(Yso.state.target) == "string" and Yso.state.target) or "")
-end
-
-local function _is_current(t)
-  return _lc(_cur_target()) == _lc(t)
-end
-
-local function _clear(reason)
-  if type(Yso.clear_target) == "function" then
-    Yso.clear_target(reason or "auto")
-  end
-end
-
-C._tm = C._tm or {}
-C._st.dead = C._st.dead or { pending = "", at = 0 }
-
-local function _cancel_dead_clear()
-  if C._tm.dead_clear then pcall(killTimer, C._tm.dead_clear) end
-  C._tm.dead_clear = nil
-  C._st.dead.pending = ""
-  C._st.dead.at = 0
-end
-
-local function _reset_enemy_state_on_starburst(tgt)
-  if type(affstrack) == "table" then
-    if type(affstrack.score) == "table" then
-      for k, v in pairs(affstrack.score) do
-        if type(v) == "number" then
-          affstrack.score[k] = 0
-        elseif type(v) == "table" then
-          if type(v.current) == "number" then v.current = 0 end
-          if type(v.score) == "number" then v.score = 0 end
-        end
-      end
-    else
-      for _, v in pairs(affstrack) do
-        if type(v) == "table" and type(v.score) == "number" then v.score = 0 end
-      end
-    end
-  end
-
-  if type(oscore) == "number" then oscore = 0 end
-  if type(softscore) == "number" then softscore = 0 end
-
-  if Yso and Yso.tgt and type(Yso.tgt.set_mindseye) == "function" then
-    pcall(Yso.tgt.set_mindseye, tgt, false, true)
-  end
-end
-
-local function _schedule_dead_clear(tgt)
-  tgt = _trim(tgt)
-  if tgt == "" then return end
-
-  _cancel_dead_clear()
-  C._st.dead.pending = tgt
-  C._st.dead.at = _now()
-
-  if type(tempTimer) ~= "function" then
-    local pend = C._st.dead.pending
-    C._tm.dead_clear = nil
-    C._st.dead.pending = ""
-    C._st.dead.at = 0
-    if pend ~= "" and _is_current(pend) then
-      _clear("dead")
-    end
-    return
-  end
-
-  local my_id
-  my_id = tempTimer(2.2, function()
-    if C._tm.dead_clear ~= my_id then return end
-    local pend = C._st.dead.pending
-    C._tm.dead_clear = nil
-    C._st.dead.pending = ""
-    C._st.dead.at = 0
-    if pend ~= "" and _is_current(pend) then
-      _clear("dead")
-    end
-  end)
-  C._tm.dead_clear = my_id
-end
-
-Yso.off.oc = Yso.off.oc or {}
-Yso.off.oc.entity_pool = Yso.off.oc.entity_pool or {
-  rotation = { "worm", "sycophant", "bubonis", "crone", "hound", "slime", "storm", "bloodleech", "firelord", "gremlin" },
-  kelp = { asthma = "bubonis", clumsiness = "storm", healthleech = "worm" },
-}
-
-Yso.off.oc.cure_events = Yso.off.oc.cure_events or {
-  kelp_eat_at   = {},
-  kelp_eat_n    = {},
-  aurum_eat_at  = {},
-  aurum_eat_n   = {},
-  tree_touch_at = {},
-  tree_touch_n  = {},
-}
-
-Yso.off.oc.party_observe = Yso.off.oc.party_observe or {
-  max_events = 30,
-  rows = {},
-}
-
-local function _mark(tbl_at, tbl_n, who)
-  who = tostring(who or ""):gsub("^%s+",""):gsub("%s+$","")
-  if who == "" then return end
-  local k = who:lower()
-  tbl_at[k] = _now()
-  tbl_n[k]  = (tonumber(tbl_n[k] or 0) or 0) + 1
-end
-
-local function _note_target_herb(who, herb_key)
-  if Yso and Yso.tgt and type(Yso.tgt.note_target_herb) == "function" then
-    pcall(Yso.tgt.note_target_herb, who, herb_key)
-  end
-end
-
-local function _party_observe_note(who, event, meta)
-  who = _trim(who)
-  event = _trim(event)
-  if who == "" or event == "" then return end
-
-  local O = Yso.off.oc.party_observe or {}
-  O.rows = O.rows or {}
-  Yso.off.oc.party_observe = O
-
-  local key = _lc(who)
-  local row = O.rows[key]
-  if type(row) ~= "table" then
-    row = {
-      name = who,
-      count = 0,
-      last_at = 0,
-      last_event = "",
-      events = {},
-    }
-    O.rows[key] = row
-  end
-
-  row.name = who
-  row.count = tonumber(row.count or 0) + 1
-  row.last_at = _now()
-  row.last_event = event
-  row.events = row.events or {}
-  row.events[#row.events + 1] = {
-    at = row.last_at,
-    event = event,
-    meta = type(meta) == "table" and meta or {},
-    active_target = _is_current(who),
-  }
-
-  local max_events = tonumber(O.max_events or 30) or 30
-  while #row.events > max_events do
-    table.remove(row.events, 1)
-  end
-end
-
-function Yso.off.oc.party_observe_get(who)
-  who = _trim(who)
-  if who == "" then return nil end
-  local O = Yso.off.oc.party_observe or {}
-  return O.rows and O.rows[_lc(who)] or nil
-end
-
-function Yso.off.oc.party_observe_snapshot()
-  local O = Yso.off.oc.party_observe or {}
-  return O.rows or {}
-end
-
-function Yso.off.oc.on_enemy_kelp_eat(who)
-  local E = Yso.off.oc.cure_events
-  _mark(E.kelp_eat_at, E.kelp_eat_n, who)
-  _note_target_herb(who, "kelp")
-  _party_observe_note(who, "kelp", { bucket = "kelp" })
-  local core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.on_enemy_kelp_eat) == "function" then
-    pcall(core.on_enemy_kelp_eat, who)
-  end
-end
-
-function Yso.off.oc.on_enemy_aurum_eat(who)
-  local E = Yso.off.oc.cure_events
-  _mark(E.aurum_eat_at, E.aurum_eat_n, who)
-  _note_target_herb(who, "aurum")
-  _party_observe_note(who, "aurum", { bucket = "aurum" })
-  local core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.on_enemy_aurum_eat) == "function" then
-    pcall(core.on_enemy_aurum_eat, who)
-  end
-end
-
-function Yso.off.oc.on_enemy_tree_touch(who)
-  local E = Yso.off.oc.cure_events
-  _mark(E.tree_touch_at, E.tree_touch_n, who)
-  _party_observe_note(who, "tree", {})
-  if Yso and Yso.tgt and type(Yso.tgt.get)=="function" then
-    local ok,r = pcall(Yso.tgt.get, who)
-    if ok and type(r)=="table" then
-      r.meta = r.meta or {}
-      r.meta.last_tree_touch_at = E.tree_touch_at[tostring(who or ""):lower()]
-    end
-  end
-  local core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.on_enemy_tree_touch) == "function" then
-    pcall(core.on_enemy_tree_touch, who)
-  end
-end
-
-function Yso.off.oc.last_kelp_eat_at(who)
-  local k = tostring(who or ""):lower()
-  local E = Yso.off.oc.cure_events
-  return E and tonumber(E.kelp_eat_at and E.kelp_eat_at[k] or 0) or 0
-end
-
 Yso.off.driver = Yso.off.driver or {}
+
 local D = Yso.off.driver
 
 D.cfg = D.cfg or {
@@ -313,29 +16,21 @@ D.cfg = D.cfg or {
 
 D.state = D.state or {
   enabled = (D.cfg.enabled ~= false),
-  policy  = "manual",
-  active  = "none",
+  policy = "manual",
+  active = "none",
 }
 
-local function _v(msg)
-  if not (D.cfg.verbose == true) then return end
-  if type(cecho) == "function" then
-    local text = ("<dim_grey>[Yso.driver] <reset>%s"):format(tostring(msg))
-    if Yso.util and type(Yso.util.cecho_line) == "function" then
-      Yso.util.cecho_line(text)
-    else
-      cecho(text .. "\n")
-    end
-  end
+local function _trim(s)
+  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
-local function _mode()
-  return Yso and Yso.mode or nil
+local function _lc(s)
+  return _trim(s):lower()
 end
 
 local function _sync_state()
   D.state = D.state or {}
-  local M = _mode()
+  local M = Yso and Yso.mode or nil
   local route = ""
   if M and type(M.active_route_id) == "function" then
     local ok, v = pcall(M.active_route_id)
@@ -357,21 +52,14 @@ end
 
 function D.toggle(on)
   local prev = (D.state.enabled == true)
-  local next_enabled
-  if on == nil then
-    next_enabled = not prev
-  else
-    next_enabled = (on == true)
-  end
+  local next_enabled = (on == nil) and (not prev) or (on == true)
   D.state.enabled = next_enabled
   D.cfg.enabled = next_enabled
-  _v("enabled="..tostring(D.state.enabled))
   if Yso.pulse and type(Yso.pulse.wake) == "function" then
     local ok = pcall(Yso.pulse.wake, "driver:toggle")
     if not ok then
       D.state.enabled = prev
       D.cfg.enabled = prev
-      _v("toggle rollback: pulse wake failed")
     end
   end
   return D.state.enabled
@@ -389,16 +77,13 @@ end
 
 function D.set_active(route)
   route = _lc(route or "")
-  if route ~= "" then
-    D.state.active = route
-  end
+  if route ~= "" then D.state.active = route end
   _sync_state()
   return D.state.active
 end
 
 function D.tick(reasons)
   _sync_state()
-  -- Delegate to off.core when available; this driver is a compat shim.
   local core = Yso and Yso.off and Yso.off.core or nil
   if core and type(core.tick) == "function" then
     local ok, sent = pcall(core.tick, reasons)
@@ -408,9 +93,4 @@ function D.tick(reasons)
 end
 
 _sync_state()
-
-if Yso and Yso.pulse and Yso.pulse.state and Yso.pulse.state.reg and Yso.pulse.state.reg["offense_driver"] then
-  Yso.pulse.state.reg["offense_driver"].enabled = false
-end
-
 return D

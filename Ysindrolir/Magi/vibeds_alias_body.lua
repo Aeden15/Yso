@@ -27,9 +27,9 @@ local function _candidate_paths()
 
   if type(Yso) == "table" and type(Yso.bootstrap) == "table" and type(Yso.bootstrap.root) == "string" then
     local root = _norm(Yso.bootstrap.root)
-    -- Strip the full Occultist-module suffix so we land at the "Yso systems" root,
+    -- Strip the package-module suffix so we land at the workspace root,
     -- not at Ysindrolir (which would make push() produce a double-Ysindrolir path).
-    local sibling = root:gsub("/Ysindrolir/Occultist/modules$", "")
+    local sibling = root:gsub("/Ysindrolir/modules$", "")
     if sibling ~= root then
       push(sibling)
     end

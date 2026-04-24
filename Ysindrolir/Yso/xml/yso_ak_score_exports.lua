@@ -3,7 +3,7 @@
 --
 -- Purpose:
 --   Provide a stable Yso-facing API for AK tracking primitives used by the
---   Occultist offense modules (scores + lists).
+--   shared offense modules (scores + lists).
 --
 -- Notes:
 --   • Read-only: this does NOT modify AK core logic.

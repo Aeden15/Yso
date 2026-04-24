@@ -228,60 +228,6 @@ function P.handle_line_event(source, opts)
   return true
 end
 
--- Optional ack hook for entity command outcomes.
-function P.entity_ack(kind, src)
-  kind = tostring(kind or ""):lower()
-  src = tostring(src or "entity_ack")
-
-  -- On failure/cooldown/disregard:
-  --   • clamp ENT lane immediately
-  --   • clear any staged ENT payloads (silent no-op)
-  --   • do NOT re-stage the last ENT command (avoids spam loops)
-  local function _clamp_and_clear(reason, is_cooldown)
-    local Y = rawget(_G, "Yso")
-    if Y and Y.queue and type(Y.queue.clear) == "function" then
-      pcall(Y.queue.clear, "class")
-    end
-    local last_ent_cmd = nil
-    if Y and Y.state then
-      last_ent_cmd = Y.state._last_ent_cmd
-      Y.state._last_ent_cmd = nil
-      Y.state._last_ent_cmd_ts = nil
-    end
-    local ER = Y and Y.off and Y.off.oc and Y.off.oc.entity_registry or nil
-    if ER and type(ER.note_fail_from_cmd) == "function" and type(last_ent_cmd) == "string" and last_ent_cmd ~= "" then
-      pcall(ER.note_fail_from_cmd, last_ent_cmd, reason)
-    end
-
-    local cd = (Y and Y.state and tonumber(Y.state._ent_last_cmd_cd)) or nil
-    local backoff = is_cooldown and (cd or 1.25) or 0.85
-
-    if Y and Y.state and type(Y.state.ent_fail) == "function" then
-      pcall(Y.state.ent_fail, backoff, reason)
-    elseif Y and Y.state and type(Y.state.set_ent_ready) == "function" then
-      pcall(Y.state.set_ent_ready, false, reason)
-    end
-
-    P.wake(reason)
-    _nudge_route(nil, reason)
-  end
-
-  if kind == "fail" or kind == "disregard" then
-    _clamp_and_clear(src .. ":" .. kind, false)
-    return
-  elseif kind == "cooldown" then
-    _clamp_and_clear(src .. ":" .. kind, true)
-    return
-  elseif kind == "sent" then
-    -- Mirror the old behavior: once we *send* an entity command, mark lane busy.
-    if Yso.state and type(Yso.state.set_ent_ready) == "function" then
-      pcall(Yso.state.set_ent_ready, false, src)
-    end
-    _nudge_route(nil, src .. ":" .. kind)
-    return
-  end
-end
-
 function P.on_payload_ack(payload, source)
   source = tostring(source or "payload_ack")
   payload = type(payload) == "table" and payload or {}
@@ -406,10 +352,7 @@ function P.queue(payload, opts)
 
   for _,c in ipairs(parts) do
     local lc = c:lower()
-    if lc:match("^command%s+gremlin%s+") then
-      -- Gremlin shieldbreak is EQ-solo. Do not attach anything.
-      return P.send_eq(c, { solo=true, prefer="eq", reason="pulse.queue:gremlin" })
-    elseif lc:match("^command%s+soulmaster%s+") or lc:match("^order%s+soulmaster%s+") then
+    if lc:match("^command%s+soulmaster%s+") or lc:match("^order%s+soulmaster%s+") then
       -- Soulmaster commands are EQUILIBRIUM-based in Achaea; treat as EQ-solo.
       return P.send_eq(c, { solo=true, prefer="eq", reason="pulse.queue:soulmaster" })
     elseif _is_free(c) then

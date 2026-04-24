@@ -110,57 +110,32 @@ safe_require("Yso.Combat.parry")
 safe_require("Yso.Combat.offense_driver")
 safe_require("Yso.Curing.blademaster_curing")
 safe_require("Yso.Curing.bash_vitals_swap")
-safe_require("Yso.Combat.occultist.entity_registry")
-safe_require_any("Yso.Combat.occultist.companions", "Yso.xml.yso_occultist_companions")
-safe_require("Yso.xml.yso_occultist_affmap")
-safe_require_any("Yso.Combat.occultist.aeon", "Yso.xml.yso_aeon")
-safe_require("Yso.Combat.routes.group_damage")
-safe_require("Yso.xml.occ_aura_planner")
-safe_require("Yso.Combat.routes.occ_aff")
-safe_require("Yso.Combat.routes.party_aff")
-safe_require("Yso.Combat.occultist.offense_helpers")
 safe_require("Yso.xml.information")
 safe_require("Yso.xml.yso_targeting")
 safe_require("Yso.xml.yso_target")
 safe_require("Yso.Core.target_intel")
 safe_require("Yso.xml.yso_target_tattoos")
-safe_require_any("Yso.Combat.occultist.softlock_gate", "Yso.xml.softlock_gate")
 safe_require("Yso.xml.curebuckets")
-safe_require("Yso.xml.pronecontroller")
--- Debug helper only; load manually when needed.
-safe_require("Yso.xml.priestess_heal")
-safe_require("Yso.xml.magician_heal")
-safe_require("Yso.xml.entourage_script")
-safe_require("Yso.xml.doppleganger_things")
-safe_require("Yso.xml.skillset_reference_chart")
-safe_require("Yso.xml.sightgate")
-safe_require("Yso.xml.yso_occ_truename_capture")
 safe_require("Yso.xml.prio_baselines")
 safe_require("Yso.xml.cureset_baselines")
-safe_require("Yso.xml.yso_configs")
 safe_require("Yso.Core.modes")
 safe_require_any("Yso.Core.mode_autoswitch", "Yso.xml.yso_mode_autoswitch")
-safe_require("Yso.xml.hunt.shieldbreak")
-safe_require("Yso.xml.occ.aura_parser")
 safe_require("Yso.xml.yso_ak_score_exports")
 safe_require_any("Yso.Core.predict_cure", "Yso.xml.yso_predict_cure")
 safe_require_any("Yso.Core.bootstrap", "Yso.xml.bootstrap")
 
--- Sibling class folders (Magi, etc.) live outside the Occultist modules tree.
+-- Sibling class folders (Magi, Alchemist, etc.) live beside the Yso tree.
 -- Add them to package.path so require() can find them.
 do
   local broot = Yso.bootstrap and Yso.bootstrap.root or ""
   if type(broot) == "string" and broot ~= "" then
-    local sibling = broot:gsub("/Occultist/modules$", "")
-    if sibling ~= broot then
-      local magi_pat = sibling .. "/Magi/?.lua"
-      if not package.path:find(magi_pat, 1, true) then
-        package.path = magi_pat .. ";" .. package.path
-      end
-      local alchemist_pat = sibling .. "/Alchemist/?.lua"
-      if not package.path:find(alchemist_pat, 1, true) then
-        package.path = alchemist_pat .. ";" .. package.path
-      end
+    local magi_pat = broot .. "/Magi/?.lua"
+    if not package.path:find(magi_pat, 1, true) then
+      package.path = magi_pat .. ";" .. package.path
+    end
+    local alchemist_pat = broot .. "/Alchemist/?.lua"
+    if not package.path:find(alchemist_pat, 1, true) then
+      package.path = alchemist_pat .. ";" .. package.path
     end
   end
 end

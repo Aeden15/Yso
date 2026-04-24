@@ -153,11 +153,9 @@ do
     return cur ~= "" and want ~= "" and cur == want
   end
 
-  function C.is_occultist() return C.is("Occultist") end
   function C.is_magi() return C.is("Magi") end
   function C.is_alchemist() return C.is("Alchemist") end
 
-  Yso.is_occultist = Yso.is_occultist or function() return C.is_occultist() end
   Yso.is_magi      = Yso.is_magi      or function() return C.is_magi() end
   Yso.is_alchemist = Yso.is_alchemist or function() return C.is_alchemist() end
 
@@ -280,10 +278,6 @@ do
         end
       end
       -- Hooks: allow offense modules / entity framework to latch on actual sends.
-      local ER = (Yso and Yso.off and Yso.off.oc and Yso.off.oc.entity_registry) or nil
-      if ER and type(ER.note_payload_sent) == "function" then
-        pcall(ER.note_payload_sent, payload)
-      end
       local core = Yso and Yso.off and Yso.off.core or nil
       if core and type(core.on_payload_sent) == "function" then
         pcall(core.on_payload_sent, payload, "locks:payload")
@@ -525,7 +519,6 @@ end
 -- Offense keyword patterns for detecting manual commands in send().
 local _OFFENSE_KW = {
   "^%s*instill%s",    "^%s*bodywarp%s",   "^%s*shrivel%s",
-  "^%s*enervate%s",   "^%s*cleanseaura%s","^%s*pinchaura%s",
   "command%s+%w+%s+at%s", "fling%s+%w+%s+at%s",
 }
 
@@ -588,8 +581,6 @@ function Yso.emit(payload, opts)
         or reason:find("offense", 1, true)
         or reason:find("group_damage", 1, true)
         or reason:find("gd:", 1, true)
-        or reason:find("occ", 1, true)
-        or reason:find("shieldbreak", 1, true)
         or reason:find("limb", 1, true)
 
       if is_offense or has_lane then

@@ -13,7 +13,7 @@ Current fixes
   Unified class devtools now live in one XML source:
     ../mudlet packages/YsoDevtools.xml
 
-  This XML now contains both Magi and Occultist devtools, kept segregated by
+  This XML now contains Magi devtools, kept segregated by
   class-specific command surfaces inside the same package.
 
   Magi aliases and triggers in Yso system.xml were corrected for the current
@@ -137,7 +137,7 @@ Notes
   The package also bootstraps the Crystalism energise helper inline so the
   alias does not depend on magi_reference.lua load order.
   Future Magi-only offense, defense, resonance, or debug helpers should live
-  here rather than inside the Occultist tree.
+  here rather than inside class-specific trees.
 
 Current Magi follow-up
 ----------------------

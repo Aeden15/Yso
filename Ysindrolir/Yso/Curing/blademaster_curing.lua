@@ -1,6 +1,6 @@
 -- Yso/Curing/blademaster_curing.lua
 -- Blademaster-specific defensive snapshot and gating logic.
--- Extracted from occ_aff_burst.lua so combat routes stay class-agnostic.
+-- Shared helper kept class-agnostic for combat routes.
 
 Yso = Yso or {}
 Yso.curing = Yso.curing or {}
@@ -70,7 +70,7 @@ function BM.snapshot_view(tgt, ctx)
     class_known = info.known,
     class_source = info.source,
     state = "missing",
-    needs_readaura = false,
+    needs_probe = false,
     passive_allowed = false,
     counts_under_pressure = false,
     blind = nil, blind_known = false, blind_fresh = false,
@@ -153,7 +153,7 @@ function BM.snapshot_view(tgt, ctx)
 
   out.active = true
   out.state = st.state
-  out.needs_readaura = (st.state ~= "complete_enough")
+  out.needs_probe = (st.state ~= "complete_enough")
   out.passive_allowed = complete_enough
     and (tonumber(st.physical or 0) or 0) >= 4
     and (tonumber(st.mental or 0) or 0) >= 4

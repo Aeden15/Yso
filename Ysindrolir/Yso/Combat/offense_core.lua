@@ -1,6 +1,6 @@
 --========================================================--
 -- Yso Combat Offense Core (Canonical Lifecycle Surface)
---  • Shared lifecycle for Magi + Occultist route wiring.
+--  • Shared lifecycle for class route wiring.
 --  • Thin aliases and shared hooks should call this module only.
 --========================================================--
 
@@ -528,20 +528,6 @@ local function _bootstrap_registry_routes()
 end
 
 _bootstrap_registry_routes()
-
-Yso.off.oc = Yso.off.oc or {}
-Yso.off.oc.on = function() return Core.on("oc_aff") end
-Yso.off.oc.off = function() return Core.off("oc_aff") end
-Yso.off.oc.toggle = function(on)
-  if on == nil then return Core.toggle("oc_aff") end
-  if on == true then return Core.on("oc_aff") end
-  return Core.off("oc_aff")
-end
-Yso.off.oc.tick = function(reason) return Core.tick(reason) end
-
-Yso.off.oc.on_enemy_kelp_eat = function(who) return Core.on_enemy_kelp_eat(who) end
-Yso.off.oc.on_enemy_aurum_eat = function(who) return Core.on_enemy_aurum_eat(who) end
-Yso.off.oc.on_enemy_tree_touch = function(who) return Core.on_enemy_tree_touch(who) end
 
 if type(Core.register) ~= "function" then
   _echo("offense core lifecycle failed to initialize")

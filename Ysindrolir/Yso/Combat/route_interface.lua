@@ -1,6 +1,6 @@
 --========================================================--
 -- Yso Combat Route Interface (Common Contract)
---  • Canonical shared route contract for Occultist combat routes.
+--  • Canonical shared route contract for class combat routes.
 --  • Routes expose shared metadata/hooks for the alias-owned loop controller.
 --  • Shared universal categories across future routes:
 --      - defense_break

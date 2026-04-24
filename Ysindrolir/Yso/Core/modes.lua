@@ -156,16 +156,8 @@ local function _ensure_route_module(entry)
 
   local bootstrap = Yso and Yso.bootstrap or nil
   local id = type(entry) == "table" and tostring(entry.id or "") or ""
-  if type(bootstrap) == "table" then
-    if (id == "oc_aff" or id == "occ_aff" or id == "occ_aff_burst") then
-      if type(bootstrap.occ_aff) == "function" then
-        pcall(bootstrap.occ_aff, true)
-      elseif type(bootstrap.occ_aff_burst) == "function" then
-        pcall(bootstrap.occ_aff_burst, true)
-      end
-    elseif type(bootstrap.entry) == "function" then
-      pcall(bootstrap.entry, true)
-    end
+  if type(bootstrap) == "table" and type(bootstrap.entry) == "function" then
+    pcall(bootstrap.entry, true)
   end
 
   mod = _route_module(entry)
@@ -880,8 +872,7 @@ if type(tempAlias) == "function" then
       if route == "aff" or route == "dam" then
         local core = _off_core()
         if core and type(core.toggle) == "function" then
-          local key = (route == "aff") and "group_aff" or "dam"
-          core.toggle(key)
+          core.toggle(route)
         else
           _echo("offense core unavailable for team route toggle.")
         end
