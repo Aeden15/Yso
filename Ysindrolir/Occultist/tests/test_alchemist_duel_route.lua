@@ -64,6 +64,12 @@ local function make_world(opts)
   local current_target = opts.target or "Tharonus"
   local emitted = {}
   local sent = {}
+  local self_affs = {}
+  for aff, active in pairs(opts.self_affs or {}) do
+    if active == true then
+      self_affs[tostring(aff):lower()] = true
+    end
+  end
 
   _G.Yso = nil
   _G.yso = nil
@@ -123,6 +129,47 @@ local function make_world(opts)
     get_target = function() return current_target end,
     target_is_valid = function(who) return tostring(who or "") ~= "" end,
     offense_paused = function() return false end,
+    self = {
+      has_aff = function(aff)
+        local key = tostring(aff or ""):lower()
+        return key ~= "" and self_affs[key] == true
+      end,
+      any_aff = function(list)
+        if type(list) ~= "table" then
+          return false
+        end
+        for i = 1, #list do
+          local key = tostring(list[i] or ""):lower()
+          if key ~= "" and self_affs[key] == true then
+            return true
+          end
+        end
+        return false
+      end,
+      is_prone = function()
+        return self_affs.prone == true
+      end,
+      is_writhed = function()
+        return self_affs.webbed == true
+          or self_affs.roped == true
+          or self_affs.transfixed == true
+          or self_affs.entangled == true
+          or self_affs.bound == true
+          or self_affs.impaled == true
+      end,
+      list_writhe_affs = function()
+        local out = {}
+        for _, aff in ipairs({ "webbed", "roped", "transfixed", "entangled", "bound", "impaled" }) do
+          if self_affs[aff] == true then
+            out[#out + 1] = aff
+          end
+        end
+        return out
+      end,
+      is_paralyzed = function()
+        return self_affs.paralysis == true
+      end,
+    },
     emit = function(payload)
       emitted[#emitted + 1] = payload
       return true
@@ -148,6 +195,13 @@ local function make_world(opts)
     affs = _G.affstrack.score,
     ak = _G.ak,
     set_target = function(tgt) current_target = tgt; _G.target = tgt end,
+    set_self_aff = function(name, active)
+      local key = tostring(name or ""):lower()
+      if key == "" then
+        return
+      end
+      self_affs[key] = (active == true)
+    end,
     advance = function(dt) now_s = now_s + (tonumber(dt) or 0) end,
   }
 end
@@ -187,6 +241,59 @@ do
   local payload, why = preview(world)
   assert_eq("2a: aurify command selected", payload and payload.eq, "aurify Tharonus")
   assert_eq("2b: aurify reason", why, "aurify_window")
+end
+
+print("\n=== Test 2b: reave finisher outranks corrupt and resumes on target swap ===")
+do
+  local world = make_world({
+    choleric = 1,
+    melancholic = 1,
+    phlegmatic = 1,
+    sanguine = 1,
+  })
+  world.P.finish_evaluate("Tharonus")
+  world.P.note_evaluate_vitals("Tharonus", 80, 80)
+
+  local can_reave, profile = world.P.can_reave("Tharonus")
+  assert_eq("2b1: four tempered humours legalize reave", can_reave, true)
+  assert_eq("2b2: profile estimated channel is 4s", profile and profile.estimated_channel_duration, 4)
+
+  local payload, why = preview(world)
+  assert_eq("2b3: reave selected before corrupt", payload and payload.direct, "reave Tharonus")
+  assert_eq("2b4: reave reason", why, "reave_window")
+
+  local sent_ok, lane = world.DR.attack_function({})
+  assert_eq("2b5: attack sends reave action", sent_ok, true)
+  assert_eq("2b6: lane reported as humour", lane, "humour")
+  assert_eq("2b7: first send pauses curing", world.sent[1], "pp")
+  assert_eq("2b8: second send starts reave", world.sent[2], "reave Tharonus")
+  assert_eq("2b9: reave state is active", Yso.alc.reaving, true)
+  assert_eq("2b10: reave target tracked", Yso.alc.reave_target, "Tharonus")
+  assert_eq("2b11: reave pause flag tracked", Yso.alc.reave_pp_paused, true)
+
+  world.set_target("Ilyna")
+  preview(world)
+  assert_eq("2b12: target swap sends resume pp", world.sent[#world.sent], "pp")
+  assert_eq("2b13: reave state clears on swap", Yso.alc.reaving, false)
+end
+
+print("\n=== Test 2c: reave is blocked by self hinder state ===")
+do
+  local world = make_world({
+    choleric = 1,
+    melancholic = 1,
+    phlegmatic = 1,
+    sanguine = 1,
+    self_affs = { prone = true },
+  })
+  world.P.finish_evaluate("Tharonus")
+  world.P.note_evaluate_vitals("Tharonus", 80, 80)
+
+  local can_reave = world.P.can_reave("Tharonus")
+  assert_eq("2c1: prone blocks reave", can_reave, false)
+  local payload, why = preview(world)
+  assert_eq("2c2: route falls through to corrupt", payload and payload.direct, "homunculus corrupt Tharonus")
+  assert_eq("2c3: corrupt reason when reave blocked", why, "corrupt_window")
 end
 
 print("\n=== Test 3: homunculus corrupt window before humour lane ===")

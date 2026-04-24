@@ -125,6 +125,17 @@ function P.handle_humour_balance_line(line)
   end
 
   do
+    local slain = line:match("^You have slain ([%w'%-]+)%.$")
+      or line:match("^([%w'%-]+) has been slain by your hand%.$")
+      or line:match("^([%w'%-]+) is dead%.$")
+    if slain and type(P.reave_on_target_slain) == "function" then
+      if P.reave_on_target_slain(slain, "slain_line") then
+        return "reave_target_slain"
+      end
+    end
+  end
+
+  do
     local target = line:match("^A diminutive homunculus resembling Ysindrolir stares menacingly at ([%w'%-]+), its eyes flashing brightly%.$")
     if target then
       if type(Yso.set_homunculus_attack) == "function" then

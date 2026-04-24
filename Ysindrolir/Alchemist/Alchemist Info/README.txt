@@ -43,3 +43,6 @@ Behavior expectations
 - Phiallist remains the live source of truth for current contents.
 - Aurification execute checks are EQ-finisher priority and use
   hp <= 60 and mp <= 60.
+- Reave execute checks now sit just below Aurification and require
+  trusted evaluate intel, humour balance ready, all four humours
+  tempered, and no channel-blocking self hinder state.

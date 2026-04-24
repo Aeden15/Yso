@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
 	<TriggerPackage>
@@ -34114,6 +34114,9 @@ return A
 Yso.bal = Yso.bal or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.phys = Yso.alc.phys or {}
+Yso.alc.reaving = (Yso.alc.reaving == true)
+Yso.alc.reave_target = tostring(Yso.alc.reave_target or &quot;&quot;)
+Yso.alc.reave_pp_paused = (Yso.alc.reave_pp_paused == true)
 
 Yso.bal.humour = Yso.bal.humour ~= false
 Yso.bal.evaluate = Yso.bal.evaluate ~= false
@@ -34170,6 +34173,14 @@ local function _echo(msg)
   if type(print) == &quot;function&quot; then
     print(text)
   end
+end
+
+local function _send_cmd(cmd)
+  cmd = tostring(cmd or &quot;&quot;)
+  if cmd == &quot;&quot; or type(send) ~= &quot;function&quot; then
+    return false
+  end
+  return pcall(send, cmd, false) == true
 end
 
 local function _trim(s)
@@ -34345,6 +34356,102 @@ local function _humour_truth_trusted(name)
     return false
   end
   return _same_target(P.state.humour_eval_target or &quot;&quot;, target)
+end
+
+local function _self_has_aff(name)
+  local key = _lc(name)
+  if key == &quot;&quot; then
+    return false
+  end
+
+  if Yso and Yso.self and type(Yso.self.has_aff) == &quot;function&quot; then
+    local ok, v = pcall(Yso.self.has_aff, key)
+    if ok and v == true then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function _reave_blockers()
+  local blockers = {}
+  local seen = {}
+
+  local function _add(name)
+    local key = _lc(name)
+    if key == &quot;&quot; or seen[key] then
+      return
+    end
+    seen[key] = true
+    blockers[#blockers + 1] = key
+  end
+
+  local prone = false
+  if Yso and Yso.self and type(Yso.self.is_prone) == &quot;function&quot; then
+    local ok, v = pcall(Yso.self.is_prone)
+    prone = ok and v == true
+  end
+  if prone or _self_has_aff(&quot;prone&quot;) then
+    _add(&quot;prone&quot;)
+  end
+
+  if _self_has_aff(&quot;paralysis&quot;) then
+    _add(&quot;paralysis&quot;)
+  end
+  if _self_has_aff(&quot;paresis&quot;) then
+    _add(&quot;paresis&quot;)
+  end
+  if _self_has_aff(&quot;webbed&quot;) then
+    _add(&quot;webbed&quot;)
+  end
+  if _self_has_aff(&quot;roped&quot;) then
+    _add(&quot;roped&quot;)
+  end
+  if _self_has_aff(&quot;transfixed&quot;) then
+    _add(&quot;transfixed&quot;)
+  end
+
+  if Yso and Yso.self and type(Yso.self.list_writhe_affs) == &quot;function&quot; then
+    local ok, list = pcall(Yso.self.list_writhe_affs)
+    if ok and type(list) == &quot;table&quot; then
+      for i = 1, #list do
+        _add(list[i])
+      end
+    end
+  end
+
+  if #blockers == 0 and Yso and Yso.self and type(Yso.self.is_writhed) == &quot;function&quot; then
+    local ok, writhed = pcall(Yso.self.is_writhed)
+    if ok and writhed == true then
+      _add(&quot;writhe&quot;)
+    end
+  end
+
+  return blockers
+end
+
+local function _reave_channel_duration(distinct)
+  local n = tonumber(distinct or 0) or 0
+  if n &gt;= 4 then return 4 end
+  if n == 3 then return 6 end
+  if n == 2 then return 8 end
+  return 10
+end
+
+local function _reave_resume_and_clear(source)
+  if Yso.alc.reave_pp_paused == true then
+    _send_cmd(&quot;pp&quot;)
+  end
+  Yso.alc.reaving = false
+  Yso.alc.reave_target = &quot;&quot;
+  Yso.alc.reave_pp_paused = false
+  P.state.reave = P.state.reave or {}
+  P.state.reave.last_clear = {
+    source = tostring(source or &quot;manual&quot;),
+    at = _now(),
+  }
+  return true
 end
 
 function Yso.alc.set_humour_ready(ready, source)
@@ -34614,6 +34721,156 @@ function P.can_aurify(name)
   return hp ~= nil and mp ~= nil and hp &lt;= 60 and mp &lt;= 60
 end
 
+function P.reave_profile(name)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+
+  local trusted = _humour_truth_trusted(target)
+  local counts = {}
+  local distinct = 0
+  local total = 0
+  local max_count = 0
+
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
+    if count &lt; 0 then
+      count = 0
+    end
+    counts[humour] = count
+    if count &gt;= 1 then
+      distinct = distinct + 1
+    end
+    total = total + count
+    if count &gt; max_count then
+      max_count = count
+    end
+  end
+
+  return {
+    target = target,
+    trusted = trusted,
+    distinct_tempered = distinct,
+    total_temperings = total,
+    max_humour_count = max_count,
+    estimated_channel_duration = _reave_channel_duration(distinct),
+    humour_counts = counts,
+  }
+end
+
+function P.can_reave(name)
+  local profile = P.reave_profile(name)
+  local blockers = _reave_blockers()
+  local humour_ready = false
+
+  if Yso.alc and type(Yso.alc.humour_ready) == &quot;function&quot; then
+    local ok, v = pcall(Yso.alc.humour_ready)
+    humour_ready = ok and v == true
+  else
+    humour_ready = Yso and Yso.bal and Yso.bal.humour ~= false
+  end
+
+  profile.humour_ready = humour_ready == true
+  profile.blockers = blockers
+  profile.all_four_tempered = (profile.distinct_tempered &gt;= 4)
+
+  local legal = profile.target ~= &quot;&quot;
+    and profile.trusted == true
+    and profile.humour_ready == true
+    and profile.all_four_tempered == true
+    and #blockers == 0
+
+  profile.legal = legal
+  return legal, profile
+end
+
+function P.fire_reave(name, profile)
+  local target = _trim(name)
+  if target == &quot;&quot; then
+    target = _current_target()
+  end
+  if target == &quot;&quot; then
+    return false, &quot;no_target&quot;
+  end
+
+  local can_reave = false
+  can_reave, profile = P.can_reave(target)
+  if can_reave ~= true then
+    return false, &quot;reave_not_legal&quot;
+  end
+
+  if not _send_cmd(&quot;pp&quot;) then
+    return false, &quot;pp_pause_failed&quot;
+  end
+
+  local cmd = string.format(&quot;reave %s&quot;, target)
+  if not _send_cmd(cmd) then
+    _send_cmd(&quot;pp&quot;)
+    return false, &quot;reave_send_failed&quot;
+  end
+
+  Yso.alc.reaving = true
+  Yso.alc.reave_target = target
+  Yso.alc.reave_pp_paused = true
+
+  P.state.reave = P.state.reave or {}
+  P.state.reave.last_start = {
+    target = target,
+    at = _now(),
+    profile = profile,
+  }
+
+  if Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
+    Yso.alc.set_humour_ready(false, &quot;reave_sent&quot;)
+  end
+
+  local eta = tonumber((profile and profile.estimated_channel_duration) or 4) or 4
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;gold&gt;[PHYSIOLOGY:] &lt;aquamarine&gt;Reave window on %s: all four humours tempered, estimated channel %ds.\n&quot;, target, eta))
+  elseif type(echo) == &quot;function&quot; then
+    echo(string.format(&quot;[PHYSIOLOGY:] Reave window on %s: all four humours tempered, estimated channel %ds.\n&quot;, target, eta))
+  end
+
+  return true, cmd
+end
+
+function P.reave_sync_target(name, source)
+  local observed = name
+  if observed == nil then
+    observed = _current_target()
+  end
+  observed = _trim(observed)
+  local active_target = _trim(Yso.alc.reave_target)
+
+  if Yso.alc.reaving ~= true and Yso.alc.reave_pp_paused ~= true then
+    return false
+  end
+
+  if active_target == &quot;&quot; then
+    return _reave_resume_and_clear(&quot;reave_target_missing:&quot; .. tostring(source or &quot;sync&quot;))
+  end
+
+  if observed == &quot;&quot; or not _same_target(active_target, observed) then
+    return _reave_resume_and_clear(&quot;reave_target_change:&quot; .. tostring(source or &quot;sync&quot;))
+  end
+
+  return false
+end
+
+function P.reave_on_target_slain(name, source)
+  local slain = _trim(name)
+  local active_target = _trim(Yso.alc.reave_target)
+  if active_target == &quot;&quot; then
+    return false
+  end
+  if slain ~= &quot;&quot; and not _same_target(active_target, slain) then
+    return false
+  end
+  return _reave_resume_and_clear(&quot;reave_target_slain:&quot; .. tostring(source or &quot;line&quot;))
+end
+
 function P.iron_aff_count(name, giving)
   local count = 0
   for i = 1, #_aff_list(giving) do
@@ -34810,6 +35067,7 @@ GD.route_contract = GD.route_contract or {
   route_local_categories = {
     &quot;evaluate&quot;,
     &quot;eq_finisher&quot;,
+    &quot;reave&quot;,
     &quot;temper&quot;,
     &quot;truewrack&quot;,
     &quot;wrack_filler&quot;,
@@ -35103,14 +35361,20 @@ local function _select_action(ctx)
   GD.init()
 
   local tgt = _trim((ctx and ctx.target) or _target())
+  local P = _phys()
+  if P and type(P.reave_sync_target) == &quot;function&quot; then
+    P.reave_sync_target(tgt, &quot;group_damage_tick&quot;)
+  end
   if tgt == &quot;&quot; then
     return nil, &quot;no_target&quot;
   end
   if not _target_valid(tgt) then
+    if P and type(P.reave_sync_target) == &quot;function&quot; then
+      P.reave_sync_target(&quot;&quot;, &quot;group_invalid_target&quot;)
+    end
     return nil, &quot;invalid_target&quot;
   end
 
-  local P = _phys()
   if not P then
     return nil, &quot;phys_unavailable&quot;
   end
@@ -35155,6 +35419,26 @@ local function _select_action(ctx)
         mana_pct = P.mana_pct and P.mana_pct(tgt) or nil,
       },
     }
+  end
+
+  -- Reave execute window (channeled humour-balance finisher).
+  if _humour_ready() and type(P.can_reave) == &quot;function&quot; then
+    local can_reave, profile = P.can_reave(tgt)
+    if can_reave then
+      local cmd = string.format(&quot;reave %s&quot;, tgt)
+      return {
+        kind = &quot;direct&quot;,
+        lane = &quot;humour&quot;,
+        cmd = cmd,
+        reason = &quot;reave_window&quot;,
+        category = &quot;reave&quot;,
+        explain = {
+          target = tgt,
+          reave = true,
+          reave_profile = profile,
+        },
+      }
+    end
   end
 
   if _eq_ready() and type(P.iron_aff_count) == &quot;function&quot; and P.iron_aff_count(tgt, giving) == 3 then
@@ -35323,6 +35607,7 @@ function GD.attack_function(ctx)
   if not GD.is_active() then
     return false, &quot;route_inactive&quot;
   end
+  local P = _phys()
 
   local action, why = _select_action(ctx or {})
   if not action then
@@ -35334,10 +35619,12 @@ function GD.attack_function(ctx)
   if action.kind == &quot;emit&quot; then
     sent = (_emit_payload(action.payload) == true)
   elseif action.kind == &quot;direct&quot; then
-    if type(send) == &quot;function&quot; then
+    if action.category == &quot;reave&quot; and P and type(P.fire_reave) == &quot;function&quot; then
+      sent = (P.fire_reave(action.explain and action.explain.target or _target(), action.explain and action.explain.reave_profile or nil) == true)
+    elseif type(send) == &quot;function&quot; then
       sent = pcall(send, action.cmd, false) == true
     end
-    if sent == true and Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
+    if sent == true and action.category == &quot;temper&quot; and Yso.alc and type(Yso.alc.set_humour_ready) == &quot;function&quot; then
       Yso.alc.set_humour_ready(false, &quot;temper_sent&quot;)
     end
   end
@@ -35545,6 +35832,17 @@ function P.handle_humour_balance_line(line)
 
   if line == P.humour_fail_line then
     return nil
+  end
+
+  do
+    local slain = line:match(&quot;^You have slain ([%w&apos;%-]+)%.$&quot;)
+      or line:match(&quot;^([%w&apos;%-]+) has been slain by your hand%.$&quot;)
+      or line:match(&quot;^([%w&apos;%-]+) is dead%.$&quot;)
+    if slain and type(P.reave_on_target_slain) == &quot;function&quot; then
+      if P.reave_on_target_slain(slain, &quot;slain_line&quot;) then
+        return &quot;reave_target_slain&quot;
+      end
+    end
   end
 
   do

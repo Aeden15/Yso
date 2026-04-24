@@ -48,6 +48,7 @@ GD.route_contract = GD.route_contract or {
   route_local_categories = {
     "evaluate",
     "eq_finisher",
+    "reave",
     "temper",
     "truewrack",
     "wrack_filler",
@@ -341,14 +342,20 @@ local function _select_action(ctx)
   GD.init()
 
   local tgt = _trim((ctx and ctx.target) or _target())
+  local P = _phys()
+  if P and type(P.reave_sync_target) == "function" then
+    P.reave_sync_target(tgt, "group_damage_tick")
+  end
   if tgt == "" then
     return nil, "no_target"
   end
   if not _target_valid(tgt) then
+    if P and type(P.reave_sync_target) == "function" then
+      P.reave_sync_target("", "group_invalid_target")
+    end
     return nil, "invalid_target"
   end
 
-  local P = _phys()
   if not P then
     return nil, "phys_unavailable"
   end
@@ -393,6 +400,26 @@ local function _select_action(ctx)
         mana_pct = P.mana_pct and P.mana_pct(tgt) or nil,
       },
     }
+  end
+
+  -- Reave execute window (channeled humour-balance finisher).
+  if _humour_ready() and type(P.can_reave) == "function" then
+    local can_reave, profile = P.can_reave(tgt)
+    if can_reave then
+      local cmd = string.format("reave %s", tgt)
+      return {
+        kind = "direct",
+        lane = "humour",
+        cmd = cmd,
+        reason = "reave_window",
+        category = "reave",
+        explain = {
+          target = tgt,
+          reave = true,
+          reave_profile = profile,
+        },
+      }
+    end
   end
 
   if _eq_ready() and type(P.iron_aff_count) == "function" and P.iron_aff_count(tgt, giving) == 3 then
@@ -561,6 +588,7 @@ function GD.attack_function(ctx)
   if not GD.is_active() then
     return false, "route_inactive"
   end
+  local P = _phys()
 
   local action, why = _select_action(ctx or {})
   if not action then
@@ -572,10 +600,12 @@ function GD.attack_function(ctx)
   if action.kind == "emit" then
     sent = (_emit_payload(action.payload) == true)
   elseif action.kind == "direct" then
-    if type(send) == "function" then
+    if action.category == "reave" and P and type(P.fire_reave) == "function" then
+      sent = (P.fire_reave(action.explain and action.explain.target or _target(), action.explain and action.explain.reave_profile or nil) == true)
+    elseif type(send) == "function" then
       sent = pcall(send, action.cmd, false) == true
     end
-    if sent == true and Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+    if sent == true and action.category == "temper" and Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
       Yso.alc.set_humour_ready(false, "temper_sent")
     end
   end

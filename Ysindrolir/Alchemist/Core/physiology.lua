@@ -2,6 +2,9 @@ Yso = Yso or {}
 Yso.bal = Yso.bal or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.phys = Yso.alc.phys or {}
+Yso.alc.reaving = (Yso.alc.reaving == true)
+Yso.alc.reave_target = tostring(Yso.alc.reave_target or "")
+Yso.alc.reave_pp_paused = (Yso.alc.reave_pp_paused == true)
 
 Yso.bal.humour = Yso.bal.humour ~= false
 Yso.bal.evaluate = Yso.bal.evaluate ~= false
@@ -58,6 +61,14 @@ local function _echo(msg)
   if type(print) == "function" then
     print(text)
   end
+end
+
+local function _send_cmd(cmd)
+  cmd = tostring(cmd or "")
+  if cmd == "" or type(send) ~= "function" then
+    return false
+  end
+  return pcall(send, cmd, false) == true
 end
 
 local function _trim(s)
@@ -233,6 +244,102 @@ local function _humour_truth_trusted(name)
     return false
   end
   return _same_target(P.state.humour_eval_target or "", target)
+end
+
+local function _self_has_aff(name)
+  local key = _lc(name)
+  if key == "" then
+    return false
+  end
+
+  if Yso and Yso.self and type(Yso.self.has_aff) == "function" then
+    local ok, v = pcall(Yso.self.has_aff, key)
+    if ok and v == true then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function _reave_blockers()
+  local blockers = {}
+  local seen = {}
+
+  local function _add(name)
+    local key = _lc(name)
+    if key == "" or seen[key] then
+      return
+    end
+    seen[key] = true
+    blockers[#blockers + 1] = key
+  end
+
+  local prone = false
+  if Yso and Yso.self and type(Yso.self.is_prone) == "function" then
+    local ok, v = pcall(Yso.self.is_prone)
+    prone = ok and v == true
+  end
+  if prone or _self_has_aff("prone") then
+    _add("prone")
+  end
+
+  if _self_has_aff("paralysis") then
+    _add("paralysis")
+  end
+  if _self_has_aff("paresis") then
+    _add("paresis")
+  end
+  if _self_has_aff("webbed") then
+    _add("webbed")
+  end
+  if _self_has_aff("roped") then
+    _add("roped")
+  end
+  if _self_has_aff("transfixed") then
+    _add("transfixed")
+  end
+
+  if Yso and Yso.self and type(Yso.self.list_writhe_affs) == "function" then
+    local ok, list = pcall(Yso.self.list_writhe_affs)
+    if ok and type(list) == "table" then
+      for i = 1, #list do
+        _add(list[i])
+      end
+    end
+  end
+
+  if #blockers == 0 and Yso and Yso.self and type(Yso.self.is_writhed) == "function" then
+    local ok, writhed = pcall(Yso.self.is_writhed)
+    if ok and writhed == true then
+      _add("writhe")
+    end
+  end
+
+  return blockers
+end
+
+local function _reave_channel_duration(distinct)
+  local n = tonumber(distinct or 0) or 0
+  if n >= 4 then return 4 end
+  if n == 3 then return 6 end
+  if n == 2 then return 8 end
+  return 10
+end
+
+local function _reave_resume_and_clear(source)
+  if Yso.alc.reave_pp_paused == true then
+    _send_cmd("pp")
+  end
+  Yso.alc.reaving = false
+  Yso.alc.reave_target = ""
+  Yso.alc.reave_pp_paused = false
+  P.state.reave = P.state.reave or {}
+  P.state.reave.last_clear = {
+    source = tostring(source or "manual"),
+    at = _now(),
+  }
+  return true
 end
 
 function Yso.alc.set_humour_ready(ready, source)
@@ -500,6 +607,156 @@ function P.can_aurify(name)
   local hp = tonumber(P.health_pct(name))
   local mp = tonumber(P.mana_pct(name))
   return hp ~= nil and mp ~= nil and hp <= 60 and mp <= 60
+end
+
+function P.reave_profile(name)
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+
+  local trusted = _humour_truth_trusted(target)
+  local counts = {}
+  local distinct = 0
+  local total = 0
+  local max_count = 0
+
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
+    if count < 0 then
+      count = 0
+    end
+    counts[humour] = count
+    if count >= 1 then
+      distinct = distinct + 1
+    end
+    total = total + count
+    if count > max_count then
+      max_count = count
+    end
+  end
+
+  return {
+    target = target,
+    trusted = trusted,
+    distinct_tempered = distinct,
+    total_temperings = total,
+    max_humour_count = max_count,
+    estimated_channel_duration = _reave_channel_duration(distinct),
+    humour_counts = counts,
+  }
+end
+
+function P.can_reave(name)
+  local profile = P.reave_profile(name)
+  local blockers = _reave_blockers()
+  local humour_ready = false
+
+  if Yso.alc and type(Yso.alc.humour_ready) == "function" then
+    local ok, v = pcall(Yso.alc.humour_ready)
+    humour_ready = ok and v == true
+  else
+    humour_ready = Yso and Yso.bal and Yso.bal.humour ~= false
+  end
+
+  profile.humour_ready = humour_ready == true
+  profile.blockers = blockers
+  profile.all_four_tempered = (profile.distinct_tempered >= 4)
+
+  local legal = profile.target ~= ""
+    and profile.trusted == true
+    and profile.humour_ready == true
+    and profile.all_four_tempered == true
+    and #blockers == 0
+
+  profile.legal = legal
+  return legal, profile
+end
+
+function P.fire_reave(name, profile)
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return false, "no_target"
+  end
+
+  local can_reave = false
+  can_reave, profile = P.can_reave(target)
+  if can_reave ~= true then
+    return false, "reave_not_legal"
+  end
+
+  if not _send_cmd("pp") then
+    return false, "pp_pause_failed"
+  end
+
+  local cmd = string.format("reave %s", target)
+  if not _send_cmd(cmd) then
+    _send_cmd("pp")
+    return false, "reave_send_failed"
+  end
+
+  Yso.alc.reaving = true
+  Yso.alc.reave_target = target
+  Yso.alc.reave_pp_paused = true
+
+  P.state.reave = P.state.reave or {}
+  P.state.reave.last_start = {
+    target = target,
+    at = _now(),
+    profile = profile,
+  }
+
+  if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+    Yso.alc.set_humour_ready(false, "reave_sent")
+  end
+
+  local eta = tonumber((profile and profile.estimated_channel_duration) or 4) or 4
+  if type(cecho) == "function" then
+    cecho(string.format("<gold>[PHYSIOLOGY:] <aquamarine>Reave window on %s: all four humours tempered, estimated channel %ds.\n", target, eta))
+  elseif type(echo) == "function" then
+    echo(string.format("[PHYSIOLOGY:] Reave window on %s: all four humours tempered, estimated channel %ds.\n", target, eta))
+  end
+
+  return true, cmd
+end
+
+function P.reave_sync_target(name, source)
+  local observed = name
+  if observed == nil then
+    observed = _current_target()
+  end
+  observed = _trim(observed)
+  local active_target = _trim(Yso.alc.reave_target)
+
+  if Yso.alc.reaving ~= true and Yso.alc.reave_pp_paused ~= true then
+    return false
+  end
+
+  if active_target == "" then
+    return _reave_resume_and_clear("reave_target_missing:" .. tostring(source or "sync"))
+  end
+
+  if observed == "" or not _same_target(active_target, observed) then
+    return _reave_resume_and_clear("reave_target_change:" .. tostring(source or "sync"))
+  end
+
+  return false
+end
+
+function P.reave_on_target_slain(name, source)
+  local slain = _trim(name)
+  local active_target = _trim(Yso.alc.reave_target)
+  if active_target == "" then
+    return false
+  end
+  if slain ~= "" and not _same_target(active_target, slain) then
+    return false
+  end
+  return _reave_resume_and_clear("reave_target_slain:" .. tostring(source or "line"))
 end
 
 function P.iron_aff_count(name, giving)
