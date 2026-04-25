@@ -329,10 +329,16 @@ function TG.is_current(name)
   return (cur ~= "" and who == cur)
 end
 
+if type(Yso.is_current_target) ~= "function" then
+  function Yso.is_current_target(name)
+    return TG.is_current(name)
+  end
+end
+
 if type(rawget(_G, "oc_isCurrentTarget")) ~= "function" then
   function oc_isCurrentTarget(name)
-    if Yso and Yso.targeting and type(Yso.targeting.is_current) == "function" then
-      return Yso.targeting.is_current(name)
+    if Yso and type(Yso.is_current_target) == "function" then
+      return Yso.is_current_target(name)
     end
     return false
   end

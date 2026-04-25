@@ -179,6 +179,15 @@ if type(TG.is_current) ~= "function" then
   end
 end
 
+if type(Yso.is_current_target) ~= "function" then
+  function Yso.is_current_target(name)
+    if Yso.targeting and type(Yso.targeting.is_current) == "function" then
+      return Yso.targeting.is_current(name)
+    end
+    return false
+  end
+end
+
 if type(Yso.get_target) ~= "function" then
   function Yso.get_target()
     if Yso.targeting and type(Yso.targeting.get) == "function" then

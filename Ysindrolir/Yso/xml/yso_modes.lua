@@ -63,6 +63,9 @@ end
 M.cfg = M.cfg or {
   default = "combat",
   echo = true,
+  install_mode_aliases = true,
+  install_route_aliases = true,
+  install_team_aliases = false,
 }
 
 M.profile = M.profile or {
@@ -862,29 +865,48 @@ if type(tempAlias) == "function" then
   _kill_alias(M._alias.combat)
   _kill_alias(M._alias.team)
   _kill_alias(M._alias.teamroute)
+  _kill_alias(M._alias.mdam)
+  _kill_alias(M._alias.mfocus)
+  _kill_alias(M._alias.mgd)
   _kill_alias(M._alias.party)
   _kill_alias(M._alias.par)
   _kill_alias(M._alias.partyroute)
-  M._alias.team = tempAlias([[^team(?:\s+(\S+))?$]], function()
-    local r = matches[2]
-    if r and r ~= "" then
-      local route = _route_norm(r)
-      if route == "aff" or route == "dam" then
-        local core = _off_core()
-        if core and type(core.toggle) == "function" then
-          core.toggle(route)
+  if M.cfg.install_team_aliases == true then
+    M._alias.team = tempAlias([[^team(?:\s+(\S+))?$]], function()
+      local r = matches[2]
+      if r and r ~= "" then
+        local route = _route_norm(r)
+        if route == "aff" or route == "dam" then
+          local core = _off_core()
+          if core and type(core.toggle) == "function" then
+            core.toggle(route)
+          else
+            _echo("offense core unavailable for team route toggle.")
+          end
         else
-          _echo("offense core unavailable for team route toggle.")
+          _set_party_mode(r, "alias:team")
         end
       else
-        _set_party_mode(r, "alias:team")
+        _set_party_mode(nil, "alias:team")
       end
-    else
-      _set_party_mode(nil, "alias:team")
-    end
-  end)
+    end)
 
-  M._alias.teamroute = tempAlias([[^teamroute\s+(\S+)$]], function() Yso.mode.set_party_route(matches[2], "alias:teamroute") end)
+    M._alias.teamroute = tempAlias([[^teamroute\s+(\S+)$]], function()
+      Yso.mode.set_party_route(matches[2], "alias:teamroute")
+    end)
+  end
+
+  if M.cfg.install_route_aliases ~= false then
+    M._alias.mdam = tempAlias([[^mdam$]], function()
+      Yso.mode.toggle_route_loop("magi_dmg", "alias:mdam")
+    end)
+    M._alias.mfocus = tempAlias([[^mfocus$]], function()
+      Yso.mode.toggle_route_loop("magi_focus", "alias:mfocus")
+    end)
+    M._alias.mgd = tempAlias([[^mgd$]], function()
+      Yso.mode.toggle_route_loop("magi_group_damage", "alias:mgd")
+    end)
+  end
 
   M._alias.mode = tempAlias([[^mode$]], function() M.echo() end)
   M._alias.mode_set = tempAlias([[^mode\s+(\S+)(?:\s+(\S+))?$]], function()

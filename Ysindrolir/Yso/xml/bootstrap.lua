@@ -10,14 +10,44 @@ if _G.yso_bootstrap_done then
   return type(root) == "table" and root.bootstrap or true
 end
 
+local function _dir_exists(p)
+  p = tostring(p or "")
+  if p == "" then return false end
+  if type(lfs) == "table" and type(lfs.attributes) == "function" then
+    local a = lfs.attributes(p)
+    return a and a.mode == "directory" or false
+  end
+  local ok, _, code = os.rename(p, p)
+  if ok then return true end
+  -- Windows returns 13 for existing directory rename permission denials.
+  return tonumber(code) == 13
+end
+
+local function _file_exists(p)
+  local f = io.open(tostring(p or ""), "r")
+  if not f then return false end
+  f:close()
+  return true
+end
+
+local function _looks_like_root(p)
+  p = tostring(p or ""):gsub("\\", "/"):gsub("/+$", "")
+  if p == "" then return false end
+  if not _dir_exists(p) then return false end
+  return _file_exists(p .. "/Yso/_entry.lua")
+      or _file_exists(p .. "/Yso/Core/bootstrap.lua")
+      or _file_exists(p .. "/Yso/xml/bootstrap.lua")
+end
+
 local function _pick_root(...)
   local cand = { ... }
   for i = 1, #cand do
     local p = tostring(cand[i] or "")
-    if p ~= "" and type(lfs) == "table" and type(lfs.attributes) == "function" then
-      local a = lfs.attributes(p)
-      if a and a.mode == "directory" then return p end
-    end
+    if _looks_like_root(p) then return p end
+  end
+  for i = 1, #cand do
+    local p = tostring(cand[i] or "")
+    if _dir_exists(p) then return p end
   end
   return tostring(cand[1] or "")
 end
@@ -40,8 +70,12 @@ local function _auto_roots()
   home = tostring(home or ""):gsub("\\", "/"):gsub("/+$", "")
   if home ~= "" then
     local extra = {
+      home .. "/Desktop/Yso systems/Ysindrolir",
+      home .. "/OneDrive/Desktop/Yso systems/Ysindrolir",
       home .. "/Desktop/Yso systems/Ysindrolir/modules",
       home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/modules",
+      home .. "/Desktop/Yso systems/Ysindrolir/Yso",
+      home .. "/OneDrive/Desktop/Yso systems/Ysindrolir/Yso",
     }
     for i = 1, #extra do out[#out+1] = extra[i] end
   end
@@ -52,6 +86,9 @@ end
 local _auto = _auto_roots()
 local root = _pick_root(
   _auto[1], _auto[2], _auto[3], _auto[4], _auto[5], _auto[6], _auto[7],
+  _auto[8], _auto[9], _auto[10], _auto[11], _auto[12], _auto[13],
+  "C:/Users/shuji/OneDrive/Desktop/Yso systems/Ysindrolir",
+  "C:/Users/shuji/Desktop/Yso systems/Ysindrolir",
   "C:/Yso/modules",
   "C:/Achaea/Yso/modules",
   "D:/Yso/modules",
@@ -177,6 +214,16 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     modules = { "Yso.Combat.route_registry", "Yso.xml.route_registry" },
     probe = function()
       return type((((_G.Yso or {}).Combat or {}).RouteRegistry)) == "table"
+    end,
+  },
+  {
+    name = "modes",
+    modules = { "Yso.Core.modes", "Yso.xml.yso_modes" },
+    probe = function()
+      local mode = ((_G.Yso or {}).mode or {})
+      return type(mode.toggle_route_loop) == "function"
+         and type(mode.start_route_loop) == "function"
+         and type(mode.stop_route_loop) == "function"
     end,
   },
   {

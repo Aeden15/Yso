@@ -43,3 +43,16 @@ Patch Notes (April 24, 2026):
   Yso.Integration.mudlet first, with a legacy fallback to Integration.mudlet.
   This resolves Mudlet runtime errors where module 'Integration.mudlet' not found
   could break trigger callbacks.
+
+Patch Notes (April 25, 2026):
+- Restored route-loop controller loading through Yso.Core.modes/Yso.xml.yso_modes
+  and added route bootstrap autoload in Yso system.xml.
+- Gated automatic team/teamroute temp alias installation in modes (default off),
+  while keeping backend party-route state and route ownership behavior intact.
+- Added explicit Magi route aliases (mdam, mfocus, mgd) and added mgd to the
+  route registry alias map.
+- Updated bootstrap root detection for current Ysindrolir layout paths.
+- Ensured Alchemist duel route and Magi route modules load in dependency order.
+- Expanded Yso.Integration.mudlet with class-neutral target-intel handlers used by
+  XML/AK trigger integrations.
+- Kept oc_isCurrentTarget as a compatibility shim through Yso.is_current_target.

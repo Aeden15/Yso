@@ -98,6 +98,7 @@ safe_require("Yso.Curing.self_curedefs")
 safe_require("Yso.Curing.serverside_policy")
 safe_require_any("Yso.Core.offense_state", "Yso.xml.yso_offense_state")
 safe_require_any("Yso.Integration.ak_legacy_wiring", "Yso.xml.ak_legacy_wiring")
+safe_require("Yso.Integration.mudlet")
 safe_require("Yso.Core.queue")
 safe_require("Yso.Core.wake_bus")
 safe_require_any("Yso.Combat.route_registry", "Yso.xml.route_registry")
@@ -118,7 +119,7 @@ safe_require("Yso.xml.yso_target_tattoos")
 safe_require("Yso.xml.curebuckets")
 safe_require("Yso.xml.prio_baselines")
 safe_require("Yso.xml.cureset_baselines")
-safe_require("Yso.Core.modes")
+safe_require_any("Yso.Core.modes", "Yso.xml.yso_modes")
 safe_require_any("Yso.Core.mode_autoswitch", "Yso.xml.yso_mode_autoswitch")
 safe_require("Yso.xml.yso_ak_score_exports")
 safe_require_any("Yso.Core.predict_cure", "Yso.xml.yso_predict_cure")
@@ -141,6 +142,7 @@ do
 end
 
 safe_require("alchemist_group_damage")
+safe_require("alchemist_duel_route")
 safe_require("magi_route_core")
 safe_require("magi_reference")
 safe_require("magi_dissonance")
@@ -187,35 +189,13 @@ _report_boot_status()
 
 -- Back-compat shims expected by some triggers.
 
--- oc_isCurrentTarget(who): compare against AK's current target only.
+-- oc_isCurrentTarget(who): compatibility shim through Yso.is_current_target.
 if type(rawget(_G, "oc_isCurrentTarget")) ~= "function" then
   ---@diagnostic disable-next-line: inject-field
   _G.oc_isCurrentTarget = function(who)
-    who = tostring(who or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    if who == "" then return false end
-
-    local cur = ""
-    if type(Yso.get_target) == "function" then
-      local ok, v = pcall(Yso.get_target)
-      if ok then cur = tostring(v or "") end
-    end
-
-    if cur == "" then
-      cur = tostring(rawget(_G, "target") or "")
-    end
-
-    if cur == "" then
-      local ak = rawget(_G, "ak")
-      if type(ak) == "table" then
-        if type(ak.target) == "string" then cur = ak.target
-        elseif type(ak.tgt) == "string" then cur = ak.tgt
-        elseif type(ak.Target) == "string" then cur = ak.Target end
-      end
-    end
-
-    cur = tostring(cur or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    if cur == "" then return false end
-    return cur:lower() == who:lower()
+    if type(Yso.is_current_target) ~= "function" then return false end
+    local ok, v = pcall(Yso.is_current_target, who)
+    return ok and v == true
   end
 end
 
