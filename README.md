@@ -135,3 +135,12 @@ Package XML:
   - `Yso system.xml` is well-formed and complete (not truncated),
   - `AK.xml` contains zero null-byte corruption,
   - both files end with valid `</MudletPackage>` closing tags.
+
+## Patch Notes (April 25, 2026 - XML Empty-Tag Normalization)
+
+- Normalized whitespace-only empty tags in `Ysindrolir/mudlet packages/Yso system.xml`
+  back to truly empty tags to avoid Mudlet command-field spacing side effects:
+  - `<mCommand>   </mCommand>` -> `<mCommand></mCommand>`
+  - `<command>    </command>` -> `<command></command>`
+  - `<packageName>...</packageName>` empty blocks compacted
+  - `<script>...</script>` empty blocks compacted
