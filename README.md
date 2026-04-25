@@ -113,3 +113,17 @@ Package XML:
     `magi_group_damage`, `magi_focus`, `Magi_duel_dam`
 - Added boot status echo output that confirms route controller availability and
   both Alchemist/Magi route tables after bootstrap.
+
+## Patch Notes (April 25, 2026 - Diagnostic XML Resync)
+
+- Synced `Ysindrolir/Yso/Core/queue.lua` into both:
+  - `Ysindrolir/Yso/xml/yso_queue.lua`
+  - `Ysindrolir/mudlet packages/Yso system.xml` -> script `Yso.queue`
+- Re-exported updated scripts into `Ysindrolir/mudlet packages/Yso system.xml`:
+  - `Yso.targeting` from `Ysindrolir/Yso/xml/yso_targeting.lua`
+  - `Parry Module` from `Ysindrolir/Yso/Combat/parry.lua`
+  - `Yso Bootstrap loader` from `Ysindrolir/Yso/xml/yso_bootstrap_loader.lua`
+- Added a fresh diagnostic run report at `Yso_diagnostic_report.txt` with:
+  - all targeted drift checks passing,
+  - `luac` parse clean on all `Ysindrolir` Lua files,
+  - and all tests in `Ysindrolir/Yso/Tests and rebuilds/` passing.
