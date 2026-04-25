@@ -61,3 +61,6 @@ Package XML:
   `mfocus`, `mgd`) where a stray `else` block existed outside the `<script>` tag.
   This restores valid XML parsing and prevents route-toggle alias bodies from
   loading in a broken state.
+- Fixed bootstrap missing-module autoload to explicitly include `offense_core`
+  probes/loads (`Yso.Core.bootstrap` and `Yso.xml.bootstrap`), preventing states
+  where route aliases run before `Yso.off.core` is present.

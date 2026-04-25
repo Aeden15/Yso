@@ -217,6 +217,13 @@ Yso.bootstrap.package_missing_order = Yso.bootstrap.package_missing_order or {
     end,
   },
   {
+    name = "offense_core",
+    modules = { "Yso.Combat.offense_core", "Yso.xml.yso_offense_coordination" },
+    probe = function()
+      return type((((_G.Yso or {}).off or {}).core)) == "table"
+    end,
+  },
+  {
     name = "modes",
     modules = { "Yso.Core.modes", "Yso.xml.yso_modes" },
     probe = function()
