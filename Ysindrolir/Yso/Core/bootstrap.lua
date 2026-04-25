@@ -87,6 +87,8 @@ local _auto = _auto_roots()
 local root = _pick_root(
   _auto[1], _auto[2], _auto[3], _auto[4], _auto[5], _auto[6], _auto[7],
   _auto[8], _auto[9], _auto[10], _auto[11], _auto[12], _auto[13],
+  -- Local fallback paths for this workspace; keep these updated when the
+  -- workspace is relocated or shared across machines.
   "C:/Users/shuji/OneDrive/Desktop/Yso systems/Ysindrolir",
   "C:/Users/shuji/Desktop/Yso systems/Ysindrolir",
   "C:/Yso/modules",

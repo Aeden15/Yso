@@ -21,8 +21,14 @@ P.humour_to_affs = {
   phlegmatic = { "clumsiness", "weariness", "asthma" },
   sanguine = { "haemophilia", "recklessness", "paralysis" },
 }
+P.cfg = P.cfg or {}
 P.wrack_required_level = tonumber(P.wrack_required_level) or 1
 P.truewrack_required_level = tonumber(P.truewrack_required_level) or 1
+P.cfg.aurify_hp_threshold = tonumber(P.cfg.aurify_hp_threshold) or 60
+P.cfg.aurify_mp_threshold = tonumber(P.cfg.aurify_mp_threshold) or 60
+if P.cfg.aurify_require_both == nil then
+  P.cfg.aurify_require_both = false
+end
 P.state.evaluate = P.state.evaluate or {
   target = "",
   active = false,
@@ -996,7 +1002,15 @@ end
 function P.can_aurify(name)
   local hp = tonumber(P.health_pct(name))
   local mp = tonumber(P.mana_pct(name))
-  return hp ~= nil and mp ~= nil and hp <= 60 and mp <= 60
+  if hp == nil or mp == nil then
+    return false
+  end
+  local hp_ok = hp <= (tonumber(P.cfg.aurify_hp_threshold) or 60)
+  local mp_ok = mp <= (tonumber(P.cfg.aurify_mp_threshold) or 60)
+  if P.cfg.aurify_require_both == true then
+    return hp_ok and mp_ok
+  end
+  return hp_ok or mp_ok
 end
 
 function P.reave_profile(name)
@@ -1254,7 +1268,10 @@ function P.pick_temper_humour(name, giving)
   end
 
   local first = P.pick_missing_aff(target, giving)
-  return P.aff_to_humour(first) or "choleric"
+  if not first then
+    return nil
+  end
+  return P.aff_to_humour(first)
 end
 
 function P.build_truewrack(name, giving)
@@ -1286,7 +1303,12 @@ function P.build_truewrack(name, giving)
   end
 
   local filler = P.pick_filler_humour(target, forced, giving)
-  if filler == nil or filler == "" then
+  if not filler then
+    _debug(string.format(
+      "[Alchemist] truewrack blocked: no valid filler humour for forced=%s target=%s",
+      tostring(forced),
+      tostring(target)
+    ))
     return nil
   end
 

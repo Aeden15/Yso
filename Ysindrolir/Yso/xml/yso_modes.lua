@@ -64,7 +64,6 @@ M.cfg = M.cfg or {
   default = "combat",
   echo = true,
   install_mode_aliases = true,
-  install_route_aliases = true,
   install_team_aliases = false,
 }
 
@@ -865,9 +864,6 @@ if type(tempAlias) == "function" then
   _kill_alias(M._alias.combat)
   _kill_alias(M._alias.team)
   _kill_alias(M._alias.teamroute)
-  _kill_alias(M._alias.mdam)
-  _kill_alias(M._alias.mfocus)
-  _kill_alias(M._alias.mgd)
   _kill_alias(M._alias.party)
   _kill_alias(M._alias.par)
   _kill_alias(M._alias.partyroute)
@@ -893,18 +889,6 @@ if type(tempAlias) == "function" then
 
     M._alias.teamroute = tempAlias([[^teamroute\s+(\S+)$]], function()
       Yso.mode.set_party_route(matches[2], "alias:teamroute")
-    end)
-  end
-
-  if M.cfg.install_route_aliases ~= false then
-    M._alias.mdam = tempAlias([[^mdam$]], function()
-      Yso.mode.toggle_route_loop("magi_dmg", "alias:mdam")
-    end)
-    M._alias.mfocus = tempAlias([[^mfocus$]], function()
-      Yso.mode.toggle_route_loop("magi_focus", "alias:mfocus")
-    end)
-    M._alias.mgd = tempAlias([[^mgd$]], function()
-      Yso.mode.toggle_route_loop("magi_group_damage", "alias:mgd")
     end)
   end
 

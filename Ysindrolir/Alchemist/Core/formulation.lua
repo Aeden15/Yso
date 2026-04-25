@@ -8,6 +8,7 @@ F.state = F.state or {}
 F.phials = F.phials or {}
 F.last_phiallist = F.last_phiallist or {}
 F.cfg = F.cfg or {}
+F._eh = F._eh or {}
 
 F.cfg.discovery = F.cfg.discovery ~= false
 F.cfg.chart_path = F.cfg.chart_path or "Ysindrolir/Alchemist/Alchemical skill_reference chart"
@@ -84,6 +85,10 @@ end
 function F.note_phiallist()
   F.state.last_phiallist_at = _now()
   F.state.discovery_requested = false
+  if F.state.validate_reserved_on_next_phiallist == true and type(F.validate_reserved_policy) == "function" then
+    F.state.validate_reserved_on_next_phiallist = false
+    pcall(F.validate_reserved_policy, "phiallist")
+  end
 end
 
 function F.request_discovery()
@@ -96,4 +101,33 @@ function F.request_discovery()
     send("phiallist")
   end
   return true
+end
+
+function F.validate_reserved_policy(reason)
+  if type(F.remind_reserved_mismatch) ~= "function" then
+    return false, "reserved_policy_unavailable"
+  end
+  local ok = true
+  local roles = { "endorphin", "enhancement" }
+  for i = 1, #roles do
+    local _, err = F.remind_reserved_mismatch(roles[i])
+    if err then ok = false end
+  end
+  F.state.last_reserved_validate_at = _now()
+  F.state.last_reserved_validate_reason = tostring(reason or "manual")
+  return ok
+end
+
+-- Validate reserved-slot policy each login/session reconnect and request
+-- a fresh phiallist snapshot when discovery is enabled.
+if type(registerAnonymousEventHandler) == "function" then
+  if F._eh.connection then
+    pcall(killAnonymousEventHandler, F._eh.connection)
+  end
+  F._eh.connection = registerAnonymousEventHandler("sysConnectionEvent", function()
+    F.state.validate_reserved_on_next_phiallist = true
+    if F.cfg.discovery ~= false and type(F.request_discovery) == "function" then
+      pcall(F.request_discovery)
+    end
+  end)
 end

@@ -1,9 +1,6 @@
---========================================================--
--- Auto-fixed wrapper
---  • Prevents self-require recursion from corrupted generator output.
---  • Ensures disk-workspace loader runs, then returns the requested namespace (best-effort).
---========================================================--
-
+-- Wrapper: expose Yso.targeting when the targeting subsystem is loaded.
 local Yso = require("Yso")
-local v = Yso.targeting
-return v or Yso
+if type(Yso.targeting) ~= "table" then
+  error("Yso.Combat.targeting: Yso.targeting not loaded yet", 2)
+end
+return Yso.targeting

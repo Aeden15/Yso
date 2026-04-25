@@ -285,7 +285,7 @@ local function _is_duel_route()
   if type(M.active_route_id) == "function" then
     local ok, v = pcall(M.active_route_id)
     local id = ok and _lc(v) or ""
-    if id ~= "" and id ~= "none" and id ~= "alchemist_duel_route" and id ~= "aduel" then
+    if id ~= "" and id ~= "none" and id ~= "alchemist_duel_route" then
       return false
     end
   end

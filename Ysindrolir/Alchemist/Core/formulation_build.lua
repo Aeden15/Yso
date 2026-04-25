@@ -11,7 +11,8 @@ local function _trim(s)
   return s
 end
 
-local function _upper_words(s)
+-- Commands are case-insensitive; we intentionally uppercase complete tokens.
+local function _upper(s)
   return tostring(s or ""):upper()
 end
 
@@ -71,7 +72,7 @@ function F.ensure_wielded(phial)
     if target_id then
       parts[#parts + 1] = "WIELD " .. target_id:upper()
     else
-      parts[#parts + 1] = "WIELD " .. _upper_words(phial.compound)
+      parts[#parts + 1] = "WIELD " .. _upper(phial.compound)
     end
   end
 
@@ -88,7 +89,7 @@ function F.ensure_wielded(phial)
 end
 
 local function _build_action(meta, arg)
-  local name = _upper_words(meta.use_name or meta.name)
+  local name = _upper(meta.use_name or meta.name)
   local use_arg = _trim(arg)
 
   if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
@@ -101,7 +102,7 @@ local function _build_action(meta, arg)
     if use_arg:lower() == "ground" or use_arg:lower() == "at ground" then
       return "THROW " .. name .. " AT GROUND"
     end
-    return "THROW " .. name .. " " .. _upper_words(use_arg)
+    return "THROW " .. name .. " " .. _upper(use_arg)
   end
 
   if meta.delivery == "imbibe_or_administer" then

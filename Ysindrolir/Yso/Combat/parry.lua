@@ -61,6 +61,10 @@ local _LIMB_CMD = {
   head     = "head",
   torso    = "torso",
 }
+local _CMD_LIMB = {}
+for limb_key, cmd_limb in pairs(_LIMB_CMD) do
+  _CMD_LIMB[tostring(cmd_limb):lower()] = limb_key
+end
 
 ------------------------------------------------------------
 -- Internal helpers
@@ -334,10 +338,10 @@ function P.next_command(opts)
 end
 
 function P.note_sent(limb_or_cmd)
-  local limb = tostring(limb_or_cmd or ""):lower()
-  limb = limb:gsub("^parry%s+", "")
-  limb = limb:gsub("%s+", "")
-  if limb == "leftleg" or limb == "rightleg" or limb == "leftarm" or limb == "rightarm" or limb == "head" or limb == "torso" then
+  local input = tostring(limb_or_cmd or ""):lower()
+  input = input:gsub("^parry%s+", ""):gsub("^%s+", ""):gsub("%s+$", "")
+  local limb = _CMD_LIMB[input] or input:gsub("%s+", "")
+  if _LIMB_CMD[limb] then
     P._current = limb
     P._last_sent_limb = limb
     P._last_sent_at = _now()
@@ -365,8 +369,16 @@ end
 -- Prompt-driven re-evaluation
 ------------------------------------------------------------
 
+P._eh = P._eh or {}
+local function _kill_ae(id)
+  if id and type(killAnonymousEventHandler) == "function" then
+    pcall(killAnonymousEventHandler, id)
+  end
+end
+
 if type(registerAnonymousEventHandler) == "function" then
-  registerAnonymousEventHandler("gmcp.Char.Vitals", function()
+  _kill_ae(P._eh.vitals)
+  P._eh.vitals = registerAnonymousEventHandler("gmcp.Char.Vitals", function()
     pcall(P.update)
   end)
 end
@@ -390,7 +402,8 @@ end
 ------------------------------------------------------------
 
 if type(registerAnonymousEventHandler) == "function" then
-  registerAnonymousEventHandler("yso.mode.changed", function(_, old, new, reason)
+  _kill_ae(P._eh.mode_changed)
+  P._eh.mode_changed = registerAnonymousEventHandler("yso.mode.changed", function(_, old, new, reason)
     if new == "bash" then
       P._current = nil
       P.clear_restore("mode->bash")

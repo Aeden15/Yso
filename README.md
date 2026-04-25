@@ -64,3 +64,37 @@ Package XML:
 - Fixed bootstrap missing-module autoload to explicitly include `offense_core`
   probes/loads (`Yso.Core.bootstrap` and `Yso.xml.bootstrap`), preventing states
   where route aliases run before `Yso.off.core` is present.
+
+## Patch Notes (April 25, 2026 - Route Toggle + Stability Sweep)
+
+- Fixed route-toggle alias handling in `Yso system.xml` (`adam`, `aduel`, `mdam`,
+  `mfocus`, `mgd`) so toggle results are unwrapped correctly from `pcall` and
+  failures now echo an actionable reason instead of silently no-oping.
+- Removed duplicate runtime `mdam`/`mfocus`/`mgd` tempAlias registration from
+  `Yso/xml/yso_modes.lua` to prevent double-fire (toggle-on then immediate off)
+  when package aliases are present.
+- Canonicalized mode/driver entry points:
+  - `Yso/Core/modes.lua` is now a shim to `Yso/xml/yso_modes.lua`.
+  - `Yso/Combat/offense_driver.lua` is now a shim to
+    `Yso/xml/yso_offense_coordination.lua`.
+- Removed fragile Alchemist group-damage toggle compatibility shim and cleaned
+  party-route checks in `Alchemist/Core/group damage.lua`.
+- Improved Alchemist physiology correctness:
+  - `can_aurify` now supports configurable HP/MP thresholds and optional
+    both-stat requirement.
+  - `pick_temper_humour` no longer wastes a temper on hardcoded fallback when
+    no desired aff is missing.
+  - `build_truewrack` now emits debug reason when no legal filler humour exists.
+- Removed unreachable `"aduel"` branch from duel-route active-id guard in
+  `Alchemist/Core/duel route.lua`.
+- Hardened parry runtime:
+  - Deduplicates anonymous event handlers on reload.
+  - Uses explicit command-to-limb reverse mapping in `note_sent`.
+- Hardened `Yso/Combat/targeting.lua` wrapper to fail loudly if
+  `Yso.targeting` is unavailable instead of returning the whole Yso root.
+- Added reserved-phial policy validation hook on phiallist updates and session
+  reconnect in `Alchemist/Core/formulation.lua`.
+- Clarified intent in formulation build helper naming/comment
+  (`_upper_words` -> `_upper`).
+- Documented bootstrap’s username-specific fallback paths as local workspace
+  fallbacks in `Yso/Core/bootstrap.lua`.

@@ -56,3 +56,33 @@ Patch Notes (April 25, 2026):
 - Expanded Yso.Integration.mudlet with class-neutral target-intel handlers used by
   XML/AK trigger integrations.
 - Kept oc_isCurrentTarget as a compatibility shim through Yso.is_current_target.
+
+Patch Notes (April 25, 2026 - Route Toggle + Stability Sweep):
+- Fixed route-toggle alias handling in Yso system.xml (adam, aduel, mdam,
+  mfocus, mgd) so toggle results are unwrapped correctly from pcall and
+  failures now echo a reason instead of silently no-oping.
+- Removed duplicate runtime mdam/mfocus/mgd tempAlias registration from
+  Yso/xml/yso_modes.lua to prevent double-fire when package aliases are present.
+- Canonicalized mode/driver entry points:
+  - Yso/Core/modes.lua now shims to Yso/xml/yso_modes.lua.
+  - Yso/Combat/offense_driver.lua now shims to Yso/xml/yso_offense_coordination.lua.
+- Removed fragile Alchemist group-damage toggle compatibility shim and cleaned
+  party-route checks in Alchemist/Core/group damage.lua.
+- Improved Alchemist physiology correctness:
+  - can_aurify now supports configurable HP/MP thresholds and optional
+    both-stat requirement.
+  - pick_temper_humour no longer wastes a temper fallback when no desired aff is missing.
+  - build_truewrack now logs debug context when no legal filler humour exists.
+- Removed unreachable "aduel" branch from duel-route active-id guard in
+  Alchemist/Core/duel route.lua.
+- Hardened parry runtime:
+  - Deduplicates anonymous event handlers on reload.
+  - Uses explicit command-to-limb reverse mapping in note_sent.
+- Hardened Yso/Combat/targeting.lua wrapper to error when Yso.targeting is not
+  loaded, instead of returning the root Yso table.
+- Added reserved-phial policy validation hook on phiallist updates and session
+  reconnect in Alchemist/Core/formulation.lua.
+- Clarified intent in formulation build helper naming/comment
+  (_upper_words -> _upper).
+- Documented bootstrap username-specific fallback paths as local workspace
+  fallbacks in Yso/Core/bootstrap.lua.
