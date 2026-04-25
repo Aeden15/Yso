@@ -86,3 +86,17 @@ Patch Notes (April 25, 2026 - Route Toggle + Stability Sweep):
   (_upper_words -> _upper).
 - Documented bootstrap username-specific fallback paths as local workspace
   fallbacks in Yso/Core/bootstrap.lua.
+
+Patch Notes (April 25, 2026 - Bootstrap Loader Ordering):
+- Added a new Core script entry in Ysindrolir/mudlet packages/Yso system.xml
+  named "Yso Bootstrap loader", placed directly above "Route chassis loader".
+- Yso Bootstrap loader now discovers and runs bootstrap via dofile before the
+  require-based route chassis loader, so package.path is initialized early in
+  inline XML script contexts.
+- Extended the loader's post-bootstrap require chain to include both Alchemist
+  and Magi route modules:
+  - alchemist_group_damage, alchemist_duel_route
+  - magi_route_core, magi_reference, magi_dissonance, magi_group_damage,
+    magi_focus, Magi_duel_dam
+- Added boot status echo output that confirms route controller availability and
+  both Alchemist/Magi route tables after bootstrap.
