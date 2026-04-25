@@ -57,3 +57,7 @@ Package XML:
   XML/AK trigger integrations.
 - Kept `oc_isCurrentTarget` as a compatibility shim routed through
   `Yso.is_current_target`.
+- Fixed malformed alias script tails in `Yso system.xml` (`adam`, `aduel`, `mdam`,
+  `mfocus`, `mgd`) where a stray `else` block existed outside the `<script>` tag.
+  This restores valid XML parsing and prevents route-toggle alias bodies from
+  loading in a broken state.
