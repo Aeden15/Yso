@@ -113,3 +113,10 @@ Patch Notes (April 25, 2026 - Diagnostic XML Resync):
   - all targeted drift checks passing,
   - luac parse clean on all Ysindrolir Lua files,
   - and all tests in Ysindrolir/Yso/Tests and rebuilds/ passing.
+
+Patch Notes (April 25, 2026 - Diagnostic Report Correction):
+- Corrected Yso_diagnostic_report.txt to remove stale false emergency text.
+- Verified current on-disk state is healthy:
+  - Yso system.xml is well-formed and complete (not truncated),
+  - AK.xml contains zero null-byte corruption,
+  - both files end with valid </MudletPackage> closing tags.
