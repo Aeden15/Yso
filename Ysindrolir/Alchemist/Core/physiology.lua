@@ -29,6 +29,9 @@ P.cfg.aurify_mp_threshold = tonumber(P.cfg.aurify_mp_threshold) or 60
 if P.cfg.aurify_require_both == nil then
   P.cfg.aurify_require_both = false
 end
+P.cfg.alchemy_debuff_fallback = P.cfg.alchemy_debuff_fallback or {}
+P.cfg.alchemy_debuff_fallback.phlogistication = tonumber(P.cfg.alchemy_debuff_fallback.phlogistication) or 46
+P.cfg.alchemy_debuff_fallback.vitrification = tonumber(P.cfg.alchemy_debuff_fallback.vitrification) or 46
 P.state.evaluate = P.state.evaluate or {
   target = "",
   active = false,
@@ -37,6 +40,7 @@ P.state.evaluate = P.state.evaluate or {
 }
 P.state.aff_lookup = P.state.aff_lookup or {}
 P.state.corruption = P.state.corruption or {}
+P.state.alchemy_debuffs = P.state.alchemy_debuffs or {}
 P.state.homunculus_attack = P.state.homunculus_attack or {
   active = false,
   target = "",
@@ -945,6 +949,96 @@ function P.corruption_active(name)
     return false
   end
   return true
+end
+
+function P.set_alchemy_debuff(target, kind, active, source)
+  target = _trim(target)
+  kind = _lc(kind)
+
+  if target == "" or (kind ~= "phlogistication" and kind ~= "vitrification") then
+    return false
+  end
+
+  local key = _target_key(target)
+  if not key then
+    return false
+  end
+
+  P.state.alchemy_debuffs = P.state.alchemy_debuffs or {}
+  P.state.alchemy_debuffs[key] = P.state.alchemy_debuffs[key] or {
+    target = target,
+    token = 0,
+  }
+
+  local row = P.state.alchemy_debuffs[key]
+  row.target = target
+  row.token = tonumber(row.token or 0) + 1
+  row.source = tostring(source or "unknown")
+  row.changed_at = _now()
+
+  if row.timer_id and type(killTimer) == "function" then
+    pcall(killTimer, row.timer_id)
+    row.timer_id = nil
+  end
+
+  if active == true then
+    row.active = true
+    row.kind = kind
+    row.applied_at = _now()
+    row.cleared_at = nil
+    row.clear_source = nil
+
+    local seconds = tonumber(P.cfg.alchemy_debuff_fallback[kind] or 0) or 0
+    if seconds > 0 and type(tempTimer) == "function" then
+      local token = row.token
+      row.expected_expires_at = row.applied_at + seconds
+      row.timer_id = tempTimer(seconds, function()
+        local current = P.state.alchemy_debuffs and P.state.alchemy_debuffs[key]
+        if current and current.active == true and current.kind == kind and current.token == token then
+          P.set_alchemy_debuff(target, kind, false, kind .. "_fallback_timer")
+        end
+      end)
+    else
+      row.expected_expires_at = nil
+    end
+
+    return true
+  end
+
+  if row.kind == kind or row.kind == nil then
+    row.active = false
+    row.cleared_at = _now()
+    row.clear_source = tostring(source or "unknown")
+  end
+
+  return true
+end
+
+function P.alchemy_debuff_active(target)
+  target = _trim(target)
+  if target == "" then
+    target = _current_target()
+  end
+
+  local key = _target_key(target)
+  if not key then
+    return false, nil, nil
+  end
+
+  local row = P.state.alchemy_debuffs and P.state.alchemy_debuffs[key]
+  if type(row) ~= "table" or row.active ~= true then
+    return false, nil, row
+  end
+
+  return true, row.kind, row
+end
+
+function P.can_use_alchemy_debuff(target)
+  local active, kind = P.alchemy_debuff_active(target)
+  if active == true then
+    return false, kind
+  end
+  return true, nil
 end
 
 function P.ak_humour_count(target, humour)

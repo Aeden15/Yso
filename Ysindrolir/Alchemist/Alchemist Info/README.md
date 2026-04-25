@@ -45,6 +45,12 @@ Primary active development is focused on Magi and Alchemist.
 - `Triggers/Alchemy/Formulation/phiallist.lua`
   Workspace-side hook that routes `phiallist` lines into the shared phial parser.
 
+- `Triggers/Alchemy/Alchemy/phlogistication_start.lua`
+- `Triggers/Alchemy/Alchemy/phlogistication_expire.lua`
+- `Triggers/Alchemy/Alchemy/vitrification_start.lua`
+- `Triggers/Alchemy/Alchemy/vitrification_expire.lua`
+  Workspace-side trigger scripts for Alchemy debuff state (`phlogistication` and `vitrification`) routed through `Yso.alc.phys.set_alchemy_debuff`.
+
 - `Aliases`, `Triggers`, `Scripts`
   Workspace mirrors for the Alchemist XML organization.
 
@@ -54,8 +60,11 @@ Primary active development is focused on Magi and Alchemist.
 - Alchemist group damage route under `adam`, using `evaluate <target> humours`, `temper <target> <humour>`, useful `truewrack <target> <humour> <affliction>`, and deterministic `wrack <target> <affliction>` fallback.
 - Alchemist duel route under `aduel`, with lock-pressure defaults (`paralysis`, `asthma`, `impatience`), aurify finish windows, conservative `inundate <target> phlegmatic`, and conservative `homunculus corrupt <target>` timing.
 - Aurification execute window is treated as an EQ finisher before normal pressure progression (and before iron in group damage), with gate `hp <= 60` and `mp <= 60`.
+- Aurify route file remains spec/planning notes only; full route automation is intentionally not implemented yet.
 - Reave execute is now a conservative instant-kill planner addition after Aurification, requiring trusted evaluate intel, humour balance ready, all four humours tempered, and no self channel-blocking hinder states.
 - Physiology humour-balance lane tracking as its own ready/not-ready state.
+- Physiology now tracks active Alchemy timed debuffs per target with fallback expiry (`phlogistication` and `vitrification`) via:
+  `set_alchemy_debuff`, `alchemy_debuff_active`, and `can_use_alchemy_debuff`.
 - Formulation phial support that is delivery-aware, chart-driven, and separated from Physiology humour logic.
 - Physiology humour pools match the skillchart for choleric, melancholic, phlegmatic, and sanguine.
 - Thin alias bodies that route through shared helpers instead of duplicating delivery syntax.
