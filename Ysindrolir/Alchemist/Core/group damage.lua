@@ -15,6 +15,37 @@ Yso.off.alc.group_damage = Yso.off.alc.group_damage or {}
 local GD = Yso.off.alc.group_damage
 GD.alias_owned = true
 
+-- Compatibility shim: some package installs still call ^adam$ through an
+-- alias that expects Yso.mode.toggle_route_loop to exist.
+Yso.mode = Yso.mode or {}
+local _existing_toggle_route_loop = Yso.mode.toggle_route_loop
+if type(_existing_toggle_route_loop) ~= "function" then
+  local _compat_toggle_route_loop
+  _compat_toggle_route_loop = function(route_id, reason)
+    route_id = tostring(route_id or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if route_id == "" then return false end
+
+    if Yso.off and Yso.off.core and type(Yso.off.core.toggle) == "function" then
+      local ok, v = pcall(Yso.off.core.toggle, route_id)
+      return ok and (v ~= false)
+    end
+
+    if type(require) == "function" then
+      pcall(require, "Yso._entry")
+      pcall(require, "Yso.Core.modes")
+      pcall(require, "Yso.xml.yso_modes")
+    end
+
+    if Yso.mode and type(Yso.mode.toggle_route_loop) == "function" and Yso.mode.toggle_route_loop ~= _compat_toggle_route_loop then
+      local ok, v = pcall(Yso.mode.toggle_route_loop, route_id, reason or "compat")
+      return ok and (v ~= false)
+    end
+
+    return false
+  end
+  Yso.mode.toggle_route_loop = _compat_toggle_route_loop
+end
+
 local function _load_alchemist_peer(file_name)
   local info = debug.getinfo(1, "S")
   local source = info and info.source or ""
