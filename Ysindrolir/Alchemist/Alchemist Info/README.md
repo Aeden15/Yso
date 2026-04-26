@@ -1,6 +1,6 @@
 # Alchemist
 
-Current workspace snapshot: April 21, 2026.
+Current workspace snapshot: April 26, 2026.
 
 Primary active development is focused on Magi and Alchemist.
 
@@ -16,10 +16,13 @@ Primary active development is focused on Magi and Alchemist.
   Formulation-only namespace/bootstrap for phial skill usage, discovery, warning, timing, and action-builder helper state.
 
 - `Core/group damage.lua`
-  Alchemist party damage route for the existing `adam` toggle: owns route-specific affliction pressure, requires fresh evaluate on target swap, reads AK humour counts for legality, tempers through the direct humour lane, and spends BAL on hybrid `truewrack` only when both lanes have route value.
+  Alchemist party damage route for the existing `adam` toggle. It now builds lane-combo payloads (`free/eq/class/bal`) instead of returning the first single legal action.
 
 - `Core/duel route.lua`
-  Alchemist duel lock-pressure route for the `aduel` toggle: owns route-specific pressure intent, keeps evaluate freshness AK-aligned, supports aurify EQ windows, uses conservative phlegmatic inundate and homunculus corrupt windows, and falls back to deterministic affliction wracks when hybrid value is not present.
+  Alchemist duel lock-pressure route for `aduel`, now using the same lane-combo payload model and shieldbreak-as-EQ-slot behavior as group damage.
+
+- `Aurify route.lua`
+  Real Aurify route module (`alchemist_aurify_route`) for bleed pressure into Aurify windows, exposed by alias `bleed`.
 
 - `Route instructions.txt`
   Checklist for keeping current and future Alchemist routes on the AK ownership/read-through model.
@@ -29,6 +32,9 @@ Primary active development is focused on Magi and Alchemist.
 
 - `alchemist_duel_route.lua`
   Root loader shim so the shared route bootstrap can require `Core/duel route.lua` despite the canonical file name containing a space.
+
+- `alchemist_aurify_route.lua`
+  Root loader shim so the shared route bootstrap can require `Aurify route.lua`.
 
 - `Core/formulation_phials.lua`
   `phiallist` parsing, phial-only tracking, validation, lookup, and readable display helpers.
@@ -56,11 +62,11 @@ Primary active development is focused on Magi and Alchemist.
 
 ## Current focus
 
-- Physiology humour intel is AK-owned; Yso keeps only evaluate freshness/vitals and reads `ak.alchemist.humour` for current-target planning.
-- Alchemist group damage route under `adam`, using `evaluate <target> humours`, `temper <target> <humour>`, useful `truewrack <target> <humour> <affliction>`, and deterministic `wrack <target> <affliction>` fallback.
-- Alchemist duel route under `aduel`, with lock-pressure defaults (`paralysis`, `asthma`, `impatience`), aurify finish windows, conservative `inundate <target> phlegmatic`, and conservative `homunculus corrupt <target>` timing.
-- Aurification execute window is treated as an EQ finisher before normal pressure progression (and before iron in group damage), with gate `hp <= 60` and `mp <= 60`.
-- Aurify route file remains spec/planning notes only; full route automation is intentionally not implemented yet.
+- Physiology humour intel is AK-owned; Yso keeps evaluate freshness/vitals and reads `ak.alchemist.humour` for current-target planning.
+- Group, duel, and aurify routes all use lane-combo payload builders with explicit `direct_order` support for non-queue mode.
+- Shieldbreak is now an EQ slot (`educe copper <target>`) that still allows legal class/bal follow-through in the same payload.
+- Aurification execute window is treated as an EQ finisher with default gate `hp <= 60` and `mp <= 60` (both required).
+- `bleed` toggles `alchemist_aurify_route`.
 - Reave execute is now a conservative instant-kill planner addition after Aurification, requiring trusted evaluate intel, humour balance ready, all four humours tempered, and no self channel-blocking hinder states.
 - Physiology humour-balance lane tracking as its own ready/not-ready state.
 - Physiology now tracks active Alchemy timed debuffs per target with fallback expiry (`phlogistication` and `vitrification`) via:
@@ -79,3 +85,5 @@ Primary active development is focused on Magi and Alchemist.
 - Manual alteration values remain user-driven for now. No potency/stability/volatility caps are enforced in this pass.
 - Live Physiology XML triggers use rolled-up pronoun regexes rather than per-pronoun/per-humour trigger copies.
 - Paralysis is gated by AK's current-target sanguine count (`>= 2`), and target swaps require a fresh `evaluate <target> humours` before humour-state planning resumes.
+- `educe salt` is treated as a post-shieldbreak/post-execute self-purge EQ action and is blocked while `stupidity` is present.
+- TODO: Legacy-driven self-affliction handling should prioritize or reprioritize `stupidity` before relying on Salt.

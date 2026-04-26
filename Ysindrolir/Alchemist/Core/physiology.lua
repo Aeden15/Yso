@@ -27,8 +27,34 @@ P.truewrack_required_level = tonumber(P.truewrack_required_level) or 1
 P.cfg.aurify_hp_threshold = tonumber(P.cfg.aurify_hp_threshold) or 60
 P.cfg.aurify_mp_threshold = tonumber(P.cfg.aurify_mp_threshold) or 60
 if P.cfg.aurify_require_both == nil then
-  P.cfg.aurify_require_both = false
+  P.cfg.aurify_require_both = true
 end
+P.inundate_math = P.inundate_math or {
+  choleric = {
+    vital = "health",
+    burst_pct_by_temper = {
+      [6] = 50,
+      [8] = 77,
+    },
+  },
+  melancholic = {
+    vital = "mana",
+    burst_pct_by_temper = {
+      [6] = 50,
+      [8] = 77,
+    },
+  },
+  sanguine = {
+    vital = "bleeding",
+    bleed_by_temper = {
+      [6] = 2304,
+      [8] = nil,
+    },
+  },
+  phlegmatic = {
+    vital = "affliction",
+  },
+}
 P.cfg.alchemy_debuff_fallback = P.cfg.alchemy_debuff_fallback or {}
 P.cfg.alchemy_debuff_fallback.phlogistication = tonumber(P.cfg.alchemy_debuff_fallback.phlogistication) or 46
 P.cfg.alchemy_debuff_fallback.vitrification = tonumber(P.cfg.alchemy_debuff_fallback.vitrification) or 46
@@ -559,6 +585,27 @@ function P.set_humour_dirty(target, humour, reason)
   return true
 end
 
+function P.clear_all_humours(target, reason)
+  local row = P.target(target)
+  if not row then
+    return false
+  end
+
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    P.set_humour_level(row.name, humour, 0, reason or "clear_all")
+  end
+
+  row.eval_dirty = true
+  row.last_dirty_source = tostring(reason or "clear_all")
+  row.last_dirty_at = P.now and P.now() or _now()
+  if _same_target(P.state.humour_eval_target or "", row.name) then
+    P.state.humour_eval_target = ""
+  end
+
+  return true
+end
+
 function P.get_humour_level(target, humour)
   humour = _valid_humour(humour)
   if not humour then
@@ -603,6 +650,26 @@ function P.can_wrack(target, humour, required_level)
   if known == nil then
     return false, nil
   end
+  return known >= need, known
+end
+
+function P.staged_humour_count(target, humour, staged)
+  humour = _lc(humour)
+  local known = tonumber(P.current_humour_count(target, humour) or 0) or 0
+  if staged and _lc(staged.temper_humour or "") == humour then
+    known = known + 1
+  end
+  return known
+end
+
+function P.can_wrack_with_staged(target, humour, required_level, staged)
+  humour = _valid_humour(humour)
+  if not humour then
+    return false, nil
+  end
+  local need = tonumber(required_level) or tonumber(P.wrack_required_level or 1) or 1
+  need = math.max(0, need)
+  local known = tonumber(P.staged_humour_count(target, humour, staged) or 0) or 0
   return known >= need, known
 end
 
@@ -1409,6 +1476,62 @@ function P.build_truewrack(name, giving)
   return string.format("truewrack %s %s %s", target, filler, forced), filler, forced
 end
 
+function P.build_truewrack_with_staged(name, giving, staged)
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+
+  local forced = P.pick_missing_aff(target, giving)
+  if not forced then
+    return nil
+  end
+
+  local forced_humour = P.aff_to_humour(forced)
+  if not forced_humour then
+    return nil
+  end
+  local required = P.required_humour_level_for_wrack("truewrack", forced)
+  local legal, known = P.can_wrack_with_staged(target, forced_humour, required, staged)
+  if legal ~= true then
+    _debug(string.format(
+      "[Alchemist] wrack blocked(staged): %s requires %s level %d, known=%s",
+      tostring(forced),
+      tostring(forced_humour),
+      tonumber(required) or 0,
+      known == nil and "unknown" or tostring(known)
+    ))
+    return nil
+  end
+
+  local preferred = P.aff_to_humour(forced)
+  local options = _pool_order(_giving_humour_pools(giving))
+  local filler, best_count = nil, -1
+  for i = 1, #options do
+    local humour = options[i]
+    local req = P.required_humour_level_for_wrack("truewrack")
+    local ok_wrack, count = P.can_wrack_with_staged(target, humour, req, staged)
+    count = tonumber(count or 0) or 0
+    if humour ~= preferred and ok_wrack == true and _humour_missing_desired(target, humour, giving) then
+      if count > best_count then
+        filler = humour
+        best_count = count
+      end
+    end
+  end
+
+  if not filler then
+    _debug(string.format(
+      "[Alchemist] truewrack blocked(staged): no valid filler humour for forced=%s target=%s",
+      tostring(forced),
+      tostring(target)
+    ))
+    return nil
+  end
+
+  return string.format("truewrack %s %s %s", target, filler, forced), filler, forced
+end
+
 function P.build_wrack_fallback(name, giving)
   local target = _trim(name)
   if target == "" then
@@ -1440,4 +1563,116 @@ function P.build_wrack_fallback(name, giving)
     return nil
   end
   return string.format("wrack %s %s", target, aff), aff
+end
+
+function P.build_wrack_fallback_with_staged(name, giving, staged)
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return nil
+  end
+
+  local aff = P.pick_missing_aff(target, giving)
+  if aff == nil or aff == "" then
+    return nil
+  end
+
+  local humour = P.aff_to_humour(aff)
+  if not humour then
+    return nil
+  end
+  local required = P.required_humour_level_for_wrack("wrack", aff)
+  local legal, known = P.can_wrack_with_staged(target, humour, required, staged)
+  if legal ~= true then
+    _debug(string.format(
+      "[Alchemist] wrack blocked(staged): %s requires %s level %d, known=%s",
+      tostring(aff),
+      tostring(humour),
+      tonumber(required) or 0,
+      known == nil and "unknown" or tostring(known)
+    ))
+    return nil
+  end
+  return string.format("wrack %s %s", target, aff), aff
+end
+
+function P.inundate_candidate(target, route_id, opts)
+  opts = opts or {}
+  target = _trim(target)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return nil
+  end
+
+  local humour_ready = false
+  if Yso.alc and type(Yso.alc.humour_ready) == "function" then
+    local ok, res = pcall(Yso.alc.humour_ready)
+    humour_ready = ok and res == true
+  else
+    humour_ready = Yso and Yso.bal and Yso.bal.humour ~= false
+  end
+  if humour_ready ~= true then
+    return nil
+  end
+
+  local function pct_candidate(humour, vital_name)
+    local count = tonumber(P.current_humour_count(target, humour) or 0) or 0
+    local burst = ((P.inundate_math[humour] or {}).burst_pct_by_temper or {})[count]
+    if burst == nil then
+      return nil
+    end
+    local now_vital = vital_name == "health" and tonumber(P.health_pct(target)) or tonumber(P.mana_pct(target))
+    if now_vital == nil then
+      return nil
+    end
+    local after = now_vital - tonumber(burst)
+    if after < 0 then
+      after = 0
+    end
+    return {
+      humour = humour,
+      cmd = "inundate " .. target .. " " .. humour,
+      vital = vital_name,
+      count = count,
+      estimated_burst_pct = tonumber(burst),
+      predicted_after_pct = after,
+      route_id = tostring(route_id or ""),
+      reason = humour == "choleric" and "inundate_health_burst" or "inundate_mana_burst",
+    }
+  end
+
+  local c = pct_candidate("choleric", "health")
+  if c then
+    return c
+  end
+  local m = pct_candidate("melancholic", "mana")
+  if m then
+    return m
+  end
+
+  local s_count = tonumber(P.current_humour_count(target, "sanguine") or 0) or 0
+  if s_count >= 6 then
+    local out = {
+      humour = "sanguine",
+      cmd = "inundate " .. target .. " sanguine",
+      vital = "bleeding",
+      count = s_count,
+      route_id = tostring(route_id or ""),
+    }
+    if s_count >= 8 then
+      out.estimated_bleeding = 2304
+      out.exact_bleeding_unknown = true
+      out.reason = "inundate_bleed_burst_tbd_8"
+    else
+      out.estimated_bleeding = 2304
+      out.reason = "inundate_bleed_burst"
+    end
+    return out
+  end
+
+  return nil
 end

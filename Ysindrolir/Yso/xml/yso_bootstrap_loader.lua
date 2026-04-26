@@ -92,6 +92,7 @@ if loaded then
     -- ── ALCHEMIST MODULES ──────────────────────────────────────────
     pcall(require, "alchemist_group_damage")
     pcall(require, "alchemist_duel_route")
+    pcall(require, "alchemist_aurify_route")
 
     -- ── MAGI MODULES ───────────────────────────────────────────────
     pcall(require, "magi_route_core")
@@ -119,11 +120,12 @@ if loaded then
 
     cecho(string.format(
       "<aquamarine>[Yso:loader]<reset> bootstrap OK | modes=%s\n" ..
-      "  alc : duel_route=%s  group_damage=%s\n" ..
+      "  alc : duel_route=%s  group_damage=%s  aurify_route=%s\n" ..
       "  magi: focus=%s  dmg=%s  group_damage=%s\n",
       _yn(has_toggle),
       _yn(type(alc.duel_route)    == "table"),
       _yn(type(alc.group_damage)  == "table"),
+      _yn(type(alc.aurify_route)  == "table"),
       _yn(type(magi.focus)        == "table"),
       _yn(type(magi.dmg)          == "table"),
       _yn(type(magi.group_damage) == "table")

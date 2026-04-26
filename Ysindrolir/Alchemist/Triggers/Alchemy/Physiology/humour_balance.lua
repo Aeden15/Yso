@@ -5,7 +5,7 @@ Yso.alc.phys = Yso.alc.phys or {}
 local P = Yso.alc.phys
 
 P.humour_types = P.humour_types or { "choleric", "melancholic", "phlegmatic", "sanguine" }
-P.possessive_pronouns = P.possessive_pronouns or { "his", "her", "their", "its", "faes", "faen" }
+P.possessive_pronouns = P.possessive_pronouns or { "his", "her", "their", "its", "faes", "faen", "faer" }
 
 P.humour_ready_line = P.humour_ready_line or "You may manipulate another's humours once more."
 P.humour_fail_line = P.humour_fail_line or "You are unable to manipulate another's humours at this time."
@@ -99,6 +99,21 @@ local function _parse_insufficient_temper(line)
     return nil, nil
   end
   return _trim(target), _lc(humour)
+end
+
+local function _parse_inundate_success(line)
+  local target, humour, pronoun = line:match("^You inundate ([%w'%-]+)'s ([a-z]+) humour, and a look of pain crosses (%a+) face%.$")
+  if not target or not humour or not pronoun then
+    return nil, nil
+  end
+  humour = _lc(humour)
+  if humour ~= "choleric" and humour ~= "melancholic" and humour ~= "phlegmatic" and humour ~= "sanguine" then
+    return nil, nil
+  end
+  if not _looks_like_pronoun(pronoun) then
+    return nil, nil
+  end
+  return _trim(target), humour
 end
 
 function P.handle_humour_balance_line(line)
@@ -206,6 +221,19 @@ function P.handle_humour_balance_line(line)
         Yso.alc.set_humour_ready(false, "temper_success")
       end
       return "temper_success"
+    end
+  end
+
+  do
+    local target, humour = _parse_inundate_success(line)
+    if target and humour then
+      if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+        Yso.alc.set_humour_ready(false, "inundate_success")
+      end
+      if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.clear_all_humours) == "function" then
+        Yso.alc.phys.clear_all_humours(target, "inundate_success:" .. tostring(humour))
+      end
+      return "inundate_success"
     end
   end
 

@@ -143,6 +143,7 @@ end
 
 safe_require("alchemist_group_damage")
 safe_require("alchemist_duel_route")
+safe_require("alchemist_aurify_route")
 safe_require("magi_route_core")
 safe_require("magi_reference")
 safe_require("magi_dissonance")

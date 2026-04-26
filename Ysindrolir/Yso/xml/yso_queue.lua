@@ -314,9 +314,18 @@ local function _lane_ready(lane)
   elseif lane == "bal" and Yso and Yso.state and type(Yso.state.bal_ready) == "function" then
     local ok, res = pcall(Yso.state.bal_ready)
     if ok and res ~= nil then return res == true end
-  elseif lane == "class" and Yso and Yso.state and type(Yso.state.ent_ready) == "function" then
-    local ok, res = pcall(Yso.state.ent_ready)
-    if ok and res ~= nil then return res == true end
+  elseif lane == "class" then
+    if Yso and type(Yso.is_alchemist) == "function" then
+      local ok_is, is_alc = pcall(Yso.is_alchemist)
+      if ok_is and is_alc == true and Yso.alc and type(Yso.alc.humour_ready) == "function" then
+        local ok, res = pcall(Yso.alc.humour_ready)
+        if ok and res ~= nil then return res == true end
+      end
+    end
+    if Yso and Yso.state and type(Yso.state.ent_ready) == "function" then
+      local ok, res = pcall(Yso.state.ent_ready)
+      if ok and res ~= nil then return res == true end
+    end
   end
 
   return true

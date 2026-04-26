@@ -144,3 +144,27 @@ Package XML:
   - `<command>    </command>` -> `<command></command>`
   - `<packageName>...</packageName>` empty blocks compacted
   - `<script>...</script>` empty blocks compacted
+
+## Patch Notes (April 26, 2026 - Alchemist Lane Payload Rework)
+
+- Reworked Alchemist routes to use lane-combo payload builders (`free/eq/class/bal`)
+  with explicit `direct_order` output for non-queue mode.
+- Updated `Alchemist/Core/group damage.lua`, `Alchemist/Core/duel route.lua`, and
+  `Alchemist/Aurify route.lua` to a shared lifecycle contract surface:
+  `start/stop/is_active/build_payload/attack_function/evaluate/explain` and alias-loop hooks.
+- Added real Aurify route wiring:
+  - new loader shim `Alchemist/alchemist_aurify_route.lua`
+  - new route id `alchemist_aurify_route`
+  - new alias `bleed`
+- Updated route registries (`Yso/Combat/route_registry.lua` and XML mirror),
+  bootstrap module loading, and `_entry.lua` requires for the new Aurify route.
+- Shieldbreak is now an EQ slot (`educe copper <target>`) that can still include
+  legal class/bal follow-up in the same payload.
+- Added Alchemist staged humour helpers and inundate math/state support in
+  `Alchemist/Core/physiology.lua`, including `clear_all_humours` on inundate send/success.
+- Updated queue class-lane readiness in both canonical and XML queue modules so
+  Alchemist class lane checks humour/class readiness before generic entity readiness.
+- Added inundate success parsing to physiology trigger handling and preserved the
+  existing humour-ready line handling.
+- Expanded/rewrote Alchemist route tests and added
+  `Ysindrolir/Yso/Tests and rebuilds/test_alchemist_aurify_route.lua`.
