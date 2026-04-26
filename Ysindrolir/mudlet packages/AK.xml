@@ -8819,22 +8819,10 @@ ak.deleteFull()</script>
 								<colorTriggerFgColor>#000000</colorTriggerFgColor>
 								<colorTriggerBgColor>#000000</colorTriggerBgColor>
 								<regexCodeList>
-									<string>He is surrounded by a nearly invisible magical shield.</string>
-									<string>She is surrounded by a nearly invisible magical shield.</string>
-									<string>Fae is surrounded by a nearly invisible magical shield.</string>
-									<string>They are surrounded by a nearly invisible magical shield.</string>
-									<string>The power of the shield logograph wards damage from him.</string>
-									<string>The power of the shield logograph wards damage from her.</string>
-									<string>The power of the shield logograph wards damage from them.</string>
-									<string>The power of the shield logograph wards damage from faen.</string>
+									<string>^(?:(?:He|She|Fae) is|They are) surrounded by a nearly invisible magical shield\.$</string>
+									<string>^The power of the shield logograph wards damage from (?:him|her|them|faen)\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
-									<integer>3</integer>
-									<integer>3</integer>
-									<integer>3</integer>
-									<integer>3</integer>
-									<integer>3</integer>
-									<integer>3</integer>
 									<integer>3</integer>
 									<integer>3</integer>
 								</regexCodePropertyList>
@@ -17557,16 +17545,14 @@ cecho("\n&lt;yellow&gt;[DEFENSIVE] &lt;aquamarine&gt;(COMMAND GREMLIN!).&lt;rese
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>^A nearly invisible magical shield forms around ([\w'\-]+).$</string>
+							<string>^(?:A nearly invisible magical shield forms around|A hulking stoneback makes a deep rumbling sound from deep within itself, and a magical shield flares into being surrounding) ([\w'\-]+)\.$</string>
 							<string>^A dizzying beam of energy strikes you as your attack rebounds off of ([\w'\-]+)\'s shield\.$</string>
 							<string>^The magical shield surrounding ([\w'\-]+) makes that impossible\.$</string>
 							<string>^A shimmering barrier of crystal forms about ([\w'\-]+)\.$</string>
 							<string>^A guardian angel surrounds ([\w'\-]+) with a protective shield\.$</string>
-							<string>^A gentle hum arises from (\w+)\'s angel, as it raises a shield to protect \w+\.$</string>
-							<string>^A hulking stoneback makes a deep rumbling sound from deep within itself, and a magical shield flares into being surrounding ([\w'\-]+)\.$</string>
+							<string>^A gentle hum arises from ([\w'\-]+)\'s angel\, as it raises a shield to protect (?:him|her|them|faer|fae|faen|[\w'\-]+)\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
-							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
@@ -17612,6 +17598,7 @@ end</script>
 							<string>^([\w'\-]+) has no shield for your gremlin to shatter\, occultist\.$</string>
 							<string>^As the kick strikes the magical shield surrounding ([\w'\-]+)\, it shatters into glimmering fragments\.$</string>
 							<string>^The othala rune on the ground suddenly erupts in a great gout of boiling magma\, the concussive blast smashing into the magical shield surrounding ([\w'\-]+) and rendering it asunder\.$</string>
+							<string>^Directing the energy of copper\, you send myriad russet streams towards ([\w'\-]+)\, shattering (?:his|her|their|faer) shield\.$</string>
 							<string>^Lunging forward\, you bring .* in a savage diagonal blow\, carving through ([\w'\-]+)\'s shield\.$</string>
 							<string>^Continuing your assault\, you whip .* in a vicious rising slash at ([\w'\-]+)\.$</string>
 							<string>^You lunge toward ([\w'\-]+) with .*\, but finding no resistance\, you stumble hopelessly off balance\.$</string>
@@ -17633,7 +17620,7 @@ end</script>
 							<string>^[\w'\-]+ brings a translucent battleaxe down in a powerful overhanded blow upon([\w'\-]+)\.$</string>
 							<string>^Bracing your feet\, you drive .+ towards ([\w'\-]+)\.$</string>
 							<string>^Your blow scythes through the air in front of ([\w'\-]+)\, missing entirely\.$</string>
-							<string>^Your blow cleaves through the magical shield surrounding ([\w'\-]+), continuing on to drive him from \w+ feet\.$</string>
+							<string>^Your blow cleaves through the magical shield surrounding ([\w'\-]+)\, continuing on to drive (?:him|her|them|faer) from \w+ feet\.$</string>
 							<string>^You find no magical shield surrounding ([\w'\-]+), and your power is unable to take hold\.$</string>
 							<string>^A savage slash of your knife trails crimson fire as you carve the logograph of the fissure into the air before (\w+)\.$</string>
 							<string>^You cast a spell of erosion at (\w+)\.$</string>
@@ -17645,6 +17632,7 @@ end</script>
 							<string>^You command your heads to lash out at (\w+)\'s protective shield, but there isn't one to befound\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
+							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>

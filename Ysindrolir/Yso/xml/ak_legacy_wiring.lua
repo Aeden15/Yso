@@ -16,6 +16,92 @@ Yso.curing = Yso.curing or {}
 Yso.ak     = Yso.ak or {}
 
 ------------------------------------------------------------
+-- 0) SHIELD FALLBACK API (callable + compatibility aliases)
+------------------------------------------------------------
+
+local function _shield_key(target)
+  target = tostring(target or ""):lower()
+  target = target:gsub("^%s+", ""):gsub("%s+$", "")
+  return target
+end
+
+local function _ak_targeted(target)
+  local fn = rawget(_G, "IsTargetted")
+  if type(fn) ~= "function" then return false end
+  local ok, v = pcall(fn, tostring(target or ""))
+  return ok and v == true
+end
+
+local function _shield_set(target, up, source)
+  local key = _shield_key(target)
+  if key == "" then return false end
+
+  Yso._shield_by_target = Yso._shield_by_target or {}
+  local state = (up == true)
+  Yso._shield_by_target[key] = state
+  Yso._shield_last_source = tostring(source or "")
+
+  -- Mirror state into AK when available; AK remains primary source-of-truth.
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    ak.defs = ak.defs or {}
+    ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+    ak.defs.shield_by_target[key] = state
+
+    if state then
+      ak.defs.shield = true
+    elseif _ak_targeted(target) then
+      ak.defs.shield = false
+    end
+  end
+
+  return state
+end
+
+local function _shield_up(target)
+  local key = _shield_key(target)
+  if key == "" then return false end
+
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" and type(ak.defs) == "table" then
+    if type(ak.defs.shield_by_target) == "table" then
+      local v = ak.defs.shield_by_target[key]
+      if type(v) == "boolean" then
+        Yso._shield_by_target = Yso._shield_by_target or {}
+        Yso._shield_by_target[key] = v
+        return v
+      end
+    end
+    if type(ak.defs.shield) == "boolean" and _ak_targeted(target) then
+      return ak.defs.shield == true
+    end
+  end
+
+  local cache = Yso._shield_by_target
+  if type(cache) == "table" and type(cache[key]) == "boolean" then
+    return cache[key]
+  end
+
+  return false
+end
+
+local _shield_api = Yso.shield
+if type(_shield_api) ~= "table" then
+  _shield_api = {}
+end
+
+_shield_api.set = _shield_set
+_shield_api.up = _shield_up
+_shield_api.is_up = _shield_up
+
+local _shield_mt = getmetatable(_shield_api) or {}
+_shield_mt.__call = function(_, target)
+  return _shield_up(target)
+end
+setmetatable(_shield_api, _shield_mt)
+Yso.shield = _shield_api
+
+------------------------------------------------------------
 -- 1) CURING ADAPTERS -> LEGACY / GAME
 ------------------------------------------------------------
 
