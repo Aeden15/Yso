@@ -83,6 +83,7 @@ DR.cfg = DR.cfg or {
   echo = true,
   loop_delay = 0.15,
   evaluate_pending_s = 1.2,
+  pending_class_timeout_s = 2.5,
   salt_min_affs = 2,
   salt_cooldown_s = 3.2,
   phlegmatic_min_temper = 2,
@@ -103,6 +104,8 @@ DR.state = DR.state or {
   last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil },
   template = { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" },
   explain = {},
+  last_hold_reason = "",
+  last_hold_at = 0,
   homunculus_attack_sent = false,
   homunculus_attack_target = "",
   last_salt_at = 0,
@@ -387,6 +390,48 @@ local function _is_duel_route()
   return true
 end
 
+local function _schedule_loop(delay, reason)
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= "table" then
+    return false
+  end
+  if type(M.schedule_route_loop) == "function" then
+    local ok, scheduled = pcall(M.schedule_route_loop, "alchemist_duel_route", delay or 0)
+    if ok and scheduled == true then
+      return true
+    end
+  end
+  if type(M.nudge_route_loop) == "function" then
+    local ok, nudged = pcall(M.nudge_route_loop, "alchemist_duel_route", tostring(reason or "route"))
+    if ok and nudged == true then
+      return true
+    end
+  end
+  return false
+end
+
+local function _set_hold_explain(reason, tgt, extra)
+  DR.state = DR.state or {}
+  DR.state.last_hold_reason = tostring(reason or "hold")
+  DR.state.last_hold_at = _now()
+  DR.state.explain = {
+    route = "alchemist_duel_route",
+    target = _trim(tgt or _target()),
+    category = "hold",
+    reason = DR.state.last_hold_reason,
+    eq = nil,
+    class = nil,
+    bal = nil,
+    free = nil,
+    direct_order = nil,
+  }
+  if type(extra) == "table" then
+    for k, v in pairs(extra) do
+      DR.state.explain[k] = v
+    end
+  end
+end
+
 local function _make_payload(tgt, category, reason)
   return {
     route = "alchemist_duel_route",
@@ -644,11 +689,21 @@ end
 local function _post_send(payload)
   local P = _phys()
   local tgt = _trim(payload and payload.target or "")
-  if payload and payload.class_category == "temper" and Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
-    Yso.alc.set_humour_ready(false, "temper_sent")
+  if payload and payload.class_category == "temper" then
+    local humour = _lc((payload.class or ""):match("^temper%s+[%w'%-]+%s+([a-z]+)$") or "")
+    if P and type(P.note_pending_class) == "function" then
+      P.note_pending_class("temper", tgt, humour, payload.class, "alchemist_duel_route", "route_send")
+    end
+    _set_hold_explain("temper_pending", tgt, {
+      humour = humour,
+      pending_cmd = payload.class,
+    })
   elseif payload and payload.class_category == "inundate" then
     if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
       Yso.alc.set_humour_ready(false, "inundate_sent")
+    end
+    if P and type(P.clear_pending_class) == "function" then
+      P.clear_pending_class("inundate_sent", { clear_any = true, clear_staged = true })
     end
     if P and type(P.clear_all_humours) == "function" and tgt ~= "" then
       P.clear_all_humours(tgt, "inundate_sent")
@@ -662,6 +717,8 @@ local function _post_send(payload)
   if payload and _lc(payload.eq or "") == "educe salt" then
     DR.state.last_salt_at = _now()
   end
+
+  _schedule_loop(0, "payload_sent")
 end
 
 local function _emit_payload(payload)
@@ -747,18 +804,34 @@ local function _select_payload(ctx)
   local free_bootstrap = _ensure_homunculus_attack(DR, tgt)
 
   local needs_eval = (type(P.target_needs_evaluate) == "function") and (P.target_needs_evaluate(tgt) == true) or false
-  if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
-    local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
-    if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
-    _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
-    if type(P.note_evaluate_request) == "function" then
-      local noted = P.note_evaluate_request(tgt, "route")
-      if noted ~= true then
-        return nil, "evaluate_duplicate"
+  if needs_eval then
+    if _evaluate_ready() and not _evaluate_pending_for(tgt) then
+      local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
+      if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+      _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
+      if type(P.note_evaluate_request) == "function" then
+        local noted = P.note_evaluate_request(tgt, "route")
+        if noted ~= true then
+          return nil, "evaluate_duplicate"
+        end
       end
+      _build_direct_order(payload, false)
+      return payload, payload.reason
     end
-    _build_direct_order(payload, false)
-    return payload, payload.reason
+    if _evaluate_pending_for(tgt) then
+      return nil, "evaluate_pending"
+    end
+    return nil, "evaluate_not_ready"
+  end
+
+  if type(P.pending_class_status) == "function" then
+    local pending_active, pending_reason, pending = P.pending_class_status("alchemist_duel_route", tgt, DR.cfg.pending_class_timeout_s)
+    if pending_reason == "temper_sent_no_confirm_timeout" then
+      return nil, "temper_sent_no_confirm_timeout"
+    end
+    if pending_active == true and pending and _lc(pending.action or "") == "temper" then
+      return nil, "temper_pending"
+    end
   end
 
   local shielded = _shielded(tgt)
@@ -858,6 +931,9 @@ local function _select_payload(ctx)
 
   _build_direct_order(payload, false)
   if not payload.eq and not payload.class and not payload.bal and not payload.free then
+    if _class_ready() ~= true then
+      return nil, "class_balance_not_ready"
+    end
     return nil, "no_legal_action"
   end
   return payload, payload.reason
@@ -870,6 +946,8 @@ function DR.init()
   DR.state.last_attack = DR.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil }
   DR.state.template = DR.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   DR.state.explain = DR.state.explain or {}
+  DR.state.last_hold_reason = _trim(DR.state.last_hold_reason)
+  DR.state.last_hold_at = tonumber(DR.state.last_hold_at or 0) or 0
   DR.state.loop_enabled = (DR.state.loop_enabled == true)
   DR.state.enabled = (DR.state.enabled == true)
   DR.state.busy = (DR.state.busy == true)
@@ -877,6 +955,7 @@ function DR.init()
   DR.state.homunculus_attack_target = _trim(DR.state.homunculus_attack_target)
   DR.state.last_salt_at = tonumber(DR.state.last_salt_at or 0) or 0
   DR.cfg.loop_delay = tonumber(DR.cfg.loop_delay or 0.15) or 0.15
+  DR.cfg.pending_class_timeout_s = tonumber(DR.cfg.pending_class_timeout_s or 2.5) or 2.5
 
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(DR, DR.route_contract)
@@ -914,6 +993,9 @@ function DR.alias_loop_on_stopped(ctx)
   local tgt = _trim((DR.state and DR.state.last_attack and DR.state.last_attack.target) or _target())
   if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
     P.clear_staged_for_target(tgt, tostring(ctx.reason or "loop_stopped"))
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("loop_stopped", { clear_any = true, clear_staged = true })
   end
   if ctx.silent ~= true then
     _echo(string.format("Alchemist duel route loop OFF (%s).", tostring(ctx.reason or "manual")))
@@ -954,12 +1036,14 @@ function DR.attack_function(ctx)
     if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
       P.clear_staged_for_target(tgt, "route_inactive")
     end
+    _set_hold_explain("route_inactive", tgt)
     return false, "route_inactive"
   end
 
   local payload, why = DR.build_payload(ctx)
   if not payload then
     DR.state.template.last_reason = why or "no_legal_action"
+    _set_hold_explain(why or "no_legal_action", _target())
     return false, why
   end
 
@@ -1006,9 +1090,7 @@ function DR.start()
   DR.state.homunculus_attack_sent = false
   DR.state.homunculus_attack_target = ""
   DR.alias_loop_clear_waiting()
-  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
-    pcall(Yso.mode.schedule_route_loop, "alchemist_duel_route", 0)
-  end
+  _schedule_loop(0, "start")
   return true
 end
 
@@ -1021,6 +1103,9 @@ function DR.stop(reason)
   end
   if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
     P.clear_staged_for_target(tgt, tostring(reason or "manual_stop"))
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("route_stop", { clear_any = true, clear_staged = true })
   end
   if P and P.state and type(P.state.evaluate) == "table" then
     P.state.evaluate.active = false
@@ -1038,6 +1123,96 @@ function DR.stop(reason)
   DR.alias_loop_clear_waiting()
   DR.state.template = DR.state.template or {}
   DR.state.template.last_disable_reason = tostring(reason or "manual")
+  return true
+end
+
+function DR.on_enter(ctx)
+  DR.init()
+  return true
+end
+
+function DR.on_exit(ctx)
+  return DR.stop("exit")
+end
+
+function DR.on_target_swap(old_target, new_target, reason)
+  local ctx = {}
+  if type(old_target) == "table" then
+    ctx = old_target
+  else
+    ctx.old_target = old_target
+    ctx.new_target = new_target
+    ctx.reason = reason
+  end
+
+  local P = _phys()
+  local old_tgt = _trim(ctx.old_target or ctx.old or "")
+  local new_tgt = _trim(ctx.new_target or ctx.new or _target())
+
+  if P and type(P.clear_staged_for_target) == "function" and old_tgt ~= "" then
+    P.clear_staged_for_target(old_tgt, "target_swap")
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("target_swap", { clear_any = true, clear_staged = true })
+  end
+
+  DR.alias_loop_clear_waiting()
+  DR.state.busy = false
+  DR.state.homunculus_attack_sent = false
+  DR.state.homunculus_attack_target = ""
+
+  if P and new_tgt ~= "" and type(P.target_needs_evaluate) == "function" and type(P.mark_all_eval_dirty) == "function" then
+    if P.target_needs_evaluate(new_tgt) == true then
+      P.mark_all_eval_dirty(new_tgt, "target_swap")
+    end
+  end
+
+  _set_hold_explain("target_swap_clear", new_tgt, {
+    old_target = old_tgt,
+    new_target = new_tgt,
+  })
+
+  _schedule_loop(0, "target_swap")
+  return true
+end
+
+function DR.on_pause(ctx)
+  return true
+end
+
+function DR.on_resume(ctx)
+  if DR.state and DR.state.loop_enabled == true then
+    _schedule_loop(0, "resume")
+  end
+  return true
+end
+
+function DR.on_manual_success(ctx)
+  if DR.state and DR.state.loop_enabled == true then
+    _schedule_loop(tonumber(DR.cfg.loop_delay or 0.15) or 0.15, "manual_success")
+  end
+  return true
+end
+
+function DR.on_send_result(payload, ctx)
+  payload = payload or {}
+  if RI and type(RI.payload_has_any_route) == "function"
+    and RI.payload_has_any_route(payload)
+    and type(RI.payload_has_route) == "function"
+    and not RI.payload_has_route(payload, "alchemist_duel_route")
+  then
+    return false
+  end
+
+  local tgt = _trim(payload.target or _target())
+  local class_cmd = _trim(payload.class or "")
+  if class_cmd:match("^temper%s+") then
+    _set_hold_explain("temper_pending", tgt, { pending_cmd = class_cmd })
+  end
+
+  if DR.state and DR.state.loop_enabled == true then
+    _schedule_loop(0, "send_result")
+  end
   return true
 end
 

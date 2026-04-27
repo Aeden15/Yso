@@ -58,6 +58,7 @@ P.inundate_math = P.inundate_math or {
 P.cfg.alchemy_debuff_fallback = P.cfg.alchemy_debuff_fallback or {}
 P.cfg.alchemy_debuff_fallback.phlogistication = tonumber(P.cfg.alchemy_debuff_fallback.phlogistication) or 46
 P.cfg.alchemy_debuff_fallback.vitrification = tonumber(P.cfg.alchemy_debuff_fallback.vitrification) or 46
+P.cfg.pending_class_timeout_s = tonumber(P.cfg.pending_class_timeout_s) or 2.5
 P.state.evaluate = P.state.evaluate or {
   target = "",
   active = false,
@@ -72,6 +73,9 @@ P.state.homunculus_attack = P.state.homunculus_attack or {
   target = "",
   changed_at = 0,
 }
+P.state.pending_class = (type(P.state.pending_class) == "table") and P.state.pending_class or nil
+P.state.pending_class_token = tonumber(P.state.pending_class_token or 0) or 0
+P.state.last_confirmed_class_at = tonumber(P.state.last_confirmed_class_at or 0) or 0
 
 local function _now()
   local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
@@ -188,6 +192,51 @@ local function _debug(msg)
     return
   end
   _echo(msg)
+end
+
+local function _route_loop_active(route_id)
+  route_id = _trim(route_id)
+  if route_id == "" then
+    return false
+  end
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= "table" then
+    return false
+  end
+  if type(M.route_loop_active) == "function" then
+    local ok, active = pcall(M.route_loop_active, route_id)
+    if ok then
+      return active == true
+    end
+  end
+  return false
+end
+
+local function _wake_route_loop(route_id, reason)
+  route_id = _trim(route_id)
+  if route_id == "" then
+    return false
+  end
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= "table" then
+    return false
+  end
+  if _route_loop_active(route_id) ~= true then
+    return false
+  end
+  if type(M.nudge_route_loop) == "function" then
+    local ok, nudged = pcall(M.nudge_route_loop, route_id, tostring(reason or "physiology"))
+    if ok and nudged == true then
+      return true
+    end
+  end
+  if type(M.schedule_route_loop) == "function" then
+    local ok, scheduled = pcall(M.schedule_route_loop, route_id, 0)
+    if ok and scheduled == true then
+      return true
+    end
+  end
+  return false
 end
 
 local function _rebuild_aff_lookup()
@@ -504,6 +553,21 @@ function Yso.homunculus_attack(tgt)
   return _same_target(st.target or "", tgt)
 end
 
+function P.wake_route(route_id, reason)
+  return _wake_route_loop(route_id, reason)
+end
+
+function P.wake_alchemist_routes(reason)
+  local woke = false
+  if _wake_route_loop("alchemist_group_damage", reason) then
+    woke = true
+  end
+  if _wake_route_loop("alchemist_duel_route", reason) then
+    woke = true
+  end
+  return woke
+end
+
 function P.now()
   return _now()
 end
@@ -694,6 +758,15 @@ function P.clear_staged_for_target(target, reason)
   local lower_target = _lc(target)
   local Q = Yso and Yso.queue or nil
   local cleared_any = false
+  local function _class_cmd_for_target(cmd_lc)
+    if cmd_lc == "" or not _same_target_cmd(cmd_lc, lower_target) then
+      return false
+    end
+    return cmd_lc:match("^temper%s+") ~= nil
+      or cmd_lc:match("^inundate%s+") ~= nil
+      or cmd_lc:match("^aurify%s+") ~= nil
+      or cmd_lc:match("^reave%s+") ~= nil
+  end
 
   if type(P.resolve_evaluate_target) == "function" and _same_target(P.resolve_evaluate_target(), target) then
     P.state.evaluate.active = false
@@ -709,6 +782,36 @@ function P.clear_staged_for_target(target, reason)
     then
       Q.clear("bal")
       cleared_any = true
+    end
+
+    local class_lane = Q.list("class")
+    if type(class_lane) == "string" then
+      local class_lc = _lc(class_lane)
+      if _class_cmd_for_target(class_lc) then
+        Q.clear("class")
+        cleared_any = true
+      end
+    elseif type(class_lane) == "table" then
+      local kept = {}
+      local removed = false
+      for i = 1, #class_lane do
+        local cmd = _trim(class_lane[i])
+        local cmd_lc = _lc(cmd)
+        if _class_cmd_for_target(cmd_lc) then
+          removed = true
+        else
+          kept[#kept + 1] = cmd
+        end
+      end
+      if removed then
+        if type(Q.clear) == "function" and type(Q.stage) == "function" then
+          Q.clear("class")
+          if #kept > 0 then
+            Q.stage("class", kept, { replace = true })
+          end
+          cleared_any = true
+        end
+      end
     end
 
     local free = Q.list("free")
@@ -770,6 +873,23 @@ function P.clear_staged_for_target(target, reason)
         cleared_any = true
       end
     end
+
+    local owned_class = Q.get_owned("class")
+    if type(owned_class) == "table" then
+      local cmd = _lc(owned_class.cmd or "")
+      local route = _lc(owned_class.route or "")
+      local tgt = _lc(owned_class.target or "")
+      if route:find("alchemist", 1, true) and (tgt == lower_target or _same_target_cmd(cmd, lower_target))
+        and _class_cmd_for_target(cmd)
+      then
+        if type(Q.clear_lane) == "function" then
+          Q.clear_lane("class")
+        elseif type(Q.clear_owned) == "function" then
+          Q.clear_owned("class")
+        end
+        cleared_any = true
+      end
+    end
   end
 
   P.state.last_staged_clear = {
@@ -779,6 +899,213 @@ function P.clear_staged_for_target(target, reason)
     cleared = (cleared_any == true),
   }
   return cleared_any
+end
+
+function P.clear_pending_class(reason, opts)
+  opts = type(opts) == "table" and opts or {}
+  local pending = type(P.state.pending_class) == "table" and P.state.pending_class or nil
+  if type(pending) ~= "table" then
+    return false
+  end
+
+  local clear_any = (opts.clear_any == true)
+  local want_route = _trim(opts.route)
+  local want_target = _trim(opts.target)
+  local want_action = _lc(opts.action)
+  local want_humour = _lc(opts.humour)
+
+  if not clear_any then
+    if want_route ~= "" and _lc(pending.route or "") ~= _lc(want_route) then
+      return false
+    end
+    if want_target ~= "" and not _same_target(pending.target or "", want_target) then
+      return false
+    end
+    if want_action ~= "" and _lc(pending.action or "") ~= want_action then
+      return false
+    end
+    if want_humour ~= "" and _lc(pending.humour or "") ~= want_humour then
+      return false
+    end
+  end
+
+  local now = _now()
+  if pending.timer_id and type(killTimer) == "function" then
+    pcall(killTimer, pending.timer_id)
+  end
+
+  local clear_reason = tostring(reason or "pending_class_clear")
+  P.state.pending_class = nil
+  P.state.last_pending_class_clear = {
+    action = _lc(pending.action or ""),
+    target = _trim(pending.target or ""),
+    humour = _lc(pending.humour or ""),
+    route = _trim(pending.route or ""),
+    reason = clear_reason,
+    at = now,
+  }
+
+  if clear_reason == "temper_sent_no_confirm_timeout" then
+    P.state.pending_timeout_event = {
+      action = _lc(pending.action or ""),
+      target = _trim(pending.target or ""),
+      humour = _lc(pending.humour or ""),
+      route = _trim(pending.route or ""),
+      reason = clear_reason,
+      at = now,
+    }
+  end
+
+  if opts.clear_staged == true and type(P.clear_staged_for_target) == "function" then
+    local pending_target = _trim(pending.target or "")
+    if pending_target ~= "" then
+      pcall(P.clear_staged_for_target, pending_target, clear_reason)
+    end
+  end
+
+  if opts.wake == true then
+    local wake_route = _trim(opts.wake_route or pending.route or "")
+    if wake_route ~= "" then
+      _wake_route_loop(wake_route, clear_reason)
+    else
+      P.wake_alchemist_routes(clear_reason)
+    end
+  end
+
+  return true
+end
+
+function P.note_pending_class(action, target, humour, cmd, route, source)
+  action = _lc(action)
+  if action == "" then
+    return false
+  end
+
+  target = _trim(target)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return false
+  end
+
+  P.clear_pending_class("pending_replace", { clear_any = true })
+
+  local now = _now()
+  local timeout_s = tonumber(P.cfg.pending_class_timeout_s or 2.5) or 2.5
+  local token = tonumber(P.state.pending_class_token or 0) + 1
+  P.state.pending_class_token = token
+
+  local pending = {
+    action = action,
+    target = target,
+    humour = _lc(humour),
+    cmd = _trim(cmd),
+    route = _trim(route),
+    source = tostring(source or "route"),
+    sent_at = now,
+    timeout_s = timeout_s,
+    token = token,
+  }
+
+  if timeout_s > 0 and type(tempTimer) == "function" then
+    pending.timer_id = tempTimer(timeout_s, function()
+      local current = P.state.pending_class
+      if type(current) ~= "table" then
+        return
+      end
+      if tonumber(current.token or 0) ~= token then
+        return
+      end
+      P.clear_pending_class("temper_sent_no_confirm_timeout", {
+        clear_any = true,
+        clear_staged = true,
+        wake = true,
+        wake_route = current.route,
+      })
+    end)
+  end
+
+  P.state.pending_class = pending
+  return true
+end
+
+function P.pending_class_status(route, target, max_age_s)
+  route = _trim(route)
+  target = _trim(target)
+
+  local timeout_event = type(P.state.pending_timeout_event) == "table" and P.state.pending_timeout_event or nil
+  if timeout_event then
+    local route_ok = (route == "" or _lc(timeout_event.route or "") == _lc(route))
+    local target_ok = (target == "" or _same_target(timeout_event.target or "", target))
+    if route_ok and target_ok then
+      P.state.pending_timeout_event = nil
+      return false, tostring(timeout_event.reason or "temper_sent_no_confirm_timeout"), timeout_event
+    end
+  end
+
+  local pending = type(P.state.pending_class) == "table" and P.state.pending_class or nil
+  if type(pending) ~= "table" then
+    return false, nil, nil
+  end
+
+  if route ~= "" and _lc(pending.route or "") ~= _lc(route) then
+    return false, nil, nil
+  end
+  if target ~= "" and not _same_target(pending.target or "", target) then
+    return false, nil, nil
+  end
+
+  local sent_at = tonumber(pending.sent_at or 0) or 0
+  local age = _now() - sent_at
+  local timeout_s = tonumber(max_age_s or pending.timeout_s or P.cfg.pending_class_timeout_s or 2.5) or 2.5
+  if timeout_s > 0 and sent_at > 0 and age >= timeout_s then
+    P.clear_pending_class("temper_sent_no_confirm_timeout", {
+      clear_any = true,
+      clear_staged = true,
+      wake = true,
+      wake_route = pending.route,
+    })
+    return false, "temper_sent_no_confirm_timeout", nil
+  end
+
+  return true, "temper_pending", pending
+end
+
+function P.note_temper_success(name, humour, source)
+  humour = _valid_humour(humour)
+  if not humour then
+    return false
+  end
+
+  local target = _trim(name)
+  if target == "" then
+    target = _trim((type(P.state.pending_class) == "table" and P.state.pending_class.target) or "")
+  end
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return false
+  end
+
+  local prior = tonumber(P.get_humour_level(target, humour))
+  local next_level = (prior ~= nil) and (prior + 1) or 1
+  P.set_humour_level(target, humour, next_level, tostring(source or "temper_success"))
+
+  if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+    Yso.alc.set_humour_ready(false, "temper_success")
+  end
+
+  P.state.last_confirmed_class_at = _now()
+  P.clear_pending_class("temper_success", {
+    action = "temper",
+    target = target,
+    humour = humour,
+    clear_staged = true,
+  })
+  P.wake_alchemist_routes("temper_success")
+  return true
 end
 
 function P.on_insufficient_temper(target, humour)
@@ -803,6 +1130,15 @@ function P.on_insufficient_temper(target, humour)
   if Q and type(Q.clear_lane_dispatched) == "function" then
     pcall(Q.clear_lane_dispatched, "bal", "insufficient_temper")
   end
+
+  P.clear_pending_class("insufficient_temper", {
+    action = "temper",
+    target = tgt,
+    humour = humour,
+    clear_staged = true,
+    wake = true,
+  })
+  P.wake_alchemist_routes("insufficient_temper")
 
   _debug(string.format("[Alchemist] insufficient temper: %s %s; clearing staged BAL", tgt, humour))
   return true
@@ -941,6 +1277,7 @@ function P.finish_evaluate(name)
     return false
   end
 
+  P.state.evaluate.target = target_row.name
   P.state.evaluate.active = false
   P.state.evaluate.requested_at = 0
   P.state.evaluate.started_at = 0
@@ -948,7 +1285,41 @@ function P.finish_evaluate(name)
   target_row.eval_dirty = false
   P.state.humour_eval_target = target_row.name
   P.clear_staged_for_target(target_row.name, "evaluate_result")
+  P.wake_alchemist_routes("finish_evaluate")
   return true
+end
+
+function P.note_evaluate_normal(name)
+  local target = P.resolve_evaluate_target(name)
+  local target_row = _target_row(target)
+  if not target_row then
+    return false
+  end
+
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    P.set_humour_level(target_row.name, humour, 0, "evaluate_normal")
+  end
+
+  return P.finish_evaluate(target_row.name)
+end
+
+function P.maybe_finish_evaluate(name)
+  local target = P.resolve_evaluate_target(name)
+  local target_row = _target_row(target)
+  if not target_row then
+    return false
+  end
+
+  for i = 1, #P.humours do
+    local humour = P.humours[i]
+    local hrow = _ensure_humour_row(target_row, humour)
+    if type(hrow) ~= "table" or hrow.dirty == true or tonumber(hrow.level) == nil then
+      return false
+    end
+  end
+
+  return P.finish_evaluate(target_row.name)
 end
 
 function P.note_evaluate_vitals(name, health_pct, mana_pct)

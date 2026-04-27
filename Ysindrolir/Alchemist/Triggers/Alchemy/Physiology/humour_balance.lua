@@ -126,6 +126,12 @@ function P.handle_humour_balance_line(line)
     if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
       Yso.alc.set_humour_ready(true, "humour_ready")
     end
+    if type(P.clear_pending_class) == "function" then
+      P.clear_pending_class("humour_balance_ready", { clear_any = true })
+    end
+    if type(P.wake_alchemist_routes) == "function" then
+      P.wake_alchemist_routes("humour_balance_ready")
+    end
     return true
   end
 
@@ -147,6 +153,15 @@ function P.handle_humour_balance_line(line)
   end
 
   if line == P.humour_fail_line then
+    if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+      Yso.alc.set_humour_ready(false, "humour_fail")
+    end
+    if type(P.clear_pending_class) == "function" then
+      P.clear_pending_class("class_balance_not_ready", { clear_any = true, clear_staged = true, wake = true })
+    end
+    if type(P.wake_alchemist_routes) == "function" then
+      P.wake_alchemist_routes("class_balance_not_ready")
+    end
     return nil
   end
 
@@ -187,12 +202,29 @@ function P.handle_humour_balance_line(line)
       if type(P.set_humour_level) == "function" then
         P.set_humour_level(target, humour, count, "evaluate_count")
       end
+      if type(P.maybe_finish_evaluate) == "function" then
+        P.maybe_finish_evaluate(target)
+      end
       return "evaluate_count"
     end
   end
 
   do
     if line:match("^.+ humours are all at normal levels%.$") then
+      local target = type(P.resolve_evaluate_target) == "function" and P.resolve_evaluate_target() or _current_target_fallback()
+      if type(P.note_evaluate_normal) == "function" then
+        P.note_evaluate_normal(target)
+      else
+        if type(P.set_humour_level) == "function" then
+          P.set_humour_level(target, "choleric", 0, "evaluate_normal")
+          P.set_humour_level(target, "melancholic", 0, "evaluate_normal")
+          P.set_humour_level(target, "phlegmatic", 0, "evaluate_normal")
+          P.set_humour_level(target, "sanguine", 0, "evaluate_normal")
+        end
+        if type(P.finish_evaluate) == "function" then
+          P.finish_evaluate(target)
+        end
+      end
       return "evaluate_normal"
     end
   end
@@ -212,13 +244,17 @@ function P.handle_humour_balance_line(line)
     local pronoun, humour = line:match("^You redirect .-, tempering (%a+) ([a-z]+) humour%.$")
     if humour and pronoun and _looks_like_pronoun(pronoun) then
       local target = type(P.current_target) == "function" and P.current_target() or _current_target_fallback()
-      if type(P.get_humour_level) == "function" and type(P.set_humour_level) == "function" then
-        local prior = tonumber(P.get_humour_level(target, humour))
-        local next_level = (prior ~= nil) and (prior + 1) or 1
-        P.set_humour_level(target, humour, next_level, "temper_success")
-      end
-      if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
-        Yso.alc.set_humour_ready(false, "temper_success")
+      if type(P.note_temper_success) == "function" then
+        P.note_temper_success(target, humour, "temper_success")
+      else
+        if type(P.get_humour_level) == "function" and type(P.set_humour_level) == "function" then
+          local prior = tonumber(P.get_humour_level(target, humour))
+          local next_level = (prior ~= nil) and (prior + 1) or 1
+          P.set_humour_level(target, humour, next_level, "temper_success")
+        end
+        if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+          Yso.alc.set_humour_ready(false, "temper_success")
+        end
       end
       return "temper_success"
     end
@@ -230,8 +266,14 @@ function P.handle_humour_balance_line(line)
       if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
         Yso.alc.set_humour_ready(false, "inundate_success")
       end
+      if type(P.clear_pending_class) == "function" then
+        P.clear_pending_class("inundate_success", { clear_any = true, clear_staged = true })
+      end
       if Yso.alc and Yso.alc.phys and type(Yso.alc.phys.clear_all_humours) == "function" then
         Yso.alc.phys.clear_all_humours(target, "inundate_success:" .. tostring(humour))
+      end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("inundate_success")
       end
       return "inundate_success"
     end
@@ -257,6 +299,9 @@ function P.handle_humour_balance_line(line)
       if Q and type(Q.clear_lane_dispatched) == "function" then
         pcall(Q.clear_lane_dispatched, "bal", "truewrack_success")
       end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("truewrack_success")
+      end
       return "truewrack_success"
     end
 
@@ -266,7 +311,25 @@ function P.handle_humour_balance_line(line)
       if Q and type(Q.clear_lane_dispatched) == "function" then
         pcall(Q.clear_lane_dispatched, "bal", "wrack_success")
       end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("wrack_success")
+      end
       return "wrack_success"
+    end
+  end
+
+  do
+    if line:match("^You do not see that person here%.$")
+      or line:match("^There is no one here by that name%.$")
+      or line:match("^You cannot find your target%.$")
+    then
+      if type(P.clear_pending_class) == "function" then
+        P.clear_pending_class("class_target_invalid", { clear_any = true, clear_staged = true, wake = true })
+      end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("class_target_invalid")
+      end
+      return "class_target_invalid"
     end
   end
 

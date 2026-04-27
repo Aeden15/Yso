@@ -82,6 +82,7 @@ GD.cfg = GD.cfg or {
   echo = true,
   loop_delay = 0.15,
   evaluate_pending_s = 1.2,
+  pending_class_timeout_s = 2.5,
   salt_min_affs = 2,
   salt_cooldown_s = 3.2,
   burst_pressure_pct = 75,
@@ -103,6 +104,8 @@ GD.state = GD.state or {
   last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil },
   template = { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" },
   explain = {},
+  last_hold_reason = "",
+  last_hold_at = 0,
   homunculus_attack_sent = false,
   homunculus_attack_target = "",
   last_salt_at = 0,
@@ -371,6 +374,48 @@ local function _is_party_damage_route()
   return true
 end
 
+local function _schedule_loop(delay, reason)
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= "table" then
+    return false
+  end
+  if type(M.schedule_route_loop) == "function" then
+    local ok, scheduled = pcall(M.schedule_route_loop, "alchemist_group_damage", delay or 0)
+    if ok and scheduled == true then
+      return true
+    end
+  end
+  if type(M.nudge_route_loop) == "function" then
+    local ok, nudged = pcall(M.nudge_route_loop, "alchemist_group_damage", tostring(reason or "route"))
+    if ok and nudged == true then
+      return true
+    end
+  end
+  return false
+end
+
+local function _set_hold_explain(reason, tgt, extra)
+  GD.state = GD.state or {}
+  GD.state.last_hold_reason = tostring(reason or "hold")
+  GD.state.last_hold_at = _now()
+  GD.state.explain = {
+    route = "alchemist_group_damage",
+    target = _trim(tgt or _target()),
+    category = "hold",
+    reason = GD.state.last_hold_reason,
+    eq = nil,
+    class = nil,
+    bal = nil,
+    free = nil,
+    direct_order = nil,
+  }
+  if type(extra) == "table" then
+    for k, v in pairs(extra) do
+      GD.state.explain[k] = v
+    end
+  end
+end
+
 local function _make_payload(tgt, category, reason)
   return {
     route = "alchemist_group_damage",
@@ -637,11 +682,21 @@ end
 local function _post_send(payload)
   local P = _phys()
   local tgt = _trim(payload and payload.target or "")
-  if payload and payload.class_category == "temper" and Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
-    Yso.alc.set_humour_ready(false, "temper_sent")
+  if payload and payload.class_category == "temper" then
+    local humour = _lc((payload.class or ""):match("^temper%s+[%w'%-]+%s+([a-z]+)$") or "")
+    if P and type(P.note_pending_class) == "function" then
+      P.note_pending_class("temper", tgt, humour, payload.class, "alchemist_group_damage", "route_send")
+    end
+    _set_hold_explain("temper_pending", tgt, {
+      humour = humour,
+      pending_cmd = payload.class,
+    })
   elseif payload and payload.class_category == "inundate" then
     if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
       Yso.alc.set_humour_ready(false, "inundate_sent")
+    end
+    if P and type(P.clear_pending_class) == "function" then
+      P.clear_pending_class("inundate_sent", { clear_any = true, clear_staged = true })
     end
     if P and type(P.clear_all_humours) == "function" and tgt ~= "" then
       P.clear_all_humours(tgt, "inundate_sent")
@@ -653,6 +708,8 @@ local function _post_send(payload)
   if payload and _lc(payload.eq or "") == "educe salt" then
     GD.state.last_salt_at = _now()
   end
+
+  _schedule_loop(0, "payload_sent")
 end
 
 local function _emit_payload(payload)
@@ -738,18 +795,34 @@ local function _select_payload(ctx)
   local free_bootstrap = _ensure_homunculus_attack(GD, tgt)
 
   local needs_eval = (type(P.target_needs_evaluate) == "function") and (P.target_needs_evaluate(tgt) == true) or false
-  if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
-    local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
-    if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
-    _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
-    if type(P.note_evaluate_request) == "function" then
-      local noted = P.note_evaluate_request(tgt, "route")
-      if noted ~= true then
-        return nil, "evaluate_duplicate"
+  if needs_eval then
+    if _evaluate_ready() and not _evaluate_pending_for(tgt) then
+      local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
+      if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+      _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
+      if type(P.note_evaluate_request) == "function" then
+        local noted = P.note_evaluate_request(tgt, "route")
+        if noted ~= true then
+          return nil, "evaluate_duplicate"
+        end
       end
+      _build_direct_order(payload, false)
+      return payload, payload.reason
     end
-    _build_direct_order(payload, false)
-    return payload, payload.reason
+    if _evaluate_pending_for(tgt) then
+      return nil, "evaluate_pending"
+    end
+    return nil, "evaluate_not_ready"
+  end
+
+  if type(P.pending_class_status) == "function" then
+    local pending_active, pending_reason, pending = P.pending_class_status("alchemist_group_damage", tgt, GD.cfg.pending_class_timeout_s)
+    if pending_reason == "temper_sent_no_confirm_timeout" then
+      return nil, "temper_sent_no_confirm_timeout"
+    end
+    if pending_active == true and pending and _lc(pending.action or "") == "temper" then
+      return nil, "temper_pending"
+    end
   end
 
   local shielded = _shielded(tgt)
@@ -845,6 +918,9 @@ local function _select_payload(ctx)
 
   _build_direct_order(payload, false)
   if not payload.eq and not payload.class and not payload.bal and not payload.free then
+    if _class_ready() ~= true then
+      return nil, "class_balance_not_ready"
+    end
     return nil, "no_legal_action"
   end
   return payload, payload.reason
@@ -857,6 +933,8 @@ function GD.init()
   GD.state.last_attack = GD.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil }
   GD.state.template = GD.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   GD.state.explain = GD.state.explain or {}
+  GD.state.last_hold_reason = _trim(GD.state.last_hold_reason)
+  GD.state.last_hold_at = tonumber(GD.state.last_hold_at or 0) or 0
   GD.state.loop_enabled = (GD.state.loop_enabled == true)
   GD.state.enabled = (GD.state.enabled == true)
   GD.state.busy = (GD.state.busy == true)
@@ -864,6 +942,7 @@ function GD.init()
   GD.state.homunculus_attack_target = _trim(GD.state.homunculus_attack_target)
   GD.state.last_salt_at = tonumber(GD.state.last_salt_at or 0) or 0
   GD.cfg.loop_delay = tonumber(GD.cfg.loop_delay or 0.15) or 0.15
+  GD.cfg.pending_class_timeout_s = tonumber(GD.cfg.pending_class_timeout_s or 2.5) or 2.5
 
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(GD, GD.route_contract)
@@ -901,6 +980,9 @@ function GD.alias_loop_on_stopped(ctx)
   local tgt = _trim((GD.state and GD.state.last_attack and GD.state.last_attack.target) or _target())
   if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
     P.clear_staged_for_target(tgt, tostring(ctx.reason or "loop_stopped"))
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("loop_stopped", { clear_any = true, clear_staged = true })
   end
   if ctx.silent ~= true then
     _echo(string.format("Alchemist group damage loop OFF (%s).", tostring(ctx.reason or "manual")))
@@ -941,12 +1023,14 @@ function GD.attack_function(ctx)
     if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
       P.clear_staged_for_target(tgt, "route_inactive")
     end
+    _set_hold_explain("route_inactive", tgt)
     return false, "route_inactive"
   end
 
   local payload, why = GD.build_payload(ctx)
   if not payload then
     GD.state.template.last_reason = why or "no_legal_action"
+    _set_hold_explain(why or "no_legal_action", _target())
     return false, why
   end
 
@@ -993,9 +1077,7 @@ function GD.start()
   GD.state.homunculus_attack_sent = false
   GD.state.homunculus_attack_target = ""
   GD.alias_loop_clear_waiting()
-  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
-    pcall(Yso.mode.schedule_route_loop, "alchemist_group_damage", 0)
-  end
+  _schedule_loop(0, "start")
   return true
 end
 
@@ -1008,6 +1090,9 @@ function GD.stop(reason)
   end
   if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
     P.clear_staged_for_target(tgt, tostring(reason or "manual_stop"))
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("route_stop", { clear_any = true, clear_staged = true })
   end
   if P and P.state and type(P.state.evaluate) == "table" then
     P.state.evaluate.active = false
@@ -1025,6 +1110,96 @@ function GD.stop(reason)
   GD.alias_loop_clear_waiting()
   GD.state.template = GD.state.template or {}
   GD.state.template.last_disable_reason = tostring(reason or "manual")
+  return true
+end
+
+function GD.on_enter(ctx)
+  GD.init()
+  return true
+end
+
+function GD.on_exit(ctx)
+  return GD.stop("exit")
+end
+
+function GD.on_target_swap(old_target, new_target, reason)
+  local ctx = {}
+  if type(old_target) == "table" then
+    ctx = old_target
+  else
+    ctx.old_target = old_target
+    ctx.new_target = new_target
+    ctx.reason = reason
+  end
+
+  local P = _phys()
+  local old_tgt = _trim(ctx.old_target or ctx.old or "")
+  local new_tgt = _trim(ctx.new_target or ctx.new or _target())
+
+  if P and type(P.clear_staged_for_target) == "function" and old_tgt ~= "" then
+    P.clear_staged_for_target(old_tgt, "target_swap")
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("target_swap", { clear_any = true, clear_staged = true })
+  end
+
+  GD.alias_loop_clear_waiting()
+  GD.state.busy = false
+  GD.state.homunculus_attack_sent = false
+  GD.state.homunculus_attack_target = ""
+
+  if P and new_tgt ~= "" and type(P.target_needs_evaluate) == "function" and type(P.mark_all_eval_dirty) == "function" then
+    if P.target_needs_evaluate(new_tgt) == true then
+      P.mark_all_eval_dirty(new_tgt, "target_swap")
+    end
+  end
+
+  _set_hold_explain("target_swap_clear", new_tgt, {
+    old_target = old_tgt,
+    new_target = new_tgt,
+  })
+
+  _schedule_loop(0, "target_swap")
+  return true
+end
+
+function GD.on_pause(ctx)
+  return true
+end
+
+function GD.on_resume(ctx)
+  if GD.state and GD.state.loop_enabled == true then
+    _schedule_loop(0, "resume")
+  end
+  return true
+end
+
+function GD.on_manual_success(ctx)
+  if GD.state and GD.state.loop_enabled == true then
+    _schedule_loop(tonumber(GD.cfg.loop_delay or 0.15) or 0.15, "manual_success")
+  end
+  return true
+end
+
+function GD.on_send_result(payload, ctx)
+  payload = payload or {}
+  if RI and type(RI.payload_has_any_route) == "function"
+    and RI.payload_has_any_route(payload)
+    and type(RI.payload_has_route) == "function"
+    and not RI.payload_has_route(payload, "alchemist_group_damage")
+  then
+    return false
+  end
+
+  local tgt = _trim(payload.target or _target())
+  local class_cmd = _trim(payload.class or "")
+  if class_cmd:match("^temper%s+") then
+    _set_hold_explain("temper_pending", tgt, { pending_cmd = class_cmd })
+  end
+
+  if GD.state and GD.state.loop_enabled == true then
+    _schedule_loop(0, "send_result")
+  end
   return true
 end
 

@@ -168,3 +168,36 @@ Package XML:
   existing humour-ready line handling.
 - Expanded/rewrote Alchemist route tests and added
   `Ysindrolir/Yso/Tests and rebuilds/test_alchemist_aurify_route.lua`.
+
+## Patch Notes (April 27, 2026 - Alchemist Evaluate/Target-Swap Stall Recovery)
+
+- Fixed Alchemist evaluate-normal handling so
+  `"His/Her/Their/... humours are all at normal levels."` is treated as a
+  full trusted evaluate result:
+  - all four humours set to `0`,
+  - evaluate marked complete/clean,
+  - staged evaluate commands cleared,
+  - affected route loops nudged immediately.
+- Added hard evaluate gates in both Alchemist routes:
+  - `Alchemist/Core/group damage.lua`
+  - `Alchemist/Core/duel route.lua`
+  Routes now hold with explicit reasons (`evaluate_pending`,
+  `evaluate_not_ready`) instead of falling through into humour-dependent plans.
+- Added shared pending class-action recovery in
+  `Alchemist/Core/physiology.lua` for temper confirmation tracking:
+  - send-time temper creates short-lived pending state,
+  - humour counts increment only on confirmed temper success line,
+  - missing confirmation clears pending with timeout recovery
+    (`temper_sent_no_confirm_timeout`) and loop wake.
+- Added route lifecycle hooks for both Alchemist routes:
+  `on_target_swap`, `on_manual_success`, `on_send_result`, plus hold/explain
+  updates (`temper_pending`, `target_swap_clear`, `route_inactive`, etc.).
+- Target swap now clears stale staged/pending state and resets per-target
+  homunculus attack guards so the new target can re-bootstrap cleanly.
+- Updated physiology trigger script
+  (`Alchemist/Triggers/Alchemy/Physiology/humour_balance.lua`) to wire
+  evaluate-normal to physiology finalize helpers and wake routes on key state
+  transitions.
+- Added/expanded regression tests:
+  - `Yso/Tests and rebuilds/test_alchemist_group_damage.lua`
+  - `Yso/Tests and rebuilds/test_alchemist_duel_route.lua`

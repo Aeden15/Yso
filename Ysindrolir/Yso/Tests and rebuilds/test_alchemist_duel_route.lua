@@ -85,6 +85,12 @@ local function make_world(opts)
   local now_s = tonumber(opts.now_s or 1300) or 1300
   local current_target = opts.target or "TargetOne"
   local sent = {}
+  local clear_staged_calls = {}
+  local mark_dirty_calls = {}
+  local pending_clear_calls = {}
+  local pending_status_active = (opts.pending_active == true)
+  local pending_timeout_once = (opts.pending_timeout_once == true)
+  local pending_last = nil
 
   _G.Yso = nil
   _G.yso = nil
@@ -110,10 +116,46 @@ local function make_world(opts)
 
   local stub_P = {
     target = function(name) return { name = name } end,
-    target_needs_evaluate = function() return false end,
+    target_needs_evaluate = function() return opts.needs_eval == true end,
     note_evaluate_request = function() return true end,
+    evaluate_staged_for_target = function() return opts.evaluate_pending == true end,
     reave_sync_target = function() return false end,
-    clear_staged_for_target = function() return true end,
+    clear_staged_for_target = function(tgt, why)
+      clear_staged_calls[#clear_staged_calls + 1] = { target = tgt, reason = why }
+      return true
+    end,
+    mark_all_eval_dirty = function(tgt, why)
+      mark_dirty_calls[#mark_dirty_calls + 1] = { target = tgt, reason = why }
+      return true
+    end,
+    note_pending_class = function(action, tgt, humour, cmd, route, source)
+      pending_status_active = true
+      pending_last = {
+        action = action,
+        target = tgt,
+        humour = humour,
+        cmd = cmd,
+        route = route,
+        source = source,
+      }
+      return true
+    end,
+    clear_pending_class = function(why, args)
+      pending_status_active = false
+      pending_clear_calls[#pending_clear_calls + 1] = { reason = why, args = args }
+      return true
+    end,
+    pending_class_status = function()
+      if pending_timeout_once == true then
+        pending_timeout_once = false
+        pending_status_active = false
+        return false, "temper_sent_no_confirm_timeout", { reason = "temper_sent_no_confirm_timeout" }
+      end
+      if pending_status_active == true then
+        return true, "temper_pending", { action = "temper", target = current_target }
+      end
+      return false, nil, nil
+    end,
     can_aurify = function() return opts.can_aurify == true end,
     can_reave = function()
       if opts.can_reave == true then
@@ -249,9 +291,16 @@ local function make_world(opts)
   return {
     R = R,
     sent = sent,
+    clear_staged_calls = clear_staged_calls,
+    mark_dirty_calls = mark_dirty_calls,
+    pending_clear_calls = pending_clear_calls,
+    pending_last = function() return pending_last end,
     set_target = function(t)
       current_target = t
       _G.target = t
+    end,
+    set_pending_timeout_once = function(v)
+      pending_timeout_once = (v == true)
     end,
   }
 end
@@ -314,6 +363,65 @@ do
   R.stop("manual")
   assert_true("4c: stop sends pacify", contains_text(world.sent, "homunculus pacify"))
   assert_false("4d: stop never sends passive", contains_text(world.sent, "homunculus passive"))
+end
+
+print("\n=== Test 5: duel hard gate holds on dirty humour intel ===")
+do
+  local world_eval = make_world({ needs_eval = true })
+  local payload_eval, why_eval = world_eval.R.build_payload({ target = "TargetOne" })
+  assert_eq("5a: dirty intel emits evaluate payload", why_eval, "humour_intel_dirty")
+  assert_true("5b: evaluate command emitted", free_has(payload_eval, "evaluate TargetOne humours"))
+
+  local world_pending = make_world({ needs_eval = true, evaluate_pending = true })
+  local payload_pending, why_pending = world_pending.R.build_payload({ target = "TargetOne" })
+  assert_eq("5c: pending evaluate holds payload", payload_pending, nil)
+  assert_eq("5d: pending evaluate reason", why_pending, "evaluate_pending")
+
+  local world_not_ready = make_world({ needs_eval = true })
+  _G.Yso.alc.set_evaluate_ready(false, "test")
+  local payload_not_ready, why_not_ready = world_not_ready.R.build_payload({ target = "TargetOne" })
+  assert_eq("5e: evaluate-not-ready holds payload", payload_not_ready, nil)
+  assert_eq("5f: evaluate-not-ready reason", why_not_ready, "evaluate_not_ready")
+end
+
+print("\n=== Test 6: duel target swap clears stale state ===")
+do
+  local world = make_world({ needs_eval = true })
+  local R = world.R
+  R.state.homunculus_attack_sent = true
+  R.state.homunculus_attack_target = "TargetOne"
+  R.state.busy = true
+
+  local ok = R.on_target_swap("TargetOne", "TargetTwo")
+  assert_true("6a: on_target_swap returns true", ok == true)
+  assert_true("6b: old target staged lanes cleared", #(world.clear_staged_calls or {}) >= 1)
+  assert_eq("6c: pending clear reason target_swap", world.pending_clear_calls[1] and world.pending_clear_calls[1].reason, "target_swap")
+  assert_false("6d: homunculus sent reset", R.state.homunculus_attack_sent == true)
+  assert_eq("6e: homunculus target reset", R.state.homunculus_attack_target, "")
+  assert_true("6f: new target marked dirty", #(world.mark_dirty_calls or {}) >= 1)
+  assert_eq("6g: dirty mark target is new target", world.mark_dirty_calls[1] and world.mark_dirty_calls[1].target, "TargetTwo")
+end
+
+print("\n=== Test 7: duel temper pending hold + timeout reason ===")
+do
+  local world = make_world({
+    temper_humour = "sanguine",
+    class_ready = true,
+    bal_ready = false,
+    eq_ready = false,
+  })
+
+  local ok = world.R.attack_function({ target = "TargetOne" })
+  assert_true("7a: first temper send succeeds", ok == true)
+
+  local payload_pending, why_pending = world.R.build_payload({ target = "TargetOne" })
+  assert_eq("7b: pending temper holds payload", payload_pending, nil)
+  assert_eq("7c: pending temper reason", why_pending, "temper_pending")
+
+  world.set_pending_timeout_once(true)
+  local payload_timeout, why_timeout = world.R.build_payload({ target = "TargetOne" })
+  assert_eq("7d: timeout tick holds once", payload_timeout, nil)
+  assert_eq("7e: timeout reason surfaced", why_timeout, "temper_sent_no_confirm_timeout")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))
