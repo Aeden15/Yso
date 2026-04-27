@@ -335,7 +335,8 @@ function P.handle_humour_balance_line(line)
 
   do
     local target = line:match("^Your homunculus .- ([A-Z][%a'-]+), corrupting ")
-      or line:match("^Your homunculus .- (.+?)(?:'s|') body, corrupting ")
+      or line:match("^Your homunculus .- ([A-Z][%a'-]+)'s body, corrupting ")
+      or line:match("^Your homunculus .- ([A-Z][%a'-]+)' body, corrupting ")
       or _current_target_fallback()
     local found = line:lower():find("corrupt", 1, true)
     local mel = line:lower():find("melancholic", 1, true)

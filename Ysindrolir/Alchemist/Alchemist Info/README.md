@@ -87,3 +87,12 @@ Primary active development is focused on Magi and Alchemist.
 - Paralysis is gated by AK's current-target sanguine count (`>= 2`), and target swaps require a fresh `evaluate <target> humours` before humour-state planning resumes.
 - `educe salt` is treated as a post-shieldbreak/post-execute self-purge EQ action and is blocked while `stupidity` is present.
 - TODO: Legacy-driven self-affliction handling should prioritize or reprioritize `stupidity` before relying on Salt.
+
+## Patch Notes (April 27, 2026 - Homunculus Corrupt Parser Fix)
+
+- Replaced invalid PCRE-style fallback parsing in `Triggers/Alchemy/Physiology/humour_balance.lua` with valid Lua patterns for possessive target lines:
+  - `Target's body, corrupting ...`
+  - `Target' body, corrupting ...`
+- Synced the same parser fix into embedded `Ysindrolir/mudlet packages/Yso system.xml` so source and package behavior stay in parity.
+- Added regression coverage in `Yso/Tests and rebuilds/test_alchemist_group_damage.lua` for possessive homunculus-corrupt lines to ensure parsed target ownership is correct.
+- Diagnostic observation: Legacy `Dor` empty script container in `Legacy V2.1.xml` was intentionally left unchanged in this pass.

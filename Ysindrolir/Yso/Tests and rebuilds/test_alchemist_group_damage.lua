@@ -725,6 +725,22 @@ do
   assert_eq("11e: timeout reason exposed", why_timeout, "temper_sent_no_confirm_timeout")
 end
 
+print("\n=== Test 12: homunculus corrupt parser handles possessive target lines ===")
+do
+  local world = make_phys_world({ target = "FallbackGuy", hp = 81, mp = 73 })
+  local P = world.P
+
+  local r1 = P.handle_humour_balance_line("Your homunculus gnaws O'rielle's body, corrupting melancholic and sanguine humours.")
+  assert_eq("12a: possessive-s body line handled", r1, "homunculus_corrupt")
+  assert_true("12b: parsed target corruption is active", P.corruption_active("O'rielle"))
+  assert_false("12c: fallback target not marked when parse succeeds", P.corruption_active("FallbackGuy"))
+
+  P.clear_corruption("O'rielle", "test_reset")
+  local r2 = P.handle_humour_balance_line("Your homunculus gnaws Ares' body, corrupting melancholic and sanguine humours.")
+  assert_eq("12d: apostrophe-only possessive line handled", r2, "homunculus_corrupt")
+  assert_true("12e: apostrophe-only parsed target corruption is active", P.corruption_active("Ares"))
+end
+
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then
   io.stderr:write(string.format("FAILURES: %d\n", fail_count))

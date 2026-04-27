@@ -201,3 +201,19 @@ Package XML:
 - Added/expanded regression tests:
   - `Yso/Tests and rebuilds/test_alchemist_group_damage.lua`
   - `Yso/Tests and rebuilds/test_alchemist_duel_route.lua`
+
+## Patch Notes (April 27, 2026 - Alchemist Homunculus Corrupt Parser Fix)
+
+- Fixed invalid Lua pattern usage in
+  `Alchemist/Triggers/Alchemy/Physiology/humour_balance.lua` for homunculus
+  corrupt target parsing.
+- Replaced the broken fallback match with valid Lua possessive-target patterns
+  so lines like `Target's body, corrupting ...` and `Target' body, corrupting ...`
+  parse the correct target instead of silently falling back to current target.
+- Synced the same parser update into embedded
+  `Ysindrolir/mudlet packages/Yso system.xml` to keep package/runtime parity.
+- Added regression coverage in
+  `Ysindrolir/Yso/Tests and rebuilds/test_alchemist_group_damage.lua` for
+  possessive homunculus-corrupt line handling.
+- Left `Legacy V2.1.xml` empty `Dor` script container unchanged on purpose in
+  this pass (documented observation only, no structural cleanup).
