@@ -154,6 +154,8 @@ local function _infer_lane_from_payload(payload)
      or cmd:match("^throw%s+")
      or cmd:match("^wipe%s+")
      or cmd:match("^envenom%s+")
+     or cmd:match("^wrack%s+")
+     or cmd:match("^truewrack%s+")
   then
     return "bal"
   end

@@ -217,3 +217,19 @@ Package XML:
   possessive homunculus-corrupt line handling.
 - Left `Legacy V2.1.xml` empty `Dor` script container unchanged on purpose in
   this pass (documented observation only, no structural cleanup).
+
+## Patch Notes (April 28, 2026 - Alchemist Route Reset Repair)
+
+- Added shared reset/cleanup hooks across Alchemist group damage, duel, and
+  Aurify routes so start/stop, target swap, target clear/slain, and AK reset
+  events clear stale route-local state without forcibly disabling active routes.
+- Added the missing humour-balance failure trigger and made the failure line
+  actively mark humour balance unavailable, clear pending/staged class state,
+  and clear the server class queue.
+- Corrected generic queue lane inference so `wrack` and `truewrack` stage on
+  BAL while `educe iron` remains EQ.
+- Added target-slain and AK `Reset Success!` bridge triggers in `Yso system.xml`,
+  plus a direct AK reset hook in `AK.xml` for reliable cleanup when AK prints
+  its reset confirmation.
+- Baseline capture now skips override curesets `group`, `hunt`, and `burst`
+  with one non-warning info echo instead of repeated Legacy warning spam.

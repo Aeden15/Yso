@@ -14,6 +14,7 @@ C.cfg = C.cfg or {
 }
 C._tm = C._tm or {}
 C._st = C._st or { dead = { pending = "", at = 0 } }
+C.state = C.state or {}
 
 local function _trim(s)
   return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
@@ -81,6 +82,143 @@ function C.schedule_dead_clear(tgt)
     if pend ~= "" and _is_current(pend) then _clear("dead") end
   end)
   C._tm.dead_clear = my_id
+  return true
+end
+
+local function _route_registry()
+  local RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == "function" then return RR end
+  if type(require) == "function" then
+    pcall(require, "Yso.Combat.route_registry")
+    pcall(require, "Yso.xml.route_registry")
+  end
+  RR = Yso and Yso.Combat and Yso.Combat.RouteRegistry or nil
+  if RR and type(RR.resolve) == "function" then return RR end
+  return nil
+end
+
+local function _route_module(entry)
+  local ns = type(entry) == "table" and tostring(entry.namespace or "") or ""
+  if ns == "" then return nil end
+  local cur = _G
+  for part in ns:gmatch("[^%.]+") do
+    if type(cur) ~= "table" then return nil end
+    cur = cur[part]
+  end
+  return type(cur) == "table" and cur or nil
+end
+
+local function _ensure_route_module(entry)
+  local mod = _route_module(entry)
+  if mod then return mod end
+  if type(require) == "function" then
+    local rmod = type(entry) == "table" and tostring(entry.module_name or "") or ""
+    if rmod ~= "" then pcall(require, rmod) end
+  end
+  return _route_module(entry)
+end
+
+local function _active_route_id()
+  local M = Yso and Yso.mode or nil
+  if M and type(M.active_route_id) == "function" then
+    local ok, v = pcall(M.active_route_id)
+    if ok then return _lc(v or "") end
+  end
+  return ""
+end
+
+local function _reset_route_mod(mod, reason, tgt)
+  if type(mod) == "table" and type(mod.reset_route_state) == "function" then
+    pcall(mod.reset_route_state, reason, tgt)
+    return true
+  end
+  return false
+end
+
+local function _reset_active_and_alchemist_routes(reason, tgt)
+  local seen = {}
+  local RR = _route_registry()
+
+  local function reset_entry(id)
+    id = _lc(id)
+    if id == "" or seen[id] == true then return end
+    seen[id] = true
+    local entry = RR and RR.resolve and RR.resolve(id) or nil
+    local mod = entry and _ensure_route_module(entry) or nil
+    _reset_route_mod(mod, reason, tgt)
+  end
+
+  reset_entry(_active_route_id())
+  reset_entry("alchemist_group_damage")
+  reset_entry("alchemist_duel_route")
+  reset_entry("alchemist_aurify_route")
+
+  if Yso and Yso.off and Yso.off.alc then
+    _reset_route_mod(Yso.off.alc.group_damage, reason, tgt)
+    _reset_route_mod(Yso.off.alc.duel_route, reason, tgt)
+    _reset_route_mod(Yso.off.alc.aurify_route, reason, tgt)
+  end
+end
+
+function C.on_target_slain(tgt, source)
+  tgt = _trim(tgt)
+  source = tostring(source or "target_slain")
+  if tgt == "" then return false end
+
+  if Yso and Yso.alc and Yso.alc.phys and type(Yso.alc.phys.reave_on_target_slain) == "function" then
+    pcall(Yso.alc.phys.reave_on_target_slain, tgt, source)
+  end
+
+  if _is_current(tgt) then
+    _reset_active_and_alchemist_routes(source, tgt)
+    C.schedule_dead_clear(tgt)
+  end
+
+  return true
+end
+
+function C.on_target_cleared(tgt, source)
+  tgt = _trim(tgt)
+  source = tostring(source or "target_clear")
+  _reset_active_and_alchemist_routes(source, tgt)
+  return true
+end
+
+function C.on_external_reset(source)
+  source = tostring(source or "external_reset")
+  local tgt = _cur_target()
+
+  _reset_active_and_alchemist_routes(source, tgt)
+
+  local Q = Yso and Yso.queue or nil
+  if Q then
+    local lanes = { "class", "eq", "bal", "free" }
+    for i = 1, #lanes do
+      local lane = lanes[i]
+      if type(Q.clear_lane) == "function" then
+        pcall(Q.clear_lane, lane)
+      end
+      if type(Q.clear) == "function" then
+        pcall(Q.clear, lane)
+      end
+      if type(Q.clear_owned) == "function" then
+        pcall(Q.clear_owned, lane)
+      end
+    end
+  end
+
+  if type(send) == "function" then
+    pcall(send, "CLEARQUEUE c!p!w!t", false)
+    pcall(send, "CLEARQUEUE e!p!w!t", false)
+    pcall(send, "CLEARQUEUE b!p!w!t", false)
+  end
+
+  C.state.last_external_reset = {
+    source = source,
+    target = tgt,
+    at = _now(),
+  }
+
   return true
 end
 

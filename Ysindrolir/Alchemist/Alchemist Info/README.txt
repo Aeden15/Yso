@@ -46,3 +46,13 @@ Behavior expectations
 - Reave execute checks now sit just below Aurification and require
   trusted evaluate intel, humour balance ready, all four humours
   tempered, and no channel-blocking self hinder state.
+
+Route reset repair - April 28, 2026
+-----------------------------------
+- Group damage, duel, and Aurify now share reset cleanup for start/stop,
+  target swap, target clear/slain, and AK reset events without disabling active
+  routes.
+- Humour cooldown failure now marks humour balance unavailable, clears
+  pending/staged class state, and clears the server class queue.
+- wrack and truewrack are BAL-lane commands in generic queue inference; educe
+  iron remains EQ.

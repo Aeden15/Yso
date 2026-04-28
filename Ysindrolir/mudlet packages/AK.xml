@@ -28003,6 +28003,9 @@ end
      ak.radiancestack = nil
   end
   cecho("&lt;cyan&gt; Reset Success!\n\n")
+  if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_external_reset) == "function" then
+    pcall(Yso.off.coord.on_external_reset, "ak_reset_success")
+  end
 end </script>
 				<eventHandlerList />
 			</Script>

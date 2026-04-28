@@ -239,6 +239,35 @@ do
   assert_false("3d: stop never sends passive", contains_text(world.sent, "homunculus passive"))
 end
 
+print("\n=== Test 4: aurify reset_route_state clears stale route-local state ===")
+do
+  local world = make_world({ hp = 60, mp = 60 })
+  local R = world.R
+  local P = world.P
+
+  R.state.busy = true
+  R.state.waiting.queue = "class"
+  R.state.waiting.main_lane = "class"
+  R.state.waiting.lanes = { class = true }
+  R.state.waiting.at = 123
+  R.state.homunculus_attack_sent = true
+  R.state.homunculus_attack_target = "TargetOne"
+  R.state.last_attack = { at = 123, target = "TargetOne", main_lane = "class", cmd = "reave TargetOne" }
+  P.state.evaluate.active = true
+  P.state.evaluate.target = "TargetOne"
+  P.state.evaluate.requested_at = 100
+  P.state.evaluate.started_at = 101
+
+  local ok = R.reset_route_state("unit_reset", "TargetOne")
+  assert_true("4a: reset returns true", ok == true)
+  assert_false("4b: busy cleared", R.state.busy == true)
+  assert_eq("4c: waiting queue cleared", R.state.waiting.queue, nil)
+  assert_eq("4d: homunculus target cleared", R.state.homunculus_attack_target, "")
+  assert_eq("4e: last attack target cleared", R.state.last_attack.target, "")
+  assert_false("4f: evaluate inactive", P.state.evaluate.active == true)
+  assert_true("4g: class server queue cleared", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+end
+
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then
   io.stderr:write(string.format("FAILURES: %d\n", fail_count))

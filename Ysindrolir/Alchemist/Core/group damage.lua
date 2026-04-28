@@ -491,6 +491,33 @@ local function _homunculus_pacify_on_stop(R)
   R.state.homunculus_attack_target = ""
 end
 
+local function _clear_route_owned_queues(reason)
+  local Q = Yso and Yso.queue or nil
+  local lanes = { "class", "eq", "bal", "free" }
+  reason = tostring(reason or "route_reset")
+
+  if Q then
+    for i = 1, #lanes do
+      local lane = lanes[i]
+      if type(Q.clear_lane) == "function" then
+        pcall(Q.clear_lane, lane, { reason = reason })
+      end
+      if type(Q.clear) == "function" then
+        pcall(Q.clear, lane)
+      end
+      if type(Q.clear_owned) == "function" then
+        pcall(Q.clear_owned, lane)
+      end
+    end
+  end
+
+  if type(send) == "function" then
+    pcall(send, "CLEARQUEUE c!p!w!t", false)
+    pcall(send, "CLEARQUEUE e!p!w!t", false)
+    pcall(send, "CLEARQUEUE b!p!w!t", false)
+  end
+end
+
 local function _self_purge_candidate(R)
   if not _eq_ready() then return nil end
 
@@ -523,8 +550,11 @@ local function _vitrification_active(P, tgt)
 end
 
 local function _pick_wrack(P, tgt, giving, staged)
-  if not (_bal_ready() and _can_plan_bal()) then
-    return nil, nil
+  if not _bal_ready() then
+    return nil, "bal_not_ready_for_wrack"
+  end
+  if not _can_plan_bal() then
+    return nil, "bal_lane_debounce"
   end
   if type(P.build_truewrack_with_staged) == "function" then
     local cmd = P.build_truewrack_with_staged(tgt, giving, staged)
@@ -550,7 +580,18 @@ local function _pick_wrack(P, tgt, giving, staged)
       return cmd, "wrack"
     end
   end
-  return nil, nil
+  return nil, "no_legal_wrack_aff_or_temper"
+end
+
+local function _note_wrack_result(R, cmd, why)
+  if _trim(cmd) ~= "" then return end
+  why = _trim(why)
+  if why == "" then return end
+  R.state = R.state or {}
+  R.state.template = R.state.template or {}
+  R.state.template.last_no_wrack_reason = why
+  R.state.explain = R.state.explain or {}
+  R.state.explain.last_no_wrack_reason = why
 end
 
 local function _pick_group_inundate(P, tgt)
@@ -848,9 +889,11 @@ local function _select_payload(ctx)
     end
 
     if payload.class_category ~= "inundate" then
-      local bal_cmd = _pick_wrack(P, tgt, giving, staged)
+      local bal_cmd, bal_reason = _pick_wrack(P, tgt, giving, staged)
       if bal_cmd then
         _set_lane(payload, "bal", bal_cmd)
+      else
+        _note_wrack_result(GD, bal_cmd, bal_reason)
       end
     end
 
@@ -910,9 +953,11 @@ local function _select_payload(ctx)
       _set_lane(payload, "eq", "educe iron " .. tgt)
     end
 
-    local bal_cmd = _pick_wrack(P, tgt, giving, staged)
+    local bal_cmd, bal_reason = _pick_wrack(P, tgt, giving, staged)
     if bal_cmd then
       _set_lane(payload, "bal", bal_cmd)
+    else
+      _note_wrack_result(GD, bal_cmd, bal_reason)
     end
   end
 
@@ -970,7 +1015,54 @@ function GD.is_active()
   return _is_party_damage_route()
 end
 
-function GD.alias_loop_on_started()
+function GD.reset_route_state(reason, target)
+  GD.init()
+  reason = tostring(reason or "reset")
+  target = _trim(target or "")
+
+  local P = _phys()
+  GD.state.busy = false
+  GD.alias_loop_clear_waiting()
+  GD.state.homunculus_attack_sent = false
+  GD.state.homunculus_attack_target = ""
+  GD.state.last_attack = { at = 0, target = "", main_lane = nil, lanes = nil, cmd = "" }
+
+  GD.state.template = GD.state.template or {}
+  GD.state.template.last_reset_reason = reason
+  GD.state.template.last_reset_target = target
+  GD.state.template.last_payload = nil
+  GD.state.template.last_target = ""
+  GD.state.template.last_reason = reason
+  GD.state.explain = { target = target, reason = reason }
+
+  if P and type(P.reave_sync_target) == "function" then
+    pcall(P.reave_sync_target, "", reason)
+  end
+  if P and type(P.clear_staged_for_target) == "function" and target ~= "" then
+    pcall(P.clear_staged_for_target, target, reason)
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    pcall(P.clear_pending_class, reason, { clear_any = true, clear_staged = true })
+  end
+  if P and P.state and type(P.state.evaluate) == "table" then
+    P.state.evaluate.active = false
+    P.state.evaluate.target = ""
+    P.state.evaluate.requested_at = 0
+    P.state.evaluate.started_at = 0
+  end
+  _clear_route_owned_queues(reason)
+  return true
+end
+
+function GD.alias_loop_prepare_start(ctx)
+  ctx = ctx or {}
+  GD.reset_route_state(tostring(ctx.reason or "prepare_start"), _target())
+  return ctx
+end
+
+function GD.alias_loop_on_started(ctx)
+  ctx = ctx or {}
+  GD.reset_route_state(tostring(ctx.reason or "loop_started"), _target())
   _echo("Alchemist group damage loop ON.")
 end
 
@@ -984,6 +1076,14 @@ function GD.alias_loop_on_stopped(ctx)
   if P and type(P.clear_pending_class) == "function" then
     P.clear_pending_class("loop_stopped", { clear_any = true, clear_staged = true })
   end
+  if P and P.state and type(P.state.evaluate) == "table" then
+    P.state.evaluate.active = false
+    P.state.evaluate.target = ""
+    P.state.evaluate.requested_at = 0
+    P.state.evaluate.started_at = 0
+  end
+  _clear_route_owned_queues(tostring(ctx.reason or "loop_stopped"))
+  _homunculus_pacify_on_stop(GD)
   if ctx.silent ~= true then
     _echo(string.format("Alchemist group damage loop OFF (%s).", tostring(ctx.reason or "manual")))
   end
@@ -1068,15 +1168,12 @@ function GD.attack_function(ctx)
   return true, GD.state.last_attack.main_lane
 end
 
-function GD.start()
+function GD.start(reason)
   GD.init()
   GD.cfg.enabled = true
   GD.state.enabled = true
   GD.state.loop_enabled = true
-  GD.state.busy = false
-  GD.state.homunculus_attack_sent = false
-  GD.state.homunculus_attack_target = ""
-  GD.alias_loop_clear_waiting()
+  GD.reset_route_state(tostring(reason or "start"), _target())
   _schedule_loop(0, "start")
   return true
 end
@@ -1101,6 +1198,7 @@ function GD.stop(reason)
     P.state.evaluate.started_at = 0
   end
 
+  _clear_route_owned_queues(tostring(reason or "route_stop"))
   _homunculus_pacify_on_stop(GD)
 
   GD.state.loop_enabled = false
@@ -1136,17 +1234,7 @@ function GD.on_target_swap(old_target, new_target, reason)
   local old_tgt = _trim(ctx.old_target or ctx.old or "")
   local new_tgt = _trim(ctx.new_target or ctx.new or _target())
 
-  if P and type(P.clear_staged_for_target) == "function" and old_tgt ~= "" then
-    P.clear_staged_for_target(old_tgt, "target_swap")
-  end
-  if P and type(P.clear_pending_class) == "function" then
-    P.clear_pending_class("target_swap", { clear_any = true, clear_staged = true })
-  end
-
-  GD.alias_loop_clear_waiting()
-  GD.state.busy = false
-  GD.state.homunculus_attack_sent = false
-  GD.state.homunculus_attack_target = ""
+  GD.reset_route_state("target_swap", old_tgt)
 
   if P and new_tgt ~= "" and type(P.target_needs_evaluate) == "function" and type(P.mark_all_eval_dirty) == "function" then
     if P.target_needs_evaluate(new_tgt) == true then

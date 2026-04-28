@@ -148,8 +148,8 @@ local function make_world(opts)
     pending_class_status = function()
       if pending_timeout_once == true then
         pending_timeout_once = false
-        pending_status_active = false
-        return false, "temper_sent_no_confirm_timeout", { reason = "temper_sent_no_confirm_timeout" }
+        pending_status_active = true
+        return true, "temper_pending", { action = "temper", target = current_target }
       end
       if pending_status_active == true then
         return true, "temper_pending", { action = "temper", target = current_target }
@@ -402,6 +402,29 @@ do
   assert_eq("6g: dirty mark target is new target", world.mark_dirty_calls[1] and world.mark_dirty_calls[1].target, "TargetTwo")
 end
 
+print("\n=== Test 6b: duel reset_route_state clears stale route-local state ===")
+do
+  local world = make_world({ temper_humour = "choleric", wrack_cmd = "wrack TargetOne paralysis" })
+  local R = world.R
+  R.state.busy = true
+  R.state.waiting.queue = "class"
+  R.state.waiting.main_lane = "class"
+  R.state.waiting.lanes = { class = true }
+  R.state.waiting.at = 123
+  R.state.homunculus_attack_sent = true
+  R.state.homunculus_attack_target = "TargetOne"
+  R.state.last_attack = { at = 123, target = "TargetOne", main_lane = "class", cmd = "temper TargetOne choleric" }
+
+  local ok = R.reset_route_state("unit_reset", "TargetOne")
+  assert_true("6b-a: reset returns true", ok == true)
+  assert_false("6b-b: busy cleared", R.state.busy == true)
+  assert_eq("6b-c: waiting queue cleared", R.state.waiting.queue, nil)
+  assert_eq("6b-d: homunculus target cleared", R.state.homunculus_attack_target, "")
+  assert_eq("6b-e: last attack target cleared", R.state.last_attack.target, "")
+  assert_true("6b-f: pending class cleared", #(world.pending_clear_calls or {}) >= 1)
+  assert_true("6b-g: class server queue cleared", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+end
+
 print("\n=== Test 7: duel temper pending hold + timeout reason ===")
 do
   local world = make_world({
@@ -421,7 +444,7 @@ do
   world.set_pending_timeout_once(true)
   local payload_timeout, why_timeout = world.R.build_payload({ target = "TargetOne" })
   assert_eq("7d: timeout tick holds once", payload_timeout, nil)
-  assert_eq("7e: timeout reason surfaced", why_timeout, "temper_sent_no_confirm_timeout")
+  assert_eq("7e: timeout remains pending", why_timeout, "temper_pending")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

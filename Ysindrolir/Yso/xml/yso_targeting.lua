@@ -219,6 +219,9 @@ function TG.clear(source, reason, silent, opts)
   TG.state.locked, TG.state.lock_source, TG.state.lock_reason = false, "", ""
 
   _sync_mirrors("")
+  if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_target_cleared) == "function" then
+    pcall(Yso.off.coord.on_target_cleared, old, reason or "target_clear")
+  end
   _reset_combat_lane_state("target_clear")
 
   -- Phase 1 plumbing: mirror into Yso.state

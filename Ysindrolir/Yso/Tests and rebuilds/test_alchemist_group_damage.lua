@@ -162,8 +162,8 @@ local function make_route_world(opts)
     pending_class_status = function()
       if pending_timeout_once == true then
         pending_timeout_once = false
-        pending_status_active = false
-        return false, "temper_sent_no_confirm_timeout", { reason = "temper_sent_no_confirm_timeout" }
+        pending_status_active = true
+        return true, "temper_pending", { action = "temper", target = current_target }
       end
       if pending_status_active == true then
         return true, "temper_pending", { action = "temper", target = current_target }
@@ -376,6 +376,7 @@ local function make_phys_world(opts)
   opts = opts or {}
   local now_s = tonumber(opts.now_s or 2000) or 2000
   local current_target = opts.target or "TargetOne"
+  local sent = {}
 
   _G.Yso = nil
   _G.yso = nil
@@ -384,7 +385,10 @@ local function make_phys_world(opts)
   _G.getCurrentLine = function() return "" end
   _G.cecho = function() end
   _G.echo = function() end
-  _G.send = function() return true end
+  _G.send = function(cmd)
+    sent[#sent + 1] = tostring(cmd or "")
+    return true
+  end
 
   _G.ak = {
     alchemist = {
@@ -429,6 +433,7 @@ local function make_phys_world(opts)
 
   return {
     P = P,
+    sent = sent,
     set_target = function(t)
       current_target = t
       _G.target = t
@@ -703,6 +708,29 @@ do
   assert_eq("10i: new target dirty mark", world.mark_dirty_calls[1] and world.mark_dirty_calls[1].target, "TargetTwo")
 end
 
+print("\n=== Test 10b: reset_route_state clears stale route-local state ===")
+do
+  local world = make_route_world({ temper_humour = "choleric", wrack_cmd = "wrack TargetOne paralysis" })
+  local R = world.R
+  R.state.busy = true
+  R.state.waiting.queue = "class"
+  R.state.waiting.main_lane = "class"
+  R.state.waiting.lanes = { class = true }
+  R.state.waiting.at = 123
+  R.state.homunculus_attack_sent = true
+  R.state.homunculus_attack_target = "TargetOne"
+  R.state.last_attack = { at = 123, target = "TargetOne", main_lane = "class", cmd = "temper TargetOne choleric" }
+
+  local ok = R.reset_route_state("unit_reset", "TargetOne")
+  assert_true("10b-a: reset returns true", ok == true)
+  assert_false("10b-b: busy cleared", R.state.busy == true)
+  assert_eq("10b-c: waiting queue cleared", R.state.waiting.queue, nil)
+  assert_eq("10b-d: homunculus target cleared", R.state.homunculus_attack_target, "")
+  assert_eq("10b-e: last attack target cleared", R.state.last_attack.target, "")
+  assert_true("10b-f: pending class cleared", #(world.pending_clear_calls or {}) >= 1)
+  assert_true("10b-g: class server queue cleared", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+end
+
 print("\n=== Test 11: temper pending hold + timeout recovery reason ===")
 do
   local world = make_route_world({
@@ -722,7 +750,7 @@ do
   world.set_pending_timeout_once(true)
   local payload_timeout, why_timeout = world.R.build_payload({ target = "TargetOne" })
   assert_eq("11d: timeout tick holds once", payload_timeout, nil)
-  assert_eq("11e: timeout reason exposed", why_timeout, "temper_sent_no_confirm_timeout")
+  assert_eq("11e: timeout remains pending", why_timeout, "temper_pending")
 end
 
 print("\n=== Test 12: homunculus corrupt parser handles possessive target lines ===")
@@ -739,6 +767,33 @@ do
   local r2 = P.handle_humour_balance_line("Your homunculus gnaws Ares' body, corrupting melancholic and sanguine humours.")
   assert_eq("12d: apostrophe-only possessive line handled", r2, "homunculus_corrupt")
   assert_true("12e: apostrophe-only parsed target corruption is active", P.corruption_active("Ares"))
+end
+
+print("\n=== Test 13: humour failure clears pending class and server class queue ===")
+do
+  local world = make_phys_world({ target = "TargetOne" })
+  local P = world.P
+  local clear_calls = {}
+  local ready_source = ""
+
+  Yso.alc.set_humour_ready = function(ready, source)
+    Yso.bal.humour = (ready == true)
+    ready_source = tostring(source or "")
+    return true
+  end
+  P.clear_pending_class = function(reason, opts)
+    clear_calls[#clear_calls + 1] = { reason = reason, opts = opts }
+    return true
+  end
+
+  local result = P.handle_humour_balance_line(P.humour_fail_line)
+  assert_eq("13a: failure returns humour_fail", result, "humour_fail")
+  assert_false("13b: humour balance marked down", Yso.bal.humour == true)
+  assert_eq("13c: humour ready source", ready_source, "humour_fail")
+  assert_eq("13d: pending clear reason", clear_calls[1] and clear_calls[1].reason, "humour_fail")
+  assert_true("13e: staged class clear requested", clear_calls[1] and clear_calls[1].opts and clear_calls[1].opts.clear_staged == true)
+  assert_true("13f: server class queue clear sent", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+  assert_true("13g: diagnostic recorded", type(P.state.last_humour_fail) == "table")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

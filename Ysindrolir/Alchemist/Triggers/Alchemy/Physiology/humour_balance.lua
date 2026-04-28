@@ -157,12 +157,17 @@ function P.handle_humour_balance_line(line)
       Yso.alc.set_humour_ready(false, "humour_fail")
     end
     if type(P.clear_pending_class) == "function" then
-      P.clear_pending_class("class_balance_not_ready", { clear_any = true, clear_staged = true, wake = true })
+      P.clear_pending_class("humour_fail", { clear_any = true, clear_staged = true })
     end
-    if type(P.wake_alchemist_routes) == "function" then
-      P.wake_alchemist_routes("class_balance_not_ready")
+    if type(send) == "function" then
+      pcall(send, "CLEARQUEUE c!p!w!t", false)
     end
-    return nil
+    P.state = P.state or {}
+    P.state.last_humour_fail = {
+      at = _now and _now() or os.time(),
+      line = line,
+    }
+    return "humour_fail"
   end
 
   do

@@ -96,3 +96,14 @@ Primary active development is focused on Magi and Alchemist.
 - Synced the same parser fix into embedded `Ysindrolir/mudlet packages/Yso system.xml` so source and package behavior stay in parity.
 - Added regression coverage in `Yso/Tests and rebuilds/test_alchemist_group_damage.lua` for possessive homunculus-corrupt lines to ensure parsed target ownership is correct.
 - Diagnostic observation: Legacy `Dor` empty script container in `Legacy V2.1.xml` was intentionally left unchanged in this pass.
+
+## Patch Notes (April 28, 2026 - Route Reset Repair)
+
+- Added shared route reset cleanup across group damage, duel, and Aurify so
+  start/stop, target swap, target clear/slain, and AK reset events clear stale
+  busy/waiting/last-attack/evaluate/homunculus state without disabling active
+  routes.
+- Humour cooldown failure now marks humour balance unavailable, clears
+  pending/staged class state, and clears the server class queue.
+- `wrack` and `truewrack` are now treated as BAL-lane commands by generic queue
+  inference, while route payloads continue to set lanes explicitly.

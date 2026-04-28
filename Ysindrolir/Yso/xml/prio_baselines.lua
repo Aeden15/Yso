@@ -31,12 +31,35 @@ local function _warn_baseline_missing_once_per_set(set)
   return true
 end
 
+local skip_baseline_sets = {
+  group = true,
+  hunt = true,
+  burst = true,
+}
+
+local function _skip_baseline_set(set)
+  set = tostring(set or ""):lower()
+  if skip_baseline_sets[set] ~= true then return false end
+  local P = Legacy.Curing.Prios
+  P._baseline_skipped_sets = type(P._baseline_skipped_sets) == "table" and P._baseline_skipped_sets or {}
+  if P._baseline_skipped_sets[set] ~= true then
+    P._baseline_skipped_sets[set] = true
+    if type(cecho) == "function" then
+      cecho("\n<white>[<gold>Legacy<white>]: Skipped baseline sync for override cureset '" .. set .. "'.")
+    end
+  end
+  return true
+end
+
 function Legacy.Curing.Prios.ApplyCapturedBaseline(set, opts)
   opts = type(opts) == "table" and opts or {}
   local warn = (opts.warn ~= false)
 
   local P = Legacy.Curing.Prios
   set = tostring(set or Legacy.Curing.ActiveServerSet or "legacy"):lower()
+  if _skip_baseline_set(set) then
+    return false, set, false
+  end
 
   local applied = false
 

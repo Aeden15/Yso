@@ -86,6 +86,17 @@ _G.yso = _G.Yso
 dofile(QUEUE_PATH)
 local Q = Yso.queue
 
+print("=== Test 0: alchemist wrack commands infer BAL lane ===")
+assert_true("0a: wrack inferred as bal", Q.stage("wrack Bob paralysis"))
+assert_eq("0b: wrack staged on bal", Q.list("bal"), "wrack Bob paralysis")
+Q.clear("bal")
+assert_true("0c: truewrack inferred as bal", Q.stage("truewrack Bob sanguine paralysis"))
+assert_eq("0d: truewrack staged on bal", Q.list("bal"), "truewrack Bob sanguine paralysis")
+Q.clear("bal")
+assert_true("0e: educe iron remains eq", Q.stage("educe iron Bob"))
+assert_eq("0f: educe iron staged on eq", Q.list("eq"), "educe iron Bob")
+Q.clear("eq")
+
 print("=== Test 1: install EQ lane command ===")
 assert_true("1a: stage eq command", Q.stage("eq", "instill target with asthma"))
 local ok_commit_1 = Q.commit({ allow_eqbal = true })

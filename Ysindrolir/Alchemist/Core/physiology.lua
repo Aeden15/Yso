@@ -1017,12 +1017,14 @@ function P.note_pending_class(action, target, humour, cmd, route, source)
       if tonumber(current.token or 0) ~= token then
         return
       end
-      P.clear_pending_class("temper_sent_no_confirm_timeout", {
-        clear_any = true,
-        clear_staged = true,
-        wake = true,
-        wake_route = current.route,
-      })
+      P.state.pending_timeout_event = {
+        action = _lc(current.action or ""),
+        target = _trim(current.target or ""),
+        humour = _lc(current.humour or ""),
+        route = _trim(current.route or ""),
+        reason = "temper_pending_longer_than_expected",
+        at = _now(),
+      }
     end)
   end
 
@@ -1039,6 +1041,12 @@ function P.pending_class_status(route, target, max_age_s)
     local route_ok = (route == "" or _lc(timeout_event.route or "") == _lc(route))
     local target_ok = (target == "" or _same_target(timeout_event.target or "", target))
     if route_ok and target_ok then
+      if tostring(timeout_event.reason or "") == "temper_pending_longer_than_expected" then
+        local current = type(P.state.pending_class) == "table" and P.state.pending_class or nil
+        if current then
+          return true, "temper_pending", current
+        end
+      end
       P.state.pending_timeout_event = nil
       return false, tostring(timeout_event.reason or "temper_sent_no_confirm_timeout"), timeout_event
     end
@@ -1060,13 +1068,15 @@ function P.pending_class_status(route, target, max_age_s)
   local age = _now() - sent_at
   local timeout_s = tonumber(max_age_s or pending.timeout_s or P.cfg.pending_class_timeout_s or 2.5) or 2.5
   if timeout_s > 0 and sent_at > 0 and age >= timeout_s then
-    P.clear_pending_class("temper_sent_no_confirm_timeout", {
-      clear_any = true,
-      clear_staged = true,
-      wake = true,
-      wake_route = pending.route,
-    })
-    return false, "temper_sent_no_confirm_timeout", nil
+    P.state.pending_timeout_event = {
+      action = _lc(pending.action or ""),
+      target = _trim(pending.target or ""),
+      humour = _lc(pending.humour or ""),
+      route = _trim(pending.route or ""),
+      reason = "temper_pending_longer_than_expected",
+      at = _now(),
+    }
+    return true, "temper_pending", pending
   end
 
   return true, "temper_pending", pending

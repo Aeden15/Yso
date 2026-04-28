@@ -139,6 +139,32 @@ assert_false("3g: different missing set not applied", applied_3c)
 assert_true("3h: warning emitted for different set", warned_3c)
 assert_eq("3i: warning count increments for different set", warn_count, 2)
 
+print("\n=== Test 4: override curesets skip baseline activation with one info echo ===")
+fresh_env(false)
+P = Legacy.Curing.Prios
+P.UseBaseline = function()
+  P._unexpected_use = true
+  return true
+end
+Legacy.Curing.UseBaseline = function()
+  P._unexpected_curing_use = true
+  return true
+end
+local applied_4a, set_4a, warned_4a = P.ApplyCapturedBaseline("group", { warn = true })
+assert_false("4a: group is not applied", applied_4a)
+assert_eq("4b: group set returned", set_4a, "group")
+assert_false("4c: group skip is not warning", warned_4a)
+assert_eq("4d: one info echo for first group skip", warn_count, 1)
+local applied_4b = P.ApplyCapturedBaseline("group", { warn = true })
+assert_false("4e: repeated group skip still not applied", applied_4b)
+assert_eq("4f: repeated group skip does not echo again", warn_count, 1)
+local applied_4c = P.ApplyCapturedBaseline("hunt", { warn = true })
+assert_false("4g: hunt is skipped", applied_4c)
+local applied_4d = P.ApplyCapturedBaseline("burst", { warn = true })
+assert_false("4h: burst is skipped", applied_4d)
+assert_false("4i: baseline helper not called", P._unexpected_use == true)
+assert_false("4j: curing helper not called", P._unexpected_curing_use == true)
+
 table.deepcopy = original_deepcopy
 
 io.write(string.format("PASS: %d\n", pass_count))
