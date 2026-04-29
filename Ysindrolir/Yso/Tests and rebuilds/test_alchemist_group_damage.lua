@@ -102,6 +102,9 @@ local function make_route_world(opts)
   local clear_staged_calls = {}
   local mark_dirty_calls = {}
   local pending_clear_calls = {}
+  local queue_clear_calls = {}
+  local queue_clear_owned_calls = {}
+  local queue_clear_dispatched_calls = {}
   local pending_status_active = (opts.pending_active == true)
   local pending_timeout_once = (opts.pending_timeout_once == true)
   local pending_last = nil
@@ -325,9 +328,35 @@ local function make_route_world(opts)
         committed[#committed + 1] = true
         return true
       end,
+      clear = function(lane)
+        queue_clear_calls[#queue_clear_calls + 1] = lane
+        return true
+      end,
+      clear_owned = function(lane)
+        queue_clear_owned_calls[#queue_clear_owned_calls + 1] = lane
+        return true
+      end,
+      clear_lane_dispatched = function(lane, reason)
+        queue_clear_dispatched_calls[#queue_clear_dispatched_calls + 1] = { lane = lane, reason = reason }
+        return true
+      end,
     }
   else
-    _G.Yso.queue = { can_plan_lane = function() return true end }
+    _G.Yso.queue = {
+      can_plan_lane = function() return true end,
+      clear = function(lane)
+        queue_clear_calls[#queue_clear_calls + 1] = lane
+        return true
+      end,
+      clear_owned = function(lane)
+        queue_clear_owned_calls[#queue_clear_owned_calls + 1] = lane
+        return true
+      end,
+      clear_lane_dispatched = function(lane, reason)
+        queue_clear_dispatched_calls[#queue_clear_dispatched_calls + 1] = { lane = lane, reason = reason }
+        return true
+      end,
+    }
   end
 
   _G.ak = {
@@ -357,6 +386,9 @@ local function make_route_world(opts)
     clear_staged_calls = clear_staged_calls,
     mark_dirty_calls = mark_dirty_calls,
     pending_clear_calls = pending_clear_calls,
+    queue_clear_calls = queue_clear_calls,
+    queue_clear_owned_calls = queue_clear_owned_calls,
+    queue_clear_dispatched_calls = queue_clear_dispatched_calls,
     stub_P = stub_P,
     pending_last = function() return pending_last end,
     set_target = function(t)
@@ -728,7 +760,8 @@ do
   assert_eq("10b-d: homunculus target cleared", R.state.homunculus_attack_target, "")
   assert_eq("10b-e: last attack target cleared", R.state.last_attack.target, "")
   assert_true("10b-f: pending class cleared", #(world.pending_clear_calls or {}) >= 1)
-  assert_true("10b-g: class server queue cleared", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+  assert_true("10b-g: local class queue cleared", contains_text(world.queue_clear_calls, "class"))
+  assert_false("10b-h: reset does not send server CLEARQUEUE", contains_text(world.sent, "CLEARQUEUE"))
 end
 
 print("\n=== Test 11: temper pending hold + timeout recovery reason ===")

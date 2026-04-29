@@ -195,22 +195,16 @@ function C.on_external_reset(source)
     local lanes = { "class", "eq", "bal", "free" }
     for i = 1, #lanes do
       local lane = lanes[i]
-      if type(Q.clear_lane) == "function" then
-        pcall(Q.clear_lane, lane)
-      end
       if type(Q.clear) == "function" then
         pcall(Q.clear, lane)
       end
       if type(Q.clear_owned) == "function" then
         pcall(Q.clear_owned, lane)
       end
+      if type(Q.clear_lane_dispatched) == "function" and lane ~= "free" then
+        pcall(Q.clear_lane_dispatched, lane, source)
+      end
     end
-  end
-
-  if type(send) == "function" then
-    pcall(send, "CLEARQUEUE c!p!w!t", false)
-    pcall(send, "CLEARQUEUE e!p!w!t", false)
-    pcall(send, "CLEARQUEUE b!p!w!t", false)
   end
 
   C.state.last_external_reset = {

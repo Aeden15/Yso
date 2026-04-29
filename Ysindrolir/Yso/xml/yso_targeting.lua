@@ -365,13 +365,13 @@ if type(Yso.get_target) ~= "function" then
 end
 
 if type(Yso.set_target) ~= "function" then
-  function Yso.set_target(who, source)
+  function Yso.set_target(who, source, opts)
     who = _clean(who)
     if who == "" then
       if type(echo) == "function" then echo("[YSO] No target supplied. Usage: y NAME\n") end
       return false
     end
-    return TG.set(who, source or "manual")
+    return TG.set(who, source or "manual", opts)
   end
 end
 

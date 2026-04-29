@@ -73,6 +73,9 @@ local function make_world(opts)
   local now_s = tonumber(opts.now_s or 1700) or 1700
   local current_target = opts.target or "TargetOne"
   local sent = {}
+  local queue_clear_calls = {}
+  local queue_clear_owned_calls = {}
+  local queue_clear_dispatched_calls = {}
 
   _G.Yso = nil
   _G.yso = nil
@@ -154,7 +157,23 @@ local function make_world(opts)
       is_writhed = function() return false end,
     },
     tgt = { has_aff = function() return false end },
-    queue = { can_plan_lane = function() return true end, list = function() return nil end, clear = function() return true end, stage = function() return true end },
+    queue = {
+      can_plan_lane = function() return true end,
+      list = function() return nil end,
+      clear = function(lane)
+        queue_clear_calls[#queue_clear_calls + 1] = lane
+        return true
+      end,
+      clear_owned = function(lane)
+        queue_clear_owned_calls[#queue_clear_owned_calls + 1] = lane
+        return true
+      end,
+      clear_lane_dispatched = function(lane, reason)
+        queue_clear_dispatched_calls[#queue_clear_dispatched_calls + 1] = { lane = lane, reason = reason }
+        return true
+      end,
+      stage = function() return true end,
+    },
   }
   _G.yso = _G.Yso
 
@@ -176,6 +195,9 @@ local function make_world(opts)
     R = R,
     P = P,
     sent = sent,
+    queue_clear_calls = queue_clear_calls,
+    queue_clear_owned_calls = queue_clear_owned_calls,
+    queue_clear_dispatched_calls = queue_clear_dispatched_calls,
     set_target = function(t)
       current_target = t
       _G.target = t
@@ -265,7 +287,8 @@ do
   assert_eq("4d: homunculus target cleared", R.state.homunculus_attack_target, "")
   assert_eq("4e: last attack target cleared", R.state.last_attack.target, "")
   assert_false("4f: evaluate inactive", P.state.evaluate.active == true)
-  assert_true("4g: class server queue cleared", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+  assert_true("4g: local class queue cleared", contains_text(world.queue_clear_calls, "class"))
+  assert_false("4h: reset does not send server CLEARQUEUE", contains_text(world.sent, "CLEARQUEUE"))
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

@@ -42,6 +42,14 @@ local function assert_true(label, value)
   pass()
 end
 
+local function assert_false(label, value)
+  if value ~= false then
+    fail(label, string.format("expected false, got %s", tostring(value)))
+    return
+  end
+  pass()
+end
+
 local function assert_eq(label, got, expected)
   if got ~= expected then
     fail(label, string.format("expected %s, got %s", tostring(expected), tostring(got)))
@@ -63,6 +71,7 @@ local reset_calls = {}
 local clear_lane_calls = {}
 local clear_calls = {}
 local clear_owned_calls = {}
+local clear_dispatched_calls = {}
 local sent = {}
 
 local function reset_mod(id)
@@ -116,6 +125,10 @@ _G.Yso = {
       clear_owned_calls[#clear_owned_calls + 1] = lane
       return true
     end,
+    clear_lane_dispatched = function(lane, reason)
+      clear_dispatched_calls[#clear_dispatched_calls + 1] = { lane = lane, reason = reason }
+      return true
+    end,
   },
   util = { now = function() return 12345 end },
 }
@@ -136,15 +149,16 @@ do
   assert_true("1d: aurify route reset", #reset_calls >= 3)
   assert_eq("1e: first reset reason", reset_calls[1] and reset_calls[1].reason, "ak_reset_success")
   assert_eq("1f: reset target", reset_calls[1] and reset_calls[1].target, "Tharonus")
-  assert_true("1g: class lane cleared", contains_text(clear_lane_calls, "class"))
-  assert_true("1h: eq lane cleared", contains_text(clear_lane_calls, "eq"))
-  assert_true("1i: bal lane cleared", contains_text(clear_lane_calls, "bal"))
-  assert_true("1j: free lane cleared", contains_text(clear_lane_calls, "free"))
-  assert_true("1k: server class queue cleared", contains_text(sent, "CLEARQUEUE c!p!w!t"))
-  assert_true("1l: server eq queue cleared", contains_text(sent, "CLEARQUEUE e!p!w!t"))
-  assert_true("1m: server bal queue cleared", contains_text(sent, "CLEARQUEUE b!p!w!t"))
-  assert_true("1n: active route remains enabled", Yso.off.alc.group_damage.state.loop_enabled == true)
-  assert_eq("1o: diagnostic source recorded", Yso.off.coord.state.last_external_reset.source, "ak_reset_success")
+  assert_false("1g: external reset does not call live clear_lane", contains_text(clear_lane_calls, "class"))
+  assert_true("1h: local class queue cleared", contains_text(clear_calls, "class"))
+  assert_true("1i: local eq queue cleared", contains_text(clear_calls, "eq"))
+  assert_true("1j: local bal queue cleared", contains_text(clear_calls, "bal"))
+  assert_true("1k: local free queue cleared", contains_text(clear_calls, "free"))
+  assert_true("1l: local class ownership cleared", contains_text(clear_owned_calls, "class"))
+  assert_true("1m: lane dispatch debounce cleared", clear_dispatched_calls[1] ~= nil)
+  assert_false("1n: external reset does not send server CLEARQUEUE", contains_text(sent, "CLEARQUEUE"))
+  assert_true("1o: active route remains enabled", Yso.off.alc.group_damage.state.loop_enabled == true)
+  assert_eq("1p: diagnostic source recorded", Yso.off.coord.state.last_external_reset.source, "ak_reset_success")
 end
 
 print("\n=== Test 2: AK reset bridge trigger body calls coordination hook ===")

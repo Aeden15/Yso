@@ -233,3 +233,15 @@ Package XML:
   its reset confirmation.
 - Baseline capture now skips override curesets `group`, `hunt`, and `burst`
   with one non-warning info echo instead of repeated Legacy warning spam.
+
+## Patch Notes (April 28, 2026 - Reset Cleanup Output Tightening)
+
+- Removed live server `CLEARQUEUE` sends from Alchemist structural reset paths
+  used by target swap, target clear/slain, route start reset, and AK reset.
+- Reset cleanup still clears Yso staged/owned queue state, lane dispatch
+  debounce, pending class state, evaluate state, and route-local homunculus
+  guards.
+- Kept the humour-cooldown failure handler's class `CLEARQUEUE` because that
+  is an actual failed class-action recovery path rather than a structural reset.
+- Guarded AK's `HomunGerminated` trigger so it no longer errors when `wsys`
+  is not loaded.

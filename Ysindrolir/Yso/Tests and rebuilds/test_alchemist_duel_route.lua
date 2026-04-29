@@ -88,6 +88,9 @@ local function make_world(opts)
   local clear_staged_calls = {}
   local mark_dirty_calls = {}
   local pending_clear_calls = {}
+  local queue_clear_calls = {}
+  local queue_clear_owned_calls = {}
+  local queue_clear_dispatched_calls = {}
   local pending_status_active = (opts.pending_active == true)
   local pending_timeout_once = (opts.pending_timeout_once == true)
   local pending_last = nil
@@ -270,7 +273,21 @@ local function make_world(opts)
   end
   _G.Yso.alc.homunculus_ready = function() return _G.Yso.bal.homunculus ~= false end
 
-  _G.Yso.queue = { can_plan_lane = function() return true end }
+  _G.Yso.queue = {
+    can_plan_lane = function() return true end,
+    clear = function(lane)
+      queue_clear_calls[#queue_clear_calls + 1] = lane
+      return true
+    end,
+    clear_owned = function(lane)
+      queue_clear_owned_calls[#queue_clear_owned_calls + 1] = lane
+      return true
+    end,
+    clear_lane_dispatched = function(lane, reason)
+      queue_clear_dispatched_calls[#queue_clear_dispatched_calls + 1] = { lane = lane, reason = reason }
+      return true
+    end,
+  }
 
   _G.ak = {
     defs = {
@@ -294,6 +311,9 @@ local function make_world(opts)
     clear_staged_calls = clear_staged_calls,
     mark_dirty_calls = mark_dirty_calls,
     pending_clear_calls = pending_clear_calls,
+    queue_clear_calls = queue_clear_calls,
+    queue_clear_owned_calls = queue_clear_owned_calls,
+    queue_clear_dispatched_calls = queue_clear_dispatched_calls,
     pending_last = function() return pending_last end,
     set_target = function(t)
       current_target = t
@@ -422,7 +442,8 @@ do
   assert_eq("6b-d: homunculus target cleared", R.state.homunculus_attack_target, "")
   assert_eq("6b-e: last attack target cleared", R.state.last_attack.target, "")
   assert_true("6b-f: pending class cleared", #(world.pending_clear_calls or {}) >= 1)
-  assert_true("6b-g: class server queue cleared", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
+  assert_true("6b-g: local class queue cleared", contains_text(world.queue_clear_calls, "class"))
+  assert_false("6b-h: reset does not send server CLEARQUEUE", contains_text(world.sent, "CLEARQUEUE"))
 end
 
 print("\n=== Test 7: duel temper pending hold + timeout reason ===")

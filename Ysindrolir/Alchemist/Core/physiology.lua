@@ -848,10 +848,11 @@ function P.clear_staged_for_target(target, reason)
       if route:find("alchemist", 1, true) and (tgt == lower_target or _same_target_cmd(cmd, lower_target))
         and (cmd:match("^wrack%s+") or cmd:match("^truewrack%s+"))
       then
-        if type(Q.clear_lane) == "function" then
-          Q.clear_lane("bal")
-        elseif type(Q.clear_owned) == "function" then
+        if type(Q.clear_owned) == "function" then
           Q.clear_owned("bal")
+        end
+        if type(Q.clear_lane_dispatched) == "function" then
+          Q.clear_lane_dispatched("bal", tostring(reason or "staged_clear"))
         end
         cleared_any = true
       end
@@ -865,9 +866,7 @@ function P.clear_staged_for_target(target, reason)
       if route:find("alchemist", 1, true) and (tgt == lower_target or _same_target_cmd(cmd, lower_target))
         and cmd:match("^evaluate%s+") and cmd:find("humours", 1, true)
       then
-        if type(Q.clear_lane) == "function" then
-          Q.clear_lane("free")
-        elseif type(Q.clear_owned) == "function" then
+        if type(Q.clear_owned) == "function" then
           Q.clear_owned("free")
         end
         cleared_any = true
@@ -882,10 +881,11 @@ function P.clear_staged_for_target(target, reason)
       if route:find("alchemist", 1, true) and (tgt == lower_target or _same_target_cmd(cmd, lower_target))
         and _class_cmd_for_target(cmd)
       then
-        if type(Q.clear_lane) == "function" then
-          Q.clear_lane("class")
-        elseif type(Q.clear_owned) == "function" then
+        if type(Q.clear_owned) == "function" then
           Q.clear_owned("class")
+        end
+        if type(Q.clear_lane_dispatched) == "function" then
+          Q.clear_lane_dispatched("class", tostring(reason or "staged_clear"))
         end
         cleared_any = true
       end

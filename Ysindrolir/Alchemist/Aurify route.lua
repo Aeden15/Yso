@@ -460,22 +460,16 @@ local function _clear_route_owned_queues(reason)
   if Q then
     for i = 1, #lanes do
       local lane = lanes[i]
-      if type(Q.clear_lane) == "function" then
-        pcall(Q.clear_lane, lane, { reason = reason })
-      end
       if type(Q.clear) == "function" then
         pcall(Q.clear, lane)
       end
       if type(Q.clear_owned) == "function" then
         pcall(Q.clear_owned, lane)
       end
+      if type(Q.clear_lane_dispatched) == "function" and lane ~= "free" then
+        pcall(Q.clear_lane_dispatched, lane, reason)
+      end
     end
-  end
-
-  if type(send) == "function" then
-    pcall(send, "CLEARQUEUE c!p!w!t", false)
-    pcall(send, "CLEARQUEUE e!p!w!t", false)
-    pcall(send, "CLEARQUEUE b!p!w!t", false)
   end
 end
 

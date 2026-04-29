@@ -228,7 +228,7 @@ if type(Yso.get_target) ~= "function" then
 end
 
 if type(Yso.set_target) ~= "function" and Yso.targeting and type(Yso.targeting.set) == "function" then
-  function Yso.set_target(who, source) return Yso.targeting.set(who, source or "manual") end
+  function Yso.set_target(who, source, opts) return Yso.targeting.set(who, source or "manual", opts) end
 end
 
 if type(Yso.clear_target) ~= "function" and Yso.targeting and type(Yso.targeting.clear) == "function" then
