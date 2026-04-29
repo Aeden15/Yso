@@ -67,6 +67,7 @@ local function make_world()
   dofile(join_path(CORE_DIR, "formulation_resolve.lua"))
   dofile(join_path(CORE_DIR, "formulation_phials.lua"))
   dofile(join_path(CORE_DIR, "formulation_build.lua"))
+  dofile(join_path(CORE_DIR, "formulation_chart.lua"))
 
   local F = Yso.alc.form
   local warnings = {}
@@ -176,6 +177,57 @@ do
   local phial = F.require_phial("Endorphin")
   local cmd = F.ensure_wielded(phial)
   assert_eq("3b: helper unwields foreign phial then wields target", cmd, "UNWIELD PHIAL475762 && WIELD PHIAL658898")
+end
+
+print("=== Test 3c: formulation chart opens, clears, and redraws user window ===")
+do
+  local F = make_world()
+  local opened = {}
+  local cleared = {}
+  local writes = {}
+  _G.openUserWindow = function(name, restore, autodock, dock)
+    opened[#opened + 1] = { name = name, restore = restore, autodock = autodock, dock = dock }
+  end
+  _G.clearWindow = function(name)
+    cleared[#cleared + 1] = name
+  end
+  _G.cecho = function(name, text)
+    writes[#writes + 1] = { name = name, text = text }
+  end
+
+  F.show_chart()
+  F.show_chart()
+
+  local written = {}
+  for _, row in ipairs(writes) do
+    written[#written + 1] = row.text
+  end
+
+  assert_eq("3c: window name used", opened[1] and opened[1].name, "Yso_Formulation_Chart")
+  assert_eq("3c: clearWindow called on first draw", cleared[1], "Yso_Formulation_Chart")
+  assert_eq("3c: clearWindow called on redraw", cleared[2], "Yso_Formulation_Chart")
+  assert_contains("3c: Vaporisation row is present", table.concat(written, ""), "Vaporisation")
+
+  _G.openUserWindow = nil
+  _G.clearWindow = nil
+  _G.cecho = nil
+end
+
+print("=== Test 3d: formulation chart falls back to main-window cecho ===")
+do
+  local F = make_world()
+  local main = {}
+  _G.openUserWindow = nil
+  _G.cecho = function(text)
+    main[#main + 1] = tostring(text or "")
+  end
+
+  F.show_chart()
+
+  assert_contains("3d: fallback includes chart title", table.concat(main, ""), "Quick effect chart")
+  assert_contains("3d: fallback includes Vaporisation", table.concat(main, ""), "Vaporisation")
+
+  _G.cecho = nil
 end
 
 print("=== Test 4: unsafe Amalgamate blocks on multiple empty phials ===")

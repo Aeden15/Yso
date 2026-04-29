@@ -45,6 +45,9 @@ Primary active development is focused on Magi and Alchemist.
 - `Core/formulation_build.lua`
   Wield and action-string builder for thin Formulation aliases; thrown phial formulations require explicit `ground` or a direction.
 
+- `Core/formulation_chart.lua`
+  Display-only `fchart` pop-up chart for quick Formulation skill/effect lookup. It does not participate in phial crafting, compound resolution, permanent phial policy, or route automation.
+
 - `Triggers/Alchemy/Physiology/humour_balance.lua`
   Workspace-side Physiology live handler for evaluate/vitals freshness, temper/wrack/truewrack balance effects, homunculus corrupt, owner-specific homunculus stance, ready lines, and AK-aligned humour-eat lines.
 
@@ -72,12 +75,14 @@ Primary active development is focused on Magi and Alchemist.
 - Physiology now tracks active Alchemy timed debuffs per target with fallback expiry (`phlogistication` and `vitrification`) via:
   `set_alchemy_debuff`, `alchemy_debuff_active`, and `can_use_alchemy_debuff`.
 - Formulation phial support that is delivery-aware, chart-driven, and separated from Physiology humour logic.
+- Display-only `fchart` Formulation chart for quick lookup of confirmed skill names and simple effects.
 - Physiology humour pools match the skillchart for choleric, melancholic, phlegmatic, and sanguine.
 - Thin alias bodies that route through shared helpers instead of duplicating delivery syntax.
 
 ## Notes
 
 - The formulation layer is phial/use-only and does not own humour or affliction-pressure logic.
+- The `fchart` helper is display-only and should remain separate from phial crafting, compound resolution, permanent phial assignment, and route automation.
 - Vials are ignored as substitutes.
 - Missing phials fail safely and may request a `phiallist` refresh once.
 - Thrown phial formulations require explicit `ground` or a direction.

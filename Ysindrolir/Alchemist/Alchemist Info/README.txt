@@ -6,6 +6,8 @@ Formulation policy updates
 --------------------------
 - Formulation alerts now use the standard colorized prefix:
   [FORMULATION:]
+- fchart opens a display-only Formulation chart window using the same prefix
+  style.
 
 - Reserved permanent phial roles:
   Phial658898 -> Endorphin slot
@@ -30,6 +32,8 @@ Formulation policy updates
   Corrosive, Incendiary, Devitalisation, Intoxicant, Vaporisation,
   Phosphorous, Monoxide, Toxin, Concussive
   (Halophilic excluded)
+- The fchart chart uses Vaporisation for flooded/iced room removal and does
+  not add Caustic unless that skill appears in the reference later.
 
 - Alteration/value-adjustment helpers support explicit phial IDs
   (for example: PHIAL658898 targets).
@@ -40,6 +44,8 @@ Behavior expectations
 - Amalgamate remains compound-driven:
     AMALGAMATE <compound>
 - Wield/throw/imbibe usage remains compound-name driven.
+- fchart is lookup-only and does not touch phial crafting, permanent phial
+  assignment, compound resolution, or route automation.
 - Phiallist remains the live source of truth for current contents.
 - Aurification execute checks are EQ-finisher priority and use
   hp <= 60 and mp <= 60.
