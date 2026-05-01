@@ -116,6 +116,19 @@ local function _lc(s)
   return _trim(s):lower()
 end
 
+local function _clear_queue_verb(value)
+  local verb = _lc(value)
+  if verb == "addclear_full" or verb == "clearfull" then
+    verb = "addclearfull"
+  elseif verb == "clear" then
+    verb = "addclear"
+  end
+  if verb ~= "addclear" and verb ~= "addclearfull" then
+    verb = "addclearfull"
+  end
+  return verb
+end
+
 local function _target_key(name)
   local key = _lc(name)
   return key ~= "" and key or nil
@@ -1643,28 +1656,33 @@ function P.fire_reave(name, profile, opts)
   local cmd = string.format("reave %s", target)
   local queued = false
   local Q = Yso and Yso.queue or nil
+  local queue_verb = _clear_queue_verb(opts.queue_verb)
+  local clearfull_lane = (queue_verb == "addclearfull") and "class" or nil
   if Q and type(Q.install_lane) == "function" then
     local qopts = {
       route = _trim(opts.route or "alchemist_reave"),
       target = target,
-      queue_verb = "addclearfull",
-      clearfull_lane = "class",
+      queue_verb = queue_verb,
+      clearfull_lane = clearfull_lane,
       reason = _trim(opts.reason or "alchemist_reave:reave"),
       kind = _trim(opts.kind or "offense"),
     }
     queued = (Q.install_lane("class", cmd, qopts) == true)
     if queued == true then
       if type(Q.mark_lane_dispatched) == "function" then
-        pcall(Q.mark_lane_dispatched, "class", "reave:addclearfull")
+        pcall(Q.mark_lane_dispatched, "class", "reave:" .. queue_verb)
       end
       if type(Q.mark_payload_fired) == "function" then
         pcall(Q.mark_payload_fired, { class = cmd, target = target })
       end
     end
+  elseif queue_verb == "addclear" and Q and type(Q.addclear) == "function" then
+    queued = (Q.addclear("c!p!w!t", cmd) == true)
   elseif Q and type(Q.addclearfull) == "function" then
     queued = (Q.addclearfull("c!p!w!t", cmd) == true)
   elseif type(send) == "function" then
-    queued = (pcall(send, "QUEUE ADDCLEARFULL c!p!w!t " .. cmd, false) == true)
+    local raw_verb = (queue_verb == "addclear") and "ADDCLEAR" or "ADDCLEARFULL"
+    queued = (pcall(send, "QUEUE " .. raw_verb .. " c!p!w!t " .. cmd, false) == true)
   end
 
   if queued ~= true then

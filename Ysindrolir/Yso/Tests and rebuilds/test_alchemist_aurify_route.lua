@@ -266,6 +266,17 @@ do
   assert_false("3d: stop never sends passive", contains_text(world.sent, "homunculus passive"))
 end
 
+print("\n=== Test 3b: aurify pressure uses one chained class payload ===")
+do
+  local world = make_world({ hp = 80, mp = 80, choleric = 0, melancholic = 0, sanguine = 0 })
+  local payload = world.R.build_payload({ target = "TargetOne" })
+  assert_eq("3b-a: pressure class combo", payload and payload.class, "temper TargetOne choleric&&evaluate TargetOne humours&&educe iron TargetOne&&wrack TargetOne nausea")
+  assert_eq("3b-b: no separate eq lane", payload and payload.eq, nil)
+  assert_eq("3b-c: no separate bal lane", payload and payload.bal, nil)
+  assert_eq("3b-d: configurable combo verb defaults to add", payload and payload.queue_verb, "add")
+  assert_eq("3b-e: combo queues on c", payload and payload.qtype, "c")
+end
+
 print("\n=== Test 4: aurify reset_route_state clears stale route-local state ===")
 do
   local world = make_world({ hp = 60, mp = 60 })

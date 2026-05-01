@@ -354,6 +354,20 @@ do
   assert_false("2c: reave not fired through shield", tostring(p_reave and p_reave.class or ""):find("reave TargetOne", 1, true) ~= nil)
 end
 
+print("\n=== Test 2b: duel pressure uses one chained class payload ===")
+do
+  local world = make_world({
+    temper_humour = "choleric",
+    wrack_cmd = "wrack TargetOne paralysis",
+  })
+  local payload = world.R.build_payload({ target = "TargetOne" })
+  assert_eq("2b-a: pressure class combo", payload and payload.class, "temper TargetOne choleric&&evaluate TargetOne humours&&educe iron TargetOne&&wrack TargetOne paralysis")
+  assert_eq("2b-b: no separate eq lane", payload and payload.eq, nil)
+  assert_eq("2b-c: no separate bal lane", payload and payload.bal, nil)
+  assert_eq("2b-d: configurable combo verb defaults to add", payload and payload.queue_verb, "add")
+  assert_eq("2b-e: combo queues on c", payload and payload.qtype, "c")
+end
+
 print("\n=== Test 3: duel keeps homunculus corrupt as free/pre action ===")
 do
   local world = make_world({

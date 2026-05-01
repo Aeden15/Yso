@@ -27,6 +27,7 @@ local TRIGGER_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Triggers", 
 local ROUTE_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Core", "group damage.lua")
 local WRAP_GROUP = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "alchemist_group_damage.lua")
 local WRAP_DUEL = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "alchemist_duel_route.lua")
+local XML_PATH = join_path(SCRIPT_DIR, "..", "..", "mudlet packages", "Yso system.xml")
 
 local pass_count = 0
 local fail_count = 0
@@ -552,9 +553,11 @@ do
     mp = 99,
   })
   local payload = world.R.build_payload({ target = "TargetOne" })
-  assert_eq("4a: normal pressure class temper", payload and payload.class, "temper TargetOne melancholic")
-  assert_eq("4b: normal pressure eq iron", payload and payload.eq, "educe iron TargetOne")
-  assert_eq("4c: normal pressure bal wrack", payload and payload.bal, "wrack TargetOne impatience")
+  assert_eq("4a: normal pressure class combo", payload and payload.class, "temper TargetOne melancholic&&evaluate TargetOne humours&&educe iron TargetOne&&wrack TargetOne impatience")
+  assert_eq("4b: normal pressure has no separate eq", payload and payload.eq, nil)
+  assert_eq("4c: normal pressure has no separate bal", payload and payload.bal, nil)
+  assert_eq("4c2: class combo default queue verb", payload and payload.queue_verb, "add")
+  assert_eq("4c3: class combo queues on c", payload and payload.qtype, "c")
 end
 
 do
@@ -595,13 +598,17 @@ do
   local ok = world.R.attack_function({ target = "TargetOne" })
   assert_true("5c: queued send succeeds", ok == true)
   local saw_class = false
+  local saw_eq_or_bal = false
   for i = 1, #world.staged do
-    if tostring(world.staged[i]):find("class:", 1, true) then
+    local item = tostring(world.staged[i])
+    if item:find("class:temper TargetOne choleric&&evaluate TargetOne humours&&educe iron TargetOne&&wrack TargetOne paralysis", 1, true) then
       saw_class = true
-      break
+    elseif item:find("eq:", 1, true) or item:find("bal:", 1, true) then
+      saw_eq_or_bal = true
     end
   end
-  assert_true("5d: queue mode stages class lane", saw_class)
+  assert_true("5d: queue mode stages chained class lane", saw_class)
+  assert_false("5e: queue mode does not stage separate eq/bal lanes", saw_eq_or_bal)
 end
 
 print("\n=== Test 6: physiology staged humour + inundate math + clear-all ===")
@@ -719,6 +726,20 @@ do
   local payload_not_ready, why_not_ready = world_not_ready.R.build_payload({ target = "TargetOne" })
   assert_eq("9h: evaluate-not-ready holds payload", payload_not_ready, nil)
   assert_eq("9i: evaluate-not-ready reason", why_not_ready, "evaluate_not_ready")
+end
+
+print("\n=== Test 9b: live XML evaluate count colour trigger ===")
+do
+  local f = assert(io.open(XML_PATH, "r"))
+  local xml = f:read("*a")
+  f:close()
+  assert_true("9b-a: trigger exists", xml:find("<name>Evaluate tempered count</name>", 1, true) ~= nil)
+  assert_true("9b-b: consolidated possessive humour regex", xml:find("^(His|Her|Their|Its|Faes|Faen) (choleric|phlegmatic|sanguine|melancholic) humour has been tempered a total of (\\d+) times?\\.$", 1, true) ~= nil)
+  assert_true("9b-c: handler preserved", xml:find("handle_humour_balance_line(line)", 1, true) ~= nil)
+  assert_true("9b-d: colour display uses deleteLine", xml:find("deleteLine()", 1, true) ~= nil)
+  assert_true("9b-e: colour display uses cecho", xml:find("cecho(string.format", 1, true) ~= nil)
+  assert_true("9b-f: all humour colours present", xml:find("cyan", 1, true) ~= nil and xml:find("gold", 1, true) ~= nil and xml:find("DeepPink", 1, true) ~= nil and xml:find("SpringGreen", 1, true) ~= nil)
+  assert_true("9b-g: count colour present", xml:find("OrangeRed", 1, true) ~= nil)
 end
 
 print("\n=== Test 10: target swap clears stale route state ===")

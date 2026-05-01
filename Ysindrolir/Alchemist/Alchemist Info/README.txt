@@ -2,6 +2,15 @@ Alchemist workspace notes
 =========================
 Last updated: April 22, 2026
 
+Queue payload update - May 1, 2026
+----------------------------------
+- Normal temper pressure uses one configurable class queue payload:
+    temper <target> <humour>&&evaluate <target> humours&&educe <metal> <target>&&wrack/truewrack ...
+- Instant-kill branches keep a separate clear-style queue verb and default to
+  addclearfull for precise execution.
+- The live Physiology evaluate-count trigger colourizes humour/count lines
+  without changing humour state tracking.
+
 Formulation policy updates
 --------------------------
 - Formulation alerts now use the standard colorized prefix:

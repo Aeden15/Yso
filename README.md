@@ -36,6 +36,16 @@ Package XML:
 - `Ysindrolir/mudlet packages/YsoDevtools.xml` was reduced to generic/Magi/
   Alchemist-safe commands.
 
+## Patch Notes (May 1, 2026)
+
+- Added plain `QUEUE ADD` support to `Yso.queue` for configurable class-combo
+  sends while preserving `ADDCLEARFULL` instant-kill behavior.
+- Alchemist temper pressure now folds into one class payload with
+  `evaluate <target> humours`, `educe`, and `wrack/truewrack` chained after the
+  initial temper command.
+- The live Physiology evaluate-count trigger colourizes humour count lines while
+  preserving existing state tracking.
+
 ## Patch Notes (April 24, 2026)
 
 - Fixed module resolution in `Yso/_entry.lua` death-helper shim to load

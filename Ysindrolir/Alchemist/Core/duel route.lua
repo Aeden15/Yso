@@ -87,6 +87,8 @@ DR.cfg = DR.cfg or {
   salt_min_affs = 2,
   salt_cooldown_s = 3.2,
   phlegmatic_min_temper = 2,
+  class_combo_queue_verb = "add",
+  instant_kill_queue_verb = "addclearfull",
 }
 
 Yso.giving = (type(Yso.giving) == "table" and Yso.giving) or {
@@ -721,6 +723,49 @@ local function _build_direct_order(payload, shield_order)
   end
 end
 
+local function _queue_verb_name(value, default)
+  local verb = _lc(value)
+  if verb == "" then verb = _lc(default) end
+  if verb == "addclear_full" or verb == "clearfull" then return "addclearfull" end
+  if verb == "clear" then return "addclear" end
+  if verb == "add" or verb == "addclear" or verb == "addclearfull" then return verb end
+  return _lc(default)
+end
+
+local function _class_combo_queue_verb()
+  return _queue_verb_name(DR.cfg and DR.cfg.class_combo_queue_verb, "add")
+end
+
+local function _instant_kill_queue_verb()
+  local verb = _queue_verb_name(DR.cfg and DR.cfg.instant_kill_queue_verb, "addclearfull")
+  if verb ~= "addclear" and verb ~= "addclearfull" then
+    verb = "addclearfull"
+  end
+  return verb
+end
+
+local function _fold_class_combo(payload, tgt)
+  if type(payload) ~= "table" or payload.class_category ~= "temper" then return false end
+  local class_cmd = _trim(payload.class)
+  local eq_cmd = _trim(payload.eq)
+  local bal_cmd = _trim(payload.bal)
+  if class_cmd == "" or eq_cmd == "" or bal_cmd == "" then return false end
+
+  payload.class = table.concat({
+    class_cmd,
+    "evaluate " .. _trim(tgt) .. " humours",
+    eq_cmd,
+    bal_cmd,
+  }, _sep())
+  payload.eq = nil
+  payload.bal = nil
+  payload.class_combo = true
+  payload.queue_verb = _class_combo_queue_verb()
+  payload.qtype = "c"
+  _build_direct_order(payload, false)
+  return true
+end
+
 local function _execute_lane(payload)
   if type(payload) ~= "table" then return nil end
   if payload.category == "aurify" then return "eq" end
@@ -739,10 +784,20 @@ end
 
 local function _execute_opts(payload)
   local lane = _execute_lane(payload)
+  local queue_verb = nil
+  local clearfull_lane = nil
+  local qtype = nil
   if lane then
+    queue_verb = _instant_kill_queue_verb()
+    clearfull_lane = (queue_verb == "addclearfull") and lane or nil
     payload.free = nil
-    payload.queue_verb = "addclearfull"
-    payload.clearfull_lane = lane
+    payload.queue_verb = queue_verb
+    payload.clearfull_lane = clearfull_lane
+  elseif payload and payload.class_combo == true then
+    queue_verb = _class_combo_queue_verb()
+    qtype = "c"
+    payload.queue_verb = queue_verb
+    payload.qtype = qtype
   end
   return {
     reason = "alchemist_duel_route:" .. tostring(payload.category or "action"),
@@ -751,8 +806,9 @@ local function _execute_opts(payload)
     route = "alchemist_duel_route",
     target = payload.target,
     allow_eqbal = true,
-    queue_verb = lane and "addclearfull" or nil,
-    clearfull_lane = lane,
+    queue_verb = queue_verb,
+    clearfull_lane = clearfull_lane,
+    qtype = qtype,
   }
 end
 
@@ -765,11 +821,12 @@ local function _send_execute_addclearfull(payload)
 
   local Q = Yso and Yso.queue or nil
   local opts = _execute_opts(payload)
+  local queue_verb = opts.queue_verb or "addclearfull"
   if Q and type(Q.install_lane) == "function" then
     local ok = Q.install_lane(lane, cmd, opts)
     if ok == true then
       if type(Q.mark_lane_dispatched) == "function" and lane ~= "free" then
-        pcall(Q.mark_lane_dispatched, lane, "addclearfull")
+        pcall(Q.mark_lane_dispatched, lane, queue_verb)
       end
       if type(Q.mark_payload_fired) == "function" then
         pcall(Q.mark_payload_fired, { [lane] = cmd, target = payload.target })
@@ -779,12 +836,17 @@ local function _send_execute_addclearfull(payload)
     return false
   end
 
+  if queue_verb == "addclear" and Q and type(Q.addclear) == "function" then
+    return Q.addclear(_execute_qtype(lane), cmd) == true
+  end
+
   if Q and type(Q.addclearfull) == "function" then
     return Q.addclearfull(_execute_qtype(lane), cmd) == true
   end
 
   if type(send) == "function" then
-    return pcall(send, ("QUEUE ADDCLEARFULL %s %s"):format(_execute_qtype(lane), cmd), false) == true
+    local raw_verb = (queue_verb == "addclear") and "ADDCLEAR" or "ADDCLEARFULL"
+    return pcall(send, ("QUEUE %s %s %s"):format(raw_verb, _execute_qtype(lane), cmd), false) == true
   end
   return false
 end
@@ -793,7 +855,7 @@ local function _post_send(payload)
   local P = _phys()
   local tgt = _trim(payload and payload.target or "")
   if payload and payload.class_category == "temper" then
-    local humour = _lc((payload.class or ""):match("^temper%s+[%w'%-]+%s+([a-z]+)$") or "")
+    local humour = _lc((payload.class or ""):match("^temper%s+[%w'%-]+%s+([a-z]+)") or "")
     if P and type(P.note_pending_class) == "function" then
       P.note_pending_class("temper", tgt, humour, payload.class, "alchemist_duel_route", "route_send")
     end
@@ -1034,6 +1096,8 @@ local function _select_payload(ctx)
     else
       _note_wrack_result(DR, bal_cmd, bal_reason)
     end
+
+    _fold_class_combo(payload, tgt)
   end
 
   _build_direct_order(payload, false)
@@ -1063,6 +1127,8 @@ function DR.init()
   DR.state.last_salt_at = tonumber(DR.state.last_salt_at or 0) or 0
   DR.cfg.loop_delay = tonumber(DR.cfg.loop_delay or 0.15) or 0.15
   DR.cfg.pending_class_timeout_s = tonumber(DR.cfg.pending_class_timeout_s or 2.5) or 2.5
+  DR.cfg.class_combo_queue_verb = _class_combo_queue_verb()
+  DR.cfg.instant_kill_queue_verb = _instant_kill_queue_verb()
 
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(DR, DR.route_contract)

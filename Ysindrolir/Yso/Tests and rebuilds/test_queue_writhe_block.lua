@@ -179,6 +179,17 @@ assert_true("6c: commit fresh eq command", ok_commit_2 == true)
 local last_line = _send_lines[#_send_lines] or ""
 assert_true("6d: last queue send is refreshed command", last_line:find("slickness", 1, true) ~= nil)
 
+print("\n=== Test 6b: queue_verb add sends plain QUEUE ADD ===")
+assert_true("6b-a: add queue install succeeds", Q.install_lane("class", "temper target choleric&&evaluate target humours&&educe iron target&&wrack target choleric", {
+  route = "alchemist_group_damage",
+  target = "target",
+  queue_verb = "add",
+  qtype = "c",
+  force_blocked = true,
+}))
+assert_eq("6b-b: plain add sent exact queue command", _send_lines[#_send_lines], "QUEUE ADD c temper target choleric&&evaluate target humours&&educe iron target&&wrack target choleric")
+assert_eq("6b-c: add ownership recorded", Q.get_owned("class") and Q.get_owned("class").queue_verb, "ADD")
+
 print("\n=== Test 7: addclearfull execute bypasses dedupe and clears other ownership ===")
 if type(Q.clear_lane_dispatched) == "function" then Q.clear_lane_dispatched("eq", "unit:clearfull") end
 assert_true("7a: stage same destroy command", Q.stage("eq", "cast destroy at target"))

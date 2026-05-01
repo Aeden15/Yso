@@ -268,6 +268,9 @@ local function _queue_verb(opts)
   opts = opts or {}
   local verb = _trim(opts.queue_verb or opts.queue_mode):lower()
   if opts.addclearfull == true then verb = "addclearfull" end
+  if verb == "add" then
+    return "ADD"
+  end
   if verb == "addclearfull" or verb == "addclear_full" or verb == "clearfull" then
     return "ADDCLEARFULL"
   end
@@ -835,14 +838,21 @@ function Q.install_lane(lane, cmd, opts)
   end
 
   local existed = (type(Q.get_owned(key)) == "table")
-  local ok = (queue_verb == "ADDCLEARFULL") and Q.addclearfull(qtype, cmd) or Q.addclear(qtype, cmd)
+  local ok
+  if queue_verb == "ADDCLEARFULL" then
+    ok = Q.addclearfull(qtype, cmd)
+  elseif queue_verb == "ADD" then
+    ok = Q.add(qtype, cmd)
+  else
+    ok = Q.addclear(qtype, cmd)
+  end
   if not ok then
     local rec = Q.get_owned(key)
     if type(rec) == "table" then
       rec.last_result = "error"
-      rec.last_error = (queue_verb == "ADDCLEARFULL") and "addclearfull_failed" or "addclear_failed"
+      rec.last_error = (queue_verb == "ADDCLEARFULL") and "addclearfull_failed" or ((queue_verb == "ADD") and "add_failed" or "addclear_failed")
     end
-    return false, (queue_verb == "ADDCLEARFULL") and "addclearfull_failed" or "addclear_failed"
+    return false, (queue_verb == "ADDCLEARFULL") and "addclearfull_failed" or ((queue_verb == "ADD") and "add_failed" or "addclear_failed")
   end
 
   if queue_verb == "ADDCLEARFULL" then
@@ -1077,6 +1087,10 @@ end
 
 function Q.addclear(qtype, payload)
   return _raw_queue("ADDCLEAR", qtype, payload)
+end
+
+function Q.add(qtype, payload)
+  return _raw_queue("ADD", qtype, payload)
 end
 
 function Q.addclearfull(qtype, payload)

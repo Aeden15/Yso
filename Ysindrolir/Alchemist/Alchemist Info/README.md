@@ -67,6 +67,9 @@ Primary active development is focused on Magi and Alchemist.
 
 - Physiology humour intel is AK-owned; Yso keeps evaluate freshness/vitals and reads `ak.alchemist.humour` for current-target planning.
 - Group, duel, and aurify routes all use lane-combo payload builders with explicit `direct_order` support for non-queue mode.
+- Normal temper pressure in group, duel, and aurify routes folds into one configurable class queue payload:
+  `temper <target> <humour>&&evaluate <target> humours&&educe <metal> <target>&&wrack/truewrack ...`.
+  Instant-kill branches keep their own clear-style queue setting and default to `addclearfull`.
 - Shieldbreak is now an EQ slot (`educe copper <target>`) that still allows legal class/bal follow-through in the same payload, with pronoun-inclusive AK shield parse coverage and callable fallback checks via `Yso.shield(target)` (plus `.up/.set` compatibility).
 - Aurification execute window is treated as an EQ finisher with default gate `hp <= 60` and `mp <= 60` (both required), and installs through `QUEUE ADDCLEARFULL`.
 - `bleed` toggles `alchemist_aurify_route`.
