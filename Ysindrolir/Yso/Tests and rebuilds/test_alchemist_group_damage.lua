@@ -531,6 +531,7 @@ do
   local ik_world = make_route_world({ can_aurify = true, self_affs = { paralysis = true, asthma = true, impatience = true } })
   local p_ik = ik_world.R.build_payload({ target = "TargetOne" })
   assert_eq("3b: salt does not override aurify window", p_ik and p_ik.eq, "aurify TargetOne")
+  assert_eq("3b2: aurify execute drops bootstrap sidecar", p_ik and p_ik.free, nil)
 
   local salt_world = make_route_world({ self_affs = { paralysis = true, asthma = true }, class_ready = false, bal_ready = false })
   local p_salt = salt_world.R.build_payload({ target = "TargetOne" })

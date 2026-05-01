@@ -140,6 +140,20 @@ do
   assert_eq("2b: waiting queue cleared on ack", M.state.waiting.queue, nil)
 end
 
+print("\n=== Test 3: destroy execute requests addclearfull ===")
+do
+  emit_rows = {}
+  affstrack.score.conflagrate = 100
+  Yso.magi_assess = 40
+  local ok = M.attack_function()
+  assert_true("3a: destroy attack succeeded", ok == true)
+  assert_eq("3b: one destroy emit payload", #emit_rows, 1)
+  local row = emit_rows[1]
+  assert_eq("3c: destroy command emitted", row and row.payload and row.payload.eq, "cast destroy at foe")
+  assert_eq("3d: destroy queue verb", row and row.opts and row.opts.queue_verb, "addclearfull")
+  assert_eq("3e: destroy clearfull lane", row and row.opts and row.opts.clearfull_lane, "eq")
+end
+
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then
   io.stderr:write(string.format("FAILURES: %d\n", fail_count))

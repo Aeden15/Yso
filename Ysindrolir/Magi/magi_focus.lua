@@ -818,6 +818,19 @@ local function _select_command(tgt)
   return nil, st, rejects, "no_legal_action"
 end
 
+local function _is_destroy_cmd(cmd)
+  return _lc(cmd):match("^cast%s+destroy%s+at%s+") ~= nil
+end
+
+local function _apply_execute_opts(opts, payload)
+  local cmd = type(payload) == "table" and _trim(payload.eq) or ""
+  if _is_destroy_cmd(cmd) then
+    opts.queue_verb = "addclearfull"
+    opts.clearfull_lane = "eq"
+  end
+  return opts
+end
+
 local function _clear_eq_queue()
   if Yso and Yso.queue and type(Yso.queue.clear) == "function" then
     pcall(Yso.queue.clear, "eq")
@@ -832,6 +845,7 @@ local function _emit_payload(payload, category)
     route = "magi_focus",
     target = _trim(type(payload) == "table" and payload.target or ""),
   }
+  _apply_execute_opts(opts, payload)
 
   if RI and type(RI.emit_route_payload) == "function" then
     return RI.emit_route_payload("magi_focus", {

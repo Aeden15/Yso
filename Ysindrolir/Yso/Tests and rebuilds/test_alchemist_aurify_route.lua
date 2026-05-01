@@ -241,6 +241,11 @@ do
   local p_exec = world.R.build_payload({ target = "TargetOne" })
   assert_eq("2c: aurify selected once both vitals low", p_exec and p_exec.eq, "aurify TargetOne")
   assert_false("2d: no same-payload inundate with aurify", tostring(p_exec and p_exec.class or ""):find("inundate", 1, true) ~= nil)
+  assert_eq("2e: execute payload drops bootstrap sidecar", p_exec and p_exec.free, nil)
+
+  local ok = world.R.attack_function({ target = "TargetOne" })
+  assert_true("2f: aurify attack succeeds", ok == true)
+  assert_true("2g: aurify uses addclearfull", contains_text(world.sent, "QUEUE ADDCLEARFULL e!p!w!t aurify TargetOne"))
 end
 
 print("\n=== Test 3: lifecycle homunculus attack/pacify ===")

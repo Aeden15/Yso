@@ -679,6 +679,74 @@ local function _build_direct_order(payload, shield_order)
   end
 end
 
+local function _execute_lane(payload)
+  if type(payload) ~= "table" then return nil end
+  if payload.category == "aurify" then return "eq" end
+  if payload.category == "reave" then return "class" end
+  return nil
+end
+
+local function _execute_qtype(lane)
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.qtype_for_lane) == "function" then
+    local qtype = _trim(Q.qtype_for_lane(lane))
+    if qtype ~= "" then return qtype end
+  end
+  return (lane == "class") and "c!p!w!t" or "e!p!w!t"
+end
+
+local function _execute_opts(payload)
+  local lane = _execute_lane(payload)
+  if lane then
+    payload.free = nil
+    payload.queue_verb = "addclearfull"
+    payload.clearfull_lane = lane
+  end
+  return {
+    reason = "alchemist_aurify_route:" .. tostring(payload.category or "action"),
+    kind = "offense",
+    commit = true,
+    route = "alchemist_aurify_route",
+    target = payload.target,
+    allow_eqbal = true,
+    queue_verb = lane and "addclearfull" or nil,
+    clearfull_lane = lane,
+  }
+end
+
+local function _send_execute_addclearfull(payload)
+  local lane = _execute_lane(payload)
+  if not lane then return nil end
+  payload.free = nil
+  local cmd = _trim(payload[lane])
+  if cmd == "" then return false end
+
+  local Q = Yso and Yso.queue or nil
+  local opts = _execute_opts(payload)
+  if Q and type(Q.install_lane) == "function" then
+    local ok = Q.install_lane(lane, cmd, opts)
+    if ok == true then
+      if type(Q.mark_lane_dispatched) == "function" and lane ~= "free" then
+        pcall(Q.mark_lane_dispatched, lane, "addclearfull")
+      end
+      if type(Q.mark_payload_fired) == "function" then
+        pcall(Q.mark_payload_fired, { [lane] = cmd, target = payload.target })
+      end
+      return true
+    end
+    return false
+  end
+
+  if Q and type(Q.addclearfull) == "function" then
+    return Q.addclearfull(_execute_qtype(lane), cmd) == true
+  end
+
+  if type(send) == "function" then
+    return pcall(send, ("QUEUE ADDCLEARFULL %s %s"):format(_execute_qtype(lane), cmd), false) == true
+  end
+  return false
+end
+
 local function _post_send(payload)
   local P = _phys()
   local tgt = _trim(payload and payload.target or "")
@@ -702,9 +770,10 @@ end
 
 local function _emit_payload(payload)
   local P = _phys()
+  local execute_lane = _execute_lane(payload)
 
   if payload.category == "reave" and P and type(P.fire_reave) == "function" then
-    local ok, fired = pcall(P.fire_reave, payload.target, payload.reave_profile)
+    local ok, fired = pcall(P.fire_reave, payload.target, payload.reave_profile, _execute_opts(payload))
     if ok and fired == true then
       _post_send(payload)
       return true
@@ -712,7 +781,7 @@ local function _emit_payload(payload)
     return false
   end
 
-  if type(payload.direct_order) == "table" and #payload.direct_order > 0 and not _use_queueing_enabled() and type(send) == "function" then
+  if not execute_lane and type(payload.direct_order) == "table" and #payload.direct_order > 0 and not _use_queueing_enabled() and type(send) == "function" then
     local line = table.concat(payload.direct_order, _sep())
     if _trim(line) ~= "" and pcall(send, line, false) == true then
       _post_send(payload)
@@ -722,14 +791,7 @@ local function _emit_payload(payload)
   end
 
   if type(Yso.emit) == "function" then
-    local ok = (Yso.emit(payload, {
-      reason = "alchemist_aurify_route:" .. tostring(payload.category or "action"),
-      kind = "offense",
-      commit = true,
-      route = "alchemist_aurify_route",
-      target = payload.target,
-      allow_eqbal = true,
-    }) == true)
+    local ok = (Yso.emit(payload, _execute_opts(payload)) == true)
     if ok then
       _post_send(payload)
     end
@@ -742,7 +804,15 @@ local function _emit_payload(payload)
     if payload.eq then Q.stage("eq", payload.eq, { route = "alchemist_aurify_route", target = payload.target }) end
     if payload.class then Q.stage("class", payload.class, { route = "alchemist_aurify_route", target = payload.target }) end
     if payload.bal then Q.stage("bal", payload.bal, { route = "alchemist_aurify_route", target = payload.target }) end
-    local ok = Q.commit({ route = "alchemist_aurify_route", target = payload.target, allow_eqbal = true })
+    local ok = Q.commit(_execute_opts(payload))
+    if ok == true then
+      _post_send(payload)
+    end
+    return ok == true
+  end
+
+  if execute_lane then
+    local ok = _send_execute_addclearfull(payload)
     if ok == true then
       _post_send(payload)
     end
@@ -835,7 +905,6 @@ local function _select_payload(ctx)
 
   if _eq_ready() and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
     local payload = _make_payload(tgt, "aurify", "aurify_window")
-    if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
     _set_lane(payload, "eq", "aurify " .. tgt)
     _build_direct_order(payload, false)
     return payload, payload.reason
@@ -845,7 +914,6 @@ local function _select_payload(ctx)
     local can_reave, profile = P.can_reave(tgt)
     if can_reave == true then
       local payload = _make_payload(tgt, "reave", "reave_window")
-      if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
       _set_lane(payload, "class", "reave " .. tgt)
       payload.class_category = "reave"
       payload.reave_profile = profile

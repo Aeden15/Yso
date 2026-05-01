@@ -68,9 +68,9 @@ Primary active development is focused on Magi and Alchemist.
 - Physiology humour intel is AK-owned; Yso keeps evaluate freshness/vitals and reads `ak.alchemist.humour` for current-target planning.
 - Group, duel, and aurify routes all use lane-combo payload builders with explicit `direct_order` support for non-queue mode.
 - Shieldbreak is now an EQ slot (`educe copper <target>`) that still allows legal class/bal follow-through in the same payload, with pronoun-inclusive AK shield parse coverage and callable fallback checks via `Yso.shield(target)` (plus `.up/.set` compatibility).
-- Aurification execute window is treated as an EQ finisher with default gate `hp <= 60` and `mp <= 60` (both required).
+- Aurification execute window is treated as an EQ finisher with default gate `hp <= 60` and `mp <= 60` (both required), and installs through `QUEUE ADDCLEARFULL`.
 - `bleed` toggles `alchemist_aurify_route`.
-- Reave execute is now a conservative instant-kill planner addition after Aurification, requiring trusted evaluate intel, humour balance ready, all four humours tempered, and no self channel-blocking hinder states.
+- Reave execute is now a conservative instant-kill planner addition after Aurification, requiring trusted evaluate intel, humour balance ready, all four humours tempered, and no self channel-blocking hinder states; it also installs through `QUEUE ADDCLEARFULL`.
 - Physiology humour-balance lane tracking as its own ready/not-ready state.
 - Physiology now tracks active Alchemy timed debuffs per target with fallback expiry (`phlogistication` and `vitrification`) via:
   `set_alchemy_debuff`, `alchemy_debuff_active`, and `can_use_alchemy_debuff`.

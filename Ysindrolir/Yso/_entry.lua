@@ -201,17 +201,41 @@ if type(rawget(_G, "oc_isCurrentTarget")) ~= "function" then
 end
 
 -- Death helpers: route trigger calls to Integration.mudlet if present.
+local function _warn_integration_once(fn, detail)
+  Yso._entry_integration_warnings = Yso._entry_integration_warnings or {}
+  local key = tostring(fn or "unknown") .. ":" .. tostring(detail or "failure")
+  if Yso._entry_integration_warnings[key] then return end
+  Yso._entry_integration_warnings[key] = true
+  local msg = ("[YSO] integration warning (%s): %s"):format(tostring(fn or "unknown"), tostring(detail or "failure"))
+  local cecho = rawget(_G, "cecho")
+  if type(cecho) == "function" then
+    cecho(("<orange>%s<reset>\n"):format(msg))
+  elseif type(echo) == "function" then
+    echo(msg .. "\n")
+  end
+end
+
 local function _call_integration(fn, ...)
   local ok, I = pcall(require, "Yso.Integration.mudlet")
   if (not ok or type(I) ~= "table") then
     -- Legacy fallback for older package.path layouts.
     ok, I = pcall(require, "Integration.mudlet")
   end
-  if not ok or type(I) ~= "table" then return false end
+  if not ok or type(I) ~= "table" then
+    _warn_integration_once(fn, "module_unavailable")
+    return false, "module_unavailable"
+  end
   local f = I[fn]
-  if type(f) ~= "function" then return false end
-  pcall(f, ...)
-  return true
+  if type(f) ~= "function" then
+    _warn_integration_once(fn, "handler_missing")
+    return false, "handler_missing"
+  end
+  local call_ok, call_err = pcall(f, ...)
+  if not call_ok then
+    _warn_integration_once(fn, tostring(call_err or "handler_error"))
+    return false, call_err
+  end
+  return true, nil
 end
 
 if type(rawget(_G, "oc_death_channel_end")) ~= "function" then

@@ -1620,7 +1620,8 @@ function P.can_reave(name)
   return legal, profile
 end
 
-function P.fire_reave(name, profile)
+function P.fire_reave(name, profile, opts)
+  opts = opts or {}
   local target = _trim(name)
   if target == "" then
     target = _current_target()
@@ -1640,7 +1641,33 @@ function P.fire_reave(name, profile)
   end
 
   local cmd = string.format("reave %s", target)
-  if not _send_cmd(cmd) then
+  local queued = false
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.install_lane) == "function" then
+    local qopts = {
+      route = _trim(opts.route or "alchemist_reave"),
+      target = target,
+      queue_verb = "addclearfull",
+      clearfull_lane = "class",
+      reason = _trim(opts.reason or "alchemist_reave:reave"),
+      kind = _trim(opts.kind or "offense"),
+    }
+    queued = (Q.install_lane("class", cmd, qopts) == true)
+    if queued == true then
+      if type(Q.mark_lane_dispatched) == "function" then
+        pcall(Q.mark_lane_dispatched, "class", "reave:addclearfull")
+      end
+      if type(Q.mark_payload_fired) == "function" then
+        pcall(Q.mark_payload_fired, { class = cmd, target = target })
+      end
+    end
+  elseif Q and type(Q.addclearfull) == "function" then
+    queued = (Q.addclearfull("c!p!w!t", cmd) == true)
+  elseif type(send) == "function" then
+    queued = (pcall(send, "QUEUE ADDCLEARFULL c!p!w!t " .. cmd, false) == true)
+  end
+
+  if queued ~= true then
     _send_cmd("pp")
     return false, "reave_send_failed"
   end

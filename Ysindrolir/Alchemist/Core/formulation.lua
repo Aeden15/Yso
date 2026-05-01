@@ -87,7 +87,15 @@ function F.note_phiallist()
   F.state.discovery_requested = false
   if F.state.validate_reserved_on_next_phiallist == true and type(F.validate_reserved_policy) == "function" then
     F.state.validate_reserved_on_next_phiallist = false
-    pcall(F.validate_reserved_policy, "phiallist")
+    local ok, validate_ok = pcall(F.validate_reserved_policy, "phiallist")
+    if not ok then
+      local err = tostring(validate_ok or "unknown")
+      F.state.last_reserved_validate_error = err
+      if F.state.last_reserved_validate_error_seen ~= err then
+        F.state.last_reserved_validate_error_seen = err
+        F.warn("reserved policy validation error (" .. err .. ")")
+      end
+    end
   end
 end
 

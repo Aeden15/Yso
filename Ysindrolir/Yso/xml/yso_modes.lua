@@ -851,6 +851,33 @@ local function _off_core()
   return nil
 end
 
+Yso.util = Yso.util or {}
+if type(Yso.util.toggle_route_alias) ~= "function" then
+  function Yso.util.toggle_route_alias(route_id, reason)
+    local function _try_toggle()
+      if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
+        return Yso.mode.toggle_route_loop(route_id, reason)
+      end
+      if type(require) == "function" then
+        pcall(require, "Yso._entry")
+        pcall(require, "Yso.Core.bootstrap")
+        pcall(require, "Yso.xml.bootstrap")
+        pcall(require, "Yso.Core.modes")
+        pcall(require, "Yso.xml.yso_modes")
+        pcall(require, "Yso.Combat.offense_core")
+      end
+      if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
+        return Yso.mode.toggle_route_loop(route_id, reason)
+      end
+      return false, "controller_unavailable"
+    end
+
+    local call_ok, ok, why = pcall(_try_toggle)
+    if call_ok then return ok, why end
+    return false, tostring(ok)
+  end
+end
+
 M._alias = M._alias or {}
 local function _kill_alias(id) if id then pcall(killAlias, id) end end
 

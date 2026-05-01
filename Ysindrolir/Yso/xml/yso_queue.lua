@@ -264,6 +264,41 @@ local function _payload_has_value(payload)
   return false
 end
 
+local function _queue_verb(opts)
+  opts = opts or {}
+  local verb = _trim(opts.queue_verb or opts.queue_mode):lower()
+  if opts.addclearfull == true then verb = "addclearfull" end
+  if verb == "addclearfull" or verb == "addclear_full" or verb == "clearfull" then
+    return "ADDCLEARFULL"
+  end
+  return "ADDCLEAR"
+end
+
+local function _clearfull_lane(payload, opts)
+  opts = opts or {}
+  payload = type(payload) == "table" and payload or {}
+  local lane = _lane_key(opts.clearfull_lane or opts.main_lane or opts.lane or opts.wake_lane)
+  if lane and lane ~= "free" and _trim(payload[lane]) ~= "" then return lane end
+  if _trim(payload.eq) ~= "" then return "eq" end
+  if _trim(payload.class) ~= "" then return "class" end
+  if _trim(payload.bal) ~= "" then return "bal" end
+  if type(payload.free) == "table" and #payload.free > 0 then return "free" end
+  return nil
+end
+
+local function _only_clearfull_lane(payload, opts)
+  if _queue_verb(opts) ~= "ADDCLEARFULL" then return payload end
+  local lane = _clearfull_lane(payload, opts)
+  if not lane then return { free = {} } end
+  local out = { free = {} }
+  if lane == "free" then
+    out.free = type(payload.free) == "table" and _clone_free(payload.free) or _split_free(payload.free)
+  else
+    out[lane] = payload[lane]
+  end
+  return out
+end
+
 local function _payload_line(payload)
   local cmds = {}
 
@@ -582,6 +617,13 @@ function Q.clear_owned(lane)
   return true
 end
 
+local function _clear_all_owned()
+  local owned = _owned_table()
+  for _, lane in ipairs({ "free", "eq", "bal", "class" }) do
+    owned[lane] = nil
+  end
+end
+
 function Q.fingerprint(cmd, opts)
   cmd = _trim(cmd)
   if cmd == "" then return "" end
@@ -776,8 +818,9 @@ function Q.install_lane(lane, cmd, opts)
   end
   local qtype = _trim(opts.qtype or Q.qtype_for_lane(key))
   if qtype == "" then return false, "invalid_qtype" end
+  local queue_verb = _queue_verb(opts)
 
-  if Q.same_lane_cmd(key, cmd, opts) then
+  if queue_verb ~= "ADDCLEARFULL" and Q.same_lane_cmd(key, cmd, opts) then
     return true, "unchanged", Q.get_owned(key)
   end
 
@@ -792,19 +835,30 @@ function Q.install_lane(lane, cmd, opts)
   end
 
   local existed = (type(Q.get_owned(key)) == "table")
-  local ok = Q.addclear(qtype, cmd)
+  local ok = (queue_verb == "ADDCLEARFULL") and Q.addclearfull(qtype, cmd) or Q.addclear(qtype, cmd)
   if not ok then
     local rec = Q.get_owned(key)
     if type(rec) == "table" then
       rec.last_result = "error"
-      rec.last_error = "addclear_failed"
+      rec.last_error = (queue_verb == "ADDCLEARFULL") and "addclearfull_failed" or "addclear_failed"
     end
-    return false, "addclear_failed"
+    return false, (queue_verb == "ADDCLEARFULL") and "addclearfull_failed" or "addclear_failed"
+  end
+
+  if queue_verb == "ADDCLEARFULL" then
+    _clear_all_owned()
+    Q.flush_staged()
+    if type(Q.clear_lane_dispatched) == "function" then
+      pcall(Q.clear_lane_dispatched, "eq", "addclearfull")
+      pcall(Q.clear_lane_dispatched, "bal", "addclearfull")
+      pcall(Q.clear_lane_dispatched, "class", "addclearfull")
+    end
   end
 
   local rec = {
     cmd = cmd,
     qtype = qtype,
+    queue_verb = queue_verb,
     target = _trim(opts.target),
     fingerprint = Q.fingerprint(cmd, opts),
     route = _route_from_opts(opts),
@@ -916,6 +970,7 @@ end
 
 function Q.commit(opts)
   local payload = _commit_payload(opts)
+  payload = _only_clearfull_lane(payload, opts)
   if not _payload_has_value(payload) then return false end
 
   opts = opts or {}

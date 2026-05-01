@@ -179,6 +179,37 @@ assert_true("6c: commit fresh eq command", ok_commit_2 == true)
 local last_line = _send_lines[#_send_lines] or ""
 assert_true("6d: last queue send is refreshed command", last_line:find("slickness", 1, true) ~= nil)
 
+print("\n=== Test 7: addclearfull execute bypasses dedupe and clears other ownership ===")
+if type(Q.clear_lane_dispatched) == "function" then Q.clear_lane_dispatched("eq", "unit:clearfull") end
+assert_true("7a: stage same destroy command", Q.stage("eq", "cast destroy at target"))
+Q.set_owned("eq", {
+  cmd = "cast destroy at target",
+  fingerprint = Q.fingerprint("cast destroy at target", { route = "magi_dmg", target = "target" }),
+  route = "magi_dmg",
+  target = "target",
+})
+Q.set_owned("class", {
+  cmd = "temper target sanguine",
+  fingerprint = Q.fingerprint("temper target sanguine", { route = "alchemist_duel_route", target = "target" }),
+  route = "alchemist_duel_route",
+  target = "target",
+})
+assert_true("7b: stage sidecar class command", Q.stage("class", "temper target sanguine"))
+local before_clearfull = #_send_lines
+local ok_clearfull = Q.commit({
+  route = "magi_dmg",
+  target = "target",
+  allow_eqbal = true,
+  queue_verb = "addclearfull",
+  clearfull_lane = "eq",
+})
+assert_true("7c: clearfull commit succeeds despite same command", ok_clearfull == true)
+assert_eq("7d: clearfull sent exact queue command", _send_lines[#_send_lines], "QUEUE ADDCLEARFULL e!p!w!t cast destroy at target")
+assert_eq("7e: clearfull bypassed unchanged dedupe", #_send_lines, before_clearfull + 1)
+assert_eq("7f: stale class ownership cleared", Q.get_owned("class"), nil)
+assert_eq("7g: staged class sidecar dropped", Q.list("class"), nil)
+assert_eq("7h: execute ownership retained", Q.get_owned("eq") and Q.get_owned("eq").queue_verb, "ADDCLEARFULL")
+
 io.write(string.format("PASS: %d\n", pass_count))
 if fail_count > 0 then
   io.stderr:write(string.format("FAILURES: %d\n", fail_count))

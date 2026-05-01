@@ -241,6 +241,50 @@ function M.on_stop()
   return M.off()
 end
 
+local function _is_destroy_cmd(cmd)
+  return _lc(cmd):match("^cast%s+destroy%s+at%s+") ~= nil
+end
+
+local function _apply_execute_opts(opts, cmd)
+  if _is_destroy_cmd(cmd) then
+    opts.queue_verb = "addclearfull"
+    opts.clearfull_lane = "eq"
+  end
+  return opts
+end
+
+local function _send_destroy_addclearfull(cmd)
+  cmd = _trim(cmd)
+  if not _is_destroy_cmd(cmd) then return nil end
+  local Q = Yso and Yso.queue or nil
+  local opts = _apply_execute_opts({
+    route = "magi_dmg",
+    target = _target(),
+    reason = "magi_dmg:destroy",
+    kind = "offense",
+  }, cmd)
+  if Q and type(Q.install_lane) == "function" then
+    local ok = Q.install_lane("eq", cmd, opts)
+    if ok == true then
+      if type(Q.mark_lane_dispatched) == "function" then
+        pcall(Q.mark_lane_dispatched, "eq", "destroy:addclearfull")
+      end
+      if type(Q.mark_payload_fired) == "function" then
+        pcall(Q.mark_payload_fired, { eq = cmd, target = opts.target })
+      end
+      return true
+    end
+    return false
+  end
+  if Q and type(Q.addclearfull) == "function" then
+    return Q.addclearfull("e!p!w!t", cmd) == true
+  end
+  if type(send) == "function" then
+    return pcall(send, "QUEUE ADDCLEARFULL e!p!w!t " .. cmd, false) == true
+  end
+  return false
+end
+
 local function _emit_payload(cmd, target, reason)
   cmd = _trim(cmd)
   target = _trim(target)
@@ -253,6 +297,7 @@ local function _emit_payload(cmd, target, reason)
     route = "magi_dmg",
     target = target,
   }
+  _apply_execute_opts(opts, cmd)
 
   if RI and type(RI.emit_route_payload) == "function" then
     return RI.emit_route_payload("magi_dmg", {
@@ -291,6 +336,11 @@ local function _emit_payload(cmd, target, reason)
   end
 
   if type(send) == "function" then
+    local destroy_sent = _send_destroy_addclearfull(cmd)
+    if destroy_sent ~= nil then
+      if destroy_sent == true then return true, cmd, payload end
+      return false, "send_failed", nil
+    end
     local ok = pcall(send, cmd)
     if ok then return true, cmd, payload end
     return false, "send_failed", nil

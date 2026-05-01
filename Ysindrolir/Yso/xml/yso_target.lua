@@ -49,12 +49,16 @@ local function _push_ak_target(name)
   if type(ak) == "table" then
     local tgt = rawget(ak, "target")
     if type(tgt) == "table" and type(tgt.set) == "function" then
-      pcall(tgt.set, name, { source = "yso" })
-      return true
+      local ok, pushed_ok, why = pcall(tgt.set, name, { source = "yso" })
+      if not ok then return false, pushed_ok end
+      if pushed_ok == false then return false, why or "ak_set_failed" end
+      return true, why
     end
     if type(rawget(ak, "setTarget")) == "function" then
-      pcall(ak.setTarget, name)
-      return true
+      local ok, pushed_ok, why = pcall(ak.setTarget, name)
+      if not ok then return false, pushed_ok end
+      if pushed_ok == false then return false, why or "ak_set_failed" end
+      return true, why
     end
   end
 
@@ -68,7 +72,7 @@ local function _push_ak_target(name)
     return true
   end
 
-  return false
+  return false, "no_ak"
 end
 
 local function _clear_ak_target()
@@ -76,12 +80,16 @@ local function _clear_ak_target()
   if type(ak) == "table" then
     local tgt = rawget(ak, "target")
     if type(tgt) == "table" and type(tgt.clear) == "function" then
-      pcall(tgt.clear, { source = "yso" })
-      return true
+      local ok, cleared_ok, why = pcall(tgt.clear, { source = "yso" })
+      if not ok then return false, cleared_ok end
+      if cleared_ok == false then return false, why or "ak_clear_failed" end
+      return true, why
     end
     if type(rawget(ak, "clearTarget")) == "function" then
-      pcall(ak.clearTarget)
-      return true
+      local ok, cleared_ok, why = pcall(ak.clearTarget)
+      if not ok then return false, cleared_ok end
+      if cleared_ok == false then return false, why or "ak_clear_failed" end
+      return true, why
     end
   end
 
@@ -95,7 +103,7 @@ local function _clear_ak_target()
     return true
   end
 
-  return false
+  return false, "no_ak"
 end
 
 if type(TG.get) ~= "function" then
@@ -129,7 +137,10 @@ if type(TG.set) ~= "function" then
       return TG.clear(source or "manual")
     end
 
-    _push_ak_target(name)
+    local pushed, why = _push_ak_target(name)
+    if pushed ~= true then
+      return false, why or "ak_set_failed"
+    end
     TG.target = name
     TG.source = tostring(source or "manual")
     TG.at = _target_now()
@@ -142,7 +153,10 @@ end
 
 if type(TG.clear) ~= "function" then
   function TG.clear(source, reason, silent)
-    _clear_ak_target()
+    local cleared, why = _clear_ak_target()
+    if cleared ~= true then
+      return false, why or "ak_clear_failed"
+    end
     TG.target = ""
     TG.source = tostring(source or "system")
     TG.at = _target_now()

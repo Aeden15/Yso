@@ -166,8 +166,8 @@ local function make_world(opts)
     queue = {
       clear = function() return true end,
     },
-    emit = function(payload)
-      emits[#emits + 1] = payload
+    emit = function(payload, emit_opts)
+      emits[#emits + 1] = { payload = payload, opts = emit_opts }
       return true
     end,
   }
@@ -348,6 +348,11 @@ do
   note_sent(world, "cast convergence at foe")
   local cmd = preview_eq(world)
   assert_eq("6a: postconv prefers destroy first", cmd, "cast destroy at foe")
+  local ok = world.MF.attack_function({})
+  assert_true("6b: destroy attack succeeds", ok == true)
+  local row = world.emits[#world.emits]
+  assert_eq("6c: destroy queue verb", row and row.opts and row.opts.queue_verb, "addclearfull")
+  assert_eq("6d: destroy clearfull lane", row and row.opts and row.opts.clearfull_lane, "eq")
 end
 
 print("\n=== Test 7: pending windows advance the route and suppress identical repeats ===")

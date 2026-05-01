@@ -114,12 +114,16 @@ local function _ak_set_target(name)
   if type(ak) == "table" then
     local tgt = rawget(ak, "target")
     if type(tgt) == "table" and type(tgt.set) == "function" then
-      local ok, err = pcall(tgt.set, name, { source = "yso" })
-      return ok, err
+      local ok, set_ok, why = pcall(tgt.set, name, { source = "yso" })
+      if not ok then return false, set_ok end
+      if set_ok == false then return false, why or "ak_set_failed" end
+      return true, why
     end
     if type(rawget(ak, "setTarget")) == "function" then
-      local ok, err = pcall(ak.setTarget, name)
-      return ok, err
+      local ok, set_ok, why = pcall(ak.setTarget, name)
+      if not ok then return false, set_ok end
+      if set_ok == false then return false, why or "ak_set_failed" end
+      return true, why
     end
   end
 
@@ -142,12 +146,16 @@ local function _ak_clear_target()
   if type(ak) == "table" then
     local tgt = rawget(ak, "target")
     if type(tgt) == "table" and type(tgt.clear) == "function" then
-      local ok, err = pcall(tgt.clear, { source = "yso" })
-      return ok, err
+      local ok, clear_ok, why = pcall(tgt.clear, { source = "yso" })
+      if not ok then return false, clear_ok end
+      if clear_ok == false then return false, why or "ak_clear_failed" end
+      return true, why
     end
     if type(rawget(ak, "clearTarget")) == "function" then
-      local ok, err = pcall(ak.clearTarget)
-      return ok, err
+      local ok, clear_ok, why = pcall(ak.clearTarget)
+      if not ok then return false, clear_ok end
+      if clear_ok == false then return false, why or "ak_clear_failed" end
+      return true, why
     end
   end
 
@@ -177,10 +185,13 @@ end
 local function _forward_to_ak(fn, arg)
   if TG._forwarding then return false, "reentrant" end
   TG._forwarding = true
-  local ok, res = pcall(fn, arg)
+  local ok, forwarded_ok, forwarded_reason = pcall(fn, arg)
   TG._forwarding = false
-  if not ok then return false, res end
-  return true, res
+  if not ok then return false, forwarded_ok end
+  if forwarded_ok == false then
+    return false, forwarded_reason or "ak_forward_failed"
+  end
+  return true, forwarded_reason
 end
 
 local function _reset_combat_lane_state(reason)
@@ -207,7 +218,11 @@ function TG.clear(source, reason, silent, opts)
 
   opts = opts or {}
   if _should_forward_to_ak(source, opts) then
-    _forward_to_ak(_ak_clear_target)
+    local ok, why = _forward_to_ak(_ak_clear_target)
+    if not ok then
+      _dbg("clear forward failed: " .. tostring(why))
+      return false, why or "ak_clear_failed"
+    end
   end
 
   local old = _clean(TG.state.name)
@@ -259,7 +274,11 @@ function TG.set(name, source, opts)
     return false, "lower_priority" end
 
   if _should_forward_to_ak(source, opts) then
-    _forward_to_ak(_ak_set_target, name)
+    local ok, why = _forward_to_ak(_ak_set_target, name)
+    if not ok then
+      _dbg("set forward failed: " .. tostring(why))
+      return false, why or "ak_set_failed"
+    end
   end
 
   TG.state.name = name

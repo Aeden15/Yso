@@ -114,6 +114,16 @@ Package XML:
 - Added boot status echo output that confirms route controller availability and
   both Alchemist/Magi route tables after bootstrap.
 
+## Patch Notes (May 1, 2026 - Instant-Kill Queue Priority)
+
+- Added `queue_verb = "addclearfull"` support to `Yso.queue` commits so route
+  execute windows can clear all queued work before installing the finisher.
+- Updated Alchemist Aurify/Reave and Magi Destroy execute paths to request
+  `QUEUE ADDCLEARFULL`, with execute payloads dropping bootstrap sidecars once
+  the kill window is selected.
+- Refreshed the XML mirror/package copies for the affected queue and Alchemist
+  scripts, and updated focused regression coverage for clearfull behavior.
+
 ## Patch Notes (April 25, 2026 - Diagnostic XML Resync)
 
 - Synced `Ysindrolir/Yso/Core/queue.lua` into both:

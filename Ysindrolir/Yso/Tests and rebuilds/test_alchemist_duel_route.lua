@@ -94,6 +94,7 @@ local function make_world(opts)
   local pending_status_active = (opts.pending_active == true)
   local pending_timeout_once = (opts.pending_timeout_once == true)
   local pending_last = nil
+  local fire_reave_opts = nil
 
   _G.Yso = nil
   _G.yso = nil
@@ -166,7 +167,8 @@ local function make_world(opts)
       end
       return false, { legal = false }
     end,
-    fire_reave = function(name)
+    fire_reave = function(name, _, call_opts)
+      fire_reave_opts = call_opts
       sent[#sent + 1] = "reave " .. tostring(name or "")
       return true
     end,
@@ -314,6 +316,7 @@ local function make_world(opts)
     queue_clear_calls = queue_clear_calls,
     queue_clear_owned_calls = queue_clear_owned_calls,
     queue_clear_dispatched_calls = queue_clear_dispatched_calls,
+    fire_reave_opts = function() return fire_reave_opts end,
     pending_last = function() return pending_last end,
     set_target = function(t)
       current_target = t
@@ -365,6 +368,19 @@ do
   })
   local payload = world.R.build_payload({ target = "TargetOne" })
   assert_true("3a: payload contains homunculus corrupt", free_has(payload, "homunculus corrupt TargetOne"))
+end
+
+print("\n=== Test 3b: duel reave execute requests addclearfull ===")
+do
+  local world = make_world({ can_reave = true })
+  local payload = world.R.build_payload({ target = "TargetOne" })
+  assert_eq("3b-a: reave selected on class lane", payload and payload.class, "reave TargetOne")
+  assert_eq("3b-b: reave payload drops bootstrap sidecar", payload and payload.free, nil)
+  local ok = world.R.attack_function({ target = "TargetOne" })
+  assert_true("3b-c: reave attack succeeds", ok == true)
+  local opts = world.fire_reave_opts()
+  assert_eq("3b-d: reave queue verb", opts and opts.queue_verb, "addclearfull")
+  assert_eq("3b-e: reave clearfull lane", opts and opts.clearfull_lane, "class")
 end
 
 print("\n=== Test 4: lifecycle pacify and target swap homunculus attack ===")
