@@ -149,6 +149,9 @@ function P.handle_humour_balance_line(line)
     if Yso.alc and type(Yso.alc.set_homunculus_ready) == "function" then
       Yso.alc.set_homunculus_ready(true, "homunculus_ready")
     end
+    if type(P.wake_alchemist_routes) == "function" then
+      P.wake_alchemist_routes("homunculus_ready")
+    end
     return true
   end
 
@@ -339,21 +342,31 @@ function P.handle_humour_balance_line(line)
   end
 
   do
-    local target = line:match("^Your homunculus .- ([A-Z][%a'-]+), corrupting ")
-      or line:match("^Your homunculus .- ([A-Z][%a'-]+)'s body, corrupting ")
-      or line:match("^Your homunculus .- ([A-Z][%a'-]+)' body, corrupting ")
-      or _current_target_fallback()
-    local found = line:lower():find("corrupt", 1, true)
-    local mel = line:lower():find("melancholic", 1, true)
-    local san = line:lower():find("sanguine", 1, true)
-    if found and mel and san then
+    local target, pronoun = line:match("^Channeling your focus through your link to your homunculus, you reach out to find the ethereal hook for ([%w'%-]+)'s humours%. Finding it, you use the alien connection with a diminutive homunculus resembling Ysindrolir to corrupt ([%a]+) humours%.$")
+    if target and _looks_like_pronoun(pronoun) then
       if Yso.alc and type(Yso.alc.set_homunculus_ready) == "function" then
         Yso.alc.set_homunculus_ready(false, "homunculus_corrupt")
       end
       if type(P.note_corrupt_success) == "function" then
         P.note_corrupt_success(target, 45)
       end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("homunculus_corrupt")
+      end
       return "homunculus_corrupt"
+    end
+  end
+
+  do
+    local target = line:match("^([%w'%-]+) looks far healthier all of a sudden%.$")
+    if target then
+      if type(P.clear_corruption) == "function" then
+        P.clear_corruption(target, "corruption_lost")
+      end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("corruption_lost")
+      end
+      return "corruption_lost"
     end
   end
 
@@ -361,7 +374,13 @@ function P.handle_humour_balance_line(line)
     local who = line:match("^([%w'%-]+) eats a ginger root%.$")
       or line:match("^([%w'%-]+) eats an antimony flake%.$")
     if who then
-      return "humour_eat_ak_owned"
+      if type(P.mark_all_eval_dirty) == "function" then
+        P.mark_all_eval_dirty(who, "humour_eat")
+      end
+      if type(P.wake_alchemist_routes) == "function" then
+        P.wake_alchemist_routes("humour_eat_dirty")
+      end
+      return "humour_eat_dirty"
     end
   end
 

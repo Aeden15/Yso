@@ -100,6 +100,20 @@ local function _echo(msg)
   end
 end
 
+local function _phys_echo_corruption(msg)
+  msg = tostring(msg or "")
+  if msg == "" then
+    return
+  end
+  if type(cecho) == "function" then
+    cecho("\n<gold>[PHYSIOLOGY:] <HotPink>" .. msg .. "<reset>\n")
+    return
+  end
+  if type(echo) == "function" then
+    echo("\n[PHYSIOLOGY:] " .. msg .. "\n")
+  end
+end
+
 local function _send_cmd(cmd)
   cmd = tostring(cmd or "")
   if cmd == "" or type(send) ~= "function" then
@@ -566,6 +580,17 @@ function Yso.homunculus_attack(tgt)
   return _same_target(st.target or "", tgt)
 end
 
+local function _aurify_route_active()
+  local route = Yso and Yso.off and Yso.off.alc and Yso.off.alc.aurify_route or nil
+  if type(route) == "table" and type(route.is_active) == "function" then
+    local ok, active = pcall(route.is_active)
+    if ok then
+      return active == true
+    end
+  end
+  return false
+end
+
 function P.wake_route(route_id, reason)
   return _wake_route_loop(route_id, reason)
 end
@@ -576,6 +601,9 @@ function P.wake_alchemist_routes(reason)
     woke = true
   end
   if _wake_route_loop("alchemist_duel_route", reason) then
+    woke = true
+  end
+  if _wake_route_loop("alchemist_aurify_route", reason) then
     woke = true
   end
   return woke
@@ -1374,11 +1402,45 @@ function P.note_corrupt_success(name, seconds)
   local now = _now()
   local duration = tonumber(seconds) or 45
   local key = _target_key(target)
+  if not key then
+    return false
+  end
+  local existing = P.state.corruption[key]
+  if type(existing) == "table" and existing.timer_id and type(killTimer) == "function" then
+    pcall(killTimer, existing.timer_id)
+  end
+  local token = tonumber((existing and existing.token) or 0) + 1
   P.state.corruption[key] = {
     target = target,
     applied_at = now,
     expected_expires_at = now + duration,
+    token = token,
+    active = true,
+    timer_id = nil,
   }
+  if duration > 0 and type(tempTimer) == "function" then
+    P.state.corruption[key].timer_id = tempTimer(duration, function()
+      local row = P.state.corruption and P.state.corruption[key]
+      if type(row) ~= "table" then
+        return
+      end
+      if row.active ~= true or tonumber(row.token or 0) ~= token then
+        return
+      end
+      if not _same_target(row.target or "", _current_target()) then
+        return
+      end
+      if _aurify_route_active() ~= true then
+        return
+      end
+      row.active = false
+      row.timer_id = nil
+      row.expired_at = _now()
+      _phys_echo_corruption("RECAST CORRUPTION!")
+      P.wake_alchemist_routes("corruption_expired")
+    end)
+  end
+  _phys_echo_corruption(target .. " IS CORRUPTED! 45s TO GO!")
   return true
 end
 
@@ -1386,6 +1448,10 @@ function P.clear_corruption(name, source)
   local key = _target_key(name)
   if not key then
     return false
+  end
+  local row = P.state.corruption[key]
+  if type(row) == "table" and row.timer_id and type(killTimer) == "function" then
+    pcall(killTimer, row.timer_id)
   end
   P.state.corruption[key] = nil
   P.state.last_corruption_clear = {
@@ -1405,8 +1471,12 @@ function P.corruption_active(name)
   if type(row) ~= "table" then
     return false
   end
+  if row.active ~= true then
+    return false
+  end
   if tonumber(row.expected_expires_at or 0) <= _now() then
-    P.state.corruption[key] = nil
+    row.active = false
+    row.timer_id = nil
     return false
   end
   return true

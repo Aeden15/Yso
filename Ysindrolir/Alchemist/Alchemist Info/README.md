@@ -22,7 +22,7 @@ Primary active development is focused on Magi and Alchemist.
   Alchemist duel lock-pressure route for `aduel`, now using the same lane-combo payload model and shieldbreak-as-EQ-slot behavior as group damage.
 
 - `Aurify route.lua`
-  Real Aurify route module (`alchemist_aurify_route`) for bleed pressure into Aurify windows, exposed by alias `bleed`.
+  Real Aurify route module (`alchemist_aurify_route`) for sticky weighted humour pressure, corruption upkeep, and Aurify/Inundate execute windows, exposed by alias `bleed`.
 
 - `Route instructions.txt`
   Checklist for keeping current and future Alchemist routes on the AK ownership/read-through model.
@@ -49,7 +49,7 @@ Primary active development is focused on Magi and Alchemist.
   Display-only `fchart` pop-up chart for quick Formulation skill/effect lookup. It does not participate in phial crafting, compound resolution, permanent phial policy, or route automation.
 
 - `Triggers/Alchemy/Physiology/humour_balance.lua`
-  Workspace-side Physiology live handler for evaluate/vitals freshness, temper/wrack/truewrack balance effects, homunculus corrupt, owner-specific homunculus stance, ready lines, and AK-aligned humour-eat lines.
+  Workspace-side Physiology live handler for evaluate/vitals freshness, temper/wrack/truewrack balance effects, live channeling homunculus-corrupt success/lost lines, owner-specific homunculus stance, ready lines, and humour-eat dirtying.
 
 - `Triggers/Alchemy/Formulation/phiallist.lua`
   Workspace-side hook that routes `phiallist` lines into the shared phial parser.
@@ -73,6 +73,11 @@ Primary active development is focused on Magi and Alchemist.
 - Shieldbreak is now an EQ slot (`educe copper <target>`) that still allows legal class/bal follow-through in the same payload, with pronoun-inclusive AK shield parse coverage and callable fallback checks via `Yso.shield(target)` (plus `.up/.set` compatibility).
 - Aurification execute window is treated as an EQ finisher with default gate `hp <= 60` and `mp <= 60` (both required), and installs through `QUEUE ADDCLEARFULL`.
 - `bleed` toggles `alchemist_aurify_route`.
+- Aurify route pressure no longer hard-forces a tiny affliction list; it keeps a sticky weighted humour focus (minimum focus goal 3) and uses humour-form `wrack/truewrack` pressure where legal.
+- Aurify EQ lane is flexible (`aurify` > `educe copper` > `educe salt` > `vitrify` > `phlogisticate` > situational silver/lead > `educe iron` fallback). `educe sulphur` is not used as offensive mana pressure.
+- Corruption tracking is tokenized per target with guarded timers and standardized Physiology cechos:
+  - `<gold>[PHYSIOLOGY:] <HotPink><target> IS CORRUPTED! 45s TO GO!<reset>`
+  - `<gold>[PHYSIOLOGY:] <HotPink>RECAST CORRUPTION!<reset>`
 - Reave execute is now a conservative instant-kill planner addition after Aurification, requiring trusted evaluate intel, humour balance ready, all four humours tempered, and no self channel-blocking hinder states; it also installs through `QUEUE ADDCLEARFULL`.
 - Physiology humour-balance lane tracking as its own ready/not-ready state.
 - Physiology now tracks active Alchemy timed debuffs per target with fallback expiry (`phlogistication` and `vitrification`) via:
@@ -95,6 +100,16 @@ Primary active development is focused on Magi and Alchemist.
 - Paralysis is gated by AK's current-target sanguine count (`>= 2`), and target swaps require a fresh `evaluate <target> humours` before humour-state planning resumes.
 - `educe salt` is treated as a post-shieldbreak/post-execute self-purge EQ action and is blocked while `stupidity` is present.
 - TODO: Legacy-driven self-affliction handling should prioritize or reprioritize `stupidity` before relying on Salt.
+
+## Patch Notes (May 2, 2026 - Aurify Pressure + Corruption Lifecycle)
+
+- Refactored Aurify route pressure into sticky weighted humour focus with a minimum focus floor before rotation and hard cap-safe planning.
+- Added Aurify corruption candidate gating (`homunculus corrupt <target>`) that respects `P.corruption_active(target)` and homunculus readiness.
+- Replaced the old homunculus-corrupt parser with the live channeling success line shape and added corruption-lost line handling:
+  - `Channeling your focus ... to corrupt <pronoun> humours.`
+  - `<target> looks far healthier all of a sudden.`
+- Physiology corruption state now uses tokenized timers with stale-guard checks; stale recast echoes are suppressed on target swap/clear/slain/reset/route stop.
+- Antimony/ginger lines now mark humour intel dirty and wake routes for a fresh `evaluate <target> humours` instead of guessing decremented humour values.
 
 ## Patch Notes (April 27, 2026 - Homunculus Corrupt Parser Fix)
 

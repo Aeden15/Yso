@@ -68,6 +68,19 @@ local function contains_text(list, text)
   return false
 end
 
+local function free_has(payload, text)
+  local free = payload and payload.free or nil
+  if type(free) == "table" then
+    for i = 1, #free do
+      if tostring(free[i] or ""):find(text, 1, true) then
+        return true
+      end
+    end
+    return false
+  end
+  return tostring(free or ""):find(text, 1, true) ~= nil
+end
+
 local function make_world(opts)
   opts = opts or {}
   local now_s = tonumber(opts.now_s or 1700) or 1700
@@ -255,11 +268,11 @@ do
 
   R.start()
   local p1 = R.build_payload({ target = "TargetOne" })
-  assert_true("3a: start arms homunculus attack", tostring(p1 and p1.free or ""):find("homunculus attack TargetOne", 1, true) ~= nil)
+  assert_true("3a: start arms homunculus attack", free_has(p1, "homunculus attack TargetOne"))
 
   world.set_target("TargetTwo")
   local p2 = R.build_payload({ target = "TargetTwo" })
-  assert_true("3b: target swap re-arms homunculus attack", tostring(p2 and p2.free or ""):find("homunculus attack TargetTwo", 1, true) ~= nil)
+  assert_true("3b: target swap re-arms homunculus attack", free_has(p2, "homunculus attack TargetTwo"))
 
   R.stop("manual")
   assert_true("3c: stop sends pacify", contains_text(world.sent, "homunculus pacify"))
@@ -270,7 +283,7 @@ print("\n=== Test 3b: aurify pressure uses one chained class payload ===")
 do
   local world = make_world({ hp = 80, mp = 80, choleric = 0, melancholic = 0, sanguine = 0 })
   local payload = world.R.build_payload({ target = "TargetOne" })
-  assert_eq("3b-a: pressure class combo", payload and payload.class, "temper TargetOne choleric&&evaluate TargetOne humours&&educe iron TargetOne&&wrack TargetOne nausea")
+  assert_eq("3b-a: pressure class combo", payload and payload.class, "temper TargetOne choleric&&evaluate TargetOne humours&&vitrify TargetOne&&truewrack TargetOne choleric choleric")
   assert_eq("3b-b: no separate eq lane", payload and payload.eq, nil)
   assert_eq("3b-c: no separate bal lane", payload and payload.bal, nil)
   assert_eq("3b-d: configurable combo verb defaults to add", payload and payload.queue_verb, "add")

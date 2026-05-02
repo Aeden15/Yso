@@ -11,6 +11,25 @@ Queue payload update - May 1, 2026
 - The live Physiology evaluate-count trigger colourizes humour/count lines
   without changing humour state tracking.
 
+Aurify pressure/corruption update - May 2, 2026
+-----------------------------------------------
+- Aurify route pressure now uses sticky weighted humour focus (minimum focus
+  floor before rotation) instead of hard forcing a tiny fixed affliction set.
+- BAL pressure prefers humour-form wrack/truewrack commands where legal and is
+  not blocked just because EQ is unavailable.
+- EQ lane is flexible and ordered:
+  aurify -> educe copper -> educe salt -> vitrify -> phlogisticate ->
+  situational silver/lead -> educe iron fallback.
+- Educe sulphur is not treated as offensive mana-path logic in Aurify route.
+- Homunculus corruption success now matches the live channeling line, lost line
+  clears state, and corruption timers are token-guarded to suppress stale recast
+  echoes on target/reset/route cleanup.
+- Standardized corruption cechos:
+  [PHYSIOLOGY:] <target> IS CORRUPTED! 45s TO GO!
+  [PHYSIOLOGY:] RECAST CORRUPTION!
+- Ginger/antimony lines now dirty humour intel and wake routes for fresh
+  evaluate humours rather than guessing a humour decrement.
+
 Formulation policy updates
 --------------------------
 - Formulation alerts now use the standard colorized prefix:

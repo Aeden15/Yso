@@ -808,20 +808,23 @@ do
   assert_eq("11e: timeout remains pending", why_timeout, "temper_pending")
 end
 
-print("\n=== Test 12: homunculus corrupt parser handles possessive target lines ===")
+print("\n=== Test 12: homunculus corrupt parser handles live channeling success/lost lines ===")
 do
   local world = make_phys_world({ target = "FallbackGuy", hp = 81, mp = 73 })
   local P = world.P
 
-  local r1 = P.handle_humour_balance_line("Your homunculus gnaws O'rielle's body, corrupting melancholic and sanguine humours.")
-  assert_eq("12a: possessive-s body line handled", r1, "homunculus_corrupt")
+  local r1 = P.handle_humour_balance_line("Channeling your focus through your link to your homunculus, you reach out to find the ethereal hook for O'rielle's humours. Finding it, you use the alien connection with a diminutive homunculus resembling Ysindrolir to corrupt her humours.")
+  assert_eq("12a: live channeling line handled", r1, "homunculus_corrupt")
   assert_true("12b: parsed target corruption is active", P.corruption_active("O'rielle"))
   assert_false("12c: fallback target not marked when parse succeeds", P.corruption_active("FallbackGuy"))
 
-  P.clear_corruption("O'rielle", "test_reset")
-  local r2 = P.handle_humour_balance_line("Your homunculus gnaws Ares' body, corrupting melancholic and sanguine humours.")
-  assert_eq("12d: apostrophe-only possessive line handled", r2, "homunculus_corrupt")
-  assert_true("12e: apostrophe-only parsed target corruption is active", P.corruption_active("Ares"))
+  local lost = P.handle_humour_balance_line("O'rielle looks far healthier all of a sudden.")
+  assert_eq("12d: corruption lost line handled", lost, "corruption_lost")
+  assert_false("12e: lost line clears corruption", P.corruption_active("O'rielle"))
+
+  local r2 = P.handle_humour_balance_line("Channeling your focus through your link to your homunculus, you reach out to find the ethereal hook for Ares's humours. Finding it, you use the alien connection with a diminutive homunculus resembling Ysindrolir to corrupt his humours.")
+  assert_eq("12f: second live channeling line handled", r2, "homunculus_corrupt")
+  assert_true("12g: second parsed target corruption is active", P.corruption_active("Ares"))
 end
 
 print("\n=== Test 13: humour failure clears pending class and server class queue ===")
@@ -849,6 +852,29 @@ do
   assert_true("13e: staged class clear requested", clear_calls[1] and clear_calls[1].opts and clear_calls[1].opts.clear_staged == true)
   assert_true("13f: server class queue clear sent", contains_text(world.sent, "CLEARQUEUE c!p!w!t"))
   assert_true("13g: diagnostic recorded", type(P.state.last_humour_fail) == "table")
+end
+
+print("\n=== Test 14: antimony/ginger lines mark humour intel dirty ===")
+do
+  local world = make_phys_world({ target = "TargetOne" })
+  local P = world.P
+  local dirty_calls = {}
+  local wake_reasons = {}
+
+  P.mark_all_eval_dirty = function(tgt, source)
+    dirty_calls[#dirty_calls + 1] = { target = tgt, source = source }
+    return true
+  end
+  P.wake_alchemist_routes = function(reason)
+    wake_reasons[#wake_reasons + 1] = tostring(reason or "")
+    return true
+  end
+
+  local result = P.handle_humour_balance_line("TargetOne eats a ginger root.")
+  assert_eq("14a: ginger line handled", result, "humour_eat_dirty")
+  assert_eq("14b: dirty mark target", dirty_calls[1] and dirty_calls[1].target, "TargetOne")
+  assert_eq("14c: dirty mark source", dirty_calls[1] and dirty_calls[1].source, "humour_eat")
+  assert_eq("14d: wake reason set", wake_reasons[1], "humour_eat_dirty")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

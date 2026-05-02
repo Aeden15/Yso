@@ -89,13 +89,6 @@ AR.cfg = AR.cfg or {
   instant_kill_queue_verb = "addclearfull",
 }
 
-AR.giving_default = AR.giving_default or {
-  "paralysis",
-  "nausea",
-  "sensitivity",
-  "haemophilia",
-}
-
 AR.state = AR.state or {
   enabled = false,
   loop_enabled = false,
@@ -108,6 +101,15 @@ AR.state = AR.state or {
   homunculus_attack_sent = false,
   homunculus_attack_target = "",
   last_salt_at = 0,
+  humour_pressure = {
+    target = "",
+    focus = "",
+    focus_goal = 3,
+    last_focus_at = 0,
+    last_eval_at = 0,
+    recent_humours = {},
+    roll = 0,
+  },
 }
 
 local function _trim(s)
@@ -506,32 +508,6 @@ local function _vitrification_active(P, tgt)
   return false
 end
 
-local function _pick_wrack(P, tgt, giving, staged)
-  if not _bal_ready() then
-    return nil, "bal_not_ready_for_wrack"
-  end
-  if not _can_plan_bal() then
-    return nil, "bal_lane_debounce"
-  end
-  if type(P.build_truewrack_with_staged) == "function" then
-    local cmd = P.build_truewrack_with_staged(tgt, giving, staged)
-    if _trim(cmd) ~= "" then return cmd, "truewrack" end
-  end
-  if type(P.build_wrack_fallback_with_staged) == "function" then
-    local cmd = P.build_wrack_fallback_with_staged(tgt, giving, staged)
-    if _trim(cmd) ~= "" then return cmd, "wrack" end
-  end
-  if type(P.build_truewrack) == "function" then
-    local cmd = P.build_truewrack(tgt, giving)
-    if _trim(cmd) ~= "" then return cmd, "truewrack" end
-  end
-  if type(P.build_wrack_fallback) == "function" then
-    local cmd = P.build_wrack_fallback(tgt, giving)
-    if _trim(cmd) ~= "" then return cmd, "wrack" end
-  end
-  return nil, "no_legal_wrack_aff_or_temper"
-end
-
 local function _note_wrack_result(R, cmd, why)
   if _trim(cmd) ~= "" then return end
   why = _trim(why)
@@ -543,61 +519,247 @@ local function _note_wrack_result(R, cmd, why)
   R.state.explain.last_no_wrack_reason = why
 end
 
-local function _pick_temper(P, tgt, giving)
-  if not _class_ready() then
-    return nil
+local _pressure_humours = { "choleric", "melancholic", "sanguine", "phlegmatic" }
+local _pressure_tactical_weight = {
+  choleric = 7,
+  melancholic = 7,
+  sanguine = 5,
+  phlegmatic = 2,
+}
+
+local function _humour_counts(P, tgt)
+  local out = {
+    choleric = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "choleric") or 0) or 0,
+    melancholic = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "melancholic") or 0) or 0,
+    phlegmatic = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "phlegmatic") or 0) or 0,
+    sanguine = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "sanguine") or 0) or 0,
+  }
+  for _, humour in ipairs(_pressure_humours) do
+    if out[humour] < 0 then out[humour] = 0 end
+    if out[humour] > 8 then out[humour] = 8 end
   end
-  if type(P.pick_temper_humour) ~= "function" then
-    return nil
+  return out
+end
+
+local function _pressure_state(R, tgt)
+  R.state = R.state or {}
+  R.state.humour_pressure = R.state.humour_pressure or {}
+  local st = R.state.humour_pressure
+  st.target = _trim(st.target)
+  st.focus = _trim(st.focus)
+  st.focus_goal = tonumber(st.focus_goal or 3) or 3
+  st.last_focus_at = tonumber(st.last_focus_at or 0) or 0
+  st.last_eval_at = tonumber(st.last_eval_at or 0) or 0
+  st.roll = tonumber(st.roll or 0) or 0
+  st.recent_humours = type(st.recent_humours) == "table" and st.recent_humours or {}
+  if tgt ~= "" and not _same_target(st.target, tgt) then
+    st.target = tgt
+    st.focus = ""
+    st.recent_humours = {}
+    st.roll = 0
+    st.last_focus_at = _now()
   end
-  local humour = _trim(P.pick_temper_humour(tgt, giving))
-  if humour == "" then
-    return nil
-  end
-  return {
-    humour = humour,
-    cmd = "temper " .. tgt .. " " .. humour,
-    reason = "temper_window",
+  return st
+end
+
+local function _clear_pressure_state(R, tgt)
+  R.state = R.state or {}
+  local target = _trim(tgt or "")
+  R.state.humour_pressure = {
+    target = target,
+    focus = "",
+    focus_goal = 3,
+    last_focus_at = _now(),
+    last_eval_at = 0,
+    recent_humours = {},
+    roll = 0,
   }
 end
 
-local function _pick_threshold_temper(P, tgt, giving)
+local function _weighted_pick(st, weights)
+  local total = 0
+  for _, humour in ipairs(_pressure_humours) do
+    local w = tonumber(weights[humour] or 0) or 0
+    if w > 0 then
+      total = total + w
+    end
+  end
+  if total <= 0 then
+    return nil
+  end
+  st.roll = (tonumber(st.roll or 0) or 0) + 1
+  local seed = math.floor((_now() * 1000) + st.roll * 37)
+  local roll = (seed % total) + 1
+  local acc = 0
+  for _, humour in ipairs(_pressure_humours) do
+    local w = tonumber(weights[humour] or 0) or 0
+    if w > 0 then
+      acc = acc + w
+      if roll <= acc then
+        return humour
+      end
+    end
+  end
+  return nil
+end
+
+local function _choose_focus_humour(R, P, tgt, counts)
+  local st = _pressure_state(R, tgt)
+  local focus_goal = math.max(1, tonumber(st.focus_goal or 3) or 3)
+  local current_focus = _lc(st.focus)
+  local current_count = tonumber(counts[current_focus] or 0) or 0
+
+  if current_focus ~= "" and current_count < focus_goal and current_count < 8 then
+    return current_focus, "focus_sticky"
+  end
+
+  local weights = {}
+  for _, humour in ipairs(_pressure_humours) do
+    local count = tonumber(counts[humour] or 0) or 0
+    local weight = 0
+    if count < 8 then
+      weight = _pressure_tactical_weight[humour] or 1
+      if count < focus_goal then
+        weight = weight + ((focus_goal - count) * 8)
+      elseif count >= 6 then
+        weight = weight - 5
+      end
+      local last_recent = _lc(st.recent_humours[1] or "")
+      if last_recent ~= "" and last_recent == humour and count >= focus_goal then
+        weight = weight - 4
+      end
+      if _vitrification_active(P, tgt) and humour == "sanguine" and count < 6 then
+        weight = weight + 3
+      end
+    end
+    weights[humour] = math.max(0, math.floor(weight))
+  end
+
+  local picked = _weighted_pick(st, weights)
+  if not picked then
+    picked = "choleric"
+  end
+
+  if current_focus ~= "" and current_focus ~= picked then
+    table.insert(st.recent_humours, 1, current_focus)
+    while #st.recent_humours > 4 do
+      table.remove(st.recent_humours)
+    end
+  end
+
+  st.focus = picked
+  st.last_focus_at = _now()
+  return picked, "focus_rotate"
+end
+
+local function _pick_temper_pressure(R, P, tgt, counts)
   if not _class_ready() then
     return nil
   end
-
-  local chol = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "choleric") or 0) or 0
-  local mel = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "melancholic") or 0) or 0
-  local sang = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "sanguine") or 0) or 0
-
-  if chol < 6 then
-    return { humour = "choleric", cmd = "temper " .. tgt .. " choleric", reason = "temper_to_choleric_6" }
+  local focus, why = _choose_focus_humour(R, P, tgt, counts)
+  focus = _lc(focus)
+  if focus == "" then
+    return nil
   end
-  if mel < 6 then
-    return { humour = "melancholic", cmd = "temper " .. tgt .. " melancholic", reason = "temper_to_melancholic_6" }
+  local count = tonumber(counts[focus] or 0) or 0
+  if count >= 8 then
+    return nil
   end
-  if sang < 6 then
-    return { humour = "sanguine", cmd = "temper " .. tgt .. " sanguine", reason = "temper_to_sanguine_6" }
+  local reason = (count < 3 and "temper_focus_to_3") or "temper_focus_pressure"
+  if why == "focus_rotate" then
+    reason = "temper_focus_rotate"
   end
-  if chol < 8 then
-    return { humour = "choleric", cmd = "temper " .. tgt .. " choleric", reason = "temper_to_choleric_8" }
-  end
-  if mel < 8 then
-    return { humour = "melancholic", cmd = "temper " .. tgt .. " melancholic", reason = "temper_to_melancholic_8" }
-  end
-  return _pick_temper(P, tgt, giving)
+  return {
+    humour = focus,
+    cmd = "temper " .. tgt .. " " .. focus,
+    reason = reason,
+  }
 end
 
-local function _pick_execute_inundate(P, tgt)
+local function _wrack_required(P, kind)
+  if type(P.required_humour_level_for_wrack) == "function" then
+    return tonumber(P.required_humour_level_for_wrack(kind) or 1) or 1
+  end
+  if kind == "truewrack" then
+    return tonumber(P.truewrack_required_level or 1) or 1
+  end
+  return tonumber(P.wrack_required_level or 1) or 1
+end
+
+local function _pick_wrack_pressure(R, P, tgt, focus, staged, counts)
+  if not _bal_ready() then
+    return nil, "bal_not_ready_for_wrack"
+  end
+  if not _can_plan_bal() then
+    return nil, "bal_lane_debounce"
+  end
+
+  local order = {}
+  local seen = {}
+  local first = _lc(focus)
+  if first ~= "" then
+    order[#order + 1] = first
+    seen[first] = true
+  end
+  for _, humour in ipairs(_pressure_humours) do
+    if not seen[humour] then
+      order[#order + 1] = humour
+      seen[humour] = true
+    end
+  end
+
+  local req_true = _wrack_required(P, "truewrack")
+  local req_wrack = _wrack_required(P, "wrack")
+  local can_with_staged = (type(P.can_wrack_with_staged) == "function")
+  local can_wrack = (type(P.can_wrack) == "function")
+
+  for _, humour in ipairs(order) do
+    local count = tonumber(counts[humour] or 0) or 0
+    if count <= 8 then
+      local ok = false
+      if can_with_staged then
+        local legal = P.can_wrack_with_staged(tgt, humour, req_true, staged)
+        ok = legal == true
+      elseif can_wrack then
+        local legal = P.can_wrack(tgt, humour, req_true)
+        ok = legal == true
+      end
+      if ok then
+        return string.format("truewrack %s %s %s", tgt, humour, humour), "truewrack_humour"
+      end
+    end
+  end
+
+  for _, humour in ipairs(order) do
+    local count = tonumber(counts[humour] or 0) or 0
+    if count <= 8 then
+      local ok = false
+      if can_with_staged then
+        local legal = P.can_wrack_with_staged(tgt, humour, req_wrack, staged)
+        ok = legal == true
+      elseif can_wrack then
+        local legal = P.can_wrack(tgt, humour, req_wrack)
+        ok = legal == true
+      end
+      if ok then
+        return string.format("wrack %s %s", tgt, humour), "wrack_humour"
+      end
+    end
+  end
+
+  return nil, "no_legal_wrack_humour"
+end
+
+local function _pick_execute_inundate(P, tgt, counts)
   if not _class_ready() then
     return nil
   end
 
   local hp = tonumber(type(P.health_pct) == "function" and P.health_pct(tgt) or nil)
   local mp = tonumber(type(P.mana_pct) == "function" and P.mana_pct(tgt) or nil)
-  local chol = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "choleric") or 0) or 0
-  local mel = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "melancholic") or 0) or 0
-  local sang = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "sanguine") or 0) or 0
+  local chol = tonumber((counts and counts.choleric) or 0) or 0
+  local mel = tonumber((counts and counts.melancholic) or 0) or 0
+  local sang = tonumber((counts and counts.sanguine) or 0) or 0
 
   local function _after(vital, burst)
     if vital == nil then return nil end
@@ -646,6 +808,122 @@ local function _pick_execute_inundate(P, tgt)
   end
 
   return nil
+end
+
+local function _pick_useful_inundate(P, tgt, counts)
+  if not _class_ready() then
+    return nil
+  end
+  if type(P.inundate_candidate) == "function" then
+    local cand = P.inundate_candidate(tgt, "alchemist_aurify_route", { mode = "pressure" })
+    if type(cand) == "table" and _trim(cand.cmd) ~= "" then
+      local humour = _lc(cand.humour)
+      local count = tonumber((counts and counts[humour]) or 0) or 0
+      if count >= 6 and count <= 8 then
+        cand.reason = cand.reason or "inundate_useful"
+        return cand
+      end
+    end
+  end
+  if tonumber((counts and counts.choleric) or 0) >= 6 then
+    return { humour = "choleric", cmd = "inundate " .. tgt .. " choleric", reason = "inundate_choleric_pressure" }
+  end
+  if tonumber((counts and counts.melancholic) or 0) >= 6 then
+    return { humour = "melancholic", cmd = "inundate " .. tgt .. " melancholic", reason = "inundate_melancholic_pressure" }
+  end
+  if tonumber((counts and counts.sanguine) or 0) >= 6 and _vitrification_active(P, tgt) then
+    return { humour = "sanguine", cmd = "inundate " .. tgt .. " sanguine", reason = "inundate_sanguine_pressure" }
+  end
+  return nil
+end
+
+local function _target_has_def(tgt, def)
+  tgt = _trim(tgt)
+  def = _lc(def)
+  if tgt == "" or def == "" then
+    return false
+  end
+  if Yso and Yso.tgt and type(Yso.tgt.has_def) == "function" then
+    local ok, v = pcall(Yso.tgt.has_def, tgt, def)
+    if ok and v == true then
+      return true
+    end
+  end
+  local ak = rawget(_G, "ak")
+  if ak and type(ak.defs) == "table" then
+    local by_target = ak.defs[def .. "_by_target"]
+    if type(by_target) == "table" then
+      return by_target[_lc(tgt)] == true
+    end
+  end
+  return false
+end
+
+local function _pick_eq_candidate(R, P, tgt, counts, opts)
+  opts = type(opts) == "table" and opts or {}
+  if _eq_ready() ~= true then
+    return nil, "eq_not_ready"
+  end
+
+  if opts.allow_aurify == true and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
+    return "aurify " .. tgt, "aurify_window", "aurify"
+  end
+
+  if _shielded(tgt) then
+    return "educe copper " .. tgt, "shieldbreak", "educe_copper"
+  end
+
+  local salt_cmd, salt_reason = _self_purge_candidate(R)
+  if salt_cmd then
+    return salt_cmd, salt_reason or "salt_self_purge", "educe_salt"
+  end
+
+  local debuff_active, debuff_kind = false, nil
+  if type(P.alchemy_debuff_active) == "function" then
+    debuff_active, debuff_kind = P.alchemy_debuff_active(tgt)
+  end
+  local can_use_debuff = true
+  if type(P.can_use_alchemy_debuff) == "function" then
+    local ok = P.can_use_alchemy_debuff(tgt)
+    can_use_debuff = ok == true
+  end
+  local sang = tonumber((counts and counts.sanguine) or 0) or 0
+
+  if can_use_debuff and not (debuff_active == true and _lc(debuff_kind) == "vitrification") and sang < 8 then
+    return "vitrify " .. tgt, "vitrify_pressure", "vitrify"
+  end
+  if can_use_debuff and not (debuff_active == true and _lc(debuff_kind) == "phlogistication") then
+    return "phlogisticate " .. tgt, "phlogistication_pressure", "phlogisticate"
+  end
+
+  if _target_has_def(tgt, "shroud") then
+    return "educe silver " .. tgt, "anti_shroud", "educe_silver"
+  end
+  if _target_has_def(tgt, "flying") then
+    return "educe lead " .. tgt, "anti_fly", "educe_lead"
+  end
+
+  return "educe iron " .. tgt, "eq_filler", "educe_iron"
+end
+
+local function _homunculus_ready()
+  if Yso.alc and type(Yso.alc.homunculus_ready) == "function" then
+    local ok, v = pcall(Yso.alc.homunculus_ready)
+    if ok then
+      return v == true
+    end
+  end
+  return Yso and Yso.bal and Yso.bal.homunculus ~= false
+end
+
+local function _corrupt_candidate(P, tgt)
+  if _homunculus_ready() ~= true then
+    return nil
+  end
+  if type(P.corruption_active) == "function" and P.corruption_active(tgt) == true then
+    return nil
+  end
+  return "homunculus corrupt " .. tgt
 end
 
 local function _build_direct_order(payload, shield_order)
@@ -911,58 +1189,30 @@ local function _select_payload(ctx)
     return nil, "invalid_target"
   end
 
-  local giving = type(AR.giving_default) == "table" and AR.giving_default or {}
+  local counts = _humour_counts(P, tgt)
+  local st = _pressure_state(AR, tgt)
   local free_bootstrap = _ensure_homunculus_attack(AR, tgt)
+  local free_corrupt = _corrupt_candidate(P, tgt)
 
   local needs_eval = (type(P.target_needs_evaluate) == "function") and (P.target_needs_evaluate(tgt) == true) or false
-  if needs_eval and _evaluate_ready() and not _evaluate_pending_for(tgt) then
-    local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
-    if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
-    _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
-    if type(P.note_evaluate_request) == "function" then
-      local noted = P.note_evaluate_request(tgt, "route")
-      if noted ~= true then
-        return nil, "evaluate_duplicate"
+  if needs_eval then
+    if _evaluate_ready() and not _evaluate_pending_for(tgt) then
+      local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
+      if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+      _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
+      if type(P.note_evaluate_request) == "function" then
+        local noted = P.note_evaluate_request(tgt, "route")
+        if noted ~= true then
+          return nil, "evaluate_duplicate"
+        end
       end
+      _build_direct_order(payload, false)
+      return payload, payload.reason
     end
-    _build_direct_order(payload, false)
-    return payload, payload.reason
-  end
-
-  local shielded = _shielded(tgt)
-
-  if shielded and _eq_ready() then
-    local payload = _make_payload(tgt, "defense_break", "shieldbreak")
-    if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
-    _set_lane(payload, "eq", "educe copper " .. tgt)
-
-    local inundate = _pick_execute_inundate(P, tgt)
-    local staged = nil
-    if inundate then
-      _set_lane(payload, "class", inundate.cmd)
-      payload.class_category = "inundate"
-      payload.reason = inundate.reason
-    else
-      local temper = _pick_threshold_temper(P, tgt, giving)
-      if temper then
-        _set_lane(payload, "class", temper.cmd)
-        payload.class_category = "temper"
-        payload.reason = temper.reason
-        staged = { temper_humour = temper.humour }
-      end
+    if _evaluate_pending_for(tgt) then
+      return nil, "evaluate_pending"
     end
-
-    if payload.class_category ~= "inundate" then
-      local bal_cmd, bal_reason = _pick_wrack(P, tgt, giving, staged)
-      if bal_cmd then
-        _set_lane(payload, "bal", bal_cmd)
-      else
-        _note_wrack_result(AR, bal_cmd, bal_reason)
-      end
-    end
-
-    _build_direct_order(payload, true)
-    return payload, payload.reason
+    return nil, "evaluate_not_ready"
   end
 
   if _eq_ready() and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
@@ -984,48 +1234,47 @@ local function _select_payload(ctx)
     end
   end
 
-  local salt_cmd, salt_reason = _self_purge_candidate(AR)
-  if salt_cmd then
-    local payload = _make_payload(tgt, "self_purge", salt_reason or "salt_self_purge")
+  local inundate = _pick_execute_inundate(P, tgt, counts) or _pick_useful_inundate(P, tgt, counts)
+  if inundate then
+    local payload = _make_payload(tgt, "burst", inundate.reason or "inundate_useful")
     if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
-    _set_lane(payload, "eq", salt_cmd)
+    _set_lane(payload, "class", inundate.cmd)
+    payload.class_category = "inundate"
+    payload.reason = inundate.reason or payload.reason
     _build_direct_order(payload, false)
     return payload, payload.reason
   end
 
-  local payload = _make_payload(tgt, "pressure", "pressure")
+  local payload = _make_payload(tgt, free_corrupt and "corrupt" or "pressure", free_corrupt and "corruption_candidate" or "pressure")
   if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+  if free_corrupt then _set_lane(payload, "free", free_corrupt) end
 
-  local inundate = _pick_execute_inundate(P, tgt)
   local staged = nil
-  if inundate then
-    _set_lane(payload, "class", inundate.cmd)
-    payload.class_category = "inundate"
-    payload.reason = inundate.reason
-    payload.category = "burst"
-  else
-    local temper = _pick_threshold_temper(P, tgt, giving)
-    if temper then
-      _set_lane(payload, "class", temper.cmd)
-      payload.class_category = "temper"
-      payload.reason = temper.reason
-      staged = { temper_humour = temper.humour }
-    end
-
-    if _eq_ready() then
-      _set_lane(payload, "eq", "educe iron " .. tgt)
-    end
-
-    local bal_cmd, bal_reason = _pick_wrack(P, tgt, giving, staged)
-    if bal_cmd then
-      _set_lane(payload, "bal", bal_cmd)
-    else
-      _note_wrack_result(AR, bal_cmd, bal_reason)
-    end
-
-    _fold_class_combo(payload, tgt)
+  local temper = _pick_temper_pressure(AR, P, tgt, counts)
+  if temper then
+    _set_lane(payload, "class", temper.cmd)
+    payload.class_category = "temper"
+    payload.reason = temper.reason
+    staged = { temper_humour = temper.humour }
+    st.focus = temper.humour
   end
 
+  local eq_cmd, eq_reason = _pick_eq_candidate(AR, P, tgt, counts, { allow_aurify = false })
+  if _trim(eq_cmd) ~= "" then
+    _set_lane(payload, "eq", eq_cmd)
+    if payload.reason == "pressure" and _trim(eq_reason) ~= "" then
+      payload.reason = eq_reason
+    end
+  end
+
+  local bal_cmd, bal_reason = _pick_wrack_pressure(AR, P, tgt, st.focus, staged, counts)
+  if bal_cmd then
+    _set_lane(payload, "bal", bal_cmd)
+  else
+    _note_wrack_result(AR, bal_cmd, bal_reason)
+  end
+
+  _fold_class_combo(payload, tgt)
   _build_direct_order(payload, false)
   if not payload.eq and not payload.class and not payload.bal and not payload.free then
     return nil, "no_legal_action"
@@ -1046,6 +1295,7 @@ function AR.init()
   AR.state.homunculus_attack_sent = (AR.state.homunculus_attack_sent == true)
   AR.state.homunculus_attack_target = _trim(AR.state.homunculus_attack_target)
   AR.state.last_salt_at = tonumber(AR.state.last_salt_at or 0) or 0
+  _pressure_state(AR, _target())
   AR.cfg.loop_delay = tonumber(AR.cfg.loop_delay or 0.15) or 0.15
   AR.cfg.class_combo_queue_verb = _class_combo_queue_verb()
   AR.cfg.instant_kill_queue_verb = _instant_kill_queue_verb()
@@ -1087,6 +1337,7 @@ function AR.reset_route_state(reason, target)
   AR.state.homunculus_attack_sent = false
   AR.state.homunculus_attack_target = ""
   AR.state.last_attack = { at = 0, target = "", main_lane = nil, lanes = nil, cmd = "" }
+  _clear_pressure_state(AR, "")
 
   AR.state.template = AR.state.template or {}
   AR.state.template.last_reset_reason = reason
@@ -1101,6 +1352,9 @@ function AR.reset_route_state(reason, target)
   end
   if P and type(P.clear_staged_for_target) == "function" and target ~= "" then
     pcall(P.clear_staged_for_target, target, reason)
+  end
+  if P and type(P.clear_corruption) == "function" and target ~= "" then
+    pcall(P.clear_corruption, target, reason)
   end
   if P and type(P.clear_pending_class) == "function" then
     pcall(P.clear_pending_class, reason, { clear_any = true, clear_staged = true })
@@ -1133,6 +1387,9 @@ function AR.alias_loop_on_stopped(ctx)
   local tgt = _trim((AR.state and AR.state.last_attack and AR.state.last_attack.target) or _target())
   if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
     P.clear_staged_for_target(tgt, tostring(ctx.reason or "loop_stopped"))
+  end
+  if P and type(P.clear_corruption) == "function" and tgt ~= "" then
+    P.clear_corruption(tgt, tostring(ctx.reason or "loop_stopped"))
   end
   if P and type(P.clear_pending_class) == "function" then
     P.clear_pending_class("loop_stopped", { clear_any = true, clear_staged = true })
@@ -1222,6 +1479,7 @@ function AR.attack_function(ctx)
     bal = payload.bal,
     free = payload.free,
     direct_order = payload.direct_order,
+    focus = _trim(((AR.state or {}).humour_pressure or {}).focus or ""),
   }
 
   return true, AR.state.last_attack.main_lane
@@ -1248,6 +1506,9 @@ function AR.stop(reason)
   end
   if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
     P.clear_staged_for_target(tgt, tostring(reason or "manual_stop"))
+  end
+  if P and type(P.clear_corruption) == "function" and tgt ~= "" then
+    P.clear_corruption(tgt, tostring(reason or "route_stop"))
   end
   if P and P.state and type(P.state.evaluate) == "table" then
     P.state.evaluate.active = false
