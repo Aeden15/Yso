@@ -615,12 +615,50 @@ print("\n=== Test 6: physiology staged humour + inundate math + clear-all ===")
 do
   local world = make_phys_world({ target = "TargetOne", hp = 80, mp = 80 })
   local P = world.P
+  local giving = { "nausea", "sensitivity", "haemophilia", "paralysis" }
 
   _G.ak.alchemist.humour.choleric = 0
   local staged_count = P.staged_humour_count("TargetOne", "choleric", { temper_humour = "choleric" })
   assert_eq("6a: staged temper increments humour count", staged_count, 1)
   local wrack_ok = P.can_wrack_with_staged("TargetOne", "choleric", 1, { temper_humour = "choleric" })
   assert_true("6b: staged temper can legalize wrack", wrack_ok == true)
+  local explicit_ok = P.can_wrack_aff_arg("TargetOne", "nausea")
+  assert_true("6b2: untempered explicit aff arg remains legal", explicit_ok == true)
+  local humour_blocked = P.can_wrack_humour_arg("TargetOne", "choleric")
+  assert_false("6b3: untempered humour arg blocked", humour_blocked == true)
+  local humour_staged_ok = P.can_wrack_humour_arg("TargetOne", "choleric", { temper_humour = "choleric" })
+  assert_true("6b4: staged temper legalizes humour arg", humour_staged_ok == true)
+
+  _G.ak.alchemist.humour.choleric = 0
+  local wrack_cmd = P.build_wrack_fallback("TargetOne", giving)
+  assert_eq("6b5: wrack fallback uses explicit aff from untempered humour", wrack_cmd, "wrack TargetOne nausea")
+  local wrack_bad = P.wrack_arg_candidate("TargetOne", "choleric")
+  assert_false("6b6: candidate marks untempered humour keyword illegal", wrack_bad and wrack_bad.legal == true)
+  local wrack_good = P.wrack_arg_candidate("TargetOne", "nausea")
+  assert_true("6b7: candidate marks explicit aff legal", wrack_good and wrack_good.legal == true)
+
+  _G.ak.alchemist.humour.choleric = 1
+  local humour_ok = P.wrack_arg_candidate("TargetOne", "choleric")
+  assert_true("6b8: tempered humour keyword legal", humour_ok and humour_ok.legal == true)
+  local wrack_staged = P.build_wrack_fallback_with_staged("TargetOne", giving, { temper_humour = "choleric" })
+  assert_eq("6b9: staged payload may use same-cycle keyword/legal fallback", wrack_staged, "wrack TargetOne nausea")
+
+  _G.ak.alchemist.humour.choleric = 1
+  _G.ak.alchemist.humour.sanguine = 0
+  local mixed_true = P.build_truewrack("TargetOne", { "haemophilia", "nausea", "sensitivity" })
+  assert_true("6b10: mixed truewrack legal with independent slots", tostring(mixed_true or ""):find("truewrack TargetOne choleric haemophilia", 1, true) ~= nil or tostring(mixed_true or ""):find("truewrack TargetOne nausea haemophilia", 1, true) ~= nil)
+
+  _G.ak.alchemist.humour.choleric = 0
+  _G.ak.alchemist.humour.sanguine = 0
+  local mixed_staged = P.build_truewrack_with_staged("TargetOne", { "haemophilia", "nausea", "sensitivity" }, { temper_humour = "choleric" })
+  assert_true("6b11: staged mixed truewrack legal", tostring(mixed_staged or ""):find("truewrack TargetOne choleric haemophilia", 1, true) ~= nil or tostring(mixed_staged or ""):find("truewrack TargetOne nausea haemophilia", 1, true) ~= nil)
+
+  _G.ak.alchemist.humour.sanguine = 0
+  local para_block = P.can_wrack_aff_arg("TargetOne", "paralysis")
+  assert_false("6b12: paralysis blocked below effective sanguine 2", para_block == true)
+  _G.ak.alchemist.humour.sanguine = 1
+  local para_staged = P.can_wrack_aff_arg("TargetOne", "paralysis", { temper_humour = "sanguine" })
+  assert_true("6b13: staged sanguine counts toward paralysis gate", para_staged == true)
 
   _G.ak.alchemist.humour = { choleric = 6, melancholic = 0, phlegmatic = 0, sanguine = 0 }
   local c6 = P.inundate_candidate("TargetOne", "alchemist_group_damage")

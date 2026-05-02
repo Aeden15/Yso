@@ -778,6 +778,81 @@ function P.can_wrack_with_staged(target, humour, required_level, staged)
   return known >= need, known
 end
 
+function P.effective_humour_count(target, humour, staged)
+  humour = _valid_humour(humour)
+  if not humour then
+    return nil
+  end
+  return tonumber(P.staged_humour_count(target, humour, staged) or 0) or 0
+end
+
+function P.can_wrack_humour_arg(target, humour, staged)
+  humour = _valid_humour(humour)
+  if not humour then
+    return false, nil, "unknown_humour"
+  end
+  local known = tonumber(P.effective_humour_count(target, humour, staged) or 0) or 0
+  if known >= 1 then
+    return true, known, "tempered_humour_arg"
+  end
+  return false, known, "humour_requires_temper"
+end
+
+function P.can_wrack_aff_arg(target, affliction, staged)
+  affliction = _lc(affliction)
+  if affliction == "" then
+    return false, nil, nil, "unknown_affliction"
+  end
+  local humour = P.aff_to_humour(affliction)
+  if not humour then
+    return false, nil, nil, "unknown_affliction"
+  end
+  local count = tonumber(P.effective_humour_count(target, humour, staged) or 0) or 0
+  if affliction == "paralysis" and count < 2 then
+    return false, humour, count, "paralysis_requires_sanguine_2"
+  end
+  return true, humour, count, "explicit_aff_arg"
+end
+
+function P.wrack_arg_candidate(target, arg, staged)
+  arg = _lc(arg)
+  if arg == "" then
+    return {
+      arg = "",
+      arg_type = nil,
+      humour = nil,
+      affliction = nil,
+      legal = false,
+      reason = "empty_arg",
+    }
+  end
+
+  local humour = _valid_humour(arg)
+  if humour then
+    local legal, count, reason = P.can_wrack_humour_arg(target, humour, staged)
+    return {
+      arg = humour,
+      arg_type = "humour",
+      humour = humour,
+      affliction = nil,
+      legal = legal == true,
+      reason = reason,
+      count = count,
+    }
+  end
+
+  local legal, aff_humour, count, reason = P.can_wrack_aff_arg(target, arg, staged)
+  return {
+    arg = arg,
+    arg_type = "affliction",
+    humour = aff_humour,
+    affliction = arg,
+    legal = legal == true,
+    reason = reason,
+    count = count,
+  }
+end
+
 local function _same_target_cmd(cmd, target)
   cmd = _lc(cmd)
   target = _lc(target)
@@ -1830,17 +1905,17 @@ function P.iron_aff_count(name, giving)
   return count
 end
 
-function P.pick_missing_aff(name, giving)
+function P.pick_missing_aff(name, giving, staged)
   local target = _trim(name)
   if target == "" then
     target = _current_target()
   end
 
-  local sanguine = tonumber(P.current_humour_count(target, "sanguine") or 0) or 0
   for i = 1, #_aff_list(giving) do
     local aff = _lc(giving[i])
     if aff ~= "" and not _has_aff(aff) then
-      if aff ~= "paralysis" or sanguine >= 2 then
+      local legal = P.can_wrack_aff_arg(target, aff, staged)
+      if legal == true then
         return aff
       end
     end
@@ -1848,7 +1923,7 @@ function P.pick_missing_aff(name, giving)
   return nil
 end
 
-function P.pick_filler_humour(name, forced_aff, giving)
+function P.pick_filler_humour(name, forced_aff, giving, staged)
   local target = _trim(name)
   if target == "" then
     target = _current_target()
@@ -1860,8 +1935,7 @@ function P.pick_filler_humour(name, forced_aff, giving)
 
   for i = 1, #options do
     local humour = options[i]
-    local required = P.required_humour_level_for_wrack("truewrack")
-    local legal, count = P.can_wrack(target, humour, required)
+    local legal, count = P.can_wrack_humour_arg(target, humour, staged)
     count = tonumber(count or 0) or 0
     if humour ~= preferred and legal == true and _humour_missing_desired(target, humour, giving) then
       if count > best_count then
@@ -1901,10 +1975,7 @@ function P.pick_temper_humour(name, giving)
     local missing = 0
     for j = 1, #affs do
       local aff = affs[j]
-      local allowed = true
-      if aff == "paralysis" and sanguine < 2 then
-        allowed = false
-      end
+      local allowed = P.can_wrack_aff_arg(target, aff) == true
       if allowed and not _has_aff(aff) then
         missing = missing + 1
       end
@@ -1931,6 +2002,45 @@ function P.pick_temper_humour(name, giving)
   return P.aff_to_humour(first)
 end
 
+local function _pick_filler_arg(name, forced_aff, giving, staged)
+  local target = _trim(name)
+  if target == "" then
+    target = _current_target()
+  end
+  if target == "" then
+    return nil
+  end
+
+  local forced_humour = P.aff_to_humour(forced_aff)
+  local filler_humour = P.pick_filler_humour(target, forced_aff, giving, staged)
+  if filler_humour then
+    local humour_candidate = P.wrack_arg_candidate(target, filler_humour, staged)
+    if humour_candidate.legal == true then
+      return humour_candidate
+    end
+  end
+
+  local pools = _giving_humour_pools(giving)
+  local ordered = _pool_order(pools)
+  for i = 1, #ordered do
+    local humour = ordered[i]
+    if humour ~= forced_humour then
+      local affs = pools[humour]
+      for j = 1, #_aff_list(affs) do
+        local aff = _lc(affs[j])
+        if aff ~= "" and aff ~= forced_aff then
+          local candidate = P.wrack_arg_candidate(target, aff, staged)
+          if candidate.legal == true then
+            return candidate
+          end
+        end
+      end
+    end
+  end
+
+  return nil
+end
+
 function P.build_truewrack(name, giving)
   local target = _trim(name)
   if target == "" then
@@ -1942,25 +2052,18 @@ function P.build_truewrack(name, giving)
     return nil
   end
 
-  local forced_humour = P.aff_to_humour(forced)
-  if not forced_humour then
-    return nil
-  end
-  local required = P.required_humour_level_for_wrack("truewrack", forced)
-  local legal, known = P.can_wrack(target, forced_humour, required)
-  if legal ~= true then
+  local forced_candidate = P.wrack_arg_candidate(target, forced)
+  if forced_candidate.legal ~= true then
     _debug(string.format(
-      "[Alchemist] wrack blocked: %s requires %s level %d, known=%s",
+      "[Alchemist] truewrack blocked: forced arg %s illegal (%s)",
       tostring(forced),
-      tostring(forced_humour),
-      tonumber(required) or 0,
-      known == nil and "unknown" or tostring(known)
+      tostring(forced_candidate.reason or "unknown_reason")
     ))
     return nil
   end
 
-  local filler = P.pick_filler_humour(target, forced, giving)
-  if not filler then
+  local filler_candidate = _pick_filler_arg(target, forced, giving)
+  if not filler_candidate then
     _debug(string.format(
       "[Alchemist] truewrack blocked: no valid filler humour for forced=%s target=%s",
       tostring(forced),
@@ -1969,7 +2072,9 @@ function P.build_truewrack(name, giving)
     return nil
   end
 
-  return string.format("truewrack %s %s %s", target, filler, forced), filler, forced
+  return string.format("truewrack %s %s %s", target, tostring(filler_candidate.arg), tostring(forced_candidate.arg)),
+    tostring(filler_candidate.arg),
+    tostring(forced_candidate.arg)
 end
 
 function P.build_truewrack_with_staged(name, giving, staged)
@@ -1978,45 +2083,23 @@ function P.build_truewrack_with_staged(name, giving, staged)
     target = _current_target()
   end
 
-  local forced = P.pick_missing_aff(target, giving)
+  local forced = P.pick_missing_aff(target, giving, staged)
   if not forced then
     return nil
   end
 
-  local forced_humour = P.aff_to_humour(forced)
-  if not forced_humour then
-    return nil
-  end
-  local required = P.required_humour_level_for_wrack("truewrack", forced)
-  local legal, known = P.can_wrack_with_staged(target, forced_humour, required, staged)
-  if legal ~= true then
+  local forced_candidate = P.wrack_arg_candidate(target, forced, staged)
+  if forced_candidate.legal ~= true then
     _debug(string.format(
-      "[Alchemist] wrack blocked(staged): %s requires %s level %d, known=%s",
+      "[Alchemist] truewrack blocked(staged): forced arg %s illegal (%s)",
       tostring(forced),
-      tostring(forced_humour),
-      tonumber(required) or 0,
-      known == nil and "unknown" or tostring(known)
+      tostring(forced_candidate.reason or "unknown_reason")
     ))
     return nil
   end
 
-  local preferred = P.aff_to_humour(forced)
-  local options = _pool_order(_giving_humour_pools(giving))
-  local filler, best_count = nil, -1
-  for i = 1, #options do
-    local humour = options[i]
-    local req = P.required_humour_level_for_wrack("truewrack")
-    local ok_wrack, count = P.can_wrack_with_staged(target, humour, req, staged)
-    count = tonumber(count or 0) or 0
-    if humour ~= preferred and ok_wrack == true and _humour_missing_desired(target, humour, giving) then
-      if count > best_count then
-        filler = humour
-        best_count = count
-      end
-    end
-  end
-
-  if not filler then
+  local filler_candidate = _pick_filler_arg(target, forced, giving, staged)
+  if not filler_candidate then
     _debug(string.format(
       "[Alchemist] truewrack blocked(staged): no valid filler humour for forced=%s target=%s",
       tostring(forced),
@@ -2025,7 +2108,9 @@ function P.build_truewrack_with_staged(name, giving, staged)
     return nil
   end
 
-  return string.format("truewrack %s %s %s", target, filler, forced), filler, forced
+  return string.format("truewrack %s %s %s", target, tostring(filler_candidate.arg), tostring(forced_candidate.arg)),
+    tostring(filler_candidate.arg),
+    tostring(forced_candidate.arg)
 end
 
 function P.build_wrack_fallback(name, giving)
@@ -2042,23 +2127,16 @@ function P.build_wrack_fallback(name, giving)
     return nil
   end
 
-  local humour = P.aff_to_humour(aff)
-  if not humour then
-    return nil
-  end
-  local required = P.required_humour_level_for_wrack("wrack", aff)
-  local legal, known = P.can_wrack(target, humour, required)
-  if legal ~= true then
+  local candidate = P.wrack_arg_candidate(target, aff)
+  if candidate.legal ~= true then
     _debug(string.format(
-      "[Alchemist] wrack blocked: %s requires %s level %d, known=%s",
+      "[Alchemist] wrack blocked: %s illegal (%s)",
       tostring(aff),
-      tostring(humour),
-      tonumber(required) or 0,
-      known == nil and "unknown" or tostring(known)
+      tostring(candidate.reason or "unknown_reason")
     ))
     return nil
   end
-  return string.format("wrack %s %s", target, aff), aff
+  return string.format("wrack %s %s", target, tostring(candidate.arg)), tostring(candidate.arg)
 end
 
 function P.build_wrack_fallback_with_staged(name, giving, staged)
@@ -2075,23 +2153,16 @@ function P.build_wrack_fallback_with_staged(name, giving, staged)
     return nil
   end
 
-  local humour = P.aff_to_humour(aff)
-  if not humour then
-    return nil
-  end
-  local required = P.required_humour_level_for_wrack("wrack", aff)
-  local legal, known = P.can_wrack_with_staged(target, humour, required, staged)
-  if legal ~= true then
+  local candidate = P.wrack_arg_candidate(target, aff, staged)
+  if candidate.legal ~= true then
     _debug(string.format(
-      "[Alchemist] wrack blocked(staged): %s requires %s level %d, known=%s",
+      "[Alchemist] wrack blocked(staged): %s illegal (%s)",
       tostring(aff),
-      tostring(humour),
-      tonumber(required) or 0,
-      known == nil and "unknown" or tostring(known)
+      tostring(candidate.reason or "unknown_reason")
     ))
     return nil
   end
-  return string.format("wrack %s %s", target, aff), aff
+  return string.format("wrack %s %s", target, tostring(candidate.arg)), tostring(candidate.arg)
 end
 
 function P.inundate_candidate(target, route_id, opts)

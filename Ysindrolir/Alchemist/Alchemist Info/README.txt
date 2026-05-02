@@ -30,6 +30,20 @@ Aurify pressure/corruption update - May 2, 2026
 - Ginger/antimony lines now dirty humour intel and wake routes for fresh
   evaluate humours rather than guessing a humour decrement.
 
+Wrack/truewrack legality update - May 2, 2026
+---------------------------------------------
+- Wrack legality is now slot-based:
+  - explicit affliction args are legal even when the source humour is
+    untempered,
+  - humour-keyword args require effective temper >= 1.
+- Truewrack evaluates each slot independently, so mixed legal slots are allowed
+  (for example, tempered humour keyword + explicit affliction from an
+  untempered pool).
+- Same-payload staged tempering contributes to effective humour count during
+  planning only.
+- Paralysis remains special and requires effective sanguine >= 2.
+- The redundant ^bleed$ user alias was removed from Yso system.xml.
+
 Formulation policy updates
 --------------------------
 - Formulation alerts now use the standard colorized prefix:

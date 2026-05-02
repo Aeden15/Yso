@@ -1,4 +1,4 @@
-Yso systems status - April 24, 2026
+Yso systems status - May 2, 2026
 
 Supported classes are now Magi and Alchemist, plus shared/generic Yso core.
 
@@ -110,6 +110,32 @@ Patch Notes (May 1, 2026 - Instant-Kill Queue Priority):
 - Refreshed the XML mirror/package copies for the affected queue and Alchemist
   scripts, and updated focused regression coverage for clearfull behavior.
 
+Patch Notes (May 2, 2026 - Duel Evaluate Gate Bug Check):
+- Fixed Alchemist duel-route evaluate gating so dirty humour intel now fails
+  closed with evaluate_not_ready when evaluate balance is unavailable.
+- Revalidated workspace checks: Lua syntax pass, XML parse pass, and full
+  Ysindrolir/Yso/Tests and rebuilds suite pass.
+- Re-exported package script embeddings with
+  Ysindrolir/scripts/export_yso_system_xml.ps1 and confirmed
+  Ysindrolir/mudlet packages/Yso system.xml parse pass.
+
+Patch Notes (May 2, 2026 - Wrack/Truewrack Slot Legality + Bleed Alias Removal):
+- Updated shared Alchemist physiology wrack legality so explicit affliction args
+  are legal even when their source humour is untempered.
+- Humour keyword wrack args now require effective temper count >= 1 (including
+  staged same-payload temper planning).
+- Paralysis remains special and requires effective sanguine >= 2.
+- Truewrack now validates each argument slot independently and supports mixed
+  legal slots (for example, tempered humour keyword + explicit affliction).
+- Updated Aurify wrack-pressure selection to use slot-legal arguments and avoid
+  duplicate same-humour truewrack args when a mixed legal option exists.
+- Removed the redundant ^bleed$ alias from Ysindrolir/mudlet packages/
+  Yso system.xml and removed the matching bleed route registration shortcut.
+- Added regression coverage in:
+  - Ysindrolir/Yso/Tests and rebuilds/test_alchemist_group_damage.lua
+  - Ysindrolir/Yso/Tests and rebuilds/test_alchemist_duel_route.lua
+  - Ysindrolir/Yso/Tests and rebuilds/test_alchemist_aurify_route.lua
+
 Patch Notes (April 25, 2026 - Diagnostic XML Resync):
 - Synced Ysindrolir/Yso/Core/queue.lua into both:
   - Ysindrolir/Yso/xml/yso_queue.lua
@@ -118,13 +144,9 @@ Patch Notes (April 25, 2026 - Diagnostic XML Resync):
   - Yso.targeting from Ysindrolir/Yso/xml/yso_targeting.lua
   - Parry Module from Ysindrolir/Yso/Combat/parry.lua
   - Yso Bootstrap loader from Ysindrolir/Yso/xml/yso_bootstrap_loader.lua
-- Added a fresh diagnostic run report at Yso_diagnostic_report.txt with:
-  - all targeted drift checks passing,
-  - luac parse clean on all Ysindrolir Lua files,
-  - and all tests in Ysindrolir/Yso/Tests and rebuilds/ passing.
+- Repeatable re-embed: Ysindrolir/scripts/export_yso_system_xml.ps1 (see comments in that script).
 
 Patch Notes (April 25, 2026 - Diagnostic Report Correction):
-- Corrected Yso_diagnostic_report.txt to remove stale false emergency text.
 - Verified current on-disk state is healthy:
   - Yso system.xml is well-formed and complete (not truncated),
   - AK.xml contains zero null-byte corruption,

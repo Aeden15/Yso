@@ -22,7 +22,7 @@ Primary active development is focused on Magi and Alchemist.
   Alchemist duel lock-pressure route for `aduel`, now using the same lane-combo payload model and shieldbreak-as-EQ-slot behavior as group damage.
 
 - `Aurify route.lua`
-  Real Aurify route module (`alchemist_aurify_route`) for sticky weighted humour pressure, corruption upkeep, and Aurify/Inundate execute windows, exposed by alias `bleed`.
+  Real Aurify route module (`alchemist_aurify_route`) for sticky weighted humour pressure, corruption upkeep, and Aurify/Inundate execute windows.
 
 - `Route instructions.txt`
   Checklist for keeping current and future Alchemist routes on the AK ownership/read-through model.
@@ -72,7 +72,7 @@ Primary active development is focused on Magi and Alchemist.
   Instant-kill branches keep their own clear-style queue setting and default to `addclearfull`.
 - Shieldbreak is now an EQ slot (`educe copper <target>`) that still allows legal class/bal follow-through in the same payload, with pronoun-inclusive AK shield parse coverage and callable fallback checks via `Yso.shield(target)` (plus `.up/.set` compatibility).
 - Aurification execute window is treated as an EQ finisher with default gate `hp <= 60` and `mp <= 60` (both required), and installs through `QUEUE ADDCLEARFULL`.
-- `bleed` toggles `alchemist_aurify_route`.
+- The redundant `^bleed$` toggle alias has been removed from `Yso system.xml`.
 - Aurify route pressure no longer hard-forces a tiny affliction list; it keeps a sticky weighted humour focus (minimum focus goal 3) and uses humour-form `wrack/truewrack` pressure where legal.
 - Aurify EQ lane is flexible (`aurify` > `educe copper` > `educe salt` > `vitrify` > `phlogisticate` > situational silver/lead > `educe iron` fallback). `educe sulphur` is not used as offensive mana pressure.
 - Corruption tracking is tokenized per target with guarded timers and standardized Physiology cechos:

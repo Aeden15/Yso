@@ -243,6 +243,29 @@ do
   assert_true("1d: both at threshold allow aurify", world.P.can_aurify("TargetOne"))
 end
 
+print("\n=== Test 1b: shield blocks dedicated aurify path ===")
+do
+  local world = make_world({
+    hp = 60,
+    mp = 60,
+    shielded = true,
+    choleric = 0,
+    melancholic = 0,
+    sanguine = 0,
+    phlegmatic = 0,
+  })
+  local p = world.R.build_payload({ target = "TargetOne" })
+  assert_false("1b-a: no direct aurify eq while shielded", (p and p.eq) == "aurify TargetOne")
+  local blob = table.concat({
+    tostring(p and p.eq or ""),
+    tostring(p and p.class or ""),
+    tostring(p and p.bal or ""),
+    type(p and p.direct_order) == "table" and table.concat(p.direct_order, " ") or "",
+  }, " ")
+  assert_false("1b-b: payload never queues aurify through shield", blob:find("aurify TargetOne", 1, true) ~= nil)
+  assert_true("1b-c: copper for shield appears in staged payload", blob:find("educe copper TargetOne", 1, true) ~= nil)
+end
+
 print("\n=== Test 2: aurify route execute + no inundate&&aurify chain ===")
 do
   local world = make_world({ hp = 80, mp = 80, choleric = 6, melancholic = 0, sanguine = 0 })
@@ -283,11 +306,33 @@ print("\n=== Test 3b: aurify pressure uses one chained class payload ===")
 do
   local world = make_world({ hp = 80, mp = 80, choleric = 0, melancholic = 0, sanguine = 0 })
   local payload = world.R.build_payload({ target = "TargetOne" })
-  assert_eq("3b-a: pressure class combo", payload and payload.class, "temper TargetOne choleric&&evaluate TargetOne humours&&vitrify TargetOne&&truewrack TargetOne choleric choleric")
+  assert_eq("3b-a: pressure class combo", payload and payload.class, "temper TargetOne choleric&&evaluate TargetOne humours&&vitrify TargetOne&&truewrack TargetOne choleric stupidity")
   assert_eq("3b-b: no separate eq lane", payload and payload.eq, nil)
   assert_eq("3b-c: no separate bal lane", payload and payload.bal, nil)
   assert_eq("3b-d: configurable combo verb defaults to add", payload and payload.queue_verb, "add")
   assert_eq("3b-e: combo queues on c", payload and payload.qtype, "c")
+end
+
+print("\n=== Test 3c: aurify/shared wrack slot legality helpers ===")
+do
+  local world = make_world({ hp = 80, mp = 80, choleric = 0, melancholic = 0, sanguine = 0, phlegmatic = 0 })
+  local P = world.P
+
+  local explicit_ok = P.can_wrack_aff_arg("TargetOne", "nausea")
+  assert_true("3c-a: explicit aff arg legal from untempered pool", explicit_ok == true)
+
+  local humour_blocked = P.can_wrack_humour_arg("TargetOne", "choleric")
+  assert_false("3c-b: untempered humour arg blocked", humour_blocked == true)
+
+  local humour_staged = P.can_wrack_humour_arg("TargetOne", "choleric", { temper_humour = "choleric" })
+  assert_true("3c-c: staged temper legalizes humour keyword", humour_staged == true)
+
+  local para_block = P.can_wrack_aff_arg("TargetOne", "paralysis")
+  assert_false("3c-d: paralysis blocked below effective sanguine 2", para_block == true)
+
+  _G.ak.alchemist.humour.sanguine = 1
+  local para_staged = P.can_wrack_aff_arg("TargetOne", "paralysis", { temper_humour = "sanguine" })
+  assert_true("3c-e: staged sanguine unlocks paralysis", para_staged == true)
 end
 
 print("\n=== Test 4: aurify reset_route_state clears stale route-local state ===")

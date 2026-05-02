@@ -676,14 +676,49 @@ local function _pick_temper_pressure(R, P, tgt, counts)
   }
 end
 
-local function _wrack_required(P, kind)
-  if type(P.required_humour_level_for_wrack) == "function" then
-    return tonumber(P.required_humour_level_for_wrack(kind) or 1) or 1
+local function _pool_affs(P, humour)
+  if type(P.humour_to_affs) ~= "table" then
+    return {}
   end
-  if kind == "truewrack" then
-    return tonumber(P.truewrack_required_level or 1) or 1
+  local list = P.humour_to_affs[_lc(humour or "")]
+  return type(list) == "table" and list or {}
+end
+
+local function _missing_aff_arg(P, tgt, humour, staged)
+  if type(P.wrack_arg_candidate) ~= "function" then
+    return nil
   end
-  return tonumber(P.wrack_required_level or 1) or 1
+  local affs = _pool_affs(P, humour)
+  local fallback = nil
+  for i = 1, #affs do
+    local aff = _lc(affs[i])
+    if aff ~= "" then
+      local candidate = P.wrack_arg_candidate(tgt, aff, staged)
+      if candidate and candidate.legal == true then
+        if type(Yso.tgt) == "table" and type(Yso.tgt.has_aff) == "function" then
+          local ok, has = pcall(Yso.tgt.has_aff, tgt, aff)
+          if ok and has ~= true then
+            return candidate
+          end
+        end
+        if not fallback then
+          fallback = candidate
+        end
+      end
+    end
+  end
+  return fallback
+end
+
+local function _pick_humour_arg(P, tgt, humour, staged)
+  if type(P.wrack_arg_candidate) ~= "function" then
+    return nil
+  end
+  local candidate = P.wrack_arg_candidate(tgt, humour, staged)
+  if candidate and candidate.legal == true and candidate.arg_type == "humour" then
+    return candidate
+  end
+  return nil
 end
 
 local function _pick_wrack_pressure(R, P, tgt, focus, staged, counts)
@@ -708,46 +743,28 @@ local function _pick_wrack_pressure(R, P, tgt, focus, staged, counts)
     end
   end
 
-  local req_true = _wrack_required(P, "truewrack")
-  local req_wrack = _wrack_required(P, "wrack")
-  local can_with_staged = (type(P.can_wrack_with_staged) == "function")
-  local can_wrack = (type(P.can_wrack) == "function")
-
+  local slot_one = nil
   for _, humour in ipairs(order) do
     local count = tonumber(counts[humour] or 0) or 0
-    if count <= 8 then
-      local ok = false
-      if can_with_staged then
-        local legal = P.can_wrack_with_staged(tgt, humour, req_true, staged)
-        ok = legal == true
-      elseif can_wrack then
-        local legal = P.can_wrack(tgt, humour, req_true)
-        ok = legal == true
-      end
-      if ok then
-        return string.format("truewrack %s %s %s", tgt, humour, humour), "truewrack_humour"
-      end
+    if count <= 8 and not slot_one then
+      slot_one = _pick_humour_arg(P, tgt, humour, staged) or _missing_aff_arg(P, tgt, humour, staged)
     end
   end
 
-  for _, humour in ipairs(order) do
-    local count = tonumber(counts[humour] or 0) or 0
-    if count <= 8 then
-      local ok = false
-      if can_with_staged then
-        local legal = P.can_wrack_with_staged(tgt, humour, req_wrack, staged)
-        ok = legal == true
-      elseif can_wrack then
-        local legal = P.can_wrack(tgt, humour, req_wrack)
-        ok = legal == true
-      end
-      if ok then
-        return string.format("wrack %s %s", tgt, humour), "wrack_humour"
+  if slot_one then
+    for _, humour in ipairs(order) do
+      local count = tonumber(counts[humour] or 0) or 0
+      if count <= 8 and _lc(humour) ~= _lc(slot_one.humour or "") then
+        local slot_two = _pick_humour_arg(P, tgt, humour, staged) or _missing_aff_arg(P, tgt, humour, staged)
+        if slot_two and _lc(slot_two.arg or "") ~= _lc(slot_one.arg or "") then
+          return string.format("truewrack %s %s %s", tgt, tostring(slot_one.arg), tostring(slot_two.arg)), "truewrack_slot_legal"
+        end
       end
     end
+    return string.format("wrack %s %s", tgt, tostring(slot_one.arg)), "wrack_slot_legal"
   end
 
-  return nil, "no_legal_wrack_humour"
+  return nil, "no_legal_wrack_slot"
 end
 
 local function _pick_execute_inundate(P, tgt, counts)
@@ -1215,7 +1232,7 @@ local function _select_payload(ctx)
     return nil, "evaluate_not_ready"
   end
 
-  if _eq_ready() and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
+  if _eq_ready() and not _shielded(tgt) and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
     local payload = _make_payload(tgt, "aurify", "aurify_window")
     _set_lane(payload, "eq", "aurify " .. tgt)
     _build_direct_order(payload, false)
@@ -1305,7 +1322,6 @@ function AR.init()
   end
   if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == "function" then
     pcall(Yso.off.core.register, "alchemist_aurify_route", AR)
-    pcall(Yso.off.core.register, "bleed", AR)
   end
   return true
 end

@@ -23,6 +23,7 @@ end
 
 local SCRIPT_DIR = script_dir()
 local ROUTE_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Core", "duel route.lua")
+local PHYS_PATH = join_path(SCRIPT_DIR, "..", "..", "Alchemist", "Core", "physiology.lua")
 
 local pass_count = 0
 local fail_count = 0
@@ -496,6 +497,68 @@ do
   local payload_timeout, why_timeout = world.R.build_payload({ target = "TargetOne" })
   assert_eq("7d: timeout tick holds once", payload_timeout, nil)
   assert_eq("7e: timeout remains pending", why_timeout, "temper_pending")
+end
+
+print("\n=== Test 8: duel/shared wrack legality surface ===")
+do
+  _G.Yso = nil
+  _G.yso = nil
+  _G.target = "TargetOne"
+  _G.getEpoch = function() return 2300 * 1000 end
+  _G.cecho = function() end
+  _G.echo = function() end
+  _G.send = function() return true end
+  _G.ak = {
+    alchemist = {
+      humour = { choleric = 0, melancholic = 0, phlegmatic = 0, sanguine = 0 },
+    },
+  }
+  _G.affstrack = { score = setmetatable({}, { __index = function() return 0 end }) }
+  _G.Yso = {
+    get_target = function() return "TargetOne" end,
+    target = "TargetOne",
+    bal = { humour = true, evaluate = true, homunculus = true },
+    util = { now = function() return 2300 end },
+    self = {
+      has_aff = function() return false end,
+      is_prone = function() return false end,
+      list_writhe_affs = function() return {} end,
+      is_writhed = function() return false end,
+    },
+    tgt = { has_aff = function() return false end },
+    queue = {
+      list = function() return nil end,
+      clear = function() return true end,
+      stage = function() return true end,
+    },
+  }
+  _G.yso = _G.Yso
+
+  dofile(PHYS_PATH)
+  local P = _G.Yso.alc.phys
+  P.begin_evaluate("TargetOne")
+  P.finish_evaluate("TargetOne")
+
+  local giving = { "haemophilia", "nausea", "sensitivity", "paralysis" }
+  local wrack0 = P.build_wrack_fallback("TargetOne", giving)
+  assert_eq("8a: duel-shared explicit aff legal from untempered pool", wrack0, "wrack TargetOne haemophilia")
+
+  local keyword0 = P.can_wrack_humour_arg("TargetOne", "choleric")
+  assert_false("8b: duel-shared humour keyword blocked at zero", keyword0 == true)
+
+  _G.ak.alchemist.humour.choleric = 1
+  local keyword1 = P.can_wrack_humour_arg("TargetOne", "choleric")
+  assert_true("8c: duel-shared humour keyword legal when tempered", keyword1 == true)
+
+  _G.ak.alchemist.humour.choleric = 0
+  local staged_keyword = P.can_wrack_humour_arg("TargetOne", "choleric", { temper_humour = "choleric" })
+  assert_true("8d: duel-shared staged temper legalizes humour keyword", staged_keyword == true)
+
+  _G.ak.alchemist.humour.sanguine = 1
+  local para_block = P.can_wrack_aff_arg("TargetOne", "paralysis")
+  assert_false("8e: duel-shared paralysis blocked below effective 2", para_block == true)
+  local para_ok = P.can_wrack_aff_arg("TargetOne", "paralysis", { temper_humour = "sanguine" })
+  assert_true("8f: duel-shared staged sanguine unlocks paralysis", para_ok == true)
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

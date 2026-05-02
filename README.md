@@ -1,4 +1,4 @@
-# Yso systems status - April 24, 2026
+# Yso systems status - May 2, 2026
 
 Supported classes are now **Magi** and **Alchemist**, plus shared/generic Yso core.
 
@@ -45,6 +45,16 @@ Package XML:
   initial temper command.
 - The live Physiology evaluate-count trigger colourizes humour count lines while
   preserving existing state tracking.
+
+## Patch Notes (May 2, 2026)
+
+- Fixed Alchemist duel-route evaluate gating so dirty humour intel now fails
+  closed with `evaluate_not_ready` when evaluate balance is unavailable.
+- Revalidated workspace checks: Lua syntax pass, XML parse pass, and full
+  `Ysindrolir/Yso/Tests and rebuilds` suite pass.
+- Re-exported package script embeddings with
+  `Ysindrolir/scripts/export_yso_system_xml.ps1` and confirmed
+  `Ysindrolir/mudlet packages/Yso system.xml` parse pass.
 
 ## Patch Notes (April 24, 2026)
 
@@ -143,14 +153,10 @@ Package XML:
   - `Yso.targeting` from `Ysindrolir/Yso/xml/yso_targeting.lua`
   - `Parry Module` from `Ysindrolir/Yso/Combat/parry.lua`
   - `Yso Bootstrap loader` from `Ysindrolir/Yso/xml/yso_bootstrap_loader.lua`
-- Added a fresh diagnostic run report at `Yso_diagnostic_report.txt` with:
-  - all targeted drift checks passing,
-  - `luac` parse clean on all `Ysindrolir` Lua files,
-  - and all tests in `Ysindrolir/Yso/Tests and rebuilds/` passing.
+- Repeatable re-embed today: `Ysindrolir/scripts/export_yso_system_xml.ps1` (see comments in that script).
 
 ## Patch Notes (April 25, 2026 - Diagnostic Report Correction)
 
-- Corrected `Yso_diagnostic_report.txt` to remove stale false emergency text.
 - Verified current on-disk state is healthy:
   - `Yso system.xml` is well-formed and complete (not truncated),
   - `AK.xml` contains zero null-byte corruption,
@@ -164,6 +170,21 @@ Package XML:
   - `<command>    </command>` -> `<command></command>`
   - `<packageName>...</packageName>` empty blocks compacted
   - `<script>...</script>` empty blocks compacted
+
+## Patch Notes (May 2, 2026 - Alchemist Wrack Slot Legality + Bleed Alias Cleanup)
+
+- Updated shared Alchemist wrack helpers in `Alchemist/Core/physiology.lua` so wrack legality is evaluated per argument slot:
+  - explicit affliction args are legal from untempered pools,
+  - humour keyword args require effective temper count `>= 1`,
+  - staged same-payload tempering contributes to planning-only effective counts,
+  - paralysis remains gated to effective sanguine `>= 2`.
+- Reworked shared wrack/truewrack builders to stop blocking explicit affliction args behind source-humour temper checks, while preserving mixed-slot legality and staged temper support.
+- Updated Aurify route wrack pressure selection (`Alchemist/Aurify route.lua`) to consume slot-legal candidates and avoid duplicate same-humour truewrack arguments by preferring mixed/distinct legal slots.
+- Removed the redundant `^bleed$` alias from `Ysindrolir/mudlet packages/Yso system.xml` and removed the matching `bleed` route registration shortcut from `Alchemist/Aurify route.lua`.
+- Added/updated regression coverage in:
+  - `Yso/Tests and rebuilds/test_alchemist_group_damage.lua`
+  - `Yso/Tests and rebuilds/test_alchemist_duel_route.lua`
+  - `Yso/Tests and rebuilds/test_alchemist_aurify_route.lua`
 
 ## Patch Notes (April 26, 2026 - Alchemist Lane Payload Rework)
 
