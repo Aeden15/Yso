@@ -1,0 +1,88 @@
+Achaea Queueing Reference (Manual + Automatic)
+Source: Mudlet HTML console extract of HELP QUEUEING
+
+Overview
+- Achaea supports server-side queueing to mitigate latency.
+- Commands can be queued and automatically attempted when required balances/states are legal.
+- Automatic queueing and manual queueing both exist; this project uses manual queueing primitives.
+
+Automatic Queueing
+- CONFIG USEQUEUEING <ON|OFF>
+  - Enable or disable automatic queueing behavior.
+- CONFIG SHOWQUEUEALERTS <ON|OFF>
+  - Enable or disable queue-related system messages.
+- Automatic queueing adds attempted commands to queue when attempted while off the required balance.
+
+Manual Queueing Commands
+- CLEARQUEUE <queue>
+- CLEARQUEUE ALL
+- QUEUE LIST
+- QUEUE ADD <queue> <command>
+- QUEUE ADDCLEAR <queue> <command>
+  - Clear the specified queue type, then add command.
+- QUEUE ADDCLEARFULL <queue> <command>
+  - Clear all queued commands, then add command.
+- QUEUE INSERT <queue> <index> <command>
+- QUEUE PREPEND <queue> <command>
+- QUEUE REPLACE <queue> <index> <command>
+- QUEUE REMOVE <index>
+- QUEUE CLEAR <queue>
+
+Queue Limits and Behavior
+- Global cap is 10 queued commands across ALL queue types (not per-type).
+- INSERT/PREPEND beyond cap remove the last queued command across all queues.
+- ADDCLEAR clears only the specified queue type first; if still no room, insertion fails.
+- ADDCLEARFULL clears everything, then inserts the new command.
+
+Simple Queue Types
+- Eq        = Equilibrium
+- Bal       = Balance
+- Eqbal     = Both equilibrium and balance
+- Class     = Class balance
+- Ship      = Ship command balance
+- Para      = Not paralysed
+- Unbound   = Not bound
+- Stun      = Not stunned
+- Free      = Eqbal + unbound + not paralysed + not stunned
+- Freestand = Free + standing
+- Full      = Freestand + class balance
+
+Custom Queue Flags
+- e = Have equilibrium
+- b = Have balance
+- c = Have class balance
+- s = Have ship balance
+- p = Have paralysis
+- w = Are bound
+- u = Is upright (not prone)
+- t = Is stunned
+- Prefix with ! for inverse state, for example !p means not paralysed.
+
+Examples
+- QUEUE ADD c!p!tu <command>
+  - Runs when class balance is up, not paralysed, not stunned, and upright.
+- QUEUE ADD eb!w!p!t <command>
+  - Equivalent of FREE-style requirements using custom flags.
+
+Yso Design Notes (Current Conversion)
+- Offense queueing is replacement-oriented, not historical stack growth.
+- Default replace primitive is QUEUE ADDCLEAR.
+- PREPEND is intentionally out of scope for this first implementation.
+- Queue ownership state is tracked on Yso._queued per lane.
+- Initial owned lanes:
+  - eq
+  - bal
+  - class
+  - free
+- Lane mapping defaults:
+  - eq lane    -> e!p!w!t
+  - bal lane   -> b!p!w!t
+  - class lane -> c!p!w!t
+  - free lane  -> eb!w!p!t
+- Entity lane currently maps to class queue.
+- Queued and fired are distinct states:
+  - queued = installed/replaced in server queue
+  - fired  = command actually executed on legal balance/state
+- Installing queue intent does not count as spend.
+- Spend is recognized by normal execution/confirmation paths (balance drop, class balance drop, route confirmations).
+- Because of global cap 10, Yso should own/replace lane slots and avoid accumulating stale history.

@@ -1,0 +1,77 @@
+Achaea Affliction List — Action and Cures
+==========================================
+Shared reference for Yso (Magi, Occultist). Source: in-game affliction list.
+Use for curative-type lookups, predict_cure, and offense planning.
+
+Columns: Affliction | Action | Herbal Cure | Alchemical Cure
+-------------------------------------------------------------
+
+Ablaze:           Apply (*)     Mending       Mending
+Addiction:        Eat           Ginseng       Ferrum
+Aeon:             Smoke         Elm           Cinnabar
+Agoraphobia:      Eat           Lobelia       Argentum
+Anorexia:         Apply         Epidermal     Epidermal
+Asthma:           Eat           Kelp          Aurum
+Bleeding:         Clot          —             —
+Blindness:        Apply         Epidermal     Epidermal
+Claustrophobia:   Eat           Lobelia       Argentum
+Clumsiness:       Eat           Kelp          Aurum
+Concussion:       Apply         Restoration   Restoration
+Confusion:        Eat           Prickly Ash   Stannum
+Crippled limb:    Apply         Mending       Mending
+Damaged limb:     Apply         Restoration   Restoration
+Darkshade:        Eat           Ginseng       Ferrum
+Deadening:        Smoke         Elm           Cinnabar
+Deafness:         Apply         Epidermal     Epidermal
+Dementia:         Eat           Prickly Ash   Stannum
+Disfigurement:    Smoke         Valerian      Realgar
+Dissonance:       Eat           Goldenseal    Plumbum
+Dizziness:        Eat           Goldenseal    Plumbum
+Drowning:         Eat           Pear          Calcite
+Entangled:        Writhe        —             —
+Epilepsy:         Eat           Goldenseal    Plumbum
+Fear:             Compose       —             —
+Freezing:         Apply         Caloric       Caloric
+Generosity:       Eat           Bellwort      Cuprum
+Hallucinations:   Eat           Prickly Ash   Stannum
+Haemophilia:      Eat           Ginseng       Ferrum
+Health Leech:     Eat           Kelp          Aurum
+Hellsight:        Smoke         Valerian      Realgar
+Hypochondria:     Eat           Kelp          Aurum
+Hypersomnia:      Eat           Prickly Ash   Stannum
+Impatience:       Eat           Goldenseal    Plumbum
+Indifference:     Eat           Bellwort      Cuprum
+Internal Trauma:  Apply         Restoration   Restoration
+Justice:          Eat           Bellwort      Cuprum
+Lethargy:         Eat           Ginseng       Ferrum
+Loneliness:       Eat           Lobelia       Argentum
+Lover's Effect:   Eat           Bellwort      Cuprum
+Masochism:        Eat           Lobelia       Argentum
+Mana Leech:       Smoke         Valerian      Realgar
+Mangled limb:     Apply         Restoration   Restoration
+Nausea:           Eat           Ginseng       Ferrum
+Pacifism:         Eat           Bellwort      Cuprum
+Paralysis:        Eat           Bloodroot     Magnesium
+Paranoia:         Eat           Prickly Ash   Stannum
+Peace:            Eat           Bellwort      Cuprum
+Recklessness:     Eat           Lobelia       Argentum
+Scytherus:        Eat           Ginseng       Ferrum
+Sensitivity:      Eat           Kelp          Aurum
+Shyness:          Eat           Goldenseal    Plumbum
+Slickness:        Smoke         Valerian      Realgar
+                  Eat           Bloodroot     Magnesium
+Stinky:           Scrub (**)    —             —
+Stupidity:        Eat           Goldenseal    Plumbum
+Stuttering:       Apply         Epidermal     Epidermal
+Tempered Humours: Eat           Ginger        Antimony
+Transfixed:       Writhe        —             —
+Vertigo:          Eat           Lobelia       Argentum
+Voyria:           Sip           Immunity      Immunity
+Weariness:        Eat           Kelp          Aurum
+Webbed:           Writhe        —             —
+
+(*) Apply = salve/ointment as appropriate.
+(**) Scrub = soap/water.
+
+Last updated: 2026-03-14
+Source: Ada-Young pastebin ZKNS7w3m (Achaea affliction list).

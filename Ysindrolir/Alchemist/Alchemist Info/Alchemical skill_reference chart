@@ -1,0 +1,707 @@
+# Alchemical skill_reference chart
+
+## Alchemy
+
+### Symbology
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 1
+- **Syntax:**
+  - `EDUCE <symbol> [args]`
+- **Works on/against:** Adventurers and denizens
+- **Cooldown / lane:** Equilibrium
+- **Type:** Utility / umbrella command
+- **Notes:**
+  - Base symbol command for Alchemy.
+  - Each symbol corresponds to a prime or metal.
+  - Use as the umbrella/base Alchemy entry.
+
+### Iron
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 4
+- **Syntax:**
+  - `EDUCE IRON <target>`
+- **Extra information:** Symbol: Two isosceles triangles set base-to-base.
+- **Works on/against:** Adventurers and denizens
+- **Cooldown / lane:** 4.00 seconds of equilibrium
+- **Resource:** 80 mana
+- **Type:** Targeted offensive symbol
+- **Notes:**
+  - Surrounds target with flames possessing the cold bite of a sword.
+
+### Salt
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 5
+- **Syntax:**
+  - `EDUCE SALT`
+- **Extra information:** Symbol: A bisected circle.
+- **Works on/against:** Self
+- **Cooldown / lane:** 3.00 seconds of equilibrium
+- **Resource:** 200 mana
+- **Type:** Self cleanse
+- **Notes:**
+  - Purges your body of afflictions.
+  - Prevented by stupidity.
+
+### Copper
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 7
+- **Syntax:**
+  - `EDUCE COPPER <target>`
+- **Extra information:** Symbol: Two overlapping hexagons.
+- **Works on/against:** Adventurers and denizens
+- **Cooldown / lane:** 2.30 seconds of equilibrium
+- **Resource:** 75 mana
+- **Type:** Shieldbreak symbol
+- **Notes:**
+  - Shatters an opponent's magical shield.
+
+### Displace
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 10
+- **Syntax:**
+  - `ETHER DISPLACE <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 6.00 seconds of equilibrium
+- **Resource:** 500 mana
+- **Type:** Positional / movement
+- **Notes:**
+  - Pulls another across an area to stand before you.
+  - Target must remain in the same location while the attempt completes.
+  - Bypasses monolith sigils when targeted at mutual allies.
+  - Works faster on mutual allies.
+
+### Silver
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 11
+- **Syntax:**
+  - `EDUCE SILVER <target>`
+  - `EDUCE SILVER`
+- **Extra information:** Symbol: A crescent tangent to a line segment.
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 5.00 seconds of equilibrium
+- **Resource:** 500 mana
+- **Type:** Reveal / anti-shroud utility
+- **Notes:**
+  - Negates shrouding for a time.
+  - Lasts much longer if applied during the night.
+  - Without a target, attempts to draw astralformed, blackwinded, or phased people in your location back to a physical state.
+
+### Phlogistication
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 12
+- **Syntax:**
+  - `PHLOGISTICATE <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 4.50 seconds of equilibrium
+- **Resource:** 400 mana
+- **Type:** Offensive pressure
+- **Notes:**
+  - Causes controlled internal combustion.
+  - Renders moss and potash temporarily inert when eaten.
+  - Stacks with existing moss/potash off-balance up to a limited ceiling.
+  - Mutually exclusive with vitrification.
+
+### Vitrification
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 17
+- **Syntax:**
+  - `VITRIFY <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 4.50 seconds of equilibrium
+- **Resource:** 400 mana
+- **Type:** Offensive punishment state
+- **Notes:**
+  - Partially transmutes skin into glass.
+  - Abilities that use balance cause bleeding.
+  - Bleeding scales upward with the length of balance loss.
+  - Mutually exclusive with phlogistication.
+
+### Lead
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 20
+- **Syntax:**
+  - `EDUCE LEAD`
+  - `EDUCE LEAD <target>`
+- **Extra information:** Symbol: Two concentric circles.
+- **Works on/against:** Adventurers and self
+- **Cooldown / lane:** 2.00 seconds of equilibrium
+- **Resource:** 150 mana
+- **Type:** Self density / anti-flight utility
+- **Notes:**
+  - Grants great density to your body.
+  - Can target a flying adventurer to drag them back to earth.
+  - Briefly knocks target off balance.
+  - Using it without a target incurs a small equilibrium loss.
+
+### Revivification
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 21
+- **Syntax:**
+  - `REVIVE <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 5.00 seconds of equilibrium
+- **Resource:** 400 mana
+- **Type:** Resurrection utility
+- **Notes:**
+  - Returns a corpse to life.
+  - Uses a catalyst of five pieces of the salt prime.
+  - Corpse should be whole and in good condition.
+  - Only works if target is a mutual ally or a member of the same city.
+
+### Aurification
+- **Skillset:** Alchemy
+- **ABADMIN ID:** 23
+- **Syntax:**
+  - `AURIFY <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 4.00 seconds of equilibrium
+- **Resource:** 250 mana
+- **Type:** Execute / finisher
+- **Notes:**
+  - Turns an enemy into a golden statue.
+  - Requires both health and mana to be at or below sixty percent of their maximums.
+
+---
+
+## Physiology
+
+### Humourism
+- **Skillset:** Physiology
+- **ABADMIN ID:** 24
+- **Syntax:**
+  - `TEMPER <target> <humour>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 1.70 seconds of humour balance
+- **Resource:** 100 mana
+- **Type:** Humour setup / lane spender
+- **Notes:**
+  - Raises one of four humours on the target.
+  - Humours can be reduced by ginger herb or antimony mineral.
+  - Maximum temper count per humour is eight.
+  - Each temper raises humour by 1.
+  - This number may rise if the target has related afflictions.
+  - Only one humour may be tempered at once with this ability.
+  - Later Physiology training expands freedom in tempering multiple humours.
+  - Evaluation of a target's humours can be done for free.
+- **Humour mappings:**
+  - **Choleric:** random curing abilities may fail. Related afflictions: nausea, sensitivity, slickness.
+  - **Melancholic:** irid moss and potash have reduced healing benefit. Related afflictions: anorexia, impatience, stupidity.
+  - **Phlegmatic:** smoking may fill lungs with phlegm and increase lungs recovery time. Related afflictions: asthma, clumsiness, weariness.
+  - **Sanguine:** bleeding increases over time. Related afflictions: haemophilia, recklessness, paralysis.
+
+### Cultivation
+- **Skillset:** Physiology
+- **ABADMIN ID:** 25
+- **Syntax:**
+  - `CULTIVATE NUCLEUS`
+  - `GERMINATE NUCLEUS <prime>`
+  - `HOMUNCULUS FOLLOW`
+  - `HOMUNCULUS RETURN`
+  - `HOMUNCULUS ATTACK <target>`
+  - `HOMUNCULUS PACIFY`
+  - `HOMUNCULUS <command> [args]`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** Homunculus balance
+- **Type:** Homunculus creation / control umbrella
+- **Notes:**
+  - Creates a nucleus from your own flesh.
+  - Nucleus can be germinated using alchemical salt, sulphur, or mercury.
+  - Only one homunculus may be alive at a time.
+  - FOLLOW orders it to follow.
+  - RETURN brings it back if elsewhere.
+  - ATTACK sends it at a target.
+  - PACIFY ceases its attacks.
+  - Most homunculus abilities use their own special balance while also requiring balance and equilibrium.
+
+### Eyes
+- **Skillset:** Physiology
+- **ABADMIN ID:** 26
+- **Syntax:**
+  - `HOMUNCULUS LOOK`
+  - `HOMUNCULUS EXITS`
+- **Works on/against:** Denizens
+- **Cooldown / lane:** 5.00 seconds of homunculus balance
+- **Type:** Homunculus scouting
+- **Notes:**
+  - Lets you look into the room where the homunculus stands so long as it is on the same continent.
+  - Can check exits from its current room.
+
+### Legs
+- **Skillset:** Physiology
+- **ABADMIN ID:** 27
+- **Syntax:**
+  - `HOMUNCULUS MOVE <direction>`
+- **Cooldown / lane:** 2.50 seconds of homunculus balance
+- **Type:** Homunculus movement
+- **Notes:**
+  - Move the homunculus room-to-room while you and it remain in the same area.
+
+### Wrack
+- **Skillset:** Physiology
+- **ABADMIN ID:** 28
+- **Syntax:**
+  - `WRACK <target> <humour|affliction>`
+- **Works on/against:** Adventurers and denizens
+- **Cooldown / lane:** 2.00 seconds of balance
+- **Resource:** 60 mana
+- **Type:** Humour conversion / damage-or-affliction
+- **Notes:**
+  - Assaults an opponent's humours to cause damage or afflictions.
+  - Each humour has several afflictions and one associated damage type.
+  - If no affliction is specified, one may manifest at random at a slight speed penalty.
+  - It is possible to wrack an untempered humour, but only by specifying the affliction and at a balance penalty.
+  - Against denizens, damage type is determined by the chosen humour.
+  - Operates outside of humour balance.
+  - May be used off-equilibrium immediately after a symbology ability when targeted against an adventurer.
+- **Humour pools:**
+  - **Choleric:** nausea, sensitivity, slickness; poison damage.
+  - **Melancholic:** stupidity, anorexia, impatience; cold damage.
+  - **Phlegmatic:** clumsiness, weariness, asthma; asphyxiation damage.
+  - **Sanguine:** haemophilia, recklessness, paralysis; magic damage.
+
+### Arms
+- **Skillset:** Physiology
+- **ABADMIN ID:** 29
+- **Syntax:**
+  - `HOMUNCULUS ATTACK <target>`
+  - `HOMUNCULUS ADMINISTER <prime>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 3.00 seconds of equilibrium
+- **Resource:** 250 mana
+- **Type:** Homunculus offense / prime administration
+- **Notes:**
+  - Improves homunculus attacks.
+  - Attack damage type and special effect depend on germination prime:
+    - **Salt:** magic damage; attacks cause bleeding.
+    - **Sulphur:** psychic damage; attacks drain mana.
+    - **Mercury:** poison damage; extends the target's next herb balance.
+  - If the homunculus becomes separated from you, attacks revert to their original weak form.
+  - ADMINISTER temporarily grants another prime effect.
+  - Administered prime attacks are less effective than native-type attacks.
+
+### Evaluate
+- **Skillset:** Physiology
+- **ABADMIN ID:** 30
+- **Syntax:**
+  - `EVALUATE <target>`
+  - `EVALUATE <target> HUMOURS`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 1.00 seconds of equilibrium
+- **Type:** Target read / scout
+- **Notes:**
+  - Roughly discerns fluid level, humour states, health, and mana.
+  - `EVALUATE <target> HUMOURS` alone uses no equilibrium.
+
+### Ears
+- **Skillset:** Physiology
+- **ABADMIN ID:** 31
+- **Syntax:**
+  - `HOMUNCULUS LISTEN <ON|OFF>`
+- **Cooldown / lane:** 3.00 seconds of homunculus balance
+- **Type:** Homunculus listening toggle
+- **Notes:**
+  - Lets you hear what the homunculus hears.
+
+### Mouth
+- **Skillset:** Physiology
+- **ABADMIN ID:** 33
+- **Syntax:**
+  - `HOMUNCULUS SAY <text>`
+- **Cooldown / lane:** 6.00 seconds of homunculus balance
+- **Type:** Homunculus speech
+- **Notes:**
+  - Speak through your homunculus from afar.
+
+### Hands
+- **Skillset:** Physiology
+- **ABADMIN ID:** 35
+- **Syntax:**
+  - `HOMUNCULUS INV[ENTORY]`
+  - `HOMUNCULUS GIVE <item> TO <person>`
+  - `HOMUNCULUS GET <item>`
+  - `HOMUNCULUS DROP <item>`
+- **Cooldown / lane:** 6.00 seconds of homunculus balance
+- **Type:** Homunculus item manipulation
+- **Notes:**
+  - Manipulate items from afar.
+  - Requires the homunculus to be in the same area as yourself, except for checking inventory.
+  - GIVE requires same room, same elevation, and target not phased or similar.
+  - GET only works if the homunculus holds fewer than five items.
+  - DROP places the held item into the current room.
+
+### Truewrack
+- **Skillset:** Physiology
+- **ABADMIN ID:** 38
+- **Syntax:**
+  - `TRUEWRACK <target> <humour|affliction> <humour|affliction>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 2.80 seconds of balance
+- **Resource:** 100 mana
+- **Type:** Dual humour conversion
+- **Notes:**
+  - Wracks two humours at once.
+  - If two afflictions are not specified, random relevant ones are chosen from the relevant humour pools.
+  - Paralysis may only be delivered once the sanguine humour has been sufficiently tempered twice.
+
+### Throat
+- **Skillset:** Physiology
+- **ABADMIN ID:** 39
+- **Syntax:**
+  - `HOMUNCULUS SHRIEK <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 12.00 seconds of homunculus balance
+- **Resource:** 500 mana
+- **Type:** Focus disruption
+- **Notes:**
+  - Loudly shrieks at an opponent to disrupt concentration.
+  - Knocks target off focus balance or increases time needed to regain it.
+  - You must be in the same room as your homunculus to use it.
+
+### Inundate
+- **Skillset:** Physiology
+- **ABADMIN ID:** 40
+- **Syntax:**
+  - `INUNDATE <target> <humour>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 1.70 seconds of humour balance
+- **Resource:** 100 mana
+- **Type:** Humour detonation / follow-up
+- **Notes:**
+  - Adds additional fluid to an already tempered humour to trigger an instant reaction.
+  - The more fluid drained, the greater the reaction.
+- **Humour reactions:**
+  - **Choleric:** health loss.
+  - **Melancholic:** mana loss.
+  - **Sanguine:** bleeding.
+  - **Phlegmatic:** lethargy, anorexia, slickness, weariness at increasing temper levels.
+- **Sublimation note:**
+  - If the field of study is Sublimation, phlegmatic instead afflicts:
+    - lethargy at 2 tempers
+    - anorexia at 6 tempers
+    - slickness at 8 tempers
+
+### Corruption
+- **Skillset:** Physiology
+- **ABADMIN ID:** 41
+- **Syntax:**
+  - `HOMUNCULUS CORRUPT <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 12.00 seconds of homunculus balance
+- **Resource:** 500 mana
+- **Type:** Homunculus humour corruption
+- **Notes:**
+  - Corrupts melancholic and sanguine humours.
+  - Causes mana loss from bleeding.
+  - Causes health loss from clotting.
+  - Wears off after a time.
+
+### Transfusion
+- **Skillset:** Physiology
+- **ABADMIN ID:** 42
+- **Syntax:**
+  - `INCUBATE NUCLEUS`
+  - `TRANSFUSE STATUS`
+  - `TRANSFUSE CONSCIOUSNESS`
+- **Works on/against:** Self
+- **Type:** Long-form self utility
+- **Notes:**
+  - Incubates a perfect replica body in your home city's physiology laboratory.
+  - Takes several days.
+  - `TRANSFUSE CONSCIOUSNESS` moves your soul into the new body when you die.
+  - Must be done from the same continent and plane as the laboratory.
+  - `TRANSFUSE STATUS` shows location and remaining incubation time.
+
+### Reave
+- **Skillset:** Physiology
+- **ABADMIN ID:** 43
+- **Syntax:**
+  - `REAVE <target>`
+- **Works on/against:** Adventurers
+- **Cooldown / lane:** 12.00 seconds of humour balance
+- **Resource:** 250 mana
+- **Type:** Delayed kill sequence
+- **Notes:**
+  - Attempts to shut down internal organs if at least one humour is tempered.
+  - Process takes time to complete.
+  - More tempered humours shorten the completion time.
+  - Approximately ten seconds with one tempered humour.
+  - Each additional tempered humour reduces duration by two seconds.
+  - Minimum duration is four seconds when all four humours are tempered.
+
+---
+
+## Formulation
+
+### Endorphin
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1801
+- **Syntax:**
+  - `WIELD ENDORPHIN`
+  - `THROW ENDORPHIN <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 1 cuprum, 1 argentum
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Gas heals some body damage when inhaled.
+
+### Nutritional
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1802
+- **Syntax:**
+  - `IMBIBE NUTRITIONAL`
+  - `ADMINISTER NUTRITIONAL <target>`
+- **Extra information:** Reagents: 1 ferrum, 1 potash
+- **Delivery type:** `imbibe_or_administer`
+- **Notes:**
+  - Potent nutritional supplement.
+
+### Corrosive
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1803
+- **Syntax:**
+  - `WIELD CORROSIVE`
+  - `THROW CORROSIVE <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 magnesium, 3 cinnabar
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Potent acid.
+  - Reacts violently with certain defences, especially magical shields.
+
+### Petrifying
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1804
+- **Syntax:**
+  - `IMBIBE PETRIFYING`
+- **Extra information:** Reagents: 2 ferrum, 1 plumbum
+- **Delivery type:** `imbibe`
+- **Notes:**
+  - Partially turns bones into a dense iron-like substance.
+  - Slows the user.
+  - Improves resistance to physical damage.
+  - Leaves the user especially vulnerable to lightning-powered attacks.
+  - If highly volatile, expires after five minutes.
+
+### Incendiary
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1805
+- **Syntax:**
+  - `WIELD INCENDIARY`
+  - `THROW INCENDIARY <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 magnesium, 1 potash
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Clings to skin.
+  - Burns until fuel is exhausted or scrubbed away.
+
+### Alteration
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1806
+- **Syntax:**
+  - `ENHANCE POTENCY|STABILITY|VOLATILITY OF <compound>`
+  - `DILUTE POTENCY|STABILITY|VOLATILITY OF <compound>`
+  - `AMALGAMATE <compound>`
+- **Cooldown / lane:** free / balanceless (`AMALGAMATE`)
+- **Delivery type:** `utility`
+- **Notes:**
+  - Alteration is the enhancement/dilution/value-adjustment layer.
+  - Amalgamate is the creation step and remains compound-driven.
+  - Destination phial is determined by empty-phial availability (no phial-targeted syntax confirmed here).
+  - Alters potency, stability, and volatility of compounds.
+  - Volatility generally means faster reaction.
+  - Stability generally means longer-lasting reaction.
+  - Potency generally means more concentrated effect.
+
+### Devitalisation
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1809
+- **Syntax:**
+  - `WIELD DEVITALISATION`
+  - `THROW DEVITALISATION <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 aurum, 1 cuprum
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Inhaled gas steadily reduces maximum health reserves.
+  - Targets cannot recover from that reduction until separated from the substance for a time.
+  - Protective masks may fail to filter it reliably.
+
+### Intoxicant
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1810
+- **Syntax:**
+  - `WIELD INTOXICANT`
+  - `THROW INTOXICANT <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 potash, 1 cinnabar
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Airborne substance causes paralysis of the lungs if inhaled.
+
+### Vaporisation
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1811
+- **Syntax:**
+  - `WIELD VAPORISATION`
+  - `THROW VAPORISATION <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 magnesium, 1 malachite
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Reacts violently with water.
+  - Can boil away liquid or turn ice to steam.
+
+### Phosphorous
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1812
+- **Syntax:**
+  - `WIELD PHOSPHOROUS`
+  - `THROW PHOSPHOROUS <DIRECTION|AT GROUND>`
+- **Extra information:** Reagents: 1 arsenic, 2 magnesium
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Produces a blinding flash.
+  - Blindness is severe enough that mindseye does not restore vision until recovery.
+
+### Monoxide
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1813
+- **Syntax:**
+  - `WIELD MONOXIDE`
+  - `THROW MONOXIDE <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 1 ferrum, 1 realgar, 1 plumbum
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Causes extreme disorientation on inhalation.
+  - If flung from an adjacent room, victims may periodically fall to the ground.
+  - If flung at the ground, inhalers also suffer immediate balance loss.
+
+### Toxin
+- **Skillset:** Formulation
+- **ABADMIN ID:** 2357
+- **Syntax:**
+  - `WIELD TOXIN`
+  - `THROW TOXIN <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 arsenic, 1 potash, 1 magnesium
+- **Works on/against:** Adventurers
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Released gas can inflict the vyoria plague.
+- **Important:**
+  - Only include fields captured from supplied material.
+  - Do not invent cooldown/resource data not shown.
+
+### Concussive
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1814
+- **Syntax:**
+  - `WIELD CONCUSSIVE`
+  - `THROW CONCUSSIVE <AT GROUND|DIRECTION>`
+- **Extra information:** Reagents: 2 magnesium, 2 argentum, 1 potash
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Delivery type:** `wield_throw`
+- **Notes:**
+  - Creates a violent explosion.
+  - Launches those not suitably secured from the location.
+  - If the alchemist stands at the centre of detonation, the explosion can be more accurate.
+  - May occasionally bypass holding/anchoring defences.
+
+### Mayology
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1815
+- **Syntax:**
+  - `AMALGAMATE DESTRUCTIVE`
+  - `IMBIBE DESTRUCTIVE`
+- **Extra information:** Reagents: 1 plumbum, 1 aurum, 1 potash, 1 ferrum, 1 argentum, 1 cuprum, 1 realgar
+- **Delivery type:** `special_self_imbibe`
+- **Notes:**
+  - Destructive serum.
+  - Drives the consumer beyond mortal limits.
+  - Greatly speeds balance and equilibrium.
+  - Causes death shortly afterward.
+  - During the effect, the homunculus is continuously destroyed.
+
+### Halophilic
+- **Skillset:** Formulation
+- **ABADMIN ID:** 2139
+- **Syntax:**
+  - `WIELD HALOPHILIC`
+  - `THROW HALOPHILIC <DIRECTION|AT GROUND>`
+- **Extra information:** Reagents: 4 salt, 2 plumbum
+- **Works on/against:** Room
+- **Delivery type:** `room_throw`
+- **Notes:**
+  - Little practical use outside killing certain species of vines.
+
+### Enhancement
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1816
+- **Syntax:**
+  - `IMBIBE ENHANCEMENT`
+- **Extra information:** Reagents: 3 argentum, 2 quicksilver
+- **Delivery type:** `imbibe`
+- **Notes:**
+  - Superior-state self-enhancement formula.
+  - Improves durability.
+  - Grants greater control over internal processes.
+  - Drawbacks include heightened aggression.
+  - Backlash on reversion causes discomfort.
+
+### Bolster
+- **Skillset:** Formulation
+- **ABADMIN ID:** 1817
+- **Syntax:**
+  - `BOLSTER`
+- **Extra information:** Requires: enhanced form
+- **Cooldown / lane:** 2.60 seconds of balance
+- **Resource:** 351 mana
+- **Delivery type:** `enhanced_state_ability`
+- **Notes:**
+  - Advanced healing while in enhanced form.
+  - Very high mental reserve cost.
+  - Extended use worsens danger of reversion backlash.
+
+---
+
+## Appendix / supporting reference
+
+### Observed phiallist format
+
+**Filled phials section columns**
+- `Phial | Compound | Months | Potency | Volatility | Stability`
+
+**Example filled rows**
+- `Phial43353 | Endorphin | 24 | 1 | 1 | 1`
+- `Phial639588 | Endorphin | 24 | 1 | 1 | 1`
+
+**Empty phials section columns**
+- `Phial | Compound | Months left | Quantity`
+
+**Example empty rows**
+- `Phial632132 | Empty | 24 | 5`
+- `Phial402228 | Empty | 24 | 1`
+
+### Reference handling notes
+- This file is reference-only.
+- Only include confirmed entries captured from supplied screenshots/text.
+- Do not invent missing ABADMIN gaps.
+- Preserve exact spellings from supplied material, including:
+  - Devitalisation
+  - Vaporisation
+  - Phosphorous
+  - Humourism
+- Preserve lane distinctions:
+  - equilibrium
+  - balance
+  - humour balance
+  - homunculus balance
+
+
+
+
+
+## Inundation info
+-Inundating humors at 6 tempers on choleric and melancholic, will burst the respective vital by fifty percent. The sanguine humour will bleed the target at 2304. 

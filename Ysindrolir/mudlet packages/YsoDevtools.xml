@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+  <TriggerPackage />
+  <TimerPackage />
+  <AliasPackage>
+    <AliasGroup isActive="yes" isFolder="yes">
+      <name>YsoDevtools</name>
+      <script />
+      <command />
+      <packageName />
+      <regex />
+      <Alias isActive="yes" isFolder="no"><name>yhelp</name><script>cecho("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; yreset | ydry [on|off|toggle] | ylane &lt;eq|bal&gt; [on|off|toggle] | ylanes | ystage &lt;eq|bal|free&gt; &lt;cmd&gt; | ycommit [eq|bal] | yclear [lane] | ymode &lt;paired|as_available&gt; | yprefer &lt;eq|bal&gt; | ytest snap|sens|instill|bloodboil | yrdebug [on|off] &lt;dam|focus&gt; | yrshow [dam|focus] [full]\n")</script><command /><packageName /><regex>^yhelp$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ytest</name><script>local args = matches[2] or ""
+if Yso and Yso.devtools and Yso.devtools.test and type(Yso.devtools.test.run) == "function" then
+  Yso.devtools.test.run(args)
+else
+  print("[YsoDevtools] ytest harness not loaded.")
+end</script><command /><packageName /><regex>^ytest(?:\s+(.+))?$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>yreset</name><script>if Yso and Yso.devtools and type(Yso.devtools.reset)=="function" then Yso.devtools.reset() end</script><command /><packageName /><regex>^yreset$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ydry</name><script>if Yso and Yso.devtools and type(Yso.devtools.set_dry)=="function" then Yso.devtools.set_dry(matches[2] or "toggle") end</script><command /><packageName /><regex>^ydry(?:\s+(on|off|toggle))?$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ylane</name><script>if Yso and Yso.devtools and type(Yso.devtools.lane)=="function" then Yso.devtools.lane(matches[2], matches[3]) end</script><command /><packageName /><regex>^ylane\s+(eq|bal)(?:\s+(on|off|toggle|1|0|true|false|ready|down))?$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ylanes</name><script>if Yso and Yso.devtools and type(Yso.devtools.status)=="function" then Yso.devtools.status() end</script><command /><packageName /><regex>^ylanes$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ystage</name><script>if Yso and Yso.devtools and type(Yso.devtools.stage)=="function" then Yso.devtools.stage(matches[2], matches[3]) end</script><command /><packageName /><regex>^ystage\s+(eq|bal|free)\s+(.+)$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ycommit</name><script>if Yso and Yso.devtools and type(Yso.devtools.commit)=="function" then Yso.devtools.commit(matches[2]) end</script><command /><packageName /><regex>^ycommit(?:\s+(eq|bal))?$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>yclear</name><script>if Yso and Yso.devtools and type(Yso.devtools.clear)=="function" then Yso.devtools.clear(matches[2]) end</script><command /><packageName /><regex>^yclear(?:\s+(\w+))?$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>ymode</name><script>if Yso and Yso.devtools and type(Yso.devtools.set_mode)=="function" then Yso.devtools.set_mode(matches[2]) end</script><command /><packageName /><regex>^ymode\s+(paired|as_available)$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>yprefer</name><script>if Yso and Yso.devtools and type(Yso.devtools.set_prefer)=="function" then Yso.devtools.set_prefer(matches[2]) end</script><command /><packageName /><regex>^yprefer\s+(eq|bal)$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>yrdebug</name><script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
+if RD and type(RD.set)=="function" then RD.set(matches[3], matches[2]) end</script><command /><packageName /><regex>^yrdebug\s+(on|off)\s+(dam|focus)$</regex></Alias>
+      <Alias isActive="yes" isFolder="no"><name>yrshow</name><script>local RD = Yso and Yso.devtools and Yso.devtools.route_debug
+if RD and type(RD.show)=="function" then RD.show(matches[2], matches[3]) end</script><command /><packageName /><regex>^yrshow(?:\s+(dam|focus))?(?:\s+(full))?$</regex></Alias>
+    </AliasGroup>
+  </AliasPackage>
+  <ScriptPackage>
+    <Script isActive="yes" isFolder="no"><name>YsoDevtools Core</name><script>Yso = Yso or {}
+Yso.devtools = Yso.devtools or {}
+local D = Yso.devtools
+local function out(msg) if cecho then cecho("&lt;cadet_blue&gt;[YsoDevtools]&lt;reset&gt; "..tostring(msg).."\n") else print("[YsoDevtools] "..tostring(msg)) end end
+function D.reset() if Yso.queue and type(Yso.queue.clear)=="function" then Yso.queue.clear() end out("reset") end
+function D.set_dry(tok) Yso.net=Yso.net or {}; Yso.net.cfg=Yso.net.cfg or {}; tok=tostring(tok or "toggle"):lower(); if tok=="toggle" or tok=="" then Yso.net.cfg.dry_run=not (Yso.net.cfg.dry_run==true) else Yso.net.cfg.dry_run=(tok=="on" or tok=="1" or tok=="true") end; out("dry="..tostring(Yso.net.cfg.dry_run)) end
+function D.lane(lane, tok) lane=tostring(lane or ""):lower(); if lane~="eq" and lane~="bal" then return false end; if Yso.state and type(Yso.state.set_ready)=="function" then Yso.state.set_ready(lane, tok~="down" and tok~="off" and tok~="0" and tok~="false", "devtools") end; out(lane.." lane updated") end
+function D.status() out("dry="..tostring(Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run==true)) end
+function D.stage(lane, cmd) if Yso.queue and type(Yso.queue.stage)=="function" then Yso.queue.stage(lane, cmd) end; out("staged "..tostring(lane)) end
+function D.commit(lane) if Yso.queue and type(Yso.queue.commit)=="function" then Yso.queue.commit({ lane = lane }) end; out("commit") end
+function D.clear(lane) if Yso.queue and type(Yso.queue.clear)=="function" then Yso.queue.clear(lane) end; out("clear") end
+function D.set_mode(mode) if Yso.set_payload_mode then Yso.set_payload_mode(mode) end; out("mode="..tostring(mode)) end
+function D.set_prefer(lane) Yso.cfg=Yso.cfg or {}; Yso.cfg.prefer_lane=lane; out("prefer="..tostring(lane)) end
+D.test = D.test or {}
+function D.test.run(args) out("test "..tostring(args or "")) end
+D.route_debug = D.route_debug or {}
+function D.route_debug.set(which, on) out("route debug "..tostring(which).."="..tostring(on)) end
+function D.route_debug.show(which) out("route "..tostring(which or "all")) end</script><eventHandlerList /></Script>
+  </ScriptPackage>
+  <KeyPackage />
+  <HelpPackage />
+</MudletPackage>

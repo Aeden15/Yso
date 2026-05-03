@@ -1,0 +1,45 @@
+Alchemist route ownership checklist
+===================================
+
+[ ] Use AK tracking, ownership, and read layers for all Alchemist route behaviours where AK covers the state.
+[ ] Keep Yso Alchemist routes as planners and read-through consumers, not duplicate tracker owners.
+[ ] Do not introduce local humour-count ownership blocks when AK already covers that state.
+[ ] Treat humour truth as current-target only.
+[ ] On target swap, require a fresh `evaluate <target> humours`.
+[ ] Use AK-backed live humour counts for legality checks where applicable.
+[ ] Use `truewrack` only when both lanes have genuine route value.
+[ ] If hybrid value fails, fall back deterministically to `wrack <target> <affliction>`.
+
+Group damage route specifics
+============================
+
+[ ] Read current-target humour counts from `ak.alchemist.humour`.
+[ ] Treat paralysis as legal when AK's current-target sanguine count is `>= 2`.
+[ ] Do not restore Yso-local steady-only humour rows for paralysis legality.
+[ ] Use `truewrack` only when a forced missing affliction is valid, the second humour lane has at least one AK temper, and that second lane still contains at least one desired missing affliction from the route giving set.
+[ ] When `truewrack` is not useful, send `wrack <target> <affliction>`, not `wrack <target> <humour>`.
+
+Future route notes
+==================
+
+[ ] Add only route intent, priority, and command selection in Yso.
+[ ] Let AK observe and own what happened after the command lands.
+[ ] Re-evaluate new targets before trusting humour-state planning.
+
+
+
+
+
+
+
+
+Alchemist strategy:
+===================
+According to https://ada-young.com/pastebin/bMKDPfjA in the Alchemist section, the class is mostly affliction based. The main usage is giving paralysis/x affliction to build humour
+levels and help of TEMPER'ing humours.
+
+Secondary afflictions include: asthma, impatience, and/or sensitivity. Depending on what you're going for, sensitivity will be great for damage route alongside the other afflictions
+from humours that support damage. Otherwise, the asthma and impatience are great for affliction lock route/vitals pressure instant kills.
+
+Using the inundate skill on the target's phlegmatic humour will nearly fully lock the target without impatience affliction. Inundating the choleric humor is paired with sensitivity for big damage bursts.
+Lastly and likely the most deadliest is inundating and corrupting the sanguine humor for massive bleeding. That can go spike vitals pressures into one of the instant kills the class has.

@@ -1,0 +1,1590 @@
+--========================================================--
+-- Alchemist / Aurify route.lua
+--  Aurify-focused route for bleed pressure and execute setup.
+--========================================================--
+
+_G.Yso = _G.Yso or _G.yso or {}
+_G.yso = _G.Yso
+
+Yso = _G.Yso
+Yso.off = Yso.off or {}
+Yso.off.alc = Yso.off.alc or {}
+
+Yso.off.alc.aurify_route = Yso.off.alc.aurify_route or {}
+local AR = Yso.off.alc.aurify_route
+AR.alias_owned = true
+
+local function _load_alchemist_peer(file_name)
+  local info = debug.getinfo(1, "S")
+  local source = info and info.source or ""
+  if source:sub(1, 1) ~= "@" then
+    return false
+  end
+  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
+  local path = dir .. "/" .. tostring(file_name or "")
+  local ok = pcall(dofile, path)
+  return ok
+end
+
+if type(require) == "function" then
+  pcall(require, "Yso")
+end
+if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
+  _load_alchemist_peer("Core/physiology.lua")
+end
+
+local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
+  pcall(require, "Yso.Combat.route_interface")
+  pcall(require, "Yso.xml.route_interface")
+  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+end
+
+AR.route_contract = AR.route_contract or {
+  id = "alchemist_aurify_route",
+  interface_version = 1,
+  shared_categories = { "defense_break", "anti_tumble" },
+  route_local_categories = {
+    "evaluate",
+    "defense_break",
+    "aurify",
+    "reave",
+    "self_purge",
+    "burst",
+    "pressure",
+    "hold",
+  },
+  capabilities = {
+    uses_eq = true,
+    uses_bal = true,
+    uses_entity = false,
+    supports_burst = true,
+    supports_bootstrap = true,
+    needs_target = true,
+    shares_defense_break = true,
+    shares_anti_tumble = true,
+  },
+  lifecycle = {
+    on_enter = true,
+    on_exit = true,
+    on_target_swap = true,
+    on_pause = true,
+    on_resume = true,
+    on_manual_success = true,
+    on_send_result = true,
+    evaluate = true,
+    explain = true,
+  },
+}
+
+AR.cfg = AR.cfg or {
+  enabled = false,
+  echo = true,
+  loop_delay = 0.15,
+  evaluate_pending_s = 1.2,
+  salt_min_affs = 2,
+  salt_cooldown_s = 3.2,
+  allow_reave = true,
+  class_combo_queue_verb = "add",
+  instant_kill_queue_verb = "addclearfull",
+}
+
+AR.state = AR.state or {
+  enabled = false,
+  loop_enabled = false,
+  timer_id = nil,
+  busy = false,
+  waiting = { queue = nil, main_lane = nil, lanes = nil, at = 0 },
+  last_attack = { cmd = "", at = 0, target = "", main_lane = "", lanes = nil },
+  template = { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" },
+  explain = {},
+  homunculus_attack_sent = false,
+  homunculus_attack_target = "",
+  last_salt_at = 0,
+  humour_pressure = {
+    target = "",
+    focus = "",
+    focus_goal = 3,
+    last_focus_at = 0,
+    last_eval_at = 0,
+    recent_humours = {},
+    roll = 0,
+  },
+}
+
+local function _trim(s)
+  return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+local function _lc(s)
+  return _trim(s):lower()
+end
+
+local function _now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then
+      return tonumber(v)
+    end
+  end
+  if type(getEpoch) == "function" then
+    local v = tonumber(getEpoch()) or os.time()
+    if v > 20000000000 then
+      v = v / 1000
+    end
+    return v
+  end
+  return os.time()
+end
+
+local function _echo(msg)
+  if AR.cfg.echo ~= true then
+    return
+  end
+  if type(cecho) == "function" then
+    cecho(string.format("<orange>[Yso:Alchemist] <reset>%s\n", tostring(msg)))
+  elseif type(echo) == "function" then
+    echo(string.format("[Yso:Alchemist] %s\n", tostring(msg)))
+  end
+end
+
+local function _debug(msg)
+  if not (Yso and Yso.ak and Yso.ak.debug == true) then
+    return
+  end
+  _echo(msg)
+end
+
+local function _phys()
+  return Yso and Yso.alc and Yso.alc.phys or nil
+end
+
+local function _sep()
+  local s = _trim((Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or "&&")
+  if s == "" then s = "&&" end
+  return s
+end
+
+local function _use_queueing_enabled()
+  local cfg = Yso and Yso.cfg or nil
+  if type(cfg) ~= "table" then
+    return true
+  end
+  local raw = cfg.UseQueueing
+  if raw == nil then raw = cfg.use_queueing end
+  if raw == nil then raw = cfg.queueing end
+  if raw == nil then
+    return true
+  end
+  local t = type(raw)
+  if t == "boolean" then
+    return raw
+  end
+  local s = _lc(raw)
+  if s == "no" or s == "false" or s == "0" or s == "off" then
+    return false
+  end
+  return true
+end
+
+local function _target()
+  if type(Yso.get_target) == "function" then
+    local ok, v = pcall(Yso.get_target)
+    if ok and _trim(v) ~= "" then
+      return _trim(v)
+    end
+  end
+  local t = rawget(_G, "target")
+  if type(t) == "string" and _trim(t) ~= "" then
+    return _trim(t)
+  end
+  return ""
+end
+
+local function _target_valid(tgt)
+  if type(Yso.target_is_valid) == "function" then
+    local ok, v = pcall(Yso.target_is_valid, tgt)
+    if ok then
+      return v == true
+    end
+  end
+  return _trim(tgt) ~= ""
+end
+
+local function _is_alchemist()
+  if type(Yso.is_alchemist) == "function" then
+    local ok, v = pcall(Yso.is_alchemist)
+    if ok then
+      return v == true
+    end
+  end
+  local cls = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or ""
+  return _lc(cls) == "alchemist"
+end
+
+local function _eq_ready()
+  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then
+      return v == true
+    end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.eq or v.equilibrium or "") == "1" or (v.eq == true or v.equilibrium == true)
+end
+
+local function _bal_ready()
+  if Yso and Yso.state and type(Yso.state.bal_ready) == "function" then
+    local ok, v = pcall(Yso.state.bal_ready)
+    if ok then
+      return v == true
+    end
+  end
+  local v = (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+  return tostring(v.bal or v.balance or "") == "1" or (v.bal == true or v.balance == true)
+end
+
+local function _class_ready()
+  if Yso.alc and type(Yso.alc.humour_ready) == "function" then
+    local ok, v = pcall(Yso.alc.humour_ready)
+    if ok then
+      return v == true
+    end
+  end
+  return Yso and Yso.bal and Yso.bal.humour ~= false
+end
+
+local function _evaluate_ready()
+  if Yso.alc and type(Yso.alc.evaluate_ready) == "function" then
+    local ok, v = pcall(Yso.alc.evaluate_ready)
+    if ok then
+      return v == true
+    end
+  end
+  return Yso and Yso.bal and Yso.bal.evaluate ~= false
+end
+
+local function _same_target(a, b)
+  return _lc(a) ~= "" and _lc(a) == _lc(b)
+end
+
+local function _self_has(aff)
+  aff = _lc(aff)
+  if aff == "" then
+    return false
+  end
+  if Yso and Yso.self and type(Yso.self.has_aff) == "function" then
+    local ok, v = pcall(Yso.self.has_aff, aff)
+    if ok and v == true then
+      return true
+    end
+  end
+  if Yso and type(Yso.affs) == "table" and Yso.affs[aff] == true then
+    return true
+  end
+  return false
+end
+
+local function _self_aff_count()
+  if Yso and Yso.self_aff and type(Yso.self_aff.count) == "function" then
+    local ok, v = pcall(Yso.self_aff.count)
+    if ok and tonumber(v) then
+      return tonumber(v)
+    end
+  end
+
+  local count = 0
+  if Yso and type(Yso.affs) == "table" then
+    for _, present in pairs(Yso.affs) do
+      if present then
+        count = count + 1
+      end
+    end
+  end
+  return count
+end
+
+local function _can_plan_bal()
+  local Q = Yso and Yso.queue or nil
+  if not (Q and type(Q.can_plan_lane) == "function") then
+    return true
+  end
+  local ok, allowed = pcall(Q.can_plan_lane, "bal")
+  if not ok then
+    return true
+  end
+  return allowed == true
+end
+
+local function _shielded(tgt)
+  tgt = _lc(tgt)
+
+  if Yso and Yso.shield and type(Yso.shield.up) == "function" and tgt ~= "" then
+    local ok, v = pcall(Yso.shield.up, tgt)
+    if ok then return v == true end
+  end
+
+  local ak = rawget(_G, "ak")
+  if ak and ak.defs then
+    if type(ak.defs.shield_by_target) == "table" and tgt ~= "" then
+      return ak.defs.shield_by_target[tgt] == true
+    end
+    return ak.defs.shield == true
+  end
+
+  return false
+end
+
+local function _evaluate_pending_for(tgt)
+  local P = _phys()
+  if P and type(P.evaluate_staged_for_target) == "function" and P.evaluate_staged_for_target(tgt) then
+    return true
+  end
+  local row = P and P.state and P.state.evaluate or nil
+  if type(row) ~= "table" then
+    return false
+  end
+  if not _same_target(row.target, tgt) then
+    return false
+  end
+  local at = tonumber(row.requested_at or 0) or 0
+  if at <= 0 then
+    return false
+  end
+  return (_now() - at) <= (tonumber(AR.cfg.evaluate_pending_s or 1.2) or 1.2)
+end
+
+local function _is_aurify_route()
+  local M = Yso and Yso.mode or nil
+  if type(M) ~= "table" then
+    return false
+  end
+  if type(M.is_party) == "function" then
+    local ok, v = pcall(M.is_party)
+    if ok and v == true then
+      return false
+    end
+  end
+  if type(M.active_route_id) == "function" then
+    local ok, v = pcall(M.active_route_id)
+    local id = ok and _lc(v) or ""
+    if id ~= "" and id ~= "none" and id ~= "alchemist_aurify_route" then
+      return false
+    end
+  end
+  if type(M.route_loop_active) == "function" then
+    local ok, v = pcall(M.route_loop_active, "alchemist_aurify_route")
+    if ok and v ~= true then
+      return false
+    end
+  end
+  return true
+end
+
+local function _make_payload(tgt, category, reason)
+  return {
+    route = "alchemist_aurify_route",
+    target = tgt,
+    category = category,
+    reason = reason,
+    lanes = {},
+    free = nil,
+    eq = nil,
+    bal = nil,
+    class = nil,
+    class_category = nil,
+    direct_order = nil,
+  }
+end
+
+local function _set_lane(payload, lane, cmd)
+  cmd = _trim(cmd)
+  if cmd == "" then
+    return
+  end
+  if lane == "free" then
+    if payload.free == nil then
+      payload.free = cmd
+    elseif type(payload.free) == "table" then
+      payload.free[#payload.free + 1] = cmd
+    else
+      payload.free = { payload.free, cmd }
+    end
+    return
+  end
+  payload[lane] = cmd
+  payload.lanes[lane] = cmd
+end
+
+local function _ensure_homunculus_attack(R, tgt)
+  tgt = _trim(tgt)
+  if tgt == "" then return nil end
+
+  if type(Yso.homunculus_attack) == "function" and Yso.homunculus_attack(tgt) then
+    return nil
+  end
+
+  R.state = R.state or {}
+
+  if R.state.homunculus_attack_target ~= tgt then
+    R.state.homunculus_attack_target = tgt
+    R.state.homunculus_attack_sent = false
+  end
+
+  if R.state.homunculus_attack_sent == true then
+    return nil
+  end
+
+  R.state.homunculus_attack_sent = true
+
+  if type(Yso.set_homunculus_attack) == "function" then
+    Yso.set_homunculus_attack(true, tgt)
+  end
+
+  return "homunculus attack " .. tgt
+end
+
+local function _homunculus_pacify_on_stop(R)
+  R.state = R.state or {}
+  if type(send) == "function" then
+    pcall(send, "homunculus pacify", false)
+  end
+  if type(Yso.set_homunculus_attack) == "function" then
+    Yso.set_homunculus_attack(false)
+  end
+  R.state.homunculus_attack_sent = false
+  R.state.homunculus_attack_target = ""
+end
+
+local function _clear_route_owned_queues(reason)
+  local Q = Yso and Yso.queue or nil
+  local lanes = { "class", "eq", "bal", "free" }
+  reason = tostring(reason or "route_reset")
+
+  if Q then
+    for i = 1, #lanes do
+      local lane = lanes[i]
+      if type(Q.clear) == "function" then
+        pcall(Q.clear, lane)
+      end
+      if type(Q.clear_owned) == "function" then
+        pcall(Q.clear_owned, lane)
+      end
+      if type(Q.clear_lane_dispatched) == "function" and lane ~= "free" then
+        pcall(Q.clear_lane_dispatched, lane, reason)
+      end
+    end
+  end
+end
+
+local function _self_purge_candidate(R)
+  if not _eq_ready() then return nil end
+
+  if _self_has("stupidity") then
+    return nil, "salt_blocked_by_stupidity"
+  end
+
+  local now = _now()
+  local last = tonumber(R.state.last_salt_at or 0) or 0
+  local cd = tonumber(R.cfg.salt_cooldown_s or 3.2) or 3.2
+  if (now - last) < cd then
+    return nil
+  end
+
+  local aff_count = _self_aff_count()
+  local min_aff = tonumber(R.cfg.salt_min_affs or 2) or 2
+  if aff_count >= min_aff then
+    return "educe salt", "salt_self_purge"
+  end
+
+  return nil
+end
+
+local function _vitrification_active(P, tgt)
+  if type(P.alchemy_debuff_active) == "function" then
+    local active, kind = P.alchemy_debuff_active(tgt)
+    return active == true and _lc(kind) == "vitrification"
+  end
+  return false
+end
+
+local function _note_wrack_result(R, cmd, why)
+  if _trim(cmd) ~= "" then return end
+  why = _trim(why)
+  if why == "" then return end
+  R.state = R.state or {}
+  R.state.template = R.state.template or {}
+  R.state.template.last_no_wrack_reason = why
+  R.state.explain = R.state.explain or {}
+  R.state.explain.last_no_wrack_reason = why
+end
+
+local _pressure_humours = { "choleric", "melancholic", "sanguine", "phlegmatic" }
+local _pressure_tactical_weight = {
+  choleric = 7,
+  melancholic = 7,
+  sanguine = 5,
+  phlegmatic = 2,
+}
+
+local function _humour_counts(P, tgt)
+  local out = {
+    choleric = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "choleric") or 0) or 0,
+    melancholic = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "melancholic") or 0) or 0,
+    phlegmatic = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "phlegmatic") or 0) or 0,
+    sanguine = tonumber(type(P.current_humour_count) == "function" and P.current_humour_count(tgt, "sanguine") or 0) or 0,
+  }
+  for _, humour in ipairs(_pressure_humours) do
+    if out[humour] < 0 then out[humour] = 0 end
+    if out[humour] > 8 then out[humour] = 8 end
+  end
+  return out
+end
+
+local function _pressure_state(R, tgt)
+  R.state = R.state or {}
+  R.state.humour_pressure = R.state.humour_pressure or {}
+  local st = R.state.humour_pressure
+  st.target = _trim(st.target)
+  st.focus = _trim(st.focus)
+  st.focus_goal = tonumber(st.focus_goal or 3) or 3
+  st.last_focus_at = tonumber(st.last_focus_at or 0) or 0
+  st.last_eval_at = tonumber(st.last_eval_at or 0) or 0
+  st.roll = tonumber(st.roll or 0) or 0
+  st.recent_humours = type(st.recent_humours) == "table" and st.recent_humours or {}
+  if tgt ~= "" and not _same_target(st.target, tgt) then
+    st.target = tgt
+    st.focus = ""
+    st.recent_humours = {}
+    st.roll = 0
+    st.last_focus_at = _now()
+  end
+  return st
+end
+
+local function _clear_pressure_state(R, tgt)
+  R.state = R.state or {}
+  local target = _trim(tgt or "")
+  R.state.humour_pressure = {
+    target = target,
+    focus = "",
+    focus_goal = 3,
+    last_focus_at = _now(),
+    last_eval_at = 0,
+    recent_humours = {},
+    roll = 0,
+  }
+end
+
+local function _weighted_pick(st, weights)
+  local total = 0
+  for _, humour in ipairs(_pressure_humours) do
+    local w = tonumber(weights[humour] or 0) or 0
+    if w > 0 then
+      total = total + w
+    end
+  end
+  if total <= 0 then
+    return nil
+  end
+  st.roll = (tonumber(st.roll or 0) or 0) + 1
+  local seed = math.floor((_now() * 1000) + st.roll * 37)
+  local roll = (seed % total) + 1
+  local acc = 0
+  for _, humour in ipairs(_pressure_humours) do
+    local w = tonumber(weights[humour] or 0) or 0
+    if w > 0 then
+      acc = acc + w
+      if roll <= acc then
+        return humour
+      end
+    end
+  end
+  return nil
+end
+
+local function _choose_focus_humour(R, P, tgt, counts)
+  local st = _pressure_state(R, tgt)
+  local focus_goal = math.max(1, tonumber(st.focus_goal or 3) or 3)
+  local current_focus = _lc(st.focus)
+  local current_count = tonumber(counts[current_focus] or 0) or 0
+
+  if current_focus ~= "" and current_count < focus_goal and current_count < 8 then
+    return current_focus, "focus_sticky"
+  end
+
+  local weights = {}
+  for _, humour in ipairs(_pressure_humours) do
+    local count = tonumber(counts[humour] or 0) or 0
+    local weight = 0
+    if count < 8 then
+      weight = _pressure_tactical_weight[humour] or 1
+      if count < focus_goal then
+        weight = weight + ((focus_goal - count) * 8)
+      elseif count >= 6 then
+        weight = weight - 5
+      end
+      local last_recent = _lc(st.recent_humours[1] or "")
+      if last_recent ~= "" and last_recent == humour and count >= focus_goal then
+        weight = weight - 4
+      end
+      if _vitrification_active(P, tgt) and humour == "sanguine" and count < 6 then
+        weight = weight + 3
+      end
+    end
+    weights[humour] = math.max(0, math.floor(weight))
+  end
+
+  local picked = _weighted_pick(st, weights)
+  if not picked then
+    picked = "choleric"
+  end
+
+  if current_focus ~= "" and current_focus ~= picked then
+    table.insert(st.recent_humours, 1, current_focus)
+    while #st.recent_humours > 4 do
+      table.remove(st.recent_humours)
+    end
+  end
+
+  st.focus = picked
+  st.last_focus_at = _now()
+  return picked, "focus_rotate"
+end
+
+local function _pick_temper_pressure(R, P, tgt, counts)
+  if not _class_ready() then
+    return nil
+  end
+  local focus, why = _choose_focus_humour(R, P, tgt, counts)
+  focus = _lc(focus)
+  if focus == "" then
+    return nil
+  end
+  local count = tonumber(counts[focus] or 0) or 0
+  if count >= 8 then
+    return nil
+  end
+  local reason = (count < 3 and "temper_focus_to_3") or "temper_focus_pressure"
+  if why == "focus_rotate" then
+    reason = "temper_focus_rotate"
+  end
+  return {
+    humour = focus,
+    cmd = "temper " .. tgt .. " " .. focus,
+    reason = reason,
+  }
+end
+
+local function _pool_affs(P, humour)
+  if type(P.humour_to_affs) ~= "table" then
+    return {}
+  end
+  local list = P.humour_to_affs[_lc(humour or "")]
+  return type(list) == "table" and list or {}
+end
+
+local function _missing_aff_arg(P, tgt, humour, staged)
+  if type(P.wrack_arg_candidate) ~= "function" then
+    return nil
+  end
+  local affs = _pool_affs(P, humour)
+  local fallback = nil
+  for i = 1, #affs do
+    local aff = _lc(affs[i])
+    if aff ~= "" then
+      local candidate = P.wrack_arg_candidate(tgt, aff, staged)
+      if candidate and candidate.legal == true then
+        if type(Yso.tgt) == "table" and type(Yso.tgt.has_aff) == "function" then
+          local ok, has = pcall(Yso.tgt.has_aff, tgt, aff)
+          if ok and has ~= true then
+            return candidate
+          end
+        end
+        if not fallback then
+          fallback = candidate
+        end
+      end
+    end
+  end
+  return fallback
+end
+
+local function _pick_humour_arg(P, tgt, humour, staged)
+  if type(P.wrack_arg_candidate) ~= "function" then
+    return nil
+  end
+  local candidate = P.wrack_arg_candidate(tgt, humour, staged)
+  if candidate and candidate.legal == true and candidate.arg_type == "humour" then
+    return candidate
+  end
+  return nil
+end
+
+local function _pick_wrack_pressure(R, P, tgt, focus, staged, counts)
+  if not _bal_ready() then
+    return nil, "bal_not_ready_for_wrack"
+  end
+  if not _can_plan_bal() then
+    return nil, "bal_lane_debounce"
+  end
+
+  local order = {}
+  local seen = {}
+  local first = _lc(focus)
+  if first ~= "" then
+    order[#order + 1] = first
+    seen[first] = true
+  end
+  for _, humour in ipairs(_pressure_humours) do
+    if not seen[humour] then
+      order[#order + 1] = humour
+      seen[humour] = true
+    end
+  end
+
+  local slot_one = nil
+  for _, humour in ipairs(order) do
+    local count = tonumber(counts[humour] or 0) or 0
+    if count <= 8 and not slot_one then
+      slot_one = _pick_humour_arg(P, tgt, humour, staged) or _missing_aff_arg(P, tgt, humour, staged)
+    end
+  end
+
+  if slot_one then
+    for _, humour in ipairs(order) do
+      local count = tonumber(counts[humour] or 0) or 0
+      if count <= 8 and _lc(humour) ~= _lc(slot_one.humour or "") then
+        local slot_two = _pick_humour_arg(P, tgt, humour, staged) or _missing_aff_arg(P, tgt, humour, staged)
+        if slot_two and _lc(slot_two.arg or "") ~= _lc(slot_one.arg or "") then
+          return string.format("truewrack %s %s %s", tgt, tostring(slot_one.arg), tostring(slot_two.arg)), "truewrack_slot_legal"
+        end
+      end
+    end
+    return string.format("wrack %s %s", tgt, tostring(slot_one.arg)), "wrack_slot_legal"
+  end
+
+  return nil, "no_legal_wrack_slot"
+end
+
+local function _pick_execute_inundate(P, tgt, counts)
+  if not _class_ready() then
+    return nil
+  end
+
+  local hp = tonumber(type(P.health_pct) == "function" and P.health_pct(tgt) or nil)
+  local mp = tonumber(type(P.mana_pct) == "function" and P.mana_pct(tgt) or nil)
+  local chol = tonumber((counts and counts.choleric) or 0) or 0
+  local mel = tonumber((counts and counts.melancholic) or 0) or 0
+  local sang = tonumber((counts and counts.sanguine) or 0) or 0
+
+  local function _after(vital, burst)
+    if vital == nil then return nil end
+    local n = vital - burst
+    if n < 0 then n = 0 end
+    return n
+  end
+
+  if chol >= 8 and hp ~= nil then
+    local after = _after(hp, 77)
+    if after and after <= 60 then
+      return { humour = "choleric", cmd = "inundate " .. tgt .. " choleric", reason = "inundate_health_execute", predicted_after_pct = after }
+    end
+  end
+  if chol >= 6 and hp ~= nil then
+    local after = _after(hp, 50)
+    if after and after <= 60 then
+      return { humour = "choleric", cmd = "inundate " .. tgt .. " choleric", reason = "inundate_health_execute", predicted_after_pct = after }
+    end
+  end
+
+  if mel >= 8 and mp ~= nil then
+    local after = _after(mp, 77)
+    if after and after <= 60 then
+      return { humour = "melancholic", cmd = "inundate " .. tgt .. " melancholic", reason = "inundate_mana_execute", predicted_after_pct = after }
+    end
+  end
+  if mel >= 6 and mp ~= nil then
+    local after = _after(mp, 50)
+    if after and after <= 60 then
+      return { humour = "melancholic", cmd = "inundate " .. tgt .. " melancholic", reason = "inundate_mana_execute", predicted_after_pct = after }
+    end
+  end
+
+  if sang >= 6 and _vitrification_active(P, tgt) then
+    local out = {
+      humour = "sanguine",
+      cmd = "inundate " .. tgt .. " sanguine",
+      reason = (sang >= 8) and "inundate_bleed_burst_tbd_8" or "inundate_bleed_burst",
+      estimated_bleeding = 2304,
+    }
+    if sang >= 8 then
+      out.exact_bleeding_unknown = true
+    end
+    return out
+  end
+
+  return nil
+end
+
+local function _pick_useful_inundate(P, tgt, counts)
+  if not _class_ready() then
+    return nil
+  end
+  if type(P.inundate_candidate) == "function" then
+    local cand = P.inundate_candidate(tgt, "alchemist_aurify_route", { mode = "pressure" })
+    if type(cand) == "table" and _trim(cand.cmd) ~= "" then
+      local humour = _lc(cand.humour)
+      local count = tonumber((counts and counts[humour]) or 0) or 0
+      if count >= 6 and count <= 8 then
+        cand.reason = cand.reason or "inundate_useful"
+        return cand
+      end
+    end
+  end
+  if tonumber((counts and counts.choleric) or 0) >= 6 then
+    return { humour = "choleric", cmd = "inundate " .. tgt .. " choleric", reason = "inundate_choleric_pressure" }
+  end
+  if tonumber((counts and counts.melancholic) or 0) >= 6 then
+    return { humour = "melancholic", cmd = "inundate " .. tgt .. " melancholic", reason = "inundate_melancholic_pressure" }
+  end
+  if tonumber((counts and counts.sanguine) or 0) >= 6 and _vitrification_active(P, tgt) then
+    return { humour = "sanguine", cmd = "inundate " .. tgt .. " sanguine", reason = "inundate_sanguine_pressure" }
+  end
+  return nil
+end
+
+local function _target_has_def(tgt, def)
+  tgt = _trim(tgt)
+  def = _lc(def)
+  if tgt == "" or def == "" then
+    return false
+  end
+  if Yso and Yso.tgt and type(Yso.tgt.has_def) == "function" then
+    local ok, v = pcall(Yso.tgt.has_def, tgt, def)
+    if ok and v == true then
+      return true
+    end
+  end
+  local ak = rawget(_G, "ak")
+  if ak and type(ak.defs) == "table" then
+    local by_target = ak.defs[def .. "_by_target"]
+    if type(by_target) == "table" then
+      return by_target[_lc(tgt)] == true
+    end
+  end
+  return false
+end
+
+local function _pick_eq_candidate(R, P, tgt, counts, opts)
+  opts = type(opts) == "table" and opts or {}
+  if _eq_ready() ~= true then
+    return nil, "eq_not_ready"
+  end
+
+  if opts.allow_aurify == true and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
+    return "aurify " .. tgt, "aurify_window", "aurify"
+  end
+
+  if _shielded(tgt) then
+    return "educe copper " .. tgt, "shieldbreak", "educe_copper"
+  end
+
+  local salt_cmd, salt_reason = _self_purge_candidate(R)
+  if salt_cmd then
+    return salt_cmd, salt_reason or "salt_self_purge", "educe_salt"
+  end
+
+  local debuff_active, debuff_kind = false, nil
+  if type(P.alchemy_debuff_active) == "function" then
+    debuff_active, debuff_kind = P.alchemy_debuff_active(tgt)
+  end
+  local can_use_debuff = true
+  if type(P.can_use_alchemy_debuff) == "function" then
+    local ok = P.can_use_alchemy_debuff(tgt)
+    can_use_debuff = ok == true
+  end
+  local sang = tonumber((counts and counts.sanguine) or 0) or 0
+
+  if can_use_debuff and not (debuff_active == true and _lc(debuff_kind) == "vitrification") and sang < 8 then
+    return "vitrify " .. tgt, "vitrify_pressure", "vitrify"
+  end
+  if can_use_debuff and not (debuff_active == true and _lc(debuff_kind) == "phlogistication") then
+    return "phlogisticate " .. tgt, "phlogistication_pressure", "phlogisticate"
+  end
+
+  if _target_has_def(tgt, "shroud") then
+    return "educe silver " .. tgt, "anti_shroud", "educe_silver"
+  end
+  if _target_has_def(tgt, "flying") then
+    return "educe lead " .. tgt, "anti_fly", "educe_lead"
+  end
+
+  return "educe iron " .. tgt, "eq_filler", "educe_iron"
+end
+
+local function _homunculus_ready()
+  if Yso.alc and type(Yso.alc.homunculus_ready) == "function" then
+    local ok, v = pcall(Yso.alc.homunculus_ready)
+    if ok then
+      return v == true
+    end
+  end
+  return Yso and Yso.bal and Yso.bal.homunculus ~= false
+end
+
+local function _corrupt_candidate(P, tgt)
+  if _homunculus_ready() ~= true then
+    return nil
+  end
+  if type(P.corruption_active) == "function" and P.corruption_active(tgt) == true then
+    return nil
+  end
+  return "homunculus corrupt " .. tgt
+end
+
+local function _build_direct_order(payload, shield_order)
+  local order = {}
+
+  local function add_cmd(cmd)
+    cmd = _trim(cmd)
+    if cmd ~= "" then
+      order[#order + 1] = cmd
+    end
+  end
+
+  if type(payload.free) == "table" then
+    for i = 1, #payload.free do
+      add_cmd(payload.free[i])
+    end
+  else
+    add_cmd(payload.free)
+  end
+
+  if shield_order == true then
+    add_cmd(payload.eq)
+    add_cmd(payload.class)
+    add_cmd(payload.bal)
+  else
+    add_cmd(payload.class)
+    add_cmd(payload.eq)
+    add_cmd(payload.bal)
+  end
+
+  if #order > 0 then
+    payload.direct_order = order
+  end
+end
+
+local function _queue_verb_name(value, default)
+  local verb = _lc(value)
+  if verb == "" then verb = _lc(default) end
+  if verb == "addclear_full" or verb == "clearfull" then return "addclearfull" end
+  if verb == "clear" then return "addclear" end
+  if verb == "add" or verb == "addclear" or verb == "addclearfull" then return verb end
+  return _lc(default)
+end
+
+local function _class_combo_queue_verb()
+  return _queue_verb_name(AR.cfg and AR.cfg.class_combo_queue_verb, "add")
+end
+
+local function _instant_kill_queue_verb()
+  local verb = _queue_verb_name(AR.cfg and AR.cfg.instant_kill_queue_verb, "addclearfull")
+  if verb ~= "addclear" and verb ~= "addclearfull" then
+    verb = "addclearfull"
+  end
+  return verb
+end
+
+local function _fold_class_combo(payload, tgt)
+  if type(payload) ~= "table" or payload.class_category ~= "temper" then return false end
+  local class_cmd = _trim(payload.class)
+  local eq_cmd = _trim(payload.eq)
+  local bal_cmd = _trim(payload.bal)
+  if class_cmd == "" or eq_cmd == "" or bal_cmd == "" then return false end
+
+  payload.class = table.concat({
+    class_cmd,
+    "evaluate " .. _trim(tgt) .. " humours",
+    eq_cmd,
+    bal_cmd,
+  }, _sep())
+  payload.eq = nil
+  payload.bal = nil
+  payload.class_combo = true
+  payload.queue_verb = _class_combo_queue_verb()
+  payload.qtype = "c"
+  _build_direct_order(payload, false)
+  return true
+end
+
+local function _execute_lane(payload)
+  if type(payload) ~= "table" then return nil end
+  if payload.category == "aurify" then return "eq" end
+  if payload.category == "reave" then return "class" end
+  return nil
+end
+
+local function _execute_qtype(lane)
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.qtype_for_lane) == "function" then
+    local qtype = _trim(Q.qtype_for_lane(lane))
+    if qtype ~= "" then return qtype end
+  end
+  return (lane == "class") and "c!p!w!t" or "e!p!w!t"
+end
+
+local function _execute_opts(payload)
+  local lane = _execute_lane(payload)
+  local queue_verb = nil
+  local clearfull_lane = nil
+  local qtype = nil
+  if lane then
+    queue_verb = _instant_kill_queue_verb()
+    clearfull_lane = (queue_verb == "addclearfull") and lane or nil
+    payload.free = nil
+    payload.queue_verb = queue_verb
+    payload.clearfull_lane = clearfull_lane
+  elseif payload and payload.class_combo == true then
+    queue_verb = _class_combo_queue_verb()
+    qtype = "c"
+    payload.queue_verb = queue_verb
+    payload.qtype = qtype
+  end
+  return {
+    reason = "alchemist_aurify_route:" .. tostring(payload.category or "action"),
+    kind = "offense",
+    commit = true,
+    route = "alchemist_aurify_route",
+    target = payload.target,
+    allow_eqbal = true,
+    queue_verb = queue_verb,
+    clearfull_lane = clearfull_lane,
+    qtype = qtype,
+  }
+end
+
+local function _send_execute_addclearfull(payload)
+  local lane = _execute_lane(payload)
+  if not lane then return nil end
+  payload.free = nil
+  local cmd = _trim(payload[lane])
+  if cmd == "" then return false end
+
+  local Q = Yso and Yso.queue or nil
+  local opts = _execute_opts(payload)
+  local queue_verb = opts.queue_verb or "addclearfull"
+  if Q and type(Q.install_lane) == "function" then
+    local ok = Q.install_lane(lane, cmd, opts)
+    if ok == true then
+      if type(Q.mark_lane_dispatched) == "function" and lane ~= "free" then
+        pcall(Q.mark_lane_dispatched, lane, queue_verb)
+      end
+      if type(Q.mark_payload_fired) == "function" then
+        pcall(Q.mark_payload_fired, { [lane] = cmd, target = payload.target })
+      end
+      return true
+    end
+    return false
+  end
+
+  if queue_verb == "addclear" and Q and type(Q.addclear) == "function" then
+    return Q.addclear(_execute_qtype(lane), cmd) == true
+  end
+
+  if Q and type(Q.addclearfull) == "function" then
+    return Q.addclearfull(_execute_qtype(lane), cmd) == true
+  end
+
+  if type(send) == "function" then
+    local raw_verb = (queue_verb == "addclear") and "ADDCLEAR" or "ADDCLEARFULL"
+    return pcall(send, ("QUEUE %s %s %s"):format(raw_verb, _execute_qtype(lane), cmd), false) == true
+  end
+  return false
+end
+
+local function _post_send(payload)
+  local P = _phys()
+  local tgt = _trim(payload and payload.target or "")
+  if payload and payload.class_category == "temper" and Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+    Yso.alc.set_humour_ready(false, "temper_sent")
+  elseif payload and payload.class_category == "inundate" then
+    if Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+      Yso.alc.set_humour_ready(false, "inundate_sent")
+    end
+    if P and type(P.clear_all_humours) == "function" and tgt ~= "" then
+      P.clear_all_humours(tgt, "inundate_sent")
+    end
+  elseif payload and payload.category == "reave" and Yso.alc and type(Yso.alc.set_humour_ready) == "function" then
+    Yso.alc.set_humour_ready(false, "reave_sent")
+  end
+
+  if payload and _lc(payload.eq or "") == "educe salt" then
+    AR.state.last_salt_at = _now()
+  end
+end
+
+local function _emit_payload(payload)
+  local P = _phys()
+  local execute_lane = _execute_lane(payload)
+
+  if payload.category == "reave" and P and type(P.fire_reave) == "function" then
+    local ok, fired = pcall(P.fire_reave, payload.target, payload.reave_profile, _execute_opts(payload))
+    if ok and fired == true then
+      _post_send(payload)
+      return true
+    end
+    return false
+  end
+
+  if not execute_lane and type(payload.direct_order) == "table" and #payload.direct_order > 0 and not _use_queueing_enabled() and type(send) == "function" then
+    local line = table.concat(payload.direct_order, _sep())
+    if _trim(line) ~= "" and pcall(send, line, false) == true then
+      _post_send(payload)
+      return true
+    end
+    return false
+  end
+
+  if type(Yso.emit) == "function" then
+    local ok = (Yso.emit(payload, _execute_opts(payload)) == true)
+    if ok then
+      _post_send(payload)
+    end
+    return ok
+  end
+
+  local Q = Yso and Yso.queue or nil
+  if Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
+    if payload.free then Q.stage("free", payload.free, { route = "alchemist_aurify_route", target = payload.target }) end
+    if payload.eq then Q.stage("eq", payload.eq, { route = "alchemist_aurify_route", target = payload.target }) end
+    if payload.class then Q.stage("class", payload.class, { route = "alchemist_aurify_route", target = payload.target }) end
+    if payload.bal then Q.stage("bal", payload.bal, { route = "alchemist_aurify_route", target = payload.target }) end
+    local ok = Q.commit(_execute_opts(payload))
+    if ok == true then
+      _post_send(payload)
+    end
+    return ok == true
+  end
+
+  if execute_lane then
+    local ok = _send_execute_addclearfull(payload)
+    if ok == true then
+      _post_send(payload)
+    end
+    return ok == true
+  end
+
+  if type(payload.direct_order) == "table" and #payload.direct_order > 0 and type(send) == "function" then
+    local line = table.concat(payload.direct_order, _sep())
+    if _trim(line) ~= "" and pcall(send, line, false) == true then
+      _post_send(payload)
+      return true
+    end
+  end
+
+  return false
+end
+
+local function _select_payload(ctx)
+  AR.init()
+
+  local P = _phys()
+  if not P then
+    return nil, "phys_unavailable"
+  end
+
+  local tgt = _trim((ctx and ctx.target) or _target())
+  if type(P.reave_sync_target) == "function" then
+    pcall(P.reave_sync_target, tgt, "aurify_select")
+  end
+  if tgt == "" then
+    return nil, "no_target"
+  end
+  if not _target_valid(tgt) then
+    return nil, "invalid_target"
+  end
+
+  local counts = _humour_counts(P, tgt)
+  local st = _pressure_state(AR, tgt)
+  local free_bootstrap = _ensure_homunculus_attack(AR, tgt)
+  local free_corrupt = _corrupt_candidate(P, tgt)
+
+  local needs_eval = (type(P.target_needs_evaluate) == "function") and (P.target_needs_evaluate(tgt) == true) or false
+  if needs_eval then
+    if _evaluate_ready() and not _evaluate_pending_for(tgt) then
+      local payload = _make_payload(tgt, "evaluate", "humour_intel_dirty")
+      if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+      _set_lane(payload, "free", "evaluate " .. tgt .. " humours")
+      if type(P.note_evaluate_request) == "function" then
+        local noted = P.note_evaluate_request(tgt, "route")
+        if noted ~= true then
+          return nil, "evaluate_duplicate"
+        end
+      end
+      _build_direct_order(payload, false)
+      return payload, payload.reason
+    end
+    if _evaluate_pending_for(tgt) then
+      return nil, "evaluate_pending"
+    end
+    return nil, "evaluate_not_ready"
+  end
+
+  if _eq_ready() and not _shielded(tgt) and type(P.can_aurify) == "function" and P.can_aurify(tgt) then
+    local payload = _make_payload(tgt, "aurify", "aurify_window")
+    _set_lane(payload, "eq", "aurify " .. tgt)
+    _build_direct_order(payload, false)
+    return payload, payload.reason
+  end
+
+  if AR.cfg.allow_reave == true and type(P.can_reave) == "function" then
+    local can_reave, profile = P.can_reave(tgt)
+    if can_reave == true then
+      local payload = _make_payload(tgt, "reave", "reave_window")
+      _set_lane(payload, "class", "reave " .. tgt)
+      payload.class_category = "reave"
+      payload.reave_profile = profile
+      _build_direct_order(payload, false)
+      return payload, payload.reason
+    end
+  end
+
+  local inundate = _pick_execute_inundate(P, tgt, counts) or _pick_useful_inundate(P, tgt, counts)
+  if inundate then
+    local payload = _make_payload(tgt, "burst", inundate.reason or "inundate_useful")
+    if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+    _set_lane(payload, "class", inundate.cmd)
+    payload.class_category = "inundate"
+    payload.reason = inundate.reason or payload.reason
+    _build_direct_order(payload, false)
+    return payload, payload.reason
+  end
+
+  local payload = _make_payload(tgt, free_corrupt and "corrupt" or "pressure", free_corrupt and "corruption_candidate" or "pressure")
+  if free_bootstrap then _set_lane(payload, "free", free_bootstrap) end
+  if free_corrupt then _set_lane(payload, "free", free_corrupt) end
+
+  local staged = nil
+  local temper = _pick_temper_pressure(AR, P, tgt, counts)
+  if temper then
+    _set_lane(payload, "class", temper.cmd)
+    payload.class_category = "temper"
+    payload.reason = temper.reason
+    staged = { temper_humour = temper.humour }
+    st.focus = temper.humour
+  end
+
+  local eq_cmd, eq_reason = _pick_eq_candidate(AR, P, tgt, counts, { allow_aurify = false })
+  if _trim(eq_cmd) ~= "" then
+    _set_lane(payload, "eq", eq_cmd)
+    if payload.reason == "pressure" and _trim(eq_reason) ~= "" then
+      payload.reason = eq_reason
+    end
+  end
+
+  local bal_cmd, bal_reason = _pick_wrack_pressure(AR, P, tgt, st.focus, staged, counts)
+  if bal_cmd then
+    _set_lane(payload, "bal", bal_cmd)
+  else
+    _note_wrack_result(AR, bal_cmd, bal_reason)
+  end
+
+  _fold_class_combo(payload, tgt)
+  _build_direct_order(payload, false)
+  if not payload.eq and not payload.class and not payload.bal and not payload.free then
+    return nil, "no_legal_action"
+  end
+  return payload, payload.reason
+end
+
+function AR.init()
+  AR.cfg = AR.cfg or {}
+  AR.state = AR.state or {}
+  AR.state.waiting = AR.state.waiting or { queue = nil, main_lane = nil, lanes = nil, at = 0 }
+  AR.state.last_attack = AR.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil }
+  AR.state.template = AR.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
+  AR.state.explain = AR.state.explain or {}
+  AR.state.loop_enabled = (AR.state.loop_enabled == true)
+  AR.state.enabled = (AR.state.enabled == true)
+  AR.state.busy = (AR.state.busy == true)
+  AR.state.homunculus_attack_sent = (AR.state.homunculus_attack_sent == true)
+  AR.state.homunculus_attack_target = _trim(AR.state.homunculus_attack_target)
+  AR.state.last_salt_at = tonumber(AR.state.last_salt_at or 0) or 0
+  _pressure_state(AR, _target())
+  AR.cfg.loop_delay = tonumber(AR.cfg.loop_delay or 0.15) or 0.15
+  AR.cfg.class_combo_queue_verb = _class_combo_queue_verb()
+  AR.cfg.instant_kill_queue_verb = _instant_kill_queue_verb()
+
+  if RI and type(RI.ensure_hooks) == "function" then
+    RI.ensure_hooks(AR, AR.route_contract)
+  end
+  if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == "function" then
+    pcall(Yso.off.core.register, "alchemist_aurify_route", AR)
+  end
+  return true
+end
+
+function AR.is_active()
+  if not _is_alchemist() then
+    return false
+  end
+  if AR.cfg.enabled ~= true or AR.state.enabled ~= true or AR.state.loop_enabled ~= true then
+    return false
+  end
+  if type(Yso.offense_paused) == "function" then
+    local ok, v = pcall(Yso.offense_paused)
+    if ok and v == true then
+      return false
+    end
+  end
+  return _is_aurify_route()
+end
+
+function AR.reset_route_state(reason, target)
+  AR.init()
+  reason = tostring(reason or "reset")
+  target = _trim(target or "")
+
+  local P = _phys()
+  AR.state.busy = false
+  AR.alias_loop_clear_waiting()
+  AR.state.homunculus_attack_sent = false
+  AR.state.homunculus_attack_target = ""
+  AR.state.last_attack = { at = 0, target = "", main_lane = nil, lanes = nil, cmd = "" }
+  _clear_pressure_state(AR, "")
+
+  AR.state.template = AR.state.template or {}
+  AR.state.template.last_reset_reason = reason
+  AR.state.template.last_reset_target = target
+  AR.state.template.last_payload = nil
+  AR.state.template.last_target = ""
+  AR.state.template.last_reason = reason
+  AR.state.explain = { target = target, reason = reason }
+
+  if P and type(P.reave_sync_target) == "function" then
+    pcall(P.reave_sync_target, "", reason)
+  end
+  if P and type(P.clear_staged_for_target) == "function" and target ~= "" then
+    pcall(P.clear_staged_for_target, target, reason)
+  end
+  if P and type(P.clear_corruption) == "function" and target ~= "" then
+    pcall(P.clear_corruption, target, reason)
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    pcall(P.clear_pending_class, reason, { clear_any = true, clear_staged = true })
+  end
+  if P and P.state and type(P.state.evaluate) == "table" then
+    P.state.evaluate.active = false
+    P.state.evaluate.target = ""
+    P.state.evaluate.requested_at = 0
+    P.state.evaluate.started_at = 0
+  end
+  _clear_route_owned_queues(reason)
+  return true
+end
+
+function AR.alias_loop_prepare_start(ctx)
+  ctx = ctx or {}
+  AR.reset_route_state(tostring(ctx.reason or "prepare_start"), _target())
+  return ctx
+end
+
+function AR.alias_loop_on_started(ctx)
+  ctx = ctx or {}
+  AR.reset_route_state(tostring(ctx.reason or "loop_started"), _target())
+  _echo("Alchemist aurify route loop ON.")
+end
+
+function AR.alias_loop_on_stopped(ctx)
+  ctx = ctx or {}
+  local P = _phys()
+  local tgt = _trim((AR.state and AR.state.last_attack and AR.state.last_attack.target) or _target())
+  if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
+    P.clear_staged_for_target(tgt, tostring(ctx.reason or "loop_stopped"))
+  end
+  if P and type(P.clear_corruption) == "function" and tgt ~= "" then
+    P.clear_corruption(tgt, tostring(ctx.reason or "loop_stopped"))
+  end
+  if P and type(P.clear_pending_class) == "function" then
+    P.clear_pending_class("loop_stopped", { clear_any = true, clear_staged = true })
+  end
+  if P and P.state and type(P.state.evaluate) == "table" then
+    P.state.evaluate.active = false
+    P.state.evaluate.target = ""
+    P.state.evaluate.requested_at = 0
+    P.state.evaluate.started_at = 0
+  end
+  _clear_route_owned_queues(tostring(ctx.reason or "loop_stopped"))
+  _homunculus_pacify_on_stop(AR)
+  if ctx.silent ~= true then
+    _echo(string.format("Alchemist aurify route loop OFF (%s).", tostring(ctx.reason or "manual")))
+  end
+end
+
+function AR.alias_loop_clear_waiting()
+  AR.state.waiting = AR.state.waiting or {}
+  AR.state.waiting.queue = nil
+  AR.state.waiting.main_lane = nil
+  AR.state.waiting.lanes = nil
+  AR.state.waiting.at = 0
+end
+
+function AR.alias_loop_waiting_blocks()
+  return false
+end
+
+AR.alias_loop_stop_details = AR.alias_loop_stop_details or {
+  no_target = true,
+  invalid_target = true,
+  wrong_class = true,
+  route_inactive = true,
+}
+
+function AR.build_payload(ctx)
+  return _select_payload(ctx or {})
+end
+
+function AR.attack_function(ctx)
+  AR.init()
+  if not AR.is_active() then
+    local P = _phys()
+    local tgt = _trim((AR.state and AR.state.last_attack and AR.state.last_attack.target) or _target())
+    if P and type(P.reave_sync_target) == "function" then
+      pcall(P.reave_sync_target, "", "route_inactive")
+    end
+    if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
+      P.clear_staged_for_target(tgt, "route_inactive")
+    end
+    return false, "route_inactive"
+  end
+
+  local payload, why = AR.build_payload(ctx)
+  if not payload then
+    AR.state.template.last_reason = why or "no_legal_action"
+    return false, why
+  end
+
+  local sent = _emit_payload(payload)
+  if sent ~= true then
+    return false, "send_failed"
+  end
+
+  local cmd = (type(payload.direct_order) == "table" and table.concat(payload.direct_order, _sep()))
+    or payload.class or payload.eq or payload.bal or payload.free or ""
+
+  AR.state.last_attack = AR.state.last_attack or {}
+  AR.state.last_attack.at = _now()
+  AR.state.last_attack.target = _trim(payload.target)
+  AR.state.last_attack.main_lane = payload.class and "class" or (payload.eq and "eq" or (payload.bal and "bal" or "free"))
+  AR.state.last_attack.lanes = payload.lanes
+  AR.state.last_attack.cmd = cmd
+
+  AR.state.template = AR.state.template or {}
+  AR.state.template.last_payload = payload
+  AR.state.template.last_target = payload.target
+  AR.state.template.last_reason = payload.reason
+
+  AR.state.explain = {
+    target = payload.target,
+    category = payload.category,
+    reason = payload.reason,
+    eq = payload.eq,
+    class = payload.class,
+    bal = payload.bal,
+    free = payload.free,
+    direct_order = payload.direct_order,
+    focus = _trim(((AR.state or {}).humour_pressure or {}).focus or ""),
+  }
+
+  return true, AR.state.last_attack.main_lane
+end
+
+function AR.start(reason)
+  AR.init()
+  AR.cfg.enabled = true
+  AR.state.enabled = true
+  AR.state.loop_enabled = true
+  AR.reset_route_state(tostring(reason or "start"), _target())
+  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
+    pcall(Yso.mode.schedule_route_loop, "alchemist_aurify_route", 0)
+  end
+  return true
+end
+
+function AR.stop(reason)
+  AR.init()
+  local P = _phys()
+  local tgt = _trim((AR.state and AR.state.last_attack and AR.state.last_attack.target) or _target())
+  if P and type(P.reave_sync_target) == "function" then
+    pcall(P.reave_sync_target, "", "route_stop")
+  end
+  if P and type(P.clear_staged_for_target) == "function" and tgt ~= "" then
+    P.clear_staged_for_target(tgt, tostring(reason or "manual_stop"))
+  end
+  if P and type(P.clear_corruption) == "function" and tgt ~= "" then
+    P.clear_corruption(tgt, tostring(reason or "route_stop"))
+  end
+  if P and P.state and type(P.state.evaluate) == "table" then
+    P.state.evaluate.active = false
+    P.state.evaluate.target = ""
+    P.state.evaluate.requested_at = 0
+    P.state.evaluate.started_at = 0
+  end
+
+  _clear_route_owned_queues(tostring(reason or "route_stop"))
+  _homunculus_pacify_on_stop(AR)
+
+  AR.state.loop_enabled = false
+  AR.state.enabled = false
+  AR.cfg.enabled = false
+  AR.state.busy = false
+  AR.alias_loop_clear_waiting()
+  AR.state.template = AR.state.template or {}
+  AR.state.template.last_disable_reason = tostring(reason or "manual")
+  return true
+end
+
+function AR.on_target_swap(old_target, new_target, reason)
+  local ctx = {}
+  if type(old_target) == "table" then
+    ctx = old_target
+  else
+    ctx.old_target = old_target
+    ctx.new_target = new_target
+    ctx.reason = reason
+  end
+
+  local P = _phys()
+  local old_tgt = _trim(ctx.old_target or ctx.old or "")
+  local new_tgt = _trim(ctx.new_target or ctx.new or _target())
+
+  AR.reset_route_state("target_swap", old_tgt)
+
+  if P and new_tgt ~= "" and type(P.target_needs_evaluate) == "function" and type(P.mark_all_eval_dirty) == "function" then
+    if P.target_needs_evaluate(new_tgt) == true then
+      P.mark_all_eval_dirty(new_tgt, "target_swap")
+    end
+  end
+
+  if AR.state and AR.state.loop_enabled == true and Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == "function" then
+    pcall(Yso.mode.schedule_route_loop, "alchemist_aurify_route", 0)
+  end
+  return true
+end
+
+function AR.evaluate(ctx)
+  local payload, why = AR.build_payload(ctx)
+  if not payload then
+    return { ok = false, reason = why }
+  end
+  return { ok = true, payload = payload, reason = why }
+end
+
+function AR.explain()
+  AR.init()
+  return AR.state.explain or {}
+end
+
+return AR

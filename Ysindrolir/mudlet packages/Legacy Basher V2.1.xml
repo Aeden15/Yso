@@ -1,0 +1,2351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage>
+		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Mob Slain</name>
+			<script>if Legacy.Settings.Basher.status == true then
+  Legacy.Settings.Basher.lastTar = Legacy.Settings.Basher.currentTar
+  Legacy.Settings.Basher.currentTar = ""
+  Legacy.Settings.Basher._attend = nil
+  Legacy.Settings.Basher.shield = false
+  Legacy.Settings.Basher.desc = ""
+  send('ql')
+  if Legacy.Basher.Targets[gmcp.Room.Info.area] then
+    if not table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], matches[2]:lower()) then
+      table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], matches[2]:lower())
+      Legacy.echo("Added '&lt;gold&gt;"..matches[2].."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
+    end
+  else
+    Legacy.Basher.Targets[gmcp.Room.Info.area] = {}
+    table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], matches[2]:lower())
+  end
+  
+  Legacy.Basher.Target()
+end
+  </script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList>
+				<string>^You have slain (.+), retrieving the corpse\.$</string>
+			</regexCodeList>
+			<regexCodePropertyList>
+				<integer>1</integer>
+			</regexCodePropertyList>
+		</Trigger>
+		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Group kill</name>
+			<script>if Legacy.Settings.Basher.status == true then
+  Legacy.Settings.Basher.lastTar = Legacy.Settings.Basher.currentTar
+  Legacy.Settings.Basher.currentTar = ""
+  Legacy.Settings.Basher._attend = nil
+  Legacy.Settings.Basher.shield = false
+  Legacy.Settings.Basher.desc = ""
+  send('ql')
+  Legacy.Basher.Target()
+end
+  </script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList>
+				<string>^.+ been slain by (\w+)\.$</string>
+			</regexCodeList>
+			<regexCodePropertyList>
+				<integer>1</integer>
+			</regexCodePropertyList>
+		</Trigger>
+		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Class switch</name>
+			<script>if Legacy.Basher.Target == nil then
+    Basher_Setup()
+  end
+
+if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] == nil then
+  Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] = {
+    attack      = "",
+    pre         = "",
+  }
+  Legacy.Settings.Basher.Rage()
+end
+
+if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack == "" then
+  Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack = "kill"
+end</script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList>
+				<string>^You are now a member of the (\w+) class\.</string>
+			</regexCodeList>
+			<regexCodePropertyList>
+				<integer>1</integer>
+			</regexCodePropertyList>
+		</Trigger>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Battle Rage</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Rage Ready</name>
+				<script>local str = matches[2]
+local name_table = string.split(str, ", ")
+  send("cq freestand")
+  Legacy.Settings.Basher.queued = false
+
+for _,v in pairs(name_table) do
+  if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class][v:lower()] then
+    Legacy.Settings.Basher.Classes[gmcp.Char.Status.class][v:lower()].available = true
+  end
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^.+ Now Available: (.+)$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Off CD</name>
+				<script>if Legacy.Settings.Basher.status == true then
+  send("cq freestand")
+    Legacy.Settings.Basher.queued = false
+
+  for k,v in pairs(Legacy.Settings.Basher.Classes[gmcp.Char.Status.class]) do
+    if k == matches[2]:lower() then
+      v.available = true
+    end
+  end
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You can use (\w+) again\.</string>
+					<string>^Your (\w+) ability could be used again but you lack the necessary Rage\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Gags</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Common Hunting Gags</name>
+				<script>deleteLine()</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>I see no "gold" to take.</string>
+					<string>You hold no "gold".</string>
+					<string>You are already wielding</string>
+					<string>You must regain equilibrium first.</string>
+					<string>You must regain balance first.</string>
+					<string>You have not lost your composure.</string>
+					<string>Alias "basher" will now execute:</string>
+					<string>[Rage]:</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>3</integer>
+					<integer>3</integer>
+					<integer>2</integer>
+					<integer>3</integer>
+					<integer>3</integer>
+					<integer>3</integer>
+					<integer>2</integer>
+					<integer>2</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Queued True</name>
+				<script>if Legacy then
+Legacy.Settings.Basher.queued = true
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^\[System\]: Added .+ to your \w+ queue\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Queued False</name>
+				<script>if Legacy then
+Legacy.Settings.Basher.queued = false
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>[System]: Running queued </string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>2</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Gold Tracking</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Got Gold check</name>
+				<script>Legacy.Settings.Basher.gotGold = true</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You pick up \d+ gold sovereigns\.$</string>
+					<string>^A .+ spills from the corpse, flying into your hands before they can reach the ground\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Leading a group</name>
+				<script>if Legacy.Settings.Basher.goldtrack == false then return end
+local str = matches[2]..", "..matches[3]
+local name_table = string.split(str, ", ")
+
+Legacy.Settings.Basher.Group = Legacy.Settings.Basher.Group or {}
+--check to add self to group since leading
+if Legacy.Settings.Basher.Group[gmcp.Char.Status.name] == nil then
+  Legacy.Settings.Basher.Group[gmcp.Char.Status.name] = 0
+end
+--add group of people following
+for _,v in pairs(name_table) do
+  if Legacy.Settings.Basher.Group[v:title()] == nil and v ~= "" then
+    Legacy.Settings.Basher.Group[v:title()] = 0
+  end
+end
+
+</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You are leading a group consisting of: (.+) and (\w+)\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>following in a group</name>
+				<script>if Legacy.Settings.Basher.goldtrack == false then return end
+Legacy.Settings.Basher.Group = Legacy.Settings.Basher.Group or {}
+--add leader of group
+if Legacy.Settings.Basher.Group[matches[2]:title()] == nil then
+  Legacy.Settings.Basher.Group[matches[2]:title()] = 0 
+end
+--check to add self to group
+if Legacy.Settings.Basher.Group[gmcp.Char.Status.name] == nil then
+  Legacy.Settings.Basher.Group[gmcp.Char.Status.name] = 0
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>1</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You are in a group led by (\w+)\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Others in Group</name>
+					<script>if Legacy.Settings.Basher.goldtrack == false then return end
+local str = matches[2]..", "..matches[3]
+local name_table = string.split(str, ", ")
+
+Legacy.Settings.Basher.Group = Legacy.Settings.Basher.Group or {}
+
+--Add remainder of group when following a leader
+for _,v in pairs(name_table) do
+  if Legacy.Settings.Basher.Group[v:title()] == nil then
+    Legacy.Settings.Basher.Group[v:title()] = 0
+  end
+end
+</script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string>^Other group members consist of: (.+)\s?(?:and)?\s?(\w+)?\.$</string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>1</integer>
+					</regexCodePropertyList>
+				</Trigger>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Putting gold away</name>
+				<script>--track by gold put away to avoid miscounting dropped gold if died
+if Legacy.Settings.Basher.goldtrack == true and Legacy.Settings.Basher.gotGold == true then
+  deleteLine()
+  Legacy.Settings.Basher.Gold = Legacy.Settings.Basher.Gold + tonumber(matches[2])
+  cecho("\n&lt;b&gt;&lt;white&gt;Picked up &lt;gold&gt;"..math.reint(matches[2]).."&lt;white&gt; gold!&lt;DimGrey&gt; ( &lt;gold&gt;"..math.reint(Legacy.Settings.Basher.Gold).." Gold total&lt;DimGrey&gt; )")
+  Legacy.Settings.Basher.gotGold = false
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You put (\d+) gold sovereigns in .+\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Legacy gold drop</name>
+				<script>--get gold trigger and put away in pack. May need more gold detection lines or more robust detection line</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>5</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>You have slain</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>2</integer>
+				</regexCodePropertyList>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Legacy get gold</name>
+					<script>sendAll("queue add freestand get gold","put gold in "..(Legacy.Settings.Basher.goldContainer or "pack"))</script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string>sovereigns spills from the corpse</string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>0</integer>
+					</regexCodePropertyList>
+				</Trigger>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Legacy gold prompt close</name>
+					<script>setTriggerStayOpen("Legacy gold drop", 0)</script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand></mCommand>
+					<packageName></packageName>
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile></mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string></string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>7</integer>
+					</regexCodePropertyList>
+				</Trigger>
+			</Trigger>
+		</TriggerGroup>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Misc</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Loki Counter</name>
+				<script>Legacy.Settings.Basher.lokiCount = Legacy.Settings.Basher.lokiCount or 0
+
+Legacy.Settings.Basher.lokiCount = Legacy.Settings.Basher.lokiCount + 1
+
+if (tonumber(gmcp.Char.Vitals.hp) == tonumber(gmcp.Char.Vitals.maxhp) and tonumber(gmcp.Char.Vitals.mp) == tonumber(gmcp.Char.Vitals.maxmp)) and Legacy.Settings.Basher.status == true and Legacy.Settings.Basher.lokiCount &gt;= 1 and Legacy.Settings.Basher.Predictions.recklessness == false then send("curing predict recklessness") Legacy.Settings.Basher.Predictions.recklessness = true end
+
+
+if Legacy.Settings.Basher.lokiCount &gt;= 3 then
+  send("cq free")
+  send("queue addclear free diagnose")
+  Legacy.Settings.Basher.lokiCount = 0
+end
+
+if lokiTimer then 
+  killTimer(lokiTimer) 
+  lokiTimer = tempTimer(30, [[Legacy.Settings.Basher.lokiCount = 0]]) 
+else 
+  lokiTimer = tempTimer(30, [[Legacy.Settings.Basher.lokiCount = 0]]) 
+end
+
+tempTimer(4, [[if (Legacy.[gmcp.Char.Status.name].Vitals.Health == Legacy.[gmcp.Char.Status.name].Vitals.MaxHP and Legacy.[gmcp.Char.Status.name].Vitals.Mana == Legacy.[gmcp.Char.Status.name].Vitals.MaxMP then send("curing predict recklessness") end]])</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>You are confused as to the effects of the venom.</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>3</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Loki Counter Reset</name>
+				<script>Legacy.Settings.Basher.lokiCount = 0</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>You are:</string>
+					<string>You are in perfect health.</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>3</integer>
+					<integer>3</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Cleared Target</name>
+				<script>Legacy.Settings.Basher.currentTar = ""</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>Cleared your target.</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>3</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>no target failsafe</name>
+				<script>deleteFull()
+nothingCount = nothingCount or 0
+
+nothingCount = nothingCount + 1
+
+if nothingCount &gt;= 2 and Legacy.Settings.Basher.status and gmcp.IRE.Target.Set ~= "" then
+  send("st "..gmcp.IRE.Target.Set)
+  nothingCount = 0
+  Legacy.Basher.Target()
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>Ahh, I am truly sorry, but I do not see anyone by that name here.</string>
+					<string>I do not recognise anything called that here.</string>
+					<string>Nothing can be seen here by that name.</string>
+					<string>You detect nothing here by that name.</string>
+					<string>You cannot see that being here.</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>3</integer>
+					<integer>3</integer>
+					<integer>3</integer>
+					<integer>3</integer>
+					<integer>3</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>They have FRIENDS</name>
+				<script>deleteFull()
+Legacy.Settings.Basher.frenemies = Legacy.Settings.Basher.frenemies or {}
+
+table.insert(Legacy.Settings.Basher.frenemies, "&lt;gold&gt;"..matches[2].." is also attacking you!")
+  </script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^(.+) springs to .+ defence\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Balance Recovery Basher</name>
+				<script>if Legacy then
+if Legacy.Settings.Basher.status == true then
+  Legacy.Settings.Basher.queued = false
+  attacked = false
+end
+if table.size(Legacy.Settings.Basher.frenemies) &gt; 0 then
+cecho("\n&lt;red&gt;-------------&lt;white&gt;"..Legacy.Settings.Basher.desc:upper().." HAS FRIENDS&lt;red&gt;-------------")
+cecho("\n"..table.concat(Legacy.Settings.Basher.frenemies, "\n&lt;gold&gt;"))
+cecho("\n&lt;red&gt;-------------")
+i = 0
+while i &lt; #Legacy.Settings.Basher.desc + 12 do
+cecho("&lt;red&gt;-")
+i = i + 1
+end
+cecho("&lt;red&gt;-------------")
+end
+Legacy.Settings.Basher.frenemies = {}
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>You have recovered balance on all limbs.</string>
+					<string>You have recovered equilibrium.</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>3</integer>
+					<integer>3</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Rewrites</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Target rewrite</name>
+				<script>if Legacy.Settings.Basher.status == true and Legacy.Settings.Basher.desc ~= "" and matches[2] ~= Legacy.Settings.Basher.lastTar then
+  deleteFull()
+  cecho("\n"..[[
+&lt;ansiLightBlue&gt;---------------------------------------------------------
+    ]].."&lt;spring_green&gt;Targeting ==&gt; &lt;gold&gt;"..Legacy.Settings.Basher.desc:upper().." &lt;DimGrey&gt;(&lt;gold&gt;"..matches[2].."&lt;DimGrey&gt;)"..[[ 
+&lt;ansiLightBlue&gt;---------------------------------------------------------]])
+if tarcall then
+  send("pt Target: "..gmcp.IRE.Target.Info.id)
+  end
+elseif matches[2] == Legacy.Settings.Basher.lastTar then
+  deleteFull()
+else
+deleteFull()
+  cecho("\n"..[[
+&lt;ansiLightBlue&gt;---------------------------------------------------------
+    ]].."&lt;spring_green&gt;Targeting ==&gt; &lt;gold&gt;"..matches[2]..[[ 
+&lt;ansiLightBlue&gt;---------------------------------------------------------]])
+end
+Legacy.Settings.Basher.lastTar = matches[2]</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^Your target is now: (.+) \(a denizen\)$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Predict afflictions</name>
+				<script>deleteFull()
+local aff = matches[2]:lower()
+cecho("\n&lt;white&gt;[&lt;gold&gt;Predicted&lt;white&gt;]: &lt;green&gt;"..matches[2]:upper())
+Legacy.Settings.Basher.Predictions = Legacy.Settings.Basher.Predictions or {}
+
+Legacy.Settings.Basher.Predictions[aff:lower()] = true
+
+tempTimer(10, function() Legacy.Settings.Basher.Predictions[aff:lower()] = false end)</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You have added the (\w+) affliction to your predicted afflictions list\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Rainbow Crit</name>
+				<script>if Legacy.Settings.Basher.rainbows == true then
+deleteLine()
+selectCurrentLine()
+hecho(rainbow("\n"..matches[1].."!"))
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You have scored (a|an) ([A-Z-\s]+) hit!!?!?$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Shield</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Shield False</name>
+				<script>if Legacy.Settings.Basher.status == true then
+  Legacy.Settings.Basher.shield = false
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^You mix together the ingredients of the caustic chemical and fling it at .+,watching as it is consumed\.$</string>
+					<string>^Your rage is wasted as .+ is not protected by a shield\.$</string>
+					<string>^You focus your rage in a single powerful sidekick, shattering .+ translucent shield\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+					<integer>1</integer>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Shield True</name>
+				<script>if Legacy.Settings.Basher.status ~= true then return end
+
+local shield_target = tostring(matches[2] or "")
+
+local class = tostring(gmcp.Char.Status.class or "")
+local class_cfg = Legacy.Settings.Basher.Classes[class] or {}
+local used = false
+
+send("cq freestand")
+Legacy.Settings.Basher.shield = true
+
+local function _is_denizen_target()
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info or nil
+  if type(info) ~= "table" then return false end
+  local npc = info.npc
+  if npc == true or npc == 1 or tostring(npc) == "1" or tostring(npc):lower() == "true" then return true end
+  local t = tostring(info.type or ""):lower()
+  return (t == "denizen" or t == "npc")
+end
+
+local function _lycantha_primebond_active()
+  if not (Yso and Yso.primebond and type(Yso.primebond.bonds) == "table") then
+    return false
+  end
+  return (Yso.primebond.bonds.lycantha == true)
+end
+
+if Legacy.Settings.Basher.useRage == true then
+  for _, v in pairs(class_cfg) do
+    if type(v) == "table" and v.desc == "Shieldbreak" then
+      local rage_state = Legacy[gmcp.Char.Status.name] or {}
+      local rage = tonumber(rage_state.rage) or 0
+      if rage &gt;= (tonumber(v.rage) or 0) and v.available == true then
+        if Legacy.Basher.queueAttackPackage("add", v.cmd, true, "shieldbreak-rage") then
+          Legacy.Settings.Basher.shield = false
+          Legacy.Settings.Basher.queued = false
+          used = true
+        end
+      end
+      break
+    end
+  end
+  if used ~= true then
+    local nr_cmd = tostring((((class_cfg.nrshieldbreak or {}).cmd) or ""))
+    if nr_cmd ~= "" then
+      if Legacy.Basher.queueAttackPackage("addclear", nr_cmd, false, "shieldbreak-fallback") then
+        Legacy.Settings.Basher.shield = false
+        used = true
+      end
+    end
+  end
+elseif class == "Occultist" and _is_denizen_target() and _lycantha_primebond_active() then
+  -- Legacy-basher local path only:
+  -- hound shieldbreak here intentionally does not read or mutate AK state.
+  do
+    local tgt = tostring((gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Set) or Legacy.Settings.Basher.currentTar or "")
+    tgt = tgt:gsub("^%s+", ""):gsub("%s+$", "")
+    if tgt ~= "" then
+      send("queue addclear eq command hound at "..tgt)
+      Legacy.Settings.Basher.shield = false
+      used = true
+    end
+  end
+end
+
+if used ~= true then
+  tempTimer(2, [[Legacy.Settings.Basher.shield = false]])
+end
+
+if shield_target ~= "" then
+cecho("\n"..[[ 
+&lt;purple&gt;---------------------------------------------------
+      ]].."&lt;gold&gt;"..shield_target:upper()..[[ SHIELDED!
+&lt;purple&gt;---------------------------------------------------
+         ]])
+end</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^A nearly invisible magical shield forms around (.+)\.$</string>
+					<string>^A dizzying beam of energy strikes you as your attack rebounds off of (.+)\'s shield\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Damage Tracking</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Damage Catch</name>
+				<script>if Legacy.Settings.Basher.status == false then return end
+local num = tonumber(matches[2])
+local dtype = matches[3]
+deleteLine()
+Legacy.Settings.Basher.damage = Legacy.Settings.Basher.damage + num
+if not table.contains(Legacy.Settings.Basher.damageTypes, dtype) then
+  table.insert(Legacy.Settings.Basher.damageTypes, dtype)
+end
+enableTrigger('Damage prompt gate')
+enableTrigger('Balance Catch')</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^Damage dealt: (\d+) \((.+)\)\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Balance Catch</name>
+				<script>Legacy.Settings.Basher.speed = tonumber(matches[3])
+Legacy.Settings.Basher.speedType = matches[2]
+disableTrigger('Balance Catch')</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^(\w+) used: (.+)s\.</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Damage prompt gate</name>
+				<script>table.insert(Legacy.Settings.Basher.totalDamage,Legacy.Settings.Basher.damage)
+local preference = Legacy.Settings.Basher.seeDamageTrackPreference
+
+if Legacy.Settings.Basher.seeDamageTrack == true then
+  cecho('\n&lt;red&gt;Damage: &lt;gold&gt;'..math.reint(Legacy.Settings.Basher.damage)..' &lt;DimGrey&gt;(&lt;pink&gt;'..table.concat(Legacy.Settings.Basher.damageTypes, '&lt;white&gt;,&lt;pink&gt; ')..'&lt;DimGrey&gt;) &lt;red&gt;DPS: &lt;gold&gt;'..Legacy.Basher.dps()..' &lt;red&gt;'..preference..': &lt;gold&gt;'..Legacy.Basher.dps(preference))
+end
+Legacy.Settings.Basher.damage = 0
+Legacy.Settings.Basher.damageTypes = {}
+Legacy.Settings.Basher.speed = 0
+disableTrigger('Damage prompt gate')</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string></string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>7</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+	</TriggerPackage>
+	<TimerPackage />
+	<AliasPackage>
+		<Alias isActive="yes" isFolder="no">
+			<name>Hunting Toggle</name>
+			<script>Legacy = Legacy or {}
+Legacy.Settings = Legacy.Settings or {}
+Legacy.Curing = Legacy.Curing or {}
+Legacy.Curing.Affs = Legacy.Curing.Affs or {}
+Legacy.Basher = Legacy.Basher or {}
+Legacy.Basher.Targets = Legacy.Basher.Targets or {}
+Legacy.Settings.Basher = Legacy.Settings.Basher or {}
+Legacy.Settings.Basher.Classes = Legacy.Settings.Basher.Classes or {}
+
+Legacy.Settings.Basher.totalDamage = {}
+if Legacy.Settings.Basher.status == false then
+  Legacy.Settings.Basher.status = true
+  if raiseEvent then raiseEvent("LegacyBasherStatus", true) end
+  if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] == nil then
+      Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] = {
+        attack      = "",
+        pre         = "",
+      }
+      Legacy.Settings.Basher.Rage()
+    end
+  if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack == "" then
+    Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack = "kill"
+  end
+  if gmcp.Char.Status.class == "Occultist" and Yso and Yso.primebond and type(Yso.primebond.request) == "function" then
+    local now = (type(getEpoch) == "function" and getEpoch()) or os.time()
+    local last = tonumber(Yso.primebond.last_scan or 0) or 0
+    if last == 0 or (now - last) > 300 then
+      pcall(Yso.primebond.request)
+    end
+  end
+  send("setalias basher "..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].pre.."/"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack)
+  Legacy.echo("&lt;green&gt;Bashing Activated.")
+  Legacy.Settings.Basher.queued = false 
+  sendCount = 0
+  Legacy.Basher.Target()
+else
+  Legacy.Settings.Basher.status = false
+  Legacy.Settings.Basher._attend = nil
+  if raiseEvent then raiseEvent("LegacyBasherStatus", false) end
+  send("cq freestand")
+  Legacy.echo("&lt;red&gt;Bashing Deactivated.")
+  sendCount = 0
+end</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^hunt$</regex>
+		</Alias>
+		<Alias isActive="yes" isFolder="no">
+			<name>Priority Display</name>
+			<script>
+cecho("\n&lt;orange&gt;Hunting Priority for &lt;white&gt;\""..gmcp.Room.Info.area.."\"")
+for prio , mob in pairs(Legacy.Basher.Targets[gmcp.Room.Info.area]) do
+  if prio &lt; 10 then
+  cecho("\n&lt;DimGrey&gt;[&lt;orange&gt;0"..prio.."&lt;DimGrey&gt;] &lt;white&gt;"..mob)
+  local str = #mob
+  local i = 0
+  while i &lt; (40 - str) do
+    echo(" ")
+    i = i + 1
+  end
+  cechoLink("&lt;green&gt;++   ", function()
+    if prio == 1 then
+      Legacy.echo("&lt;red&gt;You cannot increase the priority beyond 1.")
+    else
+    table.remove(Legacy.Basher.Targets[gmcp.Room.Info.area], table.index_of(Legacy.Basher.Targets[gmcp.Room.Info.area], mob)) table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], prio - 1, mob)
+    expandAlias("huntprio")
+    Legacy.echo("Moved &lt;gold&gt;"..mob.." &lt;white&gt;to the &lt;gold&gt;"..(prio - 1).."&lt;white&gt; position.")
+    end
+   end, "Click to increase priority of "..mob:upper(), true)
+  cechoLink("&lt;red&gt;--   ", function() 
+    table.remove(Legacy.Basher.Targets[gmcp.Room.Info.area], table.index_of(Legacy.Basher.Targets[gmcp.Room.Info.area], mob)) table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], prio + 1, mob)
+    expandAlias("huntprio")
+    Legacy.echo("Moved &lt;gold&gt;"..mob.." &lt;white&gt;to the &lt;gold&gt;"..(prio + 1).."&lt;white&gt; position.")
+  
+  end, "Click to decrease priority of "..mob:upper(), true)
+  cechoLink("&lt;ansi_red&gt;XX",function() table.remove(Legacy.Basher.Targets[gmcp.Room.Info.area], table.index_of(Legacy.Basher.Targets[gmcp.Room.Info.area], mob)) 
+  expandAlias("huntprio")
+  Legacy.echo("&lt;red&gt;Deleted &lt;gold&gt;"..mob:upper().."&lt;red&gt; from your hunting targets.")
+  end, "", true) 
+  else
+  cecho("\n&lt;DimGrey&gt;[&lt;orange&gt;"..prio.."&lt;DimGrey&gt;] &lt;white&gt;"..mob)
+  local str = #mob
+  local i = 0
+  while i &lt; (40 - str) do
+    echo(" ")
+    i = i + 1
+  end
+  cechoLink("&lt;green&gt;++   ", function()
+    table.remove(Legacy.Basher.Targets[gmcp.Room.Info.area], table.index_of(Legacy.Basher.Targets[gmcp.Room.Info.area], mob)) table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], prio - 1, mob)
+    expandAlias("huntprio")
+    Legacy.echo("Moved &lt;gold&gt;"..mob.." &lt;white&gt;to the &lt;gold&gt;"..(prio - 1).."&lt;white&gt; position.")
+   end, "Click to increase priority of "..mob:upper(), true)
+  cechoLink("&lt;red&gt;--   ", function() 
+    table.remove(Legacy.Basher.Targets[gmcp.Room.Info.area], table.index_of(Legacy.Basher.Targets[gmcp.Room.Info.area], mob)) table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], prio + 1, mob)
+    expandAlias("huntprio")
+    Legacy.echo("Moved &lt;gold&gt;"..mob.." &lt;white&gt;to the &lt;gold&gt;"..(prio + 1).."&lt;white&gt; position.")
+  end, "Click to decrease priority of "..mob:upper(), true)
+  cechoLink("&lt;ansi_red&gt;XX",function() table.remove(Legacy.Basher.Targets[gmcp.Room.Info.area], table.index_of(Legacy.Basher.Targets[gmcp.Room.Info.area], mob)) 
+  expandAlias("huntprio")
+  Legacy.echo("&lt;red&gt;Deleted &lt;gold&gt;"..mob:upper().."&lt;red&gt; from your hunting targets.")
+  end, "", true) 
+end
+end</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^huntprio\s?(.+)?$</regex>
+		</Alias>
+		<Alias isActive="yes" isFolder="no">
+			<name>manually add a target</name>
+			<script>if table.contains(gmcp.Char.Items.List.items, gmcp.IRE.Target.Set) then
+  for k,v in pairs(gmcp.Char.Items.List.items) do
+    if v.id == gmcp.IRE.Target.Set then
+      if not table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v.name:lower()) then
+        table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], v.name:lower())
+        Legacy.echo("Added '&lt;gold&gt;"..v.name.."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
+      end
+    end
+  end
+end</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^addtar$</regex>
+		</Alias>
+		<Alias isActive="yes" isFolder="no">
+			<name>Hunting Targets Export</name>
+			<script>table.save(getMudletHomeDir().."/Legacy/Downloads/BasherTargets.lua", Legacy.Basher.Targets)
+Legacy.echo("Exported your hunting targets to: \n&lt;gold&gt;"..getMudletHomeDir().."/Legacy/Downloads/BasherTargets.lua")</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^bashexport$</regex>
+		</Alias>
+		<Alias isActive="yes" isFolder="no">
+			<name>Hunting Targets Import</name>
+			<script>table.load(getMudletHomeDir().."/Legacy/Downloads/BasherTargets.lua", Legacy.Basher.Targets)
+Legacy.echo("Imported New Bashing Targets")</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^bashimport$</regex>
+		</Alias>
+		<Alias isActive="yes" isFolder="no">
+			<name>Ignore Mobs</name>
+			<script>if not table.contains(Legacy.Settings.Basher.Ignore, matches[2]:lower()) then
+  table.insert(Legacy.Settings.Basher.Ignore, matches[2]:lower())
+  Legacy.echo("&lt;red&gt;No longer looking for '&lt;gold&gt;"..matches[2].."&lt;red&gt;' as a target.")
+end</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^bignore (.+)$</regex>
+		</Alias>
+		<AliasGroup isActive="yes" isFolder="yes">
+			<name>Config</name>
+			<script></script>
+			<command></command>
+			<packageName></packageName>
+			<regex></regex>
+			<Alias isActive="yes" isFolder="no">
+				<name>Attack set</name>
+				<script>Legacy.echo("Set your bashing attack in &lt;gold&gt;"..gmcp.Char.Status.class.." &lt;white&gt;to &lt;gold&gt;"..matches[2]..".")
+if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] == nil then
+      Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] = {
+        attack      = "",
+        pre         = "",
+      }
+    end
+sendCount = 0
+Legacy.Settings.Basher.Rage()
+Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack = matches[2]
+send("setalias basher "..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].pre.."/"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack.." "..gmcp.IRE.Target.Set)
+</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^battack (.+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Set Non-rage Shield break</name>
+				<script>Legacy.echo("Set your Non-rage Shieldbreak in &lt;gold&gt;"..gmcp.Char.Status.class.." &lt;white&gt;to &lt;gold&gt;"..matches[2]..".")
+if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] == nil then
+      Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] = {
+        attack      = "",
+        pre         = "",
+        
+      }
+    end
+sendCount = 0
+Legacy.Settings.Basher.Rage()
+Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].nrshieldbreak.cmd = matches[2]
+</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^bshield (.+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Bashing prealias</name>
+				<script>Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].pre = matches[2]
+Legacy.echo("Basher Prealias set to: &lt;gold&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].pre)
+Legacy.Settings.Basher.Rage()
+send("setalias basher "..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].pre.."/"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].attack)
+</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^pre\s(.+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Flee</name>
+				<script>
+if matches[2] then
+    if tonumber(matches[2]) &gt; 70 then
+      Legacy.echo("&lt;red&gt;Flee health can not be set higher than 70%")
+      Legacy.echo("&lt;green&gt;Set Auto-flee health percent to: &lt;gold&gt;70% HP")
+      Legacy.Settings.Basher.fleeAt = 70
+    else
+      Legacy.echo("&lt;green&gt;Set Auto-flee health percent to: &lt;gold&gt;"..matches[2].."% HP")
+      Legacy.Settings.Basher.fleeAt = tonumber(matches[2])
+    end
+else
+  if Legacy.Settings.Basher.flee == false then
+    Legacy.Settings.Basher.flee = true
+    Legacy.echo("Will now flee at &lt;gold&gt;"..Legacy.Settings.Basher.fleeAt.."%&lt;white&gt; HP")
+  else
+    Legacy.Settings.Basher.flee = false
+    Legacy.echo("Courage Activated! No longer running from things!")
+  end
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^bflee\s?(\d+)?$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Config Display</name>
+				<script>if Legacy.Basher then
+  cecho("\n&lt;ansi_yellow&gt;Rage Configuration for: &lt;white&gt;"..gmcp.Char.Status.class:upper().."\n\n")
+  
+  cecho("&lt;ansi_yellow&gt;Use Big Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage.."%&lt;ansi_yellow&gt; enemy health.")
+  cechoLink("&lt;green&gt;  ^  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage + 1 cecho("\n&lt;ansi_yellow&gt;Use Big Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Increase the value by 1%", true)
+  cechoLink("&lt;green&gt;^^  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage + 5 cecho("\n&lt;ansi_yellow&gt;Use Big Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Increase the value by 5%", true)
+  cechoLink("&lt;red&gt;v  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage - 1 cecho("\n&lt;ansi_yellow&gt;Use Big Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Decrease the value by 1%", true)
+  cechoLink("&lt;red&gt;vv  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage - 5 cecho("\n&lt;ansi_yellow&gt;Use Big Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.bigDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Decrease the value by 5%", true)
+
+  cecho("\n\n&lt;ansi_yellow&gt;Use Small Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage.."%&lt;ansi_yellow&gt; enemy health.")
+  cechoLink("&lt;green&gt;  ^  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage + 1 cecho("\n&lt;ansi_yellow&gt;Use Small Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Increase the value by 1%", true)
+  cechoLink("&lt;green&gt;^^  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage + 5 cecho("\n&lt;ansi_yellow&gt;Use Small Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Increase the value by 5%", true)
+  cechoLink("&lt;red&gt;v  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage - 1 cecho("\n&lt;ansi_yellow&gt;Use Small Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Decrease the value by 1%", true)
+  cechoLink("&lt;red&gt;vv  ", function() Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage - 5 cecho("\n&lt;ansi_yellow&gt;Use Small Damage rage above &lt;white&gt;"..Legacy.Settings.Basher.Classes[gmcp.Char.Status.class].configRage.smallDamage.."%&lt;ansi_yellow&gt; enemy health.")end, "Decrease the value by 5%", true)
+
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^bconfig$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Legacy Basher current settings</name>
+				<script>local settings = Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] --import Legacy settings to local
+--Legacy.Settings.Basher.Rage()
+--Legacy basher clickable settings
+cecho("\n&lt;white&gt;- &lt;gold&gt;Legacy Basher settings for: &lt;cyan&gt;"..gmcp.Char.Status.class)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Attack set to:            &lt;ansi_yellow&gt;"..settings.attack, function() appendCmdLine("battack ") end, "Click for cmd to add your own attack", true)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Prepend set to:           &lt;ansi_yellow&gt;"..settings.pre, function() appendCmdLine("pre ") end, "Click to change presend. Use your game side cmd separator", true)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Shieldbreak set to:       &lt;ansi_yellow&gt;"..(settings.nrshieldbreak.cmd or ""), function() appendCmdLine("bshield ") end, "Click for cmd to add shield attack", true)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Will use rage atks:       &lt;ansi_yellow&gt;"..tostring(Legacy.Settings.Basher.useRage), function() appendCmdLine("lrage") end, "Click for cmd to toggle using rage", true)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Will flee when low:       &lt;ansi_yellow&gt;"..tostring(Legacy.Settings.Basher.flee), function() expandAlias("bflee") end, "Click for cmd to toggle fleeing", true)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Will use Rainbow Crits:   &lt;ansi_yellow&gt;"..tostring(Legacy.Settings.Basher.rainbows), function() if Legacy.Settings.Basher.rainbows ~= true then Legacy.Settings.Basher.rainbows = true Legacy.echo("will now use Rainbow Crits!") else Legacy.Settings.Basher.rainbows = false Legacy.echo("Boring Criticals enabled!") end end, "Click for cmd to toggle fleeing", true)
+--Gold tracker clickable display
+if Legacy.Settings.Basher.goldtrack == false then
+cechoLink("\n\n\n&lt;white&gt;- &lt;cyan&gt;Gold tracking: &lt;red&gt;Off       &lt;ansi_yellow&gt; Click to start tracking", function() expandAlias("gtrack") end, "Click to start tracking gold", true)
+elseif Legacy.Settings.Basher.goldtrack == true then
+cechoLink("\n\n\n&lt;white&gt;- &lt;cyan&gt;Gold tracking: &lt;green&gt;On", function() expandAlias("gtrack") end, "Click to stop tracking gold", true)
+cecho("     ")
+cechoLink("&lt;red&gt;    Reset", function() appendCmdLine("greset") end, "Click for cmd to completely reset gold tracking", true)
+cecho("\n&lt;white&gt;- &lt;cyan&gt;Current group:")
+cechoLink("&lt;LightSeaGreen&gt; + ", function() appendCmdLine("add &lt;name&gt; to group") end, "Add person to group", true)
+cechoLink("&lt;firebrick&gt; - ", function() appendCmdLine("remove &lt;name&gt; from group") end, "Remove person from group", true)
+echo("      ")
+local counter = 0
+for k, v in pairs(Legacy.Settings.Basher.Group) do
+  counter = counter + 1
+  if counter == table.size(Legacy.Settings.Basher.Group) then
+    cechoLink("&lt;ansi_yellow&gt;"..k, function() appendCmdLine("remove "..k.." from group") end, "Remove "..k.." from group", true)
+  else
+    cechoLink("&lt;ansi_yellow&gt;"..k..", ", function() appendCmdLine("remove "..k.." from group") end, "Remove "..k.." from group", true)
+  end
+end
+cecho("\n&lt;white&gt;- &lt;cyan&gt;Total gold tracked:       &lt;ansi_yellow&gt;"..Legacy.Settings.Basher.Gold.."  ")
+cechoLink("&lt;LightSeaGreen&gt; + ", function() appendCmdLine("gadd ") end, "Click and enter amount of gold to add to total", true)
+cecho(" ")
+cechoLink("&lt;firebrick&gt; - ", function() appendCmdLine("gsub ") end, "Click and enter amount of gold to subtrack from total", true)
+local splitammount = math.floor(Legacy.Settings.Basher.Gold / table.size(Legacy.Settings.Basher.Group))
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Amount to split:          &lt;ansi_yellow&gt;"..splitammount, function() expandAlias("gsplit") end, "Click to split gold in group", true)
+cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Gold container:           &lt;ansi_yellow&gt;"..(Legacy.Settings.Basher.goldContainer or "&lt;red&gt;CLICK TO SET!"), function() appendCmdLine("gpack ") end, "Click to set gold container for storing gold till split", true)
+end
+
+if Legacy.Settings.Basher.seeDamageTrack == true then
+  cechoLink("\n&lt;white&gt;- &lt;cyan&gt;See Damage Tracking:      &lt;ansi_yellow&gt;True", function() Legacy.Settings.Basher.seeDamageTrack = false end, "Click to stop seeing damage messages.", true)
+else
+  cechoLink("\n&lt;white&gt;- &lt;cyan&gt;See Damage Tracking:      &lt;ansi_yellow&gt;False", function() Legacy.Settings.Basher.seeDamageTrack = true end, "Click to see damage messages", true)
+end
+
+if Legacy.Settings.Basher.seeDamageTrackPreference == 'Highest' then
+  cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Damage Preference:        &lt;ansi_yellow&gt;Highest", function() Legacy.Settings.Basher.seeDamageTrackPreference = 'Total' end, "Click to see total damage dealt.", true)
+else
+  cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Damage Preference:        &lt;ansi_yellow&gt;Total", function() Legacy.Settings.Basher.seeDamageTrackPreference = 'Highest' end, "Click to see highest damage dealt", true)
+end
+
+if Legacy.Settings.Basher.onlyTarget == true then
+  cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Only Target Enemies:      &lt;ansi_yellow&gt;True", function() Legacy.Settings.Basher.onlyTarget = false end, "Click to auto hit enemies after targeting.", true)
+else
+  cechoLink("\n&lt;white&gt;- &lt;cyan&gt;Only Target Enemies:      &lt;ansi_yellow&gt;False", function() Legacy.Settings.Basher.onlyTarget = true end, "Click to only target enemies.", true)
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^lbasher$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Toggle using Rage</name>
+				<script>if Legacy.Settings.Basher.useRage ~= true then
+  Legacy.Settings.Basher.useRage = true
+  Legacy.echo("&lt;green&gt;Will now use rage while bashing!")
+else
+  Legacy.Settings.Basher.useRage = false
+  Legacy.echo("&lt;red&gt;Will no longer use rage while bashing!")
+
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^brage$</regex>
+			</Alias>
+		</AliasGroup>
+		<AliasGroup isActive="yes" isFolder="yes">
+			<name>Gold Tracker</name>
+			<script></script>
+			<command></command>
+			<packageName></packageName>
+			<regex></regex>
+			<Alias isActive="yes" isFolder="no">
+				<name>Gold Add and sub</name>
+				<script>if Legacy.Settings.Basher.Gold == nil then
+    Legacy.Settings.Basher.Gold = 0
+end
+
+if matches[2] == "gadd" then
+   Legacy.Settings.Basher.Gold = Legacy.Settings.Basher.Gold + tonumber(matches[3]) 
+   Legacy.echo("Added '&lt;gold&gt;"..matches[3].."&lt;white&gt;' to your total making it &lt;gold&gt;"..Legacy.Settings.Basher.Gold.."&lt;white&gt; gold.")
+elseif matches[2] == "gsub" then
+   Legacy.Settings.Basher.Gold = Legacy.Settings.Basher.Gold - tonumber(matches[3]) 
+   Legacy.echo("&lt;red&gt;Subtracted '&lt;gold&gt;"..matches[3].."&lt;red&gt;' to your total making it &lt;gold&gt;"..Legacy.Settings.Basher.Gold.."&lt;red&gt; gold.")
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^(gadd|gsub)\s(\d+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Split the gold</name>
+				<script>local total = Legacy.Settings.Basher.Gold
+local splitammount = math.floor(Legacy.Settings.Basher.Gold / table.size(Legacy.Settings.Basher.Group))
+if Legacy.Settings.Basher.goldContainer == nil then
+  Legacy.echo("&lt;red&gt;Gold Container not set please do '&lt;gold&gt;gpack &lt;packID&gt;&lt;red&gt;' to set where to get your gold from.")
+else
+  Legacy.echo("Splitting &lt;gold&gt;"..total.." gold between "..table.size(Legacy.Settings.Basher.Group).." people.")
+  send("get "..total.." gold from "..Legacy.Settings.Basher.goldContainer)
+
+  for k,v in pairs(Legacy.Settings.Basher.Group) do
+    Legacy.Settings.Basher.Group[k] = splitammount
+    send("give "..splitammount.." gold to "..tostring(k))
+  end
+
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^gsplit$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Set your Container</name>
+				<script>Legacy.Settings.Basher.goldContainer = matches[2]
+Legacy.echo("Set your Gold Container to '&lt;gold&gt;"..matches[2].."&lt;white&gt;'")</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^gpack (.+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Full Reset</name>
+				<script>Legacy.Settings.Basher.Gold = 0
+Legacy.Settings.Basher.Group = {}
+Legacy.Settings.Basher.goldtrack = false
+
+Legacy.echo("&lt;red&gt;Reset your group and your gold.")
+Legacy.echo("&lt;red&gt;No longer tracking gold.")</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^greset$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Toggle Tracking</name>
+				<script>if Legacy.Settings.Basher.goldtrack == false then
+  Legacy.Settings.Basher.goldtrack = true
+  Legacy.echo("Now tracking gold.")
+else
+  Legacy.Settings.Basher.goldtrack = false
+  Legacy.echo("&lt;red&gt;No longer tracking gold.")
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^gtrack$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Add remove people from your group</name>
+				<script>if Legacy.Settings.Basher.Group then
+  if matches[2] == "add" then
+    Legacy.Settings.Basher.Group[matches[3]:title()] = 0
+    Legacy.Settings.Basher.Group[gmcp.Char.Status.name] = Legacy.Settings.Basher.Group[gmcp.Char.Status.name] or 0
+    Legacy.echo("Added "..matches[3]:title().." to your hunting party.")
+  elseif matches[2] == "remove" then
+    Legacy.Settings.Basher.Group[matches[3]:title()] = nil
+    Legacy.echo("&lt;red&gt;Removed "..matches[3]:title().." from your hunting party.")
+  end
+end</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^(add|remove) (\w+) (to|from) group$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Show gold</name>
+				<script>Legacy.echo("&lt;gold&gt;"..math.reint(Legacy.Settings.Basher.Gold).."&lt;white&gt; gold tracked!")</script>
+				<command></command>
+				<packageName></packageName>
+				<regex>^gshow$</regex>
+			</Alias>
+		</AliasGroup>
+		<Alias isActive="yes" isFolder="no">
+			<name>Remove mobs</name>
+			<script>local mob = matches[2] or ''
+cecho(Legacy.Basher.removeMobs(mob))</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^bremove (.+)$</regex>
+		</Alias>
+		<Alias isActive="yes" isFolder="no">
+			<name>Target Mode Toggle</name>
+			<script>if Legacy.Settings.Basher.onlyTarget == false then
+  Legacy.Settings.Basher.onlyTarget = true
+  Legacy.echo('&lt;red&gt;Only setting a target, not hitting them!')
+else
+  Legacy.Settings.Basher.onlyTarget = false
+  Legacy.echo('&lt;green&gt;Automatically targetting and hitting when we have balance!')
+  send('ql')
+end</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^btar$</regex>
+		</Alias>
+	</AliasPackage>
+	<ActionPackage />
+	<ScriptPackage>
+		<Script isActive="yes" isFolder="no">
+			<name>Basher</name>
+			<packageName></packageName>
+			<script>--[[ Legacy Basher bootstrap (non-destructive, safe with/without Legacy Core) ]]
+Legacy = Legacy or {}
+Legacy.Settings = Legacy.Settings or {}
+Legacy.Curing = Legacy.Curing or {}
+Legacy.Curing.Affs = Legacy.Curing.Affs or {}
+Legacy.Basher = Legacy.Basher or {}
+Legacy.Basher.Targets = Legacy.Basher.Targets or {}
+Legacy.Settings.Basher = Legacy.Settings.Basher or {}
+Legacy.Settings.Basher.Classes = Legacy.Settings.Basher.Classes or {}
+Legacy.echo = Legacy.echo or function(msg) cecho("\n[Legacy]: "..tostring(msg)) end
+Legacy.bigEcho = Legacy.bigEcho or function(msg) Legacy.echo(tostring(msg)) end
+
+function Basher_Setup()
+  if (Legacy and gmcp.Char and gmcp.Room) then
+    send("settarget "..gmcp.Char.Status.name)
+    Legacy.Basher = Legacy.Basher or {}
+    Legacy.Basher.Targets = Legacy.Basher.Targets or {}
+    Legacy.Settings.Basher = Legacy.Settings.Basher or {}
+    Legacy.Settings.Basher.Classes = Legacy.Settings.Basher.Classes or {}
+    Legacy.Settings.Basher.Ignore = Legacy.Settings.Basher.Ignore or {""}
+    Legacy.Settings.Basher.Group = {}
+    Legacy.Settings.Basher.Predictions = { ["recklessness"] = false}
+    Legacy.Settings.Basher.lokiCount = 0
+    Legacy.Settings.Basher.fleeAt = Legacy.Settings.Basher.fleeAt or 10
+    if Legacy.Settings.Basher.rainbows == nil then Legacy.Settings.Basher.rainbows = true end
+    Legacy.Settings.Basher.gotGold = false
+    if Legacy.Settings.Basher.powerThrough == nil then
+      Legacy.Settings.Basher.powerThrough = true
+    end
+    Legacy.Settings.Basher.Gold = 0
+    Legacy.Settings.Basher.shield = false
+    if Legacy.Settings.Basher.hasLycantha == nil then Legacy.Settings.Basher.hasLycantha = false end
+    Legacy.Settings.Basher.status = false
+    Legacy.Settings.Basher.fleeing = false
+    Legacy.Settings.Basher.fleeRoom = 1234
+    Legacy.Settings.Basher.damage = 0
+    Legacy.Settings.Basher.totalDamage = {}
+    Legacy.Settings.Basher.damageTypes = {}
+    Legacy.Settings.Basher.speed = 0
+    Legacy.Settings.Basher.speedType = 'balance'
+    Legacy.Settings.Basher.seeDamageTrack = true
+    Legacy.Settings.Basher.seeDamageTrackPreference = 'Total'
+    Legacy.Settings.Basher.onlyTarget = false
+    
+    
+    
+  function Legacy.Basher.removeMobs(mob)
+    if not mob then return '\n&lt;red&gt;&lt;b&gt;Please specify a mob you would like removed.' end
+    local mob = mob:lower()
+    if not table.contains(Legacy.Basher.Targets, mob) then 
+      return "\n&lt;red&gt;&lt;b&gt;Couldn't find &lt;white&gt;'&lt;i&gt;"..mob.."&lt;/i&gt;'&lt;red&gt; in our hunting database."
+    end
+    
+    local areaTable = {}
+    
+    for area, denizen in pairs(Legacy.Basher.Targets) do
+      
+      if table.contains(Legacy.Basher.Targets[area], mob) then
+        table.insert(areaTable, area)
+        table.bremove(Legacy.Basher.Targets[area], mob)
+      end
+    end 
+  
+   if table.size(areaTable) == 0 then return "\n&lt;red&gt;&lt;b&gt;Couldn't find '&lt;white&gt;&lt;i&gt;"..mob.."&lt;/i&gt;'&lt;red&gt; in our hunting database." end
+   return "\n&lt;green&gt;Removed &lt;white&gt;'&lt;i&gt;"..mob.."&lt;/i&gt;' &lt;green&gt;from &lt;DimGrey&gt;(&lt;gold&gt;"..#areaTable.."&lt;DimGrey&gt;):\n&lt;gold&gt;"..table.concat(areaTable, '\n&lt;gold&gt;')
+  end
+    
+  function Legacy.Basher.dps(arg)
+    local speed = Legacy.Settings.Basher.speed
+    local dmg = 0
+    local bigDamage = 0
+    
+     for _, hit in pairs(Legacy.Settings.Basher.totalDamage) do
+      if tonumber(hit) &gt; bigDamage then bigDamage = tonumber(hit) end
+      dmg = dmg + tonumber(hit)
+     end
+     
+     
+     local avg = dmg / #Legacy.Settings.Basher.totalDamage
+     if arg ==  'Highest' then return math.reint(bigDamage) end
+     if arg ==  'Total'   then return math.reint(dmg) end
+     
+     if speed == 0 then
+      return math.reint(math.floor(avg))
+     else
+      return math.reint(math.floor(avg/speed))
+     end
+  end
+    
+  function Legacy.Settings.Basher.Mobs()
+    Legacy.Settings.Basher.possibleTargets = {}
+    for k,v in pairs(gmcp.Char.Items.List.items) do
+      if v.attrib == "m" and table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v.name:lower()) and Legacy.Settings.Basher.status == true and not table.contains(Legacy.Settings.Basher.Ignore, v.name:lower()) then
+        Legacy.Settings.Basher.possibleTargets[v.id] = v.name
+      end
+    end 
+  end
+  registerAnonymousEventHandler("gmcp.Char.Items.List", "Legacy.Settings.Basher.Mobs")
+  
+  function Legacy.Settings.Basher.possibleEcho()
+    local poss = {}
+    for k,v in pairs(gmcp.Char.Items.List.items) do
+      if v.attrib == "m" and table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v.name:lower()) and Legacy.Settings.Basher.status == true and not table.contains(Legacy.Settings.Basher.Ignore, v.name:lower()) then
+        table.insert(poss, "&lt;red&gt;"..v.name)
+      elseif v.attrib == "m" and Legacy.Settings.Basher.status == true and not table.contains(Legacy.Settings.Basher.Ignore, v.name:lower()) then
+        table.insert(poss, "&lt;orange&gt;"..v.name)
+      end
+    end
+    Legacy.Basher.Target()
+    if Legacy.Settings.Basher.status == true and Legacy.Settings.Basher.mobCount() &gt; 0 then
+      cecho("\n&lt;gold&gt;Possible Targets&lt;DimGray&gt; (&lt;orange&gt;"..table.size(poss).."&lt;DimGrey&gt;)&lt;white&gt;: \n&lt;red&gt;"..table.concat(poss, "\n"))
+    elseif Legacy.Settings.Basher.status == true and table.size(Legacy.Settings.Basher.possibleTargets) == 0 then
+      Legacy.echo("&lt;red&gt;No possible targets")
+    end 
+  end
+  registerAnonymousEventHandler("gmcp.Room.Info", "Legacy.Settings.Basher.possibleEcho")
+
+  function Legacy.Settings.Basher.mobRemove()
+    if table.contains(Legacy.Settings.Basher.possibleTargets, gmcp.Char.Items.Remove.item.id) and Legacy.Settings.Basher.status == true then
+    
+      Legacy.Settings.Basher.possibleTargets[gmcp.Char.Items.Remove.item.id] = nil
+      if not gmcp.Char.Items.Remove.item.name:match("the corpse of") then
+        Legacy.bigEcho(gmcp.Char.Items.Remove.item.name.." ran away!!!", "red", "gold")
+        Legacy.Settings.Basher.queued = false
+        Legacy.Settings.Basher.currentTar = ""
+        Legacy.Settings.Basher.possibleTargets[gmcp.Char.Items.Remove.item.id] = nil
+      end
+    end
+  end
+  registerAnonymousEventHandler("gmcp.Char.Items.Remove", "Legacy.Settings.Basher.mobRemove")
+  
+  function Legacy.Settings.Basher.mobAdd()
+    if gmcp.Char.Items.Add.item.attrib == "m" and table.contains(Legacy.Basher.Targets, gmcp.Char.Items.Add.item.name) and Legacy.Settings.Basher.status == true then
+      if not table.contains(Legacy.Settings.Basher.possibleTargets, gmcp.Char.Items.Add.item.id) then
+        Legacy.Settings.Basher.possibleTargets[gmcp.Char.Items.Add.item.id] = gmcp.Char.Items.Add.item.name
+        Legacy.echo("&lt;green&gt;Added &lt;gold&gt;"..gmcp.Char.Items.Add.item.name.."&lt;green&gt; to possible targets")
+        Legacy.Basher.Target()
+      end
+    end
+  end
+  registerAnonymousEventHandler("gmcp.Char.Items.Add", "Legacy.Settings.Basher.mobAdd")
+    
+    if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] == nil then
+      Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] = {
+        attack      = "",
+        pre         = "", 
+      }
+    end
+    
+    --Settings
+    if Legacy.Settings.Basher.useRage ~= false or Legacy.Settings.Basher.useRage == nil then
+      Legacy.Settings.Basher.useRage = true
+    end
+    
+    if Legacy.Settings.Basher.flee ~= false or Legacy.Settings.Basher.flee == nil then
+      Legacy.Settings.Basher.flee = true
+    end
+    
+    function Legacy.Settings.Basher.mobCount()
+    local mobs = 0
+    for k,v in pairs(gmcp.Char.Items.List.items) do
+      if v.attrib == "m" then
+        mobs = mobs + 1
+      end
+    end
+    return mobs
+  end
+  registerAnonymousEventHandler("gmcp.Char.Items", "Legacy.Settings.Basher.mobCount")
+
+  function Legacy.Basher.Target()
+    if Legacy.Basher.Targets[gmcp.Room.Info.area] == nil and Legacy.Settings.Basher.status == true then
+      Legacy.Basher.Targets[gmcp.Room.Info.area] = {}
+    end
+    if Legacy.Settings.Basher.status == true and (gmcp.IRE.Target.Set == "" or Legacy.Settings.Basher.currentTar == "") and Legacy.Settings.Basher.mobCount() &gt; 0 then
+      for i, mob in pairs(Legacy.Basher.Targets[gmcp.Room.Info.area]) do
+        for id, item in pairs(Legacy.Settings.Basher.possibleTargets) do
+          if item:lower() == mob:lower() and Legacy.Settings.Basher.currentTar == "" and id ~= Legacy.Settings.Basher.currentTar and not table.contains(Legacy.Settings.Basher.Ignore, item:lower()) then
+            send("st "..id)
+            Legacy.Settings.Basher.shield = false
+            Legacy.Settings.Basher.desc = item
+            Legacy.Settings.Basher.currentTar = id
+            break
+          end
+        end
+      end
+    end
+  end
+  registerAnonymousEventHandler("gmcp.Char.Items", "Legacy.Basher.Target")
+
+  local function _fool_basher_hold_active()
+    return Yso and Yso.fool and type(Yso.fool.blocks_basher) == "function" and Yso.fool.blocks_basher() == true
+  end
+
+  local function _fool_hold_debug(msg)
+    local F = Yso and Yso.fool or nil
+    local debug_on = (type(F) == "table" and type(F.cfg) == "table" and F.cfg.debug == true)
+      or (type(Legacy and Legacy.Fool) == "table" and Legacy.Fool.debug == true)
+    if debug_on and type(cecho) == "function" then
+      cecho("&lt;cyan&gt;[Fool] "..tostring(msg).."\n")
+    end
+  end
+
+  local function _attack_is_denizen_target(targetSet)
+    local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info or nil
+    if type(info) == "table" then
+      local npc = info.npc
+      if npc == true or npc == 1 or tostring(npc) == "1" or tostring(npc):lower() == "true" then return true end
+      local t = tostring(info.type or ""):lower()
+      if (t == "denizen" or t == "npc") then return true end
+    end
+    local targetIdNum = tonumber(targetSet or "")
+    if targetIdNum ~= nil then
+      return true
+    end
+    return false
+  end
+
+  function Legacy.Basher.queueAttackPackage(mode, cmd, requeue_basher, reason)
+    local S = Legacy.Settings.Basher or {}
+    local why = tostring(reason or "basher")
+    local queue_mode = tostring(mode or "add")
+    local queue_cmd = tostring(cmd or "")
+
+    if _fool_basher_hold_active() then
+      S.queued = false
+      if S._fool_hold_notice ~= why then
+        S._fool_hold_notice = why
+        _fool_hold_debug("Suppressed basher attack package ("..why..") during basher hold.")
+      end
+      return false
+    end
+
+    S._fool_hold_notice = nil
+    if queue_cmd ~= "" then
+      send("queue "..queue_mode.." freestand "..queue_cmd)
+    end
+    if requeue_basher == true then
+      send("queue add freestand basher")
+    end
+    return true
+  end
+
+  function Legacy.Settings.Basher.failsafes()
+    if Legacy.Settings.Basher.status == true then
+      if Legacy.Settings.Basher.currentTar == "" and gmcp.IRE.Target.Set ~= "" then
+                Legacy.Settings.Basher.currentTar = gmcp.IRE.Target.Set
+      elseif gmcp.IRE.Target.Set == "" then
+      end
+      Legacy.Settings.Basher.queued = false
+      Legacy.Settings.Basher.shield = false
+    end
+  end
+  registerAnonymousEventHandler("gmcp.Room.Info", "Legacy.Settings.Basher.failsafes")
+  
+  function Legacy.Settings.Basher.FleeTracker()
+    Legacy.Settings.Basher.fleeing = false
+     currentRoom = gmcp.Room.Info.num
+     currentExits = {}
+    for k,v in pairs(gmcp.Room.Info.exits) do
+      currentExits[v] = tostring(k)
+    end
+    if lastRoom == nil then
+      lastRoom = 1234
+    end
+    if currentRoom ~= lastRoom then
+      Legacy.Settings.Basher.fleeExit = currentExits[lastRoom]
+    end
+    lastRoom = gmcp.Room.Info.num
+  end
+  registerAnonymousEventHandler("gmcp.Room.Info", "Legacy.Settings.Basher.FleeTracker")
+  
+  function Legacy.Basher.flee(room)
+    if Legacy.Settings.Basher.status == false then return end
+    if Legacy.Settings.Basher.flee == false then return end
+    if Legacy.Settings.Basher.fleeExit == currentExits[Legacy.Settings.Basher.fleeRoom] then return end
+    Legacy.Settings.Basher.fleeRoom = room
+    send("queue addclear freestand go "..Legacy.Settings.Basher.fleeExit)
+  end
+  
+  --send("queue addclear freestand go "..Legacy.Settings.Basher.fleeExit)
+  function Legacy.Basher.Attack()
+    if Legacy.Settings.Basher.status == false then return end
+    if not (gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.Char and gmcp.Char.Status and gmcp.Char.Vitals) then return end
+    if Legacy.Settings.Basher.fleeing == true then return end
+
+    local status = gmcp.Char.Status or {}
+    local vitals = gmcp.Char.Vitals or {}
+    local target = gmcp.IRE.Target or {}
+    local targetInfo = target.Info or {}
+    local charName = status.name
+    local class = status.class
+    local me = Legacy[charName] or {}
+    local meVitals = (type(me) == "table" and me.Vitals) or {}
+    local class_cfg = Legacy.Settings.Basher.Classes[class] or {}
+    local configRage = class_cfg.configRage or {}
+    local fleeAt = tonumber(Legacy.Settings.Basher.fleeAt) or 0
+    local hpPer = tonumber(meVitals.hpPer)
+    local hp = tonumber(vitals.hp)
+    local hp_text = vitals.hp
+    local targetSet = tostring(target.Set or "")
+    local targetHpPerc = tostring(targetInfo.hpperc or "")
+    local health = tonumber((targetHpPerc:gsub("%%", "")))
+    local rage_now = tonumber(me.rage) or 0
+    local mobCount = 0
+    local itemsList = (gmcp.Char.Items and gmcp.Char.Items.List) or {}
+    local currentTargetKnown = false
+
+    Legacy.Settings.Basher.possibleTargets = Legacy.Settings.Basher.possibleTargets or {}
+
+    if type(Legacy.Settings.Basher.mobCount) == "function" then
+      mobCount = tonumber(Legacy.Settings.Basher.mobCount()) or 0
+    end
+
+    if type(table.contains) == "function" then
+      currentTargetKnown = table.contains(itemsList, Legacy.Settings.Basher.currentTar)
+    end
+
+    if hpPer ~= nil and hpPer &lt;= math.floor(fleeAt + 2) and not Legacy.Curing.Affs.blackout and Legacy.Settings.Basher.flee == true then
+      Legacy.bigEcho("Flee! Run for your life!!", "gold", "red")
+      Legacy.Basher.flee(gmcp.Room.Info.num)
+      Legacy.Settings.Basher.fleeing = true
+      return
+    end
+
+    if Legacy.Settings.Basher.status == true then
+      if (vitals.eq or vitals.bal) == "0" then return end
+      if (vitals.eq and vitals.bal) == "1" then attacked = false end
+      if Legacy.Settings.Basher.queued == true then return end
+      if attacked == true then return end
+    end
+
+    if Legacy.Settings.Basher.status == false then return end
+    --if gmcp.IRE.Target.Info.short_desc:match("a harrowing thrall of") and health &lt; 21 then cecho("\n&lt;red&gt;DON'T KILL THE THRALL!") Legacy.Settings.Basher.status = false end
+    if targetSet == "Aranos" then send("settarget none") return end
+  
+    sendCount = sendCount or 0
+    if sendCounter then
+      killTimer("sendCounter") 
+      sendCounter = tempTimer(10, function() if sendCount &lt; 49 then sendCount = 0 end end )
+    else
+      sendCounter = tempTimer(10, function() if sendCount &lt; 49 then sendCount = 0 end end )
+    end
+
+    if (Legacy.Settings.Basher.currentTar == "" and table.size(Legacy.Settings.Basher.possibleTargets) &gt; 0) then
+      for k,v in pairs(Legacy.Settings.Basher.possibleTargets) do
+        Legacy.Settings.Basher.currentTar = tostring(k)
+        send("settarget "..k)
+        break
+      end
+      send("ql")
+      return
+    end
+
+    if Legacy.Settings.Basher.onlyTarget == true then return end
+    if Yso and Yso.fool and type(Yso.fool.blocks_basher) == "function" and Yso.fool.blocks_basher() then return end
+    if sendCount &gt;= 20 then  Legacy.bigEcho("SOMETHING BROKE, TURNING HUNTING OFF", "red", "gold") Legacy.Settings.Basher.status = false return end 
+    if targetSet == "" and not currentTargetKnown then Legacy.Settings.Basher.currentTar = "" end
+    if class == "Occultist" then
+      Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
+      local attend = Legacy.Settings.Basher._attend
+      if attend.target == targetSet and health ~= nil and health &lt; 100 then
+        attend.healthDropped = true
+      end
+    end
+
+    local hp_ok = ((hp ~= nil and hp &gt; 0) or (hp_text == nil and Legacy.Settings.Basher.powerThrough == true))
+    local eq_ready = tostring(vitals.eq or "") == "1"
+    local bal_ready = tostring(vitals.bal or "") == "1"
+    local bigDamage = tonumber(configRage.bigDamage)
+    local smallDamage = tonumber(configRage.smallDamage)
+    local hasAttack = (class_cfg.attack ~= nil and class_cfg.attack ~= "")
+
+    if health ~= nil and targetHpPerc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and targetSet ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and hp_ok and targetSet ~= "" and eq_ready and bal_ready and mobCount &gt; 0 and hasAttack and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
+      local isDenizenTarget = _attack_is_denizen_target(targetSet)
+      if class == "Occultist" and isDenizenTarget and health ~= nil and health &gt;= 100 then
+        Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
+        local attend = Legacy.Settings.Basher._attend
+        local isNewTarget = (attend.target ~= targetSet)
+        local isHealthRecovery = (attend.target == targetSet and attend.healthDropped == true)
+        if isNewTarget or isHealthRecovery then
+          local opener_sep = (Yso and (Yso.sep or (Yso.cfg and Yso.cfg.pipe_sep))) or (string.char(38)..string.char(38))
+          if Legacy.Basher.queueAttackPackage("addclear", "attend @tar"..tostring(opener_sep).."cleanseaura @tar", true, "attend-opener") then
+            Legacy.Settings.Basher.queued = true
+            Legacy.Settings.Basher._attend = { target = targetSet, healthDropped = false }
+            sendCount = sendCount + 1
+            return
+          end
+        end
+      end
+      if Legacy.Settings.Basher.shield == false then
+        if bigDamage ~= nil and health &gt;= bigDamage then
+          for k,v  in pairs(class_cfg) do
+            if v.desc == "Big Damage" then
+              local rageCost = tonumber(v.rage) or 0
+              if math.floor(rage_now - rageCost) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true and v.cmd ~= nil and v.cmd ~= "" then
+                if Legacy.Basher.queueAttackPackage("add", v.cmd, true, "big-damage") then
+                  Legacy.Settings.Basher.queued = true
+                  tempTimer(26, function() v.available = true end)
+                  v.available = false
+                end
+              elseif Legacy.Settings.Basher.queued == false then
+                if Legacy.Basher.queueAttackPackage(nil, nil, true, "big-damage-fallback") then
+                  Legacy.Settings.Basher.queued = true
+                end
+              end
+            end
+          end
+        elseif smallDamage ~= nil and health &gt;= smallDamage then
+          for k,v  in pairs(class_cfg) do
+            if v.desc == "Small Damage" then
+              local rageCost = tonumber(v.rage) or 0
+              if math.floor(rage_now - rageCost) &gt;= 17 and v.available == true and Legacy.Settings.Basher.useRage == true and v.cmd ~= nil and v.cmd ~= "" then
+                if Legacy.Basher.queueAttackPackage("add", v.cmd, true, "small-damage") then
+                  Legacy.Settings.Basher.queued = true
+                  tempTimer(19, function() v.available = true end)
+                  v.available = false
+                end
+              elseif Legacy.Settings.Basher.queued == false then
+                if Legacy.Basher.queueAttackPackage(nil, nil, true, "small-damage-fallback") then
+                  Legacy.Settings.Basher.queued = true
+                end
+              end
+            end
+          end
+        elseif Legacy.Settings.Basher.queued == false then
+          if Legacy.Basher.queueAttackPackage(nil, nil, true, "basher") then
+            Legacy.Settings.Basher.queued = true
+          end
+        end
+      end
+      sendCount = sendCount + 1
+    end
+  end
+  registerAnonymousEventHandler("gmcp.Char.Vitals", "Legacy.Basher.Attack")
+  function Legacy.Settings.Basher.Rage()
+    if gmcp.Char.Status.class == "Alchemist" then
+      Legacy.Settings.Basher.Classes["Alchemist"].miasma = {cmd = "throw miasma", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Alchemist"].cadmium = {cmd = "educe cadmium", rage = 22, desc = "Gives Affliction", aff = "weakness", available = true}
+      Legacy.Settings.Basher.Classes["Alchemist"].caustic = {cmd = "throw caustic at ", rage = 17, desc = "Shieldbreak", available = true}
+      Legacy.Settings.Basher.Classes["Alchemist"].magnesium = {cmd = "educe magnesium", rage =36, desc = "Big Damage", available = true}
+      Legacy.Settings.Basher.Classes["Alchemist"].pathogen = {cmd = "throw pathogen", rage = 25, desc = "Conditional", needs = {"recklessness", "fear"}, available = true}
+      Legacy.Settings.Basher.Classes["Alchemist"].hypnotic = {cmd = "throw hypotic", rage = 28, desc = "Gives Affliction", aff = "amnesia", available = true}
+      Legacy.Settings.Basher.Classes["Alchemist"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Alchemist"].nrshieldbreak = {cmd = "educe copper", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Apostate" then
+      Legacy.Settings.Basher.Classes["Apostate"].convulsions = {cmd = "stare @tar convulsions", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Apostate"].horrify = {cmd = "stare @tar horrify", rage = 29, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Apostate"].daeggerpierce = {cmd = "daegger pierce @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Apostate"].burrow = {cmd = "daegger burrow @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Apostate"].bloodlet = {cmd = "bloodlet @tar", rage = 25, desc = "Conditional", needs = {"sensitivity", "stun"}, available = true}
+      Legacy.Settings.Basher.Classes["Apostate"].possess = {cmd = "possess @tar", rage = 32, desc = "Gives Affliction", aff = "charm", available = true}
+      Legacy.Settings.Basher.Classes["Apostate"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Apostate"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Bard" then    
+      Legacy.Settings.Basher.Classes["Bard"].moulinet = {cmd = "moulinet @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Bard"].trill = {cmd = "play trill at @tar", rage = 28, desc = "Gives Affliction", aff = "amnesia", available = true }
+      Legacy.Settings.Basher.Classes["Bard"].resonance = {cmd = "play resonance @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Bard"].howlslash = {cmd = "howlslash @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Bard"].cyclone = {cmd = "cyclone @tar", rage = 25, desc = "Conditional", needs = {"clumsiness", "stun"}, available = true}
+      Legacy.Settings.Basher.Classes["Bard"].charm = {cmd = "play charm at @tar", rage = 32, desc = "Gives Affliction", aff = "charm", available = true}
+      Legacy.Settings.Basher.Classes["Bard"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Bard"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Blademaster" then
+      Legacy.Settings.Basher.Classes["Blademaster"].leapstrike = {cmd = "leapstrike @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Blademaster"].daze = {cmd = "shin daze @tar", rage = 26, desc = "Gives Affliction", aff = "stun", available = true }
+      Legacy.Settings.Basher.Classes["Blademaster"].shatter = {cmd = "shin shatter @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Blademaster"].spinslash = {cmd = "spinslash @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Blademaster"].headstrike = {cmd = "strike @tar head", rage = 25, desc = "Conditional", needs = {"recklessness", "fear"}, available = true}
+      Legacy.Settings.Basher.Classes["Blademaster"].nerveslash = {cmd = "nerveslash @tar", rage = 22, desc = "Gives Affliction", aff = "weakness", available = true}
+      Legacy.Settings.Basher.Classes["Blademaster"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Blademaster"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Depthswalker" then
+      Legacy.Settings.Basher.Classes["Depthswalker"].drain = {cmd = "shadow drain @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Depthswalker"].curse = {cmd = "chrono curse @tar", rage = 24, desc = "Gives Affliction", aff = "aeon", available = true }
+      Legacy.Settings.Basher.Classes["Depthswalker"].nakail = {cmd = "intone nakail @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Depthswalker"].lash = {cmd = "shadow lash @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Depthswalker"].erasure = {cmd = "chrono erasure @tar", rage = 25, desc = "Mid Damage", available = true}
+      Legacy.Settings.Basher.Classes["Depthswalker"].boinad = {cmd = "intone boinad @tar", rage = 32, desc = "Gives Affliction", aff = "charm", available = true}
+      Legacy.Settings.Basher.Classes["Depthswalker"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Depthswalker"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Druid" then
+      Legacy.Settings.Basher.Classes["Druid"].strangle = {cmd = "strangle @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Druid"].redeem = {cmd = "reclamation redeem @tar", rage = 22, desc = "Gives Affliction", aff = "weakness", available = true }
+      Legacy.Settings.Basher.Classes["Druid"].vinecrack = {cmd = "vinecrack @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Druid"].ravage = {cmd = "ravage @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Druid"].sear = {cmd = "sear @tar", rage = 25, desc = "Conditional", needs = {"recklessness", "stun"}, available = true}
+      Legacy.Settings.Basher.Classes["Druid"].glare = {cmd = "quarterstaff glare @tar", rage = 14, desc = "Gives Affliction", aff = "clumsiness", available = true}
+      Legacy.Settings.Basher.Classes["Druid"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Druid"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Infernal" then
+      Legacy.Settings.Basher.Classes["Infernal"].ravage = {cmd = "ravage @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Infernal"].soulshield = {cmd = "soulshield", rage = 22, desc = "Buff", available = true }
+      Legacy.Settings.Basher.Classes["Infernal"].shiver = {cmd = "shiver @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Infernal"].spike = {cmd = "spike @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Infernal"].hellstrike = {cmd = "hellstrike @tar", rage = 25, desc = "Conditional", needs = {"recklessness", "fear"}, available = true}
+      Legacy.Settings.Basher.Classes["Infernal"].deathlink = {cmd = "deathlink ", rage = 30, desc = "Buff", available = true}
+      Legacy.Settings.Basher.Classes["Infernal"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Infernal"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Jester" then
+      Legacy.Settings.Basher.Classes["Jester"].noogie = {cmd = "noogie @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Jester"].dustthrow = {cmd = "dustthrow @tar", rage = 18, desc = "Gives Affliction", aff = "inhibit", available = true }
+      Legacy.Settings.Basher.Classes["Jester"].jacks = {cmd = "throw jacks at @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Jester"].ensconce = {cmd = "ensconce firecracker on @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Jester"].befuddle = {cmd = "befuddle @tar", rage = 25, desc = "Conditional", needs = {"aeon", "amnesia"}, available = true}
+      Legacy.Settings.Basher.Classes["Jester"].rap = {cmd = "rap @tar", rage = 26, desc = "Gives Affliction", aff = "stun", available = true}
+      Legacy.Settings.Basher.Classes["Jester"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Jester"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Magi" then
+      Legacy.Settings.Basher.Classes["Magi"].windslash = {cmd = "cast windlash at @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Magi"].dialation = {cmd = "cast dialation at @tar", rage = 24, desc = "Gives Affliction", aff = "aeon", available = true }
+      Legacy.Settings.Basher.Classes["Magi"].disintegrate = {cmd = "cast disintegrate at @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Magi"].squeeze = {cmd = "cast squeeze @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Magi"].firefall = {cmd = "cast firefall at @tar", rage = 25, desc = "Conditional", needs = {"clumsiness", "recklessness"}, available = true}
+      Legacy.Settings.Basher.Classes["Magi"].stormbolt = {cmd = "cast stormbolt at @tar", rage = 26, desc = "Gives Affliction", aff = "sensitivity", available = true}
+      Legacy.Settings.Basher.Classes["Magi"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Magi"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Monk" then
+      Legacy.Settings.Basher.Classes["Monk"].spinningbackfist = {cmd = "sbp", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Monk"].scramble = {cmd = "mind scramble", rage = 22, desc = "Gives Affliction", aff = "clumsiness", available = true}
+      Legacy.Settings.Basher.Classes["Monk"].splinterkick = {cmd = "spk ", rage = 17, desc = "Shieldbreak", available = true}
+      Legacy.Settings.Basher.Classes["Monk"].tornadokick = {cmd = "tnk", rage = 36, desc = "Big Damage", available = true}
+      Legacy.Settings.Basher.Classes["Monk"].mindblast = {cmd = "mind blast", rage = 25, desc = "Conditional", needs = {"weakness", "sensitivity"}, available = true}
+      Legacy.Settings.Basher.Classes["Monk"].ripplestrike = {cmd = "rpst", rage = 25, desc = "Gives Affliction", aff = "inhibit", available = true}
+      Legacy.Settings.Basher.Classes["Monk"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Monk"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Occultist" then
+      Legacy.Settings.Basher.Classes["Occultist"].harry = {cmd = "harry @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Occultist"].temper = {cmd = "temper @tar", rage = 32, desc = "Gives Affliction", aff = "charm", available = true }
+      Legacy.Settings.Basher.Classes["Occultist"].ruin = {cmd = "ruin @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Occultist"].chaosgate = {cmd = "chaosgate @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Occultist"].fluctuate = {cmd = "fluctuate @tar", rage = 25, desc = "Conditional", needs = {"fear", "amnesia"}, available = true}
+      Legacy.Settings.Basher.Classes["Occultist"].stagnate = {cmd = "stagnate @tar", rage = 29, desc = "Gives Affliction", aff = "aeon", available = true }
+      Legacy.Settings.Basher.Classes["Occultist"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Occultist"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Paladin" then
+      Legacy.Settings.Basher.Classes["Paladin"].harrow = {cmd = "harrow @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Paladin"].regeneration = {cmd = "perform rite of regeneration", rage = 18, desc = "Buff", available = true }
+      Legacy.Settings.Basher.Classes["Paladin"].faithrend = {cmd = "faithrend @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Paladin"].shock = {cmd = "perform rite of shock at @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Paladin"].punishment = {cmd = "perform rite of punishment at @tar", rage = 25, desc = "Conditional", needs = {"weakness", "clumsiness"}, available = true}
+      Legacy.Settings.Basher.Classes["Paladin"].recovery = {cmd = "perform rite of recovery at @tar", rage = 31, desc = "Buff", available = true}
+      Legacy.Settings.Basher.Classes["Paladin"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Paladin"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Pariah" then
+      Legacy.Settings.Basher.Classes["Pariah"].boil = {cmd = "blood boil @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Pariah"].symphony = {cmd = "swarm feast @tar", rage = 18, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Pariah"].ascour = {cmd = "accursed scour @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Pariah"].feast = {cmd = "swarm feast @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Pariah"].spider = {cmd = "trace spider @tar", rage = 25, desc = "Conditional", needs = {"inhibit", "sensitivity"}, available = true}
+      Legacy.Settings.Basher.Classes["Pariah"].wail = {cmd = "accursed wail @tar", rage = 32, desc = "Gives Affliction", aff = "clumsiness", available = true}
+      Legacy.Settings.Basher.Classes["Pariah"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Pariah"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Priest" then
+      Legacy.Settings.Basher.Classes["Priest"].torment = {cmd = "angel torment", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Priest"].incense = {cmd = "angel incense", rage = 19, desc = "Gives Affliction", aff = "recklessness", available = true }
+      Legacy.Settings.Basher.Classes["Priest"].crack = {cmd = "crack @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Priest"].desolation = {cmd = "perform rite of desolation @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Priest"].hammer = {cmd = "hammer @tar", rage = 25, desc = "Conditional", needs = {"clumsiness", "amnesia"}, available = true}
+      Legacy.Settings.Basher.Classes["Priest"].horrify = {cmd = "perform rite of horrify @tar", rage = 29, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Priest"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Priest"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Psion" then
+      Legacy.Settings.Basher.Classes["Psion"].barbedblade = {cmd = "weave barbedblade @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Psion"].regrowth = {cmd = "enact regrowth @tar", rage = 24, desc = "Gives Affliction", aff = "inhibit", available = true }
+      Legacy.Settings.Basher.Classes["Psion"].pulverise = {cmd = "weave pulverise @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Psion"].whirlwind = {cmd = "weave whirlwind @tar", rage = 25, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Psion"].terror = {cmd = "psi terror @tar", rage = 32, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Psion"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Psion"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Runewarden" then
+      Legacy.Settings.Basher.Classes["Runewarden"].collide = {cmd = "collide @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Runewarden"].bulwark = {cmd = "bulwark", rage = 28, desc = "Buff", available = true }
+      Legacy.Settings.Basher.Classes["Runewarden"].fragment = {cmd = "fragment @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Runewarden"].onslaught = {cmd = "onslaught @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Runewarden"].etch = {cmd = "etch rune at @tar", rage = 25, desc = "Conditional", needs = {"aeon", "stun"}, available = true }
+      Legacy.Settings.Basher.Classes["Runewarden"].safeguard = {cmd = "safeguard ", rage = 28, desc = "Buff", available = true }
+      Legacy.Settings.Basher.Classes["Runewarden"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Runewarden"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Sentinel" then
+      Legacy.Settings.Basher.Classes["Sentinel"].pester = {cmd = "pester @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Sentinel"].tame = {cmd = "tame @tar", rage = 32, desc = "Gives Affliction", aff = "charm", available = true }
+      Legacy.Settings.Basher.Classes["Sentinel"].bore = {cmd = "bore @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Sentinel"].skewer = {cmd = "skewer @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Sentinel"].swarm = {cmd = "swarm @tar", rage = 25, desc = "Conditional", needs = {"aeon", "clumsiness"}, available = true }
+      Legacy.Settings.Basher.Classes["Sentinel"].tame = {cmd = "goad @tar", rage = 32, desc = "Gives Affliction", aff = "recklessness", available = true }
+      Legacy.Settings.Basher.Classes["Sentinel"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Sentinel"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Serpent" then
+	    Legacy.Settings.Basher.Classes["Serpent"].thrash = {cmd = "thrash @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Serpent"].flagellate = {cmd = "flagellate @tar", rage = 25, desc = "Gives Affliction", aff = "aeon", available = true }
+      Legacy.Settings.Basher.Classes["Serpent"].excoriate = {cmd = "excoriate @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Serpent"].throatrip = {cmd = "throatrip @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Serpent"].snare = {cmd = "snare @tar", rage = 25, desc = "Conditional", needs = {"inhibit", "weakness"}, available = true }
+      Legacy.Settings.Basher.Classes["Serpent"].obliviate = {cmd = "obliviate @tar", rage = 28, desc = "Gives Affliction", aff = "amnesia", available = true }
+      Legacy.Settings.Basher.Classes["Serpent"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Serpent"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Shaman" then
+	    Legacy.Settings.Basher.Classes["Shaman"].corruption = {cmd = "curse @tar corruption", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Shaman"].korkma = {cmd = "invoke korkma @tar", rage = 29, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Shaman"].vulnerability = {cmd = "curse @tar vulnerability", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Shaman"].haemorrhage = {cmd = "curse @tar haemorrhage", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Shaman"].vurus = {cmd = "invoke vurus @tar", rage = 25, desc = "Conditional", needs = {"sensitivity", "amnesia"}, available = true }
+      Legacy.Settings.Basher.Classes["Shaman"].cesaret = {cmd = "invoke cesaret @tar", rage = 18, desc = "Gives Affliction", aff = "recklessness", available = true }
+      Legacy.Settings.Basher.Classes["Shaman"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Shaman"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Sylvan" then
+	    Legacy.Settings.Basher.Classes["Sylvan"].torrent = {cmd = "cast torrent at @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Sylvan"].sandstorm = {cmd = "cast sandstorm at @tar", rage = 29, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Sylvan"].thornpierce = {cmd = "thornpiece @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Sylvan"].stonevine = {cmd = "stonevine @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Sylvan"].leechroot = {cmd = "leechroot @tar", rage = 25, desc = "Conditional", needs = {"inhibit", "weakness"}, available = true }
+      Legacy.Settings.Basher.Classes["Sylvan"].rockshot = {cmd = "cast rockshot at @tar", rage = 18, desc = "Gives Affliction", aff = "amnesia", available = true }
+      Legacy.Settings.Basher.Classes["Sylvan"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Sylvan"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Unnamable" then
+      Legacy.Settings.Basher.Classes["Unnamable"].shriek = {cmd = "unnamable shriek @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Unnamable"].dread = {cmd = "croon dread @tar", rage = 24, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Unnamable"].sunder = {cmd = "unnamable sunder @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Unnamable"].destroy = {cmd = "unnamable destroy @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Unnamable"].onslaught = {cmd = "unnamable onslaught @tar", rage = 25, desc = "Conditional", needs = {"stun", "sensitivity"}, available = true }
+      Legacy.Settings.Basher.Classes["Unnamable"].entropy = {cmd = "croon entropy @tar", rage = 18, desc = "Gives Affliction", aff = "aeon", available = true }
+      Legacy.Settings.Basher.Classes["Unnamable"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Unnamable"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Silver Dragon" then
+      Legacy.Settings.Basher.Classes["Silver Dragon"].overwhelm = {cmd = "overwhelm @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Silver Dragon"].sizzle = {cmd = "sizzle @tar", rage = 25, desc = "Gives Affliction", aff = "sensitivity", available = true}
+      Legacy.Settings.Basher.Classes["Silver Dragon"].splinter = {cmd = "splinter @tar", rage = 17, desc = "Shieldbreak", available = true}
+      Legacy.Settings.Basher.Classes["Silver Dragon"].dragonspark = {cmd = "dragonspark @tar", rage = 36, desc = "Big Damage", available = true}
+      Legacy.Settings.Basher.Classes["Silver Dragon"].stormflare = {cmd = "stormflare @tar", rage = 25, desc = "Conditional", needs = {"amnesia", "fear"}, available = true}
+      Legacy.Settings.Basher.Classes["Silver Dragon"].galvanize = {cmd = "galvanize @tar", rage = 18, desc = "Gives Affliction", aff = "recklessness", available = true}
+      Legacy.Settings.Basher.Classes["Silver Dragon"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Silver Dragon"].nrshieldbreak = {cmd = "tailsmash @tar", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Golden Dragon" then
+    	Legacy.Settings.Basher.Classes["Golden Dragon"].overwhelm = {cmd = "overwhelm @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Golden Dragon"].deaden = {cmd = "deaden @tar", rage = 24, desc = "Gives Affliction", aff = "aeon", available = true }
+      Legacy.Settings.Basher.Classes["Golden Dragon"].psishatter = {cmd = "psishatter @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Golden Dragon"].psiblast = {cmd = "psiblast @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Golden Dragon"].psistorm = {cmd = "psistorm @tar", rage = 25, desc = "Conditional", needs = {"stun", "weakness"}, available = true }
+      Legacy.Settings.Basher.Classes["Golden Dragon"].psidaze = {cmd = "psidaze @tar", rage = 28, desc = "Gives Affliction", aff = "amnesia", available = true }
+      Legacy.Settings.Basher.Classes["Golden Dragon"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Golden Dragon"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Black Dragon" then
+      Legacy.Settings.Basher.Classes["Black Dragon"].dragonspit = {cmd = "dragonspit @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Black Dragon"].dragonsting = {cmd = "deaden @tar", rage = 25, desc = "Gives Affliction", aff = "sensitivity", available = true }
+      Legacy.Settings.Basher.Classes["Black Dragon"].dissolve = {cmd = "dissolve @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Black Dragon"].override = {cmd = "override @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Black Dragon"].corrode = {cmd = "corrode @tar", rage = 25, desc = "Conditional", needs = {"clumsiness", "aeon"}, available = true }
+      Legacy.Settings.Basher.Classes["Black Dragon"].dragonfear = {cmd = "psidaze @tar", rage = 28, desc = "Gives Affliction", aff = "fear", available = true }
+      Legacy.Settings.Basher.Classes["Black Dragon"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Black Dragon"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Blue Dragon" then
+      Legacy.Settings.Basher.Classes["Blue Dragon"].dragonchill = {cmd = "dragonchill @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Blue Dragon"].glaciate = {cmd = "glaciate @tar", rage = 26, desc = "Gives Affliction", aff = "stun", available = true }
+      Legacy.Settings.Basher.Classes["Blue Dragon"].frostrive = {cmd = "frostrive @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Blue Dragon"].override = {cmd = "override @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Blue Dragon"].frostwave = {cmd = "frostwave @tar", rage = 25, desc = "Conditional", needs = {"recklessness", "amnesia"}, available = true }
+      Legacy.Settings.Basher.Classes["Blue Dragon"].ague = {cmd = "auge @tar", rage = 28, desc = "Gives Affliction", aff = "clumsiness", available = true }
+      Legacy.Settings.Basher.Classes["Blue Dragon"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Blue Dragon"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Red Dragon" then
+      Legacy.Settings.Basher.Classes["Red Dragon"].overwhelm = {cmd = "overwhelm @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Red Dragon"].dragontaunt = {cmd = "glaciate @tar", rage = 26, desc = "Gives Affliction", aff = "recklessness", available = true }
+      Legacy.Settings.Basher.Classes["Red Dragon"].melt = {cmd = "melt @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Red Dragon"].dragonblaze = {cmd = "dragonblaze @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Red Dragon"].flamebath = {cmd = "flamebath @tar", rage = 25, desc = "Conditional", needs = {"recklessness", "amnesia"}, available = true }
+      Legacy.Settings.Basher.Classes["Red Dragon"].scorch = {cmd = "auge @tar", rage = 18, desc = "Gives Affliction", aff = "inhibit", available = true }
+      Legacy.Settings.Basher.Classes["Red Dragon"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Red Dragon"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "Green Dragon" then
+      Legacy.Settings.Basher.Classes["Green Dragon"].dragonspit = {cmd = "dragonspit @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["Green Dragon"].scour = {cmd = "scour @tar", rage = 18, desc = "Gives Affliction", aff = "recklessness", available = true }
+      Legacy.Settings.Basher.Classes["Green Dragon"].deteriorate = {cmd = "deteriorate @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["Green Dragon"].override = {cmd = "override @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["Green Dragon"].slaver = {cmd = "slaver @tar", rage = 25, desc = "Conditional", needs = {"sensitivity", "clumsiness"}, available = true }
+      Legacy.Settings.Basher.Classes["Green Dragon"].dragonsap = {cmd = "dragonsap @tar", rage = 22, desc = "Gives Affliction", aff = "inhibit", available = true }
+      Legacy.Settings.Basher.Classes["Green Dragon"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["Green Dragon"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "water Elemental Lord" or gmcp.Char.Status.class == 'water Elemental Lady' then
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].icicles = {cmd = "manifest icicles @tar", rage = 14, desc = "Small Damage", available = true }
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].icicles = {cmd = "manifest icicles @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].dehydrate = {cmd = "manifest dehydrate @tar", rage = 14, desc = "Gives Affliction", aff = "clumsiness", available = true }
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].dehydrate = {cmd = "manifest dehydrate @tar", rage = 14, desc = "Gives Affliction", aff = "clumsiness", available = true }
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].aquahammer = {cmd = "manifest aquahammer @tar", rage = 17, desc = "Shieldbreak", available = true }
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].aquahammer = {cmd = "manifest aquahammer @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].needlerain = {cmd = "manifest needlerain @tar", rage = 36, desc = "Big Damage", available = true }
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].needlerain = {cmd = "manifest needlerain @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].waterfall = {cmd = "manifest waterfall @tar", rage = 25, desc = "Conditional", needs = {"weakness", "aeon"}, available = true }
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].waterfall = {cmd = "manifest waterfall @tar", rage = 25, desc = "Conditional", needs = {"weakness", "aeon"}, available = true }
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].swell = {cmd = "manifest swell @tar", rage = 30, desc = "Buff", available = true }
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].swell = {cmd = "manifest swell @tar", rage = 30, desc = "Buff", available = true }
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["water Elemental Lord"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+			Legacy.Settings.Basher.Classes["water Elemental Lady"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "air Elemental Lord" or gmcp.Char.Status.class == 'air Elemental Lady' then
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].bolt = {cmd = "manifest bolt @tar", rage = 14, desc = "Small Damage", available = true }
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].bolt = {cmd = "manifest bolt @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].vacuum = {cmd = "manifest vacuum @tar", rage = 18, desc = "Gives Affliction", aff = "inhibit", available = true }
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].vacuum = {cmd = "manifest vacuum @tar", rage = 18, desc = "Gives Affliction", aff = "inhibit", available = true }
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].drill = {cmd = "manifest drill @tar", rage = 17, desc = "Shieldbreak", available = true }
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].drill = {cmd = "manifest drill @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].pressurewave = {cmd = "manifest pressurewave @tar", rage = 36, desc = "Big Damage", available = true }
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].pressurewave = {cmd = "manifest pressurewave @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].compress = {cmd = "aero compress @tar", rage = 25, desc = "Conditional", needs = {"stunned", "sensitivity"}, available = true }
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].compress = {cmd = "aero compress @tar", rage = 25, desc = "Conditional", needs = {"stunned", "sensitivity"}, available = true }
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].suffocate = {cmd = "aero suffocate @tar", rage = 22, desc = "Gives Affliction", aff = "inhibit", available = true }
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].suffocate = {cmd = "aero suffocate @tar", rage = 22, desc = "Gives Affliction", aff = "inhibit", available = true }
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["air Elemental Lord"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+			Legacy.Settings.Basher.Classes["air Elemental Lady"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "fire Elemental Lord" or gmcp.Char.Status.class == 'fire Elemental Lady' then
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].engulf = {cmd = "manifest engulf @tar", rage = 14, desc = "Small Damage", available = true }
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].engulf = {cmd = "manifest engulf @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].scourge = {cmd = "manifest scourge @tar", rage = 25, desc = "Gives Affliction", aff = "sensitivity", available = true }
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].scourge = {cmd = "manifest scourge @tar", rage = 25, desc = "Gives Affliction", aff = "sensitivity", available = true }
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].wires = {cmd = "manifest wires @tar", rage = 17, desc = "Shieldbreak", available = true }
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].wires = {cmd = "manifest wires @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].devastation = {cmd = "manifest devastation @tar", rage = 36, desc = "Big Damage", available = true }
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].devastation = {cmd = "manifest devastation @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].cataclysm = {cmd = "manifest cataclysm @tar", rage = 25, desc = "Conditional", needs = {"stunned", "recklessness"}, available = true }
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].cataclysm = {cmd = "manifest cataclysm @tar", rage = 25, desc = "Conditional", needs = {"stunned", "recklessness"}, available = true }
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].bonds = {cmd = "manifest bonds @tar", rage = 30, desc = "Small Damage", available = true }
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].bonds = {cmd = "manifest bonds @tar", rage = 30, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["fire Elemental Lord"].nrshieldbreak = {cmd = "manifest superheat @tar", rage = 0, desc = "Raze"}
+			Legacy.Settings.Basher.Classes["fire Elemental Lady"].nrshieldbreak = {cmd = "manifest superheat @tar", rage = 0, desc = "Raze"}
+    elseif gmcp.Char.Status.class == "earth Elemental Lord" or gmcp.Char.Status.class == 'earth Elemental Lady' then
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].smash = {cmd = "terran smash @tar", rage = 14, desc = "Small Damage", available = true }
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].smash = {cmd = "terran smash @tar", rage = 14, desc = "Small Damage", available = true }
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].rockfall = {cmd = "manifest rockfall @tar", rage = 18, desc = "Gives Affliction", aff = "stun", available = true }
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].rockfall = {cmd = "manifest rockfall @tar", rage = 18, desc = "Gives Affliction", aff = "stun", available = true }
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].charge = {cmd = "terran charge @tar", rage = 17, desc = "Shieldbreak", available = true }
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].charge = {cmd = "terran charge @tar", rage = 17, desc = "Shieldbreak", available = true }
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].flurry = {cmd = "terran flurry @tar", rage = 36, desc = "Big Damage", available = true }
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].flurry = {cmd = "terran flurry @tar", rage = 36, desc = "Big Damage", available = true }
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].magmaburst = {cmd = "manifest magmaburst @tar", rage = 25, desc = "Conditional", needs = {"recklessness", "clumsiness"}, available = true }
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].magmaburst = {cmd = "manifest magmaburst @tar", rage = 25, desc = "Conditional", needs = {"recklessness", "clumsiness"}, available = true }
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].rampart = {cmd = "terran rampart @tar", rage = 22, desc = "Buff", available = true }
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].rampart = {cmd = "terran rampart @tar", rage = 22, desc = "Buff", available = true }
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].configRage = {bigDamage = 20, smallDamage = 0, affAttack = 100}
+      Legacy.Settings.Basher.Classes["earth Elemental Lord"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+			Legacy.Settings.Basher.Classes["earth Elemental Lady"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
+        
+    end
+  end 
+end
+ 
+end
+registerAnonymousEventHandler("LegacyLoaded", "Basher_Setup")
+</script>
+			<eventHandlerList />
+		</Script>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>Rainbow Crits</name>
+			<packageName></packageName>
+			<script></script>
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>Rainbow Script</name>
+				<packageName></packageName>
+				<script>function rainbow(str, type, freq)
+    -- default settings, set to default if out-of-bounds
+    type = type or 0
+    if type &gt; 2 or type &lt; 0 then type = 0 end
+ 
+    freq = freq or 15
+ 
+    if freq &lt; 0 or freq &gt; 360 then freq = 15 end
+ 
+    local product = ""
+    local phase = 2 * math.pi / 3
+ 
+    local rand = betterRand()
+ 
+ 
+    if type == 0 then -- Non-repeating rainbow
+        freq = 2*math.pi / #str
+        for i = 1, #str do
+            if string.sub(str, i, i) == " " then
+                product = product..string.sub(str, i, i)
+            else
+                local r = math.sin(freq*i + phase + rand*10) * 127 + 128
+                local g = math.sin(freq*i + 0 + rand*10) * 127 + 128
+                local b = math.sin(freq*i + 2*phase + rand*10) * 127 + 128
+                r = string.format("%x", r)
+                g = string.format("%x", g)
+                b = string.format("%x", b)
+ 
+                if #r &lt; 2 then r = "0"..r end
+                if #g &lt; 2 then g = "0"..g end
+                if #b &lt; 2 then b = "0"..b end
+                product = product.."|c"..r..g..b..string.sub(str, i, i)
+            end
+        end
+    elseif type == 1 then -- Repeating rainbow
+ 
+        freq = freq * math.pi / 180
+        for i = 1, #str do
+            if string.sub(str, i, i) == " " then
+                product = product..string.sub(str, i, i)
+            else
+                local r = math.sin(freq*i + phase + rand*10) * 127 + 128
+                local g = math.sin(freq*i + 0 + rand*10) * 127 + 128
+                local b = math.sin(freq*i + 2*phase + rand*10) * 127 + 128
+                r = string.format("%x", r)
+                g = string.format("%x", g)
+                b = string.format("%x", b)
+ 
+                if #r &lt; 2 then r = "0"..r end
+                if #g &lt; 2 then g = "0"..g end
+                if #b &lt; 2 then b = "0"..b end
+                product = product.."|c"..r..g..b..string.sub(str, i, i)
+            end
+        end
+    elseif type == 2 then -- Old, uglier rainbow
+        local colours = { "|cFF0000", "|cFF6600", "|cFFEE00", "|c00FF00", "|c0099FF", "|c4400FF", "|c9900FF" }
+        local pass = math.random(7)
+ 
+        for char in str:gmatch"." do
+            if char == " " then
+                product = product .. char
+            else
+                product = product .. colours[pass] .. char
+                if pass == #colours then pass = 1 end
+                    pass = pass + 1
+                end
+        end
+    end
+    return product.."|r"
+end
+ 
+ 
+ 
+local randomtable = {}
+function betterRand()
+    if not randomtable[1] then
+        for i = 1, 97 do
+            randomtable[i] = math.random()
+        end
+    end
+    local x = math.random()
+    local i = 1 + math.floor(97*x)
+    x, randomtable[i] = randomtable[i], x
+    return x
+end</script>
+				<eventHandlerList />
+			</Script>
+		</ScriptGroup>
+	</ScriptPackage>
+	<KeyPackage />
+	<VariablePackage>
+		<HiddenVariables />
+	</VariablePackage>
+</MudletPackage>
