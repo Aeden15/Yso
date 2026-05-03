@@ -119,6 +119,7 @@ M.route_loop = M.route_loop or {
   active = "",
   last_change = _now(),
   last_reason = "init",
+  activating_id = "",
   nudges = {},
   nudge_dedupe_s = 0.05,
 }
@@ -245,6 +246,42 @@ local function _reset_party_owns()
   end
 end
 
+local function _stop_entry_loop(entry, reason, silent)
+  local id = type(entry) == "table" and _norm(entry.id or "") or ""
+  if id ~= "" and type(M.stop_route_loop) == "function" then
+    local ok, stopped = pcall(M.stop_route_loop, id, tostring(reason or "party_apply"), silent == true)
+    if ok and stopped == true then
+      return true
+    end
+  end
+
+  local mod = _route_module(entry)
+  if mod and type(mod.stop) == "function" then
+    pcall(mod.stop)
+    return true
+  end
+
+  return false
+end
+
+local function _start_alias_entry_loop(entry, reason)
+  local id = type(entry) == "table" and _norm(entry.id or "") or ""
+  if id ~= "" and type(M.start_route_loop) == "function" then
+    local ok, started = pcall(M.start_route_loop, id, tostring(reason or "party_apply"))
+    if ok and started == true then
+      return true
+    end
+  end
+
+  local mod = _route_module(entry)
+  if mod and type(mod.start) == "function" then
+    pcall(mod.start, tostring(reason or "party_apply"))
+    return mod.state and mod.state.enabled == true
+  end
+
+  return false
+end
+
 local function _party_apply(reason)
   local route = _route_norm(M.party and M.party.route or "dam")
   local entries = _party_entries()
@@ -253,9 +290,8 @@ local function _party_apply(reason)
   if M.state ~= "party" then
     for i = 1, #entries do
       local entry = entries[i]
-      local mod = _route_module(entry)
-      if mod and (_owned(entry) or _entry_enabled(entry)) and type(mod.stop) == "function" then
-        pcall(mod.stop)
+      if _owned(entry) or _entry_enabled(entry) then
+        _stop_entry_loop(entry, reason or "mode_not_party", true)
       end
     end
     _reset_party_owns()
@@ -269,16 +305,18 @@ local function _party_apply(reason)
 
   for i = 1, #entries do
     local entry = entries[i]
-    local mod = _route_module(entry)
     local is_desired = (tostring(entry.id or "") == tostring(desired.id or ""))
-    if mod and not is_desired and (_owned(entry) or _entry_enabled(entry)) and type(mod.stop) == "function" then
-      pcall(mod.stop)
+    if not is_desired and (_owned(entry) or _entry_enabled(entry)) then
+      _stop_entry_loop(entry, reason or "route_switch", true)
     end
     if not is_desired then _set_owned(entry, false) end
   end
 
   local mod = _route_module(desired)
   local desired_owned = _owned(desired)
+  local desired_id = _norm(desired and desired.id or "")
+  local activating_id = _norm(((M.route_loop or {}).activating_id) or "")
+  local in_loop_activate = (desired_id ~= "" and activating_id == desired_id)
   local is_alias_owned = (type(mod) == "table" and mod.alias_owned == true)
   local enabled = mod and mod.state and mod.state.enabled == true
 
@@ -290,10 +328,14 @@ local function _party_apply(reason)
     _set_owned(desired, true)
     desired_owned = true
   elseif is_alias_owned then
+    if enabled ~= true and not in_loop_activate then
+      _start_alias_entry_loop(desired, reason or "party_apply")
+      enabled = mod and mod.state and mod.state.enabled == true
+    end
     if enabled == true then
       _set_owned(desired, true)
       desired_owned = true
-    elseif desired_owned ~= true then
+    else
       _set_owned(desired, false)
       desired_owned = false
     end
@@ -400,6 +442,10 @@ end
 local function _loop_activate(entry, reason)
   if type(entry) ~= "table" then return false end
 
+  M.route_loop = M.route_loop or {}
+  local prior_activating = _norm(M.route_loop.activating_id or "")
+  M.route_loop.activating_id = _norm(entry.id or "")
+
   local mode = _norm(entry.mode or "")
   if mode == "party" then
     if entry.party_route and type(M.set_party_route) == "function" then
@@ -415,6 +461,7 @@ local function _loop_activate(entry, reason)
     pcall(M.set, mode, reason)
   end
 
+  M.route_loop.activating_id = prior_activating
   _set_active_loop(entry, reason)
   return true
 end
