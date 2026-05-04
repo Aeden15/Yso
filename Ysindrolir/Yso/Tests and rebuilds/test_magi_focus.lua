@@ -148,7 +148,6 @@ local function make_world(opts)
       eq_ready = function() return opts.eq_ready ~= false end,
     },
     mode = {
-      is_party = function() return false end,
       is_combat = function() return true end,
       route_loop_active = function(id) return id == "focus" end,
       schedule_route_loop = function() return true end,

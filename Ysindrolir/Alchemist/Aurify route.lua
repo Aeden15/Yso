@@ -359,12 +359,6 @@ local function _is_aurify_route()
   if type(M) ~= "table" then
     return false
   end
-  if type(M.is_party) == "function" then
-    local ok, v = pcall(M.is_party)
-    if ok and v == true then
-      return false
-    end
-  end
   if type(M.active_route_id) == "function" then
     local ok, v = pcall(M.active_route_id)
     local id = ok and _lc(v) or ""

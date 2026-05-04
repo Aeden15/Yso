@@ -1,6 +1,6 @@
 --========================================================--
 -- magi_group_damage.lua
---  * Party damage route for Magi.
+--  * Group damage route for Magi.
 --  * Strategy:
 --      - STAFF CAST HORRIPILATION while waterbonds are missing.
 --      - CAST FREEZE as the default baseline until freeze-side pressure exists.
@@ -20,7 +20,7 @@ local MGD = Yso.off.magi.group_damage
 -- NOTE: do NOT alias Yso.off.magi.dmg here — that namespace is owned by
 -- Magi_duel_dam.lua (magi_dmg route). Aliasing it here caused both routes
 -- to share the same module table, making magi_dmg inherit MGD.is_active()
--- which checks party-damage context and immediately kills the duel loop.
+-- which checks group-damage context and immediately kills the duel loop.
 MGD.alias_owned = true
 
 local function _load_magi_peer(file_name)
@@ -255,34 +255,20 @@ local function _eq_ready()
   return RC.eq_ready()
 end
 
-local function _party_damage_context_active()
+--- Group damage runs whenever Magi is in combat mode (same as other combat routes).
+local function _group_damage_context_ok()
   if not _is_magi() then return false end
-  local M = Yso and Yso.mode or nil
-  if not M then return false end
-
-  local is_party = false
-  if type(M.is_party) == "function" then
-    local ok, v = pcall(M.is_party)
-    if ok then is_party = (v == true) end
-  else
-    is_party = (_lc(M.state or "") == "party")
-      or (M.party and M.party.routes_on == true)
+  local Mo = Yso and Yso.mode
+  if not Mo then return false end
+  if type(Mo.is_combat) == "function" then
+    local ok, v = pcall(Mo.is_combat)
+    if ok and v ~= true then return false end
   end
-  if not is_party then return false end
-
-  local route = ""
-  if type(M.party_route) == "function" then
-    local ok, v = pcall(M.party_route)
-    if ok then route = _lc(v or "") end
-  elseif M.party then
-    route = _lc(M.party.route or "")
-  end
-  if route == "dmg" then route = "dam" end
-  return route == "" or route == "dam"
+  return true
 end
 
 local function _route_is_active()
-  if not _party_damage_context_active() then return false end
+  if not _group_damage_context_ok() then return false end
   if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
     return Yso.mode.route_loop_active("magi_group_damage") == true
   end

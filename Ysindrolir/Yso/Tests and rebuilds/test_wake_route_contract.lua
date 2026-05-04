@@ -133,9 +133,6 @@ _G.Yso = {
       for_mode = function()
         return {}
       end,
-      for_party_route = function()
-        return nil
-      end,
     },
   },
   off = {

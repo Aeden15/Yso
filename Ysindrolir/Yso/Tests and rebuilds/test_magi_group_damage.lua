@@ -123,9 +123,7 @@ local function make_world(opts)
       eq_ready = function() return opts.eq_ready ~= false end,
     },
     mode = {
-      is_party = function() return true end,
-      is_combat = function() return false end,
-      party_route = function() return "dam" end,
+      is_combat = function() return true end,
       route_loop_active = function(id) return id == "magi_group_damage" end,
       schedule_route_loop = function() return true end,
       stop_route_loop = function() return true end,
@@ -158,9 +156,7 @@ local function make_world(opts)
     Yso.net = { cfg = { dry_run = true } }
     dofile(API_PATH)
     Yso.state.eq_ready = function() return opts.eq_ready ~= false end
-    Yso.mode.is_party = function() return true end
-    Yso.mode.is_combat = function() return false end
-    Yso.mode.party_route = function() return "dam" end
+    Yso.mode.is_combat = function() return true end
     Yso.mode.route_loop_active = function(id) return id == "magi_group_damage" end
     Yso.mode.schedule_route_loop = function() return true end
     Yso.mode.stop_route_loop = function() return true end

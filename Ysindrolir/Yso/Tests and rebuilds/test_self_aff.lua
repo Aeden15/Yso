@@ -86,7 +86,6 @@ _G.Yso = {
   is_actively_fighting = function() return false end,
   mode = {
     is_combat = function() return false end,
-    is_party = function() return false end,
     active_route_id = function() return "" end,
     auto = { state = { combat_until = 0 } },
   },

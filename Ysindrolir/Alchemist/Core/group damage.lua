@@ -1,6 +1,6 @@
 --========================================================--
 -- Alchemist / group damage.lua
---  Party damage route for Alchemist lane-combo payloads.
+--  Group damage route for Alchemist lane-combo payloads.
 --========================================================--
 
 _G.Yso = _G.Yso or _G.yso or {}
@@ -355,15 +355,14 @@ local function _evaluate_pending_for(tgt)
   return (_now() - at) <= (tonumber(GD.cfg.evaluate_pending_s or 1.2) or 1.2)
 end
 
-local function _is_party_damage_route()
+local function _is_group_damage_route_ok()
   local M = Yso and Yso.mode or nil
   if type(M) ~= "table" then
     return false
   end
-  if type(M.party_route) == "function" then
-    local ok, v = pcall(M.party_route)
-    local route = ok and _lc(v) or ""
-    if route ~= "" and route ~= "dam" then
+  if type(M.is_combat) == "function" then
+    local ok, v = pcall(M.is_combat)
+    if ok and v ~= true then
       return false
     end
   end
@@ -1140,7 +1139,7 @@ function GD.is_active()
       return false
     end
   end
-  return _is_party_damage_route()
+  return _is_group_damage_route_ok()
 end
 
 function GD.reset_route_state(reason, target)

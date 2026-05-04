@@ -253,8 +253,7 @@ local function make_route_world(opts)
       phys = stub_P,
     },
     mode = {
-      is_party = function() return true end,
-      party_route = function() return "dam" end,
+      is_combat = function() return true end,
       route_loop_active = function(id) return id == "alchemist_group_damage" end,
       schedule_route_loop = function(id) staged[#staged + 1] = "schedule:" .. tostring(id); return true end,
     },

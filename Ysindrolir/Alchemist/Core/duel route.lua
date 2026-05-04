@@ -434,12 +434,6 @@ local function _is_duel_route()
   if type(M) ~= "table" then
     return false
   end
-  if type(M.is_party) == "function" then
-    local ok, v = pcall(M.is_party)
-    if ok and v == true then
-      return false
-    end
-  end
   if type(M.active_route_id) == "function" then
     local ok, v = pcall(M.active_route_id)
     local id = ok and _lc(v) or ""
@@ -1326,7 +1320,6 @@ function DR.attack_function(ctx)
       state_enabled = DR.state and DR.state.enabled == true,
       loop_enabled = DR.state and DR.state.loop_enabled == true,
       mode_combat = Yso and Yso.mode and type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() == true,
-      mode_party = Yso and Yso.mode and type(Yso.mode.is_party) == "function" and Yso.mode.is_party() == true,
       target = tostring(_target() or ""),
     })
     -- #endregion

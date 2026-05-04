@@ -1,7 +1,7 @@
 --========================================================--
 -- Yso Combat Route Registry
 --  • Single source of truth for active Yso combat routes.
---  • Keeps ids, aliases, namespaces, and mode/party mapping together.
+--  • Keeps ids, aliases, namespaces, and mode mapping together.
 --========================================================--
 
 Yso = Yso or {}
@@ -79,7 +79,6 @@ local ROUTES = {
   magi_focus = {
     id = "magi_focus",
     mode = "combat",
-    party_route = nil,
     namespace = "Yso.off.magi.focus",
     description = "Magi duel convergence",
     priority = 61,
@@ -90,7 +89,6 @@ local ROUTES = {
   magi_dmg = {
     id = "magi_dmg",
     mode = "combat",
-    party_route = nil,
     namespace = "Yso.off.magi.dmg",
     description = "Magi duel damage",
     priority = 62,
@@ -101,7 +99,6 @@ local ROUTES = {
   alchemist_duel_route = {
     id = "alchemist_duel_route",
     mode = "combat",
-    party_route = nil,
     namespace = "Yso.off.alc.duel_route",
     description = "Alchemist duel lock pressure",
     priority = 63,
@@ -112,7 +109,6 @@ local ROUTES = {
   alchemist_aurify_route = {
     id = "alchemist_aurify_route",
     mode = "combat",
-    party_route = nil,
     namespace = "Yso.off.alc.aurify_route",
     description = "Alchemist aurify bleed pressure",
     priority = 64,
@@ -122,10 +118,9 @@ local ROUTES = {
   },
   magi_group_damage = {
     id = "magi_group_damage",
-    mode = "party",
-    party_route = "dam",
+    mode = "combat",
     namespace = "Yso.off.magi.group_damage",
-    description = "Magi party damage",
+    description = "Magi group damage",
     priority = 56,
     class = "magi",
     active = true,
@@ -133,10 +128,9 @@ local ROUTES = {
   },
   alchemist_group_damage = {
     id = "alchemist_group_damage",
-    mode = "party",
-    party_route = "dam",
+    mode = "combat",
     namespace = "Yso.off.alc.group_damage",
-    description = "Alchemist party damage",
+    description = "Alchemist group damage",
     priority = 57,
     class = "alchemist",
     active = true,
@@ -160,8 +154,6 @@ local ALIASES = {
   mgd = { magi = "magi_group_damage" },
   dmg = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
   dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  party_dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  party_damage = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
 }
 
 local function _route_id(name)
@@ -212,24 +204,6 @@ function RR.for_mode(mode)
   return _sorted_rows(function(entry)
     return _norm(entry.mode) == mode
   end)
-end
-
-function RR.for_party_route(route)
-  route = _norm(route)
-  if route == "dmg" then route = "dam" end
-  local cls = _current_class()
-  local best, best_rank, best_priority = nil, -1, -math.huge
-  for _, entry in pairs(ROUTES) do
-    if entry.active ~= false and _norm(entry.party_route) == route then
-      local rank = _class_rank(entry, cls)
-      if rank > 0 and (not best or rank > best_rank or (rank == best_rank and (entry.priority or 0) > best_priority)) then
-        best = entry
-        best_rank = rank
-        best_priority = entry.priority or 0
-      end
-    end
-  end
-  return best and _copy(best) or nil
 end
 
 function RR.primary_for_mode(mode)

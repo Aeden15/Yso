@@ -235,7 +235,6 @@ local function make_world(opts)
       phys = stub_P,
     },
     mode = {
-      is_party = function() return false end,
       active_route_id = function() return "alchemist_duel_route" end,
       route_loop_active = function(id) return id == "alchemist_duel_route" end,
       schedule_route_loop = function() return true end,

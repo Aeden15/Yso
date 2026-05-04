@@ -36,6 +36,7 @@ V.cfg = V.cfg or {
   eq_delay = 3.40,
   start_delay = 0.00,
   require_magi = true,
+  install_aliases = true,
   default_commands = {
     "embed creeps",
     "embed oscillate",
@@ -268,5 +269,24 @@ function V.run(commands, opts)
   V.state.timers[#V.state.timers + 1] = first_id
   return true
 end
+
+-- Register ^vibed$ / ^vibeds$ so the mass-embed flow survives profile reloads without a manual alias.
+V._alias = V._alias or {}
+local function _kill_vibes_alias(id)
+  if id then pcall(killAlias, id) end
+end
+
+function V.install_aliases()
+  if V.cfg and V.cfg.install_aliases == false then return false end
+  if type(tempAlias) ~= "function" then return false end
+  _kill_vibes_alias(V._alias.embed)
+  -- vibed | vibeds (same sequence)
+  V._alias.embed = tempAlias([[^vibeds?$]], function()
+    pcall(V.run)
+  end)
+  return true
+end
+
+V.install_aliases()
 
 return V

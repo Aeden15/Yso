@@ -509,10 +509,6 @@ function SA.reset(source, opts)
         local ok_mode, v = pcall(Yso.mode.is_combat)
         in_live_mode = ok_mode and (v == true)
       end
-      if not in_live_mode and type(Yso.mode.is_party) == "function" then
-        local ok_mode, v = pcall(Yso.mode.is_party)
-        in_live_mode = ok_mode and (v == true)
-      end
       actively_fighting = in_live_mode
     end
   end

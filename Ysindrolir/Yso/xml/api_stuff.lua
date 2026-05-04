@@ -602,10 +602,9 @@ function Yso.emit(payload, opts)
   end
 
   -- Decide whether to commit immediately or stage-only (for orchestrated offense).
-  local function _in_combat_party()
-    if Yso and Yso.mode then
-      if type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() then return true end
-      if type(Yso.mode.is_party) == "function" and Yso.mode.is_party() then return true end
+  local function _in_combat_mode()
+    if Yso and Yso.mode and type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() then
+      return true
     end
     return false
   end
@@ -633,9 +632,9 @@ function Yso.emit(payload, opts)
     if opts.commit == true or opts.force_commit == true then return true end
     if opts.commit == false then return false end
     if opts.force == true then return true end
-    -- In combat/party, lane-table offense emits are staged so the route loop or
+    -- In combat, lane-table offense emits are staged so the route loop or
     -- wake bus can flush them on the next viable reopen.
-    if _in_combat_party() and _is_lane_payload(p) and _offenseish() then return false end
+    if _in_combat_mode() and _is_lane_payload(p) and _offenseish() then return false end
     return true
   end
 

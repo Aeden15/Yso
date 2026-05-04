@@ -3,22 +3,18 @@
 -- Purpose:
 --   * Central "mode of play" switch for Yso
 --   * Modes: "bash" (hunt) and "combat" only
---   * Team / group routes (aff|dam) run in combat via routes_on + set_party_route
+--   * All combat routes (duel, group, aurify, focus, …) run when mode is combat
 --   * Non-destructive: only flips optional toggles if present
 --
 -- API:
 --   Yso.mode.set("bash"|"combat"[, reason])
 --   Yso.mode.toggle([reason])                 -- toggles bash <-> combat
---   Yso.mode.is_bash() / is_hunt() / is_combat() / is_party()
---   Yso.mode.set_party_route("aff"|"dam"[, reason])
+--   Yso.mode.is_bash() / is_hunt() / is_combat()
 --   raiseEvent("yso.mode.changed", old, new, reason) on mode change
---   raiseEvent("yso.party.route.changed", old, new, reason) on party route change
 --
 -- Runtime aliases (tempAlias, auto-registered if available):
 --   ^hunt$    -> switch to bash mode without forcing a huntmode reset on noop
 --   ^mbash$   -> if already in bash, force a huntmode refresh/reset
---   ^team...$  -> combat + team routes / route toggle (see implementation)
---   ^teamroute\s+(\S+)$ -> Yso.mode.set_party_route(matches[2], "alias")
 --
 -- Back-compat:
 --   * "hunt" normalizes to "bash"
@@ -48,7 +44,6 @@ local function _norm(s)
   s = s:gsub("^%s+",""):gsub("%s+$","")
   if s == "pvp" then s = "combat" end
   if s == "pve" or s == "hunt" or s == "hunting" or s == "bashing" then s = "bash" end
-  if s == "party" then s = "combat" end
   return s
 end
 
@@ -65,7 +60,6 @@ M.cfg = M.cfg or {
   default = "combat",
   echo = true,
   install_mode_aliases = true,
-  install_team_aliases = false,
 }
 
 M.profile = M.profile or {
@@ -97,15 +91,6 @@ M.state = M.state or _norm(M.cfg.default or "combat")
 M.state = _norm(M.state)
 M.last_change = M.last_change or _now()
 M.last_reason = M.last_reason or "init"
-
-M.party = M.party or {
-  route       = "dam",
-  last_change = _now(),
-  last_reason = "init",
-  owns = {},
-  routes_on   = false,
-}
-if M.party.routes_on == nil then M.party.routes_on = false end
 
 M.route_loop = M.route_loop or {
   active = "",
@@ -232,14 +217,6 @@ local function _ensure_route_module(entry)
   return _route_module(entry)
 end
 
-local function _party_entries()
-  local RR = _route_registry()
-  if RR and type(RR.for_mode) == "function" then
-    return RR.for_mode("party")
-  end
-  return {}
-end
-
 local function _route_entries()
   local RR = _route_registry()
   if not (RR and type(RR.active_ids) == "function" and type(RR.resolve) == "function") then
@@ -254,191 +231,21 @@ local function _route_entries()
   return out
 end
 
-local function _party_entry(route)
+local function _stop_all_route_loops(reason, silent)
   local RR = _route_registry()
-  if RR and type(RR.for_party_route) == "function" then
-    return RR.for_party_route(route)
-  end
-  return nil
-end
-
-local function _owns_key(entry)
-  if type(entry) ~= "table" then return tostring(entry or "") end
-  return tostring(entry.id or entry.party_route or "")
-end
-
-local function _owned(entry)
-  local owns = M.party and M.party.owns or {}
-  local key = _owns_key(entry)
-  if owns[key] ~= nil then return owns[key] == true end
-  local route = type(entry) == "table" and tostring(entry.party_route or "") or ""
-  return route ~= "" and owns[route] == true
-end
-
-local function _set_owned(entry, on)
-  M.party.owns = M.party.owns or {}
-  local key = _owns_key(entry)
-  if key ~= "" then M.party.owns[key] = (on == true) end
-  local route = type(entry) == "table" and tostring(entry.party_route or "") or ""
-  if route ~= "" then M.party.owns[route] = (on == true) end
-end
-
-local function _entry_enabled(entry)
-  local mod = _route_module(entry)
-  if not mod then return false end
-  if mod.state and type(mod.state.enabled) == "boolean" then
-    return mod.state.enabled == true
-  end
-  if type(mod.enabled) == "boolean" then
-    return mod.enabled == true
-  end
-  return false
-end
-
-local function _reset_party_owns()
-  M.party.owns = M.party.owns or {}
-  for k in pairs(M.party.owns) do
-    M.party.owns[k] = false
-  end
-end
-
-local function _stop_entry_loop(entry, reason, silent)
-  local id = type(entry) == "table" and _norm(entry.id or "") or ""
-  if id ~= "" and type(M.stop_route_loop) == "function" then
-    local ok, stopped = pcall(M.stop_route_loop, id, tostring(reason or "party_apply"), silent == true)
-    if ok and stopped == true then
-      return true
+  if not RR or type(RR.active_ids) ~= "function" then return end
+  local ids = RR.active_ids()
+  for i = 1, #ids do
+    local id = ids[i]
+    if id and id ~= "" and type(M.stop_route_loop) == "function" then
+      pcall(M.stop_route_loop, id, reason or "stop_all", silent == true)
     end
   end
-
-  local mod = _route_module(entry)
-  if mod and type(mod.stop) == "function" then
-    pcall(mod.stop)
-    return true
-  end
-
-  return false
-end
-
-local function _start_alias_entry_loop(entry, reason)
-  local id = type(entry) == "table" and _norm(entry.id or "") or ""
-  if id ~= "" and type(M.start_route_loop) == "function" then
-    local ok, started = pcall(M.start_route_loop, id, tostring(reason or "party_apply"))
-    if ok and started == true then
-      return true
-    end
-  end
-
-  local mod = _route_module(entry)
-  if mod and type(mod.start) == "function" then
-    pcall(mod.start, tostring(reason or "party_apply"))
-    return mod.state and mod.state.enabled == true
-  end
-
-  return false
-end
-
-local function _party_apply(reason)
-  local route = _route_norm(M.party and M.party.route or "dam")
-  local entries = _party_entries()
-  local desired = _party_entry(route)
-
-  local team_active = (M.state == "combat" and M.party and M.party.routes_on == true)
-  if M.state == "bash" or not team_active then
-    for i = 1, #entries do
-      local entry = entries[i]
-      if _owned(entry) or _entry_enabled(entry) then
-        _stop_entry_loop(entry, reason or "mode_not_party", true)
-      end
-    end
-    _reset_party_owns()
-    return
-  end
-
-  if not desired then
-    _echo(("Party route <yellow>%s<reset> is not registered."):format(tostring(route)))
-    return
-  end
-
-  for i = 1, #entries do
-    local entry = entries[i]
-    local is_desired = (tostring(entry.id or "") == tostring(desired.id or ""))
-    if not is_desired and (_owned(entry) or _entry_enabled(entry)) then
-      _stop_entry_loop(entry, reason or "route_switch", true)
-    end
-    if not is_desired then _set_owned(entry, false) end
-  end
-
-  local mod = _route_module(desired)
-  local desired_owned = _owned(desired)
-  local desired_id = _norm(desired and desired.id or "")
-  local activating_id = _norm(((M.route_loop or {}).activating_id) or "")
-  local in_loop_activate = (desired_id ~= "" and activating_id == desired_id)
-  local is_alias_owned = (type(mod) == "table" and mod.alias_owned == true)
-  local enabled = mod and mod.state and mod.state.enabled == true
-
-  if mod and type(mod.start) == "function" and not is_alias_owned then
-    if enabled ~= true then
-      pcall(mod.start)
-      enabled = mod.state and mod.state.enabled == true
-    end
-    _set_owned(desired, true)
-    desired_owned = true
-  elseif is_alias_owned then
-    if enabled ~= true and not in_loop_activate then
-      _start_alias_entry_loop(desired, reason or "party_apply")
-      enabled = mod and mod.state and mod.state.enabled == true
-    end
-    if enabled == true then
-      _set_owned(desired, true)
-      desired_owned = true
-    else
-      _set_owned(desired, false)
-      desired_owned = false
-    end
-  else
-    _set_owned(desired, false)
-    desired_owned = false
-  end
-
-  -- Shared status echo lives in M.echo() so a single action does not stack
-  -- a generic route line on top of the class-owned loop line.
 end
 
 function M.is_bash()   return M.state == "bash" end
 function M.is_hunt()   return M.is_bash() end
 function M.is_combat() return M.state == "combat" end
-function M.is_party()  return M.party and M.party.routes_on == true end
-
-function M.party_route()
-  return _route_norm(M.party and M.party.route or "dam")
-end
-
-function M.route_owned(route)
-  local entry = _party_entry(route)
-  if entry then return _owned(entry) end
-  route = _route_norm(route)
-  return M.party and M.party.owns and M.party.owns[route] == true or false
-end
-
-function M.set_route_owned(route, on)
-  M.party = M.party or {
-    route = "dam",
-    last_change = _now(),
-    last_reason = "manual",
-    owns = {},
-  }
-  local entry = _party_entry(route)
-  if entry then
-    _set_owned(entry, on)
-    return true
-  end
-  route = _route_norm(route)
-  if route == "" then return false end
-  M.party.owns = M.party.owns or {}
-  M.party.owns[route] = (on == true)
-  return true
-end
 
 local function _loop_state(mod)
   if type(mod) ~= "table" then return nil end
@@ -504,19 +311,10 @@ local function _loop_activate(entry, reason)
   M.route_loop.activating_id = _norm(entry.id or "")
 
   local mode = _norm(entry.mode or "")
-  if mode == "party" then
-    M.party.routes_on = true
-    if type(M.set) == "function" then
-      pcall(M.set, "combat", reason)
+  if mode ~= "" and type(M.set) == "function" then
+    if mode == "bash" or mode == "combat" then
+      pcall(M.set, mode, reason)
     end
-    if entry.party_route and type(M.set_party_route) == "function" then
-      pcall(M.set_party_route, entry.party_route, reason)
-    end
-    if entry.party_route and type(M.set_route_owned) == "function" then
-      pcall(M.set_route_owned, entry.party_route, true)
-    end
-  elseif mode ~= "" and type(M.set) == "function" then
-    pcall(M.set, mode, reason)
   end
 
   M.route_loop.activating_id = prior_activating
@@ -526,10 +324,6 @@ end
 
 local function _loop_release(entry)
   if type(entry) ~= "table" then return false end
-
-  if entry.party_route and type(M.set_route_owned) == "function" then
-    pcall(M.set_route_owned, entry.party_route, false)
-  end
 
   local route_id = _norm(entry.id or "")
   if _norm(M.route_loop and M.route_loop.active or "") == route_id then
@@ -845,7 +639,7 @@ function Yso.is_actively_fighting()
   local route = type(M.active_route_id) == "function" and M.active_route_id() or ""
   if route == "" or route == "none" then return false end
   if type(M.is_hunt) == "function" and M.is_hunt() then return false end
-  if not ((type(M.is_combat) == "function" and M.is_combat()) or (type(M.is_party) == "function" and M.is_party())) then
+  if not (type(M.is_combat) == "function" and M.is_combat()) then
     return false
   end
 
@@ -859,47 +653,8 @@ function Yso.is_actively_fighting()
   return t ~= ""
 end
 
-function M.set_party_route(route, reason)
-  route = _route_norm(route)
-  local entry = _party_entry(route)
-  if not entry then
-    _echo(("Invalid party route: <yellow>%s<reset> (use a registered party route)"):format(tostring(route)))
-    return false
-  end
-  route = tostring(entry.party_route or route)
-
-  if M.is_combat() then
-    M.party.routes_on = true
-  end
-
-  local old = M.party_route()
-  if old == route then
-    if M.party then M.party.last_reason = reason or M.party.last_reason end
-    _party_apply("route_noop")
-    return true
-  end
-
-  M.party.route = route
-  M.party.last_change = _now()
-  M.party.last_reason = reason or "manual"
-
-  _party_apply("route:"..tostring(reason or "manual"))
-
-  if type(raiseEvent) == "function" then
-    raiseEvent("yso.party.route.changed", old, route, M.party.last_reason)
-  end
-
-  if M.is_combat() and M.is_party() then M.echo() end
-
-  return true
-end
-
 function M.echo()
-  if M.is_combat() and M.is_party() then
-    _echo(("Mode: %s (team: %s)"):format(M.state, M.party_route()))
-  else
-    _echo(("Mode: %s"):format(M.state))
-  end
+  _echo(("Mode: %s"):format(M.state))
 end
 
 function M.apply_profile(mode)
@@ -926,22 +681,11 @@ function M.set(mode, reason)
   local old = M.state
   if old == mode then
     M.last_reason = reason or M.last_reason
-    if mode == "combat" and M.party and M.party.routes_on then
-      local r = tostring(reason or "")
-      if r == "alias:combat" or r == "alias:mode" then
-        M.party.routes_on = false
-        _party_apply("combat_clear_team")
-      end
-    end
     return true
   end
 
   if mode == "bash" then
-    M.party.routes_on = false
-  elseif mode == "combat" and old == "bash" then
-    if not (M.party and M.party.routes_on == true) then
-      M.party.routes_on = false
-    end
+    _stop_all_route_loops("mode_bash", true)
   end
 
   M.state = mode
@@ -954,7 +698,6 @@ function M.set(mode, reason)
     raiseEvent("yso.mode.changed", old, mode, M.last_reason)
   end
 
-  _party_apply("mode:"..tostring(M.last_reason))
   M.echo()
 
   return true
@@ -987,29 +730,6 @@ local function _set_bash_mode(reason, opts)
     _refresh_huntmode(why)
   end
   return ok
-end
-
-local function _set_team_mode(route, reason)
-  local why = tostring(reason or "alias")
-  M.party.routes_on = true
-  local ok = M.set("combat", why)
-  if ok and route and tostring(route) ~= "" then
-    M.set_party_route(route, why)
-  elseif ok then
-    M.set_party_route(_route_norm(M.party and M.party.route or "dam"), why)
-  end
-  return ok
-end
-
-local function _off_core()
-  local core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.toggle) == "function" then return core end
-  if type(require) == "function" then
-    pcall(require, "Yso.Combat.offense_core")
-  end
-  core = Yso and Yso.off and Yso.off.core or nil
-  if core and type(core.toggle) == "function" then return core end
-  return nil
 end
 
 Yso.util = Yso.util or {}
@@ -1065,43 +785,11 @@ if type(tempAlias) == "function" then
   _kill_alias(M._alias.mbash)
   _kill_alias(M._alias.mhunt)
   _kill_alias(M._alias.combat)
-  _kill_alias(M._alias.team)
-  _kill_alias(M._alias.teamroute)
-  _kill_alias(M._alias.party)
-  _kill_alias(M._alias.par)
-  _kill_alias(M._alias.partyroute)
-  if M.cfg.install_team_aliases == true then
-    M._alias.team = tempAlias([[^team(?:\s+(\S+))?$]], function()
-      local r = matches[2]
-      if r and r ~= "" then
-        local route = _route_norm(r)
-        if route == "aff" or route == "dam" then
-          local core = _off_core()
-          if core and type(core.toggle) == "function" then
-            core.toggle(route)
-          else
-            _echo("offense core unavailable for team route toggle.")
-          end
-        else
-          _set_team_mode(r, "alias:team")
-        end
-      else
-        _set_team_mode(nil, "alias:team")
-      end
-    end)
-
-    M._alias.teamroute = tempAlias([[^teamroute\s+(\S+)$]], function()
-      Yso.mode.set_party_route(matches[2], "alias:teamroute")
-    end)
-  end
 
   M._alias.mode = tempAlias([[^mode$]], function() M.echo() end)
   M._alias.mode_set = tempAlias([[^mode\s+(\S+)(?:\s+(\S+))?$]], function()
     local raw = tostring(matches[2] or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
-    local arg = matches[3]
-    if raw == "party" then
-      _set_team_mode(arg, "alias:mode")
-    elseif raw == "bash" or raw == "hunt" then
+    if raw == "bash" or raw == "hunt" then
       _set_bash_mode("alias:mode")
     else
       M.set(_norm(raw), "alias:mode")
@@ -1118,12 +806,6 @@ if type(tempAlias) == "function" then
   M._alias.mt = tempAlias([[^mt$]], function()
     M.toggle("alias:mt")
   end)
-end
-
-M._tip_shown = M._tip_shown or false
-if (not M._tip_shown) and type(cecho) == "function" then
-  M._tip_shown = true
-  cecho("<aquamarine>[Yso] <reset>Tip: type <white>team<reset> to use the group-damage route (default: <white>team dam<reset>)."..string.char(10))
 end
 
 --========================================================--
