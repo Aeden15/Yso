@@ -1,29 +1,13 @@
 Magi workspace notes
 ====================
-Last updated: March 31, 2026
+Last updated: May 3, 2026
 
 This folder is the class-specific home for Magi work.
 
 Current fixes
 -------------
-  The old shared package:
-    Ysindrolir/mudlet packages/Devtools.xml
-  has been retired.
-
-  Unified class devtools now live in one XML source:
-    ../mudlet packages/YsoDevtools.xml
-
-  This XML now contains Magi devtools, kept segregated by
-  class-specific command surfaces inside the same package.
-
   Magi aliases and triggers in Yso system.xml were corrected for the current
   Elementalism / Crystalism helpers.
-
-  The unified devtools XML includes a Bloodboil test surface:
-    ytest bloodboil snap
-    ytest bloodboil fire [secs] [force]
-    ytest bloodboil debug [on|off|toggle]
-    ytest bloodboil auto [on|off|toggle]
 
   The Magi team-damage route now stays inside the same dam path while mixing
   water and fire pressure. It opens with horripilation when waterbonds is
@@ -113,13 +97,9 @@ Notes
     horripilation -> freeze baseline -> branch reconsideration
   and only then mixes fire-side pressure from AK frozen/frostbite/scalded/
   aflame/conflagrate state.
-  Magi focus lives in the same route family and debug surface:
-    yrdebug on magi_focus
-    yrshow magi_focus
-    yrshow magi_focus full
-  Focus uses live Yso.magi.resonance state, observes Crystalism focus without
-  auto-casting it, and exposes Dissonance stage/confidence/last evidence in
-  the shared YsoDevtools package rather than inventing a fixed timer.
+  Magi focus uses live Yso.magi.resonance state, observes Crystalism focus without
+  auto-casting it, and keeps Dissonance stage/confidence/last evidence on the
+  route object for Lua inspection (see magi_focus.lua / explain hooks).
   Focus freeze gating now treats water resonance as the hard pre-gate:
     when water is below moderate, freeze reopen remains mandatory.
     when water is already moderate, missing frozen/frostbite no longer

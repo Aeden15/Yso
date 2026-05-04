@@ -101,70 +101,6 @@ M.route_loop = M.route_loop or {
   nudge_dedupe_s = 0.05,
 }
 
--- #region agent log
-local function _agent_dbg_paths()
-  local paths = {
-    "c:\\Users\\shuji\\OneDrive\\Desktop\\Yso systems\\debug-9482d2.log"
-  }
-  if Yso and Yso.cfg and type(Yso.cfg.agent_dbg_log) == "string" and Yso.cfg.agent_dbg_log ~= "" then
-    paths[#paths + 1] = Yso.cfg.agent_dbg_log
-  end
-  if type(getMudletHomeDir) == "function" then
-    local h = getMudletHomeDir()
-    if type(h) == "string" and h ~= "" then
-      local base = h:gsub("[\\/]+$", "")
-      paths[#paths + 1] = base .. "\\debug-9482d2.log"
-    end
-  end
-  paths[#paths + 1] = "debug-9482d2.log"
-  return paths
-end
-
-local function _agent_dbg(hypothesisId, location, message, data)
-  pcall(function()
-    data = data or {}
-    local ts = os.time() * 1000
-    if type(getEpoch) == "function" then
-      local t = tonumber(getEpoch()) or os.time()
-      if t > 20000000000 then t = t / 1000 end
-      ts = math.floor(t * 1000)
-    end
-    local esc = function(s)
-      return tostring(s or ""):gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n")
-    end
-    local bits = {
-      '{"sessionId":"9482d2"',
-      ',"runId":"aduel_cleanup_repro1"',
-      ',"hypothesisId":"' .. esc(hypothesisId) .. '"',
-      ',"location":"' .. esc(location) .. '"',
-      ',"message":"' .. esc(message) .. '"',
-      ',"timestamp":' .. tostring(ts),
-    }
-    for k, v in pairs(data) do
-      local ty = type(v)
-      if ty == "boolean" then
-        bits[#bits + 1] = string.format(',"%s":%s', esc(k), v and "true" or "false")
-      elseif ty == "number" then
-        bits[#bits + 1] = string.format(',"%s":%s', esc(k), v)
-      else
-        bits[#bits + 1] = string.format(',"%s":"%s"', esc(k), esc(v))
-      end
-    end
-    bits[#bits + 1] = "}"
-    local line = table.concat(bits)
-    for _, path in ipairs(_agent_dbg_paths()) do
-      local f = io.open(path, "a")
-      if f then
-        f:write(line)
-        f:write("\n")
-        f:close()
-        break
-      end
-    end
-  end)
-end
--- #endregion
-
 local function _route_norm(r)
   r = _norm(r)
   if r == "dmg" then r = "dam" end
@@ -487,13 +423,6 @@ function M.start_route_loop(name, reason)
   _loop_clear_waiting(mod)
   mod.state.template = mod.state.template or {}
   mod.state.template.last_reason = "start_loop"
-  -- #region agent log
-  _agent_dbg("H2", "yso_modes.start_route_loop", "loop_started", {
-    route = tostring(entry.id or ""),
-    reason = tostring(ctx.reason or ""),
-    state_loop_enabled = mod.state and mod.state.loop_enabled == true,
-  })
-  -- #endregion
   M.schedule_route_loop(entry.id, 0)
 
   if type(mod.alias_loop_on_started) == "function" then
@@ -531,13 +460,6 @@ function M.stop_route_loop(name, reason, silent)
   end
 
   _loop_release(entry)
-  -- #region agent log
-  _agent_dbg("H2", "yso_modes.stop_route_loop", "loop_stopped", {
-    route = tostring(entry.id or ""),
-    reason = tostring(ctx.reason or ""),
-    silent = ctx.silent == true,
-  })
-  -- #endregion
   return true
 end
 
@@ -553,14 +475,6 @@ function M.toggle_route_loop(name, reason)
     return false
   end
   local state = _loop_state(mod)
-  -- #region agent log
-  _agent_dbg("H2", "yso_modes.toggle_route_loop", "toggle_called", {
-    requested = tostring(name or ""),
-    resolved = tostring(entry.id or ""),
-    reason = tostring(reason or "toggle"),
-    currently_enabled = state and state.loop_enabled == true,
-  })
-  -- #endregion
   if state and state.loop_enabled == true then
     return M.stop_route_loop(entry.id, reason or "toggle", false)
   end
@@ -612,19 +526,6 @@ function M.tick_route_loop(name)
   local stop_on = _loop_stop_details(mod)
   if sent ~= true then
     state.template = state.template or {}
-    local detail_s = tostring(detail or "")
-    if state.template._dbg_last_detail ~= detail_s then
-      state.template._dbg_last_detail = detail_s
-      -- #region agent log
-      _agent_dbg("H4", "yso_modes.tick_route_loop", "attack_not_sent", {
-        route = tostring(entry.id or ""),
-        detail = detail_s,
-        stop_detail = stop_on[detail_s] == true,
-      })
-      -- #endregion
-    end
-  elseif state.template then
-    state.template._dbg_last_detail = ""
   end
 
   if sent ~= true and stop_on[tostring(detail or "")] == true then
@@ -735,12 +636,6 @@ end
 Yso.util = Yso.util or {}
 if type(Yso.util.toggle_route_alias) ~= "function" then
   function Yso.util.toggle_route_alias(route_id, reason)
-    -- #region agent log
-    _agent_dbg("H1", "yso_modes.toggle_route_alias", "alias_entry", {
-      route_id = tostring(route_id or ""),
-      reason = tostring(reason or ""),
-    })
-    -- #endregion
     local function _try_toggle()
       if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
         return Yso.mode.toggle_route_loop(route_id, reason)
@@ -760,15 +655,6 @@ if type(Yso.util.toggle_route_alias) ~= "function" then
     end
 
     local call_ok, ok, why = pcall(_try_toggle)
-    -- #region agent log
-    _agent_dbg("H1", "yso_modes.toggle_route_alias", "alias_result", {
-      route_id = tostring(route_id or ""),
-      reason = tostring(reason or ""),
-      call_ok = call_ok == true,
-      ok = ok == true,
-      why = tostring(why or ""),
-    })
-    -- #endregion
     if call_ok then return ok, why end
     return false, tostring(ok)
   end

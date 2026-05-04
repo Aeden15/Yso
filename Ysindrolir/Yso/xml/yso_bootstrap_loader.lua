@@ -33,11 +33,20 @@
 --  loader". You can do this by placing it above it in the script
 --  list in the Mudlet Script Editor (Yso Scripts → Core scripts).
 --
---  TO ADD A NEW CLASS:
---    1. Add its module require() calls in the CLASS MODULES section below.
---    2. Add its routes to route_registry.lua (ROUTES + ALIASES tables).
---    3. The status line at the end will automatically pick up any module
---       stored at Yso.off.<classname>.<routename>.
+--  ADDING A NEW CLASS (checklist):
+--    1. Implement route modules under Ysindrolir/<Class>/ or Ysindrolir/Yso/… and
+--       ensure package.path / bootstrap can require() them by module name.
+--    2. Register ids + toggle aliases in:
+--         Ysindrolir/Yso/Combat/route_registry.lua
+--       (keep Yso/xml/route_registry.lua in sync if you maintain the mirror.)
+--    3. Add pcall(require, "…") lines in BOTH places below so disk ↔ Mudlet stay
+--       aligned:
+--         • CLASS MODULES (this script)
+--         • Ysindrolir/Yso/xml/route_chassis_loader.lua  → embedded as the
+--           Mudlet script "Route chassis loader" (re-embed via export script).
+--    4. Re-run: Ysindrolir/scripts/export_yso_system_xml.ps1
+--    5. Optional: extend the loader status echo if you want visibility for new
+--       Yso.off.<namespace> tables.
 --========================================================--
 
 if _G.yso_bootstrap_done then return end   -- already ran, nothing to do
@@ -122,7 +131,7 @@ if loaded then
     pcall(require, "alchemist_duel_route")
     pcall(require, "alchemist_aurify_route")
 
-    -- ── MAGI MODULES ───────────────────────────────────────────────
+    -- ── MAGI MODULES (keep order identical to route_chassis_loader.lua) ──
     pcall(require, "magi_route_core")
     pcall(require, "magi_reference")
     pcall(require, "magi_dissonance")
@@ -130,11 +139,6 @@ if loaded then
     pcall(require, "magi_focus")
     pcall(require, "magi_group_damage")
     pcall(require, "Magi_duel_dam")
-
-    -- ── FUTURE CLASS MODULES ────────────────────────────────────────
-    -- Add new class modules here:
-    --   pcall(require, "myclass_duel_route")
-    --   pcall(require, "myclass_group_damage")
   end
 
   if type(cecho) == "function" then
@@ -143,17 +147,20 @@ if loaded then
 
     -- Alchemist
     local alc = Yso and Yso.off and Yso.off.alc or {}
-    -- Magi
+    -- Magi (offense routes under Yso.off.magi; mass-embed helper under Yso.magi.vibes)
     local magi = Yso and Yso.off and Yso.off.magi or {}
+    local magi_vibes = Yso and Yso.magi and Yso.magi.vibes
+    local vibes_ok = type(magi_vibes) == "table" and type(magi_vibes.run) == "function"
 
     cecho(string.format(
       "<aquamarine>[Yso:loader]<reset> bootstrap OK | modes=%s\n" ..
       "  alc : duel_route=%s  group_damage=%s  aurify_route=%s\n" ..
-      "  magi: focus=%s  dmg=%s  group_damage=%s\n",
+      "  magi: vibes=%s  focus=%s  dmg=%s  group_damage=%s\n",
       _yn(has_toggle),
       _yn(type(alc.duel_route)    == "table"),
       _yn(type(alc.group_damage)  == "table"),
       _yn(type(alc.aurify_route)  == "table"),
+      _yn(vibes_ok),
       _yn(type(magi.focus)        == "table"),
       _yn(type(magi.dmg)          == "table"),
       _yn(type(magi.group_damage) == "table")

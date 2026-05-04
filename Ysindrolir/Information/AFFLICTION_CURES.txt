@@ -1,6 +1,6 @@
 Achaea Affliction List — Action and Cures
 ==========================================
-Shared reference for Yso (Magi, Occultist). Source: in-game affliction list.
+Shared reference for Yso (Magi, Alchemist). Source: in-game affliction list.
 Use for curative-type lookups, predict_cure, and offense planning.
 
 Columns: Affliction | Action | Herbal Cure | Alchemical Cure

@@ -4,7 +4,7 @@ Supported classes are now Magi and Alchemist, plus shared/generic Yso core.
 
 The old unsupported class stack was intentionally purged from this workspace and
 from the Mudlet package XML. Its routes, aura/truename/read-aura handling,
-card-based self-cleanse support, class entities, and class-specific Devtools
+card-based self-cleanse support, class entities, and class-specific tooling
 surfaces were removed.
 
 Kept:
@@ -21,17 +21,14 @@ Tests and rebuilds:
 - Class-specific purged tests and rebuild tools were deleted rather than
   archived.
 
-Devtools:
-- Devtools entity/class-lane testing commands were intentionally removed for
-  now.
-- Remaining Devtools aliases are limited to generic lane/queue/payload helpers,
-  Magi/Alchemist-safe test hooks, and generic route debug surfaces.
+Optional Yso.net.cfg.dry_run (defaults off) can suppress live sends when testing
+payload plumbing locally.
 
 Package XML:
 - Ysindrolir/mudlet packages/Yso system.xml was scrubbed so it no longer embeds
   executable support for the removed class stack.
-- Ysindrolir/mudlet packages/YsoDevtools.xml was reduced to generic/Magi/
-  Alchemist-safe commands.
+- Lua under Ysindrolir/Yso/ and Ysindrolir/Alchemist/ is canonical; re-embed the
+  Mudlet package with Ysindrolir/scripts/export_yso_system_xml.ps1.
 
 Expected state:
 - Magi and Alchemist remain functional.

@@ -4,8 +4,7 @@ Supported classes are now **Magi** and **Alchemist**, plus shared/generic Yso co
 
 The old unsupported class stack was intentionally purged from this workspace and
 from the Mudlet package XML. Its routes, aura/truename/read-aura handling,
-card-based self-cleanse support, class entities, and class-specific Devtools
-surfaces were removed.
+card-based self-cleanse support, and class-specific tooling surfaces were removed.
 
 Kept:
 
@@ -23,18 +22,15 @@ Tests and rebuilds:
 - Class-specific purged tests and rebuild tools were deleted rather than
   archived.
 
-Devtools:
-
-- Devtools entity/class-lane testing commands were intentionally removed for now.
-- Remaining Devtools aliases are limited to generic lane/queue/payload helpers,
-  Magi/Alchemist-safe test hooks, and generic route debug surfaces.
+Optional **`Yso.net.cfg.dry_run`** (defaults off) can suppress live sends when testing
+payload plumbing locally.
 
 Package XML:
 
 - `Ysindrolir/mudlet packages/Yso system.xml` was scrubbed so it no longer embeds
   executable support for the removed class stack.
-- `Ysindrolir/mudlet packages/YsoDevtools.xml` was reduced to generic/Magi/
-  Alchemist-safe commands.
+- Lua sources under `Ysindrolir/Yso/` and `Ysindrolir/Alchemist/` are canonical;
+  re-embed into the package with `Ysindrolir/scripts/export_yso_system_xml.ps1`.
 
 ## Patch Notes (May 1, 2026)
 
@@ -45,6 +41,18 @@ Package XML:
   initial temper command.
 - The live Physiology evaluate-count trigger colourizes humour count lines while
   preserving existing state tracking.
+
+## Patch Notes (May 3, 2026)
+
+- Expanded `Ysindrolir/scripts/export_yso_system_xml.ps1` (34 embedded scripts) so
+  hinder/route_gate/self-aff/curing policy/Bash Vitals/Magi XML helpers re-embed from
+  disk; added on-disk sources under `Ysindrolir/Yso/xml/` for route chassis, engine,
+  offense template, Bloodboil/Tree/Defensive Magi scripts.
+- Documented class-extension steps in `yso_bootstrap_loader.lua` and aligned
+  `route_chassis_loader.lua` with the bootstrap Magi require order (including
+  `magi_vibes`).
+- Removed `Ysindrolir/mudlet packages/YsoDevtools.xml` and stripped Devtools mentions
+  from READMEs and boot comments (`dry_run` defaults unchanged).
 
 ## Patch Notes (May 2, 2026)
 

@@ -140,6 +140,7 @@ local function _infer_lane_from_payload(payload)
     return "free"
   end
 
+  -- Servitor-style `command …` lines: exclude patterns that are not generic class-queue staging.
   if cmd:match("^command%s+")
      and not cmd:match("^command%s+gremlin%s+")
      and not cmd:match("^command%s+soulmaster%s+")

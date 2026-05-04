@@ -26,9 +26,8 @@ local function _load_alchemist_peer(file_name)
   return ok
 end
 
-if type(require) == "function" then
-  pcall(require, "Yso")
-end
+-- Do not require("Yso") here: it loads Yso._entry, which require()s alchemist route
+-- shims while this file is still loading via dofile → "loop or previous error loading module".
 if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
   _load_alchemist_peer("physiology.lua")
 end
@@ -39,70 +38,6 @@ if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "functi
   pcall(require, "Yso.xml.route_interface")
   RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 end
-
--- #region agent log
-local function _agent_dbg_paths_duel()
-  local paths = {
-    "c:\\Users\\shuji\\OneDrive\\Desktop\\Yso systems\\debug-9482d2.log"
-  }
-  if Yso and Yso.cfg and type(Yso.cfg.agent_dbg_log) == "string" and Yso.cfg.agent_dbg_log ~= "" then
-    paths[#paths + 1] = Yso.cfg.agent_dbg_log
-  end
-  if type(getMudletHomeDir) == "function" then
-    local h = getMudletHomeDir()
-    if type(h) == "string" and h ~= "" then
-      local base = h:gsub("[\\/]+$", "")
-      paths[#paths + 1] = base .. "\\debug-9482d2.log"
-    end
-  end
-  paths[#paths + 1] = "debug-9482d2.log"
-  return paths
-end
-
-local function _agent_dbg_duel(hypothesisId, location, message, data)
-  pcall(function()
-    data = data or {}
-    local ts = os.time() * 1000
-    if type(getEpoch) == "function" then
-      local t = tonumber(getEpoch()) or os.time()
-      if t > 20000000000 then t = t / 1000 end
-      ts = math.floor(t * 1000)
-    end
-    local esc = function(s)
-      return tostring(s or ""):gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n")
-    end
-    local bits = {
-      '{"sessionId":"9482d2"',
-      ',"runId":"aduel_cleanup_repro1"',
-      ',"hypothesisId":"' .. esc(hypothesisId) .. '"',
-      ',"location":"' .. esc(location) .. '"',
-      ',"message":"' .. esc(message) .. '"',
-      ',"timestamp":' .. tostring(ts),
-    }
-    for k, v in pairs(data) do
-      local ty = type(v)
-      if ty == "boolean" then
-        bits[#bits + 1] = string.format(',"%s":%s', esc(k), v and "true" or "false")
-      elseif ty == "number" then
-        bits[#bits + 1] = string.format(',"%s":%s', esc(k), v)
-      else
-        bits[#bits + 1] = string.format(',"%s":"%s"', esc(k), esc(v))
-      end
-    end
-    bits[#bits + 1] = "}"
-    local line = table.concat(bits)
-    for _, path in ipairs(_agent_dbg_paths_duel()) do
-      local f = io.open(path, "a")
-      if f then
-        f:write(line)
-        f:write("\n")
-        f:close()
-        break
-      end
-    end
-  end)
-end
--- #endregion
 
 DR.route_contract = DR.route_contract or {
   id = "alchemist_duel_route",
@@ -1314,15 +1249,6 @@ end
 function DR.attack_function(ctx)
   DR.init()
   if not DR.is_active() then
-    -- #region agent log
-    _agent_dbg_duel("H3", "duel_route.attack_function", "route_not_active", {
-      cfg_enabled = DR.cfg and DR.cfg.enabled == true,
-      state_enabled = DR.state and DR.state.enabled == true,
-      loop_enabled = DR.state and DR.state.loop_enabled == true,
-      mode_combat = Yso and Yso.mode and type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() == true,
-      target = tostring(_target() or ""),
-    })
-    -- #endregion
     local P = _phys()
     local tgt = _trim((DR.state and DR.state.last_attack and DR.state.last_attack.target) or _target())
     if P and type(P.reave_sync_target) == "function" then
@@ -1339,14 +1265,6 @@ function DR.attack_function(ctx)
   if not payload then
     DR.state.template.last_reason = why or "no_legal_action"
     _set_hold_explain(why or "no_legal_action", _target())
-    -- #region agent log
-    _agent_dbg_duel("H4", "duel_route.attack_function", "no_payload", {
-      why = tostring(why or ""),
-      target = tostring(_target() or ""),
-      evaluate_ready = _evaluate_ready() == true,
-      evaluate_pending = _evaluate_pending_for(_target()) == true,
-    })
-    -- #endregion
     return false, why
   end
 

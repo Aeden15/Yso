@@ -26,9 +26,8 @@ local function _load_alchemist_peer(file_name)
   return ok
 end
 
-if type(require) == "function" then
-  pcall(require, "Yso")
-end
+-- Do not require("Yso") here: it loads Yso._entry, which require()s alchemist route
+-- shims while this file is still loading via dofile → "loop or previous error loading module".
 if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
   _load_alchemist_peer("Core/physiology.lua")
 end

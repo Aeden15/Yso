@@ -32,7 +32,7 @@ Yso.curing   = Yso.curing or {}
 Yso.ak       = Yso.ak or {}          -- forward declare so we can reference later if needed
 Yso.cfg      = Yso.cfg or {}
 
--- Boot defaults: Devtools/DRY must be OFF by default each load.
+-- Boot defaults: dry-run must be OFF unless explicitly enabled each session.
 Yso.net = Yso.net or {}
 Yso.net.cfg = Yso.net.cfg or {}
 if type(Yso.net.cfg.dry_run) ~= "boolean" then
@@ -404,7 +404,7 @@ end
 
 -- ----------------- global payload mode -----------------
 Yso.cfg = Yso.cfg or {}
--- Default payload mode unless user/devtools already chose one.
+-- Default payload mode unless a session value was already set.
 if type(Yso.cfg.payload_mode) ~= "string" or Yso.cfg.payload_mode == "" then
   Yso.cfg.payload_mode = "as_available"
 end
@@ -1378,24 +1378,7 @@ function Yso.self.is_paralyzed()
   return Yso.self.has_aff("paralysis")
 end
 
--- Try to warm-load new curing subsystems for live sessions.
-if type(require) == "function" then
-  Yso._warm_require_warned = Yso._warm_require_warned or {}
-  local function _warm_require(mod, label)
-    local ok = pcall(require, mod)
-    if ok then return true end
-    if Yso._warm_require_warned[mod] then return false end
-    Yso._warm_require_warned[mod] = true
-    if type(cecho) == "function" then
-      cecho(string.format(
-        "<yellow>[Yso:API] WARN:<reset> %s failed to load; using fallback reads.\n",
-        tostring(label or mod)
-      ))
-    end
-    return false
-  end
-
-  _warm_require("Yso.Core.self_aff", "self_aff")
-  _warm_require("Yso.Curing.self_curedefs", "self_curedefs")
-  _warm_require("Yso.Curing.serverside_policy", "serverside_policy")
-end
+-- self_aff / self_curedefs / serverside_policy: loaded by Yso._entry after bootstrap
+-- (and lazily via helpers such as _selfaff_module). Do not warm-require here — the
+-- Api stuff script often runs before package.path is ready, which produced spurious
+-- "[Yso:API] WARN: … failed to load" lines despite fallback reads working.
