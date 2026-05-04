@@ -47,8 +47,8 @@ Patch Notes (April 24, 2026):
 Patch Notes (April 25, 2026):
 - Restored route-loop controller loading through Yso.Core.modes/Yso.xml.yso_modes
   and added route bootstrap autoload in Yso system.xml.
-- Gated automatic team/teamroute temp alias installation in modes (default off),
-  while keeping backend party-route state and route ownership behavior intact.
+- Removed legacy team/teamroute/party temp-alias hooks from modes; routing is
+  combat-mode plus per-route toggles only.
 - Added explicit Magi route aliases (mdam, mfocus, mgd) and added mgd to the
   route registry alias map.
 - Updated bootstrap root detection for current Ysindrolir layout paths.
@@ -67,7 +67,7 @@ Patch Notes (April 25, 2026 - Route Toggle + Stability Sweep):
   - Yso/Core/modes.lua now shims to Yso/xml/yso_modes.lua.
   - Yso/Combat/offense_driver.lua now shims to Yso/xml/yso_offense_coordination.lua.
 - Removed fragile Alchemist group-damage toggle compatibility shim and cleaned
-  party-route checks in Alchemist/Core/group damage.lua.
+  route gating in Alchemist/Core/group damage.lua.
 - Improved Alchemist physiology correctness:
   - can_aurify now supports configurable HP/MP thresholds and optional
     both-stat requirement.

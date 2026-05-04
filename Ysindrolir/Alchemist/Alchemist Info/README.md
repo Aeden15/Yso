@@ -16,7 +16,7 @@ Primary active development is focused on Magi and Alchemist.
   Formulation-only namespace/bootstrap for phial skill usage, discovery, warning, timing, and action-builder helper state.
 
 - `Core/group damage.lua`
-  Alchemist party damage route for the existing `adam` toggle. It now builds lane-combo payloads (`free/eq/class/bal`) instead of returning the first single legal action.
+  Alchemist group damage route for the existing `adam` toggle. It now builds lane-combo payloads (`free/eq/class/bal`) instead of returning the first single legal action.
 
 - `Core/duel route.lua`
   Alchemist duel lock-pressure route for `aduel`, now using the same lane-combo payload model and shieldbreak-as-EQ-slot behavior as group damage.
