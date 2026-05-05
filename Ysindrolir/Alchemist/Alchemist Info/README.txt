@@ -1,6 +1,11 @@
 Alchemist workspace notes
 =========================
-Last updated: April 22, 2026
+Last updated: May 5, 2026
+
+Mudlet: routes and aliases (e.g. adam, aduel) ship in Ysindrolir/mudlet packages/
+Yso system.xml. Day-to-day operation is toggles/aliases in Mudlet, not repo
+require() or path bootstrapping. Optional Ysindrolir/scripts/export_yso_system_xml.ps1
+re-embeds split-layout Lua into the package when needed.
 
 Queue payload update - May 1, 2026
 ----------------------------------

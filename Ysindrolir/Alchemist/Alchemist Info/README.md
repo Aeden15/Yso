@@ -1,8 +1,8 @@
 # Alchemist
 
-Current workspace snapshot: April 26, 2026.
+Current workspace snapshot: May 5, 2026.
 
-Primary active development is focused on Magi and Alchemist.
+Primary active development is **Magi** and **Alchemist** only. Live automation runs from the Mudlet package (`Ysindrolir/mudlet packages/Yso system.xml`): script load order and globals drive routes — not runtime `require()` or repo path probing. Optional `Ysindrolir/scripts/export_yso_system_xml.ps1` can sync split-layout sources back into the package when maintaining the repo.
 
 ## What is here
 
@@ -28,13 +28,13 @@ Primary active development is focused on Magi and Alchemist.
   Checklist for keeping current and future Alchemist routes on the AK ownership/read-through model.
 
 - `alchemist_group_damage.lua`
-  Root loader shim so the shared route bootstrap can require `Core/group damage.lua` despite the canonical file name containing a space.
+  Loader shim: package-facing entry for `Core/group damage.lua` (path contains a space) so the Mudlet script chain and route registry wire it with the rest of Yso.
 
 - `alchemist_duel_route.lua`
-  Root loader shim so the shared route bootstrap can require `Core/duel route.lua` despite the canonical file name containing a space.
+  Loader shim: package-facing entry for `Core/duel route.lua` (spaced filename).
 
 - `alchemist_aurify_route.lua`
-  Root loader shim so the shared route bootstrap can require `Aurify route.lua`.
+  Loader shim: package-facing entry for `Aurify route.lua`.
 
 - `Core/formulation_phials.lua`
   `phiallist` parsing, phial-only tracking, validation, lookup, and readable display helpers.

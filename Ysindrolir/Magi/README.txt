@@ -1,8 +1,13 @@
 Magi workspace notes
 ====================
-Last updated: May 3, 2026
+Last updated: May 5, 2026
 
-This folder is the class-specific home for Magi work.
+This folder is the class-specific home for Magi work. Live behavior is defined by
+the installed Mudlet package (Ysindrolir/mudlet packages/Yso system.xml): use
+aliases such as mdam, mfocus, mgd and the package trigger/script order. Repo Lua
+here is the editable source; Ysindrolir/scripts/export_yso_system_xml.ps1 is
+optional for re-embedding into the XML when maintaining split files — not part
+of ordinary in-Mudlet play.
 
 Current fixes
 -------------
