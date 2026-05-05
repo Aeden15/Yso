@@ -34,21 +34,12 @@ local function _load_magi_peer(file_name)
 end
 
 local RC = Yso.off.magi.route_core
-if type(RC) ~= "table" and type(require) == "function" then
-  pcall(require, "magi_route_core")
-  RC = Yso.off.magi.route_core
-end
 if type(RC) ~= "table" and _load_magi_peer("magi_route_core.lua") then
   RC = Yso.off.magi.route_core
 end
 assert(type(RC) == "table", "Yso.off.magi.route_core unavailable")
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
-  pcall(require, "Yso.Combat.route_interface")
-  pcall(require, "Yso.xml.route_interface")
-  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-end
 
 local PENDING_SLOTS = {
   "horripilation",
@@ -81,7 +72,7 @@ MGD.route_contract = MGD.route_contract or {
     uses_bal = false,
     uses_entity = false,
     supports_burst = true,
-    supports_bootstrap = true,
+    supports_bootstrap = false,
     needs_target = true,
     shares_defense_break = false,
     shares_anti_tumble = false,

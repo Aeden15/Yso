@@ -1,9 +1,8 @@
-local info = debug.getinfo(1, "S")
-local source = info and info.source or ""
-
-if source:sub(1, 1) ~= "@" then
-  error("alchemist_duel_route.lua must be loaded from disk")
-end
-
-local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
-return dofile(dir .. "/Core/duel route.lua")
+-- Mudlet-native shim: route scripts are loaded directly by package order.
+_G.Yso = _G.Yso or _G.yso or {}
+_G.yso = _G.Yso
+Yso = _G.Yso
+Yso.off = Yso.off or {}
+Yso.off.alc = Yso.off.alc or {}
+Yso.off.alc.duel_route = Yso.off.alc.duel_route or {}
+return Yso.off.alc.duel_route

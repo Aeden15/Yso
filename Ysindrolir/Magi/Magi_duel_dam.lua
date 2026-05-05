@@ -24,11 +24,6 @@ M.state = M.state or {}
 M.alias_owned = true
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
-  pcall(require, "Yso.Combat.route_interface")
-  pcall(require, "Yso.xml.route_interface")
-  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-end
 
 M.route_contract = M.route_contract or {
   id = "magi_dmg",
@@ -40,7 +35,7 @@ M.route_contract = M.route_contract or {
     uses_bal = false,
     uses_entity = false,
     supports_burst = true,
-    supports_bootstrap = true,
+    supports_bootstrap = false,
     needs_target = true,
   },
   override_policy = {

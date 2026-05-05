@@ -25,11 +25,6 @@ end
 local function _ensure_magi_peer(mod_name, file_name, getter)
   local value = getter()
   if type(value) == "table" then return value end
-  if type(require) == "function" then
-    pcall(require, mod_name)
-    value = getter()
-  end
-  if type(value) == "table" then return value end
   _load_magi_peer(file_name)
   value = getter()
   assert(type(value) == "table", tostring(mod_name) .. " unavailable")
@@ -45,11 +40,6 @@ local Dissonance = _ensure_magi_peer("magi_dissonance", "magi_dissonance.lua", f
 end)
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
-  pcall(require, "Yso.Combat.route_interface")
-  pcall(require, "Yso.xml.route_interface")
-  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-end
 
 local PENDING_SLOTS = {
   "horripilation",
@@ -82,7 +72,7 @@ MF.route_contract = MF.route_contract or {
     uses_bal = false,
     uses_entity = false,
     supports_burst = true,
-    supports_bootstrap = true,
+    supports_bootstrap = false,
     needs_target = true,
     shares_defense_break = false,
     shares_anti_tumble = false,

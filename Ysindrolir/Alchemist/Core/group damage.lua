@@ -26,19 +26,13 @@ local function _load_alchemist_peer(file_name)
   return ok
 end
 
--- Do not require("Yso") here: that loads Yso._entry, which in turn require()s
--- alchemist_group_damage; this file is loaded from that module via dofile() and
--- would recurse (Lua: "loop or previous error loading module 'alchemist_group_damage'").
+-- Mudlet-native load order: this script expects core tables to be present and
+-- only falls back to local dofile() peers when they are missing.
 if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
   _load_alchemist_peer("physiology.lua")
 end
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-if not (RI and type(RI.ensure_hooks) == "function") and type(require) == "function" then
-  pcall(require, "Yso.Combat.route_interface")
-  pcall(require, "Yso.xml.route_interface")
-  RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-end
 
 GD.route_contract = GD.route_contract or {
   id = "alchemist_group_damage",
@@ -59,7 +53,7 @@ GD.route_contract = GD.route_contract or {
     uses_bal = true,
     uses_entity = false,
     supports_burst = true,
-    supports_bootstrap = true,
+    supports_bootstrap = false,
     needs_target = true,
     shares_defense_break = true,
     shares_anti_tumble = true,

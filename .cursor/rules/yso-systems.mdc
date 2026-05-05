@@ -1,5 +1,5 @@
 ---
-description: Yso / Ysindrolir Mudlet workspace — package sync, bootstrap, supported classes
+description: Yso / Ysindrolir Mudlet-native workspace — package-first, no require/bootstrap routes, supported classes
 alwaysApply: true
 ---
 
@@ -9,20 +9,24 @@ alwaysApply: true
 
 Achaea **Yso** automation under `Ysindrolir/`. **Supported combat classes:** Magi and Alchemist (shared Yso core). Do not reintroduce removed stacks (e.g. Occultist routes); strip obsolete empty Mudlet folders/triggers from `Yso system.xml` when editing that package.
 
-## Canonical Lua vs Mudlet package
+## Canonical source and package workflow
 
-- Prefer editing Lua **on disk**, then re-embed into `Ysindrolir/mudlet packages/Yso system.xml` via **`Ysindrolir/scripts/export_yso_system_xml.ps1`** (`cd Ysindrolir\scripts` then run the script).
-- New or renamed Mudlet **Script** bodies must be listed in that script’s **`$ScriptToSourcePath`** hashtable (Mudlet `<name>` → repo path). After manifest changes, run the export script.
-- Validate XML after export: `[xml](Get-Content -Raw -LiteralPath '...\mudlet packages\Yso system.xml')` in PowerShell.
+- Canonical runtime artifact is Mudlet package export under `Ysindrolir/mudlet packages/` (`Yso system.xml` / `.mpackage`).
+- Prefer Mudlet-native script wiring and explicit load order over filesystem module loading.
+- `Ysindrolir/scripts/export_yso_system_xml.ps1` is optional maintenance tooling for legacy split layouts; do not require it for day-to-day route changes.
 
-## Api / curing skeleton
+## Mudlet-native route contract
 
-- Canonical file: **`Ysindrolir/Yso/Core/api.lua`** (Mudlet script name **`Api stuff`**).
-- Keep **`Ysindrolir/Yso/xml/api_stuff.lua`** identical to `Core/api.lua` (bootstrap may `require("Yso.xml.api_stuff")` as fallback to `Yso.Core.api`).
-
-## Bootstrap / routes
-
-- **`Ysindrolir/Yso/xml/yso_bootstrap_loader.lua`** and **`Ysindrolir/Yso/xml/route_chassis_loader.lua`**: keep **Alchemist / Magi** `pcall(require, …)` blocks **in the same order**. New class modules: register in **`Ysindrolir/Yso/Combat/route_registry.lua`** and extend both loaders per the checklist comments there.
+- Do not add runtime `require(...)` / `pcall(require, ...)` for Yso route loading.
+- Do not add bootstrap/path-loader scripts (`YSO_ROOT`, `package.path`, repo root probing) for route activation.
+- Keep this script-tier order contract when editing package scripts:
+  1) Foundation globals and utility tables
+  2) Core state/queue/mode plumbing
+  3) Curing/self-state helpers
+  4) Combat shared interface/helpers
+  5) Class route modules (Alchemist, Magi)
+  6) Integration triggers/aliases/event bridges
+- Route scripts should assume prior tiers are loaded and fail gracefully if a required shared table is missing.
 
 ## Reference data
 

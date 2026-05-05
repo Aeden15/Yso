@@ -1,5 +1,6 @@
-# Re-embeds known Mudlet Script bodies in mudlet packages/Yso system.xml from on-disk Lua.
-# Manifest: Mudlet script name -> Yso/ (or Alchemist/) source path; edit the hashtable below to add pairs.
+# Legacy re-embed helper for split disk->XML workflows.
+# In Mudlet-native package-first workflows, exporting directly from Mudlet is preferred.
+# Manifest: Mudlet script name -> on-disk source path.
 # Run:  cd Ysindrolir\scripts ; .\export_yso_system_xml.ps1
 # Validate:  [xml](Get-Content -Raw -LiteralPath '..\mudlet packages\Yso system.xml')
 # Dry-run:   .\export_yso_system_xml.ps1 -WhatIf
@@ -24,8 +25,8 @@ $XmlPackage = Join-Path $Ysindrolir 'mudlet packages\Yso system.xml'
 
 # Mudlet <name> -> source file (Ysindrolir-relative paths resolved above).
 # "Api stuff" is embedded from Yso/Core/api.lua (not Yso/xml/api_stuff.lua). Keep the
-# latter file in sync with api.lua for require("Yso.xml.api_stuff") fallbacks; after
-# editing api.lua, run this script so the Mudlet package matches disk.
+# latter file in sync with api.lua; after editing api.lua, run this script when you
+# intentionally want to mirror disk scripts back into the package XML.
 $ScriptToSourcePath = [ordered]@{
   'AK+Legacy wiring'              = Join-Path $YsoDir 'Integration\ak_legacy_wiring.lua'
   'Api stuff'                     = Join-Path $YsoDir 'Core\api.lua'
@@ -75,7 +76,8 @@ foreach ($entry in $ScriptToSourcePath.GetEnumerator()) {
   $mudletName = [string]$entry.Key
   $srcPath = [string]$entry.Value
   if (-not (Test-Path -LiteralPath $srcPath)) {
-    throw "Source missing for '$mudletName': $srcPath"
+    Write-Warning "Skipping '$mudletName' because source is missing: $srcPath"
+    continue
   }
   $lua = Get-Content -LiteralPath $srcPath -Raw -Encoding UTF8
   $escaped = ConvertTo-MudletXmlScriptText $lua

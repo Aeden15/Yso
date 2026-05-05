@@ -1,9 +1,8 @@
-local info = debug.getinfo(1, "S")
-local source = info and info.source or ""
-
-if source:sub(1, 1) ~= "@" then
-  error("alchemist_group_damage.lua must be loaded from disk")
-end
-
-local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
-return dofile(dir .. "/Core/group damage.lua")
+-- Mudlet-native shim: route scripts are loaded directly by package order.
+_G.Yso = _G.Yso or _G.yso or {}
+_G.yso = _G.Yso
+Yso = _G.Yso
+Yso.off = Yso.off or {}
+Yso.off.alc = Yso.off.alc or {}
+Yso.off.alc.group_damage = Yso.off.alc.group_damage or {}
+return Yso.off.alc.group_damage

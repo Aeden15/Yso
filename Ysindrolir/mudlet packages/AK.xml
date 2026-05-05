@@ -23884,8 +23884,8 @@ local who = matches[2]
 if not IsTargetted(who) then return end
 if type(oc_isCurrentTarget) == "function" and not oc_isCurrentTarget(who) then return end
 
-local ok, IM = pcall(require, "Yso.Integration.mudlet")
-if ok and IM and type(IM.onTargetFocusMind) == "function" then
+local IM = Yso and Yso.Integration and Yso.Integration.mudlet or nil
+if IM and type(IM.onTargetFocusMind) == "function" then
   pcall(IM.onTargetFocusMind, who)
 end
 
@@ -24252,8 +24252,8 @@ if not IsTargetted(who) then return end
 if type(oc_isCurrentTarget) == "function" and not oc_isCurrentTarget(who) then return end
 
 -- Notify modular tracking immediately (so early returns still record TREE usage)
-local ok, IM = pcall(require, "Yso.Integration.mudlet")
-if ok and IM and type(IM.onTargetTree) == "function" then
+local IM = Yso and Yso.Integration and Yso.Integration.mudlet or nil
+if IM and type(IM.onTargetTree) == "function" then
   pcall(IM.onTargetTree, who)
 end
 
