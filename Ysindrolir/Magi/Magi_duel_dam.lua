@@ -68,7 +68,24 @@ do
   end
 end
 
+local function _load_magi_peer(file_name)
+  local info = debug.getinfo(1, "S")
+  local source = info and info.source or ""
+  if source:sub(1, 1) ~= "@" then return false end
+  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
+  local path = dir .. "/" .. tostring(file_name or "")
+  return pcall(dofile, path)
+end
+
+local RC = Yso.off.magi.route_core
+if type(RC) ~= "table" and _load_magi_peer("magi_route_core.lua") then
+  RC = Yso.off.magi.route_core
+end
+
 local function _trim(s)
+  if type(RC) == "table" and type(RC.trim) == "function" then
+    return RC.trim(s)
+  end
   s = tostring(s or "")
   return s:gsub("^%s+", ""):gsub("%s+$", "")
 end
@@ -82,6 +99,9 @@ local function _vitals()
 end
 
 local function _eq_ready()
+  if type(RC) == "table" and type(RC.eq_ready) == "function" then
+    return RC.eq_ready()
+  end
   if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
     local ok, v = pcall(Yso.state.eq_ready)
     if ok then return v == true end
@@ -91,6 +111,10 @@ local function _eq_ready()
 end
 
 local function _target()
+  if type(RC) == "table" and type(RC.get_target) == "function" then
+    local t = RC.get_target()
+    if _trim(t) ~= "" then return _trim(t) end
+  end
   if Yso and type(Yso.get_target) == "function" then
     local ok, v = pcall(Yso.get_target)
     v = ok and _trim(v) or ""
@@ -113,6 +137,65 @@ local function _target()
   end
 
   return _trim(rawget(_G, "target") or "")
+end
+
+local function _tgt_valid(tgt)
+  if type(RC) == "table" and type(RC.target_valid) == "function" then
+    return RC.target_valid(tgt)
+  end
+  return true
+end
+
+local function _current_class()
+  local C = Yso and Yso.classinfo or nil
+  if type(C) == "table" then
+    if type(C.get) == "function" then
+      local ok, v = pcall(C.get)
+      if ok and type(v) == "string" and _trim(v) ~= "" then return v end
+    end
+    if type(C.current_class) == "function" then
+      local ok, v = pcall(C.current_class)
+      if ok and type(v) == "string" and _trim(v) ~= "" then return v end
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local cls = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or nil
+  if type(cls) == "string" and _trim(cls) ~= "" then return cls end
+  if type(Yso.class) == "string" and _trim(Yso.class) ~= "" then return Yso.class end
+  return ""
+end
+
+local function _is_magi()
+  if type(Yso.is_magi) == "function" then
+    local ok, v = pcall(Yso.is_magi)
+    if ok then return v == true end
+  end
+
+  local C = Yso and Yso.classinfo or nil
+  if type(C) == "table" and type(C.is_magi) == "function" then
+    local ok, v = pcall(C.is_magi)
+    if ok then return v == true end
+  end
+
+  return _lc(_current_class()) == "magi"
+end
+
+--- Mirrors magi_focus: duel routes only tick meaningfully in combat with this loop armed.
+local function _combat_dmg_context_active()
+  return _is_magi()
+    and Yso
+    and Yso.mode
+    and type(Yso.mode.is_combat) == "function"
+    and Yso.mode.is_combat() == true
+end
+
+local function _route_is_active()
+  if not _combat_dmg_context_active() then return false end
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
+    return Yso.mode.route_loop_active("magi_dmg") == true
+  end
+  return M.state and M.state.loop_enabled == true
 end
 
 local function _score(name)
@@ -158,12 +241,27 @@ function M.init()
   return true
 end
 
+function M.is_enabled()
+  return M.state and M.state.enabled == true
+end
+
+function M.is_active()
+  M.init()
+  return _route_is_active()
+end
+
 function M.can_run(reason)
   M.init()
-  local cls = tostring((gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class) or Yso.class or "")
-  if cls:lower() ~= "magi" then return false, "wrong_class" end
+  local ctx = type(reason) == "table" and reason or {}
+  if not M.is_enabled() then return false, "disabled" end
+  if not M.is_active() then return false, "inactive" end
+  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
+
+  local tgt = _trim((ctx and ctx.target) or _target())
+  if tgt == "" then return false, "no_target" end
+  if not _is_magi() then return false, "wrong_class" end
+  if not _tgt_valid(tgt) then return false, "invalid_target" end
   if not _eq_ready() then return false, "eq_down" end
-  if _target() == "" then return false, "no_target" end
   return true
 end
 
@@ -444,12 +542,27 @@ local function _echo(msg)
   end
 end
 
+M.alias_loop_stop_details = M.alias_loop_stop_details or {
+  inactive = true,
+  disabled = true,
+  no_target = true,
+  invalid_target = true,
+  wrong_class = true,
+}
+
+function M.alias_loop_prepare_start(ctx)
+  M.init()
+  return ctx or {}
+end
+
 function M.alias_loop_on_started(ctx)
   M.init()
   local tgt = _target()
   _echo("Duel damage loop ON.")
   if tgt == "" then
-    _echo("No target set; will hold until target is available.")
+    _echo("No target yet; holding.")
+  elseif not _tgt_valid(tgt) then
+    _echo(string.format("%s is not in room; holding.", tgt))
   end
 end
 
@@ -473,6 +586,13 @@ end
 function M.alias_loop_clear_waiting()
   if RI and type(RI.clear_waiting) == "function" then
     return RI.clear_waiting(M.state, "magi_dmg")
+  end
+  return true
+end
+
+function M.on_exit(ctx)
+  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
+    Yso.mode.stop_route_loop("magi_dmg", "exit", true)
   end
   return true
 end
