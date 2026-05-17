@@ -89,6 +89,10 @@ _G.target = "foe"
 _G.Yso = {
   Combat = {},
   off = { magi = {} },
+  mode = {
+    is_combat = function() return true end,
+    route_loop_active = function(id) return id == "magi_dmg" end,
+  },
   util = { now = function() return now_s end },
   state = {
     eq_ready = function() return true end,
