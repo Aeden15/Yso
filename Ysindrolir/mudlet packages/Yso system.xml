@@ -2900,18 +2900,18 @@ end</script>
             <regex>^lead$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>lead &lt;target&gt;</name>
+            <name>lead (named)</name>
             <script>send("educe lead " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^lead\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>iron &lt;target&gt;</name>
-            <script>send("educe iron " .. matches[2])</script>
+            <name>Bash</name>
+            <script>send("educe iron " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^iron\s+(\S+)$</regex>
+            <regex>^iro$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
             <name>salt</name>
@@ -2921,18 +2921,18 @@ end</script>
             <regex>^salt$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>disp &lt;target&gt;</name>
+            <name>Displacement</name>
             <script>send("ether displace " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^disp\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>copper &lt;target&gt;</name>
-            <script>send("educe copper " .. matches[2])</script>
+            <name>copper</name>
+            <script>send("educe copper " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^copper\s+(\S+)$</regex>
+            <regex>^cop$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
             <name>silver</name>
@@ -2942,39 +2942,39 @@ end</script>
             <regex>^silver$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>silver &lt;target&gt;</name>
+            <name>Silver (named)</name>
             <script>send("educe silver " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^silver\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>phlog &lt;target&gt;</name>
-            <script>send("phlogisticate " .. matches[2])</script>
+            <name>Phlogisticate</name>
+            <script>send("phlogisticate " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^phlog\s+(\S+)$</regex>
+            <regex>^phlog$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>vit &lt;target&gt;</name>
-            <script>send("vitrify " .. matches[2])</script>
+            <name>Vitrify</name>
+            <script>send("vitrify " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^vit\s+(\S+)$</regex>
+            <regex>^vit$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>revive &lt;target&gt;</name>
+            <name>Revivification</name>
             <script>send("revive " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^revive\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>aur &lt;target&gt;</name>
-            <script>send("aurify " .. matches[2])</script>
+            <name>Aurify</name>
+            <script>send("aurify " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^aur\s+(\S+)$</regex>
+            <regex>^aur$</regex>
           </Alias>
         </AliasGroup>
         <AliasGroup isActive="yes" isFolder="yes">
@@ -2985,53 +2985,53 @@ end</script>
           <regex>
           </regex>
           <Alias isActive="yes" isFolder="no">
-            <name>temper &lt;target&gt; &lt;humour&gt;</name>
-            <script>send("temper " .. matches[2] .. " " .. matches[3])</script>
+            <name>Temper</name>
+            <script>send("temper " .. target .. " " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
-            <regex>^temper\s+(\S+)\s+(\S+)$</regex>
+            <regex>^temper\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>wrack &lt;target&gt; &lt;humour|affliction&gt;</name>
-            <script>send("wrack " .. matches[2] .. " " .. matches[3])</script>
+            <name>Wrack</name>
+            <script>send("wrack " .. target .. " " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
-            <regex>^wrack\s+(\S+)\s+(\S+)$</regex>
+            <regex>^wrack\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>twrack &lt;target&gt; &lt;one&gt; &lt;two&gt;</name>
-            <script>send("truewrack " .. matches[2] .. " " .. matches[3] .. " " .. matches[4])</script>
+            <name>Truewrack</name>
+            <script>send("truewrack " .. target .. " " .. matches[2] .. " " .. matches[3])</script>
             <command></command>
             <packageName></packageName>
-            <regex>^twrack\s+(\S+)\s+(\S+)\s+(\S+)$</regex>
+            <regex>^twrack\s+(\S+)\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>inundate &lt;target&gt; &lt;humour&gt;</name>
-            <script>send("inundate " .. matches[2] .. " " .. matches[3])</script>
+            <name>Inundation</name>
+            <script>send("inundate " .. target .. " " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
-            <regex>^inundate\s+(\S+)\s+(\S+)$</regex>
+            <regex>^inundate\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>reave &lt;target&gt;</name>
-            <script>send("reave " .. matches[2])</script>
+            <name>Reave-Timed death</name>
+            <script>send("reave " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^reave\s+(\S+)$</regex>
+            <regex>^reav$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>eval &lt;target&gt;</name>
-            <script>send("evaluate " .. matches[2])</script>
+            <name>Evaluate (name)</name>
+            <script>send("evaluate " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^eval\s+(\S+)$</regex>
+            <regex>^eval$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>evalh &lt;target&gt;</name>
-            <script>send("evaluate " .. matches[2] .. " humours")</script>
+            <name>Evaluate humor</name>
+            <script>send("evaluate " .. target .. " humours")</script>
             <command></command>
             <packageName></packageName>
-            <regex>^evalh\s+(\S+)$</regex>
+            <regex>^evalh$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
             <name>cultivate</name>
@@ -3062,11 +3062,11 @@ end</script>
             <regex>^returnh$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hatk &lt;target&gt;</name>
-            <script>send("homunculus attack " .. matches[2])</script>
+            <name>Homunculus attack</name>
+            <script>send("homunculus attack " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^hatk\s+(\S+)$</regex>
+            <regex>^hatk$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
             <name>hpac</name>
@@ -3118,53 +3118,53 @@ end</script>
             <regex>^hinv$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hgive &lt;item&gt; to &lt;person&gt;</name>
+            <name>Homunculus giving</name>
             <script>send("homunculus give " .. matches[2] .. " to " .. matches[3])</script>
             <command></command>
             <packageName></packageName>
             <regex>^hgive\s+(.+)\s+to\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hget &lt;item&gt;</name>
+            <name>Homunculus grab</name>
             <script>send("homunculus get " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^hget\s+(.+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hdrop &lt;item&gt;</name>
+            <name>Homunculus drop</name>
             <script>send("homunculus drop " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^hdrop\s+(.+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hsay &lt;text&gt;</name>
+            <name>Homunculus speak</name>
             <script>send("homunculus say " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^hsay\s+(.+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hadmin &lt;prime&gt;</name>
+            <name>Prime administering</name>
             <script>send("homunculus administer " .. matches[2])</script>
             <command></command>
             <packageName></packageName>
             <regex>^hadmin\s+(\S+)$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hshriek &lt;target&gt;</name>
-            <script>send("homunculus shriek " .. matches[2])</script>
+            <name>Homunculus shriek</name>
+            <script>send("homunculus shriek " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^hshriek\s+(\S+)$</regex>
+            <regex>^hshriek$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
-            <name>hcorrupt &lt;target&gt;</name>
-            <script>send("homunculus corrupt " .. matches[2])</script>
+            <name>Corruption</name>
+            <script>send("homunculus corrupt " .. target)</script>
             <command></command>
             <packageName></packageName>
-            <regex>^hcorrupt\s+(\S+)$</regex>
+            <regex>^hcorrupt$</regex>
           </Alias>
           <Alias isActive="yes" isFolder="no">
             <name>incubate</name>
@@ -4117,6 +4117,93 @@ function Yso.util.echo(msg, color)
   end
   if type(cecho) ~= "function" then return end
   cecho(string.format("%s%s%s&lt;reset&gt;\n", p, c, tostring(msg)))
+end
+
+function Yso.util.toggle_route_alias(route_id, source)
+  local function _trim(s)
+    return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  end
+
+  local function _resolve_route(id)
+    local off = Yso and Yso.off or nil
+    local alc = off and off.alc or nil
+    local magi = off and off.magi or nil
+    local map = {
+      alchemist_group_damage = alc and alc.group_damage,
+      adam = alc and alc.group_damage,
+      alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
+      alchemist_aurify_route = alc and alc.aurify_route,
+      magi_dmg = magi and (magi.dmg or magi.group_damage),
+      magi_group_damage = magi and (magi.group_damage or magi.dmg),
+      magi_focus = magi and magi.focus,
+    }
+    local route = map[id]
+    return type(route) == "table" and route or nil
+  end
+
+  route_id = _trim(route_id)
+  source = _trim(source)
+  if route_id == "" then
+    return false, "missing_route_id"
+  end
+  if source == "" then
+    source = "alias"
+  end
+
+  local route = _resolve_route(route_id)
+  if type(route) ~= "table" then
+    return false, "route_unavailable:" .. route_id
+  end
+
+  if type(route.init) == "function" then
+    pcall(route.init)
+  end
+
+  local active = false
+  if type(route.is_active) == "function" then
+    local ok, v = pcall(route.is_active)
+    if ok then
+      active = (v == true)
+    end
+  else
+    local st = (type(route.state) == "table") and route.state or {}
+    local cfg = (type(route.cfg) == "table") and route.cfg or {}
+    active = (st.loop_enabled == true) or (st.enabled == true) or (cfg.enabled == true)
+  end
+
+  if active == true then
+    if type(route.stop) == "function" then
+      local ok, res = pcall(route.stop, source)
+      if ok and res ~= false then
+        return true, "stopped"
+      end
+      return false, "stop_failed"
+    end
+    if type(route.disable) == "function" then
+      local ok, res = pcall(route.disable, source)
+      if ok and res ~= false then
+        return true, "disabled"
+      end
+      return false, "disable_failed"
+    end
+    return false, "route_not_stoppable"
+  end
+
+  if type(route.start) == "function" then
+    local ok, res = pcall(route.start, source)
+    if ok and res ~= false then
+      return true, "started"
+    end
+    return false, "start_failed"
+  end
+  if type(route.enable) == "function" then
+    local ok, res = pcall(route.enable, source)
+    if ok and res ~= false then
+      return true, "enabled"
+    end
+    return false, "enable_failed"
+  end
+  return false, "route_not_startable"
 end
 
 -- ----------------- class tracking / segregation -----------------
@@ -19235,6 +19322,7 @@ end
     </Key>
   </KeyPackage>
 </MudletPackage>
+
 
 
 
