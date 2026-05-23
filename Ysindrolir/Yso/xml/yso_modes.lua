@@ -611,19 +611,23 @@ local function _set_bash_mode(reason, opts)
 end
 
 Yso.util = Yso.util or {}
-if type(Yso.util.toggle_route_alias) ~= "function" then
-  function Yso.util.toggle_route_alias(route_id, reason)
-    local function _try_toggle()
-      if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
-        return Yso.mode.toggle_route_loop(route_id, reason)
-      end
-      return false, "controller_unavailable"
+-- Always install the canonical alias toggle helper here.
+-- This intentionally overrides any stale package-local copy so all
+-- route aliases resolve through M.toggle_route_loop and RouteRegistry.
+if type(Yso.util.toggle_route_alias) == "function" then
+  Yso.util.toggle_route_alias = nil
+end
+function Yso.util.toggle_route_alias(route_id, reason)
+  local function _try_toggle()
+    if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
+      return Yso.mode.toggle_route_loop(route_id, reason)
     end
-
-    local call_ok, ok, why = pcall(_try_toggle)
-    if call_ok then return ok, why end
-    return false, tostring(ok)
+    return false, "controller_unavailable"
   end
+
+  local call_ok, ok, why = pcall(_try_toggle)
+  if call_ok then return ok, why end
+  return false, tostring(ok)
 end
 
 M._alias = M._alias or {}
