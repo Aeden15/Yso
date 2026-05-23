@@ -4119,93 +4119,6 @@ function Yso.util.echo(msg, color)
   cecho(string.format("%s%s%s&lt;reset&gt;\n", p, c, tostring(msg)))
 end
 
-function Yso.util.toggle_route_alias(route_id, source)
-  local function _trim(s)
-    return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
-  end
-
-  local function _resolve_route(id)
-    local off = Yso and Yso.off or nil
-    local alc = off and off.alc or nil
-    local magi = off and off.magi or nil
-    local map = {
-      alchemist_group_damage = alc and alc.group_damage,
-      adam = alc and alc.group_damage,
-      alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
-      alchemist_aurify_route = alc and alc.aurify_route,
-      magi_dmg = magi and (magi.dmg or magi.group_damage),
-      magi_group_damage = magi and (magi.group_damage or magi.dmg),
-      magi_focus = magi and magi.focus,
-    }
-    local route = map[id]
-    return type(route) == "table" and route or nil
-  end
-
-  route_id = _trim(route_id)
-  source = _trim(source)
-  if route_id == "" then
-    return false, "missing_route_id"
-  end
-  if source == "" then
-    source = "alias"
-  end
-
-  local route = _resolve_route(route_id)
-  if type(route) ~= "table" then
-    return false, "route_unavailable:" .. route_id
-  end
-
-  if type(route.init) == "function" then
-    pcall(route.init)
-  end
-
-  local active = false
-  if type(route.is_active) == "function" then
-    local ok, v = pcall(route.is_active)
-    if ok then
-      active = (v == true)
-    end
-  else
-    local st = (type(route.state) == "table") and route.state or {}
-    local cfg = (type(route.cfg) == "table") and route.cfg or {}
-    active = (st.loop_enabled == true) or (st.enabled == true) or (cfg.enabled == true)
-  end
-
-  if active == true then
-    if type(route.stop) == "function" then
-      local ok, res = pcall(route.stop, source)
-      if ok and res ~= false then
-        return true, "stopped"
-      end
-      return false, "stop_failed"
-    end
-    if type(route.disable) == "function" then
-      local ok, res = pcall(route.disable, source)
-      if ok and res ~= false then
-        return true, "disabled"
-      end
-      return false, "disable_failed"
-    end
-    return false, "route_not_stoppable"
-  end
-
-  if type(route.start) == "function" then
-    local ok, res = pcall(route.start, source)
-    if ok and res ~= false then
-      return true, "started"
-    end
-    return false, "start_failed"
-  end
-  if type(route.enable) == "function" then
-    local ok, res = pcall(route.enable, source)
-    if ok and res ~= false then
-      return true, "enabled"
-    end
-    return false, "enable_failed"
-  end
-  return false, "route_not_startable"
-end
-
 -- ----------------- class tracking / segregation -----------------
 Yso.classinfo = Yso.classinfo or {}
 do
@@ -5282,7 +5195,12 @@ local function _selfaff_module()
   if Yso and Yso.selfaff and type(Yso.selfaff) == "table" then
     return Yso.selfaff
   end
-  
+  if type(require) == "function" then
+    local ok = pcall(require, "Yso.Core.self_aff")
+    if ok and Yso and type(Yso.selfaff) == "table" then
+      return Yso.selfaff
+    end
+  end
   return nil
 end
 
@@ -8594,7 +8512,8 @@ local function _trim_target(s)
   return (tostring(s or ""):gsub("^%s+",""):gsub("%s+$",""))
 end
 
-if type(TG.get) ~= "function" then
+if type(TG.get) ~= "function" and type(require) == "function" then
+  pcall(require, "Yso.xml.yso_targeting")
   TG = Yso.targeting or TG
 end
 
@@ -9589,49 +9508,28 @@ _dbg("engine loaded")
         <Script isActive="yes" isFolder="no">
           <name>Yso Bootstrap loader</name>
           <packageName></packageName>
-          <script>-- Mudlet-native mode: bootstrap/path probing retired.
+          <script>--========================================================--
+-- Yso Bootstrap loader (Mudlet-native mode)
+--  Bootstrap/path probing intentionally retired.
+--========================================================--
+
 Yso = Yso or {}
 Yso.bootstrap = Yso.bootstrap or {}
 Yso.bootstrap.mode = "mudlet_native"
-
--- #region agent log
-local function _yso_dbg_log(hypothesisId, message, data)
-  local path = "C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-60ae14.log"
-  local payload = {
-    sessionId = "60ae14",
-    runId = "post-fix",
-    hypothesisId = hypothesisId,
-    location = "Yso system.xml:Yso Bootstrap loader",
-    message = message,
-    data = data or {},
-    timestamp = os.time() * 1000,
-  }
-  local ok, json = pcall(yajl.to_string, payload)
-  if not ok or type(json) ~= "string" then return end
-  local f = io.open(path, "a")
-  if not f then return end
-  f:write(json .. "\n")
-  f:close()
-end
--- #endregion
-
-_yso_dbg_log("H_bootstrapRuns", "bootstrap_loader_enter", {
-  hasYso = type(Yso) == "table",
-  bootstrapMode = Yso.bootstrap and Yso.bootstrap.mode or "",
-  hasCombat = type(Yso.Combat) == "table",
-})
-
-if type(cecho) == "function" then
-  cecho("&lt;aquamarine&gt;[Yso] Bootstrap loader bypassed (Mudlet-native load order).&lt;reset&gt;\n")
-end</script>
+_G.yso_bootstrap_done = true
+</script>
           <eventHandlerList />
         </Script>
         <Script isActive="yes" isFolder="no">
           <name>Route chassis loader</name>
           <packageName></packageName>
-          <script>-- Mudlet-native route chassis loader (no require/bootstrap).
+          <script>-- Canonical copy for Mudlet script "Route chassis loader" in Yso system.xml.
+-- Mudlet-native mode: no require/bootstrap loading, only table guards.
+
 Yso = Yso or {}
 Yso.bootstrap = Yso.bootstrap or {}
+Yso.bootstrap.mode = "mudlet_native"
+
 Yso.load_order_contract = Yso.load_order_contract or {
   "foundation",
   "core_state_queue_modes",
@@ -9640,6 +9538,7 @@ Yso.load_order_contract = Yso.load_order_contract or {
   "class_routes_alchemist_then_magi",
   "integration_events_aliases",
 }
+
 Yso.Combat = Yso.Combat or {}
 Yso.Combat.RouteInterface = Yso.Combat.RouteInterface or {}
 if type(Yso.Combat.RouteInterface.ensure_hooks) ~= "function" then
@@ -9650,42 +9549,7 @@ if type(Yso.Combat.RouteInterface.ensure_hooks) ~= "function" then
     return routeTable
   end
 end
-
--- #region agent log
-local function _yso_dbg_log(hypothesisId, message, data)
-  local path = "C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-60ae14.log"
-  local payload = {
-    sessionId = "60ae14",
-    runId = "post-fix",
-    hypothesisId = hypothesisId,
-    location = "Yso system.xml:Route chassis loader",
-    message = message,
-    data = data or {},
-    timestamp = os.time() * 1000,
-  }
-  local ok, json = pcall(yajl.to_string, payload)
-  if not ok or type(json) ~= "string" then return end
-  local f = io.open(path, "a")
-  if not f then return end
-  f:write(json .. "\n")
-  f:close()
-end
--- #endregion
-
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-_yso_dbg_log("H_routeInterfaceDefined", "route_chassis_probe", {
-  hasYso = type(Yso) == "table",
-  hasCombat = type(Yso and Yso.Combat) == "table",
-  hasRouteInterface = type(RI) == "table",
-  hasEnsureHooks = RI and type(RI.ensure_hooks) == "function" or false,
-})
-
-if not (RI and type(RI.ensure_hooks) == "function") and type(cecho) == "function" then
-  _yso_dbg_log("H_loadOrderGap", "route_interface_missing_warning", {
-    loadOrderContract = Yso.load_order_contract,
-  })
-  cecho("&lt;yellow&gt;[Yso] RouteInterface missing; check script order tiers.&lt;reset&gt;\n")
-end</script>
+</script>
           <eventHandlerList />
         </Script>
       </ScriptGroup>
@@ -15066,15 +14930,13 @@ local function _load_alchemist_peer(file_name)
   return ok
 end
 
--- Mudlet-native load order: this script expects core tables and local peers to exist.
--- alchemist_group_damage; this file is loaded from that module via dofile() and
--- would recurse (Lua: "loop or previous error loading module 'alchemist_group_damage'").
+-- Mudlet-native load order: this script expects core tables to be present and
+-- only falls back to local dofile() peers when they are missing.
 if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
   _load_alchemist_peer("physiology.lua")
 end
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-
 
 GD.route_contract = GD.route_contract or {
   id = "alchemist_group_damage",
@@ -15095,7 +14957,7 @@ GD.route_contract = GD.route_contract or {
     uses_bal = true,
     uses_entity = false,
     supports_burst = true,
-    supports_bootstrap = true,
+    supports_bootstrap = false,
     needs_target = true,
     shares_defense_break = true,
     shares_anti_tumble = true,
