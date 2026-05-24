@@ -104,6 +104,327 @@ function Yso.util.echo(msg, color)
   cecho(string.format("%s%s%s<reset>\n", p, c, tostring(msg)))
 end
 
+function Yso.util.toggle_route_alias(route_id, source)
+  local function _trim(s)
+    return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  end
+
+  -- #region agent log
+  local function _yso_dbg_log(hypothesisId, message, data)
+    local payload = {
+      sessionId = "f528bd",
+      runId = "baseline",
+      hypothesisId = hypothesisId,
+      location = "api.lua:toggle_route_alias",
+      message = message,
+      data = data or {},
+      timestamp = os.time() * 1000,
+    }
+    local ok, json = pcall(yajl.to_string, payload)
+    if not ok or type(json) ~= "string" then return end
+    local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
+    if not f then return end
+    f:write(json .. "\n")
+    f:close()
+  end
+  -- #endregion
+
+  local function _resolve_route(id)
+    local off = Yso and Yso.off or nil
+    local alc = off and off.alc or nil
+    local magi = off and off.magi or nil
+    local map = {
+      alchemist_group_damage = alc and alc.group_damage,
+      adam = alc and alc.group_damage,
+      alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
+      alchemist_aurify_route = alc and alc.aurify_route,
+      magi_dmg = magi and (magi.dmg or magi.group_damage),
+      magi_group_damage = magi and (magi.group_damage or magi.dmg),
+      magi_focus = magi and magi.focus,
+    }
+    local route = map[id]
+    return type(route) == "table" and route or nil
+  end
+
+  route_id = _trim(route_id)
+  source = _trim(source)
+  if route_id == "" then
+    return false, "missing_route_id"
+  end
+  if source == "" then
+    source = "alias"
+  end
+
+  -- #region agent log
+  _yso_dbg_log("H5", "toggle_route_alias_entry", {
+    route_id = route_id,
+    source = source,
+    has_mode_toggle_route_loop = type(Yso and Yso.mode and Yso.mode.toggle_route_loop) == "function",
+  })
+  -- #endregion
+
+  Yso.util._route_alias_fallback = Yso.util._route_alias_fallback or { loops = {} }
+  local FB = Yso.util._route_alias_fallback
+
+  local function _fb_key(id)
+    return _trim(id):lower()
+  end
+
+  local function _fb_running(id)
+    local key = _fb_key(id)
+    return key ~= "" and type(FB.loops[key]) == "table"
+  end
+
+  local function _fb_stop(id, reason)
+    local key = _fb_key(id)
+    local row = (key ~= "" and FB.loops[key]) or nil
+    if type(row) ~= "table" then
+      return false
+    end
+    if row.timer_id and type(killTimer) == "function" then
+      pcall(killTimer, row.timer_id)
+    end
+    FB.loops[key] = nil
+    -- #region agent log
+    _yso_dbg_log("H7", "fallback_loop_stopped", {
+      route_id = id,
+      reason = tostring(reason or ""),
+    })
+    -- #endregion
+    return true
+  end
+
+  local function _fb_start(id, route, start_source)
+    if type(tempTimer) ~= "function" or type(route) ~= "table" then
+      -- #region agent log
+      _yso_dbg_log("H7", "fallback_loop_unavailable", {
+        route_id = id,
+        has_tempTimer = type(tempTimer) == "function",
+      })
+      -- #endregion
+      return false
+    end
+
+    _fb_stop(id, "restart")
+
+    local key = _fb_key(id)
+    if key == "" then
+      return false
+    end
+
+    local delay = tonumber((route.cfg and route.cfg.loop_delay) or (route.state and route.state.loop_delay) or 0.2) or 0.2
+    if delay < 0.05 then delay = 0.05 end
+
+    local row = {
+      route = route,
+      delay = delay,
+      timer_id = nil,
+      tick_count = 0,
+    }
+    FB.loops[key] = row
+
+    local function _tick()
+      if FB.loops[key] ~= row then
+        return
+      end
+
+      if type(route.attack_function) ~= "function" then
+        -- #region agent log
+        _yso_dbg_log("H7", "fallback_loop_no_attack_function", { route_id = id })
+        -- #endregion
+        _fb_stop(id, "no_attack_function")
+        return
+      end
+
+      local mode_toggle_present = type(Yso and Yso.mode and Yso.mode.toggle_route_loop) == "function"
+      local original_is_active = nil
+      if not mode_toggle_present and type(route.is_active) == "function" then
+        original_is_active = route.is_active
+        route.is_active = function() return true end
+        -- #region agent log
+        _yso_dbg_log("H8", "fallback_override_is_active_on", { route_id = id })
+        -- #endregion
+      end
+
+      row.tick_count = row.tick_count + 1
+      local ok, sent, detail = pcall(route.attack_function, {
+        reason = "fallback_loop",
+        source = start_source,
+      })
+
+      if original_is_active then
+        route.is_active = original_is_active
+        -- #region agent log
+        _yso_dbg_log("H8", "fallback_override_is_active_off", {
+          route_id = id,
+          sent = tostring(sent),
+          detail = tostring(detail),
+        })
+        -- #endregion
+      end
+
+      if row.tick_count <= 3 then
+        -- #region agent log
+        _yso_dbg_log("H7", "fallback_loop_tick", {
+          route_id = id,
+          tick_count = row.tick_count,
+          call_ok = (ok == true),
+          sent = tostring(sent),
+          detail = tostring(detail),
+        })
+        -- #endregion
+      end
+
+      local still_enabled = false
+      if type(route.state) == "table" and route.state.loop_enabled == true then
+        still_enabled = true
+      elseif type(route.cfg) == "table" and route.cfg.enabled == true then
+        still_enabled = true
+      end
+
+      if still_enabled and FB.loops[key] == row then
+        row.timer_id = tempTimer(row.delay, _tick)
+      else
+        _fb_stop(id, "route_disabled")
+      end
+    end
+
+    row.timer_id = tempTimer(0, _tick)
+
+    -- #region agent log
+    _yso_dbg_log("H7", "fallback_loop_started", {
+      route_id = id,
+      delay = delay,
+    })
+    -- #endregion
+    return row.timer_id ~= nil
+  end
+
+  local has_mode_toggle = (Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function")
+  if has_mode_toggle and _fb_running(route_id) then
+    _fb_stop(route_id, "mode_controller_available")
+  end
+
+  if has_mode_toggle then
+    local ok, toggled, why = pcall(Yso.mode.toggle_route_loop, route_id, source)
+    -- #region agent log
+    _yso_dbg_log("H5", "toggle_route_alias_mode_result", {
+      call_ok = (ok == true),
+      toggled = (toggled == true),
+      why = tostring(why or ""),
+    })
+    -- #endregion
+    if ok and toggled == true then
+      return true, tostring(why or "toggled")
+    end
+  end
+
+  local route = _resolve_route(route_id)
+  if type(route) ~= "table" then
+    -- #region agent log
+    _yso_dbg_log("H5", "toggle_route_alias_route_missing", { route_id = route_id })
+    -- #endregion
+    return false, "route_unavailable:" .. route_id
+  end
+
+  -- #region agent log
+  _yso_dbg_log("H6", "toggle_route_alias_route_resolved", {
+    route_id = route_id,
+    has_init = type(route.init) == "function",
+    has_is_active = type(route.is_active) == "function",
+    has_start = type(route.start) == "function",
+    has_stop = type(route.stop) == "function",
+    has_enable = type(route.enable) == "function",
+    has_disable = type(route.disable) == "function",
+  })
+  -- #endregion
+
+  if type(route.init) == "function" then
+    pcall(route.init)
+  end
+
+  local active = false
+  if _fb_running(route_id) then
+    active = true
+  elseif type(route.is_active) == "function" then
+    local ok, v = pcall(route.is_active)
+    if ok then
+      active = (v == true)
+    end
+  else
+    local st = (type(route.state) == "table") and route.state or {}
+    local cfg = (type(route.cfg) == "table") and route.cfg or {}
+    active = (st.loop_enabled == true) or (st.enabled == true) or (cfg.enabled == true)
+  end
+
+  if active == true then
+    if type(route.stop) == "function" then
+      local ok, res = pcall(route.stop, source)
+      -- #region agent log
+      _yso_dbg_log("H6", "toggle_route_alias_stop_result", {
+        call_ok = (ok == true),
+        result = tostring(res),
+      })
+      -- #endregion
+      if ok and res ~= false then
+        _fb_stop(route_id, "route_stop")
+      end
+      return (ok and res ~= false), (ok and "stopped" or "stop_failed")
+    end
+    if type(route.disable) == "function" then
+      local ok, res = pcall(route.disable, source)
+      -- #region agent log
+      _yso_dbg_log("H6", "toggle_route_alias_disable_result", {
+        call_ok = (ok == true),
+        result = tostring(res),
+      })
+      -- #endregion
+      if ok and res ~= false then
+        _fb_stop(route_id, "route_disable")
+      end
+      return (ok and res ~= false), (ok and "disabled" or "disable_failed")
+    end
+    if _fb_stop(route_id, "fallback_stop_only") then
+      return true, "stopped_fallback"
+    end
+    -- #region agent log
+    _yso_dbg_log("H6", "toggle_route_alias_active_not_stoppable", { route_id = route_id })
+    -- #endregion
+    return false, "route_not_stoppable"
+  end
+
+  if type(route.start) == "function" then
+    local ok, res = pcall(route.start, source)
+    -- #region agent log
+    _yso_dbg_log("H6", "toggle_route_alias_start_result", {
+      call_ok = (ok == true),
+      result = tostring(res),
+    })
+    -- #endregion
+    if ok and res ~= false and not has_mode_toggle then
+      _fb_start(route_id, route, source)
+    end
+    return (ok and res ~= false), (ok and "started" or "start_failed")
+  end
+  if type(route.enable) == "function" then
+    local ok, res = pcall(route.enable, source)
+    -- #region agent log
+    _yso_dbg_log("H6", "toggle_route_alias_enable_result", {
+      call_ok = (ok == true),
+      result = tostring(res),
+    })
+    -- #endregion
+    if ok and res ~= false and not has_mode_toggle then
+      _fb_start(route_id, route, source)
+    end
+    return (ok and res ~= false), (ok and "enabled" or "enable_failed")
+  end
+  -- #region agent log
+  _yso_dbg_log("H6", "toggle_route_alias_not_startable", { route_id = route_id })
+  -- #endregion
+  return false, "route_not_startable"
+end
+
 -- ----------------- class tracking / segregation -----------------
 Yso.classinfo = Yso.classinfo or {}
 do

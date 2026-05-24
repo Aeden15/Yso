@@ -104,6 +104,126 @@ function Yso.util.echo(msg, color)
   cecho(string.format("%s%s%s<reset>\n", p, c, tostring(msg)))
 end
 
+function Yso.util.toggle_route_alias(route_id, source)
+  local function _trim(s)
+    return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  end
+
+  -- #region agent log
+  local function _yso_dbg_log(hypothesisId, message, data)
+    local payload = {
+      sessionId = "f528bd",
+      runId = "baseline",
+      hypothesisId = hypothesisId,
+      location = "api_stuff.lua:toggle_route_alias",
+      message = message,
+      data = data or {},
+      timestamp = os.time() * 1000,
+    }
+    local ok, json = pcall(yajl.to_string, payload)
+    if not ok or type(json) ~= "string" then return end
+    local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
+    if not f then return end
+    f:write(json .. "\n")
+    f:close()
+  end
+  -- #endregion
+
+  local function _resolve_route(id)
+    local off = Yso and Yso.off or nil
+    local alc = off and off.alc or nil
+    local magi = off and off.magi or nil
+    local map = {
+      alchemist_group_damage = alc and alc.group_damage,
+      adam = alc and alc.group_damage,
+      alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
+      alchemist_aurify_route = alc and alc.aurify_route,
+      magi_dmg = magi and (magi.dmg or magi.group_damage),
+      magi_group_damage = magi and (magi.group_damage or magi.dmg),
+      magi_focus = magi and magi.focus,
+    }
+    local route = map[id]
+    return type(route) == "table" and route or nil
+  end
+
+  route_id = _trim(route_id)
+  source = _trim(source)
+  if route_id == "" then
+    return false, "missing_route_id"
+  end
+  if source == "" then
+    source = "alias"
+  end
+
+  -- #region agent log
+  _yso_dbg_log("H5", "toggle_route_alias_entry", {
+    route_id = route_id,
+    source = source,
+    has_mode_toggle_route_loop = type(Yso and Yso.mode and Yso.mode.toggle_route_loop) == "function",
+  })
+  -- #endregion
+
+  if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
+    local ok, toggled, why = pcall(Yso.mode.toggle_route_loop, route_id, source)
+    -- #region agent log
+    _yso_dbg_log("H5", "toggle_route_alias_mode_result", {
+      call_ok = (ok == true),
+      toggled = (toggled == true),
+      why = tostring(why or ""),
+    })
+    -- #endregion
+    if ok and toggled == true then
+      return true, tostring(why or "toggled")
+    end
+  end
+
+  local route = _resolve_route(route_id)
+  if type(route) ~= "table" then
+    -- #region agent log
+    _yso_dbg_log("H5", "toggle_route_alias_route_missing", { route_id = route_id })
+    -- #endregion
+    return false, "route_unavailable:" .. route_id
+  end
+
+  if type(route.init) == "function" then
+    pcall(route.init)
+  end
+
+  local active = false
+  if type(route.is_active) == "function" then
+    local ok, v = pcall(route.is_active)
+    if ok then
+      active = (v == true)
+    end
+  else
+    local st = (type(route.state) == "table") and route.state or {}
+    local cfg = (type(route.cfg) == "table") and route.cfg or {}
+    active = (st.loop_enabled == true) or (st.enabled == true) or (cfg.enabled == true)
+  end
+
+  if active == true then
+    if type(route.stop) == "function" then
+      local ok, res = pcall(route.stop, source)
+      return (ok and res ~= false), (ok and "stopped" or "stop_failed")
+    end
+    if type(route.disable) == "function" then
+      local ok, res = pcall(route.disable, source)
+      return (ok and res ~= false), (ok and "disabled" or "disable_failed")
+    end
+    return false, "route_not_stoppable"
+  end
+
+  if type(route.start) == "function" then
+    local ok, res = pcall(route.start, source)
+    return (ok and res ~= false), (ok and "started" or "start_failed")
+  end
+  if type(route.enable) == "function" then
+    local ok, res = pcall(route.enable, source)
+    return (ok and res ~= false), (ok and "enabled" or "enable_failed")
+  end
+  return false, "route_not_startable"
+end
+
 -- ----------------- class tracking / segregation -----------------
 Yso.classinfo = Yso.classinfo or {}
 do
