@@ -25,5 +25,3 @@ git status
 git commit -am "Your message"
 git push origin main
 ```
-
-The old Desktop-only `.git` history is preserved under `.git.desktop-archive/` if you need it.
