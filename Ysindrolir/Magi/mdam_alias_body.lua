@@ -334,7 +334,7 @@ function RC.reset_runtime_state(state, reason)
   return state
 end
 
-return RC
+-- return omitted: alias body uses Yso.off.magi.route_core
 
 --========================================================--
 -- magi_group_damage.lua

@@ -20,11 +20,20 @@ end
 '@
 
 $parts = @(
-  (Get-Content -LiteralPath $routeCore -Raw).TrimEnd()
-  ((Get-Content -LiteralPath $src -Raw).TrimEnd() -replace '(?m)^return MGD\s*$', '-- return omitted: alias body assigns Yso.off.magi.group_damage above')
+  ((Get-Content -LiteralPath $routeCore -Raw -Encoding UTF8).TrimEnd() -replace '(?m)^return RC\s*$', '-- return omitted: alias body uses Yso.off.magi.route_core')
+  ((Get-Content -LiteralPath $src -Raw -Encoding UTF8).TrimEnd() -replace '(?m)^return MGD\s*$', '-- return omitted: alias body assigns Yso.off.magi.group_damage above')
   $toggle.TrimStart()
 )
 
 $utf8 = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText($dst, ($parts -join "`n`n") + "`n", $utf8)
 Write-Host "Wrote $dst"
+
+$luac = Get-Command luac -ErrorAction SilentlyContinue
+if (-not $luac) {
+  Write-Warning 'luac not found; skipped syntax check on mdam alias body'
+} else {
+  & $luac.Source -p $dst
+  if ($LASTEXITCODE -ne 0) { throw "luac syntax check failed for $dst" }
+  Write-Host "luac OK: $dst"
+}

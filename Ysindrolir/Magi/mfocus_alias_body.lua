@@ -334,7 +334,7 @@ function RC.reset_runtime_state(state, reason)
   return state
 end
 
-return RC
+-- return omitted: alias body uses Yso.off.magi.route_core
 
 --========================================================--
 -- Magi dissonance tracker
@@ -480,7 +480,7 @@ function D.snapshot(target)
   return _copy(_slot(target, false), target)
 end
 
-return D
+-- return omitted: alias body uses Yso.magi.dissonance
 
 --========================================================--
 -- magi_focus.lua
