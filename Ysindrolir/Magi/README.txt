@@ -4,7 +4,7 @@ Last updated: May 5, 2026
 
 This folder is the class-specific home for Magi work. Live behavior is defined by
 the installed Mudlet package (Ysindrolir/mudlet packages/Yso system.xml): use
-aliases such as mdam, mfocus, mgd and the package trigger/script order. Repo Lua
+aliases such as mdam, mfocus, mreflect and the package trigger/script order. Repo Lua
 here is the editable source; Ysindrolir/scripts/export_yso_system_xml.ps1 is
 optional for re-embedding into the XML when maintaining split files — not part
 of ordinary in-Mudlet play.
@@ -51,16 +51,19 @@ Current fixes
 Current Magi helpers
 --------------------
   magi_group_damage.lua
-    Provides Yso.off.magi.group_damage for the Magi team-damage loop.
+    Mirror for tests/export; Mudlet-primary copy lives in ^mdam$ alias body.
 
   magi_focus.lua
-    Provides Yso.off.magi.focus for the Magi duel convergence route.
+    Mirror for tests/export; Mudlet-primary copy lives in ^mfocus$ alias body.
 
   Magi_duel_dam.lua
     Provides Yso.off.magi.dmg for the Magi duel damage route (key: magi_dmg).
 
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.
+
+  mdam_alias_body.lua / mfocus_alias_body.lua
+    Built alias bodies used for package embedding by export_yso_system_xml.ps1.
 
   magi_dissonance.lua
     Provides Magi-local Dissonance stage/confidence/evidence tracking.
@@ -74,6 +77,11 @@ Current Magi helpers
 
   vibeds_alias_body.lua
     Paste-ready alias body for the vibes helper.
+
+Notes
+-----
+  Group damage alias is mdam only; duplicate mgd was removed.
+  Reflection helper is now cast-only via mreflect (no auto-reflect toggle/state).
 
 Default vibes notes
 -------------------

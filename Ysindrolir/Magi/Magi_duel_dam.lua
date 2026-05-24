@@ -1,7 +1,6 @@
 -- Magi_duel_dam.lua
 -- Thin-alias route module for the Magi duel damage route.
--- Intended toggle:
---   ^mdam$  ->  Yso.off.core.toggle("magi_dmg")
+-- Duel damage route (magi_dmg). Group damage uses ^mdam$ / magi_group_damage in mdam alias.
 --
 -- The route logic below preserves the same priority/order that was planned
 -- for the Magi damage alias body, while living in an external file so it
@@ -68,19 +67,8 @@ do
   end
 end
 
-local function _load_magi_peer(file_name)
-  local info = debug.getinfo(1, "S")
-  local source = info and info.source or ""
-  if source:sub(1, 1) ~= "@" then return false end
-  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
-  local path = dir .. "/" .. tostring(file_name or "")
-  return pcall(dofile, path)
-end
-
+Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
-if type(RC) ~= "table" and _load_magi_peer("magi_route_core.lua") then
-  RC = Yso.off.magi.route_core
-end
 
 local function _trim(s)
   if type(RC) == "table" and type(RC.trim) == "function" then
@@ -349,28 +337,14 @@ end
 local function _send_destroy_addclearfull(cmd)
   cmd = _trim(cmd)
   if not _is_destroy_cmd(cmd) then return nil end
-  local Q = Yso and Yso.queue or nil
   local opts = _apply_execute_opts({
     route = "magi_dmg",
     target = _target(),
     reason = "magi_dmg:destroy",
     kind = "offense",
   }, cmd)
-  if Q and type(Q.install_lane) == "function" then
-    local ok = Q.install_lane("eq", cmd, opts)
-    if ok == true then
-      if type(Q.mark_lane_dispatched) == "function" then
-        pcall(Q.mark_lane_dispatched, "eq", "destroy:addclearfull")
-      end
-      if type(Q.mark_payload_fired) == "function" then
-        pcall(Q.mark_payload_fired, { eq = cmd, target = opts.target })
-      end
-      return true
-    end
-    return false
-  end
-  if Q and type(Q.addclearfull) == "function" then
-    return Q.addclearfull("e!p!w!t", cmd) == true
+  if type(Yso.emit_now) == "function" then
+    return Yso.emit_now({ eq = cmd }, opts) == true
   end
   if type(send) == "function" then
     return pcall(send, "QUEUE ADDCLEARFULL e!p!w!t " .. cmd, false) == true
@@ -410,22 +384,6 @@ local function _emit_payload(cmd, target, reason)
       return true, cmd, payload
     end
     return false, "emit_failed", nil
-  end
-
-  local Q = Yso and Yso.queue or nil
-  if Q and type(Q.stage) == "function" and type(Q.commit) == "function" then
-    Q.stage("eq", cmd, opts)
-    local ok = Q.commit(opts)
-    if ok then
-      Q._commit_hint = nil
-      return true, cmd, payload
-    end
-    Q._commit_hint = opts
-    if Yso and Yso.pulse and type(Yso.pulse.wake) == "function"
-      and not (Yso.pulse.state and Yso.pulse.state._in_flush) then
-      pcall(Yso.pulse.wake, "emit:staged")
-    end
-    return true, cmd, payload
   end
 
   if type(send) == "function" then

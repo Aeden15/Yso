@@ -142,7 +142,7 @@ local ALIASES = {
   focus = { magi = "magi_focus" },
   mfocus = { magi = "magi_focus" },
   magi_focus = { magi = "magi_focus" },
-  mdam = { magi = "magi_dmg" },
+  mdam = { magi = "magi_group_damage" },
   magi_dmg = { magi = "magi_dmg" },
   aduel = { alchemist = "alchemist_duel_route" },
   alchemist_duel_route = { alchemist = "alchemist_duel_route" },
@@ -151,7 +151,6 @@ local ALIASES = {
   adam = { alchemist = "alchemist_group_damage" },
   alchemist_group_damage = { alchemist = "alchemist_group_damage" },
   gd = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  mgd = { magi = "magi_group_damage" },
   dmg = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
   dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
 }

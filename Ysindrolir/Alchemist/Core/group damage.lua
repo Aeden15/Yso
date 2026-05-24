@@ -14,23 +14,7 @@ Yso.off.alc.group_damage = Yso.off.alc.group_damage or {}
 local GD = Yso.off.alc.group_damage
 GD.alias_owned = true
 
-local function _load_alchemist_peer(file_name)
-  local info = debug.getinfo(1, "S")
-  local source = info and info.source or ""
-  if source:sub(1, 1) ~= "@" then
-    return false
-  end
-  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
-  local path = dir .. "/" .. tostring(file_name or "")
-  local ok = pcall(dofile, path)
-  return ok
-end
-
--- Mudlet-native load order: this script expects core tables to be present and
--- only falls back to local dofile() peers when they are missing.
-if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
-  _load_alchemist_peer("physiology.lua")
-end
+-- Mudlet-native load order: physiology is expected to be preloaded.
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
@@ -332,33 +316,7 @@ end
 
 local function _evaluate_pending_for(tgt)
   local P = _phys()
-  GD.state = GD.state or {}
-  GD.state.debug_eval_pending_logs = tonumber(GD.state.debug_eval_pending_logs or 0) or 0
-
-  local staged_pending = false
   if P and type(P.evaluate_staged_for_target) == "function" and P.evaluate_staged_for_target(tgt) then
-    staged_pending = true
-  end
-  if staged_pending then
-    if GD.state.debug_eval_pending_logs < 20 then
-      GD.state.debug_eval_pending_logs = GD.state.debug_eval_pending_logs + 1
-      -- #region agent log
-      local payload = {
-        sessionId = "f528bd",
-        runId = "baseline",
-        hypothesisId = "H9",
-        location = "group damage.lua:_evaluate_pending_for",
-        message = "evaluate_pending_from_staged",
-        data = { target = tostring(tgt or "") },
-        timestamp = os.time() * 1000,
-      }
-      local ok, json = pcall(yajl.to_string, payload)
-      if ok and type(json) == "string" then
-        local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-        if f then f:write(json .. "\n"); f:close() end
-      end
-      -- #endregion
-    end
     return true
   end
   local row = P and P.state and P.state.evaluate or nil
@@ -372,35 +330,7 @@ local function _evaluate_pending_for(tgt)
   if at <= 0 then
     return false
   end
-  local now = _now()
-  local threshold = (tonumber(GD.cfg.evaluate_pending_s or 1.2) or 1.2)
-  local pending = (now - at) <= threshold
-  if pending and GD.state.debug_eval_pending_logs < 20 then
-    GD.state.debug_eval_pending_logs = GD.state.debug_eval_pending_logs + 1
-    -- #region agent log
-    local payload = {
-      sessionId = "f528bd",
-      runId = "baseline",
-      hypothesisId = "H9",
-      location = "group damage.lua:_evaluate_pending_for",
-      message = "evaluate_pending_from_requested_at",
-      data = {
-        target = tostring(tgt or ""),
-        now = tonumber(now) or 0,
-        requested_at = tonumber(at) or 0,
-        delta = tonumber(now - at) or 0,
-        threshold = tonumber(threshold) or 0,
-      },
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if ok and type(json) == "string" then
-      local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-      if f then f:write(json .. "\n"); f:close() end
-    end
-    -- #endregion
-  end
-  return pending
+  return (_now() - at) <= (tonumber(GD.cfg.evaluate_pending_s or 1.2) or 1.2)
 end
 
 local function _is_group_damage_route_ok()

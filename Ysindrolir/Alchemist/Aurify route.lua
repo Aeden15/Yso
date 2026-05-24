@@ -14,23 +14,7 @@ Yso.off.alc.aurify_route = Yso.off.alc.aurify_route or {}
 local AR = Yso.off.alc.aurify_route
 AR.alias_owned = true
 
-local function _load_alchemist_peer(file_name)
-  local info = debug.getinfo(1, "S")
-  local source = info and info.source or ""
-  if source:sub(1, 1) ~= "@" then
-    return false
-  end
-  local dir = source:sub(2):match("^(.*)[/\\][^/\\]+$") or "."
-  local path = dir .. "/" .. tostring(file_name or "")
-  local ok = pcall(dofile, path)
-  return ok
-end
-
--- Mudlet-native load order: this script expects core tables to be present and
--- only falls back to local dofile() peers when they are missing.
-if not (Yso.alc and Yso.alc.phys and type(Yso.alc.phys.target) == "function") then
-  _load_alchemist_peer("Core/physiology.lua")
-end
+-- Mudlet-native load order: physiology is expected to be preloaded.
 
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 

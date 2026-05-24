@@ -13,7 +13,7 @@ Mudlet workflow (package-first)
   YSO_ROOT, package.path, or repo-root probing for route loading. Globals such
   as Yso and route tables are set up by the package's script order.
 - Operating: use package aliases/toggles in Mudlet (e.g. Magi mdam, mfocus,
-  mgd; Alchemist adam, aduel). Combat mode plus per-route toggles drive offense.
+  magi_dmg, mreflect; Alchemist adam, aduel). Combat mode plus per-route toggles drive offense.
 - Repo tree: Lua under Ysindrolir/Yso/ and Ysindrolir/Alchemist/ is the git
   source. Ysindrolir/scripts/export_yso_system_xml.ps1 is optional maintenance
   to re-embed scripts into Yso system.xml when working split-layout sources --
