@@ -9,6 +9,13 @@ alwaysApply: true
 
 Achaea **Yso** automation under `Ysindrolir/`. **Supported combat classes:** Magi and Alchemist (shared Yso core). Do not reintroduce removed stacks (e.g. Occultist routes); strip obsolete empty Mudlet folders/triggers from `Yso system.xml` when editing that package.
 
+## Git (canonical clone)
+
+- **All `git add`, `git commit`, and `git push` for Yso must run in:** `C:\Users\shuji\OneDrive\Documents\GitHub\Yso`
+- This Desktop workspace is an edit copy only; **do not** run `git commit` at the Desktop root.
+- After changing files here, sync and commit via `Ysindrolir/scripts/Invoke-YsoGit.ps1` (copies `Ysindrolir/` into the GitHub clone, then runs git there), or commit manually in the GitHub clone.
+- See [`GIT.md`](GIT.md) at the workspace root.
+
 ## Canonical source and package workflow
 
 - Canonical runtime artifact is Mudlet package export under `Ysindrolir/mudlet packages/` (`Yso system.xml` / `.mpackage`).
