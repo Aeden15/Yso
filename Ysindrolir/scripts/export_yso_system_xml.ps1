@@ -159,6 +159,14 @@ $ScriptToSourcePath = [ordered]@{
 }
 
 $ScriptInserts = @(
+  @{ Name = 'Yso modes';             After = 'Api stuff';                Source = Join-Path $YsoDir 'xml\yso_modes.lua' },
+  @{ Name = 'Yso pulse';             After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua' },
+  @{ Name = 'Route registry';        After = 'Yso pulse';                Source = Join-Path $YsoDir 'Combat\route_registry.lua' },
+  @{ Name = 'Offense core';          After = 'Yso.offense.request_tick'; Source = Join-Path $YsoDir 'Combat\offense_core.lua' },
+  @{ Name = 'Alchemist duel route';  After = 'Alchemist physiology';     Source = Join-Path $AlchemistDir 'Core\duel route.lua' },
+  @{ Name = 'Alchemist aurify route'; After = 'Alchemist duel route';    Source = Join-Path $AlchemistDir 'Aurify route.lua' },
+  @{ Name = 'Magi route core';       After = 'Defensive checks';         Source = Join-Path $MagiDir 'magi_route_core.lua' },
+  @{ Name = 'Magi duel dam';         After = 'Magi route core';          Source = Join-Path $MagiDir 'Magi_duel_dam.lua' },
   @{ Name = 'formulation';           After = 'AK+Legacy wiring';       Source = Join-Path $AlchemistDir 'Core\formulation.lua' },
   @{ Name = 'formulation_resolve';   After = 'formulation';            Source = Join-Path $AlchemistDir 'Core\formulation_resolve.lua' },
   @{ Name = 'formulation_phials';    After = 'formulation_resolve';    Source = Join-Path $AlchemistDir 'Core\formulation_phials.lua' },
