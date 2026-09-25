@@ -246,6 +246,45 @@ do
   assert_contains("4b: warning names multiple empties", warnings[#warnings], "multiple empty phials detected")
 end
 
+print("=== Test 4b: strict autofix builds deterministic recovery sequence ===")
+do
+  local F, warnings = make_world()
+  load_phials(F, {
+    "Phial658898 | Empty | -- | 1 | 1 | 2",
+    "Phial475762 | Empty | -- | 1 | 1 | 1",
+    "Phial454568 | Empty | -- | 2 | 1 | 2",
+  })
+
+  local plan = F.build_role_amalgamate_autofix("endorphin", "endorphin")
+  assert_eq("4b-1: autofix returns command plan table", type(plan), "table")
+  assert_eq("4b-2: plan length includes prefill, empty, final", #plan, 5)
+  assert_eq("4b-3: prefill one", plan[1], "AMALGAMATE ENDORPHIN")
+  assert_eq("4b-4: prefill two", plan[2], "AMALGAMATE ENDORPHIN")
+  assert_eq("4b-5: prefill three", plan[3], "AMALGAMATE ENDORPHIN")
+  assert_eq("4b-6: reserved slot emptied after prefill", plan[4], "EMPTY PHIAL658898")
+  assert_eq("4b-7: final amalgamate runs with single empty reserved slot", plan[5], "AMALGAMATE ENDORPHIN")
+  assert_contains("4b-8: autofix warning emitted", warnings[#warnings], "Autofix: pre-filling 3 empty phials")
+end
+
+print("=== Test 4c: send_amalgamate_autofix emits full sequence then refresh ===")
+do
+  local F, _, sent = make_world()
+  load_phials(F, {
+    "Phial658898 | Empty | -- | 1 | 1 | 2",
+    "Phial475762 | Empty | -- | 1 | 1 | 1",
+    "Phial454568 | Empty | -- | 2 | 1 | 2",
+  })
+
+  local plan = F.send_amalgamate_autofix("endorphin")
+  assert_eq("4c-1: send helper returns command plan table", type(plan), "table")
+  assert_eq("4c-2: send prefill one", sent[1], "AMALGAMATE ENDORPHIN")
+  assert_eq("4c-3: send prefill two", sent[2], "AMALGAMATE ENDORPHIN")
+  assert_eq("4c-4: send prefill three", sent[3], "AMALGAMATE ENDORPHIN")
+  assert_eq("4c-5: send empty reserved", sent[4], "EMPTY PHIAL658898")
+  assert_eq("4c-6: send final amalgamate", sent[5], "AMALGAMATE ENDORPHIN")
+  assert_eq("4c-7: trailing phiallist refresh", sent[6], "phiallist")
+end
+
 print("=== Test 5: safe Amalgamate sends command then phiallist refresh ===")
 do
   local F, warnings, sent = make_world()

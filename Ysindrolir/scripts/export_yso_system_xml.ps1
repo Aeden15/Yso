@@ -43,7 +43,10 @@ function Add-ScriptAfter([string]$content, [string]$afterName, [string]$newName,
   $nameRe = [regex]::Escape($afterName)
   $pattern = '(?s)(<Script isActive="yes" isFolder="no">\s*<name>' + $nameRe + '</name>.*?</Script>)'
   $m = [regex]::Match($content, $pattern)
-  if (-not $m.Success) { throw "Insert anchor not found for '$newName' after '$afterName'" }
+  if (-not $m.Success) {
+    Write-Warning "Insert anchor not found for '$newName' after '$afterName'"
+    return $content
+  }
   return $content.Substring(0, $m.Index + $m.Length) + $block + $content.Substring($m.Index + $m.Length)
 }
 

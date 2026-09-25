@@ -94,6 +94,17 @@ local function _canonical_role(role)
   return aliases[key]
 end
 
+local function _amalgamate_role_for_compound(compound)
+  local key = _normalize_compound_key(compound)
+  if key == "endorphin" then
+    return "endorphin", key
+  end
+  if key == "enhancement" then
+    return "enhancement", key
+  end
+  return "offensive_flex", key
+end
+
 local function _role_label(role_key)
   local labels = {
     endorphin = "Endorphin",
@@ -701,6 +712,136 @@ function F.send_role_amalgamate(role, compound)
   return cmd, context
 end
 
+function F.build_role_amalgamate_autofix(role, compound)
+  local policy, err = F.reserved_role(role)
+  if not policy then
+    if type(F.warn) == "function" then
+      F.warn(err)
+    end
+    return nil
+  end
+
+  if next(F.phials or {}) == nil then
+    if type(F.request_discovery) == "function" then
+      F.request_discovery()
+    end
+    if type(F.warn) == "function" then
+      F.warn("Unsafe Amalgamate state: phiallist is unknown. Run PHIALLIST.")
+    end
+    return nil
+  end
+
+  local desired_compound = _normalize_compound_key(compound or policy.expected_compound or "")
+  if desired_compound == "" then
+    if type(F.warn) == "function" then
+      F.warn(policy.label .. " helper needs a compound.")
+    end
+    return nil
+  end
+
+  if policy.expected_compound and desired_compound ~= policy.expected_compound then
+    if type(F.warn) == "function" then
+      F.warn(policy.label .. " helper expects " .. policy.expected_compound:sub(1, 1):upper() .. policy.expected_compound:sub(2) .. ".")
+    end
+    return nil
+  end
+
+  if policy.expected_pool then
+    local ok = policy.expected_pool[desired_compound] == true
+    if not ok then
+      if type(F.warn) == "function" then
+        F.warn("Offensive gas flex pool excludes " .. desired_compound:sub(1, 1):upper() .. desired_compound:sub(2) .. ".")
+      end
+      return nil
+    end
+  end
+
+  local slot = F.phials[policy.id]
+  if not slot then
+    if type(F.warn) == "function" then
+      F.warn("Unsafe Amalgamate state: " .. policy.id .. " is missing from current phiallist. Run PHIALLIST.")
+    end
+    if type(F.request_discovery) == "function" then
+      F.request_discovery()
+    end
+    return nil
+  end
+
+  local cmd = "AMALGAMATE " .. desired_compound:upper()
+  local empties = F.empty_phials()
+
+  if #empties == 1 and empties[1].id == policy.id and slot.empty then
+    return cmd, {
+      role = policy.role,
+      role_label = policy.label,
+      phial_id = policy.id,
+      compound = desired_compound,
+      autofix = false,
+      prefill_count = 0,
+    }
+  end
+
+  local plan = {}
+  for _ = 1, #empties do
+    plan[#plan + 1] = cmd
+  end
+  plan[#plan + 1] = "EMPTY " .. policy.id:upper()
+  plan[#plan + 1] = cmd
+
+  if type(F.warn) == "function" and #empties > 1 then
+    F.warn("Autofix: pre-filling " .. tostring(#empties) .. " empty phials before reserving " .. policy.id .. " for " .. desired_compound:upper() .. ".")
+  end
+
+  return plan, {
+    role = policy.role,
+    role_label = policy.label,
+    phial_id = policy.id,
+    compound = desired_compound,
+    autofix = true,
+    prefill_count = #empties,
+  }
+end
+
+function F.send_role_amalgamate_autofix(role, compound)
+  local plan, context = F.build_role_amalgamate_autofix(role, compound)
+  if not plan then
+    return nil
+  end
+
+  if type(send) == "function" then
+    if type(plan) == "table" then
+      for i = 1, #plan do
+        send(plan[i])
+      end
+    else
+      send(plan)
+    end
+    send("phiallist")
+  end
+
+  F.state.last_amalgamate = {
+    cmd = type(plan) == "table" and table.concat(plan, " && ") or tostring(plan),
+    role = context and context.role,
+    phial_id = context and context.phial_id,
+    compound = context and context.compound,
+    autofix = context and context.autofix == true,
+    prefill_count = context and context.prefill_count or 0,
+    at = type(F.now) == "function" and F.now() or os.time(),
+  }
+  return plan, context
+end
+
+function F.send_amalgamate_autofix(compound)
+  local role, normalized = _amalgamate_role_for_compound(compound)
+  if normalized == "" then
+    if type(F.warn) == "function" then
+      F.warn("Autofix amalgamate helper needs a compound.")
+    end
+    return nil
+  end
+  return F.send_role_amalgamate_autofix(role, normalized)
+end
+
 function F.build_endorphin_amalgamate()
   return F.build_role_amalgamate("endorphin", "endorphin")
 end
@@ -723,6 +864,18 @@ end
 
 function F.send_offensive_gas_amalgamate(compound)
   return F.send_role_amalgamate("offensive_flex", compound)
+end
+
+function F.send_endorphin_amalgamate_autofix()
+  return F.send_role_amalgamate_autofix("endorphin", "endorphin")
+end
+
+function F.send_enhancement_amalgamate_autofix()
+  return F.send_role_amalgamate_autofix("enhancement", "enhancement")
+end
+
+function F.send_offensive_gas_amalgamate_autofix(compound)
+  return F.send_role_amalgamate_autofix("offensive_flex", compound)
 end
 
 function F.show_phials()
