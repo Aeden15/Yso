@@ -851,7 +851,8 @@ function MGD.attack_function(arg)
   end
   local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
   local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
-  if (not has_ack_bus or dry_run) and type(MGD.on_payload_queued) == "function" then
+  local queue_live = Yso and Yso.queue and type(Yso.queue.commit) == "function"
+  if (not has_ack_bus or dry_run or not queue_live) and type(MGD.on_payload_queued) == "function" then
     pcall(MGD.on_payload_queued, ack_payload or queued_payload)
   end
 

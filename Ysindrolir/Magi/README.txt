@@ -4,7 +4,7 @@ Last updated: May 5, 2026
 
 This folder is the class-specific home for Magi work. Live behavior is defined by
 the installed Mudlet package (Ysindrolir/mudlet packages/Yso system.xml): use
-aliases such as mdam, mfocus, mreflect and the package trigger/script order. Repo Lua
+aliases such as mdam, mfocus, fstorm, gwater, mreflect and the package trigger/script order. Repo Lua
 here is the editable source; Ysindrolir/scripts/export_yso_system_xml.ps1 is
 optional for re-embedding into the XML when maintaining split files — not part
 of ordinary in-Mudlet play.
@@ -58,6 +58,11 @@ Current Magi helpers
 
   Magi_duel_dam.lua
     Provides Yso.off.magi.dmg for the Magi duel damage route (key: magi_dmg).
+
+  Magi_firestorm.lua / Magi_water_group.lua
+    Package scripts for ^fstorm$ (magi_firestorm) and ^gwater$ (magi_water_group).
+    Thin aliases toggle those loops like mdam. Staff/shield ids: Yso.magi.weapons.set.
+    Shalestorm is a Magi-wide flag on Yso.magi.shalestorm.
 
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.

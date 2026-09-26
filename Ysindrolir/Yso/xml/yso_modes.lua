@@ -30,31 +30,6 @@ Yso.mode = Yso.mode or {}
 
 local M = Yso.mode
 
--- #region agent log
-local function _yso_dbg_log(hypothesisId, message, data)
-  local payload = {
-    sessionId = "f528bd",
-    runId = "baseline",
-    hypothesisId = hypothesisId,
-    location = "yso_modes.lua",
-    message = message,
-    data = data or {},
-    timestamp = os.time() * 1000,
-  }
-  local ok, json = pcall(yajl.to_string, payload)
-  if not ok or type(json) ~= "string" then return end
-  local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-  if not f then return end
-  f:write(json .. "\n")
-  f:close()
-end
-
-_yso_dbg_log("H2", "yso_modes_loaded", {
-  has_mode_table = type(Yso.mode) == "table",
-  prior_toggle_route_alias = type(Yso.util and Yso.util.toggle_route_alias) == "function",
-})
--- #endregion
-
 local function _now()
   if type(getEpoch) == "function" then
     local t = tonumber(getEpoch()) or os.time()
@@ -167,6 +142,29 @@ local function _route_entries()
     if entry then out[#out + 1] = entry end
   end
   return out
+end
+
+local function _send_usequeueing(on)
+  local cmd = (on == true) and "config usequeueing on" or "config usequeueing off"
+  if type(Yso.send) == "function" then
+    return pcall(Yso.send, cmd) == true
+  end
+  if type(send) == "function" then
+    return pcall(send, cmd, false) == true
+  end
+  return false
+end
+
+local function _combat_loop_count()
+  local n = 0
+  local entries = _route_entries()
+  for i = 1, #entries do
+    local mod = _route_module(entries[i])
+    if type(mod) == "table" and type(mod.state) == "table" and mod.state.loop_enabled == true then
+      n = n + 1
+    end
+  end
+  return n
 end
 
 local function _stop_all_route_loops(reason, silent)
@@ -431,6 +429,7 @@ function M.start_route_loop(name, reason)
     pcall(mod.alias_loop_on_started, ctx)
   end
 
+  _send_usequeueing(false)
   return true
 end
 
@@ -462,6 +461,9 @@ function M.stop_route_loop(name, reason, silent)
   end
 
   _loop_release(entry)
+  if _combat_loop_count() <= 0 then
+    _send_usequeueing(true)
+  end
   return true
 end
 
@@ -643,13 +645,6 @@ if type(Yso.util.toggle_route_alias) == "function" then
   Yso.util.toggle_route_alias = nil
 end
 function Yso.util.toggle_route_alias(route_id, reason)
-  -- #region agent log
-  _yso_dbg_log("H3", "toggle_route_alias_called", {
-    route_id = tostring(route_id or ""),
-    reason = tostring(reason or ""),
-    has_toggle_route_loop = type(Yso and Yso.mode and Yso.mode.toggle_route_loop) == "function",
-  })
-  -- #endregion
   local function _try_toggle()
     if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
       return Yso.mode.toggle_route_loop(route_id, reason)
@@ -658,13 +653,6 @@ function Yso.util.toggle_route_alias(route_id, reason)
   end
 
   local call_ok, ok, why = pcall(_try_toggle)
-  -- #region agent log
-  _yso_dbg_log("H4", "toggle_route_alias_result", {
-    call_ok = (call_ok == true),
-    ok = (ok == true),
-    why = tostring(why or ""),
-  })
-  -- #endregion
   if call_ok then return ok, why end
   return false, tostring(ok)
 end

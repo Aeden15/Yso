@@ -399,6 +399,22 @@ M.elementalism = {
     },
   },
 
+  shalestorm = {
+    name = "Shalestorm",
+    abadmin_id = 31422,
+    syntax = "CAST SHALESTORM AT <target>",
+    channels = { "earth" },
+    works_on = "adventurers",
+    cooldown_s = 2.40,
+    resource_mana = 100,
+    notes = {
+      "Higher order earth spell: summons a storm of rocks that periodically pummel the victim.",
+      "Every two pummel ticks, earth resonance decreases. The storm ends when earth resonance is gone.",
+      "Unshielded: damage plus a random limb. Shielded: breaks the shield.",
+      "Tracked globally on Yso.magi.shalestorm from the cast-up and lose-maintain lines.",
+    },
+  },
+
   conflagrate = {
     name = "Conflagrate",
     abadmin_id = 2217,

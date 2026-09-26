@@ -128,7 +128,11 @@ $ScriptToSourcePath = [ordered]@{
   'Cureset Baselines'             = Join-Path $YsoDir 'xml\cureset_baselines.lua'
   'Defensive checks'              = Join-Path $YsoDir 'xml\magi_defensive_checks.lua'
   'Magi route core'               = Join-Path $MagiDir 'magi_route_core.lua'
+  'Magi weapons'                  = Join-Path $MagiDir 'magi_weapons.lua'
+  'Magi shalestorm'               = Join-Path $MagiDir 'magi_shalestorm.lua'
   'Magi duel dam'                 = Join-Path $MagiDir 'Magi_duel_dam.lua'
+  'Magi firestorm'                = Join-Path $MagiDir 'Magi_firestorm.lua'
+  'Magi water group'              = Join-Path $MagiDir 'Magi_water_group.lua'
   'formulation'                   = Join-Path $AlchemistDir 'Core\formulation.lua'
   'formulation_build'             = Join-Path $AlchemistDir 'Core\formulation_build.lua'
   'formulation_chart'             = Join-Path $AlchemistDir 'Core\formulation_chart.lua'
@@ -168,8 +172,13 @@ $ScriptInserts = @(
   @{ Name = 'Offense core';          After = 'Yso.offense.request_tick'; Source = Join-Path $YsoDir 'Combat\offense_core.lua' },
   @{ Name = 'Alchemist duel route';  After = 'Alchemist physiology';     Source = Join-Path $AlchemistDir 'Core\duel route.lua' },
   @{ Name = 'Alchemist aurify route'; After = 'Alchemist duel route';    Source = Join-Path $AlchemistDir 'Aurify route.lua' },
+  @{ Name = 'Defensive checks';      After = 'Route registry';           Source = Join-Path $YsoDir 'xml\magi_defensive_checks.lua' },
   @{ Name = 'Magi route core';       After = 'Defensive checks';         Source = Join-Path $MagiDir 'magi_route_core.lua' },
-  @{ Name = 'Magi duel dam';         After = 'Magi route core';          Source = Join-Path $MagiDir 'Magi_duel_dam.lua' },
+  @{ Name = 'Magi weapons';          After = 'Magi route core';          Source = Join-Path $MagiDir 'magi_weapons.lua' },
+  @{ Name = 'Magi shalestorm';       After = 'Magi weapons';             Source = Join-Path $MagiDir 'magi_shalestorm.lua' },
+  @{ Name = 'Magi duel dam';         After = 'Magi shalestorm';          Source = Join-Path $MagiDir 'Magi_duel_dam.lua' },
+  @{ Name = 'Magi firestorm';        After = 'Magi duel dam';            Source = Join-Path $MagiDir 'Magi_firestorm.lua' },
+  @{ Name = 'Magi water group';      After = 'Magi firestorm';           Source = Join-Path $MagiDir 'Magi_water_group.lua' },
   @{ Name = 'formulation';           After = 'AK+Legacy wiring';       Source = Join-Path $AlchemistDir 'Core\formulation.lua' },
   @{ Name = 'formulation_resolve';   After = 'formulation';            Source = Join-Path $AlchemistDir 'Core\formulation_resolve.lua' },
   @{ Name = 'formulation_phials';    After = 'formulation_resolve';    Source = Join-Path $AlchemistDir 'Core\formulation_phials.lua' },
