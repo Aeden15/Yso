@@ -159,6 +159,7 @@ $ScriptToSourcePath = [ordered]@{
   'Yso.engine (event plumbing)'   = Join-Path $YsoDir 'xml\yso_engine.lua'
   'Yso.offense.request_tick'      = Join-Path $YsoDir 'xml\yso_offense_request_tick.lua'
   'Yso modes'                     = Join-Path $YsoDir 'xml\yso_modes.lua'
+  'Yso party targeting'           = Join-Path $YsoDir 'xml\yso_party_targeting.lua'
   'Yso pulse'                     = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua'
   'Yso.state wiring'              = Join-Path $YsoDir 'xml\yso_state_wiring_stub.lua'
   'Yso.target'                    = Join-Path $YsoDir 'xml\yso_target.lua'
@@ -167,6 +168,7 @@ $ScriptToSourcePath = [ordered]@{
 
 $ScriptInserts = @(
   @{ Name = 'Yso modes';             After = 'Api stuff';                Source = Join-Path $YsoDir 'xml\yso_modes.lua' },
+  @{ Name = 'Yso party targeting';   After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_party_targeting.lua' },
   @{ Name = 'Yso pulse';             After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua' },
   @{ Name = 'Route registry';        After = 'Yso pulse';                Source = Join-Path $YsoDir 'Combat\route_registry.lua' },
   @{ Name = 'Offense core';          After = 'Yso.offense.request_tick'; Source = Join-Path $YsoDir 'Combat\offense_core.lua' },
@@ -249,6 +251,10 @@ foreach ($tr in $TriggersToRemove) {
 
 if ($PSCmdlet.ShouldProcess('mgd', 'Remove duplicate mgd alias')) {
   $content = Remove-AliasByName $content 'mgd'
+}
+
+if ($PSCmdlet.ShouldProcess('Targeting', 'Remove y targeting alias')) {
+  $content = Remove-AliasByName $content 'Targeting'
 }
 
 if ($PSCmdlet.ShouldProcess('mdam', 'Replace mdam alias script body')) {
