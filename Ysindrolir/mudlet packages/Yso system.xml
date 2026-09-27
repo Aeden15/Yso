@@ -2681,6 +2681,32 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Target shield up</name>
+						<script>local tgt = matches[2]
+if Yso and Yso.shield and type(Yso.shield.set) == "function" and tgt and tgt ~= "" then
+  Yso.shield.set(tgt, true, "line:shield_up")
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^A dizzying beam of energy strikes you as your attack rebounds off of ([\w'\-]+)'s shield\.$</string>
+							<string>^A nearly invisible magical shield forms around ([\w'\-]+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
 				</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Miscellaneous</name>
@@ -3728,6 +3754,37 @@ end
 function RC.has_aff(aff)
   return RC.score_aff(aff) &gt; 0
 end
+
+function RC.get_target_hp_percent(_target_name)
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local pct = tonumber(ak.healthpercent)
+    if pct then return pct end
+    local cur = tonumber(ak.currenthealth)
+    local maxhp = tonumber(ak.maxhealth)
+    if cur and maxhp and maxhp &gt; 0 then
+      return (cur / maxhp) * 100
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
+  if type(info) == "table" then
+    local raw = info.hpperc
+    if raw ~= nil and tostring(raw) ~= "-1" then
+      local n = tonumber(tostring(raw):gsub("%%", ""))
+      if n then return n end
+    end
+  end
+
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
+end
+
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
 
 function RC.read_resonance()
   local R = Yso and Yso.magi and Yso.magi.resonance or nil
@@ -5220,6 +5277,37 @@ end
 function RC.has_aff(aff)
   return RC.score_aff(aff) &gt; 0
 end
+
+function RC.get_target_hp_percent(_target_name)
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local pct = tonumber(ak.healthpercent)
+    if pct then return pct end
+    local cur = tonumber(ak.currenthealth)
+    local maxhp = tonumber(ak.maxhealth)
+    if cur and maxhp and maxhp &gt; 0 then
+      return (cur / maxhp) * 100
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
+  if type(info) == "table" then
+    local raw = info.hpperc
+    if raw ~= nil and tostring(raw) ~= "-1" then
+      local n = tonumber(tostring(raw):gsub("%%", ""))
+      if n then return n end
+    end
+  end
+
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
+end
+
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
 
 function RC.read_resonance()
   local R = Yso and Yso.magi and Yso.magi.resonance or nil
@@ -10606,6 +10694,37 @@ function RC.has_aff(aff)
   return RC.score_aff(aff) &gt; 0
 end
 
+function RC.get_target_hp_percent(_target_name)
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local pct = tonumber(ak.healthpercent)
+    if pct then return pct end
+    local cur = tonumber(ak.currenthealth)
+    local maxhp = tonumber(ak.maxhealth)
+    if cur and maxhp and maxhp &gt; 0 then
+      return (cur / maxhp) * 100
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
+  if type(info) == "table" then
+    local raw = info.hpperc
+    if raw ~= nil and tostring(raw) ~= "-1" then
+      local n = tonumber(tostring(raw):gsub("%%", ""))
+      if n then return n end
+    end
+  end
+
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
+end
+
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
+
 function RC.read_resonance()
   local R = Yso and Yso.magi and Yso.magi.resonance or nil
   local synced = false
@@ -11139,7 +11258,13 @@ local function _score(name)
 end
 
 local function _assess()
-  return tonumber(Yso.magi_assess or 999) or 999
+  if type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
 end
 
 local function _shielded(tgt)
@@ -11210,11 +11335,11 @@ function M.build(reason)
   if _shielded(tgt) then
     return "cast erode " .. tgt .. " maintain"
 
-  -- Instant kills
-  elseif _score("conflagrate") &gt;= 100 and assess &lt;= 40 then
+  -- Instant kills (skip when target HP is unknown)
+  elseif assess ~= nil and _score("conflagrate") &gt;= 100 and assess &lt;= 40 then
     return "cast destroy at " .. tgt
 
-  elseif assess &lt;= 25 or (assess &lt;= 30 and _score("sensitivity") &gt;= 100) then
+  elseif assess ~= nil and (assess &lt;= 25 or (assess &lt;= 30 and _score("sensitivity") &gt;= 100)) then
     return "cast stormhammer at " .. tgt
 
   -- Debuff timer setup
@@ -11624,13 +11749,12 @@ local function _is_magi()
   return false
 end
 
-local function _hp()
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.get_hp_percent) == "function" then
-    local ok, v = pcall(D.get_hp_percent)
+local function _target_hp()
+  if type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  return 100
+  return nil
 end
 
 local function _target()
@@ -11687,17 +11811,17 @@ local function _route_is_active()
 end
 
 local function _select_command(tgt)
-  local hp = _hp()
+  local hp = _target_hp()
   local res = (type(RC.read_resonance) == "function" and RC.read_resonance()) or { air = 0, earth = 0, fire = 0, water = 0 }
   local conflag = RC.has_aff("conflagrate")
   local aflame_ready = RC.score_aff("aflame") &gt;= 200
   local scalded = RC.has_aff("scalded")
   local storm = _shalestorm_up(tgt)
 
-  if hp &lt; 25 then
+  if hp ~= nil and hp &lt; 25 then
     return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
   end
-  if hp &lt; 35 and conflag then
+  if hp ~= nil and hp &lt; 35 and conflag then
     return _cast("destroy", tgt), "execute", "hp_destroy"
   end
   if _shielded(tgt) then
@@ -12100,13 +12224,12 @@ local function _is_magi()
   return false
 end
 
-local function _hp()
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.get_hp_percent) == "function" then
-    local ok, v = pcall(D.get_hp_percent)
+local function _target_hp()
+  if type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  return 100
+  return nil
 end
 
 local function _target()
@@ -12153,7 +12276,7 @@ local function _route_is_active()
 end
 
 local function _select_command(tgt)
-  local hp = _hp()
+  local hp = _target_hp()
   local res = (type(RC.read_resonance) == "function" and RC.read_resonance()) or { air = 0, earth = 0, fire = 0, water = 0 }
   local water = tonumber(res.water) or 0
   local earth = tonumber(res.earth) or 0
@@ -12165,7 +12288,7 @@ local function _select_command(tgt)
   local nausea = RC.has_aff("nausea")
   local calcified = RC.has_aff("calcifiedtorso")
 
-  if hp &lt;= 20 then
+  if hp ~= nil and hp &lt;= 20 then
     return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
   end
   if _shielded(tgt) then
@@ -12427,6 +12550,433 @@ if Yso.off.core and type(Yso.off.core.register) == "function" then
 end
 
 return M
+</script>
+          <eventHandlerList />
+        </Script>        <Script isActive="yes" isFolder="no">
+          <name>Bloodboil auto</name>
+          <packageName></packageName>
+          <script>Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+
+local M = Yso.magi.elemental
+
+M.cfg = M.cfg or {
+  auto_bloodboil = true,
+  min_affs_hunt = 2,
+  cooldown_s = 4.0,
+  queue_mode = "prepend",
+  queue_type = "eq",
+  command = "cast bloodboil",
+  debug = false,
+  min_retry_s = 0.25,
+}
+
+M.cfg.destroy = M.cfg.destroy or {
+  require_conflagration = true,
+  hp_threshold = 40,
+  enforce_hp_gate = false,
+}
+
+M.cfg.pvp = M.cfg.pvp or {
+  enabled            = false,
+  min_affs_default   = 3,
+  allow_lock_override = true,
+  curesets = {
+    depthswalker = { min_affs = 2, notes = "placeholder" },
+    bard         = { min_affs = 2, notes = "placeholder" },
+    monk         = { min_affs = 2, notes = "placeholder" },
+    dwc          = { min_affs = 3, notes = "dual wield cutting knights" },
+    dwb          = { min_affs = 3, notes = "dual wield blunt knights (future)" },
+    blademaster  = { min_affs = 3, notes = "placeholder" },
+    shaman       = { min_affs = 2, notes = "placeholder" },
+    airlord      = { min_affs = 2, notes = "elemental air spec" },
+  },
+}
+
+M.state = M.state or {
+  cooldown_until = 0,
+  last_attempt = 0,
+}
+
+M.state.timers = M.state.timers or {}
+M.state.destroy_hp_stub_noted = M.state.destroy_hp_stub_noted or false
+
+local function _now()
+  local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
+  if t and t &gt; 1000000000000 then t = t / 1000 end
+  return t or os.time()
+end
+
+local function _debug(msg)
+  if M.cfg.debug and type(cecho) == "function" then
+    cecho(string.format("[Magi:Bloodboil] %s\n", tostring(msg)))
+  end
+end
+
+local function _echo(msg)
+  if type(cecho) == "function" then
+    cecho(string.format("&lt;SlateBlue&gt;[Magi] &lt;white&gt;%s\n", tostring(msg)))
+  end
+end
+
+local function _trim(s)
+  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+local function _status()
+  return (gmcp and gmcp.Char and gmcp.Char.Status) or {}
+end
+
+local function _vitals()
+  return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
+end
+
+local function _eq_ready()
+  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then return v == true end
+  end
+
+  local v = _vitals()
+  return tostring(v.eq or v.equilibrium or "") == "1"
+      or v.eq == true
+      or v.equilibrium == true
+end
+
+local function _is_magi()
+  if Yso and Yso.magi and Yso.magi.defs and type(Yso.magi.defs.is_magi) == "function" then
+    local ok, v = pcall(Yso.magi.defs.is_magi)
+    if ok then return v == true end
+  end
+
+  local s = _status()
+  local cls = s.class or s.classname
+  if (type(cls) ~= "string" or cls == "") and Yso and Yso.magi and Yso.magi.defs and Yso.magi.defs.state then
+    cls = Yso.magi.defs.state.class_name
+  end
+
+  return tostring(cls or ""):lower() == "magi"
+end
+
+local function _current_cureset()
+  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
+  if type(set) == "string" and set ~= "" then
+    return set:lower()
+  end
+
+  local prof = Yso and Yso.curing and Yso.curing._active_profile
+  if type(prof) == "string" and prof ~= "" then
+    return prof:lower()
+  end
+
+  local cur = rawget(_G, "CurrentCureset")
+  if type(cur) == "string" and cur ~= "" then
+    return cur:lower()
+  end
+
+  return ""
+end
+
+local function _Aff()
+  return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
+end
+
+local function _has(aff)
+  return _Aff()[aff] == true
+end
+
+local function _aff_count()
+  local A = _Aff()
+  local n = 0
+
+  for k, v in pairs(A) do
+    if v == true and k ~= "softlocked" and k ~= "truelocked" then
+      n = n + 1
+    end
+  end
+
+  return n
+end
+
+local function _resolve_current_target()
+  local tgt = ""
+
+  if Yso and type(Yso.get_target) == "function" then
+    local ok, res = pcall(Yso.get_target)
+    if ok and type(res) == "string" then
+      tgt = _trim(res)
+    end
+  end
+
+  if tgt == "" and Yso and Yso.targeting and type(Yso.targeting.get) == "function" then
+    local ok, res = pcall(Yso.targeting.get)
+    if ok and type(res) == "string" then
+      tgt = _trim(res)
+    end
+  end
+
+  if tgt == "" then
+    tgt = _trim(rawget(_G, "target"))
+  end
+
+  tgt = tostring(tgt or ""):gsub("%s*%b()%s*$", "")
+  return _trim(tgt)
+end
+
+local function _queue_eqbal(cmd, opts)
+  opts = opts or {}
+  cmd = _trim(cmd)
+  if cmd == "" or type(send) ~= "function" then
+    return false
+  end
+
+  if tostring(opts.queue_verb or ""):lower() == "addclearfull" then
+    if Yso and Yso.queue and type(Yso.queue.addclearfull) == "function" then
+      return Yso.queue.addclearfull("eqbal", cmd) == true
+    end
+    send("queue addclearfull eqbal " .. cmd, false)
+    return true
+  end
+
+  send("queue prepend eqbal " .. cmd, false)
+  return true
+end
+
+local function _target_has_aff(aff)
+  aff = _trim(aff):lower()
+  if aff == "" then return false end
+
+  if Yso and Yso.ak and type(Yso.ak.has) == "function" then
+    local ok, has_aff = pcall(Yso.ak.has, aff)
+    if ok then
+      return has_aff == true
+    end
+  end
+
+  local threshold = tonumber(Yso and Yso.ak and Yso.ak.threshold) or 100
+  if type(affstrack) == "table" and type(affstrack.score) == "table" then
+    return (tonumber(affstrack.score[aff] or 0) or 0) &gt;= threshold
+  end
+
+  return false
+end
+
+local function _record_timer(spell, seconds)
+  M.state.timers[spell] = {
+    seconds = tonumber(seconds) or 0,
+    armed_at = _now(),
+  }
+end
+
+function M.is_ready()
+  return _now() &gt;= tonumber(M.state.cooldown_until or 0)
+end
+
+function M.set_ready(is_ready, src)
+  if is_ready then
+    M.state.cooldown_until = 0
+  else
+    M.state.cooldown_until = _now() + (tonumber(M.cfg.cooldown_s or 4.0) or 4.0)
+  end
+
+  _debug(string.format("ready=%s src=%s", tostring(is_ready), tostring(src or "?")))
+  return true
+end
+
+function M.should_bloodboil()
+  if M.cfg.auto_bloodboil ~= true then
+    return false, "disabled"
+  end
+
+  if not _is_magi() then
+    return false, "class"
+  end
+
+  if not M.is_ready() then
+    return false, "cooldown"
+  end
+
+  if not _eq_ready() then
+    return false, "eq"
+  end
+
+  if _has("haemophilia") then
+    return false, "haemophilia"
+  end
+
+  local curset = _current_cureset()
+  local count  = _aff_count()
+
+  if curset == "hunt" then
+    local min_affs = tonumber(M.cfg.min_affs_hunt or 2) or 2
+    if count &lt; min_affs then return false, "affs", count, min_affs end
+    return true, "ok", count, min_affs
+  end
+
+  local pvp = M.cfg.pvp
+  if not (type(pvp) == "table" and pvp.enabled == true) then
+    return false, "pvp_disabled"
+  end
+
+  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
+  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
+                   or tonumber(pvp.min_affs_default or 3) or 3
+
+  local lock_ok = pvp.allow_lock_override and _has("softlocked")
+  if count &lt; min_affs and not lock_ok then
+    return false, "affs_pvp", count, min_affs
+  end
+
+  return true, "ok_pvp", count, min_affs
+end
+
+local function _queue_bloodboil(source)
+  local cmd = tostring(M.cfg.command or "cast bloodboil")
+  local mode = tostring(M.cfg.queue_mode or "prepend")
+  local qtype = tostring(M.cfg.queue_type or "eq")
+
+  local ok = false
+  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
+    ok = (Yso.queue.raw(mode, qtype, cmd) == true)
+  elseif type(send) == "function" then
+    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
+    ok = true
+  end
+
+  if ok then
+    M.state.last_attempt = _now()
+    M.set_ready(false, "queue:" .. tostring(source or "?"))
+    _debug(string.format("queued mode=%s qtype=%s src=%s", mode, qtype, tostring(source or "?")))
+  end
+
+  return ok
+end
+
+function M.try_bloodboil(source)
+  local now = _now()
+  local min_retry = tonumber(M.cfg.min_retry_s or 0.25) or 0.25
+  if (now - tonumber(M.state.last_attempt or 0)) &lt; min_retry then
+    return false
+  end
+
+  local ok, reason = M.should_bloodboil()
+  if not ok then
+    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
+    return false
+  end
+
+  return _queue_bloodboil(source)
+end
+
+function M.on_eq_recovered()
+  return M.try_bloodboil("eq_recovered")
+end
+
+function M.on_ready_line()
+  M.set_ready(true, "line:ready")
+  return M.try_bloodboil("ready_line")
+end
+
+function M.get_target_hp_percent(_target_name)
+  local RC = Yso and Yso.off and Yso.off.magi and Yso.off.magi.route_core
+  if type(RC) == "table" and type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent, _target_name)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  return nil
+end
+
+function M.firelash(mode)
+  local arg = _trim(mode):lower()
+  local target = arg
+
+  if target == "" then
+    target = _resolve_current_target()
+  end
+
+  if target == "" then
+    _echo("No target set for firelash.")
+    return false
+  end
+
+  local ok = _queue_eqbal("cast firelash at " .. target)
+  if ok then
+    _echo("Firelash queued at " .. target .. ".")
+  end
+  return ok
+end
+
+function M.destroy_current_target()
+  local tgt = _resolve_current_target()
+  if tgt == "" then
+    _echo("No target set for destroy.")
+    return false
+  end
+
+  if M.cfg.destroy.require_conflagration ~= false and not _target_has_aff("conflagration") then
+    _echo(string.format("Destroy blocked on %s: conflagration not confirmed.", tgt))
+    return false
+  end
+
+  if M.cfg.destroy.enforce_hp_gate == true then
+    local hp_pct = M.get_target_hp_percent(tgt)
+    if not hp_pct then
+      _echo("Destroy HP gate is enabled but target HP% is not wired yet.")
+      return false
+    end
+    if hp_pct &gt; (tonumber(M.cfg.destroy.hp_threshold or 40) or 40) then
+      _echo(string.format(
+        "Destroy blocked on %s: %.1f%%%% is above the %d%%%% threshold.",
+        tgt,
+        hp_pct,
+        tonumber(M.cfg.destroy.hp_threshold or 40) or 40
+      ))
+      return false
+    end
+  elseif M.state.destroy_hp_stub_noted ~= true then
+    M.state.destroy_hp_stub_noted = true
+    _echo(string.format(
+      "Destroy HP gate is stubbed for now; only conflagration is checked (planned threshold: %d%%%%).",
+      tonumber(M.cfg.destroy.hp_threshold or 40) or 40
+    ))
+  end
+
+  local ok = _queue_eqbal("cast destroy at " .. tgt, { queue_verb = "addclearfull" })
+  if ok then
+    _echo("Destroy queued on " .. tgt .. ".")
+  end
+  return ok
+end
+
+local function _cast_timed_spell(spell, seconds)
+  local secs = tonumber(seconds)
+  if not secs then
+    _echo(string.format("%s requires a timer between 10 and 60 seconds.", tostring(spell)))
+    return false
+  end
+
+  secs = math.floor(secs)
+  if secs &lt; 10 or secs &gt; 60 then
+    _echo(string.format("%s requires a timer between 10 and 60 seconds.", tostring(spell)))
+    return false
+  end
+
+  local ok = _queue_eqbal(string.format("cast %s %d", tostring(spell), secs))
+  if ok then
+    _record_timer(spell, secs)
+    _echo(string.format("%s armed for %ds.", tostring(spell):gsub("^%l", string.upper), secs))
+  end
+  return ok
+end
+
+function M.cast_holocaust(seconds)
+  return _cast_timed_spell("holocaust", seconds)
+end
+
+function M.cast_magmasphere(seconds)
+  return _cast_timed_spell("magmasphere", seconds)
+end
 </script>
           <eventHandlerList />
         </Script>
@@ -15943,34 +16493,69 @@ Legacy.UI.AK.Console = Geyser.MiniConsole:new({
 
 function Legacy.UI.AK.Update()
 
-  if Legacy.NDB.db[target:title()] == nil then return end
+  if not ak then return end
   if target == nil or target == "None" or target == "none" then return end
-  if Legacy.Settings.Basher.status == true then return end
-  
+  if Legacy and Legacy.Settings and Legacy.Settings.Basher and Legacy.Settings.Basher.status == true then return end
+
+  local tname = target
+  if type(target) == "table" then
+    if type(target.title) == "function" then
+      tname = target:title()
+    elseif type(target.title) == "string" then
+      tname = target.title
+    elseif type(target.name) == "string" then
+      tname = target.name
+    end
+  elseif type(target) == "string" and type(target.title) == "function" then
+    tname = target:title()
+  end
+  if type(tname) ~= "string" or tname == "" or tname == "None" or tname == "none" then return end
+  if not (Legacy and Legacy.NDB and Legacy.NDB.db) or Legacy.NDB.db[tname] == nil then return end
+  if not (Legacy.UI and Legacy.UI.AK and Legacy.UI.AK.Console and Legacy.UI.AK.TargetConsole) then return end
+
   Legacy.UI.AK.Console:clear()
   Legacy.UI.AK.TargetConsole:clear()
-  ak.healthpercent = math.floor((ak.currenthealth/ak.maxhealth)*100)
-  ak.manapercent   = math.floor((ak.currentmana/ak.maxmana)*100)
-  
-  Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Target: &lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[target:title()].city:lower()].color.."&gt;"..target:title().."\n")
+  local maxhp = tonumber(ak.maxhealth) or 0
+  local maxmp = tonumber(ak.maxmana) or 0
+  ak.healthpercent = (maxhp &gt; 0) and math.floor((tonumber(ak.currenthealth) or 0) / maxhp * 100) or 0
+  ak.manapercent   = (maxmp &gt; 0) and math.floor((tonumber(ak.currentmana) or 0) / maxmp * 100) or 0
+
+  local citycolor = "gold"
+  local ndb = Legacy.NDB.db[tname]
+  if ndb and type(ndb.city) == "string" and Legacy.Settings and Legacy.Settings.NDB and Legacy.Settings.NDB.Config then
+    local cfg = Legacy.Settings.NDB.Config[ndb.city:lower()]
+    if type(cfg) == "table" and type(cfg.color) == "string" then
+      citycolor = cfg.color
+    end
+  end
+  Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Target: &lt;"..citycolor.."&gt;"..tname.."\n")
   Legacy.UI.AK.TargetConsole:cecho("&lt;ansi_white&gt;Health: &lt;forest_green&gt;"..ak.healthpercent.."%      &lt;ansi_white&gt;Mana: &lt;cyan&gt;"..ak.manapercent.."%\n")
+  local defs = type(ak.defs) == "table" and ak.defs or {}
   Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Rebounding: ")
-  if ak.defs.rebounding == true then
+  if defs.rebounding == true then
     Legacy.UI.AK.TargetConsole:cecho("&lt;green&gt;YES")
   else
     Legacy.UI.AK.TargetConsole:cecho("&lt;red&gt;NO")
   end
   Legacy.UI.AK.TargetConsole:cecho("   &lt;gold&gt;Shield: ")
-  if ak.defs.shield == true then
+  if defs.shield == true then
     Legacy.UI.AK.TargetConsole:cecho("&lt;green&gt;YES")
   else
     Legacy.UI.AK.TargetConsole:cecho("&lt;red&gt;NO")
   end
   local lockaffs = {"impatience", "paralysis", "asthma", "slickness", "anorexia"}
-  Legacy.UI.AK.Console:cecho("&lt;orange&gt;Limbs: "..lb.prompt().."\n")
-  for k,v in pairs(affstrack.score) do
-  
-    if v &gt; 0 then
+  local limbs = "--"
+  if type(lb) == "table" and type(lb.prompt) == "function" then
+    local ok, shown = pcall(lb.prompt)
+    if ok and type(shown) == "string" and shown ~= "" then
+      limbs = shown
+    end
+  end
+  Legacy.UI.AK.Console:cecho("&lt;orange&gt;Limbs: "..limbs.."\n")
+  local scores = affstrack and affstrack.score
+  if type(scores) ~= "table" then return end
+  for k,v in pairs(scores) do
+    if tonumber(v) and tonumber(v) &gt; 0 then
       if table.contains(lockaffs, k) then
         Legacy.UI.AK.Console:cecho("\n&lt;red&gt;"..tostring(k):title().." "..math.floor(v))
       else

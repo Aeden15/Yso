@@ -110,13 +110,12 @@ local function _is_magi()
   return false
 end
 
-local function _hp()
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.get_hp_percent) == "function" then
-    local ok, v = pcall(D.get_hp_percent)
+local function _target_hp()
+  if type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  return 100
+  return nil
 end
 
 local function _target()
@@ -163,7 +162,7 @@ local function _route_is_active()
 end
 
 local function _select_command(tgt)
-  local hp = _hp()
+  local hp = _target_hp()
   local res = (type(RC.read_resonance) == "function" and RC.read_resonance()) or { air = 0, earth = 0, fire = 0, water = 0 }
   local water = tonumber(res.water) or 0
   local earth = tonumber(res.earth) or 0
@@ -175,7 +174,7 @@ local function _select_command(tgt)
   local nausea = RC.has_aff("nausea")
   local calcified = RC.has_aff("calcifiedtorso")
 
-  if hp <= 20 then
+  if hp ~= nil and hp <= 20 then
     return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
   end
   if _shielded(tgt) then

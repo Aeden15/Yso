@@ -181,6 +181,7 @@ $ScriptInserts = @(
   @{ Name = 'Magi duel dam';         After = 'Magi shalestorm';          Source = Join-Path $MagiDir 'Magi_duel_dam.lua' },
   @{ Name = 'Magi firestorm';        After = 'Magi duel dam';            Source = Join-Path $MagiDir 'Magi_firestorm.lua' },
   @{ Name = 'Magi water group';      After = 'Magi firestorm';           Source = Join-Path $MagiDir 'Magi_water_group.lua' },
+  @{ Name = 'Bloodboil auto';        After = 'Magi water group';         Source = Join-Path $YsoDir 'xml\magi_bloodboil_auto.lua' },
   @{ Name = 'formulation';           After = 'AK+Legacy wiring';       Source = Join-Path $AlchemistDir 'Core\formulation.lua' },
   @{ Name = 'formulation_resolve';   After = 'formulation';            Source = Join-Path $AlchemistDir 'Core\formulation_resolve.lua' },
   @{ Name = 'formulation_phials';    After = 'formulation_resolve';    Source = Join-Path $AlchemistDir 'Core\formulation_phials.lua' },

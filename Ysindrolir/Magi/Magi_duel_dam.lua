@@ -192,7 +192,13 @@ local function _score(name)
 end
 
 local function _assess()
-  return tonumber(Yso.magi_assess or 999) or 999
+  if type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
 end
 
 local function _shielded(tgt)
@@ -263,11 +269,11 @@ function M.build(reason)
   if _shielded(tgt) then
     return "cast erode " .. tgt .. " maintain"
 
-  -- Instant kills
-  elseif _score("conflagrate") >= 100 and assess <= 40 then
+  -- Instant kills (skip when target HP is unknown)
+  elseif assess ~= nil and _score("conflagrate") >= 100 and assess <= 40 then
     return "cast destroy at " .. tgt
 
-  elseif assess <= 25 or (assess <= 30 and _score("sensitivity") >= 100) then
+  elseif assess ~= nil and (assess <= 25 or (assess <= 30 and _score("sensitivity") >= 100)) then
     return "cast stormhammer at " .. tgt
 
   -- Debuff timer setup

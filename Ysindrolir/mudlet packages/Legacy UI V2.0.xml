@@ -1693,9 +1693,9 @@ Legacy.UI.AK.Console = Geyser.MiniConsole:new({
 
 function Legacy.UI.AK.Update()
 
-  -- Guard: no target / basher running / no NDB record
+  if not ak then return end
   if target == nil or target == "None" or target == "none" then return end
-  if Legacy.Settings.Basher.status == true then return end
+  if Legacy and Legacy.Settings and Legacy.Settings.Basher and Legacy.Settings.Basher.status == true then return end
 
   local tname = target
   if type(target) == "table" then
@@ -1706,35 +1706,56 @@ function Legacy.UI.AK.Update()
     elseif type(target.name) == "string" then
       tname = target.name
     end
+  elseif type(target) == "string" and type(target.title) == "function" then
+    tname = target:title()
   end
   if type(tname) ~= "string" or tname == "" or tname == "None" or tname == "none" then return end
   if not (Legacy and Legacy.NDB and Legacy.NDB.db) or Legacy.NDB.db[tname] == nil then return end
+  if not (Legacy.UI and Legacy.UI.AK and Legacy.UI.AK.Console and Legacy.UI.AK.TargetConsole) then return end
 
-  
   Legacy.UI.AK.Console:clear()
   Legacy.UI.AK.TargetConsole:clear()
-  ak.healthpercent = math.floor((ak.currenthealth/ak.maxhealth)*100)
-  ak.manapercent   = math.floor((ak.currentmana/ak.maxmana)*100)
-  
-  Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Target: &lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[tname].city:lower()].color.."&gt;"..tname.."\n")
+  local maxhp = tonumber(ak.maxhealth) or 0
+  local maxmp = tonumber(ak.maxmana) or 0
+  ak.healthpercent = (maxhp &gt; 0) and math.floor((tonumber(ak.currenthealth) or 0) / maxhp * 100) or 0
+  ak.manapercent   = (maxmp &gt; 0) and math.floor((tonumber(ak.currentmana) or 0) / maxmp * 100) or 0
+
+  local citycolor = "gold"
+  local ndb = Legacy.NDB.db[tname]
+  if ndb and type(ndb.city) == "string" and Legacy.Settings and Legacy.Settings.NDB and Legacy.Settings.NDB.Config then
+    local cfg = Legacy.Settings.NDB.Config[ndb.city:lower()]
+    if type(cfg) == "table" and type(cfg.color) == "string" then
+      citycolor = cfg.color
+    end
+  end
+  Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Target: &lt;"..citycolor.."&gt;"..tname.."\n")
   Legacy.UI.AK.TargetConsole:cecho("&lt;ansi_white&gt;Health: &lt;forest_green&gt;"..ak.healthpercent.."%      &lt;ansi_white&gt;Mana: &lt;cyan&gt;"..ak.manapercent.."%\n")
+  local defs = type(ak.defs) == "table" and ak.defs or {}
   Legacy.UI.AK.TargetConsole:cecho("&lt;gold&gt;Rebounding: ")
-  if ak.defs.rebounding == true then
+  if defs.rebounding == true then
     Legacy.UI.AK.TargetConsole:cecho("&lt;green&gt;YES")
   else
     Legacy.UI.AK.TargetConsole:cecho("&lt;red&gt;NO")
   end
   Legacy.UI.AK.TargetConsole:cecho("   &lt;gold&gt;Shield: ")
-  if ak.defs.shield == true then
+  if defs.shield == true then
     Legacy.UI.AK.TargetConsole:cecho("&lt;green&gt;YES")
   else
     Legacy.UI.AK.TargetConsole:cecho("&lt;red&gt;NO")
   end
   local lockaffs = {"impatience", "paralysis", "asthma", "slickness", "anorexia"}
-  Legacy.UI.AK.Console:cecho("&lt;orange&gt;Limbs: "..lb.prompt().."\n")
-  for k,v in pairs(affstrack.score) do
-  
-    if v &gt; 0 then
+  local limbs = "--"
+  if type(lb) == "table" and type(lb.prompt) == "function" then
+    local ok, shown = pcall(lb.prompt)
+    if ok and type(shown) == "string" and shown ~= "" then
+      limbs = shown
+    end
+  end
+  Legacy.UI.AK.Console:cecho("&lt;orange&gt;Limbs: "..limbs.."\n")
+  local scores = affstrack and affstrack.score
+  if type(scores) ~= "table" then return end
+  for k,v in pairs(scores) do
+    if tonumber(v) and tonumber(v) &gt; 0 then
       if table.contains(lockaffs, k) then
         Legacy.UI.AK.Console:cecho("\n&lt;red&gt;"..tostring(k):title().." "..math.floor(v))
       else

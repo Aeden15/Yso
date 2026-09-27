@@ -110,13 +110,12 @@ local function _is_magi()
   return false
 end
 
-local function _hp()
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.get_hp_percent) == "function" then
-    local ok, v = pcall(D.get_hp_percent)
+local function _target_hp()
+  if type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent)
     if ok and tonumber(v) then return tonumber(v) end
   end
-  return 100
+  return nil
 end
 
 local function _target()
@@ -173,17 +172,17 @@ local function _route_is_active()
 end
 
 local function _select_command(tgt)
-  local hp = _hp()
+  local hp = _target_hp()
   local res = (type(RC.read_resonance) == "function" and RC.read_resonance()) or { air = 0, earth = 0, fire = 0, water = 0 }
   local conflag = RC.has_aff("conflagrate")
   local aflame_ready = RC.score_aff("aflame") >= 200
   local scalded = RC.has_aff("scalded")
   local storm = _shalestorm_up(tgt)
 
-  if hp < 25 then
+  if hp ~= nil and hp < 25 then
     return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
   end
-  if hp < 35 and conflag then
+  if hp ~= nil and hp < 35 and conflag then
     return _cast("destroy", tgt), "execute", "hp_destroy"
   end
   if _shielded(tgt) then

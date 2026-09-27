@@ -139,6 +139,37 @@ function RC.has_aff(aff)
   return RC.score_aff(aff) > 0
 end
 
+function RC.get_target_hp_percent(_target_name)
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local pct = tonumber(ak.healthpercent)
+    if pct then return pct end
+    local cur = tonumber(ak.currenthealth)
+    local maxhp = tonumber(ak.maxhealth)
+    if cur and maxhp and maxhp > 0 then
+      return (cur / maxhp) * 100
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
+  if type(info) == "table" then
+    local raw = info.hpperc
+    if raw ~= nil and tostring(raw) ~= "-1" then
+      local n = tonumber(tostring(raw):gsub("%%", ""))
+      if n then return n end
+    end
+  end
+
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
+end
+
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
+
 function RC.read_resonance()
   local R = Yso and Yso.magi and Yso.magi.resonance or nil
   local synced = false

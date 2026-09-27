@@ -322,6 +322,11 @@ function M.on_ready_line()
 end
 
 function M.get_target_hp_percent(_target_name)
+  local RC = Yso and Yso.off and Yso.off.magi and Yso.off.magi.route_core
+  if type(RC) == "table" and type(RC.get_target_hp_percent) == "function" then
+    local ok, v = pcall(RC.get_target_hp_percent, _target_name)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
   return nil
 end
 
