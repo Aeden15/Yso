@@ -2944,6 +2944,13 @@ end</script>
 						<packageName />
 						<regex>^aur$</regex>
 					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Barrier</name>
+						<script>sendAll("cq all&amp;&amp;educe tin")</script>
+						<command />
+						<packageName />
+						<regex>^tin$</regex>
+					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Physiology</name>
