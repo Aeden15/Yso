@@ -7349,7 +7349,7 @@ end</script>
 }
 
 for _, shape in ipairs(crystals) do
-  send("outr crystal " .. shape)
+  send("outr " .. shape)
 end
 
 for _, shape in ipairs(crystals) do
@@ -17417,9 +17417,9 @@ Ocean = Geyser.MiniConsole:new({
   autoWrap = false
 }, wilderness_map_container)
 
-Ocean:hide()
-Wilderness:hide()
-Map:show()
+if Ocean and Ocean.hide then pcall(function() Ocean:hide() end) end
+if Wilderness and Wilderness.hide then pcall(function() Wilderness:hide() end) end
+if Map and Map.show then pcall(function() Map:show() end) end
 
 
 --Mobs
