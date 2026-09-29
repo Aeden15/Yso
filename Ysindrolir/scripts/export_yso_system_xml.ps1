@@ -167,7 +167,10 @@ $ScriptToSourcePath = [ordered]@{
 }
 
 $ScriptInserts = @(
+  @{ Name = 'Yso self aff';           After = 'Api stuff';                Source = Join-Path $YsoDir 'Core\self_aff.lua' },
+  @{ Name = 'Yso self curedefs';      After = 'Yso self aff';             Source = Join-Path $YsoDir 'Curing\self_curedefs.lua' },
   @{ Name = 'Yso modes';             After = 'Api stuff';                Source = Join-Path $YsoDir 'xml\yso_modes.lua' },
+  @{ Name = 'Yso serverside policy'; After = 'Yso modes';                Source = Join-Path $YsoDir 'Curing\serverside_policy.lua' },
   @{ Name = 'Yso party targeting';   After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_party_targeting.lua' },
   @{ Name = 'Yso pulse';             After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua' },
   @{ Name = 'Route registry';        After = 'Yso pulse';                Source = Join-Path $YsoDir 'Combat\route_registry.lua' },

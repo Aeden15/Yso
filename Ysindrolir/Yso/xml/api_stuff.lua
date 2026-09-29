@@ -104,126 +104,6 @@ function Yso.util.echo(msg, color)
   cecho(string.format("%s%s%s<reset>\n", p, c, tostring(msg)))
 end
 
-function Yso.util.toggle_route_alias(route_id, source)
-  local function _trim(s)
-    return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
-  end
-
-  -- #region agent log
-  local function _yso_dbg_log(hypothesisId, message, data)
-    local payload = {
-      sessionId = "f528bd",
-      runId = "baseline",
-      hypothesisId = hypothesisId,
-      location = "api_stuff.lua:toggle_route_alias",
-      message = message,
-      data = data or {},
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if not ok or type(json) ~= "string" then return end
-    local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-    if not f then return end
-    f:write(json .. "\n")
-    f:close()
-  end
-  -- #endregion
-
-  local function _resolve_route(id)
-    local off = Yso and Yso.off or nil
-    local alc = off and off.alc or nil
-    local magi = off and off.magi or nil
-    local map = {
-      alchemist_group_damage = alc and alc.group_damage,
-      adam = alc and alc.group_damage,
-      alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
-      alchemist_aurify_route = alc and alc.aurify_route,
-      magi_dmg = magi and (magi.dmg or magi.group_damage),
-      magi_group_damage = magi and (magi.group_damage or magi.dmg),
-      magi_focus = magi and magi.focus,
-    }
-    local route = map[id]
-    return type(route) == "table" and route or nil
-  end
-
-  route_id = _trim(route_id)
-  source = _trim(source)
-  if route_id == "" then
-    return false, "missing_route_id"
-  end
-  if source == "" then
-    source = "alias"
-  end
-
-  -- #region agent log
-  _yso_dbg_log("H5", "toggle_route_alias_entry", {
-    route_id = route_id,
-    source = source,
-    has_mode_toggle_route_loop = type(Yso and Yso.mode and Yso.mode.toggle_route_loop) == "function",
-  })
-  -- #endregion
-
-  if Yso and Yso.mode and type(Yso.mode.toggle_route_loop) == "function" then
-    local ok, toggled, why = pcall(Yso.mode.toggle_route_loop, route_id, source)
-    -- #region agent log
-    _yso_dbg_log("H5", "toggle_route_alias_mode_result", {
-      call_ok = (ok == true),
-      toggled = (toggled == true),
-      why = tostring(why or ""),
-    })
-    -- #endregion
-    if ok and toggled == true then
-      return true, tostring(why or "toggled")
-    end
-  end
-
-  local route = _resolve_route(route_id)
-  if type(route) ~= "table" then
-    -- #region agent log
-    _yso_dbg_log("H5", "toggle_route_alias_route_missing", { route_id = route_id })
-    -- #endregion
-    return false, "route_unavailable:" .. route_id
-  end
-
-  if type(route.init) == "function" then
-    pcall(route.init)
-  end
-
-  local active = false
-  if type(route.is_active) == "function" then
-    local ok, v = pcall(route.is_active)
-    if ok then
-      active = (v == true)
-    end
-  else
-    local st = (type(route.state) == "table") and route.state or {}
-    local cfg = (type(route.cfg) == "table") and route.cfg or {}
-    active = (st.loop_enabled == true) or (st.enabled == true) or (cfg.enabled == true)
-  end
-
-  if active == true then
-    if type(route.stop) == "function" then
-      local ok, res = pcall(route.stop, source)
-      return (ok and res ~= false), (ok and "stopped" or "stop_failed")
-    end
-    if type(route.disable) == "function" then
-      local ok, res = pcall(route.disable, source)
-      return (ok and res ~= false), (ok and "disabled" or "disable_failed")
-    end
-    return false, "route_not_stoppable"
-  end
-
-  if type(route.start) == "function" then
-    local ok, res = pcall(route.start, source)
-    return (ok and res ~= false), (ok and "started" or "start_failed")
-  end
-  if type(route.enable) == "function" then
-    local ok, res = pcall(route.enable, source)
-    return (ok and res ~= false), (ok and "enabled" or "enable_failed")
-  end
-  return false, "route_not_startable"
-end
-
 -- ----------------- class tracking / segregation -----------------
 Yso.classinfo = Yso.classinfo or {}
 do
@@ -669,6 +549,64 @@ local function _trim(s)
   return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
+local function _lane_text(v)
+  if type(v) == "table" then
+    local out = {}
+    for i = 1, #v do
+      local part = _trim(v[i])
+      if part ~= "" then out[#out + 1] = part end
+    end
+    return table.concat(out, (Yso and (Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)))) or "&&")
+  end
+  return _trim(v)
+end
+
+function Yso.send(cmd)
+  cmd = _trim(cmd)
+  if cmd == "" then return false end
+  if Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true then
+    return true
+  end
+  if type(send) == "function" then
+    local ok = pcall(send, cmd, false)
+    return ok == true
+  end
+  if type(expandAlias) == "function" then
+    local ok = pcall(expandAlias, cmd)
+    return ok == true
+  end
+  return false
+end
+
+local function _emit_direct(payload)
+  local cmds = {}
+  if type(payload) == "string" then
+    local line = _trim(payload)
+    if line ~= "" then cmds[1] = line end
+  elseif type(payload) == "table" then
+    local free = _lane_text(payload.free or payload.pre)
+    local eq = _lane_text(payload.eq)
+    local bal = _lane_text(payload.bal)
+    local class = _lane_text(payload.class or payload.ent or payload.entity)
+    if free ~= "" then cmds[#cmds + 1] = free end
+    if eq ~= "" then cmds[#cmds + 1] = eq end
+    if bal ~= "" then cmds[#cmds + 1] = bal end
+    if class ~= "" then cmds[#cmds + 1] = class end
+    if #cmds == 0 and payload[1] ~= nil then
+      for i = 1, #payload do
+        local line = _trim(payload[i])
+        if line ~= "" then cmds[#cmds + 1] = line end
+      end
+    end
+  end
+  if #cmds == 0 then return false end
+  local any = false
+  for i = 1, #cmds do
+    if Yso.send(cmds[i]) then any = true end
+  end
+  return any
+end
+
 function Yso.emit(payload, opts)
   opts = opts or {}
   if type(payload) == "table" and _trim(opts.target or "") == "" then
@@ -714,7 +652,11 @@ function Yso.emit(payload, opts)
     if Q and type(Q.emit)=="function" then
       return Q.emit(payload)
     end
-    return false
+    local sent_direct = _emit_direct(payload)
+    if sent_direct == true and Yso.locks and type(Yso.locks.note_payload) == "function" then
+      pcall(Yso.locks.note_payload, payload)
+    end
+    return sent_direct
   end
 
   if opts.solo == true and type(Q.clear)=="function" then
@@ -1300,12 +1242,6 @@ local function _selfaff_module()
   if Yso and Yso.selfaff and type(Yso.selfaff) == "table" then
     return Yso.selfaff
   end
-  if type(require) == "function" then
-    local ok = pcall(require, "Yso.Core.self_aff")
-    if ok and Yso and type(Yso.selfaff) == "table" then
-      return Yso.selfaff
-    end
-  end
   return nil
 end
 
@@ -1498,7 +1434,6 @@ function Yso.self.is_paralyzed()
   return Yso.self.has_aff("paralysis")
 end
 
--- self_aff / self_curedefs / serverside_policy: loaded by Yso._entry after bootstrap
--- (and lazily via helpers such as _selfaff_module). Do not warm-require here — the
--- Api stuff script often runs before package.path is ready, which produced spurious
--- "[Yso:API] WARN: … failed to load" lines despite fallback reads working.
+-- self_aff / self_curedefs / serverside_policy load as Mudlet package scripts
+-- after this one (Yso self aff, Yso self curedefs, Yso serverside policy).
+-- _selfaff_module only uses Yso.selfaff if that table already exists.

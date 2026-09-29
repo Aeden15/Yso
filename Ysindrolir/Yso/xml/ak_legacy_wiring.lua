@@ -430,5 +430,27 @@ function Yso.ak.sync_from_ak()
 _akwire_echo("sync_from_ak(): "..tostring(#Yso.ak.list_affs()).." affs synced from AK")
 end
 
+------------------------------------------------------------
+-- AK lost-aff bridge (OppLostAff -> "AK lost aff")
+------------------------------------------------------------
+
+local function _on_ak_lost_aff(_, affStr)
+  local aff = _canon_aff(affStr)
+  if aff == "" then return end
+  if type(Yso.ak.cure) == "function" then
+    pcall(Yso.ak.cure, aff, { source = "AK lost aff" })
+  end
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.ak.aff.lost", aff, "AK lost aff")
+  end
+end
+
+if type(registerAnonymousEventHandler) == "function" then
+  if Yso.ak._eh_lost and type(killAnonymousEventHandler) == "function" then
+    pcall(killAnonymousEventHandler, Yso.ak._eh_lost)
+  end
+  Yso.ak._eh_lost = registerAnonymousEventHandler("AK lost aff", _on_ak_lost_aff)
+end
+
 _akwire_echo("Yso / Achaea wiring loaded (Legacy + AK bridge)")
 --========================================================--

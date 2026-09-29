@@ -414,6 +414,11 @@ local function _set_aff_active(key, active, source, opts)
   _mark_meta(source)
   if was ~= is and type(raiseEvent) == "function" then
     raiseEvent("yso.self.aff.changed", key, is, source)
+    if is then
+      raiseEvent("yso.self.aff.gained", key, source)
+    else
+      raiseEvent("yso.self.aff.lost", key, source)
+    end
   end
   return true
 end
