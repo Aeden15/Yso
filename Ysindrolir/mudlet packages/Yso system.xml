@@ -56,7 +56,12 @@ end</script>
 				<regexCodePropertyList />
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Cureset Baseline Capture</name>
-					<script>local set = matches[2]:lower()
+					<script>Legacy = Legacy or {}
+Legacy.Curing = Legacy.Curing or {}
+Legacy.Curing.Prios = Legacy.Curing.Prios or {}
+Legacy.Curing.Prios.baseSets = Legacy.Curing.Prios.baseSets or {}
+
+local set = matches[2]:lower()
 Legacy.Curing.ActiveServerSet = set
 Legacy.Curing.Prios.baseSets[set] = {}
 Legacy.Curing.Prios.capture = { active=true, set=set, lastPrio=nil }
@@ -95,17 +100,23 @@ end)
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Priority</name>
-					<script>local cap = Legacy.Curing.Prios.capture
-if not (cap and cap.active) then return end
+					<script>local LegacyRef = rawget(_G, "Legacy")
+local prios = LegacyRef and LegacyRef.Curing and LegacyRef.Curing.Prios or nil
+local cap = prios and prios.capture or nil
+if not (type(cap) == "table" and cap.active) then return end
 
 local prio = tonumber(matches[2])
 local line = matches[3] or ""
 cap.lastPrio = prio
 
+prios.baseSets = prios.baseSets or {}
+if not cap.set then return end
+prios.baseSets[cap.set] = prios.baseSets[cap.set] or {}
+
 for chunk in line:gmatch("([^,]+)") do
   local aff = chunk:lower():gsub("%s+",""):gsub("%.","")
   if aff ~= "" then
-    Legacy.Curing.Prios.baseSets[cap.set][aff:title()] = prio
+    prios.baseSets[cap.set][aff:title()] = prio
   end
 end
 </script>
@@ -129,16 +140,21 @@ end
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Continuation</name>
-					<script>local cap = Legacy.Curing.Prios.capture
-if not (cap and cap.active and cap.lastPrio) then return end
+					<script>local LegacyRef = rawget(_G, "Legacy")
+local prios = LegacyRef and LegacyRef.Curing and LegacyRef.Curing.Prios or nil
+local cap = prios and prios.capture or nil
+if not (type(cap) == "table" and cap.active and cap.lastPrio and cap.set) then return end
 
 local line = matches[2] or ""
 if line:find("^Affs with priority") then return end
 
+prios.baseSets = prios.baseSets or {}
+prios.baseSets[cap.set] = prios.baseSets[cap.set] or {}
+
 for chunk in line:gmatch("([^,]+)") do
   local aff = chunk:lower():gsub("%s+",""):gsub("%.","")
   if aff ~= "" then
-    Legacy.Curing.Prios.baseSets[cap.set][aff:title()] = cap.lastPrio
+    prios.baseSets[cap.set][aff:title()] = cap.lastPrio
   end
 end
 </script>
@@ -7324,6 +7340,25 @@ end</script>
 						<command />
 						<packageName />
 						<regex>^mheals</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Spinning</name>
+						<script>local crystals = {
+  "cube", "cylinder", "diamond", "disc", "egg",
+  "pentagon", "polyhedron", "pyramid", "sphere", "spiral", "torus"
+}
+
+for _, shape in ipairs(crystals) do
+  send("outr crystal " .. shape)
+end
+
+for _, shape in ipairs(crystals) do
+  send("spin " .. shape)
+end
+</script>
+						<command />
+						<packageName />
+						<regex>^swin$</regex>
 					</Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
