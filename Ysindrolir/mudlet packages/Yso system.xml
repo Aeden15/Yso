@@ -2872,7 +2872,7 @@ end
           </regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Shielding</name>
-						<script>send("cq all&&touch shield")</script>
+						<script>send("cq all&amp;&amp;touch shield")</script>
 						<command />
 						<packageName />
 						<regex>^shi$</regex>
@@ -7224,7 +7224,7 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>boil</name>
-						<script>send("cq all&&cast bloodboil")</script>
+						<script>send("cq all&amp;&amp;cast bloodboil")</script>
 						<command />
 						<packageName />
 						<regex>^boi$</regex>
@@ -15138,8 +15138,6 @@ function M.cast_magmasphere(seconds)
   return _cast_timed_spell("magmasphere", seconds)
 end
 </script>
-          <eventHandlerList />
-        </Script>
           <eventHandlerList />
         </Script>
 				<Script isActive="yes" isFolder="no">
