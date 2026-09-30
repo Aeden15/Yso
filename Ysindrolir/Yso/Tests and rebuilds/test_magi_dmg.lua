@@ -57,6 +57,7 @@ local send_count = 0
 local emit_rows = {}
 local ack_rows = {}
 local now_s = 7000
+local hellfumes_up = true
 
 _G.setConsoleBufferSize = function() end
 _G.registerAnonymousEventHandler = function() return 1 end
@@ -89,6 +90,11 @@ _G.target = "foe"
 _G.Yso = {
   Combat = {},
   off = { magi = {} },
+  magi = {
+    hellfumes = {
+      is_up = function() return hellfumes_up == true end,
+    },
+  },
   mode = {
     is_combat = function() return true end,
     route_loop_active = function(id) return id == "magi_dmg" end,
@@ -156,6 +162,43 @@ do
   assert_eq("3c: destroy command emitted", row and row.payload and row.payload.eq, "cast destroy at foe")
   assert_eq("3d: destroy queue verb", row and row.opts and row.opts.queue_verb, "addclearfull")
   assert_eq("3e: destroy clearfull lane", row and row.opts and row.opts.clearfull_lane, "eq")
+end
+
+print("\n=== Test 4: hellfumes down opens before magma ===")
+do
+  emit_rows = {}
+  affstrack.score.conflagrate = 0
+  Yso.magi_assess = nil
+  hellfumes_up = false
+  M.on_payload_sent({
+    route = "magi_dmg",
+    target = "foe",
+    lanes = { eq = "cast destroy at foe" },
+    route_by_lane = { eq = "magi_dmg" },
+  })
+  local ok = M.attack_function()
+  assert_true("4a: hellfumes attack succeeded", ok == true)
+  assert_eq("4b: one hellfumes emit payload", #emit_rows, 1)
+  local row = emit_rows[1]
+  assert_eq("4c: hellfumes command emitted", row and row.payload and row.payload.eq, "cast hellfumes")
+end
+
+print("\n=== Test 5: destroy still wins while hellfumes is down ===")
+do
+  emit_rows = {}
+  affstrack.score.conflagrate = 100
+  Yso.magi_assess = 40
+  hellfumes_up = false
+  M.on_payload_sent({
+    route = "magi_dmg",
+    target = "foe",
+    lanes = { eq = "cast hellfumes" },
+    route_by_lane = { eq = "magi_dmg" },
+  })
+  local ok = M.attack_function()
+  assert_true("5a: destroy still fires", ok == true)
+  local row = emit_rows[1]
+  assert_eq("5b: destroy command emitted", row and row.payload and row.payload.eq, "cast destroy at foe")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

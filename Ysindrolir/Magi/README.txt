@@ -63,6 +63,8 @@ Current Magi helpers
     Package scripts for ^fstorm$ (magi_firestorm) and ^gwater$ (magi_water_group).
     Thin aliases toggle those loops like mdam. Staff/shield ids: Yso.magi.weapons.set.
     Shalestorm is a Magi-wide flag on Yso.magi.shalestorm.
+    Hellfumes is a Magi-wide room flag on Yso.magi.hellfumes (Elementalism up/down lines).
+    magi_dmg recasts hellfumes after shield/execute; magi_focus recasts it before horripilation.
 
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.

@@ -478,7 +478,10 @@ M.elementalism = {
     works_on = "room",
     cooldown_s = 4.00,
     resource_mana = 200,
-    notes = { "Creates a noxious cloud in your location, choking those around you." },
+    notes = {
+      "Creates a noxious cloud in your location, choking those around you.",
+      "Tracked on Yso.magi.hellfumes from the Elementalism up/down lines; magi_dmg and magi_focus recast when is_up() is not true.",
+    },
   },
 
   flood = {

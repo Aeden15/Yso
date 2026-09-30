@@ -191,6 +191,16 @@ local function _score(name)
   return tonumber(score[name] or 0) or 0
 end
 
+local function _hellfumes_up()
+  local H = Yso and Yso.magi and Yso.magi.hellfumes
+  if type(H) ~= "table" then return false end
+  if type(H.is_up) == "function" then
+    local ok, v = pcall(H.is_up)
+    if ok then return v == true end
+  end
+  return H.active == true
+end
+
 local function _assess()
   if type(RC.get_target_hp_percent) == "function" then
     local ok, v = pcall(RC.get_target_hp_percent)
@@ -275,6 +285,9 @@ function M.build(reason)
 
   elseif assess ~= nil and (assess <= 25 or (assess <= 30 and _score("sensitivity") >= 100)) then
     return "cast stormhammer at " .. tgt
+
+  elseif not _hellfumes_up() then
+    return "cast hellfumes"
 
   -- Debuff timer setup
   elseif _score("scalded") < 100 then

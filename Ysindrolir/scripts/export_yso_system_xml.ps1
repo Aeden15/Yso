@@ -124,15 +124,16 @@ $ScriptToSourcePath = [ordered]@{
   'Alchemist group damage'        = Join-Path $AlchemistDir 'Core\group damage.lua'
   'Alchemist physiology'          = Join-Path $AlchemistDir 'Core\physiology.lua'
   'Bash Vitals Swap'              = Join-Path $YsoDir 'Curing\bash_vitals_swap.lua'
-  'Bloodboil auto'                = Join-Path $YsoDir 'xml\magi_bloodboil_auto.lua'
   'Cureset Baselines'             = Join-Path $YsoDir 'xml\cureset_baselines.lua'
   'Defensive checks'              = Join-Path $YsoDir 'xml\magi_defensive_checks.lua'
   'Magi route core'               = Join-Path $MagiDir 'magi_route_core.lua'
   'Magi weapons'                  = Join-Path $MagiDir 'magi_weapons.lua'
   'Magi shalestorm'               = Join-Path $MagiDir 'magi_shalestorm.lua'
+  'Magi hellfumes'                = Join-Path $MagiDir 'magi_hellfumes.lua'
   'Magi duel dam'                 = Join-Path $MagiDir 'Magi_duel_dam.lua'
   'Magi firestorm'                = Join-Path $MagiDir 'Magi_firestorm.lua'
   'Magi water group'              = Join-Path $MagiDir 'Magi_water_group.lua'
+  'Magi elemental helpers'        = Join-Path $YsoDir 'xml\magi_elemental_helpers.lua'
   'formulation'                   = Join-Path $AlchemistDir 'Core\formulation.lua'
   'formulation_build'             = Join-Path $AlchemistDir 'Core\formulation_build.lua'
   'formulation_chart'             = Join-Path $AlchemistDir 'Core\formulation_chart.lua'
@@ -181,10 +182,11 @@ $ScriptInserts = @(
   @{ Name = 'Magi route core';       After = 'Defensive checks';         Source = Join-Path $MagiDir 'magi_route_core.lua' },
   @{ Name = 'Magi weapons';          After = 'Magi route core';          Source = Join-Path $MagiDir 'magi_weapons.lua' },
   @{ Name = 'Magi shalestorm';       After = 'Magi weapons';             Source = Join-Path $MagiDir 'magi_shalestorm.lua' },
-  @{ Name = 'Magi duel dam';         After = 'Magi shalestorm';          Source = Join-Path $MagiDir 'Magi_duel_dam.lua' },
+  @{ Name = 'Magi hellfumes';        After = 'Magi shalestorm';          Source = Join-Path $MagiDir 'magi_hellfumes.lua' },
+  @{ Name = 'Magi duel dam';         After = 'Magi hellfumes';           Source = Join-Path $MagiDir 'Magi_duel_dam.lua' },
   @{ Name = 'Magi firestorm';        After = 'Magi duel dam';            Source = Join-Path $MagiDir 'Magi_firestorm.lua' },
   @{ Name = 'Magi water group';      After = 'Magi firestorm';           Source = Join-Path $MagiDir 'Magi_water_group.lua' },
-  @{ Name = 'Bloodboil auto';        After = 'Magi water group';         Source = Join-Path $YsoDir 'xml\magi_bloodboil_auto.lua' },
+  @{ Name = 'Magi elemental helpers'; After = 'Magi water group';        Source = Join-Path $YsoDir 'xml\magi_elemental_helpers.lua' },
   @{ Name = 'formulation';           After = 'AK+Legacy wiring';       Source = Join-Path $AlchemistDir 'Core\formulation.lua' },
   @{ Name = 'formulation_resolve';   After = 'formulation';            Source = Join-Path $AlchemistDir 'Core\formulation_resolve.lua' },
   @{ Name = 'formulation_phials';    After = 'formulation_resolve';    Source = Join-Path $AlchemistDir 'Core\formulation_phials.lua' },
@@ -197,7 +199,7 @@ if (-not (Test-Path -LiteralPath $XmlPackage)) {
   throw "Package XML not found: $XmlPackage"
 }
 
-$ScriptsToRemove = @('Yso Bootstrap loader', 'Yso.queue', 'Magi group damage', 'Magi focus')
+$ScriptsToRemove = @('Yso Bootstrap loader', 'Yso.queue', 'Magi group damage', 'Magi focus', 'Bloodboil auto')
 $TriggersToRemove = @('Reflection up', 'Reflection down')
 $MdamAliasSource = Join-Path $MagiDir 'mdam_alias_body.lua'
 $MfocusAliasSource = Join-Path $MagiDir 'mfocus_alias_body.lua'

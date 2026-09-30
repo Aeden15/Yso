@@ -2582,9 +2582,7 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(EMBED ENERGISE!).\n")</scr
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Bloodboil: EQ recovered</name>
-						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.on_eq_recovered) == "function" then
-  Yso.magi.elemental.on_eq_recovered()
-end</script>
+						<script>-- Bloodboil marker: auto-queue removed; revisit later.</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2605,9 +2603,7 @@ end</script>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Bloodboil ready</name>
-						<script>if Yso and Yso.magi and Yso.magi.elemental and type(Yso.magi.elemental.on_ready_line) == "function" then
-  Yso.magi.elemental.on_ready_line()
-end</script>
+						<script>-- Bloodboil marker: auto-queue removed; revisit later.</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2691,6 +2687,54 @@ end</script>
 						<regexCodeList>
 							<string>^You no longer feel able to maintain your shalestorm against (\w+)\.$</string>
 							<string>^Boulders cease materialising to pummel (\w+)\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Hellfumes start</name>
+						<script>if Yso and Yso.magi and Yso.magi.hellfumes and type(Yso.magi.hellfumes.set_up) == "function" then
+  Yso.magi.hellfumes.set_up()
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^You coax an absolutely foul-smelling cloud of air from the bowels of the earth\.$</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>1</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Hellfumes end</name>
+						<script>if Yso and Yso.magi and Yso.magi.hellfumes and type(Yso.magi.hellfumes.set_down) == "function" then
+  Yso.magi.hellfumes.set_down("down")
+end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>^Calling upon the powers of the wind, you blow the noxious fumes away\.$</string>
+							<string>^The noxious cloud dissipates\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
@@ -5700,6 +5744,7 @@ local Dissonance = Yso.magi.dissonance
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 local PENDING_SLOTS = {
+  "hellfumes",
   "horripilation",
   "freeze",
   "bombard",
@@ -5770,6 +5815,7 @@ MF.cfg = MF.cfg or {
   echo = true,
   loop_delay = 0.15,
   same_target_repeat_s = 0.75,
+  hellfumes_pending_s = 1.00,
   horripilation_pending_s = 1.00,
   freeze_pending_s = 1.00,
   bombard_pending_s = 1.00,
@@ -5987,6 +6033,16 @@ local function _focus_armed()
   return false
 end
 
+local function _hellfumes_up()
+  local H = Yso and Yso.magi and Yso.magi.hellfumes
+  if type(H) ~= "table" then return false end
+  if type(H.is_up) == "function" then
+    local ok, v = pcall(H.is_up)
+    if ok then return v == true end
+  end
+  return H.active == true
+end
+
 local function _fulm_stage_from_state(st)
   if st.paralysis == true then return 3 end
   if st.epilepsy == true then return 2 end
@@ -6124,6 +6180,7 @@ local function _snapshot(tgt)
     },
     pending = base.pending,
     raw = base.raw,
+    hellfumes = _hellfumes_up() or base.pending.hellfumes == true,
     route = {
       target = route.target,
       room_id = route.room_id,
@@ -6185,6 +6242,12 @@ end
 local function _can_staffcast_horripilation(tgt)
   local cmd = ("staff cast horripilation %s"):format(tgt)
   local ok, why = _spell_guard("horripilation", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_hellfumes(tgt)
+  local cmd = "cast hellfumes"
+  local ok, why = _spell_guard("hellfumes", tgt, cmd)
   return ok, why, cmd
 end
 
@@ -6383,6 +6446,16 @@ local function _select_command(tgt)
   if st.target_valid ~= true then
     _set_route_stage(tgt, "hold", "invalid_target", "maintenance")
     return nil, st, rejects, "invalid_target"
+  end
+
+  if st.hellfumes ~= true then
+    local ok, why, cmd = _can_cast_hellfumes(tgt)
+    _set_route_stage(tgt, ok and "opener" or "hold", "hellfumes", "opener_setup")
+    if ok then
+      return _choice(cmd, "opener_setup", "hellfumes_open", "hellfumes_missing", "opener", "hellfumes", "opener_setup"), st, rejects, ""
+    end
+    _reject(rejects, "hellfumes_open", why ~= "" and why or "hellfumes_missing")
+    return nil, st, rejects, why ~= "" and why or "hellfumes_missing"
   end
 
   if st.waterbonds ~= true then
@@ -6777,6 +6850,15 @@ function MF.on_payload_queued(payload)
     MF.state.last_sent_cmd = cmd
     MF.state.last_sent_at = _now()
 
+    if lc:match("^cast%s+hellfumes$") then
+      local hell_tgt = _trim(_target())
+      MF.state.last_sent_target = hell_tgt
+      MF.state.last_sent_category = "opener_setup"
+      _mark_pending("hellfumes", hell_tgt, MF.cfg.hellfumes_pending_s)
+      _set_route_stage(hell_tgt, "opener", "hellfumes", "opener_setup")
+      return
+    end
+
     local horr_tgt = _capture_target(lc, "^staff%s+cast%s+horripilation%s+(.+)$")
     if horr_tgt ~= "" then
       MF.state.last_sent_target = horr_tgt
@@ -7124,6 +7206,13 @@ end</script>
 						<command />
 						<packageName />
 						<regex>^hailstorm$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>boil</name>
+						<script>send("cq all&&cast bloodboil")</script>
+						<command />
+						<packageName />
+						<regex>^boi$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Destroy</name>
@@ -12206,6 +12295,8 @@ end
 local function _is_entity(c)
   local lc = c:lower()
   if not lc:match("^command%s+") then return false end
+  -- Gremlin/soulmaster are EQ-lane despite the "command" verb.
+  if lc:match("^command%s+gremlin%s+") or lc:match("^command%s+soulmaster%s+") then return false end
   return true
 end
 local function _is_bal_main(c)
@@ -12213,6 +12304,7 @@ local function _is_bal_main(c)
   return lc:match("^fling%s+")
       or lc:match("^flick%s+")
       or lc:match("^toss%s+")
+      or lc:match("^ruinate%s+")
       or lc:match("^throw%s+")
       or lc:match("^wipe%s+")
       or lc:match("^envenom%s+")
@@ -12275,7 +12367,11 @@ function P.queue(payload, opts)
   if prefer ~= "bal" then prefer = "eq" end
 
   for _,c in ipairs(parts) do
-    if _is_free(c) then
+    local lc = c:lower()
+    if lc:match("^command%s+soulmaster%s+") or lc:match("^order%s+soulmaster%s+") then
+      -- Soulmaster commands are EQUILIBRIUM-based in Achaea; treat as EQ-solo.
+      return P.send_eq(c, { solo=true, prefer="eq", reason="pulse.queue:soulmaster" })
+    elseif _is_free(c) then
       free[#free+1] = c
     elseif _is_entity(c) then
       ent = ent or c
@@ -13251,6 +13347,73 @@ return S
 </script>
           <eventHandlerList />
         </Script>        <Script isActive="yes" isFolder="no">
+          <name>Magi hellfumes</name>
+          <packageName></packageName>
+          <script>--========================================================--
+-- magi_hellfumes.lua
+--  * Magi-wide hellfumes room flag. Readable from any Magi route.
+--  * Set from live Elementalism triggers, not from a successful send.
+--========================================================--
+
+Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+Yso.magi.hellfumes = Yso.magi.hellfumes or {}
+
+local S = Yso.magi.hellfumes
+
+-- Unseen stays nil; only set_up/set_down coerce the flag.
+if S.active ~= true and S.active ~= false then
+  S.active = nil
+end
+S.room_id = tostring(S.room_id or "")
+S.at = tonumber(S.at or 0) or 0
+S.reason = tostring(S.reason or "")
+
+local function _now()
+  if type(getEpoch) == "function" then
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
+  end
+  return os.time()
+end
+
+local function _room_id()
+  local g = rawget(_G, "gmcp")
+  local info = g and g.Room and g.Room.Info
+  if info and info.num ~= nil then return tostring(info.num) end
+  if info and info.id ~= nil then return tostring(info.id) end
+  return ""
+end
+
+function S.set_up()
+  S.active = true
+  S.room_id = _room_id()
+  S.at = _now()
+  S.reason = "cast"
+  return true
+end
+
+function S.set_down(reason)
+  S.active = false
+  S.room_id = ""
+  S.at = _now()
+  S.reason = tostring(reason or "down")
+  return true
+end
+
+function S.is_up()
+  if S.active ~= true then return false end
+  local current = _room_id()
+  local stamped = tostring(S.room_id or "")
+  if current == "" or stamped == "" then return true end
+  return current == stamped
+end
+
+return S
+</script>
+          <eventHandlerList />
+        </Script>        <Script isActive="yes" isFolder="no">
           <name>Magi duel dam</name>
           <packageName></packageName>
           <script>-- Magi_duel_dam.lua
@@ -13446,6 +13609,16 @@ local function _score(name)
   return tonumber(score[name] or 0) or 0
 end
 
+local function _hellfumes_up()
+  local H = Yso and Yso.magi and Yso.magi.hellfumes
+  if type(H) ~= "table" then return false end
+  if type(H.is_up) == "function" then
+    local ok, v = pcall(H.is_up)
+    if ok then return v == true end
+  end
+  return H.active == true
+end
+
 local function _assess()
   if type(RC.get_target_hp_percent) == "function" then
     local ok, v = pcall(RC.get_target_hp_percent)
@@ -13530,6 +13703,9 @@ function M.build(reason)
 
   elseif assess ~= nil and (assess &lt;= 25 or (assess &lt;= 30 and _score("sensitivity") &gt;= 100)) then
     return "cast stormhammer at " .. tgt
+
+  elseif not _hellfumes_up() then
+    return "cast hellfumes"
 
   -- Debuff timer setup
   elseif _score("scalded") &lt; 100 then
@@ -14742,7 +14918,7 @@ return M
 </script>
           <eventHandlerList />
         </Script>        <Script isActive="yes" isFolder="no">
-          <name>Bloodboil auto</name>
+          <name>Magi elemental helpers</name>
           <packageName></packageName>
           <script>Yso = Yso or {}
 Yso.magi = Yso.magi or {}
@@ -14750,44 +14926,14 @@ Yso.magi.elemental = Yso.magi.elemental or {}
 
 local M = Yso.magi.elemental
 
-M.cfg = M.cfg or {
-  auto_bloodboil = true,
-  min_affs_hunt = 2,
-  cooldown_s = 4.0,
-  queue_mode = "prepend",
-  queue_type = "eq",
-  command = "cast bloodboil",
-  debug = false,
-  min_retry_s = 0.25,
-}
-
+M.cfg = M.cfg or {}
 M.cfg.destroy = M.cfg.destroy or {
   require_conflagration = true,
   hp_threshold = 40,
   enforce_hp_gate = false,
 }
 
-M.cfg.pvp = M.cfg.pvp or {
-  enabled            = false,
-  min_affs_default   = 3,
-  allow_lock_override = true,
-  curesets = {
-    depthswalker = { min_affs = 2, notes = "placeholder" },
-    bard         = { min_affs = 2, notes = "placeholder" },
-    monk         = { min_affs = 2, notes = "placeholder" },
-    dwc          = { min_affs = 3, notes = "dual wield cutting knights" },
-    dwb          = { min_affs = 3, notes = "dual wield blunt knights (future)" },
-    blademaster  = { min_affs = 3, notes = "placeholder" },
-    shaman       = { min_affs = 2, notes = "placeholder" },
-    airlord      = { min_affs = 2, notes = "elemental air spec" },
-  },
-}
-
-M.state = M.state or {
-  cooldown_until = 0,
-  last_attempt = 0,
-}
-
+M.state = M.state or {}
 M.state.timers = M.state.timers or {}
 M.state.destroy_hp_stub_noted = M.state.destroy_hp_stub_noted or false
 
@@ -14795,12 +14941,6 @@ local function _now()
   local t = (type(getEpoch) == "function" and tonumber(getEpoch())) or os.time()
   if t and t &gt; 1000000000000 then t = t / 1000 end
   return t or os.time()
-end
-
-local function _debug(msg)
-  if M.cfg.debug and type(cecho) == "function" then
-    cecho(string.format("[Magi:Bloodboil] %s\n", tostring(msg)))
-  end
 end
 
 local function _echo(msg)
@@ -14811,81 +14951,6 @@ end
 
 local function _trim(s)
   return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
-end
-
-local function _status()
-  return (gmcp and gmcp.Char and gmcp.Char.Status) or {}
-end
-
-local function _vitals()
-  return (gmcp and gmcp.Char and gmcp.Char.Vitals) or {}
-end
-
-local function _eq_ready()
-  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
-    local ok, v = pcall(Yso.state.eq_ready)
-    if ok then return v == true end
-  end
-
-  local v = _vitals()
-  return tostring(v.eq or v.equilibrium or "") == "1"
-      or v.eq == true
-      or v.equilibrium == true
-end
-
-local function _is_magi()
-  if Yso and Yso.magi and Yso.magi.defs and type(Yso.magi.defs.is_magi) == "function" then
-    local ok, v = pcall(Yso.magi.defs.is_magi)
-    if ok then return v == true end
-  end
-
-  local s = _status()
-  local cls = s.class or s.classname
-  if (type(cls) ~= "string" or cls == "") and Yso and Yso.magi and Yso.magi.defs and Yso.magi.defs.state then
-    cls = Yso.magi.defs.state.class_name
-  end
-
-  return tostring(cls or ""):lower() == "magi"
-end
-
-local function _current_cureset()
-  local set = Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet
-  if type(set) == "string" and set ~= "" then
-    return set:lower()
-  end
-
-  local prof = Yso and Yso.curing and Yso.curing._active_profile
-  if type(prof) == "string" and prof ~= "" then
-    return prof:lower()
-  end
-
-  local cur = rawget(_G, "CurrentCureset")
-  if type(cur) == "string" and cur ~= "" then
-    return cur:lower()
-  end
-
-  return ""
-end
-
-local function _Aff()
-  return (Legacy and Legacy.Curing and Legacy.Curing.Affs) or {}
-end
-
-local function _has(aff)
-  return _Aff()[aff] == true
-end
-
-local function _aff_count()
-  local A = _Aff()
-  local n = 0
-
-  for k, v in pairs(A) do
-    if v == true and k ~= "softlocked" and k ~= "truelocked" then
-      n = n + 1
-    end
-  end
-
-  return n
 end
 
 local function _resolve_current_target()
@@ -14956,115 +15021,6 @@ local function _record_timer(spell, seconds)
     seconds = tonumber(seconds) or 0,
     armed_at = _now(),
   }
-end
-
-function M.is_ready()
-  return _now() &gt;= tonumber(M.state.cooldown_until or 0)
-end
-
-function M.set_ready(is_ready, src)
-  if is_ready then
-    M.state.cooldown_until = 0
-  else
-    M.state.cooldown_until = _now() + (tonumber(M.cfg.cooldown_s or 4.0) or 4.0)
-  end
-
-  _debug(string.format("ready=%s src=%s", tostring(is_ready), tostring(src or "?")))
-  return true
-end
-
-function M.should_bloodboil()
-  if M.cfg.auto_bloodboil ~= true then
-    return false, "disabled"
-  end
-
-  if not _is_magi() then
-    return false, "class"
-  end
-
-  if not M.is_ready() then
-    return false, "cooldown"
-  end
-
-  if not _eq_ready() then
-    return false, "eq"
-  end
-
-  if _has("haemophilia") then
-    return false, "haemophilia"
-  end
-
-  local curset = _current_cureset()
-  local count  = _aff_count()
-
-  if curset == "hunt" then
-    local min_affs = tonumber(M.cfg.min_affs_hunt or 2) or 2
-    if count &lt; min_affs then return false, "affs", count, min_affs end
-    return true, "ok", count, min_affs
-  end
-
-  local pvp = M.cfg.pvp
-  if not (type(pvp) == "table" and pvp.enabled == true) then
-    return false, "pvp_disabled"
-  end
-
-  local entry = type(pvp.curesets) == "table" and pvp.curesets[curset] or nil
-  local min_affs = (type(entry) == "table" and tonumber(entry.min_affs))
-                   or tonumber(pvp.min_affs_default or 3) or 3
-
-  local lock_ok = pvp.allow_lock_override and _has("softlocked")
-  if count &lt; min_affs and not lock_ok then
-    return false, "affs_pvp", count, min_affs
-  end
-
-  return true, "ok_pvp", count, min_affs
-end
-
-local function _queue_bloodboil(source)
-  local cmd = tostring(M.cfg.command or "cast bloodboil")
-  local mode = tostring(M.cfg.queue_mode or "prepend")
-  local qtype = tostring(M.cfg.queue_type or "eq")
-
-  local ok = false
-  if Yso and Yso.queue and type(Yso.queue.raw) == "function" then
-    ok = (Yso.queue.raw(mode, qtype, cmd) == true)
-  elseif type(send) == "function" then
-    send(string.format("queue %s %s %s", mode, qtype, cmd), false)
-    ok = true
-  end
-
-  if ok then
-    M.state.last_attempt = _now()
-    M.set_ready(false, "queue:" .. tostring(source or "?"))
-    _debug(string.format("queued mode=%s qtype=%s src=%s", mode, qtype, tostring(source or "?")))
-  end
-
-  return ok
-end
-
-function M.try_bloodboil(source)
-  local now = _now()
-  local min_retry = tonumber(M.cfg.min_retry_s or 0.25) or 0.25
-  if (now - tonumber(M.state.last_attempt or 0)) &lt; min_retry then
-    return false
-  end
-
-  local ok, reason = M.should_bloodboil()
-  if not ok then
-    _debug(string.format("skip src=%s reason=%s", tostring(source or "?"), tostring(reason or "?")))
-    return false
-  end
-
-  return _queue_bloodboil(source)
-end
-
-function M.on_eq_recovered()
-  return M.try_bloodboil("eq_recovered")
-end
-
-function M.on_ready_line()
-  M.set_ready(true, "line:ready")
-  return M.try_bloodboil("ready_line")
 end
 
 function M.get_target_hp_percent(_target_name)
@@ -15167,6 +15123,8 @@ function M.cast_magmasphere(seconds)
   return _cast_timed_spell("magmasphere", seconds)
 end
 </script>
+          <eventHandlerList />
+        </Script>
           <eventHandlerList />
         </Script>
 				<Script isActive="yes" isFolder="no">
@@ -16083,8 +16041,7 @@ local function _normalize_phial_id(raw)
 end
 
 local function _is_permanent_months(months)
-  local marker = _trim(months)
-  return marker == "--" or marker == "---"
+  return _trim(months) == "--"
 end
 
 local function _normalize_compound_key(name)
@@ -16112,13 +16069,6 @@ local function _normalize_compound_key(name)
     toxin = "toxin",
     conc = "concussive",
     concussive = "concussive",
-    nutri = "nutritional",
-    nutritional = "nutritional",
-    petri = "petrifying",
-    petrifying = "petrifying",
-    dest = "destructive",
-    destructive = "destructive",
-    mayology = "destructive",
     halophilic = "halophilic",
   }
   return aliases[key] or key
@@ -16759,8 +16709,7 @@ function F.send_role_amalgamate(role, compound)
   return cmd, context
 end
 
-function F.build_role_amalgamate_autofix(role, compound, opts)
-  opts = type(opts) == "table" and opts or {}
+function F.build_role_amalgamate_autofix(role, compound)
   local policy, err = F.reserved_role(role)
   if not policy then
     if type(F.warn) == "function" then
@@ -16794,9 +16743,7 @@ function F.build_role_amalgamate_autofix(role, compound, opts)
     return nil
   end
 
-  -- The ama alias may fill any Formulation compound into the flex slot.
-  -- Keep the offensive-gas pool restriction on the dedicated gas helpers only.
-  if policy.expected_pool and opts.any_formulation ~= true then
+  if policy.expected_pool then
     local ok = policy.expected_pool[desired_compound] == true
     if not ok then
       if type(F.warn) == "function" then
@@ -16852,8 +16799,8 @@ function F.build_role_amalgamate_autofix(role, compound, opts)
   }
 end
 
-function F.send_role_amalgamate_autofix(role, compound, opts)
-  local plan, context = F.build_role_amalgamate_autofix(role, compound, opts)
+function F.send_role_amalgamate_autofix(role, compound)
+  local plan, context = F.build_role_amalgamate_autofix(role, compound)
   if not plan then
     return nil
   end
@@ -16882,33 +16829,14 @@ function F.send_role_amalgamate_autofix(role, compound, opts)
 end
 
 function F.send_amalgamate_autofix(compound)
-  local requested = tostring(compound or ""):gsub("^%s+", ""):gsub("%s+$", "")
-  if requested == "" then
+  local role, normalized = _amalgamate_role_for_compound(compound)
+  if normalized == "" then
     if type(F.warn) == "function" then
       F.warn("Autofix amalgamate helper needs a compound.")
     end
     return nil
   end
-
-  local meta
-  if type(F.resolve) == "function" then
-    meta = F.resolve(requested, { silent = true })
-  end
-  if not meta then
-    if type(F.warn) == "function" then
-      F.warn("No Formulation compound found for " .. requested .. ".")
-    end
-    return nil
-  end
-  if meta.delivery == "utility" or meta.delivery == "enhanced_state_ability" then
-    if type(F.warn) == "function" then
-      F.warn(meta.name .. " is not a compound that can be amalgamated.")
-    end
-    return nil
-  end
-
-  local role = select(1, _amalgamate_role_for_compound(meta.use_name or meta.name))
-  return F.send_role_amalgamate_autofix(role, meta.use_name or meta.name, { any_formulation = true })
+  return F.send_role_amalgamate_autofix(role, normalized)
 end
 
 function F.build_endorphin_amalgamate()

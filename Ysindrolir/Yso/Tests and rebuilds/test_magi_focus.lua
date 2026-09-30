@@ -133,6 +133,9 @@ local function make_world(opts)
         note_focus = function() focus_active = true end,
         clear_focus = function() focus_active = false end,
       },
+      hellfumes = {
+        is_up = function() return opts.hellfumes_up ~= false end,
+      },
       elemental = {
         get_target_hp_percent = function() return hp_pct end,
       },
@@ -241,6 +244,14 @@ do
   local world = make_world({})
   local cmd = preview_eq(world)
   assert_eq("1a: missing waterbonds opens with horripilation", cmd, "staff cast horripilation foe")
+end
+
+print("=== Test 1b: hellfumes down opens before horripilation ===")
+do
+  local world = make_world({ hellfumes_up = false })
+  local cmd, reason = preview_eq(world)
+  assert_eq("1b: missing hellfumes opens with cast hellfumes", cmd, "cast hellfumes")
+  assert_eq("1c: reason tracks hellfumes gap", reason, "hellfumes_missing")
 end
 
 print("\n=== Test 2: freeze reopens if either frozen or frostbite is missing ===")

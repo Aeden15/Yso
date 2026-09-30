@@ -538,6 +538,7 @@ local Dissonance = Yso.magi.dissonance
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 local PENDING_SLOTS = {
+  "hellfumes",
   "horripilation",
   "freeze",
   "bombard",
@@ -608,6 +609,7 @@ MF.cfg = MF.cfg or {
   echo = true,
   loop_delay = 0.15,
   same_target_repeat_s = 0.75,
+  hellfumes_pending_s = 1.00,
   horripilation_pending_s = 1.00,
   freeze_pending_s = 1.00,
   bombard_pending_s = 1.00,
@@ -825,6 +827,16 @@ local function _focus_armed()
   return false
 end
 
+local function _hellfumes_up()
+  local H = Yso and Yso.magi and Yso.magi.hellfumes
+  if type(H) ~= "table" then return false end
+  if type(H.is_up) == "function" then
+    local ok, v = pcall(H.is_up)
+    if ok then return v == true end
+  end
+  return H.active == true
+end
+
 local function _fulm_stage_from_state(st)
   if st.paralysis == true then return 3 end
   if st.epilepsy == true then return 2 end
@@ -962,6 +974,7 @@ local function _snapshot(tgt)
     },
     pending = base.pending,
     raw = base.raw,
+    hellfumes = _hellfumes_up() or base.pending.hellfumes == true,
     route = {
       target = route.target,
       room_id = route.room_id,
@@ -1023,6 +1036,12 @@ end
 local function _can_staffcast_horripilation(tgt)
   local cmd = ("staff cast horripilation %s"):format(tgt)
   local ok, why = _spell_guard("horripilation", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_hellfumes(tgt)
+  local cmd = "cast hellfumes"
+  local ok, why = _spell_guard("hellfumes", tgt, cmd)
   return ok, why, cmd
 end
 
@@ -1221,6 +1240,16 @@ local function _select_command(tgt)
   if st.target_valid ~= true then
     _set_route_stage(tgt, "hold", "invalid_target", "maintenance")
     return nil, st, rejects, "invalid_target"
+  end
+
+  if st.hellfumes ~= true then
+    local ok, why, cmd = _can_cast_hellfumes(tgt)
+    _set_route_stage(tgt, ok and "opener" or "hold", "hellfumes", "opener_setup")
+    if ok then
+      return _choice(cmd, "opener_setup", "hellfumes_open", "hellfumes_missing", "opener", "hellfumes", "opener_setup"), st, rejects, ""
+    end
+    _reject(rejects, "hellfumes_open", why ~= "" and why or "hellfumes_missing")
+    return nil, st, rejects, why ~= "" and why or "hellfumes_missing"
   end
 
   if st.waterbonds ~= true then
@@ -1614,6 +1643,15 @@ function MF.on_payload_queued(payload)
     local lc = _lc(cmd)
     MF.state.last_sent_cmd = cmd
     MF.state.last_sent_at = _now()
+
+    if lc:match("^cast%s+hellfumes$") then
+      local hell_tgt = _trim(_target())
+      MF.state.last_sent_target = hell_tgt
+      MF.state.last_sent_category = "opener_setup"
+      _mark_pending("hellfumes", hell_tgt, MF.cfg.hellfumes_pending_s)
+      _set_route_stage(hell_tgt, "opener", "hellfumes", "opener_setup")
+      return
+    end
 
     local horr_tgt = _capture_target(lc, "^staff%s+cast%s+horripilation%s+(.+)$")
     if horr_tgt ~= "" then
