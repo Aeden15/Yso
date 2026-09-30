@@ -2863,6 +2863,21 @@ end
 						<regex>^msclear(?:\s+(\w+))?$</regex>
 					</Alias>
 				</AliasGroup>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Defenses</name>
+					<script />
+					<command />
+					<packageName />
+					<regex>
+          </regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>Shielding</name>
+						<script>send("cq all&&touch shield")</script>
+						<command />
+						<packageName />
+						<regex>^shi$</regex>
+					</Alias>
+				</AliasGroup>
 			</AliasGroup>
 			<AliasGroup isActive="yes" isFolder="yes">
 				<name>Alchemy</name>
