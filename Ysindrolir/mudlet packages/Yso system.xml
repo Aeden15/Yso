@@ -2807,6 +2807,80 @@ end</script>
 					</Trigger>
 				</TriggerGroup>
 			</TriggerGroup>
+			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Monk</name>
+				<script />
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand />
+				<packageName />
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile />
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList />
+				<regexCodePropertyList />
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Telepathy</name>
+					<script />
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand />
+					<packageName />
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile />
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Kai trance on</name>
+						<script>deleteLine()
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(TRANCE IS ON.)\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile />
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>Your mantra is complete - the Kai Trance is upon you.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Kai trance off</name>
+						<script>deleteLine()
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;firebrick&gt;(TRANCE IS OFF.)\n")</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile />
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList>
+							<string>You break out of the Kai Trance, sighing as you feel your accumulated Kai energy vanish.</string>
+						</regexCodeList>
+						<regexCodePropertyList>
+							<integer>3</integer>
+						</regexCodePropertyList>
+					</Trigger>
+				</TriggerGroup>
+			</TriggerGroup>
 		</TriggerGroup>
 	</TriggerPackage>
 	<TimerPackage />
@@ -2825,7 +2899,6 @@ end</script>
 				<packageName />
 				<regex>
         </regex>
-				
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Modes of Combat</name>
 					<script />
@@ -7581,6 +7654,259 @@ end</script>
 					</AliasGroup>
 				</AliasGroup>
 			</AliasGroup>
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Monk</name>
+				<script />
+				<command />
+				<packageName />
+				<regex />
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Telepathy</name>
+					<script />
+					<command />
+					<packageName />
+					<regex />
+					<Alias isActive="yes" isFolder="no">
+						<name>Mind throw</name>
+						<script>send("mind throw " ..matches[2])</script>
+						<command />
+						<packageName />
+						<regex>^mthrow (\w+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mind Terror</name>
+						<script>send("mind terror")</script>
+						<command />
+						<packageName />
+						<regex>^terror$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mana transfer</name>
+						<script>send("mind suffuse")</script>
+						<command />
+						<packageName />
+						<regex>^suffuse$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mana drain</name>
+						<script>send("mind drain")</script>
+						<command />
+						<packageName />
+						<regex>^mdrain$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Listen toggle</name>
+						<script>if matches[2] == "o" then
+send("mind listen")
+elseif matches[2] == "f" then
+send("mind unlisten")
+end</script>
+						<command />
+						<packageName />
+						<regex>^list(.)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Isolate toggle</name>
+						<script>if matches[2] == "o" then
+send("mind isolate")
+elseif matches[2] == "f" then
+send("mind unisolate")
+end</script>
+						<command />
+						<packageName />
+						<regex>^miso(.)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Empathy toggle</name>
+						<script>if matches[2] == "o" then
+send("mind empathy")
+elseif matches[2] == "f" then
+send("mind unempathy")
+end</script>
+						<command />
+						<packageName />
+						<regex>^memp(.)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Barrier toggle</name>
+						<script>if matches[2] == "o" then
+send("mind barrier")
+elseif matches[2] == "f" then
+send("mind unbarrier")
+end</script>
+						<command />
+						<packageName />
+						<regex>^bar(.)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Scanning</name>
+						<script>send("mind scan")</script>
+						<command />
+						<packageName />
+						<regex>^mscan$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Travel</name>
+						<script>send("mind travel")</script>
+						<command />
+						<packageName />
+						<regex>^mtrav$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mind crush</name>
+						<script>send("mind crush " ..target)</script>
+						<command />
+						<packageName />
+						<regex>^crush$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mind strip</name>
+						<script>send("mind strip " ..target)</script>
+						<command />
+						<packageName />
+						<regex>^strip$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mind watch toggle</name>
+						<script>if matches[2] == "o" then
+send("mind sapience")
+elseif matches[2] == "f" then
+send("unwatch")
+end</script>
+						<command />
+						<packageName />
+						<regex>^msap(.)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Clamp toggle</name>
+						<script>if matches[2] == "o" then
+send("mind clamp")
+elseif matches[2] == "f" then
+send("mind unclamp")
+end</script>
+						<command />
+						<packageName />
+						<regex>^clam(.)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Blackout</name>
+						<script>send("mind blackout")</script>
+						<command />
+						<packageName />
+						<regex>^blac$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Radiance</name>
+						<script>send("mind radiance")</script>
+						<command />
+						<packageName />
+						<regex>^rad$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Scythe</name>
+						<script>if Yso and Yso.monk and Yso.monk.scythe and type(Yso.monk.scythe.execute) == "function" then
+  Yso.monk.scythe.execute()
+end</script>
+						<command />
+						<packageName />
+						<regex>^scy$</regex>
+					</Alias>
+				</AliasGroup>
+				<AliasGroup isActive="yes" isFolder="yes">
+					<name>Kaido</name>
+					<script />
+					<command />
+					<packageName />
+					<regex />
+					<Alias isActive="yes" isFolder="no">
+						<name>Healing</name>
+						<script>if (tonumber(hadoken) or 0) &gt;= 21 then
+send("kai heal")
+end</script>
+						<command />
+						<packageName />
+						<regex>^kheal$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Feeble</name>
+						<script>if (tonumber(hadoken) or 0) &gt;= 61 and affstrack and affstrack.score and (tonumber(affstrack.score.prone) or 0) &gt;= 100 then
+send("kai enfeeble " ..target)
+end</script>
+						<command />
+						<packageName />
+						<regex>^feeb$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Deliverance</name>
+						<script>if (tonumber(hadoken) or 0) &gt;= 81 and not prone then --as in myself not proned
+send("transmuse 1000")
+expandAlias("pp")
+send("kai deliverance")
+end</script>
+						<command />
+						<packageName />
+						<regex>^delv$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Transitioning</name>
+						<script>if (tonumber(hadoken) or 0) &gt;= 10 then
+send("kai transition " ..matches[2])
+end</script>
+						<command />
+						<packageName />
+						<regex>^ktran (\w+)$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Dragon stance</name>
+						<script>send("drs")</script>
+						<command />
+						<packageName />
+						<regex>^drs$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Scorpion stance</name>
+						<script>send("scs")</script>
+						<command />
+						<packageName />
+						<regex>^scs$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Rat stance</name>
+						<script>send("rts")</script>
+						<command />
+						<packageName />
+						<regex>^rts$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Bear stance</name>
+						<script>send("brs")</script>
+						<command />
+						<packageName />
+						<regex>^brs$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Cat stance</name>
+						<script>send("cts")</script>
+						<command />
+						<packageName />
+						<regex>^cts$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Eagle stance</name>
+						<script>send("egs")</script>
+						<command />
+						<packageName />
+						<regex>^egs$</regex>
+					</Alias>
+					<Alias isActive="yes" isFolder="no">
+						<name>Horse stance</name>
+						<script>send("hrs")</script>
+						<command />
+						<packageName />
+						<regex>^hrs$</regex>
+					</Alias>
+				</AliasGroup>
+			</AliasGroup>
 		</AliasGroup>
 	</AliasPackage>
 	<ActionPackage />
@@ -9039,10 +9365,11 @@ end
 -- _selfaff_module only uses Yso.selfaff if that table already exists.
 </script>
 					<eventHandlerList />
-				</Script>        <Script isActive="yes" isFolder="no">
-          <name>Yso self aff</name>
-          <packageName></packageName>
-          <script>-- Auto-exported from Mudlet package script: Yso self aff
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso self aff</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso self aff
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
@@ -9874,11 +10201,12 @@ _sync_writhe_lane_blocks("init")
 
 return SA
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Yso self curedefs</name>
-          <packageName></packageName>
-          <script>-- Auto-exported from Mudlet package script: Yso self curedefs
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso self curedefs</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso self curedefs
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
@@ -10187,8 +10515,8 @@ D.startup_spotcheck()
 
 return D
 </script>
-          <eventHandlerList />
-        </Script>
+					<eventHandlerList />
+				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso modes</name>
 					<packageName />
@@ -10888,10 +11216,11 @@ end
 --========================================================--
 </script>
 					<eventHandlerList />
-				</Script>        <Script isActive="yes" isFolder="no">
-          <name>Yso serverside policy</name>
-          <packageName></packageName>
-          <script>-- Auto-exported from Mudlet package script: Yso serverside policy
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso serverside policy</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso serverside policy
 -- DO NOT EDIT IN XML; edit this file instead.
 
 --========================================================--
@@ -11892,11 +12221,12 @@ P.init()
 
 return P
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Yso party targeting</name>
-          <packageName></packageName>
-          <script>-- Auto-exported from Mudlet package script: Yso party targeting
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso party targeting</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso party targeting
 -- DO NOT EDIT IN XML; edit this file instead.
 
 -- Party target calling.
@@ -12009,11 +12339,12 @@ if type(tempRegexTrigger) == "function" then
   )
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Yso pulse</name>
-          <packageName></packageName>
-          <script>-- Auto-exported from Mudlet package script: Yso.pulse (wake bus)
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Yso pulse</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: Yso.pulse (wake bus)
 -- DO NOT EDIT IN XML; edit this file instead.
 -- Pair: Yso/Core/wake_bus.lua and Yso/xml/yso_pulse_wake_bus.lua stay byte-identical; Mudlet package name is Yso.pulse (wake bus).
 
@@ -12559,11 +12890,12 @@ do
   end
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Route registry</name>
-          <packageName></packageName>
-          <script>--========================================================--
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Route registry</name>
+					<packageName />
+					<script>--========================================================--
 -- Yso Combat Route Registry
 --  • Single source of truth for active Yso combat routes.
 --  • Keeps ids, aliases, namespaces, and mode mapping together.
@@ -12801,11 +13133,12 @@ end
 
 return RR
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Defensive checks</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Defensive checks</name>
+					<packageName />
+					<script>Yso = Yso or {}
 Yso.magi = Yso.magi or {}
 Yso.magi.defs = Yso.magi.defs or {}
 
@@ -12849,384 +13182,479 @@ function M.set_class(classname)
   M.state.class_name = tostring(classname or "")
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi route core</name>
-          <packageName></packageName>
-          <script>--========================================================--
--- Magi route chassis helpers
---  * Shared runtime helpers for Magi route modules.
---  * Keeps targeting, timing, pending windows, and snapshots in one place.
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>AK+Legacy wiring</name>
+					<packageName />
+					<script>-- Auto-exported from Mudlet package script: AK+Legacy wiring
+-- DO NOT EDIT IN XML; edit this file instead.
+
+--========================================================--
+-- Yso / Achaea Wiring
+--  • Wires Yso.curing.adapters -&gt; Legacy + game commands
+--  • Wires Yso.ak -&gt; AK1 / AK Tracker (affstrack + ak.check)
+--  • Assumes:
+--      - Legacy core is loaded (Prio/Deprio/UpdatePrios exist)
+--      - AK Tracker.xml is loaded (affstrack, ak.check exist)
+--      - Yso_curing_core + Yso_AK_core already loaded
 --========================================================--
 
-Yso = Yso or {}
-Yso.off = Yso.off or {}
-Yso.off.magi = Yso.off.magi or {}
+Yso        = Yso or {}
+Yso.curing = Yso.curing or {}
+Yso.ak     = Yso.ak or {}
 
-Yso.off.magi.route_core = Yso.off.magi.route_core or {}
-local RC = Yso.off.magi.route_core
+------------------------------------------------------------
+-- 0) SHIELD FALLBACK API (callable + compatibility aliases)
+------------------------------------------------------------
 
-function RC.trim(s)
-  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+local function _shield_key(target)
+  target = tostring(target or ""):lower()
+  target = target:gsub("^%s+", ""):gsub("%s+$", "")
+  return target
 end
 
-function RC.lc(s)
-  return RC.trim(s):lower()
+local function _ak_targeted(target)
+  local fn = rawget(_G, "IsTargetted")
+  if type(fn) ~= "function" then return false end
+  local ok, v = pcall(fn, tostring(target or ""))
+  return ok and v == true
 end
 
-function RC.same_target(a, b)
-  a = RC.lc(a)
-  b = RC.lc(b)
-  return a ~= "" and a == b
-end
+local function _shield_set(target, up, source)
+  local key = _shield_key(target)
+  if key == "" then return false end
 
-function RC.now()
-  if Yso and Yso.util and type(Yso.util.now) == "function" then
-    local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
+  Yso._shield_by_target = Yso._shield_by_target or {}
+  local state = (up == true)
+  Yso._shield_by_target[key] = state
+  Yso._shield_last_source = tostring(source or "")
+
+  -- Mirror state into AK when available; AK remains primary source-of-truth.
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    ak.defs = ak.defs or {}
+    ak.defs.shield_by_target = ak.defs.shield_by_target or {}
+    ak.defs.shield_by_target[key] = state
+
+    if state then
+      ak.defs.shield = true
+    elseif _ak_targeted(target) then
+      ak.defs.shield = false
+    end
   end
+
+  return state
+end
+
+local function _shield_up(target)
+  local key = _shield_key(target)
+  if key == "" then return false end
+
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" and type(ak.defs) == "table" then
+    if type(ak.defs.shield_by_target) == "table" then
+      local v = ak.defs.shield_by_target[key]
+      if type(v) == "boolean" then
+        Yso._shield_by_target = Yso._shield_by_target or {}
+        Yso._shield_by_target[key] = v
+        return v
+      end
+    end
+    if type(ak.defs.shield) == "boolean" and _ak_targeted(target) then
+      return ak.defs.shield == true
+    end
+  end
+
+  local cache = Yso._shield_by_target
+  if type(cache) == "table" and type(cache[key]) == "boolean" then
+    return cache[key]
+  end
+
+  return false
+end
+
+local _shield_api = Yso.shield
+if type(_shield_api) ~= "table" then
+  _shield_api = {}
+end
+
+_shield_api.set = _shield_set
+_shield_api.up = _shield_up
+_shield_api.is_up = _shield_up
+
+local _shield_mt = getmetatable(_shield_api) or {}
+_shield_mt.__call = function(_, target)
+  return _shield_up(target)
+end
+setmetatable(_shield_api, _shield_mt)
+Yso.shield = _shield_api
+
+------------------------------------------------------------
+-- 1) CURING ADAPTERS -&gt; LEGACY / GAME
+------------------------------------------------------------
+
+local function _cwire_echo(msg)
+  if Yso.curing and Yso.curing.debug then
+    cecho(string.format("&lt;cyan&gt;[Yso:CureWire] &lt;reset&gt;%s\n", msg))
+  end
+end
+
+-- Ensure adapters table exists
+Yso.curing.adapters = Yso.curing.adapters or {}
+local C = Yso.curing.adapters
+
+-- Toggle game-side CURING ON/OFF.
+C.game_curing_on = function()
+  if type(send) == "function" then
+    send("curing on", false)
+    _cwire_echo("sent: curing on")
+  else
+    _cwire_echo("wanted to send 'curing on' but send() is missing")
+  end
+end
+
+C.game_curing_off = function()
+  if type(send) == "function" then
+    send("curing off", false)
+    _cwire_echo("sent: curing off")
+  else
+    _cwire_echo("wanted to send 'curing off' but send() is missing")
+  end
+end
+
+-- Raise an affliction priority via Legacy:
+--  • Prefer Legacy's Prio(aff) helper (moves to slot 1).
+--  • Fallback: raw CURING PRIORITY command.
+C.raise_aff = function(aff)
+  if not aff or aff == "" then return end
+  aff = tostring(aff)
+
+  if type(Prio) == "function" then
+    Prio(aff)  -- Legacy: push to 1
+    _cwire_echo("Legacy Prio("..aff..")")
+  elseif type(send) == "function" then
+    send(string.format("curing priority %s 1", aff), false)
+    _cwire_echo("sent: curing priority "..aff.." 1")
+  else
+    _cwire_echo("cannot raise_aff("..aff.."): no Prio() or send()")
+  end
+end
+
+-- Lower an affliction priority via Legacy:
+--  • Prefer Legacy's Deprio(aff) helper (sets to 26).
+--  • Fallback: raw CURING PRIORITY aff 26.
+C.lower_aff = function(aff)
+  if not aff or aff == "" then return end
+  aff = tostring(aff)
+
+  if type(Deprio) == "function" then
+    Deprio(aff)
+    _cwire_echo("Legacy Deprio("..aff..")")
+  elseif type(send) == "function" then
+    send(string.format("curing priority %s 26", aff), false)
+    _cwire_echo("sent: curing priority "..aff.." 26")
+  else
+    _cwire_echo("cannot lower_aff("..aff.."): no Deprio() or send()")
+  end
+end
+
+-- Explicitly set an aff's position:
+--  • Prefer Legacy's Prio(aff, pos).
+--  • Fallback: raw CURING PRIORITY aff pos.
+C.set_aff_prio = function(aff, prio)
+  if not aff or aff == "" then return end
+  prio = tonumber(prio) or 1
+  aff  = tostring(aff)
+
+  if type(Prio) == "function" then
+    Prio(aff, prio)
+    _cwire_echo(string.format("Legacy Prio(%s, %d)", aff, prio))
+  elseif type(send) == "function" then
+    send(string.format("curing priority %s %d", aff, prio), false)
+    _cwire_echo(string.format("sent: curing priority %s %d", aff, prio))
+  else
+    _cwire_echo("cannot set_aff_prio("..aff..","..tostring(prio)..")")
+  end
+end
+
+-- Switch server-side curingset/profile:
+--  • Legacy uses "curingset new legacy" + "curingset switch legacy"
+--    on install, so we mirror that here.
+C.use_profile = function(name)
+  if not name or name == "" then return end
+  name = tostring(name)
+
+  if type(send) == "function" then
+    send(string.format("curingset switch %s", name), false)
+    _G.CurrentCureset = name
+    _cwire_echo("sent: curingset switch "..name)
+  else
+    _cwire_echo("cannot use_profile("..name.."): send() missing")
+  end
+end
+
+-- Tree policy bridge (phase-1 conservative scaffold).
+-- aff_trigger: prioritize trigger behavior while under active pressure.
+-- aff_count: fallback/default behavior.
+C.set_tree_policy = function(mode, _ctx)
+  mode = tostring(mode or ""):lower()
+  if mode == "" then return end
+
+  -- Keep wire-level behavior simple and non-destructive in phase one.
+  -- Policy computes desired mode and the adapter exposes it for diagnostics.
+  Yso.curing = Yso.curing or {}
+  Yso.curing.tree_policy = mode
+  _cwire_echo("tree policy -&gt; " .. mode)
+end
+
+-- Emergency queue bridge used by serverside policy scaffolding.
+C.queue_emergency = function(cmd, opts)
+  cmd = tostring(cmd or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if cmd == "" then return false end
+
+  opts = type(opts) == "table" and opts or {}
+  local qtype = tostring(opts.qtype or "bal"):gsub("^%s+", ""):gsub("%s+$", "")
+  if qtype == "" then qtype = "bal" end
+  local idx = tonumber(opts.index)
+
+  local line
+  if idx and idx &gt;= 1 then
+    line = string.format("QUEUE INSERT %s %d %s", qtype, idx, cmd)
+  else
+    line = string.format("QUEUE ADD %s %s", qtype, cmd)
+  end
+
+  if type(send) ~= "function" then
+    _cwire_echo("cannot queue_emergency: send() missing")
+    return false
+  end
+
+  send(line, false)
+  _cwire_echo("sent: " .. line)
+  return true
+end
+
+-- Emergency hook is intentionally minimal; you can flesh this out later.
+C.emergency = function(tag)
+  tag = tostring(tag or "")
+  if tag == "" then return end
+
+  _cwire_echo("emergency("..tag..") called (no behaviour wired yet)")
+  -- Example you might add later:
+  -- if tag == "lockpanic" and type(send)=="function" then
+  --   send("curing tree on", false)
+  --   send("curing priority paralysis 1", false)
+  --   _cwire_echo("lockpanic: raised paralysis + toggled tree")
+  -- end
+end
+
+------------------------------------------------------------
+-- 2) AK BRIDGE -&gt; affstrack + ak.check
+------------------------------------------------------------
+
+Yso.ak         = Yso.ak or {}
+Yso.ak.adapters = Yso.ak.adapters or {}
+Yso.ak.threshold = Yso.ak.threshold or 100  -- score at/above this is "confirmed"
+
+local function _akwire_echo(msg)
+  if Yso.ak and Yso.ak.debug then
+    cecho(string.format("&lt;magenta&gt;[Yso:AK-Bridge] &lt;reset&gt;%s\n", msg))
+  end
+end
+
+local function _akwire_now()
   if type(getEpoch) == "function" then
-    local v = tonumber(getEpoch()) or os.time()
-    if v &gt; 20000000000 then v = v / 1000 end
-    return v
+    local t = tonumber(getEpoch()) or os.time()
+    if t &gt; 20000000000 then t = t / 1000 end
+    return t
   end
   return os.time()
 end
 
-function RC.get_target()
-  if type(Yso.get_target) == "function" then
-    local ok, v = pcall(Yso.get_target)
-    if ok and RC.trim(v) ~= "" then return RC.trim(v) end
+local function _canon_aff(aff)
+  aff = tostring(aff or ""):lower()
+  if aff == "" then return "" end
+  if Yso and Yso.util and type(Yso.util.normalize_aff_name) == "function" then
+    aff = Yso.util.normalize_aff_name(aff)
+  elseif aff == "prefarar" then
+    aff = "sensitivity"
+  end
+  return aff
+end
+
+-- Build a { aff_name = true } map from AK's affstrack.score.
+local function _aff_map_from_ak()
+  local map = {}
+
+  if not affstrack or type(affstrack) ~= "table" or type(affstrack.score) ~= "table" then
+    return map
   end
 
-  -- Yso.targeting subsystem (checked before global fallbacks so the routing
-  -- system agrees with whatever Magi_duel_dam.lua and other alias files see).
-  if type(Yso.targeting) == "table" then
-    if type(Yso.targeting.get) == "function" then
-      local ok, v = pcall(Yso.targeting.get)
-      if ok and RC.trim(v) ~= "" then return RC.trim(v) end
-    elseif type(Yso.targeting.get_target) == "function" then
-      local ok, v = pcall(Yso.targeting.get_target)
-      if ok and RC.trim(v) ~= "" then return RC.trim(v) end
-    elseif type(Yso.targeting.target) == "string" then
-      local v = RC.trim(Yso.targeting.target)
-      if v ~= "" then return v end
+  local threshold = Yso.ak.threshold or 100
+
+  for name, score in pairs(affstrack.score) do
+    if type(name) == "string" and type(score) == "number" then
+      if score &gt;= threshold then
+        map[_canon_aff(name)] = true
+      end
     end
   end
 
-  local cur = rawget(_G, "target")
-  if type(cur) == "string" and RC.trim(cur) ~= "" then return RC.trim(cur) end
+  return map
+end
 
-  local ak = rawget(_G, "ak")
+-- Helper to count keys in a table.
+local function _tbl_count(t)
+  local c = 0
+  for _ in pairs(t) do c = c + 1 end
+  return c
+end
+
+-- Override adapters.pull_full_state so Yso.ak.sync_from_ak() works.
+Yso.ak.adapters.pull_full_state = function()
+  local m = _aff_map_from_ak()
+  _akwire_echo("pull_full_state() -&gt; ".._tbl_count(m).." affs from AK")
+  return m
+end
+
+-- Let Yso tell AK when the combat target changes (resets AK's internal state).
+Yso.ak.adapters.on_target_change = function(name)
+  name = tostring(name or "")
   if type(ak) == "table" then
-    if type(ak.target) == "string" and RC.trim(ak.target) ~= "" then return RC.trim(ak.target) end
-    if type(ak.tgt) == "string" and RC.trim(ak.tgt) ~= "" then return RC.trim(ak.tgt) end
-  end
-
-  return ""
-end
-
-function RC.room_id()
-  local g = rawget(_G, "gmcp")
-  local info = g and g.Room and g.Room.Info
-  if info and info.num ~= nil then return tostring(info.num) end
-  if info and info.id ~= nil then return tostring(info.id) end
-  return ""
-end
-
-function RC.target_valid(tgt)
-  tgt = RC.trim(tgt)
-  if tgt == "" then return false end
-  if type(Yso.target_is_valid) == "function" then
-    local ok, v = pcall(Yso.target_is_valid, tgt)
-    if ok then return v == true end
-  end
-  return true
-end
-
-function RC.eq_ready()
-  if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
-    local ok, v = pcall(Yso.locks.eq_ready)
-    if ok then return v == true end
-  end
-  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
-    local ok, v = pcall(Yso.state.eq_ready)
-    if ok then return v == true end
-  end
-
-  local vitals = (rawget(_G, "gmcp") or {}).Char
-  vitals = vitals and vitals.Vitals or {}
-  local eq_val = vitals.eq
-  if eq_val == nil then eq_val = vitals.equilibrium end
-  if eq_val == nil then eq_val = "" end
-  return tostring(eq_val) == "1" or eq_val == true
-end
-
-function RC.score_aff(aff)
-  aff = RC.lc(aff)
-  if aff == "" then return 0 end
-
-  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
-    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-
-  local A = rawget(_G, "affstrack")
-  if type(A) == "table" and type(A.score) == "table" then
-    local row = A.score[aff]
-    if type(row) == "number" then
-      return tonumber(row) or 0
+    -- Common AK reset helper.
+    if type(ak.deleteFull) == "function" then
+      pcall(ak.deleteFull)
     end
-    if type(row) == "table" then
-      return tonumber(row.current or row.score or row.value or 0) or 0
+    -- Some variants expose ak.target.set
+    if type(ak.target) == "table" and type(ak.target.set) == "function" and name ~= "" then
+      pcall(ak.target.set, name)
     end
   end
-
-  if Yso and Yso.ak and type(Yso.ak.has) == "function" then
-    local ok, v = pcall(Yso.ak.has, aff)
-    if ok and v == true then return 100 end
-  end
-
-  return 0
+  _akwire_echo("on_target_change -&gt; "..name)
 end
 
-function RC.has_aff(aff)
-  return RC.score_aff(aff) &gt; 0
+
+-- Optional: keep on_target_change as-is if you've wired it already,
+-- otherwise leave the stub from the skeleton.
+
+------------------------------------------------------------
+-- Override query helpers to read AK live
+------------------------------------------------------------
+
+function Yso.ak.has(aff)
+  if not aff or aff == "" then return false end
+  aff = _canon_aff(aff)
+
+  -- Prefer AK's check helper if it exists (handles venom-&gt;aff mapping).
+  if ak and type(ak.check) == "function" then
+    if ak.check(aff, Yso.ak.threshold or 100) then return true end
+    if aff == "sensitivity" and ak.check("prefarar", Yso.ak.threshold or 100) then return true end
+    return false
+  end
+
+  -- Fallback: direct inspect affstrack.score.
+  if affstrack and affstrack.score and type(affstrack.score[aff]) == "number" then
+    return affstrack.score[aff] &gt;= (Yso.ak.threshold or 100)
+  end
+  if aff == "sensitivity" and affstrack and affstrack.score and type(affstrack.score.prefarar) == "number" then
+    return affstrack.score.prefarar &gt;= (Yso.ak.threshold or 100)
+  end
+
+  return false
 end
 
-function RC.get_target_hp_percent(_target_name)
-  local ak = rawget(_G, "ak")
-  if type(ak) == "table" then
-    local pct = tonumber(ak.healthpercent)
-    if pct then return pct end
-    local cur = tonumber(ak.currenthealth)
-    local maxhp = tonumber(ak.maxhealth)
-    if cur and maxhp and maxhp &gt; 0 then
-      return (cur / maxhp) * 100
+function Yso.ak.count(affs)
+  if not affs then return 0 end
+  local list = {}
+
+  if type(affs) == "string" then
+    for part in affs:gmatch("([^/]+)") do
+      list[#list+1] = part:lower()
     end
-  end
-
-  local gmcp = rawget(_G, "gmcp")
-  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
-  if type(info) == "table" then
-    local raw = info.hpperc
-    if raw ~= nil and tostring(raw) ~= "-1" then
-      local n = tonumber(tostring(raw):gsub("%%", ""))
-      if n then return n end
+  elseif type(affs) == "table" then
+    for _, a in ipairs(affs) do
+      list[#list+1] = tostring(a):lower()
     end
-  end
-
-  local assess = tonumber(Yso and Yso.magi_assess)
-  if assess then return assess end
-  return nil
-end
-
-Yso.magi = Yso.magi or {}
-Yso.magi.elemental = Yso.magi.elemental or {}
-Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
-
-function RC.read_resonance()
-  local R = Yso and Yso.magi and Yso.magi.resonance or nil
-  local synced = false
-  local out = { air = 0, earth = 0, fire = 0, water = 0, synced = false }
-
-  if type(R) == "table" and type(R.sync_from_ak) == "function" then
-    local ok, synced_ok = pcall(R.sync_from_ak)
-    if ok then synced = (synced_ok == true) end
-  end
-
-  local function _get(element)
-    if type(R) == "table" and type(R.get) == "function" then
-      local ok, v = pcall(R.get, element)
-      if ok then return tonumber(v) or 0 end
-    end
-    if type(R) == "table" and type(R.state) == "table" then
-      return tonumber(R.state[element] or 0) or 0
-    end
+  else
     return 0
   end
 
-  out.air = _get("air")
-  out.earth = _get("earth")
-  out.fire = _get("fire")
-  out.water = _get("water")
-  out.synced = synced
-  out.air_moderate = out.air &gt;= 2
-  out.earth_moderate = out.earth &gt;= 2
-  out.fire_moderate = out.fire &gt;= 2
-  out.water_moderate = out.water &gt;= 2
-  out.air_major = out.air &gt;= 3
-  out.earth_major = out.earth &gt;= 3
-  out.fire_major = out.fire &gt;= 3
-  out.water_major = out.water &gt;= 3
-  return out
-end
-
-function RC.ensure_pending(state, slots)
-  state.pending = state.pending or {}
-  if type(slots) ~= "table" then return state.pending end
-  for i = 1, #slots do
-    local name = tostring(slots[i] or "")
-    if name ~= "" then
-      state.pending[name] = state.pending[name] or { target = "", until_t = 0 }
-    end
+  local n = 0
+  for _, a in ipairs(list) do
+    if Yso.ak.has(a) then n = n + 1 end
   end
-  return state.pending
+  return n
 end
 
-function RC.pending_slot(state, slot)
-  slot = tostring(slot or "")
-  if slot == "" then return nil end
-  RC.ensure_pending(state, { slot })
-  return state.pending[slot]
+function Yso.ak.any(affs, n)
+  n = tonumber(n) or 1
+  if n &lt;= 0 then return true end
+  return Yso.ak.count(affs) &gt;= n
 end
 
-function RC.clear_pending(state, slot)
-  local row = RC.pending_slot(state, slot)
-  if not row then return nil end
-  row.target = ""
-  row.until_t = 0
-  return row
-end
-
-function RC.clear_pending_all(state, slots)
-  if type(slots) ~= "table" then return true end
-  for i = 1, #slots do
-    RC.clear_pending(state, slots[i])
-  end
-  return true
-end
-
-function RC.mark_pending(state, slot, target, duration)
-  local row = RC.pending_slot(state, slot)
-  if not row then return nil end
-  row.target = RC.trim(target)
-  row.until_t = RC.now() + (tonumber(duration) or 0)
-  return row
-end
-
-function RC.pending_active(state, slot, target)
-  local row = RC.pending_slot(state, slot)
-  if not row then return false end
-  return RC.same_target(row.target, target) and RC.now() &lt; (tonumber(row.until_t) or 0)
-end
-
-function RC.same_target_repeat(state, cmd, target, repeat_s)
-  state = type(state) == "table" and state or {}
-  if not RC.same_target(state.last_sent_target or "", target) then return false end
-  if RC.lc(state.last_sent_cmd or "") ~= RC.lc(cmd or "") then return false end
-  local dt = RC.now() - (tonumber(state.last_sent_at) or 0)
-  return dt &gt;= 0 and dt &lt; (tonumber(repeat_s) or 0.75)
-end
-
-function RC.guard_spell(opts)
-  opts = type(opts) == "table" and opts or {}
-  local state = type(opts.state) == "table" and opts.state or {}
-  local target = RC.trim(opts.target)
-  local slot = tostring(opts.slot or "")
-  local cmd = tostring(opts.cmd or "")
-
-  if target == "" then return false, "no_target" end
-
-  local target_valid = opts.target_valid
-  if target_valid == nil then target_valid = RC.target_valid(target) end
-  if target_valid ~= true then return false, "invalid_target" end
-
-  if opts.eq_required ~= false then
-    local eq_ready = opts.eq_ready
-    if eq_ready == nil then eq_ready = RC.eq_ready() end
-    if eq_ready ~= true then return false, "eq_down" end
-  end
-
-  if slot ~= "" and RC.pending_active(state, slot, target) then
-    return false, slot .. "_pending"
-  end
-
-  if RC.same_target_repeat(state, cmd, target, opts.repeat_s or (opts.cfg and opts.cfg.same_target_repeat_s) or 0.75) then
-    return false, (slot ~= "" and (slot .. "_repeat") or "repeat")
-  end
-
-  return true, ""
-end
-
-function RC.build_snapshot(opts)
-  opts = type(opts) == "table" and opts or {}
-  local target = RC.trim(opts.target or RC.get_target())
-  local tv = opts.target_valid
-  if tv == nil then tv = RC.target_valid(target) end
-  local eq = opts.eq_ready
-  if eq == nil then eq = RC.eq_ready() end
-  local out = {
-    target = target,
-    room_id = tostring(opts.room_id or RC.room_id() or ""),
-    target_valid = tv,
-    eq_ready = eq,
-    raw = {},
-    pending = {},
-    res = RC.read_resonance(),
-  }
-
-  local affs = type(opts.affs) == "table" and opts.affs or {}
-  for i = 1, #affs do
-    local aff = tostring(affs[i] or "")
-    if aff ~= "" then
-      out.raw[aff] = RC.score_aff(aff)
-      out[aff] = out.raw[aff] &gt; 0
-    end
-  end
-
-  local pending_slots = type(opts.pending_slots) == "table" and opts.pending_slots or {}
-  for i = 1, #pending_slots do
-    local slot = tostring(pending_slots[i] or "")
-    if slot ~= "" then
-      out.pending[slot] = RC.pending_active(opts.state or {}, slot, target)
-    end
-  end
-
-  if type(opts.extend) == "function" then
-    opts.extend(out)
-  end
-
-  return out
-end
-
-function RC.build_explain(base)
+-- Returns a sorted list of current confirmed affs from AK.
+function Yso.ak.list_affs()
+  local map = _aff_map_from_ak()
   local out = {}
-  if type(base) == "table" then
-    for k, v in pairs(base) do
-      out[k] = v
-    end
+  for a,_ in pairs(map) do
+    out[#out+1] = a
   end
-  out.generated_at = RC.now()
+  table.sort(out)
   return out
 end
 
-function RC.reset_runtime_state(state, reason)
-  state = type(state) == "table" and state or {}
-  reason = tostring(reason or "manual")
-  state.busy = false
-  state.last_target = ""
-  state.last_cmd = ""
-  state.last_category = ""
-  state.last_sent_cmd = ""
-  state.last_sent_target = ""
-  state.last_sent_category = ""
-  state.last_sent_at = 0
-  state.explain = {}
-  state.template = state.template or {}
-  state.template.last_reason = reason
-  state.template.last_payload = nil
-  state.template.last_target = ""
-  return state
+-- Keep Yso.ak.enemy.* in sync for UI / status if you want.
+function Yso.ak.sync_from_ak()
+  Yso.ak.enemy = Yso.ak.enemy or { name = "", affs = {}, last_gain = {}, last_cure = {} }
+
+  local state = _aff_map_from_ak()
+  Yso.ak.enemy.affs = {}
+
+  for aff,_ in pairs(state) do
+    local canon = _canon_aff(aff)
+    Yso.ak.enemy.affs[canon]      = true
+    Yso.ak.enemy.last_gain[canon] = Yso.ak.enemy.last_gain[canon] or _akwire_now()
+  end
+_akwire_echo("sync_from_ak(): "..tostring(#Yso.ak.list_affs()).." affs synced from AK")
 end
 
-return RC
+------------------------------------------------------------
+-- AK lost-aff bridge (OppLostAff -&gt; "AK lost aff")
+------------------------------------------------------------
+
+local function _on_ak_lost_aff(_, affStr)
+  local aff = _canon_aff(affStr)
+  if aff == "" then return end
+  if type(Yso.ak.cure) == "function" then
+    pcall(Yso.ak.cure, aff, { source = "AK lost aff" })
+  end
+  if type(raiseEvent) == "function" then
+    raiseEvent("yso.ak.aff.lost", aff, "AK lost aff")
+  end
+end
+
+if type(registerAnonymousEventHandler) == "function" then
+  if Yso.ak._eh_lost and type(killAnonymousEventHandler) == "function" then
+    pcall(killAnonymousEventHandler, Yso.ak._eh_lost)
+  end
+  Yso.ak._eh_lost = registerAnonymousEventHandler("AK lost aff", _on_ak_lost_aff)
+end
+
+_akwire_echo("Yso / Achaea wiring loaded (Legacy + AK bridge)")
+--========================================================--
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi weapons</name>
-          <packageName></packageName>
-          <script>--========================================================--
+					<eventHandlerList />
+				</Script>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Magi Class</name>
+					<packageName />
+					<script />
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>Magi weapons</name>
+						<packageName />
+						<script>--========================================================--
 -- magi_weapons.lua
 --  * In-session staff/shield item ids (vary per character).
 --  * Set from Lua: Yso.magi.weapons.set("staff", "32501")
@@ -13297,11 +13725,12 @@ end
 
 return W
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi shalestorm</name>
-          <packageName></packageName>
-          <script>--========================================================--
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi shalestorm</name>
+						<packageName />
+						<script>--========================================================--
 -- magi_shalestorm.lua
 --  * Magi-wide shalestorm flag. Readable from any Magi route.
 --  * Set from live Elementalism triggers, not from a successful send.
@@ -13360,11 +13789,12 @@ end
 
 return S
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi hellfumes</name>
-          <packageName></packageName>
-          <script>--========================================================--
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi hellfumes</name>
+						<packageName />
+						<script>--========================================================--
 -- magi_hellfumes.lua
 --  * Magi-wide hellfumes room flag. Readable from any Magi route.
 --  * Set from live Elementalism triggers, not from a successful send.
@@ -13427,11 +13857,12 @@ end
 
 return S
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi duel dam</name>
-          <packageName></packageName>
-          <script>-- Magi_duel_dam.lua
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi duel dam</name>
+						<packageName />
+						<script>-- Magi_duel_dam.lua
 -- Thin-alias route module for the Magi duel damage route.
 -- Duel damage route (magi_dmg). Group damage uses ^mdam$ / magi_group_damage in mdam alias.
 --
@@ -14013,11 +14444,12 @@ end
 
 return M
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi firestorm</name>
-          <packageName></packageName>
-          <script>--========================================================--
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi firestorm</name>
+						<packageName />
+						<script>--========================================================--
 -- Magi_firestorm.lua
 --  * Alias-owned Magi firestorm route (^fstorm$ / magi_firestorm).
 --  * One EQ cast per tick via Yso.emit. No queues or pipe stacks.
@@ -14488,11 +14920,12 @@ end
 
 return M
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi water group</name>
-          <packageName></packageName>
-          <script>--========================================================--
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi water group</name>
+						<packageName />
+						<script>--========================================================--
 -- Magi_water_group.lua
 --  * Alias-owned Magi water-group route (^gwater$ / magi_water_group).
 --  * Instant wields via Yso.send when ids are set; one EQ cast via Yso.emit.
@@ -14931,11 +15364,12 @@ end
 
 return M
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>Magi elemental helpers</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi elemental helpers</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.magi = Yso.magi or {}
 Yso.magi.elemental = Yso.magi.elemental or {}
 
@@ -15138,473 +15572,392 @@ function M.cast_magmasphere(seconds)
   return _cast_timed_spell("magmasphere", seconds)
 end
 </script>
-          <eventHandlerList />
-        </Script>
-				<Script isActive="yes" isFolder="no">
-					<name>AK+Legacy wiring</name>
-					<packageName />
-					<script>-- Auto-exported from Mudlet package script: AK+Legacy wiring
--- DO NOT EDIT IN XML; edit this file instead.
-
---========================================================--
--- Yso / Achaea Wiring
---  • Wires Yso.curing.adapters -&gt; Legacy + game commands
---  • Wires Yso.ak -&gt; AK1 / AK Tracker (affstrack + ak.check)
---  • Assumes:
---      - Legacy core is loaded (Prio/Deprio/UpdatePrios exist)
---      - AK Tracker.xml is loaded (affstrack, ak.check exist)
---      - Yso_curing_core + Yso_AK_core already loaded
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>Magi route core</name>
+						<packageName />
+						<script>--========================================================--
+-- Magi route chassis helpers
+--  * Shared runtime helpers for Magi route modules.
+--  * Keeps targeting, timing, pending windows, and snapshots in one place.
 --========================================================--
 
-Yso        = Yso or {}
-Yso.curing = Yso.curing or {}
-Yso.ak     = Yso.ak or {}
+Yso = Yso or {}
+Yso.off = Yso.off or {}
+Yso.off.magi = Yso.off.magi or {}
 
-------------------------------------------------------------
--- 0) SHIELD FALLBACK API (callable + compatibility aliases)
-------------------------------------------------------------
+Yso.off.magi.route_core = Yso.off.magi.route_core or {}
+local RC = Yso.off.magi.route_core
 
-local function _shield_key(target)
-  target = tostring(target or ""):lower()
-  target = target:gsub("^%s+", ""):gsub("%s+$", "")
-  return target
+function RC.trim(s)
+  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
-local function _ak_targeted(target)
-  local fn = rawget(_G, "IsTargetted")
-  if type(fn) ~= "function" then return false end
-  local ok, v = pcall(fn, tostring(target or ""))
-  return ok and v == true
+function RC.lc(s)
+  return RC.trim(s):lower()
 end
 
-local function _shield_set(target, up, source)
-  local key = _shield_key(target)
-  if key == "" then return false end
+function RC.same_target(a, b)
+  a = RC.lc(a)
+  b = RC.lc(b)
+  return a ~= "" and a == b
+end
 
-  Yso._shield_by_target = Yso._shield_by_target or {}
-  local state = (up == true)
-  Yso._shield_by_target[key] = state
-  Yso._shield_last_source = tostring(source or "")
-
-  -- Mirror state into AK when available; AK remains primary source-of-truth.
-  local ak = rawget(_G, "ak")
-  if type(ak) == "table" then
-    ak.defs = ak.defs or {}
-    ak.defs.shield_by_target = ak.defs.shield_by_target or {}
-    ak.defs.shield_by_target[key] = state
-
-    if state then
-      ak.defs.shield = true
-    elseif _ak_targeted(target) then
-      ak.defs.shield = false
-    end
+function RC.now()
+  if Yso and Yso.util and type(Yso.util.now) == "function" then
+    local ok, v = pcall(Yso.util.now)
+    if ok and tonumber(v) then return tonumber(v) end
   end
-
-  return state
-end
-
-local function _shield_up(target)
-  local key = _shield_key(target)
-  if key == "" then return false end
-
-  local ak = rawget(_G, "ak")
-  if type(ak) == "table" and type(ak.defs) == "table" then
-    if type(ak.defs.shield_by_target) == "table" then
-      local v = ak.defs.shield_by_target[key]
-      if type(v) == "boolean" then
-        Yso._shield_by_target = Yso._shield_by_target or {}
-        Yso._shield_by_target[key] = v
-        return v
-      end
-    end
-    if type(ak.defs.shield) == "boolean" and _ak_targeted(target) then
-      return ak.defs.shield == true
-    end
-  end
-
-  local cache = Yso._shield_by_target
-  if type(cache) == "table" and type(cache[key]) == "boolean" then
-    return cache[key]
-  end
-
-  return false
-end
-
-local _shield_api = Yso.shield
-if type(_shield_api) ~= "table" then
-  _shield_api = {}
-end
-
-_shield_api.set = _shield_set
-_shield_api.up = _shield_up
-_shield_api.is_up = _shield_up
-
-local _shield_mt = getmetatable(_shield_api) or {}
-_shield_mt.__call = function(_, target)
-  return _shield_up(target)
-end
-setmetatable(_shield_api, _shield_mt)
-Yso.shield = _shield_api
-
-------------------------------------------------------------
--- 1) CURING ADAPTERS -&gt; LEGACY / GAME
-------------------------------------------------------------
-
-local function _cwire_echo(msg)
-  if Yso.curing and Yso.curing.debug then
-    cecho(string.format("&lt;cyan&gt;[Yso:CureWire] &lt;reset&gt;%s\n", msg))
-  end
-end
-
--- Ensure adapters table exists
-Yso.curing.adapters = Yso.curing.adapters or {}
-local C = Yso.curing.adapters
-
--- Toggle game-side CURING ON/OFF.
-C.game_curing_on = function()
-  if type(send) == "function" then
-    send("curing on", false)
-    _cwire_echo("sent: curing on")
-  else
-    _cwire_echo("wanted to send 'curing on' but send() is missing")
-  end
-end
-
-C.game_curing_off = function()
-  if type(send) == "function" then
-    send("curing off", false)
-    _cwire_echo("sent: curing off")
-  else
-    _cwire_echo("wanted to send 'curing off' but send() is missing")
-  end
-end
-
--- Raise an affliction priority via Legacy:
---  • Prefer Legacy's Prio(aff) helper (moves to slot 1).
---  • Fallback: raw CURING PRIORITY command.
-C.raise_aff = function(aff)
-  if not aff or aff == "" then return end
-  aff = tostring(aff)
-
-  if type(Prio) == "function" then
-    Prio(aff)  -- Legacy: push to 1
-    _cwire_echo("Legacy Prio("..aff..")")
-  elseif type(send) == "function" then
-    send(string.format("curing priority %s 1", aff), false)
-    _cwire_echo("sent: curing priority "..aff.." 1")
-  else
-    _cwire_echo("cannot raise_aff("..aff.."): no Prio() or send()")
-  end
-end
-
--- Lower an affliction priority via Legacy:
---  • Prefer Legacy's Deprio(aff) helper (sets to 26).
---  • Fallback: raw CURING PRIORITY aff 26.
-C.lower_aff = function(aff)
-  if not aff or aff == "" then return end
-  aff = tostring(aff)
-
-  if type(Deprio) == "function" then
-    Deprio(aff)
-    _cwire_echo("Legacy Deprio("..aff..")")
-  elseif type(send) == "function" then
-    send(string.format("curing priority %s 26", aff), false)
-    _cwire_echo("sent: curing priority "..aff.." 26")
-  else
-    _cwire_echo("cannot lower_aff("..aff.."): no Deprio() or send()")
-  end
-end
-
--- Explicitly set an aff's position:
---  • Prefer Legacy's Prio(aff, pos).
---  • Fallback: raw CURING PRIORITY aff pos.
-C.set_aff_prio = function(aff, prio)
-  if not aff or aff == "" then return end
-  prio = tonumber(prio) or 1
-  aff  = tostring(aff)
-
-  if type(Prio) == "function" then
-    Prio(aff, prio)
-    _cwire_echo(string.format("Legacy Prio(%s, %d)", aff, prio))
-  elseif type(send) == "function" then
-    send(string.format("curing priority %s %d", aff, prio), false)
-    _cwire_echo(string.format("sent: curing priority %s %d", aff, prio))
-  else
-    _cwire_echo("cannot set_aff_prio("..aff..","..tostring(prio)..")")
-  end
-end
-
--- Switch server-side curingset/profile:
---  • Legacy uses "curingset new legacy" + "curingset switch legacy"
---    on install, so we mirror that here.
-C.use_profile = function(name)
-  if not name or name == "" then return end
-  name = tostring(name)
-
-  if type(send) == "function" then
-    send(string.format("curingset switch %s", name), false)
-    _G.CurrentCureset = name
-    _cwire_echo("sent: curingset switch "..name)
-  else
-    _cwire_echo("cannot use_profile("..name.."): send() missing")
-  end
-end
-
--- Tree policy bridge (phase-1 conservative scaffold).
--- aff_trigger: prioritize trigger behavior while under active pressure.
--- aff_count: fallback/default behavior.
-C.set_tree_policy = function(mode, _ctx)
-  mode = tostring(mode or ""):lower()
-  if mode == "" then return end
-
-  -- Keep wire-level behavior simple and non-destructive in phase one.
-  -- Policy computes desired mode and the adapter exposes it for diagnostics.
-  Yso.curing = Yso.curing or {}
-  Yso.curing.tree_policy = mode
-  _cwire_echo("tree policy -&gt; " .. mode)
-end
-
--- Emergency queue bridge used by serverside policy scaffolding.
-C.queue_emergency = function(cmd, opts)
-  cmd = tostring(cmd or ""):gsub("^%s+", ""):gsub("%s+$", "")
-  if cmd == "" then return false end
-
-  opts = type(opts) == "table" and opts or {}
-  local qtype = tostring(opts.qtype or "bal"):gsub("^%s+", ""):gsub("%s+$", "")
-  if qtype == "" then qtype = "bal" end
-  local idx = tonumber(opts.index)
-
-  local line
-  if idx and idx &gt;= 1 then
-    line = string.format("QUEUE INSERT %s %d %s", qtype, idx, cmd)
-  else
-    line = string.format("QUEUE ADD %s %s", qtype, cmd)
-  end
-
-  if type(send) ~= "function" then
-    _cwire_echo("cannot queue_emergency: send() missing")
-    return false
-  end
-
-  send(line, false)
-  _cwire_echo("sent: " .. line)
-  return true
-end
-
--- Emergency hook is intentionally minimal; you can flesh this out later.
-C.emergency = function(tag)
-  tag = tostring(tag or "")
-  if tag == "" then return end
-
-  _cwire_echo("emergency("..tag..") called (no behaviour wired yet)")
-  -- Example you might add later:
-  -- if tag == "lockpanic" and type(send)=="function" then
-  --   send("curing tree on", false)
-  --   send("curing priority paralysis 1", false)
-  --   _cwire_echo("lockpanic: raised paralysis + toggled tree")
-  -- end
-end
-
-------------------------------------------------------------
--- 2) AK BRIDGE -&gt; affstrack + ak.check
-------------------------------------------------------------
-
-Yso.ak         = Yso.ak or {}
-Yso.ak.adapters = Yso.ak.adapters or {}
-Yso.ak.threshold = Yso.ak.threshold or 100  -- score at/above this is "confirmed"
-
-local function _akwire_echo(msg)
-  if Yso.ak and Yso.ak.debug then
-    cecho(string.format("&lt;magenta&gt;[Yso:AK-Bridge] &lt;reset&gt;%s\n", msg))
-  end
-end
-
-local function _akwire_now()
   if type(getEpoch) == "function" then
-    local t = tonumber(getEpoch()) or os.time()
-    if t &gt; 20000000000 then t = t / 1000 end
-    return t
+    local v = tonumber(getEpoch()) or os.time()
+    if v &gt; 20000000000 then v = v / 1000 end
+    return v
   end
   return os.time()
 end
 
-local function _canon_aff(aff)
-  aff = tostring(aff or ""):lower()
-  if aff == "" then return "" end
-  if Yso and Yso.util and type(Yso.util.normalize_aff_name) == "function" then
-    aff = Yso.util.normalize_aff_name(aff)
-  elseif aff == "prefarar" then
-    aff = "sensitivity"
-  end
-  return aff
-end
-
--- Build a { aff_name = true } map from AK's affstrack.score.
-local function _aff_map_from_ak()
-  local map = {}
-
-  if not affstrack or type(affstrack) ~= "table" or type(affstrack.score) ~= "table" then
-    return map
+function RC.get_target()
+  if type(Yso.get_target) == "function" then
+    local ok, v = pcall(Yso.get_target)
+    if ok and RC.trim(v) ~= "" then return RC.trim(v) end
   end
 
-  local threshold = Yso.ak.threshold or 100
-
-  for name, score in pairs(affstrack.score) do
-    if type(name) == "string" and type(score) == "number" then
-      if score &gt;= threshold then
-        map[_canon_aff(name)] = true
-      end
+  -- Yso.targeting subsystem (checked before global fallbacks so the routing
+  -- system agrees with whatever Magi_duel_dam.lua and other alias files see).
+  if type(Yso.targeting) == "table" then
+    if type(Yso.targeting.get) == "function" then
+      local ok, v = pcall(Yso.targeting.get)
+      if ok and RC.trim(v) ~= "" then return RC.trim(v) end
+    elseif type(Yso.targeting.get_target) == "function" then
+      local ok, v = pcall(Yso.targeting.get_target)
+      if ok and RC.trim(v) ~= "" then return RC.trim(v) end
+    elseif type(Yso.targeting.target) == "string" then
+      local v = RC.trim(Yso.targeting.target)
+      if v ~= "" then return v end
     end
   end
 
-  return map
-end
+  local cur = rawget(_G, "target")
+  if type(cur) == "string" and RC.trim(cur) ~= "" then return RC.trim(cur) end
 
--- Helper to count keys in a table.
-local function _tbl_count(t)
-  local c = 0
-  for _ in pairs(t) do c = c + 1 end
-  return c
-end
-
--- Override adapters.pull_full_state so Yso.ak.sync_from_ak() works.
-Yso.ak.adapters.pull_full_state = function()
-  local m = _aff_map_from_ak()
-  _akwire_echo("pull_full_state() -&gt; ".._tbl_count(m).." affs from AK")
-  return m
-end
-
--- Let Yso tell AK when the combat target changes (resets AK's internal state).
-Yso.ak.adapters.on_target_change = function(name)
-  name = tostring(name or "")
+  local ak = rawget(_G, "ak")
   if type(ak) == "table" then
-    -- Common AK reset helper.
-    if type(ak.deleteFull) == "function" then
-      pcall(ak.deleteFull)
-    end
-    -- Some variants expose ak.target.set
-    if type(ak.target) == "table" and type(ak.target.set) == "function" and name ~= "" then
-      pcall(ak.target.set, name)
-    end
+    if type(ak.target) == "string" and RC.trim(ak.target) ~= "" then return RC.trim(ak.target) end
+    if type(ak.tgt) == "string" and RC.trim(ak.tgt) ~= "" then return RC.trim(ak.tgt) end
   end
-  _akwire_echo("on_target_change -&gt; "..name)
+
+  return ""
 end
 
-
--- Optional: keep on_target_change as-is if you've wired it already,
--- otherwise leave the stub from the skeleton.
-
-------------------------------------------------------------
--- Override query helpers to read AK live
-------------------------------------------------------------
-
-function Yso.ak.has(aff)
-  if not aff or aff == "" then return false end
-  aff = _canon_aff(aff)
-
-  -- Prefer AK's check helper if it exists (handles venom-&gt;aff mapping).
-  if ak and type(ak.check) == "function" then
-    if ak.check(aff, Yso.ak.threshold or 100) then return true end
-    if aff == "sensitivity" and ak.check("prefarar", Yso.ak.threshold or 100) then return true end
-    return false
-  end
-
-  -- Fallback: direct inspect affstrack.score.
-  if affstrack and affstrack.score and type(affstrack.score[aff]) == "number" then
-    return affstrack.score[aff] &gt;= (Yso.ak.threshold or 100)
-  end
-  if aff == "sensitivity" and affstrack and affstrack.score and type(affstrack.score.prefarar) == "number" then
-    return affstrack.score.prefarar &gt;= (Yso.ak.threshold or 100)
-  end
-
-  return false
+function RC.room_id()
+  local g = rawget(_G, "gmcp")
+  local info = g and g.Room and g.Room.Info
+  if info and info.num ~= nil then return tostring(info.num) end
+  if info and info.id ~= nil then return tostring(info.id) end
+  return ""
 end
 
-function Yso.ak.count(affs)
-  if not affs then return 0 end
-  local list = {}
+function RC.target_valid(tgt)
+  tgt = RC.trim(tgt)
+  if tgt == "" then return false end
+  if type(Yso.target_is_valid) == "function" then
+    local ok, v = pcall(Yso.target_is_valid, tgt)
+    if ok then return v == true end
+  end
+  return true
+end
 
-  if type(affs) == "string" then
-    for part in affs:gmatch("([^/]+)") do
-      list[#list+1] = part:lower()
+function RC.eq_ready()
+  if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
+    local ok, v = pcall(Yso.locks.eq_ready)
+    if ok then return v == true end
+  end
+  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
+    local ok, v = pcall(Yso.state.eq_ready)
+    if ok then return v == true end
+  end
+
+  local vitals = (rawget(_G, "gmcp") or {}).Char
+  vitals = vitals and vitals.Vitals or {}
+  local eq_val = vitals.eq
+  if eq_val == nil then eq_val = vitals.equilibrium end
+  if eq_val == nil then eq_val = "" end
+  return tostring(eq_val) == "1" or eq_val == true
+end
+
+function RC.score_aff(aff)
+  aff = RC.lc(aff)
+  if aff == "" then return 0 end
+
+  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == "function" then
+    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
+    if ok and tonumber(v) then return tonumber(v) end
+  end
+
+  local A = rawget(_G, "affstrack")
+  if type(A) == "table" and type(A.score) == "table" then
+    local row = A.score[aff]
+    if type(row) == "number" then
+      return tonumber(row) or 0
     end
-  elseif type(affs) == "table" then
-    for _, a in ipairs(affs) do
-      list[#list+1] = tostring(a):lower()
+    if type(row) == "table" then
+      return tonumber(row.current or row.score or row.value or 0) or 0
     end
-  else
+  end
+
+  if Yso and Yso.ak and type(Yso.ak.has) == "function" then
+    local ok, v = pcall(Yso.ak.has, aff)
+    if ok and v == true then return 100 end
+  end
+
+  return 0
+end
+
+function RC.has_aff(aff)
+  return RC.score_aff(aff) &gt; 0
+end
+
+function RC.get_target_hp_percent(_target_name)
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local pct = tonumber(ak.healthpercent)
+    if pct then return pct end
+    local cur = tonumber(ak.currenthealth)
+    local maxhp = tonumber(ak.maxhealth)
+    if cur and maxhp and maxhp &gt; 0 then
+      return (cur / maxhp) * 100
+    end
+  end
+
+  local gmcp = rawget(_G, "gmcp")
+  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
+  if type(info) == "table" then
+    local raw = info.hpperc
+    if raw ~= nil and tostring(raw) ~= "-1" then
+      local n = tonumber(tostring(raw):gsub("%%", ""))
+      if n then return n end
+    end
+  end
+
+  local assess = tonumber(Yso and Yso.magi_assess)
+  if assess then return assess end
+  return nil
+end
+
+Yso.magi = Yso.magi or {}
+Yso.magi.elemental = Yso.magi.elemental or {}
+Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
+
+function RC.read_resonance()
+  local R = Yso and Yso.magi and Yso.magi.resonance or nil
+  local synced = false
+  local out = { air = 0, earth = 0, fire = 0, water = 0, synced = false }
+
+  if type(R) == "table" and type(R.sync_from_ak) == "function" then
+    local ok, synced_ok = pcall(R.sync_from_ak)
+    if ok then synced = (synced_ok == true) end
+  end
+
+  local function _get(element)
+    if type(R) == "table" and type(R.get) == "function" then
+      local ok, v = pcall(R.get, element)
+      if ok then return tonumber(v) or 0 end
+    end
+    if type(R) == "table" and type(R.state) == "table" then
+      return tonumber(R.state[element] or 0) or 0
+    end
     return 0
   end
 
-  local n = 0
-  for _, a in ipairs(list) do
-    if Yso.ak.has(a) then n = n + 1 end
-  end
-  return n
-end
-
-function Yso.ak.any(affs, n)
-  n = tonumber(n) or 1
-  if n &lt;= 0 then return true end
-  return Yso.ak.count(affs) &gt;= n
-end
-
--- Returns a sorted list of current confirmed affs from AK.
-function Yso.ak.list_affs()
-  local map = _aff_map_from_ak()
-  local out = {}
-  for a,_ in pairs(map) do
-    out[#out+1] = a
-  end
-  table.sort(out)
+  out.air = _get("air")
+  out.earth = _get("earth")
+  out.fire = _get("fire")
+  out.water = _get("water")
+  out.synced = synced
+  out.air_moderate = out.air &gt;= 2
+  out.earth_moderate = out.earth &gt;= 2
+  out.fire_moderate = out.fire &gt;= 2
+  out.water_moderate = out.water &gt;= 2
+  out.air_major = out.air &gt;= 3
+  out.earth_major = out.earth &gt;= 3
+  out.fire_major = out.fire &gt;= 3
+  out.water_major = out.water &gt;= 3
   return out
 end
 
--- Keep Yso.ak.enemy.* in sync for UI / status if you want.
-function Yso.ak.sync_from_ak()
-  Yso.ak.enemy = Yso.ak.enemy or { name = "", affs = {}, last_gain = {}, last_cure = {} }
-
-  local state = _aff_map_from_ak()
-  Yso.ak.enemy.affs = {}
-
-  for aff,_ in pairs(state) do
-    local canon = _canon_aff(aff)
-    Yso.ak.enemy.affs[canon]      = true
-    Yso.ak.enemy.last_gain[canon] = Yso.ak.enemy.last_gain[canon] or _akwire_now()
+function RC.ensure_pending(state, slots)
+  state.pending = state.pending or {}
+  if type(slots) ~= "table" then return state.pending end
+  for i = 1, #slots do
+    local name = tostring(slots[i] or "")
+    if name ~= "" then
+      state.pending[name] = state.pending[name] or { target = "", until_t = 0 }
+    end
   end
-_akwire_echo("sync_from_ak(): "..tostring(#Yso.ak.list_affs()).." affs synced from AK")
+  return state.pending
 end
 
-------------------------------------------------------------
--- AK lost-aff bridge (OppLostAff -&gt; "AK lost aff")
-------------------------------------------------------------
-
-local function _on_ak_lost_aff(_, affStr)
-  local aff = _canon_aff(affStr)
-  if aff == "" then return end
-  if type(Yso.ak.cure) == "function" then
-    pcall(Yso.ak.cure, aff, { source = "AK lost aff" })
-  end
-  if type(raiseEvent) == "function" then
-    raiseEvent("yso.ak.aff.lost", aff, "AK lost aff")
-  end
+function RC.pending_slot(state, slot)
+  slot = tostring(slot or "")
+  if slot == "" then return nil end
+  RC.ensure_pending(state, { slot })
+  return state.pending[slot]
 end
 
-if type(registerAnonymousEventHandler) == "function" then
-  if Yso.ak._eh_lost and type(killAnonymousEventHandler) == "function" then
-    pcall(killAnonymousEventHandler, Yso.ak._eh_lost)
-  end
-  Yso.ak._eh_lost = registerAnonymousEventHandler("AK lost aff", _on_ak_lost_aff)
+function RC.clear_pending(state, slot)
+  local row = RC.pending_slot(state, slot)
+  if not row then return nil end
+  row.target = ""
+  row.until_t = 0
+  return row
 end
 
-_akwire_echo("Yso / Achaea wiring loaded (Legacy + AK bridge)")
---========================================================--
+function RC.clear_pending_all(state, slots)
+  if type(slots) ~= "table" then return true end
+  for i = 1, #slots do
+    RC.clear_pending(state, slots[i])
+  end
+  return true
+end
+
+function RC.mark_pending(state, slot, target, duration)
+  local row = RC.pending_slot(state, slot)
+  if not row then return nil end
+  row.target = RC.trim(target)
+  row.until_t = RC.now() + (tonumber(duration) or 0)
+  return row
+end
+
+function RC.pending_active(state, slot, target)
+  local row = RC.pending_slot(state, slot)
+  if not row then return false end
+  return RC.same_target(row.target, target) and RC.now() &lt; (tonumber(row.until_t) or 0)
+end
+
+function RC.same_target_repeat(state, cmd, target, repeat_s)
+  state = type(state) == "table" and state or {}
+  if not RC.same_target(state.last_sent_target or "", target) then return false end
+  if RC.lc(state.last_sent_cmd or "") ~= RC.lc(cmd or "") then return false end
+  local dt = RC.now() - (tonumber(state.last_sent_at) or 0)
+  return dt &gt;= 0 and dt &lt; (tonumber(repeat_s) or 0.75)
+end
+
+function RC.guard_spell(opts)
+  opts = type(opts) == "table" and opts or {}
+  local state = type(opts.state) == "table" and opts.state or {}
+  local target = RC.trim(opts.target)
+  local slot = tostring(opts.slot or "")
+  local cmd = tostring(opts.cmd or "")
+
+  if target == "" then return false, "no_target" end
+
+  local target_valid = opts.target_valid
+  if target_valid == nil then target_valid = RC.target_valid(target) end
+  if target_valid ~= true then return false, "invalid_target" end
+
+  if opts.eq_required ~= false then
+    local eq_ready = opts.eq_ready
+    if eq_ready == nil then eq_ready = RC.eq_ready() end
+    if eq_ready ~= true then return false, "eq_down" end
+  end
+
+  if slot ~= "" and RC.pending_active(state, slot, target) then
+    return false, slot .. "_pending"
+  end
+
+  if RC.same_target_repeat(state, cmd, target, opts.repeat_s or (opts.cfg and opts.cfg.same_target_repeat_s) or 0.75) then
+    return false, (slot ~= "" and (slot .. "_repeat") or "repeat")
+  end
+
+  return true, ""
+end
+
+function RC.build_snapshot(opts)
+  opts = type(opts) == "table" and opts or {}
+  local target = RC.trim(opts.target or RC.get_target())
+  local tv = opts.target_valid
+  if tv == nil then tv = RC.target_valid(target) end
+  local eq = opts.eq_ready
+  if eq == nil then eq = RC.eq_ready() end
+  local out = {
+    target = target,
+    room_id = tostring(opts.room_id or RC.room_id() or ""),
+    target_valid = tv,
+    eq_ready = eq,
+    raw = {},
+    pending = {},
+    res = RC.read_resonance(),
+  }
+
+  local affs = type(opts.affs) == "table" and opts.affs or {}
+  for i = 1, #affs do
+    local aff = tostring(affs[i] or "")
+    if aff ~= "" then
+      out.raw[aff] = RC.score_aff(aff)
+      out[aff] = out.raw[aff] &gt; 0
+    end
+  end
+
+  local pending_slots = type(opts.pending_slots) == "table" and opts.pending_slots or {}
+  for i = 1, #pending_slots do
+    local slot = tostring(pending_slots[i] or "")
+    if slot ~= "" then
+      out.pending[slot] = RC.pending_active(opts.state or {}, slot, target)
+    end
+  end
+
+  if type(opts.extend) == "function" then
+    opts.extend(out)
+  end
+
+  return out
+end
+
+function RC.build_explain(base)
+  local out = {}
+  if type(base) == "table" then
+    for k, v in pairs(base) do
+      out[k] = v
+    end
+  end
+  out.generated_at = RC.now()
+  return out
+end
+
+function RC.reset_runtime_state(state, reason)
+  state = type(state) == "table" and state or {}
+  reason = tostring(reason or "manual")
+  state.busy = false
+  state.last_target = ""
+  state.last_cmd = ""
+  state.last_category = ""
+  state.last_sent_cmd = ""
+  state.last_sent_target = ""
+  state.last_sent_category = ""
+  state.last_sent_at = 0
+  state.explain = {}
+  state.template = state.template or {}
+  state.template.last_reason = reason
+  state.template.last_payload = nil
+  state.template.last_target = ""
+  return state
+end
+
+return RC
 </script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Alchemist Class</name>
+					<packageName />
+					<script />
 					<eventHandlerList />
-				</Script>        <Script isActive="yes" isFolder="no">
-          <name>formulation</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+					<Script isActive="yes" isFolder="no">
+						<name>formulation</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.form = Yso.alc.form or {}
 
@@ -15746,11 +16099,12 @@ if type(registerAnonymousEventHandler) == "function" then
   end)
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>formulation_resolve</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_resolve</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.form = Yso.alc.form or {}
 
@@ -16004,11 +16358,12 @@ function F.resolve(name, opts)
   }
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>formulation_phials</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_phials</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.form = Yso.alc.form or {}
 
@@ -16928,11 +17283,12 @@ function F.show_phials()
   return lines
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>formulation_build</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_build</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.form = Yso.alc.form or {}
 
@@ -17109,11 +17465,12 @@ function F.build_use(name, arg)
   }
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>formulation_chart</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_chart</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.form = Yso.alc.form or {}
 
@@ -17211,11 +17568,12 @@ function F.show_chart()
   cecho("&lt;gray&gt;" .. string.rep("-", 58) .. "\n")
 end
 </script>
-          <eventHandlerList />
-        </Script>        <Script isActive="yes" isFolder="no">
-          <name>formulation_phiallist</name>
-          <packageName></packageName>
-          <script>Yso = Yso or {}
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>formulation_phiallist</name>
+						<packageName />
+						<script>Yso = Yso or {}
 Yso.alc = Yso.alc or {}
 Yso.alc.form = Yso.alc.form or {}
 
@@ -17226,8 +17584,932 @@ function Yso.alc.form.handle_phiallist_line(line)
   return Yso.alc.form.parse_phiallist(line)
 end
 </script>
-          <eventHandlerList />
-        </Script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Monk Class</name>
+					<packageName />
+					<script />
+					<eventHandlerList />
+										<Script isActive="yes" isFolder="no">
+						<name>Monk reference</name>
+						<packageName />
+						<script>--========================================================--
+-- Monk Skill Reference (Tekura / Telepathy)
+--  • Reference-first: humans and the Monk stub scripts.
+--  • Built from in-game AB outputs.
+--  • AB IDs 848 and 853 are defences and are not stored here.
+--========================================================--
+
+Yso = Yso or {}
+Yso.ref = Yso.ref or {}
+Yso.ref.monk = Yso.ref.monk or {}
+
+local M = Yso.ref.monk
+
+M.meta = {
+  class = "Monk",
+  updated = "2026-10-01",
+  notes = {
+    "AB IDs 848 and 853 are defences and are not part of this skill reference.",
+    "Entering a tekura stance usually consumes balance. After a tekura kick or punch, a skilled practitioner can transition immediately, with a slightly slower recovery.",
+  },
+}
+
+local function skill(row)
+  row.syntax = row.syntax or {}
+  row.notes = row.notes or {}
+  row.afflicts = row.afflicts or {}
+  row.requires = row.requires or {}
+  return row
+end
+
+M.tekura = {
+  horse = skill({
+    name = "Horse",
+    abadmin_id = 840,
+    syntax = { "HRS", "LEAP &lt;direction&gt;" },
+    works_on = "self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "HRS", role = "stance" },
+      { cmd = "LEAP", role = "utility" },
+    },
+    notes = {
+      "First stance. Ideal for striking.",
+      "Standard strikes can be used with the slam and wrench throws.",
+      "Leap over obstructions in a given direction.",
+    },
+  }),
+
+  combo = skill({
+    name = "Combo",
+    abadmin_id = 841,
+    syntax = { "COMBO &lt;target&gt; &lt;kick|stance&gt; [limb] &lt;punch1&gt; [limb] &lt;punch2&gt; [limb] [JPK]" },
+    works_on = "adventurers and denizens",
+    cooldown_lane = "arms_and_legs",
+    commands = {
+      { cmd = "COMBO", role = "combo" },
+    },
+    notes = {
+      "Limb targets may be omitted or included.",
+      "A full combo is one kick and two punches.",
+      "Requires balance on both arms and legs.",
+      "Appending JPK attempts a jumpkick before the rest of the combo, when the combo does not already include a jumpkick.",
+    },
+  }),
+
+  jab = skill({
+    name = "Jab",
+    abadmin_id = 842,
+    syntax = { "JBP &lt;target&gt; &lt;HEAD|ARMS&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 3.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "JBP", role = "punch" },
+    },
+    notes = {
+      "Head: restores the target's hearing.",
+      "Arms: disables the target's parry for a very short time.",
+    },
+  }),
+
+  snapkick = skill({
+    name = "Snapkick",
+    abadmin_id = 843,
+    syntax = { "SNK &lt;target&gt; left/right" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "SNK", role = "kick", limb_side = "legs" },
+    },
+    notes = {
+      "A low kick that attacks the legs.",
+    },
+  }),
+
+  hook = skill({
+    name = "Hook",
+    abadmin_id = 844,
+    syntax = { "HKP &lt;target&gt;" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "HKP", role = "punch" },
+    },
+    notes = {
+      "A punch aimed at the torso.",
+    },
+  }),
+
+  eagle = skill({
+    name = "Eagle",
+    abadmin_id = 845,
+    syntax = { "EGS", "HGK &lt;target&gt;" },
+    works_on = "adventurers and self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "EGS", role = "stance" },
+      { cmd = "HGK", role = "kick" },
+    },
+    notes = {
+      "Kicks and punches are faster from this stance.",
+      "Highkick brings down someone above you and prones them.",
+    },
+  }),
+
+  sidekick = skill({
+    name = "Sidekick",
+    abadmin_id = 846,
+    syntax = { "SDK &lt;target&gt;" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "SDK", role = "kick" },
+    },
+    notes = {
+      "Drives the leg straight into the torso.",
+    },
+  }),
+
+  uppercut = skill({
+    name = "Uppercut",
+    abadmin_id = 847,
+    syntax = { "UCP &lt;target&gt;" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "UCP", role = "punch" },
+    },
+    notes = {
+      "Attacks the head.",
+    },
+  }),
+
+  palmstrike = skill({
+    name = "Palmstrike",
+    abadmin_id = 849,
+    syntax = { "PMP &lt;target&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 3.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "PMP", role = "punch" },
+    },
+    afflicts = { "impatience", "stupidity" },
+    notes = {
+      "Delivers impatience if the target does not have it, or stupidity if they do.",
+    },
+  }),
+
+  hammerfist = skill({
+    name = "Hammerfist",
+    abadmin_id = 850,
+    syntax = { "HFP &lt;target&gt; left/right" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "HFP", role = "punch", limb_side = "legs" },
+    },
+    notes = {
+      "Brings the fist down on a leg.",
+    },
+  }),
+
+  cat = skill({
+    name = "Cat",
+    abadmin_id = 851,
+    syntax = { "CTS" },
+    works_on = "self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "CTS", role = "stance" },
+    },
+    notes = {
+      "For facing heavy offense.",
+      "Superior defence and far more blocks.",
+      "Harder to attack, and your own attacks are slower.",
+    },
+  }),
+
+  roundhouse = skill({
+    name = "Roundhouse",
+    abadmin_id = 852,
+    syntax = { "RHK &lt;target&gt;" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "RHK", role = "kick" },
+    },
+    notes = {
+      "Shatters a magical shield.",
+      "If the torso is damaged, the target is proned when their shield or prismatic barrier breaks.",
+      "In Rat stance, roundhouse also shatters prismatic barriers.",
+    },
+  }),
+
+  sweep = skill({
+    name = "Sweep",
+    abadmin_id = 854,
+    syntax = { "SWK &lt;target&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 4.50,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "SWK", role = "kick" },
+    },
+    notes = {
+      "Attempts to sweep the legs out from under the opponent.",
+    },
+  }),
+
+  bear = skill({
+    name = "Bear",
+    abadmin_id = 855,
+    syntax = { "BRS" },
+    works_on = "self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "BRS", role = "stance" },
+    },
+    notes = {
+      "Throws do more damage.",
+      "Can intercept a fleeing enemy.",
+      "Kicks and punches are slowed.",
+    },
+  }),
+
+  slam = skill({
+    name = "Slam",
+    abadmin_id = 856,
+    syntax = { "SLT &lt;target&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 3.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "SLT", role = "throw" },
+    },
+    afflicts = { "scrambledbrains" },
+    requires = { "prone" },
+    notes = {
+      "Targets the head. Prone opponents only.",
+      "Scrambles the brain and removes the ability to naturally reject mental locks.",
+      "Lasts longer if the head is already damaged.",
+    },
+  }),
+
+  moonkick = skill({
+    name = "Moonkick",
+    abadmin_id = 857,
+    syntax = { "MNK &lt;target&gt; left/right" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "MNK", role = "kick", limb_side = "arms" },
+    },
+    notes = {
+      "The foot travels in a crescent and attacks the arms.",
+    },
+  }),
+
+  spear = skill({
+    name = "Spear",
+    abadmin_id = 858,
+    syntax = { "SPP &lt;target&gt; left/right" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "SPP", role = "punch", limb_side = "arms" },
+    },
+    notes = {
+      "A rigid-hand punch that damages the arms.",
+    },
+  }),
+
+  rat = skill({
+    name = "Rat",
+    abadmin_id = 859,
+    syntax = { "RTS" },
+    works_on = "self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "RTS", role = "stance" },
+    },
+    notes = {
+      "Superior accuracy against high avoidance.",
+      "Blocks more often.",
+      "Roundhouse kicks in this stance shatter prismatic barriers and magical shields.",
+    },
+  }),
+
+  thrustkick = skill({
+    name = "Thrustkick",
+    abadmin_id = 860,
+    syntax = { "THK &lt;target&gt; &lt;direction&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 4.00,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "THK", role = "kick", needs_direction = true },
+    },
+    notes = {
+      "Kicks the opponent away in the specified direction.",
+    },
+  }),
+
+  wrench = skill({
+    name = "Wrench",
+    abadmin_id = 861,
+    syntax = { "WRT &lt;target&gt; &lt;HEAD|TORSO|LEFT ARM|RIGHT ARM&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 4.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "WRT", role = "throw" },
+    },
+    afflicts = { "epilepsy", "bruisedribs" },
+    requires = { "damaged_limb" },
+    notes = {
+      "Only a limb that is already damaged. Does not require prone.",
+      "Head: periodic epilepsy.",
+      "Torso: bruised ribs. Also prones the target if both arms are broken.",
+      "Either arm: yanks the target off balance and throws them to the ground.",
+    },
+  }),
+
+  axe = skill({
+    name = "Axe",
+    abadmin_id = 862,
+    syntax = { "AXK &lt;target&gt;" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 6.50,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "AXK", role = "kick" },
+    },
+    afflicts = { "scrambledbrains", "blackout" },
+    requires = { "prone" },
+    notes = {
+      "Highly inaccurate. Prone opponents only.",
+      "Extremely high head damage.",
+      "Brief scrambled brains. Severe blackout if the head is mangled.",
+    },
+  }),
+
+  scorpion = skill({
+    name = "Scorpion",
+    abadmin_id = 864,
+    syntax = { "SCS" },
+    works_on = "self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "SCS", role = "stance" },
+    },
+    notes = {
+      "Sacrifices defence for offense.",
+      "Punches and kicks do more damage and are as fast as possible.",
+      "Blocks far less often.",
+      "Does not change how quickly a target's limbs break, only how much health damage the attacks do.",
+    },
+  }),
+
+  whirlwind = skill({
+    name = "Whirlwind",
+    abadmin_id = 865,
+    syntax = { "WWK &lt;target&gt;" },
+    works_on = "adventurers and denizens",
+    cooldown_s = 4.50,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "WWK", role = "kick" },
+    },
+    afflicts = { "scrambledbrains" },
+    notes = {
+      "Two spinning crescent kicks aimed at the head.",
+      "Briefly delivers scrambled brains.",
+    },
+  }),
+
+  bladehand = skill({
+    name = "Bladehand",
+    abadmin_id = 866,
+    syntax = { "BLP &lt;target&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 3.00,
+    cooldown_lane = "arm",
+    commands = {
+      { cmd = "BLP", role = "punch" },
+    },
+    afflicts = { "dizziness" },
+    notes = {
+      "A strike to the side of the neck that inflicts dizziness.",
+    },
+  }),
+
+  pinch = skill({
+    name = "Pinch",
+    abadmin_id = 867,
+    syntax = { "PNB", "UNBLOCK PNB" },
+    works_on = "adventurers",
+    cooldown_s = 1.00,
+    cooldown_lane = "balance",
+    resource_mana = 50,
+    commands = {
+      { cmd = "PNB", role = "block" },
+      { cmd = "UNBLOCK PNB", role = "block" },
+    },
+    notes = {
+      "A block that can stun an opponent who is already weakened enough.",
+    },
+  }),
+
+  backbreaker = skill({
+    name = "Backbreaker",
+    abadmin_id = 868,
+    syntax = { "BBT &lt;target&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 4.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "BBT", role = "throw" },
+    },
+    requires = { "prone" },
+    notes = {
+      "Prone opponents only. Damage rises as the torso is more damaged.",
+      "Four backbreakers in quick succession snap the spine and kill.",
+      "Bruised ribs reduces that number to three.",
+    },
+  }),
+
+  jumpkick = skill({
+    name = "Jumpkick",
+    abadmin_id = 869,
+    syntax = { "JPK &lt;target&gt;" },
+    works_on = "adventurers",
+    cooldown_s = 4.00,
+    cooldown_lane = "leg",
+    commands = {
+      { cmd = "JPK", role = "kick" },
+    },
+    notes = {
+      "From an adjacent room, fly in and slam an outstretched foot into the target.",
+      "Knocks the target to the floor and stuns them.",
+    },
+  }),
+
+  dragon = skill({
+    name = "Dragon",
+    abadmin_id = 870,
+    syntax = { "DRS" },
+    works_on = "self",
+    cooldown_s = 2.00,
+    cooldown_lane = "balance",
+    commands = {
+      { cmd = "DRS", role = "stance" },
+    },
+    notes = {
+      "Recover from mental equilibrium loss far more swiftly.",
+      "Turn aside many blows with blocks.",
+    },
+  }),
+}
+
+M.telepathy = {
+  scythe = skill({
+    name = "Scythe",
+    abadmin_id = 941,
+    syntax = { "MIND SCYTHE" },
+    works_on = "adventurers",
+    cooldown_s = 4.00,
+    cooldown_lane = "equilibrium",
+    resource_mana = 50,
+    commands = {
+      { cmd = "MIND SCYTHE", role = "finish" },
+    },
+    afflicts = {},
+    requires = { "mangledhead" },
+    mental_pool = { "stupidity", "impatience", "dizziness", "epilepsy", "confusion" },
+    mental_pool_min = 2,
+    notes = {
+      "No target argument.",
+      "Requires a mangled head and at least two of stupidity, impatience, dizziness, epilepsy, or confusion.",
+    },
+  }),
+}
+
+M.stances = {
+  dragon = { name = "Dragon", command = "DRS", key = "dragon" },
+  scorpion = { name = "Scorpion", command = "SCS", key = "scorpion" },
+  rat = { name = "Rat", command = "RTS", key = "rat" },
+  bear = { name = "Bear", command = "BRS", key = "bear" },
+  cat = { name = "Cat", command = "CTS", key = "cat" },
+  eagle = { name = "Eagle", command = "EGS", key = "eagle" },
+  horse = { name = "Horse", command = "HRS", key = "horse" },
+}
+
+M.by_cmd = {}
+
+local function index_skillset(set)
+  for key, row in pairs(set) do
+    for _, spec in ipairs(row.commands or {}) do
+      local cmd = tostring(spec.cmd or ""):lower()
+      if cmd ~= "" then
+        M.by_cmd[cmd] = {
+          cmd = cmd,
+          role = spec.role,
+          limb_side = spec.limb_side,
+          needs_direction = spec.needs_direction == true,
+          skill_key = key,
+          skill = row,
+        }
+      end
+    end
+  end
+end
+
+index_skillset(M.tekura)
+index_skillset(M.telepathy)
+
+function M.lookup(token)
+  token = tostring(token or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+  if token == "" then return nil end
+  return M.by_cmd[token]
+end
+
+function M.stance_by_word(word)
+  word = tostring(word or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+  if word == "" or word == "none" then return nil end
+  return M.stances[word]
+end
+</script>
+						<eventHandlerList />
+					</Script>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Telepathy</name>
+						<packageName />
+						<script />
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Scythe logic</name>
+							<packageName />
+							<script>--========================================================--
+-- Monk scythe
+--  MIND SCYTHE has no target argument.
+--  Gate: mangled head (affstrack.score.head &gt;= 200) and at least
+--  two of stupidity, impatience, dizziness, epilepsy, confusion.
+--========================================================--
+
+Yso = Yso or {}
+Yso.monk = Yso.monk or {}
+Yso.monk.scythe = Yso.monk.scythe or {}
+
+local S = Yso.monk.scythe
+
+local FALLBACK_POOL = { "stupidity", "impatience", "dizziness", "epilepsy", "confusion" }
+
+local function _entry()
+  local ref = Yso.ref and Yso.ref.monk
+  local row = ref and ref.telepathy and ref.telepathy.scythe
+  if type(row) == "table" then return row end
+  return nil
+end
+
+local function _pool()
+  local row = _entry()
+  local pool = row and row.mental_pool
+  if type(pool) == "table" and #pool &gt; 0 then return pool end
+  return FALLBACK_POOL
+end
+
+local function _min_count()
+  local row = _entry()
+  return tonumber(row and row.mental_pool_min) or 2
+end
+
+local function _resolve_target(target)
+  target = tostring(target or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if target ~= "" then return target end
+  if Yso and type(Yso.get_target) == "function" then
+    local ok, who = pcall(Yso.get_target)
+    if ok then
+      who = tostring(who or ""):gsub("^%s+", ""):gsub("%s+$", "")
+      if who ~= "" then return who end
+    end
+  end
+  local g = rawget(_G, "target")
+  if type(g) == "string" and g ~= "" then return g end
+  return ""
+end
+
+local function _has_aff(name)
+  if Yso and Yso.ak and type(Yso.ak.has) == "function" then
+    local ok, v = pcall(Yso.ak.has, name)
+    if ok and v == true then return true end
+    if ok then return false end
+  end
+  local scores = rawget(_G, "affstrack")
+  scores = scores and scores.score
+  if type(scores) ~= "table" then return false end
+  return (tonumber(scores[name]) or 0) &gt;= 100
+end
+
+local function _mangled_head()
+  local scores = rawget(_G, "affstrack")
+  scores = scores and scores.score
+  if type(scores) ~= "table" then return false end
+  return (tonumber(scores.head) or 0) &gt;= 200
+end
+
+function S.ready(target)
+  if _resolve_target(target) == "" then return false end
+  if not _mangled_head() then return false end
+  local seen = {}
+  local count = 0
+  for _, name in ipairs(_pool()) do
+    name = tostring(name or ""):lower()
+    if name ~= "" and not seen[name] and _has_aff(name) then
+      seen[name] = true
+      count = count + 1
+    end
+  end
+  return count &gt;= _min_count()
+end
+
+function S.execute(target)
+  if not S.ready(target) then return false end
+  if type(send) ~= "function" then return false end
+  send("mind scythe")
+  return true
+end
+</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+					<ScriptGroup isActive="yes" isFolder="yes">
+						<name>Kaido</name>
+						<packageName />
+						<script />
+						<eventHandlerList />
+						<Script isActive="yes" isFolder="no">
+							<name>Kai resource</name>
+							<packageName />
+							<script>--========================================================--
+-- Monk Kai resource
+--  gmcp.Char.Vitals.charstats is a list of "Label: value" strings.
+--  Captured: { "Bleed: 0", "Rage: 0", "Kai: 0%", "Stance: None" }
+--  hadoken is the Kai percent as a number. Aliases compare it directly.
+--========================================================--
+
+Yso = Yso or {}
+Yso.monk = Yso.monk or {}
+Yso.monk.kai = Yso.monk.kai or {}
+
+local K = Yso.monk.kai
+
+K.current = tonumber(K.current) or 0
+if _G.hadoken == nil then
+  _G.hadoken = K.current
+end
+
+local function _label_value(entry)
+  local label, value = tostring(entry or ""):match("^(.-):%s*(.*)$")
+  if not label then return "", "" end
+  label = label:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+  value = tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  return label, value
+end
+
+function K.apply_charstats(list)
+  if type(list) ~= "table" then return K.current end
+  for _, entry in ipairs(list) do
+    local label, value = _label_value(entry)
+    if label == "kai" then
+      local n = tonumber((value:gsub("%%", "")))
+      if n then
+        if n &lt; 0 then n = 0 end
+        if n &gt; 100 then n = 100 end
+        K.current = n
+        _G.hadoken = n
+      end
+    end
+  end
+  local stance = Yso.monk and Yso.monk.stance
+  if stance and type(stance.apply_charstats) == "function" then
+    stance.apply_charstats(list)
+  end
+  return K.current
+end
+
+local function _on_vitals()
+  local g = rawget(_G, "gmcp")
+  local stats = g and g.Char and g.Char.Vitals and g.Char.Vitals.charstats
+  K.apply_charstats(stats)
+end
+
+if type(registerAnonymousEventHandler) == "function" and not K._eh then
+  K._eh = registerAnonymousEventHandler("gmcp.Char.Vitals", _on_vitals)
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Stance logic</name>
+							<packageName />
+							<script>--========================================================--
+-- Monk stance
+--  Stance words from charstats: None, Dragon, Horse, and the
+--  other Tekura stance names on Yso.ref.monk.stances.
+--  GMCP is the source of truth. Enter and leave lines are not parsed.
+--========================================================--
+
+Yso = Yso or {}
+Yso.monk = Yso.monk or {}
+Yso.monk.stance = Yso.monk.stance or {}
+
+local S = Yso.monk.stance
+
+S.current = S.current
+S.word = S.word or "none"
+
+local function _ref()
+  local ref = Yso.ref and Yso.ref.monk
+  if type(ref) ~= "table" then return nil end
+  return ref
+end
+
+function S.set(word)
+  word = tostring(word or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+  if word == "" or word == "none" then
+    S.word = "none"
+    S.current = nil
+    return nil
+  end
+  local ref = _ref()
+  local row = ref and type(ref.stance_by_word) == "function" and ref.stance_by_word(word) or nil
+  if not row and ref and type(ref.stances) == "table" then
+    row = ref.stances[word]
+  end
+  if not row then
+    S.word = word
+    S.current = nil
+    return nil
+  end
+  S.word = row.key or word
+  S.current = row
+  return row
+end
+
+function S.apply_charstats(list)
+  if type(list) ~= "table" then return S.current end
+  for _, entry in ipairs(list) do
+    local label, value = tostring(entry or ""):match("^(.-):%s*(.*)$")
+    if label and label:gsub("^%s+", ""):gsub("%s+$", ""):lower() == "stance" then
+      value = tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
+      return S.set(value)
+    end
+  end
+  return S.current
+end
+
+local function _on_vitals()
+  local g = rawget(_G, "gmcp")
+  local stats = g and g.Char and g.Char.Vitals and g.Char.Vitals.charstats
+  S.apply_charstats(stats)
+end
+
+if type(registerAnonymousEventHandler) == "function" and not S._eh then
+  S._eh = registerAnonymousEventHandler("gmcp.Char.Vitals", _on_vitals)
+end
+</script>
+							<eventHandlerList />
+						</Script>
+						<Script isActive="yes" isFolder="no">
+							<name>Combo logic</name>
+							<packageName />
+							<script>--========================================================--
+-- Monk combo
+--  Caller passes the kick and two punches. This builds the
+--  COMBO string and does not send it.
+--  left/right is filled only for strikes whose syntax takes it.
+--========================================================--
+
+Yso = Yso or {}
+Yso.monk = Yso.monk or {}
+Yso.monk.combo = Yso.monk.combo or {}
+
+local C = Yso.monk.combo
+
+local LIMB_KEYS = {
+  legs = { "leftleg", "rightleg" },
+  arms = { "leftarm", "rightarm" },
+}
+
+local function _lookup(token)
+  local ref = Yso.ref and Yso.ref.monk
+  if not ref or type(ref.lookup) ~= "function" then return nil end
+  return ref.lookup(token)
+end
+
+local function _score(key)
+  local scores = rawget(_G, "affstrack")
+  scores = scores and scores.score
+  if type(scores) ~= "table" then return 0 end
+  return tonumber(scores[key]) or 0
+end
+
+local function _side(limb_side, override)
+  if type(override) == "string" and override ~= "" then
+    local side = override:lower()
+    if side == "left" or side == "right" then return side end
+  end
+  local keys = LIMB_KEYS[limb_side]
+  if not keys then return nil end
+  local best_key, best_score
+  for _, key in ipairs(keys) do
+    local score = _score(key)
+    if score &gt; 0 and score &lt; 200 and (not best_score or score &gt; best_score) then
+      best_key = key
+      best_score = score
+    end
+  end
+  if not best_key then return "left" end
+  if best_key:find("right", 1, true) then return "right" end
+  return "left"
+end
+
+local function _piece(token, opts)
+  local row = _lookup(token)
+  if not row then return nil, "unknown_strike" end
+  local parts = { row.cmd }
+  if row.needs_direction and type(opts.direction) == "string" and opts.direction ~= "" then
+    parts[#parts + 1] = tostring(opts.direction):lower()
+  end
+  if row.limb_side then
+    local overrides = type(opts.limbs) == "table" and opts.limbs or {}
+    local key = tostring(token or ""):lower()
+    parts[#parts + 1] = _side(row.limb_side, overrides[row.cmd] or overrides[key])
+  end
+  return parts, row
+end
+
+local function _append(out, parts)
+  for i = 1, #parts do
+    out[#out + 1] = parts[i]
+  end
+end
+
+function C.build(target, opts)
+  opts = type(opts) == "table" and opts or {}
+  target = tostring(target or opts.target or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if target == "" then return nil, "no_target" end
+
+  local kick_parts, kick = _piece(opts.kick, opts)
+  if not kick_parts then return nil, kick or "bad_kick" end
+  if kick.role ~= "kick" and kick.role ~= "stance" then
+    return nil, "kick_required"
+  end
+
+  local p1_parts, p1 = _piece(opts.punch1, opts)
+  if not p1_parts then return nil, p1 or "bad_punch1" end
+  if p1.role ~= "punch" then return nil, "punch1_required" end
+
+  local p2_parts, p2 = _piece(opts.punch2, opts)
+  if not p2_parts then return nil, p2 or "bad_punch2" end
+  if p2.role ~= "punch" then return nil, "punch2_required" end
+
+  local out = { "combo", target }
+  _append(out, kick_parts)
+  _append(out, p1_parts)
+  _append(out, p2_parts)
+
+  local already_jpk = kick.cmd == "jpk" or p1.cmd == "jpk" or p2.cmd == "jpk"
+  if opts.jpk == true and not already_jpk then
+    out[#out + 1] = "jpk"
+  end
+
+  return table.concat(out, " ")
+end
+</script>
+							<eventHandlerList />
+						</Script>
+					</ScriptGroup>
+				</ScriptGroup>
 			</ScriptGroup>
 		</ScriptGroup>
 	</ScriptPackage>

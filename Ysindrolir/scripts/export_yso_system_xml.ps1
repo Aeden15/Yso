@@ -114,6 +114,7 @@ $Ysindrolir = Resolve-Path (Join-Path $ScriptsDir '..')
 $YsoDir = Join-Path $Ysindrolir 'Yso'
 $AlchemistDir = Join-Path $Ysindrolir 'Alchemist'
 $MagiDir = Join-Path $Ysindrolir 'Magi'
+$MonkDir = Join-Path $Ysindrolir 'Monk'
 $XmlPackage = Join-Path $Ysindrolir 'mudlet packages\Yso system.xml'
 
 $ScriptToSourcePath = [ordered]@{
@@ -165,6 +166,11 @@ $ScriptToSourcePath = [ordered]@{
   'Yso.state wiring'              = Join-Path $YsoDir 'xml\yso_state_wiring_stub.lua'
   'Yso.target'                    = Join-Path $YsoDir 'xml\yso_target.lua'
   'Yso.targeting'                 = Join-Path $YsoDir 'xml\yso_targeting.lua'
+  'Monk reference'                = Join-Path $MonkDir 'monk_reference.lua'
+  'Scythe logic'                  = Join-Path $MonkDir 'scythe.lua'
+  'Kai resource'                  = Join-Path $MonkDir 'kai_resource.lua'
+  'Stance logic'                  = Join-Path $MonkDir 'stance.lua'
+  'Combo logic'                   = Join-Path $MonkDir 'combo.lua'
 }
 
 $ScriptInserts = @(
