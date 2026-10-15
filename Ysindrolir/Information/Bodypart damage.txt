@@ -1,0 +1,54 @@
+
+There are six body parts for the purposes of damage and combat in Achaea:
+Head
+Torso/Body
+Left Arm
+Right Arm
+Left Leg
+Right Leg
+
+Each of these body parts is able to take individual damage, and generally
+attacks will tell you which body part they are attacking, if any. If no body
+part is shown in an attack, then you are just taking general damage.
+
+Attacks vs. body parts do both general damage against your health, and damage
+vs. that body part. However, generally speaking, the damage to your health
+done by an attack vs. a body part will be less than if it wasn't targetted to
+a body part.
+
+Now, each body part can be at one of three states:
+
+State 0 means that your bodypart is either fully healed, or has taken only
+minor damage.
+
+State 1 means that your bodypart has sustained some damage but is still
+functional.
+
+State 2 means that your bodypart has been seriously mutilated.
+
+
+Below is a chart listing the effects of being at State 1 and State 2.
+
+Bodypart        State 1              State 2
+--------        -------              -------
+Head            Stupidity            Concussion
+Body            Minor bleeding       Serious bleeding
+Limbs           Limb breaks          Limb is mutilated and broken and cannot
+                                     be healed without first applying a
+                                     restoration salve to it.
+
+
+Some have been confused in the past by the difference between State 1 and
+State 2 damage on a limb, and a limb being broken. It should be emphasized
+that they are _not_ the same thing. To better understand how this works,
+imagine that when a limb has been damaged, as opposed to broken, the ability
+of that limb to heal has been affected, so a simple mending salve will not
+heal it without first applying a restoration salve.
+
+In order to deal out body part damage, which is possible with weapons and with
+some abilities, you must first obtain the TARGETTING ability in the Weaponry
+skill.
+
+Furthermore, if you have the PARRYING ability in Weaponry, you will, if you
+have a weapon capable of parrying wielded (Probe it to find out), be able to
+parry attacks to a body part, thus taking no damage.
