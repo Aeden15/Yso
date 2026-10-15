@@ -30103,7 +30103,36 @@ end</script>
 				<Script isActive="yes" isFolder="no">
 					<name>odisplay</name>
 					<packageName></packageName>
-					<script>if ak.refreshAffs then return end           --DELETE THIS SHIT OUT OF YOUR PERSONAL VARS
+					<script>ak = ak or {}
+
+-- Tracker paths call these even when a custom display skips the stock window.
+local function tracking_echo(label, colour, afflictions)
+  if ak.nodisplay or type(cecho) ~= "function" then return end
+  if type(afflictions) ~= "string" or afflictions == "" then return end
+  cecho("\n&lt;cyan&gt;[AK]&lt;reset&gt; "..label..": &lt;"..colour.."&gt;"..afflictions.."&lt;reset&gt;")
+end
+if type(EchoForMajorAff) ~= "function" then
+  function EchoForMajorAff(affliction)
+    tracking_echo("Major", "red", affliction)
+  end
+end
+if type(ak.echogain) ~= "function" then
+  function ak.echogain(afflictions)
+    tracking_echo("Gained", "red", afflictions)
+  end
+end
+if type(ak.echolost) ~= "function" then
+  function ak.echolost(afflictions)
+    tracking_echo("Lost", "green", afflictions)
+  end
+end
+if type(ak.echoForPossibleCures) ~= "function" then
+  function ak.echoForPossibleCures(afflictions)
+    tracking_echo("Possible cures", "yellow", afflictions)
+  end
+end
+
+if ak.refreshAffs then return end           --DELETE THIS SHIT OUT OF YOUR PERSONAL VARS
 ak = ak or {}
 
 function ak.refreshAffs()
