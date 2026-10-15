@@ -29219,7 +29219,8 @@ function ak.serveraliases()
       ak.pervasion.setattacks()
     end
   end
-  if not inlyre() then
+  -- Optional user hook. AK never defines this, so a bare call errors on class change and look.
+  if not inlyre() and type(ak.mycustomoffense) == "function" then
     ak.mycustomoffense()
   end
   if ak.reboundPop and ak.stack ~= "NoOne" and not inlyre() and not ak.tza and not ak.deathstrike then

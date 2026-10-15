@@ -4318,6 +4318,38 @@ end
 						<packageName />
 						<regex>^shi$</regex>
 					</Alias>
+					<Alias isActive="yes" isFolder="no">
+					<name>Class based prompts</name>
+					<script>local magi = "config prompt custom #Y(*h/*%h) (*m/*%m#Y) *%w|*%e *b *c*r *R #R*t*T"
+local air = "config prompt custom #Y(*h/*%h) (*m/*%m#Y) *%w|*%e *b#C*i*v#w *c*r *R #R*t*T"
+local function apply(cmd)
+  if type(send) == "function" then send(cmd) end
+end
+local pick = tostring(matches[2] or ""):lower()
+if pick == "m" then
+  apply(magi)
+  return
+elseif pick == "a" then
+  apply(air)
+  return
+end
+local cls = ""
+if Yso and Yso.classinfo and type(Yso.classinfo.get) == "function" then
+  local ok, v = pcall(Yso.classinfo.get)
+  if ok then cls = tostring(v or "") end
+end
+cls = cls:lower()
+if cls == "magi" then
+  apply(magi)
+elseif cls:find("air", 1, true) and cls:find("elemental", 1, true) then
+  apply(air)
+elseif type(cecho) == "function" then
+  cecho(string.format("&lt;yellow&gt;[Yso] &lt;reset&gt;No custom prompt for class: %s\n", cls ~= "" and cls or "unknown"))
+end</script>
+						<command />
+						<packageName />
+						<regex>^prompt([ma])?$</regex>
+					</Alias>
 				</AliasGroup>
 			</AliasGroup>
 			<AliasGroup isActive="yes" isFolder="yes">
