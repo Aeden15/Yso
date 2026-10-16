@@ -3,7 +3,7 @@
 # Run:  cd Ysindrolir\scripts ; .\export_yso_system_xml.ps1
 # Validate:  [xml](Get-Content -Raw -LiteralPath '..\mudlet packages\Yso system.xml')
 [CmdletBinding(SupportsShouldProcess = $true)]
-param()
+param([switch]$FocusOnly)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -213,6 +213,31 @@ $MreflectAliasSource = Join-Path $MagiDir 'mreflect_alias_body.lua'
 
 $content = Get-Content -LiteralPath $XmlPackage -Raw -Encoding UTF8
 $original = $content
+
+# Update Focus without replacing unrelated native scripts from older source mirrors.
+if ($FocusOnly) {
+  if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Focus script and alias only')) {
+    & (Join-Path $ScriptsDir 'build_mfocus_alias_body.ps1') | Out-Null
+    $content = Set-AliasScriptByName $content 'mfocus' $MfocusAliasSource
+    if (Test-ScriptBlockExists $content 'Magi focus') {
+      $dissonance = (Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $MagiDir 'magi_dissonance.lua')).TrimEnd()
+      $dissonance = $dissonance -replace '(?m)^return D\s*$', '-- return omitted: native Focus shares Yso.magi.dissonance'
+      $focus = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $MagiDir 'magi_focus.lua')
+      $escaped = ConvertTo-MudletXmlScriptText ($dissonance + "`n`n" + $focus)
+      $pattern = '(?s)(<Script isActive="yes" isFolder="no">\s*<name>Magi focus</name>\s*(?:<packageName\s*/>|<packageName>[^<]*</packageName>)\s*<script>)(.*?)(</script>)'
+      $match = [regex]::Match($content, $pattern)
+      if (-not $match.Success) { throw 'Cannot locate native Magi focus script body' }
+      $content = $content.Substring(0, $match.Index) + $match.Groups[1].Value + $escaped + $match.Groups[3].Value + $content.Substring($match.Index + $match.Length)
+    }
+    $document = New-Object System.Xml.XmlDocument
+    try { $document.LoadXml($content) } catch { throw $_.Exception.InnerException.Message }
+    if ($content -cne $original) {
+      [System.IO.File]::WriteAllText($XmlPackage, $content, (New-Object System.Text.UTF8Encoding $false))
+    }
+    Write-Host 'Synchronized Focus script and alias; unrelated package content preserved.'
+  }
+  return
+}
 
 foreach ($rm in $ScriptsToRemove) {
   if ($PSCmdlet.ShouldProcess($rm, 'Remove script from package XML')) {

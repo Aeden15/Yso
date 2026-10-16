@@ -1,0 +1,91 @@
+Softlock
+
+Asthma - prevents smoking pipes, cured by eating Aurum/Kelp
+Anorexia - prevents eating herbs, cured by applying Epidermal/Focusing
+Slickness - prevents applying salves, cured by eating
+Magnesium/Bloodroot or smoking Realgar/Valerian
+
+
+
+Venomlock
+
+Paralysis - prevents movement and touching their Tree tattoo, cured by
+eating Magnesium/Bloodroot
+Asthma - prevents smoking pipes, cured by eating Aurum/Kelp
+Anorexia - prevents eating herbs, cured by applying Epidermal/Focusing
+Slickness - prevents applying salves, cured by eating
+Magnesium/Bloodroot or smoking Realgar/Valerian
+
+
+
+Truelock/Hardlock
+
+Paralysis - prevents Tree tattoo, cured by eating Magnesium/Bloodroot
+Asthma - prevents smoking pipes, cured by eating Aurum/Kelp
+Anorexia - prevents eating herbs, cured by applying Epidermal/Focusing
+Slickness - prevents applying salves, cured by eating
+Magnesium/Bloodroot or smoking Realgar/Valerian
+Impatience - prevents using Focus, cured by eating Plumbum/Goldenseal
+
+Also includes various other afflictions, such as Weariness, Stupidity,
+Recklessness, etc., which prevent class-specific active and passive
+cures
+
+
+
+Focuslock
+
+Paralysis - prevents Tree tattoo, cured by eating Magnesium/Bloodroot
+Asthma - prevents smoking pipes, cured by eating Aurum/Kelp
+Anorexia - prevents eating herbs, cured by applying Epidermal/Focusing
+Slickness - prevents applying salves, cured by eating
+Magnesium/Bloodroot or smoking Realgar/Valerian
+In lieu of Impatience, the user afflicts multiple mental afflictions in
+the hopes that when the opponent uses Focus it cures something other
+than anorexia
+
+
+
+Riftlock
+
+Two arm breaks - prevents out-rifting herbs, cured by apply mending to
+arms
+Slickness - prevents applying salves, cured by Magnesium/Bloodroot or
+smoking Realgar/ Valerian
+Asthma - prevents smoking pipes, cured by eating Aurum/Kelp
+Addiction (Vardrax) can help with a Riftlock, as it will force your
+opponent to eat everything already in their hands when their arms are
+broken
+
+
+
+Salvelock
+
+Two arm breaks, but at level 2 or higher - prevents out-rifting herbs,
+cured by apply mending to arms, and level 2 breaks will mean they cannot
+use Restore to heal their limbs.
+Slickness - prevents applying salves, cured by Magnesium/Bloodroot or
+smoking Realgar/Valerian
+Asthma - prevents smoking pipes, cured by eating Aurum/Kelp
+Addiction (Vardrax) can help with a Riftlock, as it will force your
+opponent to eat whatever is already in their hands when their arms are
+broken
+
+
+
+Sleeplock
+
+Sleep/Delphinium afflicted at least three times in very rapid
+succession. The first will strip the Insomnia affliction, which prevents
+falling asleep. The second strips the Gypsum/Kola defence, which allows
+a person to wake instantly. The third puts the opponent to sleep, which
+would then take long enough to wake from, that you can keep afflicting
+Sleep/Delphinium, or continue with other locking afflictions.
+
+
+
+Aeonlock
+
+Aeon - allows only one action at a time on a lengthy balance.
+Asthma - prevents curing Aeon by smoking Cinnabar/Elm
+Further Aurum based afflictions to ensure Asthma remains stuck.

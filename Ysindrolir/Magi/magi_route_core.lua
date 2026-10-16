@@ -90,6 +90,8 @@ function RC.target_valid(tgt)
 end
 
 function RC.eq_ready()
+  -- Reserve EQ immediately after a purge submission, before GMCP catches up.
+  if RC.bloodboil and RC.now() < (RC.bloodboil.pending_until or 0) then return false end
   if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
     local ok, v = pcall(Yso.locks.eq_ready)
     if ok then return v == true end
@@ -140,6 +142,10 @@ function RC.has_aff(aff)
 end
 
 function RC.get_target_hp_percent(_target_name)
+  local C = Yso.magi and Yso.magi.convergence
+  if C and type(C.hp) == "function" then
+    return C.hp(_target_name or RC.get_target())
+  end
   local ak = rawget(_G, "ak")
   if type(ak) == "table" then
     local pct = tonumber(ak.healthpercent)
@@ -156,7 +162,8 @@ function RC.get_target_hp_percent(_target_name)
   if type(info) == "table" then
     local raw = info.hpperc
     if raw ~= nil and tostring(raw) ~= "-1" then
-      local n = tonumber(tostring(raw):gsub("%%", ""))
+      local hp_text = tostring(raw):gsub("%%", "")
+      local n = tonumber(hp_text)
       if n then return n end
     end
   end
@@ -172,6 +179,8 @@ Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
 
 function RC.read_resonance()
   local R = Yso and Yso.magi and Yso.magi.resonance or nil
+  local ak = rawget(_G, "ak")
+  local live = ak and ak.magi and ak.magi.resonance or nil
   local synced = false
   local out = { air = 0, earth = 0, fire = 0, water = 0, synced = false }
 
@@ -188,6 +197,12 @@ function RC.read_resonance()
     if type(R) == "table" and type(R.state) == "table" then
       return tonumber(R.state[element] or 0) or 0
     end
+    -- AK's package triggers are available even when the optional skill
+    -- reference/runtime helper is not installed.
+    if type(live) == "table" then
+      local upper = element:sub(1, 1):upper() .. element:sub(2)
+      return tonumber(live[upper] or live[element] or 0) or 0
+    end
     return 0
   end
 
@@ -195,7 +210,7 @@ function RC.read_resonance()
   out.earth = _get("earth")
   out.fire = _get("fire")
   out.water = _get("water")
-  out.synced = synced
+  out.synced = synced or (type(R) ~= "table" and type(live) == "table")
   out.air_moderate = out.air >= 2
   out.earth_moderate = out.earth >= 2
   out.fire_moderate = out.fire >= 2
@@ -363,6 +378,86 @@ function RC.reset_runtime_state(state, reason)
   state.template.last_payload = nil
   state.template.last_target = ""
   return state
+end
+
+-- Optional shared finishers are resolved at call time (native load order).
+function RC.special_action(tgt)
+  local C = Yso.magi and Yso.magi.convergence
+  if C and type(C.select) == "function" then return C.select(tgt) end
+  return nil, "special_helper_unavailable"
+end
+
+function RC.note_special_queued(cmd, tgt)
+  if RC.lc(cmd) == "cast bloodboil" then
+    RC.bloodboil.pending_until = RC.now() + 4
+    return
+  end
+  local C = Yso.magi and Yso.magi.convergence
+  if C and type(C.note_queued) == "function" then C.note_queued(cmd, tgt) end
+end
+
+-- Self-purge state is shared by every Magi route and survives route/core reloads.
+-- Submission is not proof of a cast: only the success trigger starts cooldown.
+RC.bloodboil = RC.bloodboil or { cooling = false, pending_until = 0 }
+local bloodboil_affs = {
+  "stupidity", "dizziness", "weariness", "recklessness",
+  "anorexia", "impatience", "slickness", "asthma",
+}
+function RC.bloodboil_note_cast()
+  RC.bloodboil.cooling = true
+  RC.bloodboil.pending_until = RC.now() + 4
+end
+function RC.bloodboil_note_ready()
+  RC.bloodboil.cooling = false
+end
+function RC.bloodboil_note_eq_recovered()
+  RC.bloodboil.pending_until = 0
+end
+function RC.bloodboil_command()
+  local g = rawget(_G, "gmcp")
+  local status = g and g.Char and g.Char.Status
+  if not status or RC.lc(status.class or status.classname) ~= "magi" then return nil, "wrong_class" end
+  if Yso.mode and type(Yso.mode.is_combat) == "function" and not Yso.mode.is_combat() then return nil, "not_combat" end
+  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return nil, "paused" end
+  if RC.bloodboil.cooling then return nil, "bloodboil_cooldown" end
+  if not RC.eq_ready() then return nil, "eq_down" end
+  local tracker = Yso.curing and Yso.curing.afflictions
+  if tracker then
+    if type(tracker.is_complete) ~= "function" or not tracker.is_complete() then
+      return nil, "self_afflictions_incomplete"
+    end
+    if type(tracker.sync_legacy) == "function" then
+      if not tracker.sync_legacy() then return nil, "self_afflictions_unknown" end
+    elseif type(tracker.snapshot) ~= "function" or not tracker.snapshot() then
+      return nil, "self_afflictions_unknown"
+    end
+  end
+  -- This is Legacy's SELF table, never RC.has_aff/affstrack (enemy evidence).
+  local Aff = Legacy and Legacy.Curing and Legacy.Curing.Affs
+  if type(Aff) ~= "table" then return nil, "self_afflictions_unknown" end
+  if Aff.haemophilia then return nil, "haemophilia" end
+  local count = 0
+  for _,aff in ipairs(bloodboil_affs) do if Aff[aff] == true then count = count + 1 end end
+  if count < 2 then return nil, "below_two_afflictions" end
+  local vitals = g.Char.Vitals or {}
+  if (tonumber(vitals.mp) or 0) < 75 then return nil, "insufficient_mana" end
+  local channels = ""
+  for _,stat in pairs(vitals.charstats or {}) do
+    local value = tostring(stat):match("^[Cc]hannels:%s*(.*)$")
+    if value then channels = value:lower(); break end
+  end
+  for _,element in ipairs({"fire", "water"}) do
+    if not channels:find("%f[%a]" .. element .. "%f[%A]") then return nil, "channels_unconfirmed" end
+  end
+  return "cast bloodboil", "bloodboil_self_purge"
+end
+function RC.with_bloodboil(cmd)
+  -- Only an actual selected finisher wins; Assess and preparatory spells do not.
+  local spell = RC.lc(cmd):match("^cast%s+(%S+)")
+  if spell == "destroy" or spell == "convergence" or spell == "stormhammer" or spell == "glaciate" then return cmd end
+  local purge, reason = RC.bloodboil_command()
+  if purge then return purge, reason end
+  return cmd
 end
 
 return RC

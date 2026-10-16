@@ -43,10 +43,16 @@ Current fixes
     magi_focus
   Legacy alias compatibility still maps:
     focus -> magi_focus
-  It opens through horripilation / freeze, revisits bombard when needed,
-  swaps Fulminate continuation in on kelp pressure, drives Dissonance toward
-  stage 4 with live Magi-local tracking, then casts convergence immediately
-  once all four resonances are moderate.
+  It opens with hellfumes when needed, then dehydrate before horripilation /
+  freeze. It pursues asthma, slickness, paralysis, and anorexia, plus any two
+  of epilepsy, stupidity, and dizziness. Convergence requires those afflictions
+  confirmed at AK score 100+, all four resonances moderate, and Dissonance 4.
+  Staff Lightning pursues stupidity with Shock + Lightning fitted; disable via
+  Yso.off.magi.focus.cfg.shock_lightning_enabled = false if unavailable.
+  The late fallback dumps major resonance Earth / Fire / Water / Air through
+  emanation; with no major resonance it casts dehydrate. Pending casts never
+  count as confirmed lock afflictions. After convergence, Destroy stays first,
+  followed by lock maintenance and damage pressure.
 
 Current Magi helpers
 --------------------
@@ -64,13 +70,16 @@ Current Magi helpers
     Thin aliases toggle those loops like mdam. Staff/shield ids: Yso.magi.weapons.set.
     Shalestorm is a Magi-wide flag on Yso.magi.shalestorm.
     Hellfumes is a Magi-wide room flag on Yso.magi.hellfumes (Elementalism up/down lines).
-    magi_dmg recasts hellfumes after shield/execute; magi_focus recasts it before horripilation.
+    magi_dmg recasts hellfumes after shield/execute; magi_focus follows it with dehydrate.
 
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.
 
   mdam_alias_body.lua / mfocus_alias_body.lua
     Built alias bodies used for package embedding by export_yso_system_xml.ps1.
+    For Focus-only changes, run scripts/export_yso_system_xml.ps1 -FocusOnly.
+    This synchronizes the Focus alias and existing native Focus script without
+    replacing unrelated embedded runtime logic from older source mirrors.
 
   magi_dissonance.lua
     Provides Magi-local Dissonance stage/confidence/evidence tracking.

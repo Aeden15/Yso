@@ -208,6 +208,7 @@ local function make_world(opts)
     set_res = function(element, value)
       resonance[tostring(element or ""):lower()] = tonumber(value or 0) or 0
     end,
+    set_hellfumes = function(on) opts.hellfumes_up = on end,
     set_focus = function(on)
       focus_active = (on == true)
     end,
@@ -239,269 +240,190 @@ local function note_sent(world, cmd)
   world.MF.on_payload_sent({ eq = cmd })
 end
 
-print("=== Test 1: horripilation opener ===")
-do
-  local world = make_world({})
-  local cmd = preview_eq(world)
-  assert_eq("1a: missing waterbonds opens with horripilation", cmd, "staff cast horripilation foe")
+-- A settled setup isolates selector behavior from the mandatory opening cast.
+local function settled(changes)
+  changes = changes or {}
+  local scores = {
+    waterbonds=100, frozen=100, frostbite=100, clumsiness=100, asthma=100,
+    slickness=100, paralysis=100, anorexia=100, epilepsy=100, stupidity=100,
+    scalded=100,
+  }
+  for key,value in pairs(changes.aff_scores or {}) do scores[key]=value end
+  changes.aff_scores=scores
+  for _,element in ipairs({"air","earth","fire","water"}) do
+    local key=element.."_res"
+    if changes[key]==nil then changes[key]=2 end
+  end
+  if changes.dissonance_stage==nil then changes.dissonance_stage=4 end
+  local world=make_world(changes)
+  note_sent(world, "cast dehydrate at foe")
+  world.advance(3)
+  return world
 end
 
-print("=== Test 1b: hellfumes down opens before horripilation ===")
+print("=== Opening Dehydrate ===")
 do
-  local world = make_world({ hellfumes_up = false })
-  local cmd, reason = preview_eq(world)
-  assert_eq("1b: missing hellfumes opens with cast hellfumes", cmd, "cast hellfumes")
-  assert_eq("1c: reason tracks hellfumes gap", reason, "hellfumes_missing")
+  local world=make_world({hellfumes_up=false})
+  assert_eq("hellfumes first", preview_eq(world), "cast hellfumes")
+  note_sent(world,"cast hellfumes")
+  assert_eq("dehydrate immediately after hellfumes",preview_eq(world),"cast dehydrate at foe")
+  assert_eq("preview does not complete opener",preview_eq(world),"cast dehydrate at foe")
+  note_sent(world,"cast dehydrate at foe")
+  assert_eq("then waterbonds setup",preview_eq(world),"staff cast horripilation foe")
+  world.set_hellfumes(true)
+  assert_true("opening recorded",world.MF.explain().opening_dehydrate_done)
+  world.set_target("other")
+  assert_eq("target change opens again",preview_eq(world),"cast dehydrate at other")
+  note_sent(world,"cast dehydrate at other")
+  world.set_room("1002")
+  assert_eq("room change respects immediate repeat guard",preview_eq(world),nil)
+  world.advance(1)
+  assert_eq("room change opens again",preview_eq(world),"cast dehydrate at other")
+  world.MF.reset("test")
+  world.advance(3)
+  assert_eq("reset opens again",preview_eq(world),"cast dehydrate at other")
 end
 
-print("\n=== Test 2: freeze reopens if either frozen or frostbite is missing ===")
+print("=== Core lock priorities ===")
 do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-    },
-  })
-  local cmd = preview_eq(world)
-  assert_eq("2a: frostbite gap reopens freeze", cmd, "cast freeze at foe")
-  world.set_focus(true)
+  local world=settled({aff_scores={asthma=0}})
+  assert_eq("asthma pressure",preview_eq(world),"cast bombard at foe")
+  world=settled({aff_scores={slickness=0}})
+  assert_eq("slickness pressure",preview_eq(world),"cast mudslide at foe")
+  world=settled({aff_scores={slickness=0,frozen=0}})
+  assert_eq("mudslide needs frozen",preview_eq(world),"cast freeze at foe")
+  world=settled({aff_scores={paralysis=0,epilepsy=100}})
+  assert_eq("paralysis even when kelpscore low and mechanics ready",preview_eq(world),"cast fulminate at foe")
+  world=settled({aff_scores={anorexia=0},water_res=2})
+  assert_eq("water progression toward anorexia",preview_eq(world),"cast freeze at foe")
+  world=settled({aff_scores={anorexia=0},water_res=3})
+  assert_eq("await actual anorexia through water pressure",preview_eq(world),"cast freeze at foe")
+  local ex=world.MF.explain()
+  assert_eq("major water is not confirmation",ex.lock.ready,false)
+  assert_true("missing anorexia explained",ex.lock.missing_core[1]=="anorexia")
+end
+
+print("=== Any two mentals and strict Convergence gate ===")
+do
+  for _,pair in ipairs({{"epilepsy","stupidity"},{"epilepsy","dizziness"},{"stupidity","dizziness"}}) do
+    local scores={epilepsy=0,stupidity=0,dizziness=0}
+    scores[pair[1]]=100
+    scores[pair[2]]=100
+    local world=settled({aff_scores=scores})
+    assert_eq("pair "..table.concat(pair,"/"),preview_eq(world),"cast convergence at foe")
+    assert_eq("two mentals counted",world.MF.explain().lock.mental_count,2)
+  end
+  local world=settled({aff_scores={epilepsy=0,stupidity=100,dizziness=0}})
+  assert_eq("existing paralysis does not hide missing epilepsy",preview_eq(world),"cast fulminate at foe")
+  world=settled({aff_scores={stupidity=0,dizziness=0}})
+  assert_eq("optional shock lightning",preview_eq(world),"staff cast lightning at foe")
+  note_sent(world,"staff cast lightning at foe")
   preview_eq(world)
-  local ex = world.MF.explain()
-  assert_eq("2b: explain uses planner route key", ex.route, "focus")
-  assert_eq("2c: explain decision uses planner wording", ex.decision, "freeze_reopen")
-  assert_eq("2d: explain reason tracks the water resonance gate", ex.reason, "water_moderate_missing")
-  assert_true("2e: explain exposes focus overlay state", ex.fulminate and ex.fulminate.focus_punish_armed == true)
+  assert_eq("pending lightning is not mental confirmation",world.MF.explain().lock.mental_count,1)
+  world=settled({aff_scores={stupidity=0,dizziness=0},air_res=3})
+  world.MF.cfg.shock_lightning_enabled=false
+  assert_eq("disabled shock uses air emanation",preview_eq(world),"cast emanation at foe air")
+  world=settled({aff_scores={stupidity=0,dizziness=0},air_res=2})
+  world.MF.cfg.shock_lightning_enabled=false
+  assert_eq("build air for dizziness",preview_eq(world),"cast bombard at foe")
+  world=settled()
+  world.MF.cfg.shock_lightning_enabled=false
+  assert_eq("confirmed stupidity counts with feature disabled",preview_eq(world),"cast convergence at foe")
+  world=settled({dissonance_stage=2})
+  assert_eq("lock alone is insufficient",preview_eq(world),"embed dissonance")
+  world=settled({fire_res=1})
+  assert_eq("mechanical resonance still required",preview_eq(world),"cast firelash at foe")
 end
 
-print("\n=== Test 3: bombard revisit remains a live branch ===")
+print("=== Emanation and Dehydrate fallback ===")
 do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 100,
-      clumsiness = 100,
-    },
-    air_res = 1,
-    earth_res = 1,
-    fire_res = 2,
-    water_res = 2,
-  })
-  local cmd, reason = preview_eq(world)
-  assert_eq("3a: missing asthma revisits bombard", cmd, "cast bombard at foe")
-  assert_eq("3b: bombard reason is planner-local", reason, "asthma_missing")
+  -- A pending Dissonance builder leaves the fallback reachable without satisfying Convergence.
+  local function fallback(elements)
+    local world=settled({dissonance_stage=1})
+    note_sent(world,"embed dissonance")
+    for _,element in ipairs(elements or {}) do world.set_res(element,3) end
+    return world
+  end
+  for _,element in ipairs({"earth","fire","water","air"}) do
+    local world=fallback({element})
+    assert_eq("emanation "..element,preview_eq(world),"cast emanation at foe "..element)
+    assert_eq("element explained",world.MF.explain().emanation_element,element)
+    note_sent(world,"cast emanation at foe "..element)
+    assert_eq("pending prevents repeat",preview_eq(world),nil)
+    assert_eq("sending does not clear resonance",Yso.magi.resonance.get(element),3)
+    world.advance(2.5)
+    assert_eq("emanation retry after pending",preview_eq(world),"cast emanation at foe "..element)
+  end
+  local world=fallback({"earth","fire","water","air"})
+  assert_eq("earth first",preview_eq(world),"cast emanation at foe earth")
+  world.set_res("earth",2)
+  assert_eq("fire second",preview_eq(world),"cast emanation at foe fire")
+  world.set_res("fire",2)
+  assert_eq("water third",preview_eq(world),"cast emanation at foe water")
+  world.set_res("water",2)
+  assert_eq("air fourth",preview_eq(world),"cast emanation at foe air")
+  world=fallback()
+  assert_eq("dehydrate final fallback",preview_eq(world),"cast dehydrate at foe")
+  note_sent(world,"cast dehydrate at foe")
+  assert_eq("dehydrate repeat suppressed",preview_eq(world),nil)
+  preview_eq(world)
+  local st=world.MF.explain().state
+  assert_eq("nausea not fabricated",st.nausea,false)
+  assert_eq("weariness not fabricated",st.weariness,false)
 end
 
-print("\n=== Test 4: fulminate continuation swaps in ahead of later gates ===")
+print("=== Guard, tracking and post-Convergence ===")
 do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 100,
-      clumsiness = 100,
-      asthma = 100,
-      fulminated = 100,
-    },
-    kelpscore = 2,
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 2,
-    dissonance_stage = 2,
-  })
-  local cmd, reason = preview_eq(world)
-  assert_eq("4a: partial fulminate chain continues when kelp pressure is live", cmd, "cast fulminate at foe")
-  assert_eq("4b: fulminate reason names the missing continuation", reason, "epilepsy_missing")
+  local world=make_world({eq_ready=false})
+  assert_eq("eq guard",preview_eq(world),nil)
+  world=settled({aff_scores={conflagrate=100}})
+  note_sent(world,"cast convergence at foe")
+  assert_eq("destroy first",preview_eq(world),"cast destroy at foe")
+  assert_true("destroy emits",world.MF.attack_function({})==true)
+  local emit=world.emits[#world.emits]
+  assert_eq("destroy clearfull preserved",emit.opts.queue_verb,"addclearfull")
+  world=settled({aff_scores={slickness=0}})
+  note_sent(world,"cast convergence at foe")
+  assert_eq("maintain lock after convergence",preview_eq(world),"cast mudslide at foe")
+  world=settled()
+  note_sent(world,"cast convergence at foe")
+  assert_eq("post-convergence dehydrate filler",preview_eq(world),"cast dehydrate at foe")
+  world=settled({aff_scores={nausea=100,weariness=100,ablaze=200}})
+  preview_eq(world)
+  local st=world.MF.explain().state
+  assert_true("nausea tracked",st.nausea)
+  assert_true("weariness tracked",st.weariness)
+  assert_eq("burning stacks retained raw",st.raw.ablaze,200)
+  world.MF.reset("test")
+  for _,slot in ipairs({"dehydrate","mudslide","lightning","emanation"}) do
+    assert_eq("reset clears "..slot,world.MF.state.pending[slot].target,"")
+  end
 end
 
-print("\n=== Test 5: convergence immediately outranks fulminate once legal ===")
+print("=== Review regressions ===")
 do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 100,
-      clumsiness = 100,
-      asthma = 100,
-      fulminated = 100,
-    },
-    kelpscore = 2,
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 2,
-    dissonance_stage = 4,
-  })
-  local cmd, reason = preview_eq(world)
-  assert_eq("5a: convergence fires as soon as all gates are satisfied", cmd, "cast convergence at foe")
-  assert_eq("5b: convergence reason stays planner-friendly", reason, "all_gates_satisfied")
+  local world=settled({aff_scores={asthma=1,slickness=50,paralysis=1,anorexia=50,epilepsy=1,stupidity=33}})
+  assert_eq("uncertain lock stays pressure",preview_eq(world),"cast bombard at foe")
+  assert_eq("uncertain mentals do not count",world.MF.explain().lock.mental_count,0)
+  assert_eq("uncertain lock is not ready",world.MF.explain().lock.ready,false)
+  world=settled({aff_scores={frostbite=0},earth_res=3})
+  note_sent(world,"cast convergence at foe")
+  note_sent(world,"cast emanation at foe earth")
+  assert_eq("blocked postconv major holds",preview_eq(world),nil)
+  world=settled()
+  world.MF.route_contract.route_local_categories={"maintenance"}
+  world.MF.cfg.shock_lightning_enabled=false
+  dofile(FOCUS_PATH)
+  world.MF.init()
+  local found=false
+  for _,category in ipairs(world.MF.route_contract.route_local_categories) do
+    if category=="lock_pressure" then found=true end
+  end
+  assert_true("hot reload adds lock category",found)
+  assert_eq("hot reload preserves disabled shock",world.MF.cfg.shock_lightning_enabled,false)
 end
-
-print("\n=== Test 6: post-convergence overlay starts with destroy ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 100,
-      clumsiness = 100,
-      asthma = 100,
-      conflagrate = 100,
-    },
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 2,
-    dissonance_stage = 4,
-  })
-  note_sent(world, "cast convergence at foe")
-  local cmd = preview_eq(world)
-  assert_eq("6a: postconv prefers destroy first", cmd, "cast destroy at foe")
-  local ok = world.MF.attack_function({})
-  assert_true("6b: destroy attack succeeds", ok == true)
-  local row = world.emits[#world.emits]
-  assert_eq("6c: destroy queue verb", row and row.opts and row.opts.queue_verb, "addclearfull")
-  assert_eq("6d: destroy clearfull lane", row and row.opts and row.opts.clearfull_lane, "eq")
-end
-
-print("\n=== Test 7: pending windows advance the route and suppress identical repeats ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      clumsiness = 100,
-      asthma = 100,
-    },
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 1,
-  })
-  local cmd = preview_eq(world)
-  assert_eq("7a: initial freeze reopen fires", cmd, "cast freeze at foe")
-  note_sent(world, "cast freeze at foe")
-  cmd = preview_eq(world)
-  assert_eq("7b: pending freeze advances to dissonance push instead of repeating freeze", cmd, "embed dissonance")
-  note_sent(world, "embed dissonance")
-  cmd = preview_eq(world)
-  assert_eq("7c: pending dissonance blocks immediate identical resend", cmd, nil)
-end
-
-print("\n=== Test 8: loop reset clears route-local state deterministically ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 100,
-      clumsiness = 100,
-      asthma = 100,
-      conflagrate = 100,
-    },
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 2,
-    dissonance_stage = 4,
-  })
-  note_sent(world, "cast convergence at foe")
-  note_sent(world, "embed dissonance")
-  world.MF.alias_loop_on_stopped({ silent = true, reason = "manual" })
-  world.MF.alias_loop_on_started({})
-  local ex = world.MF.explain()
-  local dis = Yso.magi.dissonance.snapshot("foe")
-  assert_eq("8a: reset clears last sent command", world.MF.state.last_sent_cmd, "")
-  assert_eq("8b: reset clears postconv state", ex.postconv, false)
-  assert_eq("8c: reset clears dissonance tracker", dis.stage, 0)
-end
-
-print("\n=== Test 9: freeze missing defers to bombard when water gate is met and A/E are missing ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 0,
-      clumsiness = 100,
-      asthma = 100,
-    },
-    air_res = 1,
-    earth_res = 1,
-    fire_res = 2,
-    water_res = 2,
-  })
-  local cmd, reason = preview_eq(world)
-  assert_eq("9a: bombard selected over freeze when water resonance is already moderate", cmd, "cast bombard at foe")
-  assert_eq("9b: reason tracks A/E resonance deficit", reason, "air_earth_moderate_missing")
-end
-
-print("\n=== Test 10: freeze missing defers to fire pivot after A/E are ready ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 0,
-      clumsiness = 100,
-      asthma = 100,
-    },
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 1,
-    water_res = 2,
-  })
-  local cmd, reason = preview_eq(world)
-  assert_eq("10a: fire-side pivot selected over freeze when fire resonance is missing", cmd, "cast magma at foe")
-  assert_eq("10b: reason tracks fire progression", reason, "fire_progress_scalded")
-end
-
-print("\n=== Test 11: water resonance below moderate still forces freeze reopen ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 0,
-      clumsiness = 100,
-      asthma = 100,
-    },
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 1,
-  })
-  local cmd, reason = preview_eq(world)
-  assert_eq("11a: freeze remains mandatory while water resonance is below moderate", cmd, "cast freeze at foe")
-  assert_eq("11b: reason surfaces water gate", reason, "water_moderate_missing")
-end
-
-print("\n=== Test 12: maintenance freeze fallback runs when pivots are temporarily blocked ===")
-do
-  local world = make_world({
-    aff_scores = {
-      waterbonds = 100,
-      frozen = 100,
-      frostbite = 0,
-      clumsiness = 100,
-      asthma = 100,
-    },
-    air_res = 2,
-    earth_res = 2,
-    fire_res = 2,
-    water_res = 2,
-    dissonance_stage = 1,
-  })
-  note_sent(world, "embed dissonance")
-  local cmd, reason = preview_eq(world)
-  assert_eq("12a: fallback freeze selected when resonance pivots are blocked by pending windows", cmd, "cast freeze at foe")
-  assert_eq("12b: fallback reason is maintenance freeze", reason, "freeze_package_incomplete")
-end
-
-io.write(string.format("PASS: %d\n", pass_count))
-if fail_count > 0 then
-  io.stderr:write(string.format("FAILURES: %d\n", fail_count))
+io.write(string.format("PASS: %d\n",pass_count))
+if fail_count>0 then
+  io.stderr:write(string.format("FAILURES: %d\n",fail_count))
   os.exit(1)
 end
-

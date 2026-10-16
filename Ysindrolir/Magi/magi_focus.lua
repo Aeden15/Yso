@@ -24,10 +24,14 @@ local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 local PENDING_SLOTS = {
   "hellfumes",
-  "horripilation",
-  "freeze",
-  "bombard",
-  "fulminate",
+  "horripilation", --gives waterbonds
+  "dehydrate",     -- Nausea/weariness; existing weariness gives burning, otherwise existing nausea gives freeze. Never both stacks.
+  "mudslide",      -- Slickness against a frozen target.
+  "lightning",     -- Stupidity with both Shock and Lightning staff crystals fitted.
+  "emanation",     -- Spends major resonance for the selected element.
+  "freeze",        --strips insulation defence, otherwise it will give shivering, then freeze state.
+  "bombard",       --gives clumsiness
+  "fulminate",     --class mechanic. Gives fulmianted affliction. If they already have fulminated, then it gives epilepsy. If they already have epilepsy, then it gives paralysis.
   "firelash",
   "magma",
   "dissonance",
@@ -48,6 +52,7 @@ MF.route_contract = MF.route_contract or {
     "convergence_now",
     "postconv_finish",
     "maintenance",
+    "lock_pressure",
   },
   capabilities = {
     uses_eq = true,
@@ -84,6 +89,12 @@ MF.route_contract = MF.route_contract or {
 }
 
 do
+  local categories = MF.route_contract.route_local_categories
+  local found = false
+  for _, category in ipairs(categories) do
+    if category == "lock_pressure" then found = true end
+  end
+  if not found then categories[#categories + 1] = "lock_pressure" end
   if RI and type(RI.ensure_hooks) == "function" then
     RI.ensure_hooks(MF, MF.route_contract)
   end
@@ -96,6 +107,11 @@ MF.cfg = MF.cfg or {
   same_target_repeat_s = 0.75,
   hellfumes_pending_s = 1.00,
   horripilation_pending_s = 1.00,
+  dehydrate_pending_s = 1.00,
+  mudslide_pending_s = 1.00,
+  lightning_pending_s = 1.00,
+  emanation_pending_s = 2.40,
+  shock_lightning_enabled = true,
   freeze_pending_s = 1.00,
   bombard_pending_s = 1.00,
   fulminate_pending_s = 1.00,
@@ -261,6 +277,7 @@ local function _reset_route(reason)
   route.subphase = "reset"
   route.bucket = "reset"
   route.postconv = false
+  route.opening_dehydrate_done = false
   route.last_reset_reason = tostring(reason or "")
   return route
 end
@@ -273,8 +290,10 @@ local function _ensure_context(tgt)
 
   if room_changed then
     route = _reset_route("room_change")
+    _clear_pending_all()
   elseif target_changed then
     route = _reset_route("target_change")
+    _clear_pending_all()
   end
 
   route.target = _trim(tgt or "")
@@ -330,6 +349,8 @@ local function _fulm_stage_from_state(st)
 end
 
 local function _fulm_reason(st)
+  if st.epilepsy ~= true and st.fulminated == true then return "epilepsy_missing" end
+  if st.paralysis ~= true and st.epilepsy == true then return "paralysis_missing" end
   if st.fulm_stage <= 0 then return "fulminate_seed" end
   if st.fulm_stage == 1 then return "epilepsy_missing" end
   if st.fulm_stage == 2 then return "paralysis_missing" end
@@ -376,6 +397,10 @@ local function _next_conv_gate(st)
 end
 
 local function _conv_blocker(st)
+  if st.lock_ready ~= true then
+    if #st.lock_missing_core > 0 then return "lock_missing:" .. table.concat(st.lock_missing_core, "/") end
+    return "lock_mentals:" .. tostring(st.mental_count) .. "/2"
+  end
   if #st.conv_missing > 0 then
     return "missing_moderate:" .. table.concat(st.conv_missing, "/")
   end
@@ -387,7 +412,7 @@ end
 
 local function _choose_threshold_rule(st)
   if st.postconv == true then return "postconv_overlay" end
-  if st.kelpscore > 1 and st.fulm_stage < 3 and st.conv_ready ~= true then
+  if st.fulminate_need == true then
     return "kelp_pressure_established"
   end
   if st.bombard_need == true then
@@ -419,6 +444,13 @@ local function _snapshot(tgt)
       "conflagrate",
       "conflagration",
       "scalded",
+      "slickness",
+      "anorexia",
+      "dizziness",
+      "stupidity",
+      "nausea",
+      "weariness",
+      "ablaze",
     },
     pending_slots = PENDING_SLOTS,
   })
@@ -449,6 +481,13 @@ local function _snapshot(tgt)
     conflagrate = base.conflagrate == true,
     conflagration = base.conflagration == true,
     scalded = base.scalded == true or base.pending.magma == true,
+    slickness = base.slickness == true,
+    anorexia = base.anorexia == true,
+    dizziness = base.dizziness == true,
+    stupidity = base.stupidity == true,
+    nausea = base.nausea == true,
+    weariness = base.weariness == true,
+    ablaze = base.ablaze == true,
     kelpscore = _kelpscore(),
     res = {
       air = tonumber(base.res.air or 0) or 0,
@@ -467,6 +506,7 @@ local function _snapshot(tgt)
       subphase = route.subphase,
       bucket = route.bucket,
       postconv = route.postconv == true,
+      opening_dehydrate_done = route.opening_dehydrate_done == true,
       last_reset_reason = route.last_reset_reason,
     },
     focus_punish_armed = _focus_armed(),
@@ -475,11 +515,24 @@ local function _snapshot(tgt)
     dissonance_last_evidence = tostring(dis.last_evidence or ""),
   }
 
+  -- Shared snapshot booleans include uncertain scores. Lock gates require confirmation.
+  for _, aff in ipairs({ "asthma", "slickness", "paralysis", "anorexia", "epilepsy", "stupidity", "dizziness" }) do
+    st[aff] = tonumber(st.raw[aff] or 0) >= 100
+  end
   st.fulm_stage = _fulm_stage_from_state(st)
   st.epilepsy_live = st.epilepsy == true
   st.para_conversion_ready = st.fulm_stage == 2
+  st.lock_missing_core = {}
+  for _, aff in ipairs({ "asthma", "slickness", "paralysis", "anorexia" }) do
+    if st[aff] ~= true then st.lock_missing_core[#st.lock_missing_core + 1] = aff end
+  end
+  st.mental_count = 0
+  for _, aff in ipairs({ "epilepsy", "stupidity", "dizziness" }) do
+    if st[aff] == true then st.mental_count = st.mental_count + 1 end
+  end
+  st.lock_ready = #st.lock_missing_core == 0 and st.mental_count >= 2
   st.conv_missing = _conv_missing(st.res)
-  st.conv_ready = (#st.conv_missing == 0) and st.dissonance_stage >= 4
+  st.conv_ready = st.lock_ready and (#st.conv_missing == 0) and st.dissonance_stage >= 4
   st.conv_blocker = _conv_blocker(st)
   st.next_gate = _next_conv_gate(st)
   st.postconv = st.route.postconv == true
@@ -501,7 +554,7 @@ local function _snapshot(tgt)
     st.bombard_reason = "earth_moderate_missing"
   end
   st.bombard_need = st.bombard_reason ~= ""
-  st.fulminate_need = st.kelpscore > 1 and st.fulm_stage < 3 and st.conv_ready ~= true
+  st.fulminate_need = st.paralysis ~= true or (st.mental_count < 2 and st.epilepsy ~= true)
   st.threshold_rule = _choose_threshold_rule(st)
 
   local hp_open, hp_blocker, hp_window = _destroy_window()
@@ -575,6 +628,30 @@ end
 local function _can_cast_or_embed_dissonance_builder(tgt)
   local cmd = "embed dissonance"
   local ok, why = _spell_guard("dissonance", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_dehydrate(tgt)
+  local cmd = ("cast dehydrate at %s"):format(tgt)
+  local ok, why = _spell_guard("dehydrate", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_mudslide(tgt)
+  local cmd = ("cast mudslide at %s"):format(tgt)
+  local ok, why = _spell_guard("mudslide", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_staffcast_lightning(tgt)
+  local cmd = ("staff cast lightning at %s"):format(tgt)
+  local ok, why = _spell_guard("lightning", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_emanation(tgt, element)
+  local cmd = ("cast emanation at %s %s"):format(tgt, element)
+  local ok, why = _spell_guard("emanation", tgt, cmd)
   return ok, why, cmd
 end
 
@@ -659,6 +736,81 @@ local function _pick_dissonance_push(st, rejects)
   return nil
 end
 
+local function _pick_lock_pressure(st, rejects)
+  local phase = st.postconv and "postconv" or "lock"
+  local function attempt(builder, decision, reason, ...)
+    local ok, why, cmd = builder(st.target, ...)
+    if ok then
+      return _choice(cmd, "lock_pressure", decision, reason, phase, decision, "lock_pressure")
+    end
+    _reject(rejects, decision, why ~= "" and why or reason)
+    return nil
+  end
+
+  if not st.asthma then
+    local choice = attempt(_can_cast_bombard, "lock_asthma", "asthma_missing")
+    if choice then return choice end
+  end
+  if not st.slickness then
+    local choice
+    if not st.frozen then
+      choice = attempt(_can_cast_freeze, "lock_freeze", "slickness_needs_frozen")
+    else
+      choice = attempt(_can_cast_mudslide, "lock_slickness", "slickness_missing")
+    end
+    if choice then return choice end
+  end
+  if not st.paralysis then
+    local choice = attempt(_can_cast_fulminate, "lock_paralysis", _fulm_reason(st))
+    if choice then return choice end
+  end
+  if not st.anorexia then
+    -- Water resonance enables the passive proc; the proc message confirms anorexia.
+    local choice = attempt(_can_cast_freeze, "lock_anorexia", "anorexia_missing")
+    if choice then return choice end
+  end
+  if st.mental_count < 2 then
+    if not st.epilepsy then
+      local choice = attempt(_can_cast_fulminate, "lock_epilepsy", "epilepsy_missing")
+      if choice then return choice end
+    end
+    if not st.stupidity and MF.cfg.shock_lightning_enabled ~= false then
+      local choice = attempt(_can_staffcast_lightning, "lock_stupidity", "stupidity_missing")
+      if choice then return choice end
+    end
+    if not st.dizziness then
+      local choice
+      if st.res.air >= 3 then
+        choice = attempt(_can_cast_emanation, "lock_dizziness", "dizziness_missing", "air")
+      else
+        choice = attempt(_can_cast_bombard, "lock_air_build", "dizziness_needs_major_air")
+      end
+      if choice then return choice end
+    end
+  end
+  return nil
+end
+
+local function _pick_resonance_fallback(st, rejects)
+  local phase = st.postconv and "postconv" or "maintenance"
+  for _, element in ipairs({ "earth", "fire", "water", "air" }) do
+    if st.res[element] >= 3 then
+      local ok, why, cmd = _can_cast_emanation(st.target, element)
+      if ok then
+        return _choice(cmd, "maintenance", "emanation_dump", "major_" .. element, phase, element, "maintenance")
+      end
+      _reject(rejects, "emanation_dump", why)
+      return nil, why
+    end
+  end
+  local ok, why, cmd = _can_cast_dehydrate(st.target)
+  if ok then
+    return _choice(cmd, "maintenance", "dehydrate_fallback", "no_major_resonance", phase, "dehydrate", "maintenance")
+  end
+  _reject(rejects, "dehydrate_fallback", why)
+  return nil, why
+end
+
 local function _pick_postconv_action(st, rejects)
   if st.postconv ~= true then
     _reject(rejects, "postconv_action", "postconv_false")
@@ -674,6 +826,9 @@ local function _pick_postconv_action(st, rejects)
   else
     _reject(rejects, "destroy_now", st.destroy_blocker)
   end
+
+  local lock = _pick_lock_pressure(st, rejects)
+  if lock then return lock end
 
   if st.fulminate_need == true then
     local ok, why, cmd = _can_cast_fulminate(st.target)
@@ -691,13 +846,9 @@ local function _pick_postconv_action(st, rejects)
     _reject(rejects, "postconv_magma", why_magma ~= "" and why_magma or "magma_blocked")
   end
 
-  do
-    local ok_firelash, why_firelash, cmd_firelash = _can_cast_firelash(st.target)
-    if ok_firelash then
-      return _choice(cmd_firelash, "postconv_finish", "burst_pressure", "postconv_firelash_pressure", "postconv", "burst", "postconv_finish")
-    end
-    _reject(rejects, "postconv_firelash", why_firelash ~= "" and why_firelash or "firelash_blocked")
-  end
+  local fallback, fallback_blocker = _pick_resonance_fallback(st, rejects)
+  if fallback then return fallback end
+  if fallback_blocker then return nil end
 
   if st.freeze_missing == true then
     local ok, why, cmd = _can_cast_freeze(st.target)
@@ -737,6 +888,16 @@ local function _select_command(tgt)
     return nil, st, rejects, why ~= "" and why or "hellfumes_missing"
   end
 
+  if st.route.opening_dehydrate_done ~= true then
+    local ok, why, cmd = _can_cast_dehydrate(tgt)
+    _set_route_stage(tgt, ok and "opener" or "hold", "dehydrate", "opener_setup")
+    if ok then
+      return _choice(cmd, "opener_setup", "dehydrate_open", "opening_dehydrate", "opener", "dehydrate", "opener_setup"), st, rejects, ""
+    end
+    _reject(rejects, "dehydrate_open", why)
+    return nil, st, rejects, why
+  end
+
   if st.waterbonds ~= true then
     local ok, why, cmd = _can_staffcast_horripilation(tgt)
     _set_route_stage(tgt, ok and "opener" or "hold", "horripilation", "opener_setup")
@@ -770,16 +931,11 @@ local function _select_command(tgt)
     return nil, st, rejects, "postconv_no_legal_action"
   end
 
-  if st.conv_ready == true then
-    local ok, why, cmd = _can_cast_convergence(tgt)
-    _set_route_stage(tgt, ok and "gate" or "hold", "convergence", "convergence_now")
-    if ok then
-      return _choice(cmd, "convergence_now", "convergence_now", "all_gates_satisfied", "gate", "convergence", "convergence_now"), st, rejects, ""
-    end
-    _reject(rejects, "convergence_now", why ~= "" and why or "all_gates_satisfied")
-    return nil, st, rejects, why ~= "" and why or "all_gates_satisfied"
+  local lock = _pick_lock_pressure(st, rejects)
+  if lock then
+    _set_route_stage(tgt, lock.phase, lock.subphase, lock.bucket)
+    return lock, st, rejects, ""
   end
-  _reject(rejects, "convergence_now", st.conv_blocker)
 
   local bombard = _pick_bombard_revisit(st, rejects)
   if bombard then
@@ -805,6 +961,17 @@ local function _select_command(tgt)
     return diss, st, rejects, ""
   end
 
+  if st.conv_ready == true then
+    local ok, why, cmd = _can_cast_convergence(tgt)
+    _set_route_stage(tgt, ok and "gate" or "hold", "convergence", "convergence_now")
+    if ok then
+      return _choice(cmd, "convergence_now", "convergence_now", "all_gates_satisfied", "gate", "convergence", "convergence_now"), st, rejects, ""
+    end
+    _reject(rejects, "convergence_now", why ~= "" and why or "all_gates_satisfied")
+    return nil, st, rejects, why ~= "" and why or "all_gates_satisfied"
+  end
+  _reject(rejects, "convergence_now", st.conv_blocker)
+
   if st.freeze_missing == true then
     local ok, why, cmd = _can_cast_freeze(tgt)
     if ok then
@@ -814,8 +981,13 @@ local function _select_command(tgt)
     _reject(rejects, "maintenance_freeze", why ~= "" and why or "freeze_package_incomplete")
   end
 
+  local fallback, why = _pick_resonance_fallback(st, rejects)
+  if fallback then
+    _set_route_stage(tgt, fallback.phase, fallback.subphase, fallback.bucket)
+    return fallback, st, rejects, ""
+  end
   _set_route_stage(tgt, "hold", "idle", "maintenance")
-  return nil, st, rejects, "no_legal_action"
+  return nil, st, rejects, why or "no_legal_action"
 end
 
 local function _is_destroy_cmd(cmd)
@@ -897,6 +1069,17 @@ local function _update_explain(tgt, st, choice, rejects, blocker)
     route_enabled = MF.is_enabled and MF.is_enabled() or false,
     debug = MF.state and MF.state.debug == true or false,
     postconv = st and st.postconv == true or false,
+    opening_dehydrate_done = st and st.route.opening_dehydrate_done == true or false,
+    lock = st and {
+      ready = st.lock_ready,
+      missing_core = st.lock_missing_core,
+      mental_count = st.mental_count,
+      mental_required = 2,
+      epilepsy = st.epilepsy,
+      stupidity = st.stupidity,
+      dizziness = st.dizziness,
+    } or {},
+    emanation_element = choice and choice.cmd:match("^cast emanation at .+ (%a+)$") or "",
     stage = route.phase or "",
     phase = route.phase or "",
     subphase = route.subphase or "",
@@ -955,6 +1138,12 @@ end
 
 function MF.init()
   MF.cfg = MF.cfg or {}
+  -- Backfill settings for an already-loaded route when the alias is refreshed.
+  if MF.cfg.shock_lightning_enabled == nil then MF.cfg.shock_lightning_enabled = true end
+  for key, value in pairs({ dehydrate_pending_s = 1.00, mudslide_pending_s = 1.00,
+      lightning_pending_s = 1.00, emanation_pending_s = 2.40 }) do
+    if MF.cfg[key] == nil then MF.cfg[key] = value end
+  end
   MF.state = MF.state or {}
   MF.state.template = MF.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
   RC.ensure_pending(MF.state, PENDING_SLOTS)
@@ -1134,7 +1323,39 @@ function MF.on_payload_queued(payload)
       MF.state.last_sent_target = hell_tgt
       MF.state.last_sent_category = "opener_setup"
       _mark_pending("hellfumes", hell_tgt, MF.cfg.hellfumes_pending_s)
+      _ensure_context(hell_tgt).opening_dehydrate_done = false
       _set_route_stage(hell_tgt, "opener", "hellfumes", "opener_setup")
+      return
+    end
+
+    local dehydrate_tgt = _capture_target(lc, "^cast%s+dehydrate%s+at%s+(.+)$")
+    if dehydrate_tgt ~= "" then
+      local route = _ensure_context(dehydrate_tgt)
+      local opening = route.opening_dehydrate_done ~= true
+      route.opening_dehydrate_done = true
+      MF.state.last_sent_target = dehydrate_tgt
+      MF.state.last_sent_category = opening and "opener_setup" or "maintenance"
+      _mark_pending("dehydrate", dehydrate_tgt, MF.cfg.dehydrate_pending_s)
+      _set_route_stage(dehydrate_tgt, opening and "opener" or (route.postconv and "postconv" or "maintenance"),
+        "dehydrate", MF.state.last_sent_category)
+      return
+    end
+
+    local mudslide_tgt = _capture_target(lc, "^cast%s+mudslide%s+at%s+(.+)$")
+    local lightning_tgt = _capture_target(lc, "^staff%s+cast%s+lightning%s+at%s+(.+)$")
+    local emanation_tgt, element = lc:match("^cast%s+emanation%s+at%s+(.+)%s+(%a+)$")
+    local slot, aff_tgt
+    if mudslide_tgt ~= "" then slot, aff_tgt = "mudslide", mudslide_tgt
+    elseif lightning_tgt ~= "" then slot, aff_tgt = "lightning", lightning_tgt
+    elseif emanation_tgt and ({ air = true, earth = true, fire = true, water = true })[element] then
+      slot, aff_tgt = "emanation", _trim(emanation_tgt)
+    end
+    if slot then
+      local route = _ensure_context(aff_tgt)
+      MF.state.last_sent_target = aff_tgt
+      MF.state.last_sent_category = slot == "emanation" and "maintenance" or "lock_pressure"
+      _mark_pending(slot, aff_tgt, MF.cfg[slot .. "_pending_s"])
+      _set_route_stage(aff_tgt, route.postconv and "postconv" or "lock", element or slot, MF.state.last_sent_category)
       return
     end
 
