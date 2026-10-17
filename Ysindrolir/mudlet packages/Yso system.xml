@@ -3759,6 +3759,47 @@ end</script>
 						</Trigger>
 					</TriggerGroup>
 				</TriggerGroup>
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Kaido</name>
+					<script />
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand />
+					<packageName />
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile />
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Kai cripple</name>
+						<script>-- Two-line success confirmation; only update the selected opponent.
+if type(IsTargetted) ~= &quot;function&quot;
+    or type(OppGainedAff) ~= &quot;function&quot; then return end
+if type(ak) == &quot;table&quot; and type(ak.ai) == &quot;function&quot; and ak.ai() then return end
+
+local victim = type(multimatches) == &quot;table&quot;
+  and type(multimatches[1]) == &quot;table&quot; and multimatches[1][2]
+if type(victim) ~= &quot;string&quot; or victim == &quot;&quot; or not IsTargetted(victim) then return end
+
+OppGainedAff(&quot;leftleg rightleg rightarm leftarm prone&quot;)</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>1</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile />
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You thrust your palms forward and a stream of blue light crackles forth to strike out at ([\w&apos;-]+)\.$</string><string>^Snapping sounds echo through the air as your crippled victim sinks to the floor\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+				</TriggerGroup>
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Dragonform</name>
@@ -4319,8 +4360,8 @@ end
 						<regex>^shi$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
-					<name>Class based prompts</name>
-					<script>local magi = "config prompt custom #Y(*h/*%h) (*m/*%m#Y) *%w|*%e *b *c*r *R #R*t*T"
+						<name>Class based prompts</name>
+						<script>local magi = "config prompt custom #Y(*h/*%h) (*m/*%m#Y) *%w|*%e *b *c*r *R #R*t*T"
 local air = "config prompt custom #Y(*h/*%h) (*m/*%m#Y) *%w|*%e *b#C*i*v#w *c*r *R #R*t*T"
 local function apply(cmd)
   if type(send) == "function" then send(cmd) end
@@ -10089,7 +10130,7 @@ comboPartThree = nil</script>
 					<Alias isActive="yes" isFolder="no">
 						<name>Group damage</name>
 						<script>-- ^shdam$: embedded implementation; no runtime file loading.
-local revision = '1b6b4b0dce47b37500b8e2be5b7d445dda4513b6377c3286608d3e2f6d2831d8'
+local revision = 'a9790ada4ef361523068f1050d557364279b6acd9fd5ef4fdf89785faafa090c'
 local installed = Yso and Yso.off and Yso.off.monk and Yso.off.monk.group_damage
 if not installed or installed._source_revision ~= revision then
   (function()
@@ -10212,56 +10253,21 @@ function M.is_active()
   return monk() and Yso.mode and Yso.mode.is_combat() and M.state.loop_enabled==true
 end
 
--- Pure selection: confirmed state in, legal command out. Never mutates kata.
+-- Shared AI and combo validation are also available to future Shikudo routes.
 function M.select(ctx)
-  local tgt=trim(ctx.target)
-  if not tgt:match('^[%a%d_\'-]+$') then return nil,'invalid_target' end
-  if ctx.shield~=true and ctx.dispatch_ready==true then return 'dispatch '..tgt,'dispatch' end
-  local form=trim(ctx.form):lower()
-  if form=='' or form=='none' then return 'adopt rain form','adopt' end
-  local kata=tonumber(ctx.kata) or 0
-  local leg=M.cfg.leg=='right' and 'right' or 'left'
-  local a,b,k,next_form,flow
-  if form=='rain' then
-    a,b,k='kuro '..leg,'kuro '..leg,'frontkick left'
-    if ctx.leg_ready==true or ctx.prone==true then
-      -- Prone first so Hiru can apply its prone-only confusion benefit.
-      a,b,k='frontkick left','hiru','hiru'
-    end
-    -- Fast cures can remove prone/injury before our next balance. Advance
-    -- after two confirmed triples anyway, instead of repeating Rain to 21.
-    next_form,flow='oak',ctx.leg_ready==true or ctx.prone==true or kata&gt;=6
-  elseif form=='oak' then
-    a,b,k='nervestrike','kuro '..leg,'risingkick head'
-    if ctx.leg_ready==true or ctx.prone==true then b='livestrike' end
-    next_form,flow='gaital',true
-  elseif form=='gaital' then
-    if ctx.prone==true then a,b,k='needle','needle','spinkick'
-    else a,b,k='sweep',nil,'spinkick' end
-    next_form,flow='rain',kata&gt;=9
-  elseif form=='willow' then
-    a,b,k='hiru','hiraku','flashheel '..leg
-    next_form,flow='rain',kata&gt;=6
-  elseif form=='tykonos' then
-    a,b,k='thrust head','thrust torso','risingkick head'
-    next_form,flow='willow',true
-  elseif form=='maelstrom' then
-    a,b,k='livestrike','ruku torso','risingkick torso'
-    next_form,flow='oak',true
-  else return nil,'unknown_form' end
-  -- Conservatively leave before another full combo reaches the guide's cap.
-  -- A shield still skips dispatch. The same legal combo is what breaks it.
-  local cap=form=='rain' and 24 or 12
-  if form~='tykonos' and kata+3&gt;=cap and kata&gt;=5 then
-    return 'transition to '..next_form..' form','transition'
-  end
-  local pieces={'combo',tgt,a}
-  if b then pieces[#pieces+1]=b end
-  pieces[#pieces+1]=k
-  if flow and kata&gt;=5 then pieces[#pieces+1]='transition '..next_form end
-  return table.concat(pieces,' '),'combo'
+  local F = form_tracker()
+  local A = F and F.ai
+  local C = Yso.monk and Yso.monk.combo
+  if not A or type(A.select) ~= 'function' then return nil,'no_ai' end
+  if not C or type(C.build_shikudo) ~= 'function' then return nil,'no_combo_builder' end
+  if not trim(ctx.target):match("^[%a%d_'-]+$") then return nil,'invalid_target' end
+  ctx.leg = M.cfg.leg
+  local opts, why = A.select(ctx)
+  if not opts then return nil,why end
+  if opts.command then return opts.command,opts.kind end
+  local cmd, reason = C.build_shikudo(ctx.target,opts)
+  return cmd,cmd and opts.kind or reason
 end
-
 function M.note_recovery(limb)
   local p=M.state.pending or M.state.cooldown
   if not p then return end
@@ -10444,8 +10450,9 @@ function M.attack_function()
   -- Text confirmations update F.form immediately; don't reapply stale GMCP here.
   local form=F.form
   -- AK tracks leg breaks as leftleg/rightleg, not invented injury names.
-  local injury=has_aff(tgt,'leftleg') or has_aff(tgt,'rightleg')
-  local ctx={target=tgt,form=form,kata=F.kata,prone=has_aff(tgt,'prone'),leg_ready=injury}
+  local injury=has_aff(tgt,M.cfg.leg=='right' and 'rightleg' or 'leftleg')
+  local ctx={target=tgt,form=form,kata=F.kata,prone=has_aff(tgt,'prone'),leg_ready=injury,
+    affs={paralysis=has_aff(tgt,'paralysis'),anorexia=has_aff(tgt,'anorexia'),stuttering=has_aff(tgt,'stuttering')}}
   -- 1. Shield check and shield handling.
   ctx.shield=Yso.shield.up(tgt)==true
   if ctx.shield then
@@ -10470,12 +10477,20 @@ end
 M.alias_loop_stop_details={inactive=true,disabled=true,invalid_target=true,no_mindlock_tracker=true,no_shield_tracker=true,no_form_tracker=true,no_execute_helper=true,no_staff=true,no_emitter=true,legacy_queue_present=true,unknown_form=true}
 function M.alias_loop_on_started()
   M.alias_loop_clear_waiting()
+  -- A watchdog stop requires an explicit restart. Drop its expired decision
+  -- then; can_run still requires current BAL/EQ readiness before any retry.
+  -- Ordinary rapid off/on retains physical recovery protection.
+  if M.state.retry_after_timeout then
+    M.state.cooldown=nil
+    M.state.retry_after_timeout=nil
+  end
   M.state.hold_reason=nil; M.state.reported_hold=nil
   M.state.melee_missing=nil
   echo_status('Group damage ON. Use shdam again to stop.')
 end
 function M.alias_loop_on_stopped(ctx)
   M.alias_loop_clear_waiting()
+  if ctx and ctx.reason=='confirmation_timeout' then M.state.retry_after_timeout=true end
   if not ctx or not ctx.silent then echo_status('Group damage OFF ('..tostring(ctx and ctx.reason or 'manual')..').') end
 end
 function M.alias_loop_on_error(err)
@@ -10522,7 +10537,6 @@ if type(registerAnonymousEventHandler)=='function' then
 end
 M.init()
 return M
-
   end)()
   Yso.off.monk.group_damage._source_revision = revision
 end
@@ -10533,7 +10547,8 @@ end
 local ok, why = Yso.util.toggle_route_alias('monk_shikudo_group_damage', 'alias:shdam')
 if ok ~= true and type(cecho)=='function' then
   cecho('&lt;orange&gt;[SHIKUDO] Toggle failed: '..tostring(why or 'unknown')..'&lt;reset&gt;\n')
-end</script>
+end
+</script>
 						<command />
 						<packageName />
 						<regex>^shdam$</regex>
@@ -10558,79 +10573,6 @@ bash()
 						<command />
 						<packageName />
 						<regex>^shunt$</regex>
-					</Alias>
-					<Alias isActive="yes" isFolder="no">
-						<name>Custom Shikudo pk combos</name>
-						<script>local F = Yso and Yso.monk and Yso.monk.shikudo
-local form = F and type(F.current_form) == 'function' and F.current_form()
-  or (F and F.form) or shikudoForm or shikudostance
--- Tekura shares the three-key pattern; only handle an active Shikudo form.
-if not form or form == '' then
-  local stats = gmcp and gmcp.Char and gmcp.Char.Vitals and gmcp.Char.Vitals.charstats
-  local has_form, has_stance = false, false
-  for _, entry in ipairs(type(stats) == 'table' and stats or {}) do
-    local label = tostring(entry):match('^(.-):')
-    label = tostring(label or ''):lower():gsub('^%s+', ''):gsub('%s+$', '')
-    if label == 'form' then has_form = true end
-    if label == 'stance' then has_stance = true end
-  end
-  local S = Yso and Yso.monk and Yso.monk.stance
-  if not has_form and (has_stance or (S and S.current)) and (not matches[5] or matches[5] == '') then return end
-  cecho('&lt;orange&gt;[SHIKUDO] No active form. Enter one first, e.g. ADOPT TYKONOS FORM, then retry the combo.&lt;reset&gt;\n')
-  return
-end
-if not F or type(F.staff_command) ~= 'function' or type(F.resolve_target) ~= 'function' then
-  cecho('&lt;orange&gt;[SHIKUDO] Load My Shikudo stance? (form and inventory tracking).&lt;reset&gt;\n')
-  return
-end
-local who = F.resolve_target()
-if not who then return end
-local row = type(stances) == 'table' and stances[form]
-if type(row) ~= 'table' or type(row.strike) ~= 'table' or type(row.kick) ~= 'table' then
-  cecho('&lt;orange&gt;[SHIKUDO] No custom key mappings for ' .. tostring(form) .. '. Load Stances key mappings.&lt;reset&gt;\n')
-  return
-end
-local transition
-if matches[5] and matches[5] ~= '' then
-  transition = type(row.transition) == 'table' and row.transition[matches[5]]
-  if not transition then
-    cecho('&lt;orange&gt;[SHIKUDO] That transition is not allowed from ' .. form .. '.&lt;reset&gt;\n')
-    return
-  end
-  if (tonumber(F.kata) or 0) &lt; 5 then
-    cecho('&lt;orange&gt;[SHIKUDO] At least 5 confirmed kata actions are required to transition.&lt;reset&gt;\n')
-    return
-  end
-end
--- Preserve the existing custom key mappings; never silently invent keys.
-local first, second, third
-if form == 'rain' and matches[2] ~= 'r' then
-  first, second, third = row.kick[matches[2]], row.strike[matches[3]], row.strike[matches[4]]
-else
-  first, second, third = row.strike[matches[2]], row.kick[matches[3]], row.strike[matches[4]]
-end
-if type(first) ~= 'string' or type(second) ~= 'string' or type(third) ~= 'string'
-   or first == '' or second == '' or third == '' then
-  cecho('&lt;orange&gt;[SHIKUDO] Invalid strike/kick key for this form.&lt;reset&gt;\n')
-  return
-end
-local atkstring = first .. ' ' .. second .. ' ' .. third
-if form == 'rain' and matches[2] ~= 'r' then side = first:gsub('frontkick%s','') end
-if transition then atkstring = atkstring .. ' transition ' .. transition end
-local wield = F.staff_command()
-if not wield then return end
-if type(Yso.emit) ~= 'function' then
-  cecho('&lt;orange&gt;[SHIKUDO] Yso.emit is unavailable.&lt;reset&gt;\n')
-  return
-end
-local chain = 'stand&amp;&amp;dismount&amp;&amp;' .. wield
-  .. '&amp;&amp;order loyals follow me&amp;&amp;order loyals kill ' .. who
-  .. '&amp;&amp;combo ' .. who .. ' ' .. atkstring .. '&amp;&amp;assess ' .. who
-Yso.emit({bal=chain},{kind='offense',reason='shikudo:pk',target=who,commit=true})
-</script>
-						<command />
-						<packageName />
-						<regex>^(w|a|s|d|z|x|f|j|q|r|c|e)(w|a|s|d|z|x|e|f|q)(w|a|s|d|z|x|e|f|q)(?:\s+(tykonos|willow|rain|oak|gaital|maelstrom))?$</regex>
 					</Alias>
 				</AliasGroup>
 			</AliasGroup>
@@ -10774,18 +10716,18 @@ Yso.emit({bal=chain},{kind='offense',reason='shikudo:pk',target=who,commit=true}
 					<regex>^pres$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
-					<name>Mistral</name>
-					<script>Yso.off.airlord.manual("mistral")</script>
-					<command />
-					<packageName />
-					<regex>^mist$</regex>
-				</Alias>
-				<Alias isActive="yes" isFolder="no">
 					<name>alock</name>
 					<script>Yso.util.toggle_route_alias("airlord_lock", "alias:alock")</script>
 					<command />
 					<packageName />
 					<regex>^alock$</regex>
+					<Alias isActive="yes" isFolder="no">
+						<name>Mistral</name>
+						<script>Yso.off.airlord.manual("mistral")</script>
+						<command />
+						<packageName />
+						<regex>^mist$</regex>
+					</Alias>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>alupdraft</name>
@@ -10828,6 +10770,22 @@ Yso.emit({bal=chain},{kind='offense',reason='shikudo:pk',target=who,commit=true}
 					<command />
 					<packageName />
 					<regex>^tail$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Soaring</name>
+					<script>-- ^soa([lhs])$: send the full game command rather than a client alias.
+local elevations = {
+  l = &quot;low&quot;,
+  h = &quot;high&quot;,
+  s = &quot;stratosphere&quot;,
+}
+local elevation = elevations[matches[2]]
+if elevation then
+  sendAll(&quot;clearqueue all&quot;, &quot;aero soar &quot; .. elevation)
+end</script>
+					<command />
+					<packageName />
+					<regex>^soa([lhs])$</regex>
 				</Alias>
 			</AliasGroup>
 		</AliasGroup>
@@ -20624,6 +20582,8 @@ local function _snapshot(tgt)
     target = tgt,
     affs = {
       "waterbonds",
+      "nausea",
+      "weariness",
       "frozen",
       "frostbite",
       "clumsiness",
@@ -20639,8 +20599,6 @@ local function _snapshot(tgt)
       "anorexia",
       "dizziness",
       "stupidity",
-      "nausea",
-      "weariness",
       "ablaze",
     },
     pending_slots = PENDING_SLOTS,
@@ -24654,6 +24612,23 @@ M.stances = {
   horse = { name = "Horse", command = "HRS", key = "horse" },
 }
 
+-- Shatter is available in every form and occupies one staff strike.
+-- Reference: https://wiki.achaea.com/Shikudo (AB SHIKUDO SHATTER).
+M.shikudo.shatter = skill({
+  name = 'Shatter', syntax = {'SHATTER'},
+  commands = {{cmd='SHATTER', role='strike'}},
+  works_on = 'adventurers and denizens',
+  notes = {'Breaks a magical shield; usable in every Shikudo form.'},
+})
+local limb_options = {
+  thrust = {head=true, torso=true, ['left arm']=true, ['right arm']=true, ['left leg']=true, ['right leg']=true},
+  dart = {head=true, torso=true, ['left arm']=true, ['right arm']=true, ['left leg']=true, ['right leg']=true},
+  ruku = {left=true, right=true, torso=true},
+  kuro = {left=true, right=true}, frontkick = {left=true, right=true},
+  flashheel = {left=true, right=true}, risingkick = {head=true, torso=true},
+}
+for key, options in pairs(limb_options) do M.shikudo[key].limb_options = options end
+
 -- Observed limb damage per successful hit, in percentage points (not health damage).
 -- These are measurements against Maldrantus, not universal damage guarantees.
 M.shikudo_limb_meta = {
@@ -25055,113 +25030,6 @@ Hadoken()
 						<script />
 						<eventHandlerList />
 						<Script isActive="yes" isFolder="no">
-							<name>Stances key mappings</name>
-							<packageName />
-							<script>-- Shikudo custom combo keys. Edit this script to change your layout.
--- Normal order: strike -&gt; kick -&gt; strike.
--- Rain order: kick -&gt; strike -&gt; strike.
--- Unassigned keys are intentionally absent.
-stances = {
-  tykonos = {
-    transition = {willow = 'willow'},
-    strike = {
-      w = "thrust head",
-      a = "thrust left arm",
-      s = "thrust torso",
-      d = "thrust right arm",
-      z = "thrust left leg",
-      x = "thrust right leg",
-    },
-    kick = {
-      w = "risingkick head",
-      s = "risingkick torso",
-    },
-  },
-  willow = {
-    transition = {rain = 'rain'},
-    strike = {
-      w = "dart head",
-      a = "dart left arm",
-      s = "dart torso",
-      d = "dart right arm",
-      z = "dart left leg",
-      x = "dart right leg",
-      f = "hiru",
-      q = "hiraku",
-    },
-    kick = {
-      z = "flashheel left",
-      x = "flashheel right",
-    },
-  },
-  rain = {
-    transition = {tykonos = 'tykonos', oak = 'oak'},
-    strike = {
-      w = "hiru",
-      a = "ruku left",
-      s = "ruku torso",
-      d = "ruku right",
-      z = "kuro left",
-      x = "kuro right",
-    },
-    kick = {
-      a = "frontkick left",
-      d = "frontkick right",
-    },
-  },
-  oak = {
-    transition = {willow = 'willow', gaital = 'gaital'},
-    strike = {
-      w = "nervestrike",
-      a = "ruku left",
-      s = "ruku torso",
-      d = "ruku right",
-      z = "kuro left",
-      x = "kuro right",
-      f = "livestrike",
-    },
-    kick = {
-      w = "risingkick head",
-      s = "risingkick torso",
-    },
-  },
-  gaital = {
-    transition = {rain = 'rain', maelstrom = 'maelstrom'},
-    strike = {
-      w = "needle",
-      a = "ruku left",
-      s = "ruku torso",
-      d = "ruku right",
-      z = "kuro left",
-      x = "kuro right",
-      f = "jinzuku",
-    },
-    kick = {
-      w = "spinkick",
-      z = "flashheel left",
-      x = "flashheel right",
-      q = "dawnkick",
-    },
-  },
-  maelstrom = {
-    transition = {oak = 'oak'},
-    strike = {
-      w = "livestrike",
-      a = "ruku left",
-      s = "ruku torso",
-      d = "ruku right",
-      f = "jinzuku",
-    },
-    kick = {
-      w = "risingkick head",
-      s = "risingkick torso",
-    },
-  },
-}
-</script>
-							<eventHandlerList />
-						</Script>
-						<Script isActive="yes" isFolder="no">
 							<name>Bashing script</name>
 							<packageName />
 							<script>-- Defines both the namespaced function and the legacy entry point used by shunt.
@@ -25479,13 +25347,13 @@ function F.staff_command()
   local configured = tostring(rawget(_G, 'shikstaff') or ''):gsub('^%s+', ''):gsub('%s+$', '')
   if configured ~= '' then
     if configured:match('^staff%d+$') then return 'wield ' .. configured end
-    cecho('&lt;orange&gt;[SHIKUDO] Set shikstaff to a staff item name such as staff123.&lt;reset&gt;\n')
+    if type(cecho) == 'function' then cecho('&lt;orange&gt;[SHIKUDO] Set shikstaff to a staff item name such as staff123.&lt;reset&gt;\n') end
     return nil
   end
   local id = F.get_staff_id('willow')
   if id then return 'wield staff' .. id end
   F.refresh_staffs()
-  cecho('&lt;orange&gt;[SHIKUDO] No willow staff found in inventory. Refresh requested; retry after it arrives.&lt;reset&gt;\n')
+  if type(cecho) == 'function' then cecho('&lt;orange&gt;[SHIKUDO] No willow staff found in inventory. Refresh requested; retry after it arrives.&lt;reset&gt;\n') end
 end
 
 function F.resolve_target()
@@ -25536,10 +25404,238 @@ end
 </script>
 							<eventHandlerList />
 						</Script>
-						<Script isActive="no" isFolder="no">
-							<name>PK Shikudo for AK</name>
+						<Script isActive="yes" isFolder="no"><name>Combo logic</name><packageName></packageName><script>--========================================================--
+-- Monk combo
+--  Caller passes the kick and two punches. This builds the
+--  COMBO string and does not send it.
+--  left/right is filled only for strikes whose syntax takes it.
+--========================================================--
+
+Yso = Yso or {}
+Yso.monk = Yso.monk or {}
+Yso.monk.combo = Yso.monk.combo or {}
+
+local C = Yso.monk.combo
+
+local LIMB_KEYS = {
+  legs = { "leftleg", "rightleg" },
+  arms = { "leftarm", "rightarm" },
+}
+
+local function _lookup(token)
+  local ref = Yso.ref and Yso.ref.monk
+  if not ref or type(ref.lookup) ~= "function" then return nil end
+  return ref.lookup(token)
+end
+
+local function _score(key)
+  local scores = rawget(_G, "affstrack")
+  scores = scores and scores.score
+  if type(scores) ~= "table" then return 0 end
+  return tonumber(scores[key]) or 0
+end
+
+local function _side(limb_side, override)
+  if type(override) == "string" and override ~= "" then
+    local side = override:lower()
+    if side == "left" or side == "right" then return side end
+  end
+  local keys = LIMB_KEYS[limb_side]
+  if not keys then return nil end
+  local best_key, best_score
+  for _, key in ipairs(keys) do
+    local score = _score(key)
+    if score &gt; 0 and score &lt; 200 and (not best_score or score &gt; best_score) then
+      best_key = key
+      best_score = score
+    end
+  end
+  if not best_key then return "left" end
+  if best_key:find("right", 1, true) then return "right" end
+  return "left"
+end
+
+local function _piece(token, opts)
+  local row = _lookup(token)
+  if not row then return nil, "unknown_strike" end
+  local parts = { row.cmd }
+  if row.needs_direction and type(opts.direction) == "string" and opts.direction ~= "" then
+    parts[#parts + 1] = tostring(opts.direction):lower()
+  end
+  if row.limb_side then
+    local overrides = type(opts.limbs) == "table" and opts.limbs or {}
+    local key = tostring(token or ""):lower()
+    parts[#parts + 1] = _side(row.limb_side, overrides[row.cmd] or overrides[key])
+  end
+  return parts, row
+end
+
+local function _append(out, parts)
+  for i = 1, #parts do
+    out[#out + 1] = parts[i]
+  end
+end
+
+function C.build(target, opts)
+  opts = type(opts) == "table" and opts or {}
+  target = tostring(target or opts.target or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if target == "" then return nil, "no_target" end
+
+  local kick_parts, kick = _piece(opts.kick, opts)
+  if not kick_parts then return nil, kick or "bad_kick" end
+  if kick.role ~= "kick" and kick.role ~= "stance" then
+    return nil, "kick_required"
+  end
+
+  local p1_parts, p1 = _piece(opts.punch1, opts)
+  if not p1_parts then return nil, p1 or "bad_punch1" end
+  if p1.role ~= "punch" then return nil, "punch1_required" end
+
+  local p2_parts, p2 = _piece(opts.punch2, opts)
+  if not p2_parts then return nil, p2 or "bad_punch2" end
+  if p2.role ~= "punch" then return nil, "punch2_required" end
+
+  local out = { "combo", target }
+  _append(out, kick_parts)
+  _append(out, p1_parts)
+  _append(out, p2_parts)
+
+  local already_jpk = kick.cmd == "jpk" or p1.cmd == "jpk" or p2.cmd == "jpk"
+  if opts.jpk == true and not already_jpk then
+    out[#out + 1] = "jpk"
+  end
+
+  return table.concat(out, " ")
+end
+
+-- Shikudo deliberately uses its own reference namespace: Tekura also has
+-- COMBO and Sweep, but different balance and form rules.
+function C.build_shikudo(target, opts)
+  opts = type(opts) == 'table' and opts or {}
+  target = tostring(target or '')
+  if not target:match("^[%a%d_'-]+$") then return nil, 'invalid_target' end
+  local ref = Yso.ref and Yso.ref.monk and Yso.ref.monk.shikudo
+  local form = ref and ref[opts.form]
+  if not form or not form.attacks then return nil, 'unknown_form' end
+  local attacks = opts.attacks
+  if type(attacks) ~= 'table' or #attacks &lt; 1 or #attacks &gt; 3 then return nil, 'attack_count' end
+  local allowed = {shatter=true}
+  for _, key in ipairs(form.attacks) do allowed[key:lower()] = true end
+  local out, kicks, arms = {'combo', target}, 0, 0
+  for _, piece in ipairs(attacks) do
+    if type(piece) ~= 'string' then return nil, 'invalid_attack' end
+    local key, arg = piece:lower():match('^(%a+)%s*(.-)$')
+    local row = key and ref[key]
+    if not row or not allowed[key] then return nil, 'attack_unavailable' end
+    local role = row.commands[1].role
+    if role ~= 'strike' and role ~= 'kick' then return nil, 'invalid_attack' end
+    if row.limb_options then
+      if not row.limb_options[arg] then return nil, 'invalid_limb' end
+    elseif arg ~= '' then return nil, 'unexpected_limb' end
+    if role == 'kick' then kicks = kicks + 1
+    else arms = arms + (key == 'sweep' and 2 or 1) end
+    if kicks &gt; 1 or arms &gt; 2 then return nil, 'balance_slots' end
+    out[#out+1] = key .. (arg ~= '' and (' '..arg) or '')
+  end
+  if opts.transition then
+    if (tonumber(opts.kata) or 0) &lt; 5 then return nil, 'insufficient_kata' end
+    local destination = ref[opts.transition]
+    local legal = false
+    if destination and destination.attacks then
+      for _, name in ipairs(form.transitions or {}) do
+        if name:lower() == opts.transition or name == destination.form_name then legal = true end
+      end
+    end
+    if not legal then return nil, 'invalid_transition' end
+    out[#out+1] = 'transition '..opts.transition
+  end
+  return table.concat(out, ' ')
+end
+</script><eventHandlerList /></Script>
+<Script isActive="yes" isFolder="no">
+							<name>Shikudo AI logic</name>
 							<packageName />
-							<script>-- Custom Shikudo pk combos and ^shdam$ own combos.</script>
+							<script>-- Confirmed target/form/kata state in; damage-route options out. No sending,
+-- predicted afflictions, limb damage, kata increments, or mutable decisions.
+Yso = Yso or {}
+Yso.monk = Yso.monk or {}
+Yso.monk.shikudo = Yso.monk.shikudo or {}
+local F = Yso.monk.shikudo
+F.ai = F.ai or {}
+local A = F.ai
+
+function A.select(ctx)
+  ctx = type(ctx) == 'table' and ctx or {}
+  local form = tostring(ctx.form or ''):lower()
+  if form == '' or form == 'none' then return {command='adopt rain form',kind='adopt'} end
+  local ref = Yso.ref and Yso.ref.monk and Yso.ref.monk.shikudo
+  if not ref or not ref[form] or not ref[form].attacks then return nil, 'unknown_form' end
+  if ctx.shield ~= true and ctx.dispatch_ready == true then
+    local target = tostring(ctx.target or '')
+    if not target:match("^[%a%d_'-]+$") then return nil, 'invalid_target' end
+    return {command='dispatch '..target,kind='dispatch'}
+  end
+  local kata = tonumber(ctx.kata) or 0
+  local leg = ctx.leg == 'right' and 'right' or 'left'
+  local arm = ctx.arm == 'right' and 'right' or 'left'
+  local affs = type(ctx.affs) == 'table' and ctx.affs or {}
+  local function has(key) return affs[key] == true or (tonumber(affs[key]) or 0) &gt;= 100 end
+  local attacks, next_form, flow
+  if form == 'rain' then
+    attacks = {'kuro '..leg, 'kuro '..leg, 'frontkick '..arm}
+    if ctx.leg_ready == true or ctx.prone == true then
+      attacks = {'hiru', 'hiru', 'frontkick '..arm}
+    end
+    -- Retain the installed damage route's fast progression at six confirmed
+    -- actions; 24/12 below are conservative policy, not measured game caps.
+    next_form, flow = 'oak', ctx.leg_ready == true or ctx.prone == true or kata &gt;= 6
+  elseif form == 'oak' then
+    attacks = {has('paralysis') and 'livestrike' or 'nervestrike', 'kuro '..leg, 'risingkick head'}
+    if ctx.leg_ready == true or ctx.prone == true then attacks[2] = 'livestrike' end
+    next_form, flow = 'gaital', true
+  elseif form == 'gaital' then
+    attacks = ctx.prone == true and {'needle', 'needle', 'spinkick'} or {'sweep', 'flashheel '..leg}
+    next_form, flow = 'rain', kata &gt;= 9
+  elseif form == 'willow' then
+    attacks = {'hiru', has('anorexia') and has('stuttering') and 'hiru' or 'hiraku', 'flashheel '..leg}
+    next_form, flow = 'rain', kata &gt;= 6
+  elseif form == 'tykonos' then
+    attacks = {'thrust head', 'thrust torso', 'risingkick head'}
+    next_form, flow = 'willow', true
+  elseif form == 'maelstrom' then
+    attacks = {'livestrike', 'ruku torso', 'risingkick torso'}
+    next_form, flow = 'oak', true
+  end
+  if form ~= 'tykonos' and kata + 3 &gt;= (form == 'rain' and 24 or 12) and kata &gt;= 5 then
+    return {command='transition to '..next_form..' form',kind='transition'}
+  end
+  if ctx.shield == true then
+    -- Sweep consumes both staff balances; replace it before inserting Shatter.
+    local strike = form == 'gaital' and 'needle' or attacks[2]
+    local kick = attacks[#attacks]
+    attacks = {'shatter', strike, kick}
+  elseif form == 'rain' and (ctx.leg_ready == true or ctx.prone == true) then
+    -- Preserve the installed order: prone first, then Hiru's prone benefit.
+    attacks = {attacks[3], attacks[1], attacks[2]}
+  end
+  return {form=form, kata=kata, attacks=attacks,
+    transition=flow and kata &gt;= 5 and next_form or nil, kind='combo'}
+end
+
+-- Legacy callers still ask for only the second staff balance. Resolve through
+-- the same selector, with absent scores treated as unconfirmed.
+function shikudostafftwo()
+  local target = type(Yso.get_target) == 'function' and Yso.get_target() or rawget(_G,'target')
+  local selected = type(IsTargetted) == 'function' and IsTargetted(target)
+  local scores = selected and rawget(_G,'affstrack') or nil
+  local affs = scores and scores.score or {}
+  local opts = A.select{form=F.form or rawget(_G,'shikudostance'), kata=F.kata,
+    leg=rawget(_G,'tpll') == true and 'right' or 'left', affs=affs,
+    prone=(tonumber(affs.prone) or 0) &gt;= 100}
+  stafftwo = opts and opts.attacks and opts.attacks[2] or ''
+  return stafftwo
+end
+</script>
 							<eventHandlerList />
 						</Script>
 						<Script isActive="yes" isFolder="no">

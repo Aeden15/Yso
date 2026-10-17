@@ -3,7 +3,7 @@
 # Run:  cd Ysindrolir\scripts ; .\export_yso_system_xml.ps1
 # Validate:  [xml](Get-Content -Raw -LiteralPath '..\mudlet packages\Yso system.xml')
 [CmdletBinding(SupportsShouldProcess = $true)]
-param([switch]$FocusOnly)
+param([switch]$FocusOnly, [switch]$ShikudoOnly, [switch]$KaiSoarOnly)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -214,6 +214,44 @@ $MreflectAliasSource = Join-Path $MagiDir 'mreflect_alias_body.lua'
 $content = Get-Content -LiteralPath $XmlPackage -Raw -Encoding UTF8
 $original = $content
 
+# Scoped maintenance preserves package-native scripts that have no current disk source.
+# Run both switches together for the Monk/Kai/soar update, without the legacy full refresh.
+if ($ShikudoOnly -or $KaiSoarOnly) {
+  if ($FocusOnly) { throw 'FocusOnly cannot be combined with ShikudoOnly or KaiSoarOnly.' }
+  if ($ShikudoOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Shikudo sources and embedded shdam alias')) {
+    & (Join-Path $ScriptsDir 'build_shdam_alias_body.ps1') | Out-Null
+    $sources = [ordered]@{
+      'Monk reference' = 'monk_reference.lua'
+      'My Shikudo stance?' = 'shikudo_forms.lua'
+      'Combo logic' = 'combo.lua'
+      'Shikudo AI logic' = 'shikudo_ai.lua'
+      'Dispatch execute logic' = 'shikudo_execute.lua'
+    }
+    foreach ($entry in $sources.GetEnumerator()) {
+      $document = [xml]$content
+      $nodes = @($document.SelectNodes('//Script') | Where-Object { [string]$_.name -ceq $entry.Key })
+      if ($nodes.Count -ne 1) { throw "Expected one Shikudo script: $($entry.Key)" }
+      $body = ConvertTo-MudletXmlScriptText (Get-Content -LiteralPath (Join-Path $MonkDir $entry.Value) -Raw -Encoding UTF8)
+      $nameText = [System.Security.SecurityElement]::Escape([string]$entry.Key)
+      $nameAt = $content.IndexOf('<name>' + $nameText + '</name>')
+      $openAt = $content.IndexOf('<script>', $nameAt) + '<script>'.Length
+      $closeAt = $content.IndexOf('</script>', $openAt)
+      if ($nameAt -lt 0 -or $openAt -lt 8 -or $closeAt -lt $openAt) { throw "Missing script body: $($entry.Key)" }
+      $content = $content.Substring(0, $openAt) + $body + $content.Substring($closeAt)
+    }
+    $content = Set-AliasScriptByName $content 'Group damage' (Join-Path $MonkDir 'shdam_alias_body.lua')
+    $document = [xml]$content
+    if ($content -cne $original) {
+      [System.IO.File]::WriteAllText($XmlPackage, $content, (New-Object System.Text.UTF8Encoding $false))
+    }
+    Write-Host 'Synchronized Shikudo; unrelated package content preserved.'
+  }
+  if ($KaiSoarOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Kai cripple and soar')) {
+    & (Join-Path $ScriptsDir 'build_kai_soar_package.ps1')
+  }
+  return
+}
+
 # Update Focus without replacing unrelated native scripts from older source mirrors.
 if ($FocusOnly) {
   if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Focus script and alias only')) {
@@ -320,3 +358,8 @@ if ($content -ne $original) {
 }
 
 Write-Host "Done. Manifest entries: $($ScriptToSourcePath.Count). Inserts: $($ScriptInserts.Count)."
+
+# Keep the maintained combat entries synchronized after a legacy full refresh too.
+if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize maintained Shikudo, Kai cripple and soar entries')) {
+  & $PSCommandPath -ShikudoOnly -KaiSoarOnly
+}

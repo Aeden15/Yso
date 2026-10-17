@@ -76,11 +76,44 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
+  airlord_damage = {
+    id = "airlord_damage",
+    contexts = { duel = true, group = true },
+    mode = "combat",
+    namespace = "Yso.off.airlord.damage",
+    description = "Airlord Damage route",
+    priority = 64,
+    class = "",
+    active = true,
+  },
+  airlord_lock = {
+    id = "airlord_lock",
+    context = "duel",
+    mode = "combat",
+    namespace = "Yso.off.airlord.lock",
+    description = "Airlord pressure and Compression",
+    priority = 65,
+    -- Form names vary between Lord and Lady; the route checks both explicitly.
+    class = "",
+    active = true,
+  },
+  monk_shikudo_group_damage = {
+    id = "monk_shikudo_group_damage",
+    context = "group",
+    mode = "combat",
+    namespace = "Yso.off.monk.group_damage",
+    description = "Shikudo group damage",
+    priority = 56,
+    class = "monk",
+    active = true,
+    module_name = "shikudo_group_damage",
+  },
   magi_focus = {
     id = "magi_focus",
+    context = "duel",
     mode = "combat",
     namespace = "Yso.off.magi.focus",
-    description = "Magi duel convergence",
+    description = "Magi lock pressure",
     priority = 61,
     class = "magi",
     active = true,
@@ -88,6 +121,7 @@ local ROUTES = {
   },
   magi_dmg = {
     id = "magi_dmg",
+    context = "duel",
     mode = "combat",
     namespace = "Yso.off.magi.dmg",
     description = "Magi duel damage",
@@ -98,6 +132,7 @@ local ROUTES = {
   },
   alchemist_duel_route = {
     id = "alchemist_duel_route",
+    context = "duel",
     mode = "combat",
     namespace = "Yso.off.alc.duel_route",
     description = "Alchemist duel lock pressure",
@@ -108,6 +143,7 @@ local ROUTES = {
   },
   alchemist_aurify_route = {
     id = "alchemist_aurify_route",
+    context = "duel",
     mode = "combat",
     namespace = "Yso.off.alc.aurify_route",
     description = "Alchemist aurify bleed pressure",
@@ -118,6 +154,7 @@ local ROUTES = {
   },
   magi_group_damage = {
     id = "magi_group_damage",
+    context = "group",
     mode = "combat",
     namespace = "Yso.off.magi.group_damage",
     description = "Magi group damage",
@@ -128,6 +165,7 @@ local ROUTES = {
   },
   magi_firestorm = {
     id = "magi_firestorm",
+    context = "group",
     mode = "combat",
     namespace = "Yso.off.magi.firestorm",
     description = "Magi firestorm",
@@ -138,6 +176,7 @@ local ROUTES = {
   },
   magi_water_group = {
     id = "magi_water_group",
+    context = "group",
     mode = "combat",
     namespace = "Yso.off.magi.water_group",
     description = "Magi water group",
@@ -148,6 +187,7 @@ local ROUTES = {
   },
   alchemist_group_damage = {
     id = "alchemist_group_damage",
+    context = "group",
     mode = "combat",
     namespace = "Yso.off.alc.group_damage",
     description = "Alchemist group damage",
@@ -159,6 +199,9 @@ local ROUTES = {
 }
 
 local ALIASES = {
+  aidam = "airlord_damage",
+  alock = "airlord_lock",
+  shdam = { monk = "monk_shikudo_group_damage" },
   focus = { magi = "magi_focus" },
   mfocus = { magi = "magi_focus" },
   magi_focus = { magi = "magi_focus" },

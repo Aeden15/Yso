@@ -1,6 +1,10 @@
-# Yso systems status — May 23, 2026
+# Yso systems status — October 17, 2026
 
-Supported classes are **Magi** and **Alchemist**, plus shared Yso core. Older class stacks were removed from this workspace and from the Mudlet package; do not treat removed classes as active automation paths.
+The package includes **Magi**, **Alchemist**, **Monk/Shikudo**, **Airlord**, and Dragon support, plus shared Yso core. Check the installed package and maintained build mappings before treating an older filesystem module as an active automation path.
+
+For the current Shikudo/Kai/soar changes, use `Ysindrolir/scripts/export_yso_system_xml.ps1 -ShikudoOnly -KaiSoarOnly`. This scoped refresh preserves unrelated package-native scripts. The legacy full refresh also changes other classes and removes older package entries; use it only when deliberately refreshing those sources.
+
+The `Ysindrolir/Yso` folder remains in use for shared sources, export inputs, and tests. See [the source audit](Ysindrolir/Information/Yso-source-audit.md) for retained modules and the three retired loader files removed in this cleanup.
 
 ## Mudlet workflow (package-first)
 

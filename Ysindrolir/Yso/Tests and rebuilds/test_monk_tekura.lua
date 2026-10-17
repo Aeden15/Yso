@@ -95,7 +95,7 @@ assert_eq("horse command case-insensitive", Yso.monk.stance.current and Yso.monk
 assert_eq("axe id", Yso.ref.monk.tekura.axe.abadmin_id, 862)
 assert_eq("cat id", Yso.ref.monk.tekura.cat.abadmin_id, 851)
 assert_eq("scythe syntax", Yso.ref.monk.telepathy.scythe.syntax[1], "MIND SCYTHE")
-assert_nil("no shikudo table", Yso.ref.monk.shikudo)
+assert_true("shikudo reference available", type(Yso.ref.monk.shikudo) == "table")
 
 local function clear_scores()
   affstrack.score = {}
