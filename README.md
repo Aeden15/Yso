@@ -1,6 +1,20 @@
-# Yso systems status — May 23, 2026
+# Yso systems status — October 17, 2026
 
-Supported classes are **Magi** and **Alchemist**, plus shared Yso core. Older class stacks were removed from this workspace and from the Mudlet package; do not treat removed classes as active automation paths.
+The package includes **Magi**, **Alchemist**, **Monk/Shikudo**, **Airlord**, and Dragon support, plus shared Yso core. Check the installed package and maintained build mappings before treating an older filesystem module as an active automation path.
+
+For the current Shikudo/Kai/soar changes, use `Ysindrolir/scripts/export_yso_system_xml.ps1 -ShikudoOnly -KaiSoarOnly`. This scoped refresh preserves unrelated package-native scripts. The legacy full refresh also changes other classes and removes older package entries; use it only when deliberately refreshing those sources.
+
+Kaido's `delv` alias requires more than 81 Kai and no self paralysis or prone.
+It pauses curing through `pp` before sending `kai deliverance`, then keeps it
+paused through channeling and active Deliverance. The down/interruption message
+restores curing only when this activation paused it. An unconfirmed request times
+out after five seconds. Burst readiness is tracked from server success,
+cooldown-rejection and ready messages under `Yso.monk.kai.burst.ready` (unknown
+until confirmed); the resource rejection does not change cooldown readiness.
+Run `scripts/test_kaido_package.ps1` and `scripts/test_legacy_prompt_vitals.ps1`
+under `Ysindrolir/` for the Kaido lifecycle and Legacy prompt regressions.
+
+The `Ysindrolir/Yso` folder remains in use for shared sources, export inputs, and tests. See [the source audit](Ysindrolir/Information/Yso-source-audit.md) for retained modules and the three retired loader files removed in this cleanup.
 
 ## Mudlet workflow (package-first)
 

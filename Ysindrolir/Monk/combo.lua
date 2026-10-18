@@ -101,3 +101,47 @@ function C.build(target, opts)
 
   return table.concat(out, " ")
 end
+
+-- Shikudo deliberately uses its own reference namespace: Tekura also has
+-- COMBO and Sweep, but different balance and form rules.
+function C.build_shikudo(target, opts)
+  opts = type(opts) == 'table' and opts or {}
+  target = tostring(target or '')
+  if not target:match("^[%a%d_'-]+$") then return nil, 'invalid_target' end
+  local ref = Yso.ref and Yso.ref.monk and Yso.ref.monk.shikudo
+  local form = ref and ref[opts.form]
+  if not form or not form.attacks then return nil, 'unknown_form' end
+  local attacks = opts.attacks
+  if type(attacks) ~= 'table' or #attacks < 1 or #attacks > 3 then return nil, 'attack_count' end
+  local allowed = {shatter=true}
+  for _, key in ipairs(form.attacks) do allowed[key:lower()] = true end
+  local out, kicks, arms = {'combo', target}, 0, 0
+  for _, piece in ipairs(attacks) do
+    if type(piece) ~= 'string' then return nil, 'invalid_attack' end
+    local key, arg = piece:lower():match('^(%a+)%s*(.-)$')
+    local row = key and ref[key]
+    if not row or not allowed[key] then return nil, 'attack_unavailable' end
+    local role = row.commands[1].role
+    if role ~= 'strike' and role ~= 'kick' then return nil, 'invalid_attack' end
+    if row.limb_options then
+      if not row.limb_options[arg] then return nil, 'invalid_limb' end
+    elseif arg ~= '' then return nil, 'unexpected_limb' end
+    if role == 'kick' then kicks = kicks + 1
+    else arms = arms + (key == 'sweep' and 2 or 1) end
+    if kicks > 1 or arms > 2 then return nil, 'balance_slots' end
+    out[#out+1] = key .. (arg ~= '' and (' '..arg) or '')
+  end
+  if opts.transition then
+    if (tonumber(opts.kata) or 0) < 5 then return nil, 'insufficient_kata' end
+    local destination = ref[opts.transition]
+    local legal = false
+    if destination and destination.attacks then
+      for _, name in ipairs(form.transitions or {}) do
+        if name:lower() == opts.transition or name == destination.form_name then legal = true end
+      end
+    end
+    if not legal then return nil, 'invalid_transition' end
+    out[#out+1] = 'transition '..opts.transition
+  end
+  return table.concat(out, ' ')
+end
