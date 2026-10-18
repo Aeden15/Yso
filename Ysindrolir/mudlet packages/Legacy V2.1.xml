@@ -5168,36 +5168,47 @@ end
   
   
   if Legacy.Settings.Prompt.vitalsChange == true then
-      Legacy[gmcp.Char.Status.name].newHealth = tonumber(gmcp.Char.Vitals.hp)
-      Legacy[gmcp.Char.Status.name].newMana = tonumber(gmcp.Char.Vitals.mp)
+      local profile = Legacy[gmcp.Char.Status.name]
+      local vitals = gmcp.Char.Vitals or {}
+      local hp, mp = tonumber(vitals.hp), tonumber(vitals.mp)
+      -- Partial GMCP samples must not erase the baseline or invent zero vitals.
+      if hp and mp then
+      profile.newHealth, profile.newMana = hp, mp
+      profile.oldHealth = tonumber(profile.oldHealth) or hp
+      profile.oldMana = tonumber(profile.oldMana) or mp
+      local maxhp, maxmp = tonumber(vitals.maxhp) or 0, tonumber(vitals.maxmp) or 0
+      local function _pct(delta, maxv)
+        if maxv &lt;= 0 then return 0 end
+        return math.floor((delta / maxv) * 100)
+      end
       
       if (Legacy[gmcp.Char.Status.name].newHealth == Legacy[gmcp.Char.Status.name].oldHealth) and (Legacy[gmcp.Char.Status.name].newMana == Legacy[gmcp.Char.Status.name].oldMana) then
         --nothing
-      elseif math.floor((Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) / gmcp.Char.Vitals.maxhp * 100) == 100 or math.floor((Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) / gmcp.Char.Vitals.maxhp * 100) == 100 or math.floor((Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) / gmcp.Char.Vitals.maxmp * 100) == 100 or math.floor((Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) / gmcp.Char.Vitals.maxmp * 100) == 100 then
+      elseif _pct(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth, maxhp) == 100 or _pct(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth, maxhp) == 100 or _pct(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana, maxmp) == 100 or _pct(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana, maxmp) == 100 then
         --stops from seeing everytime the prompt breaks out of blackout
       elseif math.floor(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) &gt; 150 or math.floor(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) &gt; 150 or math.floor(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) &gt; 150 or math.floor(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) &gt; 150  then 
         cecho(" &lt;DimGrey&gt;( ")
         if Legacy[gmcp.Char.Status.name].oldHealth &gt; Legacy[gmcp.Char.Status.name].newHealth and math.floor(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) &gt; 150 then
           cecho("&lt;ansiRed&gt;-&lt;red&gt;"..math.floor(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth).."h ")
-          if math.floor((Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) / gmcp.Char.Vitals.maxhp * 100) &gt; 0 then
-            cecho("&lt;ansiRed&gt;"..math.floor((Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth) / gmcp.Char.Vitals.maxhp * 100).."% "..Legacy.Settings.Prompt.healthLost())
+          if _pct(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth, maxhp) &gt; 0 then
+            cecho("&lt;ansiRed&gt;".._pct(Legacy[gmcp.Char.Status.name].oldHealth - Legacy[gmcp.Char.Status.name].newHealth, maxhp).."% "..Legacy.Settings.Prompt.healthLost())
           end
         elseif Legacy[gmcp.Char.Status.name].oldHealth &lt; Legacy[gmcp.Char.Status.name].newHealth and math.floor(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) &gt; 150 then
           cecho("&lt;forest_green&gt;+&lt;green&gt;"..math.floor(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth).."h ")
-          if math.floor((Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) / gmcp.Char.Vitals.maxhp * 100) &gt; 0 then
-            cecho("&lt;forest_green&gt;"..math.floor((Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth) / gmcp.Char.Vitals.maxhp * 100).."% ")
+          if _pct(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth, maxhp) &gt; 0 then
+            cecho("&lt;forest_green&gt;".._pct(Legacy[gmcp.Char.Status.name].newHealth - Legacy[gmcp.Char.Status.name].oldHealth, maxhp).."% ")
           end
         end
         
         if Legacy[gmcp.Char.Status.name].oldMana &gt; Legacy[gmcp.Char.Status.name].newMana and math.floor(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) &gt; 150 then
           cecho("&lt;ansiRed&gt;-&lt;red&gt;"..math.floor(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana).."m ")
-          if math.floor((Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) / gmcp.Char.Vitals.maxmp * 100) &gt; 0 then
-            cecho("&lt;ansiRed&gt;"..math.floor((Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana) / gmcp.Char.Vitals.maxmp * 100).."% ")
+          if _pct(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana, maxmp) &gt; 0 then
+            cecho("&lt;ansiRed&gt;".._pct(Legacy[gmcp.Char.Status.name].oldMana - Legacy[gmcp.Char.Status.name].newMana, maxmp).."% ")
           end
         elseif Legacy[gmcp.Char.Status.name].oldMana &lt; Legacy[gmcp.Char.Status.name].newMana and math.floor(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) &gt; 150 then
           cecho("&lt;forest_green&gt;+&lt;green&gt;"..math.floor(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana).."m ")
-          if math.floor((Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) / gmcp.Char.Vitals.maxmp * 100) &gt; 0 then
-            cecho("&lt;forest_green&gt;"..math.floor((Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana) / gmcp.Char.Vitals.maxmp * 100).."% ")
+          if _pct(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana, maxmp) &gt; 0 then
+            cecho("&lt;forest_green&gt;".._pct(Legacy[gmcp.Char.Status.name].newMana - Legacy[gmcp.Char.Status.name].oldMana, maxmp).."% ")
           end
         end
         cecho("&lt;DimGrey&gt;)")
@@ -5207,8 +5218,8 @@ end
         end
       end
       
-      Legacy[gmcp.Char.Status.name].oldHealth = tonumber(gmcp.Char.Vitals.hp)
-      Legacy[gmcp.Char.Status.name].oldMana = tonumber(gmcp.Char.Vitals.mp)
+      profile.oldHealth, profile.oldMana = hp, mp
+      end -- valid health and mana sample
 
   end
   if Legacy.Settings.Curing.affPrompt ~= nil and Legacy.Settings.Curing.affPrompt then

@@ -1415,8 +1415,14 @@ end
   
   
   if Legacy.Settings.Prompt.vitalsChange == true then
-      Legacy[gmcp.Char.Status.name].newHealth = tonumber(gmcp.Char.Vitals.hp)
-      Legacy[gmcp.Char.Status.name].newMana = tonumber(gmcp.Char.Vitals.mp)
+      local profile = Legacy[gmcp.Char.Status.name]
+      local vitals = gmcp.Char.Vitals or {}
+      local hp, mp = tonumber(vitals.hp), tonumber(vitals.mp)
+      -- Partial GMCP samples must not erase the baseline or invent zero vitals.
+      if hp and mp then
+      profile.newHealth, profile.newMana = hp, mp
+      profile.oldHealth = tonumber(profile.oldHealth) or hp
+      profile.oldMana = tonumber(profile.oldMana) or mp
       local maxhp = tonumber(gmcp.Char.Vitals.maxhp or 0) or 0
       local maxmp = tonumber(gmcp.Char.Vitals.maxmp or 0) or 0
       local function _pct(delta, maxv)
@@ -1464,8 +1470,8 @@ end
         end
       end
       
-      Legacy[gmcp.Char.Status.name].oldHealth = tonumber(gmcp.Char.Vitals.hp)
-      Legacy[gmcp.Char.Status.name].oldMana = tonumber(gmcp.Char.Vitals.mp)
+      profile.oldHealth, profile.oldMana = hp, mp
+      end -- valid health and mana sample
 
   end
   if Legacy.Settings.Curing.affPrompt ~= nil and Legacy.Settings.Curing.affPrompt then

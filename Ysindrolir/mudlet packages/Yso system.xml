@@ -3798,7 +3798,63 @@ OppGainedAff(&quot;leftleg rightleg rightarm leftarm prone&quot;)</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList><string>^You thrust your palms forward and a stream of blue light crackles forth to strike out at ([\w&apos;-]+)\.$</string><string>^Snapping sounds echo through the air as your crippled victim sinks to the floor\.$</string></regexCodeList>
 						<regexCodePropertyList><integer>1</integer><integer>1</integer></regexCodePropertyList>
-					</Trigger>
+					</Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Kai burst used</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_burst("used") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You let loose an uncontrolled burst of kai energy, flushing it through your system and bolstering your reserves\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Kai burst resource rejection</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_burst("too_much_kai") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You are already circulating too much kai energy to focus upon an uncontrolled burst\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Kai burst cooldown</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_burst("cooldown") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You may not yet produce a burst of uncontrolled kai energy\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Kai burst ready</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_burst("ready") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You may produce another burst of uncontrolled kai energy\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Deliverance channeling</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_deliverance("channeling") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You bow your head in prayer, press your palms together and begin to pray silently for deliverance\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Deliverance up</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_deliverance("active") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You slowly raise your head and feel your body pulse with the power of Deliverance\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+                            <name>Deliverance down</name>
+                            <script>if Yso and Yso.monk and Yso.monk.kai then Yso.monk.kai.on_deliverance("idle") end</script>
+                            <triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen>
+                            <mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile />
+                            <colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor>
+                            <regexCodeList><string>^You raise your head and cease your prayers for deliverance\.$</string></regexCodeList>
+                            <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+                        </Trigger>
 				</TriggerGroup>
 			</TriggerGroup>
 			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -9960,10 +10016,12 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Deliverance</name>
-						<script>if (tonumber(Hadoken()) or 0) &gt;= 81 and not prone then --as in myself not proned
-send("transmuse 1000")
-expandAlias("pp")
-send("kai deliverance")
+						<script>-- Pause curing and request Deliverance together; confirmation triggers own state.
+if Yso and Yso.monk and Yso.monk.kai then
+  local ok, reason = Yso.monk.kai.start_deliverance()
+  if not ok and type(cecho) == &quot;function&quot; then
+    cecho(&quot;\n&lt;cyan&gt;[Yso]&lt;reset&gt; Deliverance blocked: &quot; .. tostring(reason) .. &quot;.\n&quot;)
+  end
 end</script>
 						<command />
 						<packageName />
@@ -24941,9 +24999,9 @@ end
 							<packageName />
 							<script>--========================================================--
 -- Monk Kai resource
---  gmcp.Char.Vitals.charstats is a list of "Label: value" strings.
---  Tekura: { "Bleed: 0", "Rage: 0", "Kai: 0%", "Stance: None" }
---  Shikudo adds "Form: &lt;name&gt;" and "Kata: &lt;number&gt;". Both vary.
+--  gmcp.Char.Vitals.charstats is a list of &quot;Label: value&quot; strings.
+--  Tekura: { &quot;Bleed: 0&quot;, &quot;Rage: 0&quot;, &quot;Kai: 0%&quot;, &quot;Stance: None&quot; }
+--  Shikudo adds &quot;Form: &lt;name&gt;&quot; and &quot;Kata: &lt;number&gt;&quot;. Both vary.
 --  Hadoken() reads current GMCP Kai (0 when unavailable).
 --  hadoken remains a numeric compatibility mirror.
 --========================================================--
@@ -24954,25 +25012,91 @@ Yso.monk.kai = Yso.monk.kai or {}
 
 local K = Yso.monk.kai
 
+-- Server-confirmed cooldown and channel state; neither changes Kai amounts.
+K.burst = K.burst or {}
+K.deliverance = K.deliverance or {state = &quot;idle&quot;}
+local D = K.deliverance
+
+function K.on_burst(result)
+  if result == &quot;used&quot; or result == &quot;cooldown&quot; then
+    K.burst.ready = false
+  elseif result == &quot;ready&quot; then
+    K.burst.ready = true
+  end
+  K.burst.last_result = result
+end
+
+local function _curing()
+  return Legacy and Legacy.Settings and Legacy.Settings.Curing
+end
+
+local function _cancel_confirmation()
+  D.generation = (D.generation or 0) + 1
+  if D.timer and type(killTimer) == &quot;function&quot; then killTimer(D.timer) end
+  D.timer = nil
+end
+
+local function _restore_curing()
+  local owned = D.paused_curing
+  D.paused_curing = false
+  local curing = _curing()
+  if owned and curing and curing.status == false then expandAlias(&quot;pp&quot;) end
+end
+
+function K.on_deliverance(state)
+  if state ~= &quot;idle&quot; and state ~= &quot;channeling&quot; and state ~= &quot;active&quot; then return end
+  _cancel_confirmation()
+  D.state = state
+  if state == &quot;idle&quot; then _restore_curing() end
+end
+
+function K.start_deliverance()
+  if D.state ~= &quot;idle&quot; then return false, &quot;deliverance_busy&quot; end
+  if (tonumber(rawget(_G, &quot;hadoken&quot;)) or 0) &lt;= 81 then return false, &quot;insufficient_kai&quot; end
+  local self = Yso.self
+  if type(self) ~= &quot;table&quot; or type(self.has_aff) ~= &quot;function&quot;
+      or type(self.is_prone) ~= &quot;function&quot; then return false, &quot;self_state_unavailable&quot; end
+  if self.has_aff(&quot;paralysis&quot;) then return false, &quot;paralysis&quot; end
+  if self.is_prone() then return false, &quot;prone&quot; end
+  local curing = _curing()
+  if not curing or type(curing.status) ~= &quot;boolean&quot;
+      or type(expandAlias) ~= &quot;function&quot; or type(send) ~= &quot;function&quot;
+      or type(tempTimer) ~= &quot;function&quot; then return false, &quot;curing_unavailable&quot; end
+
+  D.state = &quot;pending&quot;
+  D.paused_curing = curing.status == true
+  _cancel_confirmation()
+  local generation = D.generation
+  D.timer = tempTimer(5, function()
+    if D.generation == generation and D.state == &quot;pending&quot; then
+      K.on_deliverance(&quot;idle&quot;)
+    end
+  end)
+  -- pp is a toggle: never resume a system that was already paused.
+  if D.paused_curing then expandAlias(&quot;pp&quot;) end
+  send(&quot;kai deliverance&quot;)
+  return true
+end
+
 K.current = tonumber(K.current) or 0
 if _G.hadoken == nil then
   _G.hadoken = K.current
 end
 
 local function _label_value(entry)
-  local label, value = tostring(entry or ""):match("^(.-):%s*(.*)$")
-  if not label then return "", "" end
-  label = label:gsub("^%s+", ""):gsub("%s+$", ""):lower()
-  value = tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  local label, value = tostring(entry or &quot;&quot;):match(&quot;^(.-):%s*(.*)$&quot;)
+  if not label then return &quot;&quot;, &quot;&quot; end
+  label = label:gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;):lower()
+  value = tostring(value or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
   return label, value
 end
 
 local function _kai_value(list)
-  if type(list) ~= "table" then return 0 end
+  if type(list) ~= &quot;table&quot; then return 0 end
   for _, entry in ipairs(list) do
     local label, value = _label_value(entry)
-    if label == "kai" then
-      local n = tonumber((value:gsub("%%$", "")))
+    if label == &quot;kai&quot; then
+      local n = tonumber((value:gsub(&quot;%%$&quot;, &quot;&quot;)))
       if n and n == n and n ~= math.huge and n ~= -math.huge then
         return math.max(0, math.min(100, n))
       end
@@ -24985,26 +25109,26 @@ end
 function K.apply_charstats(list)
   K.current = _kai_value(list)
   _G.hadoken = K.current
-  if type(list) ~= "table" then return K.current end
+  if type(list) ~= &quot;table&quot; then return K.current end
   local stance = Yso.monk and Yso.monk.stance
-  if stance and type(stance.apply_charstats) == "function" then
+  if stance and type(stance.apply_charstats) == &quot;function&quot; then
     stance.apply_charstats(list)
   end
   local shikudo = Yso.monk and Yso.monk.shikudo
-  if shikudo and type(shikudo.apply_charstats) == "function" then
+  if shikudo and type(shikudo.apply_charstats) == &quot;function&quot; then
     shikudo.apply_charstats(list)
   end
   return K.current
 end
 
 local function _on_vitals()
-  local g = rawget(_G, "gmcp")
+  local g = rawget(_G, &quot;gmcp&quot;)
   local stats = g and g.Char and g.Char.Vitals and g.Char.Vitals.charstats
   return K.apply_charstats(stats)
 end
 
 function Hadoken()
-  local g = rawget(_G, "gmcp")
+  local g = rawget(_G, &quot;gmcp&quot;)
   local stats = g and g.Char and g.Char.Vitals and g.Char.Vitals.charstats
   -- Reading Kai must not reapply potentially older form/kata confirmations.
   K.current = _kai_value(stats)
@@ -25012,15 +25136,14 @@ function Hadoken()
   return K.current
 end
 
-if K._eh and type(killAnonymousEventHandler) == "function" then
+if K._eh and type(killAnonymousEventHandler) == &quot;function&quot; then
   killAnonymousEventHandler(K._eh)
   K._eh = nil
 end
-if type(registerAnonymousEventHandler) == "function" and not K._eh then
-  K._eh = registerAnonymousEventHandler("gmcp.Char.Vitals", _on_vitals)
+if type(registerAnonymousEventHandler) == &quot;function&quot; and not K._eh then
+  K._eh = registerAnonymousEventHandler(&quot;gmcp.Char.Vitals&quot;, _on_vitals)
 end
-Hadoken()
-</script>
+Hadoken()</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>

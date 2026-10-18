@@ -246,7 +246,7 @@ if ($ShikudoOnly -or $KaiSoarOnly) {
     }
     Write-Host 'Synchronized Shikudo; unrelated package content preserved.'
   }
-  if ($KaiSoarOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Kai cripple and soar')) {
+  if ($KaiSoarOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Kaido states, Deliverance, Kai cripple and soar')) {
     & (Join-Path $ScriptsDir 'build_kai_soar_package.ps1')
   }
   return
