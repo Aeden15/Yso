@@ -135,6 +135,7 @@ $ScriptToSourcePath = [ordered]@{
   'Cureset Baselines'             = Join-Path $YsoDir 'xml\cureset_baselines.lua'
   'Defensive checks'              = Join-Path $YsoDir 'xml\magi_defensive_checks.lua'
   'Magi route core'               = Join-Path $MagiDir 'magi_route_core.lua'
+  'Magi group route retirement'   = Join-Path $MagiDir 'retire_group_damage.lua'
   'Magi weapons'                  = Join-Path $MagiDir 'magi_weapons.lua'
   'Magi shalestorm'               = Join-Path $MagiDir 'magi_shalestorm.lua'
   'Magi hellfumes'                = Join-Path $MagiDir 'magi_hellfumes.lua'
@@ -189,6 +190,7 @@ $ScriptInserts = @(
   @{ Name = 'Yso party targeting';   After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_party_targeting.lua' },
   @{ Name = 'Yso pulse';             After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua' },
   @{ Name = 'Route registry';        After = 'Yso pulse';                Source = Join-Path $YsoDir 'Combat\route_registry.lua' },
+  @{ Name = 'Magi group route retirement'; After = 'Route registry'; Source = Join-Path $MagiDir 'retire_group_damage.lua' },
   @{ Name = 'Offense core';          After = 'Yso.offense.request_tick'; Source = Join-Path $YsoDir 'Combat\offense_core.lua' },
   @{ Name = 'Alchemist duel route';  After = 'Alchemist physiology';     Source = Join-Path $AlchemistDir 'Core\duel route.lua' },
   @{ Name = 'Alchemist aurify route'; After = 'Alchemist duel route';    Source = Join-Path $AlchemistDir 'Aurify route.lua' },
@@ -215,7 +217,7 @@ if (-not (Test-Path -LiteralPath $XmlPackage)) {
 
 $ScriptsToRemove = @('Yso Bootstrap loader', 'Yso.queue', 'Magi group damage', 'Magi focus', 'Bloodboil auto')
 $TriggersToRemove = @('Reflection up', 'Reflection down')
-$MdamAliasSource = Join-Path $MagiDir 'mdam_alias_body.lua'
+$MdamAliasSource = Join-Path $MagiDir 'mdam_retired_alias.lua'
 $MfocusAliasSource = Join-Path $MagiDir 'mfocus_alias_body.lua'
 $MreflectAliasSource = Join-Path $MagiDir 'mreflect_alias_body.lua'
 
@@ -354,7 +356,6 @@ if ($PSCmdlet.ShouldProcess('Targeting', 'Remove y targeting alias')) {
 }
 
 if ($PSCmdlet.ShouldProcess('mdam', 'Replace mdam alias script body')) {
-  & (Join-Path $ScriptsDir 'build_mdam_alias_body.ps1') | Out-Null
   $content = Set-AliasScriptByName $content 'mdam' $MdamAliasSource
 }
 

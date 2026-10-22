@@ -140,8 +140,7 @@ function Yso.util.toggle_route_alias(route_id, source)
       adam = alc and alc.group_damage,
       alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
       alchemist_aurify_route = alc and alc.aurify_route,
-      magi_dmg = magi and (magi.dmg or magi.group_damage),
-      magi_group_damage = magi and (magi.group_damage or magi.dmg),
+      magi_dmg = magi and magi.dmg,
       magi_focus = magi and magi.focus,
     }
     local route = map[id]

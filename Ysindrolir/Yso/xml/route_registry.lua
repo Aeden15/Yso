@@ -162,17 +162,6 @@ local ROUTES = {
     active = true,
     module_name = "alchemist_aurify_route",
   },
-  magi_group_damage = {
-    id = "magi_group_damage",
-    context = "group",
-    mode = "combat",
-    namespace = "Yso.off.magi.group_damage",
-    description = "Magi group damage",
-    priority = 56,
-    class = "magi",
-    active = true,
-    module_name = "magi_group_damage",
-  },
   magi_firestorm = {
     id = "magi_firestorm",
     context = "group",
@@ -217,7 +206,6 @@ local ALIASES = {
   focus = { magi = "magi_focus" },
   mfocus = { magi = "magi_focus" },
   magi_focus = { magi = "magi_focus" },
-  mdam = { magi = "magi_group_damage" },
   fstorm = { magi = "magi_firestorm" },
   magi_firestorm = { magi = "magi_firestorm" },
   gwater = { magi = "magi_water_group" },
@@ -229,9 +217,9 @@ local ALIASES = {
   alchemist_aurify_route = { alchemist = "alchemist_aurify_route" },
   adam = { alchemist = "alchemist_group_damage" },
   alchemist_group_damage = { alchemist = "alchemist_group_damage" },
-  gd = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  dmg = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
+  gd = { alchemist = "alchemist_group_damage" },
+  dmg = { alchemist = "alchemist_group_damage" },
+  dam = { alchemist = "alchemist_group_damage" },
 }
 
 local function _route_id(name)

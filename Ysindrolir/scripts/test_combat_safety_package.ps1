@@ -7,7 +7,7 @@ function Normalize([string]$text){$text.Trim().Replace("`r`n","`n")}
 function Mask([string]$text){
   foreach($spec in @(
     @('Script','Api stuff'),@('Script','Yso modes'),@('Script','Enemy Deliverance safety'),
-    @('Script','Magi resonance feedback'),@('Script','Route registry'),@('Trigger','Enemy Deliverance'),
+    @('Script','Magi resonance feedback'),@('Script','Route registry'),@('Script','Magi group route retirement'),@('Script','Magi duel dam'),@('Trigger','Enemy Deliverance'),
     @('Trigger','Enemy Deliverance stage 2'),@('Trigger','Mfocus resonance depleted'),
     @('Trigger','Mfocus resonance feedback'),@('Trigger','Mfocus resonance failure'),
     @('Alias','Deliverance safety'),@('Alias','mdam'),@('Alias','mfocus'))){
@@ -29,7 +29,7 @@ try {
   [xml]$doc=$after
   foreach($row in @(@('Api stuff','Yso/xml/api_stuff.lua'),@('Yso modes','Yso/xml/yso_modes.lua'),
     @('Enemy Deliverance safety','Yso/Combat/deliverance.lua'),@('Magi resonance feedback','Magi/resonance_feedback.lua'),
-    @('Route registry','Yso/Combat/route_registry.lua'),@('Magi weapons','Magi/magi_weapons.lua'),
+    @('Route registry','Yso/Combat/route_registry.lua'),@('Magi group route retirement','Magi/retire_group_damage.lua'),@('Magi weapons','Magi/magi_weapons.lua'),
     @('Magi duel dam','Magi/Magi_duel_dam.lua'),@('Magi firestorm','Magi/Magi_firestorm.lua'),
     @('Magi water group','Magi/Magi_water_group.lua'),@('Magi elemental helpers','Yso/xml/magi_elemental_helpers.lua'),
     @('Yso serverside policy','Yso/Curing/serverside_policy.lua'),@('Yso self aff','Yso/Core/self_aff.lua'),
@@ -45,7 +45,7 @@ try {
     if($LASTEXITCODE -ne 0){throw ('Lua syntax: '+$row[0])}
   }
   $first=$doc.SelectSingleNode('//Trigger[name="Enemy Deliverance"]')
-  foreach($row in @(@('mfocus','Magi/mfocus_alias_body.lua'),@('mdam','Magi/mdam_alias_body.lua'))){
+  foreach($row in @(@('mfocus','Magi/mfocus_alias_body.lua'),@('mdam','Magi/mdam_retired_alias.lua'))){
     $node=$doc.SelectSingleNode('//Alias[name="'+$row[0]+'"]')
     Assert ((Normalize $node.script) -ceq (Normalize ([IO.File]::ReadAllText((Join-Path $root $row[1]))))) ('Generated alias drift '+$row[0])
     $dest=Join-Path $base ($row[0]+'.lua');[IO.File]::WriteAllText($dest,[string]$node.script)
@@ -94,6 +94,12 @@ try {
   if($LASTEXITCODE -ne 0){throw 'Packaged Deliverance runtime failed'}
   & lua (Join-Path $root 'Yso/Tests and rebuilds/test_resonance_feedback.lua') (Join-Path $base 'Magi/resonance_feedback.lua')
   if($LASTEXITCODE -ne 0){throw 'Packaged resonance runtime failed'}
+  & lua (Join-Path $root 'Yso/Tests and rebuilds/test_magi_group_routes.lua') ($base+'/')
+  if($LASTEXITCODE -ne 0){throw 'Packaged group-route retirement failed'}
+  $retiredAlias=$doc.SelectSingleNode('//Alias[name="mdam"]')
+  $harness='local message=""; cecho=function(s) message=message..s end; Yso={emit=function() error("retired alias attacked") end};'+"`n"+$retiredAlias.script+"`n"+'assert(message:find("gwater",1,true) and message:find("fstorm",1,true))'
+  [IO.File]::WriteAllText($adapter,$harness)
+  & lua $adapter; if($LASTEXITCODE -ne 0){throw 'Retired alias did not explain replacement routes'}
   # Replay AK's actual six positive adapters and depletion adapter. AK alone
   # mutates measurements; the Yso route reader must see precisely those values.
   [xml]$akDoc=[IO.File]::ReadAllText((Join-Path $root 'mudlet packages/AK.xml'))

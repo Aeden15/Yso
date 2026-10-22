@@ -33,8 +33,8 @@ Current fixes
 
   Magi offense routes now share a Magi-only chassis helper:
     Yso.off.magi.route_core
-  magi_convergence.lua mirrors the package's shared finisher helper. Both
-  generated mdam and mfocus aliases include it, so rebuilding an alias retains
+  magi_convergence.lua mirrors the package's shared finisher helper. The
+  generated mfocus alias includes it, so rebuilding the alias retains
   confirmed assessment, staff/channel gates, and shared finisher state.
   This keeps target resolution, pending windows, repeat suppression,
   resonance reads, and explain scaffolding aligned without flattening
@@ -59,8 +59,8 @@ Current fixes
 
 Current Magi helpers
 --------------------
-  magi_group_damage.lua
-    Mirror for tests/export; Mudlet-primary copy lives in ^mdam$ alias body.
+  The old generic Magi group-damage route is retired. Use gwater for Group Water
+  or fstorm for Firestorm. mdam only displays this replacement notice.
 
   magi_focus.lua
     Mirror for tests/export; Mudlet-primary copy lives in ^mfocus$ alias body.
@@ -70,7 +70,7 @@ Current Magi helpers
 
   Magi_firestorm.lua / Magi_water_group.lua
     Package scripts for ^fstorm$ (magi_firestorm) and ^gwater$ (magi_water_group).
-    Thin aliases toggle those loops like mdam. Staff/shield ids: Yso.magi.weapons.set.
+    Thin aliases toggle those loops. Staff/shield ids: Yso.magi.weapons.set.
     Shalestorm is a Magi-wide flag on Yso.magi.shalestorm.
     Hellfumes is a Magi-wide room flag on Yso.magi.hellfumes (Elementalism up/down lines).
     magi_dmg recasts hellfumes after shield/execute; magi_focus follows it with dehydrate.
@@ -78,8 +78,8 @@ Current Magi helpers
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.
 
-  mdam_alias_body.lua / mfocus_alias_body.lua
-    Built alias bodies used for package embedding by export_yso_system_xml.ps1.
+  mfocus_alias_body.lua
+    Built Focus alias body used for package embedding by export_yso_system_xml.ps1.
     For Focus-only changes, run scripts/export_yso_system_xml.ps1 -FocusOnly.
     This synchronizes the Focus alias and existing native Focus script without
     replacing unrelated embedded runtime logic from older source mirrors.

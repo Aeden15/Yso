@@ -5814,1886 +5814,8 @@ end</script>
           </regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>mdam</name>
-						<script>--========================================================--
--- Magi route chassis helpers
---  * Shared runtime helpers for Magi route modules.
---  * Keeps targeting, timing, pending windows, and snapshots in one place.
---========================================================--
-
-Yso = Yso or {}
-Yso.off = Yso.off or {}
-Yso.off.magi = Yso.off.magi or {}
-
-Yso.off.magi.route_core = Yso.off.magi.route_core or {}
-local RC = Yso.off.magi.route_core
-
-function RC.trim(s)
-  return (tostring(s or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;))
-end
-
-function RC.lc(s)
-  return RC.trim(s):lower()
-end
-
-function RC.same_target(a, b)
-  a = RC.lc(a)
-  b = RC.lc(b)
-  return a ~= &quot;&quot; and a == b
-end
-
-function RC.now()
-  if Yso and Yso.util and type(Yso.util.now) == &quot;function&quot; then
-    local ok, v = pcall(Yso.util.now)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  if type(getEpoch) == &quot;function&quot; then
-    local v = tonumber(getEpoch()) or os.time()
-    if v &gt; 20000000000 then v = v / 1000 end
-    return v
-  end
-  return os.time()
-end
-
-function RC.get_target()
-  if type(Yso.get_target) == &quot;function&quot; then
-    local ok, v = pcall(Yso.get_target)
-    if ok and RC.trim(v) ~= &quot;&quot; then return RC.trim(v) end
-  end
-
-  -- Yso.targeting subsystem (checked before global fallbacks so the routing
-  -- system agrees with whatever Magi_duel_dam.lua and other alias files see).
-  if type(Yso.targeting) == &quot;table&quot; then
-    if type(Yso.targeting.get) == &quot;function&quot; then
-      local ok, v = pcall(Yso.targeting.get)
-      if ok and RC.trim(v) ~= &quot;&quot; then return RC.trim(v) end
-    elseif type(Yso.targeting.get_target) == &quot;function&quot; then
-      local ok, v = pcall(Yso.targeting.get_target)
-      if ok and RC.trim(v) ~= &quot;&quot; then return RC.trim(v) end
-    elseif type(Yso.targeting.target) == &quot;string&quot; then
-      local v = RC.trim(Yso.targeting.target)
-      if v ~= &quot;&quot; then return v end
-    end
-  end
-
-  local cur = rawget(_G, &quot;target&quot;)
-  if type(cur) == &quot;string&quot; and RC.trim(cur) ~= &quot;&quot; then return RC.trim(cur) end
-
-  local ak = rawget(_G, &quot;ak&quot;)
-  if type(ak) == &quot;table&quot; then
-    if type(ak.target) == &quot;string&quot; and RC.trim(ak.target) ~= &quot;&quot; then return RC.trim(ak.target) end
-    if type(ak.tgt) == &quot;string&quot; and RC.trim(ak.tgt) ~= &quot;&quot; then return RC.trim(ak.tgt) end
-  end
-
-  return &quot;&quot;
-end
-
-function RC.room_id()
-  local g = rawget(_G, &quot;gmcp&quot;)
-  local info = g and g.Room and g.Room.Info
-  if info and info.num ~= nil then return tostring(info.num) end
-  if info and info.id ~= nil then return tostring(info.id) end
-  return &quot;&quot;
-end
-
-function RC.target_valid(tgt)
-  tgt = RC.trim(tgt)
-  if tgt == &quot;&quot; then return false end
-  if type(Yso.target_is_valid) == &quot;function&quot; then
-    local ok, v = pcall(Yso.target_is_valid, tgt)
-    if ok then return v == true end
-  end
-  return true
-end
-
-function RC.eq_ready()
-  -- Reserve EQ immediately after a purge submission, before GMCP catches up.
-  if RC.bloodboil and RC.now() &lt; (RC.bloodboil.pending_until or 0) then return false end
-  if Yso and Yso.locks and type(Yso.locks.eq_ready) == &quot;function&quot; then
-    local ok, v = pcall(Yso.locks.eq_ready)
-    if ok then return v == true end
-  end
-  if Yso and Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
-    local ok, v = pcall(Yso.state.eq_ready)
-    if ok then return v == true end
-  end
-
-  local vitals = (rawget(_G, &quot;gmcp&quot;) or {}).Char
-  vitals = vitals and vitals.Vitals or {}
-  local eq_val = vitals.eq
-  if eq_val == nil then eq_val = vitals.equilibrium end
-  if eq_val == nil then eq_val = &quot;&quot; end
-  return tostring(eq_val) == &quot;1&quot; or eq_val == true
-end
-
-function RC.score_aff(aff)
-  aff = RC.lc(aff)
-  if aff == &quot;&quot; then return 0 end
-
-  if Yso and Yso.oc and Yso.oc.ak and type(Yso.oc.ak.get_aff_score) == &quot;function&quot; then
-    local ok, v = pcall(Yso.oc.ak.get_aff_score, aff)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-
-  local A = rawget(_G, &quot;affstrack&quot;)
-  if type(A) == &quot;table&quot; and type(A.score) == &quot;table&quot; then
-    local row = A.score[aff]
-    if type(row) == &quot;number&quot; then
-      return tonumber(row) or 0
-    end
-    if type(row) == &quot;table&quot; then
-      return tonumber(row.current or row.score or row.value or 0) or 0
-    end
-  end
-
-  if Yso and Yso.ak and type(Yso.ak.has) == &quot;function&quot; then
-    local ok, v = pcall(Yso.ak.has, aff)
-    if ok and v == true then return 100 end
-  end
-
-  return 0
-end
-
-function RC.has_aff(aff)
-  return RC.score_aff(aff) &gt; 0
-end
-
-function RC.get_target_hp_percent(_target_name)
-  local C = Yso.magi and Yso.magi.convergence
-  if C and type(C.hp) == &quot;function&quot; then
-    return C.hp(_target_name or RC.get_target())
-  end
-  local ak = rawget(_G, &quot;ak&quot;)
-  if type(ak) == &quot;table&quot; then
-    local pct = tonumber(ak.healthpercent)
-    if pct then return pct end
-    local cur = tonumber(ak.currenthealth)
-    local maxhp = tonumber(ak.maxhealth)
-    if cur and maxhp and maxhp &gt; 0 then
-      return (cur / maxhp) * 100
-    end
-  end
-
-  local gmcp = rawget(_G, &quot;gmcp&quot;)
-  local info = gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info
-  if type(info) == &quot;table&quot; then
-    local raw = info.hpperc
-    if raw ~= nil and tostring(raw) ~= &quot;-1&quot; then
-      local hp_text = tostring(raw):gsub(&quot;%%&quot;, &quot;&quot;)
-      local n = tonumber(hp_text)
-      if n then return n end
-    end
-  end
-
-  local assess = tonumber(Yso and Yso.magi_assess)
-  if assess then return assess end
-  return nil
-end
-
-Yso.magi = Yso.magi or {}
-Yso.magi.elemental = Yso.magi.elemental or {}
-Yso.magi.elemental.get_target_hp_percent = RC.get_target_hp_percent
-
-function RC.read_resonance()
-  local R = Yso and Yso.magi and Yso.magi.resonance or nil
-  local ak = rawget(_G, &quot;ak&quot;)
-  local live = ak and ak.magi and ak.magi.resonance or nil
-  local synced = false
-  local out = { air = 0, earth = 0, fire = 0, water = 0, synced = false }
-
-  if type(R) == &quot;table&quot; and type(R.sync_from_ak) == &quot;function&quot; then
-    local ok, synced_ok = pcall(R.sync_from_ak)
-    if ok then synced = (synced_ok == true) end
-  end
-
-  local function _get(element)
-    if type(R) == &quot;table&quot; and type(R.get) == &quot;function&quot; then
-      local ok, v = pcall(R.get, element)
-      if ok then return tonumber(v) or 0 end
-    end
-    if type(R) == &quot;table&quot; and type(R.state) == &quot;table&quot; then
-      return tonumber(R.state[element] or 0) or 0
-    end
-    -- AK&apos;s package triggers are available even when the optional skill
-    -- reference/runtime helper is not installed.
-    if type(live) == &quot;table&quot; then
-      local upper = element:sub(1, 1):upper() .. element:sub(2)
-      return tonumber(live[upper] or live[element] or 0) or 0
-    end
-    return 0
-  end
-
-  out.air = _get(&quot;air&quot;)
-  out.earth = _get(&quot;earth&quot;)
-  out.fire = _get(&quot;fire&quot;)
-  out.water = _get(&quot;water&quot;)
-  out.synced = synced or (type(R) ~= &quot;table&quot; and type(live) == &quot;table&quot;)
-  out.air_moderate = out.air &gt;= 2
-  out.earth_moderate = out.earth &gt;= 2
-  out.fire_moderate = out.fire &gt;= 2
-  out.water_moderate = out.water &gt;= 2
-  out.air_major = out.air &gt;= 3
-  out.earth_major = out.earth &gt;= 3
-  out.fire_major = out.fire &gt;= 3
-  out.water_major = out.water &gt;= 3
-  return out
-end
-
-function RC.ensure_pending(state, slots)
-  state.pending = state.pending or {}
-  if type(slots) ~= &quot;table&quot; then return state.pending end
-  for i = 1, #slots do
-    local name = tostring(slots[i] or &quot;&quot;)
-    if name ~= &quot;&quot; then
-      state.pending[name] = state.pending[name] or { target = &quot;&quot;, until_t = 0 }
-    end
-  end
-  return state.pending
-end
-
-function RC.pending_slot(state, slot)
-  slot = tostring(slot or &quot;&quot;)
-  if slot == &quot;&quot; then return nil end
-  RC.ensure_pending(state, { slot })
-  return state.pending[slot]
-end
-
-function RC.clear_pending(state, slot)
-  local row = RC.pending_slot(state, slot)
-  if not row then return nil end
-  row.target = &quot;&quot;
-  row.until_t = 0
-  return row
-end
-
-function RC.clear_pending_all(state, slots)
-  if type(slots) ~= &quot;table&quot; then return true end
-  for i = 1, #slots do
-    RC.clear_pending(state, slots[i])
-  end
-  return true
-end
-
-function RC.mark_pending(state, slot, target, duration)
-  local row = RC.pending_slot(state, slot)
-  if not row then return nil end
-  row.target = RC.trim(target)
-  row.until_t = RC.now() + (tonumber(duration) or 0)
-  return row
-end
-
-function RC.pending_active(state, slot, target)
-  local row = RC.pending_slot(state, slot)
-  if not row then return false end
-  return RC.same_target(row.target, target) and RC.now() &lt; (tonumber(row.until_t) or 0)
-end
-
-function RC.same_target_repeat(state, cmd, target, repeat_s)
-  state = type(state) == &quot;table&quot; and state or {}
-  if not RC.same_target(state.last_sent_target or &quot;&quot;, target) then return false end
-  if RC.lc(state.last_sent_cmd or &quot;&quot;) ~= RC.lc(cmd or &quot;&quot;) then return false end
-  local dt = RC.now() - (tonumber(state.last_sent_at) or 0)
-  return dt &gt;= 0 and dt &lt; (tonumber(repeat_s) or 0.75)
-end
-
-function RC.guard_spell(opts)
-  opts = type(opts) == &quot;table&quot; and opts or {}
-  local state = type(opts.state) == &quot;table&quot; and opts.state or {}
-  local target = RC.trim(opts.target)
-  local slot = tostring(opts.slot or &quot;&quot;)
-  local cmd = tostring(opts.cmd or &quot;&quot;)
-
-  if target == &quot;&quot; then return false, &quot;no_target&quot; end
-
-  local target_valid = opts.target_valid
-  if target_valid == nil then target_valid = RC.target_valid(target) end
-  if target_valid ~= true then return false, &quot;invalid_target&quot; end
-
-  if opts.eq_required ~= false then
-    local eq_ready = opts.eq_ready
-    if eq_ready == nil then eq_ready = RC.eq_ready() end
-    if eq_ready ~= true then return false, &quot;eq_down&quot; end
-  end
-
-  if slot ~= &quot;&quot; and RC.pending_active(state, slot, target) then
-    return false, slot .. &quot;_pending&quot;
-  end
-
-  if RC.same_target_repeat(state, cmd, target, opts.repeat_s or (opts.cfg and opts.cfg.same_target_repeat_s) or 0.75) then
-    return false, (slot ~= &quot;&quot; and (slot .. &quot;_repeat&quot;) or &quot;repeat&quot;)
-  end
-
-  return true, &quot;&quot;
-end
-
-function RC.build_snapshot(opts)
-  opts = type(opts) == &quot;table&quot; and opts or {}
-  local target = RC.trim(opts.target or RC.get_target())
-  local tv = opts.target_valid
-  if tv == nil then tv = RC.target_valid(target) end
-  local eq = opts.eq_ready
-  if eq == nil then eq = RC.eq_ready() end
-  local out = {
-    target = target,
-    room_id = tostring(opts.room_id or RC.room_id() or &quot;&quot;),
-    target_valid = tv,
-    eq_ready = eq,
-    raw = {},
-    pending = {},
-    res = RC.read_resonance(),
-  }
-
-  local affs = type(opts.affs) == &quot;table&quot; and opts.affs or {}
-  for i = 1, #affs do
-    local aff = tostring(affs[i] or &quot;&quot;)
-    if aff ~= &quot;&quot; then
-      out.raw[aff] = RC.score_aff(aff)
-      out[aff] = out.raw[aff] &gt; 0
-    end
-  end
-
-  local pending_slots = type(opts.pending_slots) == &quot;table&quot; and opts.pending_slots or {}
-  for i = 1, #pending_slots do
-    local slot = tostring(pending_slots[i] or &quot;&quot;)
-    if slot ~= &quot;&quot; then
-      out.pending[slot] = RC.pending_active(opts.state or {}, slot, target)
-    end
-  end
-
-  if type(opts.extend) == &quot;function&quot; then
-    opts.extend(out)
-  end
-
-  return out
-end
-
-function RC.build_explain(base)
-  local out = {}
-  if type(base) == &quot;table&quot; then
-    for k, v in pairs(base) do
-      out[k] = v
-    end
-  end
-  out.generated_at = RC.now()
-  return out
-end
-
-function RC.reset_runtime_state(state, reason)
-  state = type(state) == &quot;table&quot; and state or {}
-  reason = tostring(reason or &quot;manual&quot;)
-  state.busy = false
-  state.last_target = &quot;&quot;
-  state.last_cmd = &quot;&quot;
-  state.last_category = &quot;&quot;
-  state.last_sent_cmd = &quot;&quot;
-  state.last_sent_target = &quot;&quot;
-  state.last_sent_category = &quot;&quot;
-  state.last_sent_at = 0
-  state.explain = {}
-  state.template = state.template or {}
-  state.template.last_reason = reason
-  state.template.last_payload = nil
-  state.template.last_target = &quot;&quot;
-  return state
-end
-
--- Optional shared finishers are resolved at call time (native load order).
-function RC.special_action(tgt)
-  local C = Yso.magi and Yso.magi.convergence
-  if C and type(C.select) == &quot;function&quot; then return C.select(tgt) end
-  return nil, &quot;special_helper_unavailable&quot;
-end
-
-function RC.note_special_queued(cmd, tgt)
-  if RC.lc(cmd) == &quot;cast bloodboil&quot; then
-    RC.bloodboil.pending_until = RC.now() + 4
-    return
-  end
-  local C = Yso.magi and Yso.magi.convergence
-  if C and type(C.note_queued) == &quot;function&quot; then C.note_queued(cmd, tgt) end
-end
-
--- Self-purge state is shared by every Magi route and survives route/core reloads.
--- Submission is not proof of a cast: only the success trigger starts cooldown.
-RC.bloodboil = RC.bloodboil or { cooling = false, pending_until = 0 }
-local bloodboil_affs = {
-  &quot;stupidity&quot;, &quot;dizziness&quot;, &quot;weariness&quot;, &quot;recklessness&quot;,
-  &quot;anorexia&quot;, &quot;impatience&quot;, &quot;slickness&quot;, &quot;asthma&quot;,
-}
-function RC.bloodboil_note_cast()
-  RC.bloodboil.cooling = true
-  RC.bloodboil.pending_until = RC.now() + 4
-end
-function RC.bloodboil_note_ready()
-  RC.bloodboil.cooling = false
-end
-function RC.bloodboil_note_eq_recovered()
-  RC.bloodboil.pending_until = 0
-end
-function RC.bloodboil_command()
-  local g = rawget(_G, &quot;gmcp&quot;)
-  local status = g and g.Char and g.Char.Status
-  if not status or RC.lc(status.class or status.classname) ~= &quot;magi&quot; then return nil, &quot;wrong_class&quot; end
-  if Yso.mode and type(Yso.mode.is_combat) == &quot;function&quot; and not Yso.mode.is_combat() then return nil, &quot;not_combat&quot; end
-  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return nil, &quot;paused&quot; end
-  if RC.bloodboil.cooling then return nil, &quot;bloodboil_cooldown&quot; end
-  if not RC.eq_ready() then return nil, &quot;eq_down&quot; end
-  local tracker = Yso.curing and Yso.curing.afflictions
-  if tracker then
-    if type(tracker.is_complete) ~= &quot;function&quot; or not tracker.is_complete() then
-      return nil, &quot;self_afflictions_incomplete&quot;
-    end
-    if type(tracker.sync_legacy) == &quot;function&quot; then
-      if not tracker.sync_legacy() then return nil, &quot;self_afflictions_unknown&quot; end
-    elseif type(tracker.snapshot) ~= &quot;function&quot; or not tracker.snapshot() then
-      return nil, &quot;self_afflictions_unknown&quot;
-    end
-  end
-  -- This is Legacy&apos;s SELF table, never RC.has_aff/affstrack (enemy evidence).
-  local Aff = Legacy and Legacy.Curing and Legacy.Curing.Affs
-  if type(Aff) ~= &quot;table&quot; then return nil, &quot;self_afflictions_unknown&quot; end
-  if Aff.haemophilia then return nil, &quot;haemophilia&quot; end
-  local count = 0
-  for _,aff in ipairs(bloodboil_affs) do if Aff[aff] == true then count = count + 1 end end
-  if count &lt; 2 then return nil, &quot;below_two_afflictions&quot; end
-  local vitals = g.Char.Vitals or {}
-  if (tonumber(vitals.mp) or 0) &lt; 75 then return nil, &quot;insufficient_mana&quot; end
-  local channels = &quot;&quot;
-  for _,stat in pairs(vitals.charstats or {}) do
-    local value = tostring(stat):match(&quot;^[Cc]hannels:%s*(.*)$&quot;)
-    if value then channels = value:lower(); break end
-  end
-  for _,element in ipairs({&quot;fire&quot;, &quot;water&quot;}) do
-    if not channels:find(&quot;%f[%a]&quot; .. element .. &quot;%f[%A]&quot;) then return nil, &quot;channels_unconfirmed&quot; end
-  end
-  return &quot;cast bloodboil&quot;, &quot;bloodboil_self_purge&quot;
-end
-function RC.with_bloodboil(cmd)
-  -- Only an actual selected finisher wins; Assess and preparatory spells do not.
-  local spell = RC.lc(cmd):match(&quot;^cast%s+(%S+)&quot;)
-  if spell == &quot;destroy&quot; or spell == &quot;convergence&quot; or spell == &quot;stormhammer&quot; or spell == &quot;glaciate&quot; then return cmd end
-  local purge, reason = RC.bloodboil_command()
-  if purge then return purge, reason end
-  return cmd
-end
-
--- return omitted: alias body uses Yso.off.magi.route_core
-
--- Shared opportunistic Magi finishers. Mudlet Script: Convergence logic.
--- Selection is side-effect free: reserve only after the route accepts a payload.
-Yso = Yso or {}
-Yso.magi = Yso.magi or {}
-Yso.magi.convergence = Yso.magi.convergence or {}
-local C = Yso.magi.convergence
-C.cfg = C.cfg or { assess_eq_s = 2.5, assess_pending_s = 4,
-  assess_retry_s = 10, hp_ttl_s = 15, cast_pending_s = 3.6 }
-C.targets = C.targets or {}
-C.inventory = C.inventory or {}
-local COVER = { &apos;shyness&apos;, &apos;dizziness&apos;, &apos;stupidity&apos;, &apos;epilepsy&apos; }
--- AK&apos;s entire goldenseal/plumbum bucket, not just our preferred cover.
-local PLUMBUM = { &apos;fulminated&apos;, &apos;sandfever&apos;, &apos;dizziness&apos;, &apos;epilepsy&apos;,
-  &apos;impatience&apos;, &apos;shyness&apos;, &apos;stupidity&apos;, &apos;depression&apos; }
-local function core() return Yso.off and Yso.off.magi and Yso.off.magi.route_core end
-local function key(s) return (tostring(s or &apos;&apos;):gsub(&apos;^%s+&apos;,&apos;&apos;):gsub(&apos;%s+$&apos;,&apos;&apos;)):lower() end
-local function now() return core().now() end
-local function row(tgt)
-  local k = key(tgt)
-  if k == &apos;&apos; then return nil end
-  C.targets[k] = C.targets[k] or { ticks=0, uncertain=false, attempted=false,
-    converged=false, pending_until=0, assess_until=0, assess_retry_at=0 }
-  return C.targets[k]
-end
-local function threshold() return math.max(1, tonumber(Yso.ak and Yso.ak.threshold) or 100) end
-local function score(aff) return tonumber(core().score_aff(aff)) or 0 end
-local function vitals() return gmcp and gmcp.Char and gmcp.Char.Vitals or {} end
-local function is_magi()
-  if Yso.classinfo and type(Yso.classinfo.is_magi)==&apos;function&apos; then
-    return Yso.classinfo.is_magi() == true
-  end
-  return key(gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class)==&apos;magi&apos;
-end
-function C.snapshot(tgt)
-  local out = {}
-  for k,v in pairs(row(tgt) or {}) do out[k]=v end
-  return out
-end
-function C.reset_target(tgt) C.targets[key(tgt)] = nil end
-function C.reset()
-  C.targets={}
-  if type(ak)==&apos;table&apos; then ak.health_target=nil; ak.health_observed_at=nil end
-end
-function C.clear_ticks(tgt)
-  local s=row(tgt); if not s then return end
-  s.ticks, s.uncertain, s.attempted = 0, false, false
-end
-function C.note_tick(tgt)
-  local s=row(tgt); if not s then return false end
-  -- After an ambiguous uncovered eat, start a fresh observed lower bound.
-  if s.uncertain then s.ticks=0; s.uncertain=false end
-  local old=s.ticks
-  s.ticks=math.min(4, old+1)
-  if s.ticks~=old and type(cecho)==&apos;function&apos; then
-    cecho((&apos;\n&lt;SteelBlue&gt;[MAGI] &lt;dark_orchid&gt;DISSONANCE&lt;aquamarine&gt;: (%d/4)&lt;reset&gt;\n&apos;):format(s.ticks))
-  end
-  return true
-end
-function C.before_cure(tgt, herb)
-  herb=key(herb)
-  if herb~=&apos;plumbum flake&apos; and herb~=&apos;goldenseal root&apos; then return end
-  local RC=core()
-  if not RC or not RC.same_target(tgt,RC.get_target()) then return end
-  local s=row(tgt); if not s or s.ticks==0 then return end
-  local possible=false
-  local bucket=affstrack and affstrack.eaten and affstrack.eaten[herb] or PLUMBUM
-  for _,aff in ipairs(bucket) do
-    if key(aff)~=&apos;dissonance&apos; then
-      local n=score(aff)
-      if n&gt;=threshold() then return end -- This eat has other cover to cure.
-      if n&gt;0 then possible=true end
-    end
-  end
-  if possible or (tonumber(ak and ak.randomaffs) or 0)&gt;0 then
-    s.uncertain=true
-  else
-    C.clear_ticks(tgt)
-  end
-end
--- Visible Enemy curing triggers record text evidence. The AK pre-cure hook
--- above is the only place that changes stacks, independent of trigger order.
-function C.note_eat_line(tgt, herb)
-  herb=key(herb)
-  local RC=core()
-  if (herb~=&apos;plumbum flake&apos; and herb~=&apos;goldenseal root&apos;) or not RC
-    or not RC.same_target(tgt,RC.get_target()) then return false end
-  local s=row(tgt); if not s then return false end
-  s.last_eat_herb=herb; s.last_eat_at=now()
-  return true
-end
-function C.note_result(tgt, success)
-  local s=row(tgt); if not s then return end
-  s.attempted=success==true
-  s.converged=success==true
-  s.pending_until=0
-end
--- The package handles the verified insufficient-dissonance failure. A queued
--- attempt is latched until explicit result/reset or confirmed dissonance cure;
--- it never fabricates a successful affliction from a send.
-function C.note_queued(cmd,tgt)
-  local s=row(tgt); if not s then return end
-  local lc=key(cmd)
-  if lc==&apos;cast convergence at &apos;..key(tgt) then
-    if s.attempted then return end
-    s.attempted=true; s.pending_until=now()+2.9
-  elseif lc==&apos;assess &apos;..key(tgt) then
-    if now()&lt;s.assess_until then return end
-    s.assess_until=now()+C.cfg.assess_pending_s
-    s.assess_retry_at=now()+C.cfg.assess_retry_s
-    C.assess_eq_until=now()+(tonumber(C.cfg.assess_eq_s) or 2.5)
-  elseif lc==&apos;cast destroy at &apos;..key(tgt) then
-    if now()&lt;s.pending_until then return end
-    s.pending_until=now()+C.cfg.cast_pending_s
-  end
-end
-function C.note_assess(tgt, current, maximum)
-  current, maximum=tonumber(current),tonumber(maximum)
-  if not current or not maximum or maximum&lt;=0 or current&lt;0 or current&gt;maximum then return false end
-  local s=row(tgt); if not s then return false end
-  s.hp=100*current/maximum; s.hp_at=now(); s.assess_until=0
-  if core().same_target(tgt,core().get_target()) and type(ak)==&apos;table&apos; then
-    ak.healthpercent=s.hp
-    ak.health_target=tgt
-    ak.health_observed_at=now()
-  end
-  return true
-end
-function C.hp(tgt)
-  local RC=core(); if not RC or not RC.same_target(tgt,RC.get_target()) then return nil end
-  local k=key(tgt)
-  local s=row(tgt)
-  local a=rawget(_G,&apos;ak&apos;)
-  -- AK initializes healthpercent to 100 even without an assessment. Only
-  -- a named, timestamped observation is evidence; default/global HP is not.
-  if a and key(a.health_target)==k and a.health_observed_at
-    and now()-a.health_observed_at&lt;=C.cfg.hp_ttl_s then
-    local n=tonumber(a.healthpercent)
-    if n and n&gt;=0 and n&lt;=100 then return n end
-  end
-  if s.hp and now()-(s.hp_at or 0)&lt;=C.cfg.hp_ttl_s then return s.hp end
-  return nil
-end
-function C.capture_target_info(info)
-  if type(info)~=&apos;table&apos; then return end
-  local name=info.name or info.target
-  local hp_text=tostring(info.hpperc or &apos;&apos;):gsub(&apos;%%&apos;,&apos;&apos;)
-  local hp=tonumber(hp_text)
-  if key(name)==&apos;&apos; or not hp or hp&lt;0 or hp&gt;100 then return end
-  local s=row(name); s.hp=hp; s.hp_at=now(); s.assess_until=0
-end
-function C.capture_items(data,kind)
-  if type(data)~=&apos;table&apos; or data.location~=&apos;inv&apos; then return end
-  if kind==&apos;List&apos; then
-    C.inventory={}
-    for _,item in ipairs(data.items or {}) do C.inventory[tostring(item.id)]=item end
-  elseif data.item then
-    C.inventory[tostring(data.item.id)]=kind==&apos;Remove&apos; and nil or data.item
-    if kind==&apos;Remove&apos; then C.inventory[tostring(data.item.id)]=nil end
-  end
-end
-function C.staff_ready()
-  local W=Yso.magi.weapons
-  local id=W and type(W.get)==&apos;function&apos; and W.get(&apos;staff&apos;) or tostring(rawget(_G,&apos;magistaff&apos;) or &apos;&apos;):match(&apos;^staff(%d+)$&apos;)
-  for _,item in pairs(C.inventory) do
-    local attrs=tostring(item.attrib or &apos;&apos;)
-    local name=key(item.name)
-    if (attrs:find(&apos;l&apos;,1,true) or attrs:find(&apos;r&apos;,1,true))
-      and ((id and id~=&apos;&apos; and tostring(item.id)==tostring(id))
-        or name:find(&apos;elemental staff&apos;,1,true)) then return true end
-  end
-  return false
-end
-function C.channels_ready(required)
-  -- Optional adapter for installations that already track channel changes.
-  if type(C.channel_check)==&apos;function&apos; then return C.channel_check(required)==true end
-  local text=&apos;&apos;
-  for _,stat in pairs(vitals().charstats or {}) do
-    local value=tostring(stat):match(&apos;^[Cc]hannels:%s*(.*)$&apos;)
-    if value then text=key(value); break end
-  end
-  for _,el in ipairs(required) do
-    if not text:find(&apos;%f[%a]&apos;..el..&apos;%f[%A]&apos;) then return false end
-  end
-  return true
-end
-local function ready(tgt)
-  local RC=core()
-  if not RC or not is_magi() or not RC.same_target(tgt,RC.get_target()) or not RC.target_valid(tgt) then return false end
-  if type(Yso.offense_paused)==&apos;function&apos; and Yso.offense_paused() then return false end
-  return RC.eq_ready()
-end
-function C.command(tgt)
-  local RC=core(); tgt=tgt or (RC and RC.get_target())
-  if not ready(tgt) then return nil,&apos;not_ready&apos; end
-  local s=row(tgt)
-  if now()&lt;s.pending_until or now()&lt;s.assess_until or now()&lt;(C.assess_eq_until or 0) then
-    return nil,&apos;special_pending&apos;
-  end
-  if s.attempted or s.converged then return nil,&apos;convergence_attempted&apos; end
-  if s.uncertain or s.ticks&lt;4 then return nil,&apos;dissonance_below_four_ticks&apos; end
-  if score(&apos;fulminated&apos;)&lt;threshold() then return nil,&apos;fulminated_missing&apos; end
-  local n=0
-  for _,aff in ipairs(COVER) do if score(aff)&gt;=threshold() then n=n+1 end end
-  if n&lt;3 then return nil,&apos;needs_three_other_cover_afflictions&apos; end
-  n=0
-  for _,aff in ipairs(PLUMBUM) do if score(aff)&gt;=threshold() then n=n+1 end end
-  if n&lt;2 then return nil,&apos;dissonance_exposed&apos; end
-  local r=RC.read_resonance()
-  for _,el in ipairs({&apos;air&apos;,&apos;earth&apos;,&apos;fire&apos;,&apos;water&apos;}) do
-    if (tonumber(r[el]) or 0)&lt;2 then return nil,el..&apos;_below_moderate&apos; end
-  end
-  if not C.channels_ready({&apos;air&apos;,&apos;earth&apos;,&apos;fire&apos;,&apos;water&apos;}) then return nil,&apos;channels_unconfirmed&apos; end
-  if (tonumber(vitals().mp) or 0)&lt;300 then return nil,&apos;insufficient_mana&apos; end
-  return &apos;cast convergence at &apos;..tgt,&apos;convergence_ready&apos;
-end
-Converge=C.command
-function C.destroy_command(tgt)
-  if not ready(tgt) then return nil,&apos;not_ready&apos; end
-  local s=row(tgt)
-  if now()&lt;s.pending_until or now()&lt;s.assess_until or now()&lt;(C.assess_eq_until or 0) then
-    return nil,&apos;special_pending&apos;,true
-  end
-  if score(&apos;conflagrate&apos;)&lt;threshold() or score(&apos;aflame&apos;)&lt;200 then return nil,&apos;destroy_afflictions_missing&apos; end
-  if not C.staff_ready() then return nil,&apos;elemental_staff_unconfirmed&apos; end
-  if not C.channels_ready({&apos;fire&apos;}) then return nil,&apos;fire_channel_unconfirmed&apos; end
-  local hp=C.hp(tgt)
-  if hp==nil then
-    if now()&lt;s.assess_retry_at then return nil,&apos;assess_backoff&apos; end
-    if (tonumber(vitals().mp) or 0)&lt;50 then return nil,&apos;assess_mana&apos; end
-    return &apos;assess &apos;..tgt,&apos;assess_unknown_hp&apos;
-  end
-  if hp&gt;40 then return nil,&apos;hp_above_destroy_threshold&apos; end
-  return &apos;cast destroy at &apos;..tgt,&apos;destroy_ready&apos;
-end
-function C.select(tgt)
-  local cmd,why,hold=C.destroy_command(tgt)
-  if cmd or hold then return cmd,why,hold end
-  return C.command(tgt)
-end
-
--- Native item events keep wield state current across List/Add/Update/Remove.
-local items=gmcp and gmcp.Char and gmcp.Char.Items
-if items and items.List then C.capture_items(items.List,&apos;List&apos;) end
-C.handlers=C.handlers or {}
-if type(registerAnonymousEventHandler)==&apos;function&apos; then
-  for _,kind in ipairs({&apos;List&apos;,&apos;Add&apos;,&apos;Update&apos;,&apos;Remove&apos;}) do
-    if C.handlers[kind] and type(killAnonymousEventHandler)==&apos;function&apos; then killAnonymousEventHandler(C.handlers[kind]) end
-    C.handlers[kind]=registerAnonymousEventHandler(&apos;gmcp.Char.Items.&apos;..kind,function()
-      local g=gmcp and gmcp.Char and gmcp.Char.Items
-      C.capture_items(g and g[kind],kind)
-    end)
-  end
-  if C.handlers.target_info and type(killAnonymousEventHandler)==&apos;function&apos; then killAnonymousEventHandler(C.handlers.target_info) end
-  C.handlers.target_info=registerAnonymousEventHandler(&apos;gmcp.IRE.Target.Info&apos;,function()
-    C.capture_target_info(gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.IRE.Target.Info)
-  end)
-end
--- return omitted: shared convergence helper
-
---========================================================--
--- magi_group_damage.lua
---  * Group damage route for Magi (tests + export mirror).
---  * Mudlet-primary copy lives in ^mdam$ alias (Magi/mdam_alias_body.lua; includes route_core).
---  * Strategy:
---      - STAFF CAST HORRIPILATION while waterbonds are missing.
---      - CAST FREEZE as the default baseline until freeze-side pressure exists.
---      - Keep the existing mudslide / water-emanation / glaciate water line.
---      - Once frozen or frostbite is established on the current target, branch
---        into fire pressure without abandoning the water side.
---      - Use MAGMA / FIRELASH / CONFLAGRATE / EMANATION FIRE conditionally.
---  * Alias-controlled loop ownership lives in Yso.mode.
---========================================================--
-
-Yso = Yso or {}
-Yso.off = Yso.off or {}
-Yso.off.magi = Yso.off.magi or {}
-
-Yso.off.magi.group_damage = Yso.off.magi.group_damage or {}
-local MGD = Yso.off.magi.group_damage
--- NOTE: do NOT alias Yso.off.magi.dmg here — that namespace is owned by
--- Magi_duel_dam.lua (magi_dmg route). Aliasing it here caused both routes
--- to share the same module table, making magi_dmg inherit MGD.is_active()
--- which checks group-damage context and immediately kills the duel loop.
-MGD.alias_owned = true
-
-Yso.off.magi.route_core = Yso.off.magi.route_core or {}
-local RC = Yso.off.magi.route_core
-
-local trim, lc, same_target, now = RC.trim, RC.lc, RC.same_target, RC.now
-
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
-
-local PENDING_SLOTS = {
-  &quot;horripilation&quot;,
-  &quot;freeze&quot;,
-  &quot;mudslide&quot;,
-  &quot;emanation_water&quot;,
-  &quot;magma&quot;,
-  &quot;firelash&quot;,
-  &quot;conflagrate&quot;,
-  &quot;emanation_fire&quot;,
-  &quot;glaciate&quot;,
-}
-
-MGD.route_contract = MGD.route_contract or {
-  id = &quot;magi_group_damage&quot;,
-  interface_version = 1,
-  shared_categories = { &quot;defense_break&quot;, &quot;anti_tumble&quot; },
-  route_local_categories = {
-    &quot;opener_setup&quot;,
-    &quot;freeze_setup&quot;,
-    &quot;salve_pressure&quot;,
-    &quot;disrupt_setup&quot;,
-    &quot;glaciate_burst&quot;,
-    &quot;fire_build&quot;,
-    &quot;fire_payoff&quot;,
-    &quot;fire_promotion&quot;,
-  },
-  capabilities = {
-    uses_eq = true,
-    uses_bal = false,
-    uses_entity = false,
-    supports_burst = true,
-    supports_bootstrap = false,
-    needs_target = true,
-    shares_defense_break = false,
-    shares_anti_tumble = false,
-  },
-  override_policy = {
-    mode = &quot;narrow_global_only&quot;,
-    allowed = {
-      target_invalid = true,
-      target_slain = true,
-      route_off = true,
-      pause = true,
-      manual_suppression = true,
-      target_swap_bootstrap = true,
-    },
-  },
-  lifecycle = {
-    on_enter = true,
-    on_exit = true,
-    on_target_swap = true,
-    on_pause = true,
-    on_resume = true,
-    on_manual_success = true,
-    on_send_result = true,
-    evaluate = true,
-    explain = true,
-  },
-}
-
-do
-  if RI and type(RI.ensure_hooks) == &quot;function&quot; then
-    RI.ensure_hooks(MGD, MGD.route_contract)
-  end
-end
-
-MGD.cfg = MGD.cfg or {
-  enabled = false,
-  echo = true,
-  loop_delay = 0.15,
-  same_target_repeat_s = 0.75,
-  horripilation_pending_s = 1.00,
-  freeze_pending_s = 1.00,
-  mudslide_pending_s = 0.80,
-  water_emanation_pending_s = 2.60,
-  magma_pending_s = 1.00,
-  firelash_pending_s = 1.00,
-  conflagrate_pending_s = 1.00,
-  fire_emanation_pending_s = 2.60,
-  glaciate_pending_s = 1.00,
-}
-
-MGD.state = MGD.state or {
-  enabled = false,
-  loop_enabled = false,
-  timer_id = nil,
-  busy = false,
-  last_target = &quot;&quot;,
-  last_cmd = &quot;&quot;,
-  last_category = &quot;&quot;,
-  last_sent_cmd = &quot;&quot;,
-  last_sent_target = &quot;&quot;,
-  last_sent_category = &quot;&quot;,
-  last_sent_at = 0,
-  explain = {},
-  template = { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; },
-  pending = {
-    horripilation = { target = &quot;&quot;, until_t = 0 },
-    freeze = { target = &quot;&quot;, until_t = 0 },
-    mudslide = { target = &quot;&quot;, until_t = 0 },
-    emanation_water = { target = &quot;&quot;, until_t = 0 },
-    magma = { target = &quot;&quot;, until_t = 0 },
-    firelash = { target = &quot;&quot;, until_t = 0 },
-    conflagrate = { target = &quot;&quot;, until_t = 0 },
-    emanation_fire = { target = &quot;&quot;, until_t = 0 },
-    glaciate = { target = &quot;&quot;, until_t = 0 },
-  },
-  cold = {
-    target = &quot;&quot;,
-    room_id = &quot;&quot;,
-    phase = &quot;reset&quot;,
-    seen_frostbite = false,
-    seen_frozen = false,
-    progressed_at = 0,
-    reason = &quot;init&quot;,
-  },
-  route = {
-    target = &quot;&quot;,
-    room_id = &quot;&quot;,
-    freeze_step_done = false,
-    branch_stage = &quot;reset&quot;,
-    last_reset_reason = &quot;init&quot;,
-  },
-  waiting = { queue = nil, main_lane = nil, lanes = nil, fingerprint = &quot;&quot;, reason = &quot;&quot;, at = 0 },
-  last_attack = { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; },
-  in_flight = { fingerprint = &quot;&quot;, target = &quot;&quot;, route = &quot;magi_group_damage&quot;, at = 0, resolved_at = 0, lanes = nil, eq = &quot;&quot;, entity = &quot;&quot;, reason = &quot;&quot; },
-}
-
-local function _echo(msg)
-  if MGD.cfg.echo ~= true then return end
-  if type(cecho) == &quot;function&quot; then
-    cecho(string.format(&quot;&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;%s\n&quot;, tostring(msg)))
-  elseif type(echo) == &quot;function&quot; then
-    echo(string.format(&quot;[Yso:Magi] %s\n&quot;, tostring(msg)))
-  end
-end
-
-local function _is_magi()
-  if type(Yso.is_magi) == &quot;function&quot; then
-    local ok, v = pcall(Yso.is_magi)
-    if ok then return v == true end
-  end
-  local C = Yso and Yso.classinfo or nil
-  if type(C) == &quot;table&quot; and type(C.is_magi) == &quot;function&quot; then
-    local ok, v = pcall(C.is_magi)
-    if ok then return v == true end
-  end
-  local gmcp = rawget(_G, &quot;gmcp&quot;)
-  local cls = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or nil
-  if type(cls) == &quot;string&quot; and trim(cls) ~= &quot;&quot; then return lc(cls) == &quot;magi&quot; end
-  if type(Yso.class) == &quot;string&quot; and trim(Yso.class) ~= &quot;&quot; then return lc(Yso.class) == &quot;magi&quot; end
-  return false
-end
-
---- Group damage runs whenever Magi is in combat mode (same as other combat routes).
-local function _group_damage_context_ok()
-  if not _is_magi() then return false end
-  local Mo = Yso and Yso.mode
-  if not Mo then return false end
-  if type(Mo.is_combat) == &quot;function&quot; then
-    local ok, v = pcall(Mo.is_combat)
-    if ok and v ~= true then return false end
-  end
-  return true
-end
-
-local function _route_is_active()
-  if not _group_damage_context_ok() then return false end
-  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
-    return Yso.mode.route_loop_active(&quot;magi_group_damage&quot;) == true
-  end
-  return MGD.state and MGD.state.loop_enabled == true
-end
-
-local function _set_loop_enabled(on)
-  local enabled = (on == true)
-  MGD.state.enabled = enabled
-  MGD.state.loop_enabled = enabled
-  -- Do NOT set MGD.loop_enabled on the module table directly — only MGD.state
-  -- is authoritative. Setting a module-level copy caused stale reads after a
-  -- state reset that didn&apos;t touch the module-level field.
-  MGD.cfg.enabled = enabled
-  MGD.state.loop_delay = tonumber(MGD.state.loop_delay or MGD.cfg.loop_delay or 0.15) or 0.15
-  return enabled
-end
-
-local function _cold_slot()
-  MGD.state.cold = MGD.state.cold or {
-    target = &quot;&quot;,
-    room_id = &quot;&quot;,
-    phase = &quot;reset&quot;,
-    seen_frostbite = false,
-    seen_frozen = false,
-    progressed_at = 0,
-    reason = &quot;init&quot;,
-  }
-  return MGD.state.cold
-end
-
-local function _reset_cold(reason)
-  local cold = _cold_slot()
-  cold.target = &quot;&quot;
-  cold.room_id = &quot;&quot;
-  cold.phase = &quot;reset&quot;
-  cold.seen_frostbite = false
-  cold.seen_frozen = false
-  cold.progressed_at = 0
-  cold.reason = tostring(reason or &quot;&quot;)
-  return cold
-end
-
-local function _route_slot()
-  MGD.state.route = MGD.state.route or {
-    target = &quot;&quot;,
-    room_id = &quot;&quot;,
-    freeze_step_done = false,
-    branch_stage = &quot;reset&quot;,
-    last_reset_reason = &quot;init&quot;,
-  }
-  return MGD.state.route
-end
-
-local function _reset_route(reason)
-  local route = _route_slot()
-  route.target = &quot;&quot;
-  route.room_id = &quot;&quot;
-  route.freeze_step_done = false
-  route.branch_stage = &quot;reset&quot;
-  route.last_reset_reason = tostring(reason or &quot;&quot;)
-  return route
-end
-
-local function _ensure_context(tgt)
-  local room = RC.room_id()
-  local cold = _cold_slot()
-  local route = _route_slot()
-
-  local room_changed = false
-  if cold.room_id ~= &quot;&quot; and room ~= &quot;&quot; and cold.room_id ~= room then room_changed = true end
-  if route.room_id ~= &quot;&quot; and room ~= &quot;&quot; and route.room_id ~= room then room_changed = true end
-
-  local target_changed = false
-  if cold.target ~= &quot;&quot; and tgt ~= &quot;&quot; and not same_target(cold.target, tgt) then target_changed = true end
-  if route.target ~= &quot;&quot; and tgt ~= &quot;&quot; and not same_target(route.target, tgt) then target_changed = true end
-
-  if room_changed then
-    cold = _reset_cold(&quot;room_change&quot;)
-    route = _reset_route(&quot;room_change&quot;)
-  elseif target_changed then
-    cold = _reset_cold(&quot;target_change&quot;)
-    route = _reset_route(&quot;target_change&quot;)
-  end
-
-  cold.target = trim(tgt or &quot;&quot;)
-  cold.room_id = room
-  route.target = trim(tgt or &quot;&quot;)
-  route.room_id = room
-  return cold, route
-end
-
-local function _set_branch_stage(tgt, stage)
-  local _, route = _ensure_context(tgt)
-  route.branch_stage = tostring(stage or &quot;&quot;)
-  return route
-end
-
-local function _refresh_cold_state(tgt, frozen, frostbite)
-  local cold = _ensure_context(tgt)
-  if frostbite == true then cold.seen_frostbite = true end
-  if frozen == true then cold.seen_frozen = true end
-
-  if (cold.seen_frozen or cold.seen_frostbite) and tonumber(cold.progressed_at or 0) &lt;= 0 then
-    cold.progressed_at = now()
-  end
-  if cold.seen_frozen or cold.seen_frostbite then
-    cold.phase = &quot;progressed&quot;
-  else
-    cold.phase = &quot;freeze_baseline&quot;
-  end
-  return cold
-end
-
-local function _spell_guard(slot_name, tgt, cmd)
-  return RC.guard_spell({
-    state = MGD.state,
-    cfg = MGD.cfg,
-    slot = slot_name,
-    target = tgt,
-    cmd = cmd,
-    target_valid = RC.target_valid(tgt),
-    eq_ready = RC.eq_ready(),
-  })
-end
-
-local function _freeze_stable()
-  return RC.has_aff(&quot;frozen&quot;) or RC.has_aff(&quot;frostbite&quot;)
-end
-
-local function _has_conflagrate()
-  return RC.has_aff(&quot;conflagrate&quot;)
-end
-
--- AK tracks ablaze stacks under the key &quot;aflame&quot;; &quot;ablaze&quot; is the in-game name.
-local function _has_ablaze()
-  return RC.has_aff(&quot;aflame&quot;)
-end
-
-local function _aflame_ready_for_conflagrate()
-  return RC.score_aff(&quot;aflame&quot;) &gt;= 200
-end
-
-local function _can_cast_horripilation(tgt)
-  local cmd = (&quot;staff cast horripilation %s&quot;):format(tgt)
-  local ok, why = _spell_guard(&quot;horripilation&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_freeze(tgt)
-  local cmd = (&quot;cast freeze at %s&quot;):format(tgt)
-  local ok, why = _spell_guard(&quot;freeze&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_mudslide(tgt)
-  local cmd = (&quot;cast mudslide at %s&quot;):format(tgt)
-  local ok, why = _spell_guard(&quot;mudslide&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_glaciate(tgt)
-  local cmd = (&quot;cast glaciate at %s&quot;):format(tgt)
-  if not RC.has_aff(&quot;frozen&quot;) then return false, &quot;frozen_required&quot;, cmd end
-  local ok, why = _spell_guard(&quot;glaciate&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_magma(tgt)
-  local cmd = (&quot;cast magma at %s&quot;):format(tgt)
-  local ok, why = _spell_guard(&quot;magma&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_firelash(tgt)
-  local cmd = (&quot;cast firelash at %s&quot;):format(tgt)
-  local ok, why = _spell_guard(&quot;firelash&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_conflagrate(tgt)
-  local cmd = (&quot;cast conflagrate at %s&quot;):format(tgt)
-  -- Two-stage check gives better diagnostics:
-  --   &quot;ablaze_required&quot;  = no ablaze stacks at all (aflame score = 0)
-  --   &quot;aflame_not_ready&quot; = ablaze started but fewer than 2 stacks (score &lt; 200)
-  if not _has_ablaze() then return false, &quot;ablaze_required&quot;, cmd end
-  if not _aflame_ready_for_conflagrate() then return false, &quot;aflame_not_ready&quot;, cmd end
-  local ok, why = _spell_guard(&quot;conflagrate&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_water_emanation(tgt)
-  local res = RC.read_resonance()
-  local cmd = (&quot;cast emanation at %s water&quot;):format(tgt)
-  if res.water_major ~= true then return false, &quot;water_not_major&quot;, cmd end
-  local ok, why = _spell_guard(&quot;emanation_water&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _can_cast_fire_emanation(tgt)
-  local res = RC.read_resonance()
-  local cmd = (&quot;cast emanation at %s fire&quot;):format(tgt)
-  if res.fire_major ~= true then return false, &quot;fire_not_major&quot;, cmd end
-  if not _has_conflagrate() then return false, &quot;conflagrate_required&quot;, cmd end
-  if not _freeze_stable() then return false, &quot;freeze_stable_required&quot;, cmd end
-  local ok, why = _spell_guard(&quot;emanation_fire&quot;, tgt, cmd)
-  return ok, why, cmd
-end
-
-local function _effective_state(tgt)
-  local base = RC.build_snapshot({
-    state = MGD.state,
-    target = tgt,
-    affs = {
-      &quot;waterbonds&quot;,
-      &quot;frozen&quot;,
-      &quot;frostbite&quot;,
-      &quot;slickness&quot;,
-      &quot;disrupt&quot;,
-      &quot;scalded&quot;,
-      &quot;conflagrate&quot;,
-      &quot;aflame&quot;,
-    },
-    pending_slots = PENDING_SLOTS,
-  })
-  local frozen = base.frozen == true
-  local frostbite = base.frostbite == true
-  local slick_actual = base.slickness == true
-  local disrupt_actual = base.disrupt == true
-  local waterbonds_actual = base.waterbonds == true
-  local scalded_actual = base.scalded == true
-  local conflagrate = base.conflagrate == true
-  local ablaze = _has_ablaze()
-  local aflame = tonumber(base.raw.aflame or 0) or 0
-  local water_res = tonumber(base.res.water or 0) or 0
-  local fire_res = tonumber(base.res.fire or 0) or 0
-  local water_major = base.res.water_major == true
-  local fire_major = base.res.fire_major == true
-  local cold = _refresh_cold_state(tgt, frozen, frostbite)
-  local _, route = _ensure_context(tgt)
-
-  local slickness = slick_actual or RC.pending_active(MGD.state,&quot;mudslide&quot;, tgt)
-  local disrupt = disrupt_actual or RC.pending_active(MGD.state,&quot;emanation_water&quot;, tgt)
-  local waterbonds = waterbonds_actual or RC.pending_active(MGD.state,&quot;horripilation&quot;, tgt)
-  local scalded = scalded_actual or RC.pending_active(MGD.state,&quot;magma&quot;, tgt)
-  local fire_branch_eligible = (route.freeze_step_done == true) and _freeze_stable()
-
-  return {
-    target = trim(tgt or &quot;&quot;),
-    target_valid = RC.target_valid(tgt),
-    waterbonds = waterbonds,
-    waterbonds_actual = waterbonds_actual,
-    frozen = frozen,
-    frostbite = frostbite,
-    freeze_stable = _freeze_stable(),
-    slickness = slickness,
-    slickness_actual = slick_actual,
-    disrupt = disrupt,
-    disrupt_actual = disrupt_actual,
-    scalded = scalded,
-    scalded_actual = scalded_actual,
-    conflagrate = conflagrate,
-    ablaze = ablaze,
-    aflame = aflame,
-    aflame_ready = aflame &gt;= 200,
-    water_res = water_res,
-    water_res_major = water_major,
-    fire_res = fire_res,
-    fire_res_major = fire_major,
-    resonance_synced = base.res.synced == true,
-    freeze_step_done = (route.freeze_step_done == true),
-    fire_branch_eligible = fire_branch_eligible,
-    route = {
-      target = route.target,
-      room_id = route.room_id,
-      freeze_step_done = route.freeze_step_done,
-      branch_stage = route.branch_stage,
-      last_reset_reason = route.last_reset_reason,
-    },
-    cold = {
-      target = cold.target,
-      room_id = cold.room_id,
-      phase = cold.phase,
-      seen_frostbite = cold.seen_frostbite,
-      seen_frozen = cold.seen_frozen,
-      progressed_at = cold.progressed_at,
-      reason = cold.reason,
-    },
-    pending = {
-      horripilation = RC.pending_active(MGD.state,&quot;horripilation&quot;, tgt),
-      freeze = RC.pending_active(MGD.state,&quot;freeze&quot;, tgt),
-      mudslide = RC.pending_active(MGD.state,&quot;mudslide&quot;, tgt),
-      emanation_water = RC.pending_active(MGD.state,&quot;emanation_water&quot;, tgt),
-      magma = RC.pending_active(MGD.state,&quot;magma&quot;, tgt),
-      firelash = RC.pending_active(MGD.state,&quot;firelash&quot;, tgt),
-      conflagrate = RC.pending_active(MGD.state,&quot;conflagrate&quot;, tgt),
-      emanation_fire = RC.pending_active(MGD.state,&quot;emanation_fire&quot;, tgt),
-      glaciate = RC.pending_active(MGD.state,&quot;glaciate&quot;, tgt),
-    },
-    raw = {
-      waterbonds = tonumber(base.raw.waterbonds or 0) or 0,
-      frozen = tonumber(base.raw.frozen or 0) or 0,
-      frostbite = tonumber(base.raw.frostbite or 0) or 0,
-      slickness = tonumber(base.raw.slickness or 0) or 0,
-      disrupt = tonumber(base.raw.disrupt or 0) or 0,
-      scalded = tonumber(base.raw.scalded or 0) or 0,
-      conflagrate = tonumber(base.raw.conflagrate or 0) or 0,
-      aflame = aflame,
-      water_res = water_res,
-      fire_res = fire_res,
-    },
-  }
-end
-
-local function _should_mudslide(st)
-  return st.frozen == true and st.slickness ~= true
-end
-
-local function _should_water_emanation(st)
-  return st.frozen == true and st.slickness == true and st.disrupt ~= true and st.water_res_major == true
-end
-
-local function _should_glaciate(st, tgt)
-  if st.frozen ~= true then return false end
-  if st.slickness ~= true then return false end
-  if st.disrupt ~= true and st.water_res_major == true then return false end
-  if same_target(MGD.state.last_sent_target or &quot;&quot;, tgt) and MGD.state.last_sent_category == &quot;glaciate_burst&quot; then
-    return false
-  end
-  return true
-end
-
-local function _should_fire_emanation(st)
-  return st.conflagrate == true
-    and st.freeze_stable == true
-    and st.fire_res_major == true
-end
-
-local function _select_command(tgt)
-  local st = _effective_state(tgt)
-
-  if not st.target_valid then
-    _set_branch_stage(tgt, &quot;invalid_target&quot;)
-    return nil, nil, st, &quot;invalid_target&quot;
-  end
-
-  local special, reason, hold = RC.special_action(tgt)
-  if special or hold then return special, &quot;special&quot;, st, reason end
-
-  if not st.waterbonds then
-    local ok, why, cmd = _can_cast_horripilation(tgt)
-    _set_branch_stage(tgt, ok and &quot;opener_setup&quot; or &quot;opener_wait&quot;)
-    if ok then
-      return cmd, &quot;opener_setup&quot;, st, &quot;waterbonds_missing&quot;
-    end
-    return nil, nil, st, why ~= &quot;&quot; and why or &quot;waterbonds_missing&quot;
-  end
-
-  if st.freeze_step_done ~= true then
-    local ok, why, cmd = _can_cast_freeze(tgt)
-    _set_branch_stage(tgt, ok and &quot;freeze_setup&quot; or &quot;freeze_wait&quot;)
-    if ok then
-      return cmd, &quot;freeze_setup&quot;, st, &quot;freeze_step_gate&quot;
-    end
-    return nil, nil, st, why ~= &quot;&quot; and why or &quot;freeze_step_gate&quot;
-  end
-
-  if _should_mudslide(st) then
-    local ok, why, cmd = _can_cast_mudslide(tgt)
-    _set_branch_stage(tgt, ok and &quot;salve_pressure&quot; or &quot;mudslide_wait&quot;)
-    if ok then
-      return cmd, &quot;salve_pressure&quot;, st, &quot;mudslide_window&quot;
-    end
-    return nil, nil, st, why ~= &quot;&quot; and why or &quot;mudslide_window&quot;
-  end
-
-  do
-    local ok, _, cmd = _can_cast_glaciate(tgt)
-    if ok and _should_glaciate(st, tgt) then
-      _set_branch_stage(tgt, &quot;glaciate_burst&quot;)
-      return cmd, &quot;glaciate_burst&quot;, st, &quot;glaciate_window&quot;
-    end
-  end
-
-  if st.freeze_stable ~= true then
-    local ok, why, cmd = _can_cast_freeze(tgt)
-    _set_branch_stage(tgt, ok and &quot;freeze_setup&quot; or &quot;freeze_wait&quot;)
-    if ok then
-      return cmd, &quot;freeze_setup&quot;, st, &quot;freeze_baseline&quot;
-    end
-    return nil, nil, st, why ~= &quot;&quot; and why or &quot;freeze_baseline&quot;
-  end
-
-  if _should_water_emanation(st) then
-    local ok, _, cmd = _can_cast_water_emanation(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;disrupt_setup&quot;)
-      return cmd, &quot;disrupt_setup&quot;, st, &quot;water_emanation_setup&quot;
-    end
-  end
-
-  if st.fire_branch_eligible == true and st.conflagrate ~= true and st.aflame_ready == true and st.ablaze == true then
-    local ok, _, cmd = _can_cast_conflagrate(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;fire_payoff&quot;)
-      return cmd, &quot;fire_payoff&quot;, st, &quot;conflagrate_ready&quot;
-    end
-  end
-
-  if st.fire_branch_eligible == true and _should_fire_emanation(st) then
-    local ok, _, cmd = _can_cast_fire_emanation(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;fire_promotion&quot;)
-      return cmd, &quot;fire_promotion&quot;, st, &quot;fire_emanation_promote&quot;
-    end
-  end
-
-  if st.fire_branch_eligible == true and st.scalded ~= true then
-    local ok, _, cmd = _can_cast_magma(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;fire_build&quot;)
-      return cmd, &quot;fire_build&quot;, st, &quot;scalded_missing&quot;
-    end
-  end
-
-  if st.fire_branch_eligible == true and st.conflagrate ~= true then
-    local ok, _, cmd = _can_cast_firelash(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;fire_build&quot;)
-      return cmd, &quot;fire_build&quot;, st, &quot;firelash_builder&quot;
-    end
-  end
-
-  do
-    local ok, _, cmd = _can_cast_glaciate(tgt)
-    if ok and st.frozen == true then
-      _set_branch_stage(tgt, &quot;glaciate_burst&quot;)
-      return cmd, &quot;glaciate_burst&quot;, st, &quot;glaciate_fallback&quot;
-    end
-  end
-
-  if st.fire_branch_eligible == true then
-    local ok, _, cmd = _can_cast_firelash(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;fire_build&quot;)
-      return cmd, &quot;fire_build&quot;, st, &quot;maintain_fire_pressure&quot;
-    end
-  end
-
-  do
-    local ok, why, cmd = _can_cast_freeze(tgt)
-    if ok then
-      _set_branch_stage(tgt, &quot;freeze_setup&quot;)
-      return cmd, &quot;freeze_setup&quot;, st, &quot;freeze_refresh&quot;
-    end
-    _set_branch_stage(tgt, &quot;hold&quot;)
-    return nil, nil, st, why ~= &quot;&quot; and why or &quot;no_legal_action&quot;
-  end
-end
-
-local function _emit_payload(payload, category)
-  local target = trim(type(payload) == &quot;table&quot; and payload.target or &quot;&quot;)
-  local opts = {
-    reason = &quot;magi_group_damage:&quot; .. tostring(category or &quot;attack&quot;),
-    kind = &quot;offense&quot;,
-    commit = true,
-    require_commit = payload.eq == &quot;cast bloodboil&quot;,
-    repeat_command = payload.eq == &quot;cast bloodboil&quot;,
-    route = &quot;magi_group_damage&quot;,
-    target = target,
-  }
-
-  if RI and type(RI.emit_route_payload) == &quot;function&quot; then
-    return RI.emit_route_payload(&quot;magi_group_damage&quot;, {
-      target = target,
-      lanes = { eq = payload and payload.eq },
-      meta = {
-        route = &quot;magi_group_damage&quot;,
-        main_lane = &quot;eq&quot;,
-        main_category = tostring(category or &quot;&quot;),
-      },
-    }, opts)
-  end
-
-  if type(Yso.emit) == &quot;function&quot; then
-    return Yso.emit(payload, opts) == true, nil, nil
-  end
-
-  local cmd = type(payload) == &quot;table&quot; and (payload.eq or (type(payload.lanes) == &quot;table&quot; and payload.lanes.eq)) or nil
-  if type(cmd) == &quot;string&quot; and cmd ~= &quot;&quot; and type(send) == &quot;function&quot; then
-    local ok = pcall(send, cmd)
-    return ok == true, nil, nil
-  end
-
-  return false, &quot;emit_unavailable&quot;, nil
-end
-
-local function _payload_each_eq(payload, fn)
-  if type(payload) ~= &quot;table&quot; or type(fn) ~= &quot;function&quot; then return end
-  local row = payload.eq or (type(payload.lanes) == &quot;table&quot; and payload.lanes.eq)
-  if type(row) == &quot;string&quot; then
-    fn(row)
-    return
-  end
-  if type(row) == &quot;table&quot; then
-    for i = 1, #row do
-      if type(row[i]) == &quot;string&quot; then fn(row[i]) end
-    end
-  end
-end
-
-local function _capture_target(cmd, pat)
-  return trim(lc(cmd):match(pat) or &quot;&quot;)
-end
-
-local function _attack_opts(arg)
-  if type(arg) == &quot;table&quot; and (arg.preview ~= nil or arg.ctx ~= nil) then
-    return arg.ctx, (arg.preview == true)
-  end
-  return arg, false
-end
-
-local function _update_explain(tgt, st, category, reason, planned_cmd)
-  MGD.state.explain = RC.build_explain({
-    route = &quot;magi_group_damage&quot;,
-    target = tgt,
-    decision = category or &quot;&quot;,
-    reason = reason or &quot;&quot;,
-    planned = { eq = planned_cmd or &quot;&quot; },
-    branch_stage = (_route_slot().branch_stage or (st and st.route and st.route.branch_stage) or &quot;&quot;),
-    freeze_step_done = st and st.freeze_step_done == true or false,
-    fire_branch_eligible = st and st.fire_branch_eligible == true or false,
-    state = st or {},
-    last_cmd = MGD.state and MGD.state.last_cmd or &quot;&quot;,
-    last_sent_cmd = MGD.state and MGD.state.last_sent_cmd or &quot;&quot;,
-    pending = MGD.state and MGD.state.pending or {},
-    route_enabled = MGD.is_enabled and MGD.is_enabled() or false,
-    active = MGD.is_active and MGD.is_active() or false,
-  })
-end
-
-local function _clear_runtime_state(reason)
-  RC.reset_runtime_state(MGD.state, reason)
-end
-
-function MGD.init()
-  MGD.cfg = MGD.cfg or {}
-  MGD.state = MGD.state or {}
-  MGD.state.template = MGD.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; }
-  RC.ensure_pending(MGD.state, PENDING_SLOTS)
-  if RI and type(RI.ensure_waiting_state) == &quot;function&quot; then
-    RI.ensure_waiting_state(MGD.state, &quot;magi_group_damage&quot;)
-  end
-  _cold_slot()
-  _route_slot()
-  MGD.state.loop_delay = tonumber(MGD.state.loop_delay or MGD.cfg.loop_delay or 0.15) or 0.15
-  MGD.state.busy = (MGD.state.busy == true)
-  _set_loop_enabled((MGD.state.loop_enabled == true) or (MGD.state.enabled == true))
-  return true
-end
-
-function MGD.reset(reason)
-  MGD.init()
-  RC.clear_pending_all(MGD.state, PENDING_SLOTS)
-  _reset_cold(reason or &quot;manual&quot;)
-  _reset_route(reason or &quot;manual&quot;)
-  _clear_runtime_state(reason or &quot;manual&quot;)
-  if RI and type(RI.clear_waiting) == &quot;function&quot; then
-    RI.clear_waiting(MGD.state, &quot;magi_group_damage&quot;)
-  end
-  return true
-end
-
-function MGD.is_enabled()
-  return MGD.state and MGD.state.enabled == true
-end
-
-function MGD.is_active()
-  return _route_is_active()
-end
-
-function MGD.can_run(ctx)
-  MGD.init()
-  if not MGD.is_enabled() then return false, &quot;disabled&quot; end
-  if not MGD.is_active() then return false, &quot;inactive&quot; end
-  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return false, &quot;paused&quot; end
-
-  local tgt = trim((ctx and ctx.target) or RC.get_target())
-  if tgt == &quot;&quot; then
-    _reset_cold(&quot;no_target&quot;)
-    _reset_route(&quot;no_target&quot;)
-    return false, &quot;no_target&quot;
-  end
-  if not _is_magi() then return false, &quot;wrong_class&quot; end
-  if not RC.target_valid(tgt) then
-    _reset_cold(&quot;invalid_target&quot;)
-    _reset_route(&quot;invalid_target&quot;)
-    return false, &quot;invalid_target&quot;
-  end
-  _ensure_context(tgt)
-  return true, tgt
-end
-
-function MGD.attack_function(arg)
-  local ctx, preview = _attack_opts(arg)
-  local ok, info = MGD.can_run(ctx)
-  if not ok then
-    if preview then return nil, info end
-    return false, info
-  end
-
-  local tgt = info
-  if MGD.state.last_target ~= &quot;&quot; and not same_target(MGD.state.last_target, tgt) then
-    RC.clear_pending_all(MGD.state, PENDING_SLOTS)
-  end
-  MGD.state.last_target = tgt
-
-  local cmd, category, st, reason = _select_command(tgt)
-  if not (category == &quot;special&quot; and not cmd) and RC.eq_ready() then
-    local selected, purge_reason = RC.with_bloodboil(cmd)
-    cmd = selected
-    if purge_reason then category, reason = &quot;self_purge&quot;, purge_reason end
-  end
-  MGD.state.template.last_reason = reason
-  MGD.state.template.last_target = tgt
-  _update_explain(tgt, st, category, reason, cmd)
-
-  if not cmd or cmd == &quot;&quot; then
-    MGD.state.template.last_payload = nil
-    if preview then return nil, reason end
-    return false, reason
-  end
-
-  local payload = {
-    route = &quot;magi_group_damage&quot;,
-    target = tgt,
-    lanes = { eq = cmd },
-    meta = {
-      main_lane = &quot;eq&quot;,
-      main_category = category,
-      main_reason = reason,
-      state = st,
-      explain = MGD.state.explain,
-    },
-  }
-
-  MGD.state.template.last_payload = { eq = cmd, meta = payload.meta }
-
-  if preview then return payload end
-
-  local queued_payload = { eq = cmd, target = tgt }
-  local sent, emit_detail, ack_payload = _emit_payload(queued_payload, category)
-  if sent ~= true then return false, emit_detail or &quot;emit_failed&quot; end
-  RC.note_special_queued(cmd, tgt)
-  if RI and type(RI.mark_waiting) == &quot;function&quot; then
-    RI.mark_waiting(MGD.state, &quot;magi_group_damage&quot;, ack_payload or queued_payload, {
-      cmd = trim(cmd),
-      target = tgt,
-      main_lane = &quot;eq&quot;,
-    })
-  end
-  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == &quot;function&quot;
-  local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
-  local queue_live = Yso and Yso.queue and type(Yso.queue.commit) == &quot;function&quot;
-  if (not has_ack_bus or dry_run or not queue_live) and type(MGD.on_payload_queued) == &quot;function&quot; then
-    pcall(MGD.on_payload_queued, ack_payload or queued_payload)
-  end
-
-  MGD.state.last_cmd = cmd
-  MGD.state.last_category = category
-  return true, cmd, payload
-end
-
-function MGD.build_payload(ctx)
-  return MGD.attack_function({ ctx = ctx, preview = true })
-end
-
-function MGD.build(reason)
-  local ctx = type(reason) == &quot;table&quot; and reason or { reason = tostring(reason or &quot;&quot;) }
-  return MGD.build_payload(ctx)
-end
-
-function MGD.evaluate(ctx)
-  local payload, why = MGD.build_payload(ctx)
-  if not payload then return { ok = false, reason = why } end
-  return { ok = true, payload = payload }
-end
-
-function MGD.explain()
-  MGD.init()
-  local ex = type(MGD.state.explain) == &quot;table&quot; and MGD.state.explain or {}
-  local tgt = RC.get_target()
-  local st = _effective_state(tgt)
-  ex.route = &quot;magi_group_damage&quot;
-  ex.enabled = MGD.is_enabled()
-  ex.route_enabled = MGD.is_enabled()
-  ex.active = MGD.is_active()
-  ex.target = tgt
-  ex.last_reason = MGD.state and MGD.state.template and MGD.state.template.last_reason or &quot;&quot;
-  ex.last_disable_reason = MGD.state and MGD.state.template and MGD.state.template.last_disable_reason or &quot;&quot;
-  ex.last_cmd = MGD.state and MGD.state.last_cmd or &quot;&quot;
-  ex.last_sent_cmd = MGD.state and MGD.state.last_sent_cmd or &quot;&quot;
-  ex.decision = ex.decision or (MGD.state and MGD.state.last_category or &quot;&quot;)
-  ex.branch_stage = (st.route and st.route.branch_stage) or ex.branch_stage or &quot;&quot;
-  ex.freeze_step_done = st.freeze_step_done == true
-  ex.fire_branch_eligible = st.fire_branch_eligible == true
-  ex.state = st
-  ex.pending = MGD.state and MGD.state.pending or {}
-  return ex
-end
-
-function MGD.status()
-  return MGD.explain()
-end
-
-function MGD.on_payload_queued(payload)
-  _payload_each_eq(payload, function(cmd)
-    cmd = trim(cmd)
-    if cmd == &quot;&quot; then return end
-
-    local cmd_lc = lc(cmd)
-    MGD.state.last_sent_cmd = cmd
-    MGD.state.last_sent_at = now()
-
-    local horr_tgt = _capture_target(cmd_lc, &quot;^staff%s+cast%s+horripilation%s+(.+)$&quot;)
-    if horr_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = horr_tgt
-      MGD.state.last_sent_category = &quot;opener_setup&quot;
-      RC.mark_pending(MGD.state,&quot;horripilation&quot;, horr_tgt, MGD.cfg.horripilation_pending_s)
-      _set_branch_stage(horr_tgt, &quot;opener_setup&quot;)
-      return
-    end
-
-    local freeze_tgt = _capture_target(cmd_lc, &quot;^cast%s+freeze%s+at%s+(.+)$&quot;)
-    if freeze_tgt ~= &quot;&quot; then
-      local _, route = _ensure_context(freeze_tgt)
-      route.freeze_step_done = true
-      route.branch_stage = &quot;freeze_setup&quot;
-      MGD.state.last_sent_target = freeze_tgt
-      MGD.state.last_sent_category = &quot;freeze_setup&quot;
-      RC.mark_pending(MGD.state,&quot;freeze&quot;, freeze_tgt, MGD.cfg.freeze_pending_s)
-      return
-    end
-
-    local mud_tgt = _capture_target(cmd_lc, &quot;^cast%s+mudslide%s+at%s+(.+)$&quot;)
-    if mud_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = mud_tgt
-      MGD.state.last_sent_category = &quot;salve_pressure&quot;
-      RC.mark_pending(MGD.state,&quot;mudslide&quot;, mud_tgt, MGD.cfg.mudslide_pending_s)
-      _set_branch_stage(mud_tgt, &quot;salve_pressure&quot;)
-      return
-    end
-
-    local ema_water_tgt = _capture_target(cmd_lc, &quot;^cast%s+emanation%s+at%s+(.+)%s+water$&quot;)
-    if ema_water_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = ema_water_tgt
-      MGD.state.last_sent_category = &quot;disrupt_setup&quot;
-      RC.mark_pending(MGD.state,&quot;emanation_water&quot;, ema_water_tgt, MGD.cfg.water_emanation_pending_s)
-      _set_branch_stage(ema_water_tgt, &quot;disrupt_setup&quot;)
-      return
-    end
-
-    local magma_tgt = _capture_target(cmd_lc, &quot;^cast%s+magma%s+at%s+(.+)$&quot;)
-    if magma_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = magma_tgt
-      MGD.state.last_sent_category = &quot;salve_pressure&quot;
-      RC.mark_pending(MGD.state,&quot;magma&quot;, magma_tgt, MGD.cfg.magma_pending_s)
-      _set_branch_stage(magma_tgt, &quot;fire_build&quot;)
-      return
-    end
-
-    local firelash_tgt = _capture_target(cmd_lc, &quot;^cast%s+firelash%s+at%s+(.+)$&quot;)
-    if firelash_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = firelash_tgt
-      MGD.state.last_sent_category = &quot;fire_build&quot;
-      RC.mark_pending(MGD.state,&quot;firelash&quot;, firelash_tgt, MGD.cfg.firelash_pending_s)
-      _set_branch_stage(firelash_tgt, &quot;fire_build&quot;)
-      return
-    end
-
-    local conflagrate_tgt = _capture_target(cmd_lc, &quot;^cast%s+conflagrate%s+at%s+(.+)$&quot;)
-    if conflagrate_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = conflagrate_tgt
-      MGD.state.last_sent_category = &quot;fire_payoff&quot;
-      RC.mark_pending(MGD.state,&quot;conflagrate&quot;, conflagrate_tgt, MGD.cfg.conflagrate_pending_s)
-      _set_branch_stage(conflagrate_tgt, &quot;fire_payoff&quot;)
-      return
-    end
-
-    local ema_fire_tgt = _capture_target(cmd_lc, &quot;^cast%s+emanation%s+at%s+(.+)%s+fire$&quot;)
-    if ema_fire_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = ema_fire_tgt
-      MGD.state.last_sent_category = &quot;fire_promotion&quot;
-      RC.mark_pending(MGD.state,&quot;emanation_fire&quot;, ema_fire_tgt, MGD.cfg.fire_emanation_pending_s)
-      _set_branch_stage(ema_fire_tgt, &quot;fire_promotion&quot;)
-      return
-    end
-
-    local glaciate_tgt = _capture_target(cmd_lc, &quot;^cast%s+glaciate%s+at%s+(.+)$&quot;)
-    if glaciate_tgt ~= &quot;&quot; then
-      MGD.state.last_sent_target = glaciate_tgt
-      MGD.state.last_sent_category = &quot;glaciate_burst&quot;
-      RC.mark_pending(MGD.state,&quot;glaciate&quot;, glaciate_tgt, MGD.cfg.glaciate_pending_s)
-      _set_branch_stage(glaciate_tgt, &quot;glaciate_burst&quot;)
-      return
-    end
-  end)
-end
-
-function MGD.on_payload_sent(payload)
-  if RI and type(RI.payload_has_any_route) == &quot;function&quot; and RI.payload_has_any_route(payload)
-    and not RI.payload_has_route(payload, &quot;magi_group_damage&quot;)
-  then
-    return false
-  end
-  if RI and type(RI.clear_waiting_on_ack) == &quot;function&quot; then
-    RI.clear_waiting_on_ack(MGD.state, &quot;magi_group_damage&quot;, payload, { require_route = false })
-  end
-  return MGD.on_payload_queued(payload)
-end
-
-function MGD.on_payload_fired(payload)
-  payload = payload or {}
-  MGD.state.last_fired_cmd = trim(payload.eq or payload.cmd or &quot;&quot;)
-  MGD.state.last_fired_at = now()
-end
-
-function MGD.on_enter(ctx)
-  MGD.init()
-  return true
-end
-
-function MGD.on_exit(ctx)
-  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == &quot;function&quot; then
-    Yso.mode.stop_route_loop(&quot;magi_group_damage&quot;, &quot;exit&quot;, true)
-  end
-  MGD.reset(&quot;exit&quot;)
-  return true
-end
-
-function MGD.on_target_swap(old_target, new_target)
-  if not same_target(old_target, new_target) then
-    RC.clear_pending_all(MGD.state, PENDING_SLOTS)
-    _reset_cold(&quot;target_swap&quot;)
-    _reset_route(&quot;target_swap&quot;)
-    _clear_runtime_state(&quot;target_swap&quot;)
-    if MGD.state.loop_enabled == true then
-      MGD.schedule_loop(0)
-    end
-  end
-  return true
-end
-
-function MGD.on_pause(ctx)
-  return true
-end
-
-function MGD.on_resume(ctx)
-  if MGD.state and MGD.state.loop_enabled == true then
-    MGD.schedule_loop(0)
-  end
-  return true
-end
-
-function MGD.on_manual_success(ctx)
-  if MGD.state and MGD.state.loop_enabled == true then
-    MGD.schedule_loop(MGD.state.loop_delay)
-  end
-  return true
-end
-
-function MGD.on_send_result(payload, ctx)
-  MGD.on_payload_fired(payload)
-  return true
-end
-
-function MGD.schedule_loop(delay)
-  if Yso and Yso.mode and type(Yso.mode.schedule_route_loop) == &quot;function&quot; then
-    return Yso.mode.schedule_route_loop(&quot;magi_group_damage&quot;, delay)
-  end
-  return false
-end
-
-MGD.alias_loop_stop_details = MGD.alias_loop_stop_details or {
-  inactive = true,
-  disabled = true,
-  no_target = true,
-  invalid_target = true,
-  wrong_class = true,
-}
-
-function MGD.alias_loop_prepare_start(ctx)
-  MGD.init()
-  return ctx or {}
-end
-
-function MGD.alias_loop_on_started(ctx)
-  RC.clear_pending_all(MGD.state, PENDING_SLOTS)
-  _reset_cold(&quot;loop_start&quot;)
-  _reset_route(&quot;loop_start&quot;)
-  _clear_runtime_state(&quot;loop_start&quot;)
-  _echo(&quot;Group damage loop ON.&quot;)
-  local tgt = RC.get_target()
-  if tgt == &quot;&quot; then
-    _echo(&quot;No target yet; holding.&quot;)
-  elseif not RC.target_valid(tgt) then
-    _echo(string.format(&quot;%s is not in room; holding.&quot;, tgt))
-  end
-end
-
-function MGD.alias_loop_on_stopped(ctx)
-  MGD.init()
-  ctx = ctx or {}
-  local reason = tostring(ctx.reason or &quot;manual&quot;)
-  RC.clear_pending_all(MGD.state, PENDING_SLOTS)
-  _reset_cold(reason)
-  _reset_route(reason)
-  _clear_runtime_state(reason)
-  MGD.state.template.last_disable_reason = reason
-  if ctx.silent ~= true then
-    _echo(string.format(&quot;Group damage loop OFF (%s).&quot;, reason))
-  end
-end
-
-function MGD.alias_loop_waiting_blocks()
-  return false
-end
-
-function MGD.alias_loop_clear_waiting()
-  if RI and type(RI.clear_waiting) == &quot;function&quot; then
-    return RI.clear_waiting(MGD.state, &quot;magi_group_damage&quot;)
-  end
-  return true
-end
-
-function MGD.alias_loop_on_error(err)
-  _echo(&quot;Magi team damage loop error: &quot; .. tostring(err))
-end
-
-if Yso and Yso.off and Yso.off.core and type(Yso.off.core.register) == &quot;function&quot; then
-  pcall(Yso.off.core.register, &quot;magi_group_damage&quot;, MGD)
-end
-
--- return omitted: alias body assigns Yso.off.magi.group_damage above
-
--- ^mdam$ alias entry: toggle group-damage loop (route id magi_group_damage).
-Yso.util = Yso.util or {}
-if type(Yso.util.toggle_route_alias) ~= &quot;function&quot; then
-  if type(cecho) == &quot;function&quot; then
-    cecho(&quot;&lt;orange&gt;[YSO] route controller unavailable; check Mudlet load order.&lt;reset&gt;\n&quot;)
-  end
-  return
-end
-local ok, why = Yso.util.toggle_route_alias(&quot;magi_group_damage&quot;, &quot;alias:mdam&quot;)
-if ok ~= true and type(cecho) == &quot;function&quot; then
-  cecho(&quot;&lt;SlateBlue&gt;[YSO] mdam toggle failed: &quot; .. tostring(why or &quot;unknown&quot;) .. &quot;&lt;reset&gt;\n&quot;)
+						<script>if type(cecho)==&apos;function&apos; then
+  cecho(&apos;&lt;orange&gt;[Yso:Magi]&lt;reset&gt; mdam is retired. Use gwater for Group Water or fstorm for Firestorm.\n&apos;)
 end
 </script>
 						<command />
@@ -18198,17 +16320,6 @@ local ROUTES = {
     active = true,
     module_name = &quot;alchemist_aurify_route&quot;,
   },
-  magi_group_damage = {
-    id = &quot;magi_group_damage&quot;,
-    context = &quot;group&quot;,
-    mode = &quot;combat&quot;,
-    namespace = &quot;Yso.off.magi.group_damage&quot;,
-    description = &quot;Magi group damage&quot;,
-    priority = 56,
-    class = &quot;magi&quot;,
-    active = true,
-    module_name = &quot;magi_group_damage&quot;,
-  },
   magi_firestorm = {
     id = &quot;magi_firestorm&quot;,
     context = &quot;group&quot;,
@@ -18253,7 +16364,6 @@ local ALIASES = {
   focus = { magi = &quot;magi_focus&quot; },
   mfocus = { magi = &quot;magi_focus&quot; },
   magi_focus = { magi = &quot;magi_focus&quot; },
-  mdam = { magi = &quot;magi_group_damage&quot; },
   fstorm = { magi = &quot;magi_firestorm&quot; },
   magi_firestorm = { magi = &quot;magi_firestorm&quot; },
   gwater = { magi = &quot;magi_water_group&quot; },
@@ -18265,9 +16375,9 @@ local ALIASES = {
   alchemist_aurify_route = { alchemist = &quot;alchemist_aurify_route&quot; },
   adam = { alchemist = &quot;alchemist_group_damage&quot; },
   alchemist_group_damage = { alchemist = &quot;alchemist_group_damage&quot; },
-  gd = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot; },
-  dmg = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot; },
-  dam = { magi = &quot;magi_group_damage&quot;, alchemist = &quot;alchemist_group_damage&quot; },
+  gd = { alchemist = &quot;alchemist_group_damage&quot; },
+  dmg = { alchemist = &quot;alchemist_group_damage&quot; },
+  dam = { alchemist = &quot;alchemist_group_damage&quot; },
 }
 
 local function _route_id(name)
@@ -18328,7 +16438,60 @@ end
 return RR
 </script>
 					<eventHandlerList />
-				</Script>
+				</Script><Script isActive="yes" isFolder="no"><name>Magi group route retirement</name><packageName /><script>-- Import-time migration: the former generic route is replaced by gwater/fstorm.
+Yso=Yso or {};Yso.off=Yso.off or {};Yso.off.magi=Yso.off.magi or {}
+local id=&apos;magi_group_damage&apos;
+local old=Yso.off.magi.group_damage
+local function cancel(row)
+  if type(row)~=&apos;table&apos; then return end
+  if row.timer_id and type(killTimer)==&apos;function&apos; then pcall(killTimer,row.timer_id) end
+  row.timer_id=nil
+end
+local fallback=Yso.util and Yso.util._route_alias_fallback
+for key,row in pairs(fallback and fallback.loops or {}) do
+  if key==id or (old and row.route==old) then cancel(row);fallback.loops[key]=nil end
+end
+if type(old)==&apos;table&apos; then
+  old.enabled=false
+  if old.cfg then old.cfg.enabled=false end
+  if old.state then
+    cancel(old.state)
+    old.state.enabled=false;old.state.loop_enabled=false;old.state.busy=false
+  end
+  if type(old.alias_loop_on_stopped)==&apos;function&apos; then
+    pcall(old.alias_loop_on_stopped,{reason=&apos;route_retired&apos;,silent=true})
+  end
+  if old.state then old.state.pending={};old.state.waiting={};old.state.in_flight={} end
+end
+Yso.off.magi.group_damage=nil
+local Q=Yso.queue
+if Q then
+  if type(Q.get_owned)==&apos;function&apos; then
+    for _,lane in ipairs({&apos;eq&apos;,&apos;bal&apos;,&apos;class&apos;,&apos;free&apos;}) do
+      local owned=Q.get_owned(lane)
+      if owned and owned.route==id then
+        if type(Q.clear_lane)==&apos;function&apos; then pcall(Q.clear_lane,lane,{qtype=owned.qtype}) end
+        local staged=type(Q.get_staged_owner)==&apos;function&apos; and Q.get_staged_owner(lane) or nil
+        if staged and staged.route==id and type(Q.clear)==&apos;function&apos; then pcall(Q.clear,lane) end
+      end
+    end
+  end
+  if Q._commit_hint and Q._commit_hint.route==id then
+    if type(Q.clear)==&apos;function&apos; then pcall(Q.clear,&apos;all&apos;) end
+    Q._commit_hint=nil
+  end
+end
+local core=Yso.off.core
+if core then
+  if core.routes then core.routes[id]=nil end
+  if core.state and core.state.active==id then core.state.active=&apos;&apos; end
+end
+local loop=Yso.mode and Yso.mode.route_loop
+if loop then
+  if loop.active==id then loop.active=&apos;&apos; end
+  if loop.nudges then loop.nudges[id]=nil end
+end
+</script><eventHandlerList /></Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Defensive checks</name>
 					<packageName />
@@ -19062,7 +17225,7 @@ return S
 						<packageName />
 						<script>-- Magi_duel_dam.lua
 -- Thin-alias route module for the Magi duel damage route.
--- Duel damage route (magi_dmg). Group damage uses ^mdam$ / magi_group_damage in mdam alias.
+-- Duel damage route (magi_dmg). Group offense uses gwater or fstorm.
 --
 -- The route logic below preserves the same priority/order that was planned
 -- for the Magi damage alias body, while living in an external file so it
@@ -19075,8 +17238,8 @@ Yso.off.magi = Yso.off.magi or {}
 local M = Yso.off.magi.dmg or {}
 Yso.off.magi.dmg = M
 
-M.key  = "magi_dmg"
-M.name = "Magi Duel Damage"
+M.key  = &quot;magi_dmg&quot;
+M.name = &quot;Magi Duel Damage&quot;
 
 -- Required by the mode engine loop (modes.lua tick_route_loop).
 -- _loop_state() reads these tables; loop_delay is the re-fire interval in seconds.
@@ -19087,10 +17250,10 @@ M.alias_owned = true
 local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 M.route_contract = M.route_contract or {
-  id = "magi_dmg",
+  id = &quot;magi_dmg&quot;,
   interface_version = 1,
-  shared_categories = { "defense_break", "anti_tumble" },
-  route_local_categories = { "duel_damage" },
+  shared_categories = { &quot;defense_break&quot;, &quot;anti_tumble&quot; },
+  route_local_categories = { &quot;duel_damage&quot; },
   capabilities = {
     uses_eq = true,
     uses_bal = false,
@@ -19100,7 +17263,7 @@ M.route_contract = M.route_contract or {
     needs_target = true,
   },
   override_policy = {
-    mode = "narrow_global_only",
+    mode = &quot;narrow_global_only&quot;,
     allowed = {
       target_invalid = true,
       target_slain = true,
@@ -19124,7 +17287,7 @@ M.route_contract = M.route_contract or {
 }
 
 do
-  if RI and type(RI.ensure_hooks) == "function" then
+  if RI and type(RI.ensure_hooks) == &quot;function&quot; then
     RI.ensure_hooks(M, M.route_contract)
   end
 end
@@ -19133,11 +17296,11 @@ Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
 
 local function _trim(s)
-  if type(RC) == "table" and type(RC.trim) == "function" then
+  if type(RC) == &quot;table&quot; and type(RC.trim) == &quot;function&quot; then
     return RC.trim(s)
   end
-  s = tostring(s or "")
-  return s:gsub("^%s+", ""):gsub("%s+$", "")
+  s = tostring(s or &quot;&quot;)
+  return s:gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
 end
 
 local function _lc(s)
@@ -19149,48 +17312,48 @@ local function _vitals()
 end
 
 local function _eq_ready()
-  if type(RC) == "table" and type(RC.eq_ready) == "function" then
+  if type(RC) == &quot;table&quot; and type(RC.eq_ready) == &quot;function&quot; then
     return RC.eq_ready()
   end
-  if Yso and Yso.state and type(Yso.state.eq_ready) == "function" then
+  if Yso and Yso.state and type(Yso.state.eq_ready) == &quot;function&quot; then
     local ok, v = pcall(Yso.state.eq_ready)
     if ok then return v == true end
   end
   local v = _vitals()
-  return tostring(v.eq or v.equilibrium or "") == "1" or v.eq == true or v.equilibrium == true
+  return tostring(v.eq or v.equilibrium or &quot;&quot;) == &quot;1&quot; or v.eq == true or v.equilibrium == true
 end
 
 local function _target()
-  if type(RC) == "table" and type(RC.get_target) == "function" then
+  if type(RC) == &quot;table&quot; and type(RC.get_target) == &quot;function&quot; then
     local t = RC.get_target()
-    if _trim(t) ~= "" then return _trim(t) end
+    if _trim(t) ~= &quot;&quot; then return _trim(t) end
   end
-  if Yso and type(Yso.get_target) == "function" then
+  if Yso and type(Yso.get_target) == &quot;function&quot; then
     local ok, v = pcall(Yso.get_target)
-    v = ok and _trim(v) or ""
-    if v ~= "" then return v end
+    v = ok and _trim(v) or &quot;&quot;
+    if v ~= &quot;&quot; then return v end
   end
 
   if Yso and Yso.targeting then
-    if type(Yso.targeting.get) == "function" then
+    if type(Yso.targeting.get) == &quot;function&quot; then
       local ok, v = pcall(Yso.targeting.get)
-      v = ok and _trim(v) or ""
-      if v ~= "" then return v end
-    elseif type(Yso.targeting.get_target) == "function" then
+      v = ok and _trim(v) or &quot;&quot;
+      if v ~= &quot;&quot; then return v end
+    elseif type(Yso.targeting.get_target) == &quot;function&quot; then
       local ok, v = pcall(Yso.targeting.get_target)
-      v = ok and _trim(v) or ""
-      if v ~= "" then return v end
-    elseif type(Yso.targeting.target) == "string" then
+      v = ok and _trim(v) or &quot;&quot;
+      if v ~= &quot;&quot; then return v end
+    elseif type(Yso.targeting.target) == &quot;string&quot; then
       local v = _trim(Yso.targeting.target)
-      if v ~= "" then return v end
+      if v ~= &quot;&quot; then return v end
     end
   end
 
-  return _trim(rawget(_G, "target") or "")
+  return _trim(rawget(_G, &quot;target&quot;) or &quot;&quot;)
 end
 
 local function _tgt_valid(tgt)
-  if type(RC) == "table" and type(RC.target_valid) == "function" then
+  if type(RC) == &quot;table&quot; and type(RC.target_valid) == &quot;function&quot; then
     return RC.target_valid(tgt)
   end
   return true
@@ -19198,37 +17361,37 @@ end
 
 local function _current_class()
   local C = Yso and Yso.classinfo or nil
-  if type(C) == "table" then
-    if type(C.get) == "function" then
+  if type(C) == &quot;table&quot; then
+    if type(C.get) == &quot;function&quot; then
       local ok, v = pcall(C.get)
-      if ok and type(v) == "string" and _trim(v) ~= "" then return v end
+      if ok and type(v) == &quot;string&quot; and _trim(v) ~= &quot;&quot; then return v end
     end
-    if type(C.current_class) == "function" then
+    if type(C.current_class) == &quot;function&quot; then
       local ok, v = pcall(C.current_class)
-      if ok and type(v) == "string" and _trim(v) ~= "" then return v end
+      if ok and type(v) == &quot;string&quot; and _trim(v) ~= &quot;&quot; then return v end
     end
   end
 
-  local gmcp = rawget(_G, "gmcp")
+  local gmcp = rawget(_G, &quot;gmcp&quot;)
   local cls = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or nil
-  if type(cls) == "string" and _trim(cls) ~= "" then return cls end
-  if type(Yso.class) == "string" and _trim(Yso.class) ~= "" then return Yso.class end
-  return ""
+  if type(cls) == &quot;string&quot; and _trim(cls) ~= &quot;&quot; then return cls end
+  if type(Yso.class) == &quot;string&quot; and _trim(Yso.class) ~= &quot;&quot; then return Yso.class end
+  return &quot;&quot;
 end
 
 local function _is_magi()
-  if type(Yso.is_magi) == "function" then
+  if type(Yso.is_magi) == &quot;function&quot; then
     local ok, v = pcall(Yso.is_magi)
     if ok then return v == true end
   end
 
   local C = Yso and Yso.classinfo or nil
-  if type(C) == "table" and type(C.is_magi) == "function" then
+  if type(C) == &quot;table&quot; and type(C.is_magi) == &quot;function&quot; then
     local ok, v = pcall(C.is_magi)
     if ok then return v == true end
   end
 
-  return _lc(_current_class()) == "magi"
+  return _lc(_current_class()) == &quot;magi&quot;
 end
 
 --- Mirrors magi_focus: duel routes only tick meaningfully in combat with this loop armed.
@@ -19236,14 +17399,14 @@ local function _combat_dmg_context_active()
   return _is_magi()
     and Yso
     and Yso.mode
-    and type(Yso.mode.is_combat) == "function"
+    and type(Yso.mode.is_combat) == &quot;function&quot;
     and Yso.mode.is_combat() == true
 end
 
 local function _route_is_active()
   if not _combat_dmg_context_active() then return false end
-  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("magi_dmg") == true
+  if Yso and Yso.mode and type(Yso.mode.route_loop_active) == &quot;function&quot; then
+    return Yso.mode.route_loop_active(&quot;magi_dmg&quot;) == true
   end
   return M.state and M.state.loop_enabled == true
 end
@@ -19255,8 +17418,8 @@ end
 
 local function _hellfumes_up()
   local H = Yso and Yso.magi and Yso.magi.hellfumes
-  if type(H) ~= "table" then return false end
-  if type(H.is_up) == "function" then
+  if type(H) ~= &quot;table&quot; then return false end
+  if type(H.is_up) == &quot;function&quot; then
     local ok, v = pcall(H.is_up)
     if ok then return v == true end
   end
@@ -19264,7 +17427,7 @@ local function _hellfumes_up()
 end
 
 local function _assess()
-  if type(RC.get_target_hp_percent) == "function" then
+  if type(RC.get_target_hp_percent) == &quot;function&quot; then
     local ok, v = pcall(RC.get_target_hp_percent)
     if ok then return tonumber(v) end
   end
@@ -19276,13 +17439,13 @@ end
 local function _shielded(tgt)
   tgt = string.lower(_trim(tgt))
 
-  if Yso and Yso.shield and type(Yso.shield.up) == "function" and tgt ~= "" then
+  if Yso and Yso.shield and type(Yso.shield.up) == &quot;function&quot; and tgt ~= &quot;&quot; then
     local ok, v = pcall(Yso.shield.up, tgt)
     if ok then return v == true end
   end
 
   if ak and ak.defs then
-    if type(ak.defs.shield_by_target) == "table" and tgt ~= "" then
+    if type(ak.defs.shield_by_target) == &quot;table&quot; and tgt ~= &quot;&quot; then
       return ak.defs.shield_by_target[tgt] == true
     end
     return ak.defs.shield == true
@@ -19296,13 +17459,13 @@ function M.init()
   M.state.enabled = (M.state.enabled == true or M.enabled == true)
   M.state.loop_enabled = (M.state.loop_enabled == true or M.state.enabled == true or M.enabled == true)
   M.state.loop_delay = tonumber(M.state.loop_delay or M.cfg.loop_delay or 0.15) or 0.15
-  M.state.template = M.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
-  if RI and type(RI.ensure_waiting_state) == "function" then
-    RI.ensure_waiting_state(M.state, "magi_dmg")
+  M.state.template = M.state.template or { last_reason = &quot;init&quot;, last_disable_reason = &quot;&quot;, last_payload = nil, last_target = &quot;&quot; }
+  if RI and type(RI.ensure_waiting_state) == &quot;function&quot; then
+    RI.ensure_waiting_state(M.state, &quot;magi_dmg&quot;)
   else
-    M.state.waiting = M.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = "", reason = "", at = 0 }
-    M.state.last_attack = M.state.last_attack or { cmd = "", at = 0, target = "", main_lane = "", lanes = nil, fingerprint = "" }
-    M.state.in_flight = M.state.in_flight or { fingerprint = "", target = "", route = "magi_dmg", at = 0, resolved_at = 0, lanes = nil, eq = "", entity = "", reason = "" }
+    M.state.waiting = M.state.waiting or { queue = nil, main_lane = nil, lanes = nil, fingerprint = &quot;&quot;, reason = &quot;&quot;, at = 0 }
+    M.state.last_attack = M.state.last_attack or { cmd = &quot;&quot;, at = 0, target = &quot;&quot;, main_lane = &quot;&quot;, lanes = nil, fingerprint = &quot;&quot; }
+    M.state.in_flight = M.state.in_flight or { fingerprint = &quot;&quot;, target = &quot;&quot;, route = &quot;magi_dmg&quot;, at = 0, resolved_at = 0, lanes = nil, eq = &quot;&quot;, entity = &quot;&quot;, reason = &quot;&quot; }
   end
   return true
 end
@@ -19318,73 +17481,73 @@ end
 
 function M.can_run(reason)
   M.init()
-  local ctx = type(reason) == "table" and reason or {}
-  if not M.is_enabled() then return false, "disabled" end
-  if not M.is_active() then return false, "inactive" end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
+  local ctx = type(reason) == &quot;table&quot; and reason or {}
+  if not M.is_enabled() then return false, &quot;disabled&quot; end
+  if not M.is_active() then return false, &quot;inactive&quot; end
+  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return false, &quot;paused&quot; end
 
   local tgt = _trim((ctx and ctx.target) or _target())
-  if tgt == "" then return false, "no_target" end
-  if not _is_magi() then return false, "wrong_class" end
-  if not _tgt_valid(tgt) then return false, "invalid_target" end
-  if not _eq_ready() then return false, "eq_down" end
+  if tgt == &quot;&quot; then return false, &quot;no_target&quot; end
+  if not _is_magi() then return false, &quot;wrong_class&quot; end
+  if not _tgt_valid(tgt) then return false, &quot;invalid_target&quot; end
+  if not _eq_ready() then return false, &quot;eq_down&quot; end
   return true
 end
 
 local function _select_command(reason)
   local tgt = _target()
-  if tgt == "" then return nil end
+  if tgt == &quot;&quot; then return nil end
 
   local assess = _assess()
 
-  if not _shielded(tgt) and type(RC.special_action) == "function" then
+  if not _shielded(tgt) and type(RC.special_action) == &quot;function&quot; then
     local special, _, hold = RC.special_action(tgt)
     if special or hold then return special, hold end
   end
 
   -- Shield handling
   if _shielded(tgt) then
-    return "cast erode " .. tgt .. " maintain"
+    return &quot;cast erode &quot; .. tgt .. &quot; maintain&quot;
 
   -- Instant kills (skip when target HP is unknown)
-  elseif assess ~= nil and (assess &lt;= 25 or (assess &lt;= 30 and _score("sensitivity") &gt;= 100)) then
-    return "cast stormhammer at " .. tgt
+  elseif assess ~= nil and (assess &lt;= 25 or (assess &lt;= 30 and _score(&quot;sensitivity&quot;) &gt;= 100)) then
+    return &quot;cast stormhammer at &quot; .. tgt
 
   elseif not _hellfumes_up() then
-    return "cast hellfumes"
+    return &quot;cast hellfumes&quot;
 
   -- Debuff timer setup
-  elseif _score("scalded") &lt; 100 then
-    return "cast magma " .. tgt
+  elseif _score(&quot;scalded&quot;) &lt; 100 then
+    return &quot;cast magma &quot; .. tgt
 
-  elseif _score("scalded") &gt;= 100 and _score("waterbonds") &lt; 100 then
-    return "staff cast horripilation at " .. tgt
+  elseif _score(&quot;scalded&quot;) &gt;= 100 and _score(&quot;waterbonds&quot;) &lt; 100 then
+    return &quot;staff cast horripilation at &quot; .. tgt
 
   -- Affliction pressure
-  elseif _score("clumsiness") &lt; 100 then
-    return "cast bombard " .. tgt
+  elseif _score(&quot;clumsiness&quot;) &lt; 100 then
+    return &quot;cast bombard &quot; .. tgt
 
-  elseif _score("clumsiness") &gt;= 100 and _score("slickness") &lt; 100 then
-    return "cast mudslide " .. tgt
+  elseif _score(&quot;clumsiness&quot;) &gt;= 100 and _score(&quot;slickness&quot;) &lt; 100 then
+    return &quot;cast mudslide &quot; .. tgt
 
-  elseif _score("nausea") &lt; 100 and _score("weariness") &lt; 100 then
-    return "cast dehydrate " .. tgt
+  elseif _score(&quot;nausea&quot;) &lt; 100 and _score(&quot;weariness&quot;) &lt; 100 then
+    return &quot;cast dehydrate &quot; .. tgt
 
   else
     local fulm_score =
-      _score("clumsiness") +
-      _score("weariness") +
-      _score("slickness") +
-      _score("nausea") +
-      _score("sensitivity")
+      _score(&quot;clumsiness&quot;) +
+      _score(&quot;weariness&quot;) +
+      _score(&quot;slickness&quot;) +
+      _score(&quot;nausea&quot;) +
+      _score(&quot;sensitivity&quot;)
 
     if fulm_score &gt; 200 then
-      return "cast fulminate " .. tgt
+      return &quot;cast fulminate &quot; .. tgt
     end
 
-    local earth_res = tonumber((((ak or {}).magi or {}).resonance or {})["Earth"] or 0) or 0
+    local earth_res = tonumber((((ak or {}).magi or {}).resonance or {})[&quot;Earth&quot;] or 0) or 0
     if earth_res == 2 then
-      return "cast shalestorm at " .. tgt
+      return &quot;cast shalestorm at &quot; .. tgt
     end
   end
 
@@ -19392,7 +17555,7 @@ local function _select_command(reason)
 end
 
 function M.build(reason)
-  if _target() == "" then return nil end
+  if _target() == &quot;&quot; then return nil end
   local cmd, hold = _select_command(reason)
   if hold then return nil end
   return RC.with_bloodboil(cmd)
@@ -19400,7 +17563,7 @@ end
 
 function M.after_send(cmd, reason)
   M.last_cmd = cmd
-  M.last_reason = tostring(reason or "")
+  M.last_reason = tostring(reason or &quot;&quot;)
   M.last_target = _target()
 end
 
@@ -19413,13 +17576,13 @@ function M.on_stop()
 end
 
 local function _is_destroy_cmd(cmd)
-  return _lc(cmd):match("^cast%s+destroy%s+at%s+") ~= nil
+  return _lc(cmd):match(&quot;^cast%s+destroy%s+at%s+&quot;) ~= nil
 end
 
 local function _apply_execute_opts(opts, cmd)
   if _is_destroy_cmd(cmd) then
-    opts.queue_verb = "addclearfull"
-    opts.clearfull_lane = "eq"
+    opts.queue_verb = &quot;addclearfull&quot;
+    opts.clearfull_lane = &quot;eq&quot;
   end
   return opts
 end
@@ -19428,16 +17591,16 @@ local function _send_destroy_addclearfull(cmd)
   cmd = _trim(cmd)
   if not _is_destroy_cmd(cmd) then return nil end
   local opts = _apply_execute_opts({
-    route = "magi_dmg",
+    route = &quot;magi_dmg&quot;,
     target = _target(),
-    reason = "magi_dmg:destroy",
-    kind = "offense",
+    reason = &quot;magi_dmg:destroy&quot;,
+    kind = &quot;offense&quot;,
   }, cmd)
-  if type(Yso.emit_now) == "function" then
+  if type(Yso.emit_now) == &quot;function&quot; then
     return Yso.emit_now({ eq = cmd }, opts) == true
   end
-  if type(send) == "function" then
-    return pcall(send, "QUEUE ADDCLEARFULL e!p!w!t " .. cmd, false) == true
+  if type(send) == &quot;function&quot; then
+    return pcall(send, &quot;QUEUE ADDCLEARFULL e!p!w!t &quot; .. cmd, false) == true
   end
   return false
 end
@@ -19445,94 +17608,94 @@ end
 local function _emit_payload(cmd, target, reason)
   cmd = _trim(cmd)
   target = _trim(target)
-  if cmd == "" then return false, "empty", nil end
+  if cmd == &quot;&quot; then return false, &quot;empty&quot;, nil end
 
   local opts = {
-    reason = "magi_dmg:" .. tostring(reason or "attack"),
-    kind = "offense",
+    reason = &quot;magi_dmg:&quot; .. tostring(reason or &quot;attack&quot;),
+    kind = &quot;offense&quot;,
     commit = true,
-    require_commit = cmd == "cast bloodboil",
-    repeat_command = cmd == "cast bloodboil",
-    route = "magi_dmg",
+    require_commit = cmd == &quot;cast bloodboil&quot;,
+    repeat_command = cmd == &quot;cast bloodboil&quot;,
+    route = &quot;magi_dmg&quot;,
     target = target,
   }
   _apply_execute_opts(opts, cmd)
 
-  if RI and type(RI.emit_route_payload) == "function" then
-    return RI.emit_route_payload("magi_dmg", {
+  if RI and type(RI.emit_route_payload) == &quot;function&quot; then
+    return RI.emit_route_payload(&quot;magi_dmg&quot;, {
       target = target,
       lanes = { eq = cmd },
       meta = {
-        route = "magi_dmg",
-        main_lane = "eq",
-        main_category = cmd == "cast bloodboil" and "self_purge" or "duel_damage",
+        route = &quot;magi_dmg&quot;,
+        main_lane = &quot;eq&quot;,
+        main_category = cmd == &quot;cast bloodboil&quot; and &quot;self_purge&quot; or &quot;duel_damage&quot;,
       },
     }, opts)
   end
 
   local payload = { eq = cmd, target = target }
-  if type(Yso.emit) == "function" then
+  if type(Yso.emit) == &quot;function&quot; then
     if Yso.emit(payload, opts) == true then
       return true, cmd, payload
     end
-    return false, "emit_failed", nil
+    return false, &quot;emit_failed&quot;, nil
   end
 
-  if type(send) == "function" then
+  if type(send) == &quot;function&quot; then
     local destroy_sent = _send_destroy_addclearfull(cmd)
     if destroy_sent ~= nil then
       if destroy_sent == true then return true, cmd, payload end
-      return false, "send_failed", nil
+      return false, &quot;send_failed&quot;, nil
     end
     local ok = pcall(send, cmd)
     if ok then return true, cmd, payload end
-    return false, "send_failed", nil
+    return false, &quot;send_failed&quot;, nil
   end
 
-  return false, "no_send", nil
+  return false, &quot;no_send&quot;, nil
 end
 
 -- Called by modes.lua tick_route_loop on every scheduled timer tick.
 -- Must return true on a successful send, false/nil otherwise.
 function M.attack_function(arg)
   M.init()
-  local ctx = type(arg) == "table" and arg or { reason = tostring(arg or "loop") }
+  local ctx = type(arg) == &quot;table&quot; and arg or { reason = tostring(arg or &quot;loop&quot;) }
 
   local ok_check, can, why = pcall(M.can_run, ctx)
-  if not ok_check or not can then return false, (why or "cannot_run") end
+  if not ok_check or not can then return false, (why or &quot;cannot_run&quot;) end
 
   local ok_build, cmd = pcall(M.build, ctx)
-  if not ok_build or not cmd or cmd == "" then return false, "empty" end
+  if not ok_build or not cmd or cmd == &quot;&quot; then return false, &quot;empty&quot; end
 
   local tgt = _target()
   if ctx.preview then
-    return {target=tgt,lanes={eq=cmd},meta={main_category=cmd == "cast bloodboil" and "self_purge" or "duel_damage"}}
+    return {target=tgt,lanes={eq=cmd},meta={main_category=cmd == &quot;cast bloodboil&quot; and &quot;self_purge&quot; or &quot;duel_damage&quot;}}
   end
-  local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, ctx.reason or "loop")
-  if sent ~= true then return false, (emit_detail or "emit_failed") end
-  if type(RC.note_special_queued) == "function" then RC.note_special_queued(cmd, tgt) end
+  local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, ctx.reason or &quot;loop&quot;)
+  if sent ~= true then return false, (emit_detail or &quot;emit_failed&quot;) end
+  if type(RC.note_special_queued) == &quot;function&quot; then RC.note_special_queued(cmd, tgt) end
 
-  if RI and type(RI.mark_waiting) == "function" then
-    RI.mark_waiting(M.state, "magi_dmg", ack_payload or { eq = cmd, target = tgt }, {
+  if RI and type(RI.mark_waiting) == &quot;function&quot; then
+    RI.mark_waiting(M.state, &quot;magi_dmg&quot;, ack_payload or { eq = cmd, target = tgt }, {
       cmd = cmd,
       target = tgt,
-      main_lane = "eq",
+      main_lane = &quot;eq&quot;,
     })
   end
 
-  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
+  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == &quot;function&quot;
   local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
-  if (not has_ack_bus or dry_run) and type(M.on_payload_sent) == "function" then
+  if (not has_ack_bus or dry_run) and type(M.on_payload_sent) == &quot;function&quot; then
     pcall(M.on_payload_sent, ack_payload or { eq = cmd, target = tgt })
   end
 
-  M.after_send(cmd, ctx.reason or "loop")
+  M.after_send(cmd, ctx.reason or &quot;loop&quot;)
   return true, cmd
 end
 
 -- Standalone tick helper (useful for direct testing outside the mode engine).
 function M.tick(reason)
-  return M.attack_function({ reason = tostring(reason or "tick") })
+  return M.attack_function({ reason = tostring(reason or &quot;tick&quot;) })
 end
 
 function M.on()
@@ -19561,27 +17724,27 @@ end
 
 function M.on_payload_sent(payload)
   M.init()
-  if RI and type(RI.payload_has_any_route) == "function" and RI.payload_has_any_route(payload)
-    and not RI.payload_has_route(payload, "magi_dmg")
+  if RI and type(RI.payload_has_any_route) == &quot;function&quot; and RI.payload_has_any_route(payload)
+    and not RI.payload_has_route(payload, &quot;magi_dmg&quot;)
   then
     return false
   end
-  if RI and type(RI.clear_waiting_on_ack) == "function" then
-    RI.clear_waiting_on_ack(M.state, "magi_dmg", payload, { require_route = false })
+  if RI and type(RI.clear_waiting_on_ack) == &quot;function&quot; then
+    RI.clear_waiting_on_ack(M.state, &quot;magi_dmg&quot;, payload, { require_route = false })
   end
 
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
+  payload = type(payload) == &quot;table&quot; and payload or {}
+  local lanes = type(payload.lanes) == &quot;table&quot; and payload.lanes or payload
   local cmd = _trim(lanes.eq or payload.eq or payload.cmd)
-  if cmd ~= "" then
-    M.after_send(cmd, "ack")
+  if cmd ~= &quot;&quot; then
+    M.after_send(cmd, &quot;ack&quot;)
   end
   return true
 end
 
 function M.on_send_result(payload, ctx)
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
+  payload = type(payload) == &quot;table&quot; and payload or {}
+  local lanes = type(payload.lanes) == &quot;table&quot; and payload.lanes or payload
   M.state.last_fired_cmd = _trim(lanes.eq or payload.eq or payload.cmd)
   return true
 end
@@ -19589,10 +17752,10 @@ end
 -- Mode engine lifecycle callbacks -------------------------------------------
 
 local function _echo(msg)
-  if type(cecho) == "function" then
-    cecho(string.format("&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;%s\n", tostring(msg)))
-  elseif type(echo) == "function" then
-    echo(string.format("[Yso:Magi] %s\n", tostring(msg)))
+  if type(cecho) == &quot;function&quot; then
+    cecho(string.format(&quot;&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;%s\n&quot;, tostring(msg)))
+  elseif type(echo) == &quot;function&quot; then
+    echo(string.format(&quot;[Yso:Magi] %s\n&quot;, tostring(msg)))
   end
 end
 
@@ -19612,25 +17775,25 @@ end
 function M.alias_loop_on_started(ctx)
   M.init()
   local tgt = _target()
-  _echo("Duel damage loop ON.")
-  if tgt == "" then
-    _echo("No target yet; holding.")
+  _echo(&quot;Duel damage loop ON.&quot;)
+  if tgt == &quot;&quot; then
+    _echo(&quot;No target yet; holding.&quot;)
   elseif not _tgt_valid(tgt) then
-    _echo(string.format("%s is not in room; holding.", tgt))
+    _echo(string.format(&quot;%s is not in room; holding.&quot;, tgt))
   end
 end
 
 function M.alias_loop_on_stopped(ctx)
   M.init()
   ctx = ctx or {}
-  local reason = tostring(ctx.reason or "manual")
+  local reason = tostring(ctx.reason or &quot;manual&quot;)
   M.state.template = M.state.template or {}
   M.state.template.last_disable_reason = reason
-  _echo(string.format("Duel damage loop OFF (%s).", reason))
+  _echo(string.format(&quot;Duel damage loop OFF (%s).&quot;, reason))
 end
 
 function M.alias_loop_on_error(err)
-  _echo("Duel damage loop error: " .. tostring(err))
+  _echo(&quot;Duel damage loop error: &quot; .. tostring(err))
 end
 
 function M.alias_loop_waiting_blocks()
@@ -19638,20 +17801,20 @@ function M.alias_loop_waiting_blocks()
 end
 
 function M.alias_loop_clear_waiting()
-  if RI and type(RI.clear_waiting) == "function" then
-    return RI.clear_waiting(M.state, "magi_dmg")
+  if RI and type(RI.clear_waiting) == &quot;function&quot; then
+    return RI.clear_waiting(M.state, &quot;magi_dmg&quot;)
   end
   return true
 end
 
 function M.on_exit(ctx)
-  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
-    Yso.mode.stop_route_loop("magi_dmg", "exit", true)
+  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == &quot;function&quot; then
+    Yso.mode.stop_route_loop(&quot;magi_dmg&quot;, &quot;exit&quot;, true)
   end
   return true
 end
 
-if Yso.off.core and type(Yso.off.core.register) == "function" then
+if Yso.off.core and type(Yso.off.core.register) == &quot;function&quot; then
   pcall(Yso.off.core.register, M.key, M)
 end
 

@@ -1,6 +1,6 @@
 -- Magi_duel_dam.lua
 -- Thin-alias route module for the Magi duel damage route.
--- Duel damage route (magi_dmg). Group damage uses ^mdam$ / magi_group_damage in mdam alias.
+-- Duel damage route (magi_dmg). Group offense uses gwater or fstorm.
 --
 -- The route logic below preserves the same priority/order that was planned
 -- for the Magi damage alias body, while living in an external file so it

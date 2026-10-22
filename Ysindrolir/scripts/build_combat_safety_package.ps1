@@ -27,15 +27,16 @@ function SetPattern([string]$text,[string]$name,[string]$pattern){
   $text.Substring(0,$entry.Index)+$block+$text.Substring($entry.Index+$entry.Length)
 }
 if(-not $PSCmdlet.ShouldProcess($PackagePath,'Synchronize Deliverance safety, resonance feedback and Magi aliases')){return}
-& (Join-Path $PSScriptRoot 'build_mdam_alias_body.ps1') | Out-Null
 & (Join-Path $PSScriptRoot 'build_mfocus_alias_body.ps1') | Out-Null
 $text=[IO.File]::ReadAllText($PackagePath)
 $text=Script $text 'Api stuff' 'Yso/xml/api_stuff.lua' ''
 $text=Script $text 'Yso modes' 'Yso/xml/yso_modes.lua' ''
 $text=Script $text 'Route registry' 'Yso/Combat/route_registry.lua' ''
+$text=Script $text 'Magi group route retirement' 'Magi/retire_group_damage.lua' 'Route registry'
+$text=Script $text 'Magi duel dam' 'Magi/Magi_duel_dam.lua' ''
 $text=Script $text 'Enemy Deliverance safety' 'Yso/Combat/deliverance.lua' 'Api stuff'
 $text=Script $text 'Magi resonance feedback' 'Magi/resonance_feedback.lua' 'Enemy Deliverance safety'
-$text=SetBody $text 'Alias' 'mdam' ([IO.File]::ReadAllText((Join-Path $root 'Magi/mdam_alias_body.lua')))
+$text=SetBody $text 'Alias' 'mdam' ([IO.File]::ReadAllText((Join-Path $root 'Magi/mdam_retired_alias.lua')))
 $text=SetBody $text 'Alias' 'mfocus' ([IO.File]::ReadAllText((Join-Path $root 'Magi/mfocus_alias_body.lua')))
 $text=SetBody $text 'Trigger' 'Enemy Deliverance' @'
 local D = Yso and Yso.Combat and Yso.Combat.Deliverance
