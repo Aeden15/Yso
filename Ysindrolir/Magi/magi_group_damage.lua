@@ -545,6 +545,9 @@ local function _select_command(tgt)
     return nil, nil, st, "invalid_target"
   end
 
+  local special, reason, hold = RC.special_action(tgt)
+  if special or hold then return special, "special", st, reason end
+
   if not st.waterbonds then
     local ok, why, cmd = _can_cast_horripilation(tgt)
     _set_branch_stage(tgt, ok and "opener_setup" or "opener_wait")
@@ -662,6 +665,8 @@ local function _emit_payload(payload, category)
     reason = "magi_group_damage:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
+    require_commit = payload.eq == "cast bloodboil",
+    repeat_command = payload.eq == "cast bloodboil",
     route = "magi_group_damage",
     target = target,
   }
@@ -812,6 +817,11 @@ function MGD.attack_function(arg)
   MGD.state.last_target = tgt
 
   local cmd, category, st, reason = _select_command(tgt)
+  if not (category == "special" and not cmd) and RC.eq_ready() then
+    local selected, purge_reason = RC.with_bloodboil(cmd)
+    cmd = selected
+    if purge_reason then category, reason = "self_purge", purge_reason end
+  end
   MGD.state.template.last_reason = reason
   MGD.state.template.last_target = tgt
   _update_explain(tgt, st, category, reason, cmd)
@@ -842,6 +852,7 @@ function MGD.attack_function(arg)
   local queued_payload = { eq = cmd, target = tgt }
   local sent, emit_detail, ack_payload = _emit_payload(queued_payload, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
+  RC.note_special_queued(cmd, tgt)
   if RI and type(RI.mark_waiting) == "function" then
     RI.mark_waiting(MGD.state, "magi_group_damage", ack_payload or queued_payload, {
       cmd = trim(cmd),

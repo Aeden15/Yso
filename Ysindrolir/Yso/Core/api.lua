@@ -105,6 +105,8 @@ function Yso.util.echo(msg, color)
 end
 
 function Yso.util.toggle_route_alias(route_id, source)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return false, "enemy_deliverance" end
   local function _trim(s)
     return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
   end
@@ -768,6 +770,8 @@ Yso.pause = Yso.pause or {}
 Yso.pause.offense = Yso.pause.offense or { active = false, reason = "", at = 0 }
 
 function Yso.offense_paused()
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return true end
   return (Yso.pause and Yso.pause.offense and Yso.pause.offense.active == true) or false
 end
 
@@ -871,6 +875,8 @@ local function _trim(s)
 end
 
 function Yso.emit(payload, opts)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
   if type(payload) == "table" and _trim(opts.target or "") == "" then
     local tgt = _trim(payload.target)

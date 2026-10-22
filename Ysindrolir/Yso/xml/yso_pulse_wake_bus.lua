@@ -426,6 +426,11 @@ end
 
 P.register("queue.commit", _flush_staged_queue, { order = -100 })
 
+-- Wake the shared controller, which owns readiness checks and attack emission.
+P.register("route.active", function(reasons)
+  _nudge_route(nil, "pulse:" .. table.concat(reasons or {}, ","))
+end, { order = 100 })
+
 -- ---------------- dispatch loop ----------------
 function P._flush_inner()
   if P.state._in_flush then return end

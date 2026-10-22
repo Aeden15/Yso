@@ -33,6 +33,9 @@ Current fixes
 
   Magi offense routes now share a Magi-only chassis helper:
     Yso.off.magi.route_core
+  magi_convergence.lua mirrors the package's shared finisher helper. Both
+  generated mdam and mfocus aliases include it, so rebuilding an alias retains
+  confirmed assessment, staff/channel gates, and shared finisher state.
   This keeps target resolution, pending windows, repeat suppression,
   resonance reads, and explain scaffolding aligned without flattening
   route-local brains together.

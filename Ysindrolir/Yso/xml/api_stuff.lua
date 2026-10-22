@@ -308,7 +308,13 @@ do
 
         if v ~= nil then return v end
 
-        return true
+        -- The state helper is optional in the package runtime. Do not let
+        -- the short send guard expiring stand in for equilibrium regain.
+        local g = rawget(_G, "gmcp")
+        local vitals = g and g.Char and g.Char.Vitals or {}
+        local eq = vitals.eq
+        if eq == nil then eq = vitals.equilibrium end
+        return eq == true or tostring(eq) == "1"
       elseif lane == "bal" then
         local v = nil
 
@@ -447,6 +453,8 @@ Yso.pause = Yso.pause or {}
 Yso.pause.offense = Yso.pause.offense or { active = false, reason = "", at = 0 }
 
 function Yso.offense_paused()
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return true end
   return (Yso.pause and Yso.pause.offense and Yso.pause.offense.active == true) or false
 end
 
@@ -608,6 +616,8 @@ local function _emit_direct(payload)
 end
 
 function Yso.emit(payload, opts)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
   if type(payload) == "table" and _trim(opts.target or "") == "" then
     local tgt = _trim(payload.target)
@@ -650,13 +660,27 @@ function Yso.emit(payload, opts)
   local Q = (Yso and Yso.queue)
   if not (Q and type(Q.stage)=="function" and type(Q.commit)=="function") then
     if Q and type(Q.emit)=="function" then
-      return Q.emit(payload)
+      return Q.emit(payload, opts)
     end
     local sent_direct = _emit_direct(payload)
     if sent_direct == true and Yso.locks and type(Yso.locks.note_payload) == "function" then
       pcall(Yso.locks.note_payload, payload)
     end
     return sent_direct
+  end
+
+  -- Opt-in for self cures that must never be left queued after rejection.
+  -- Validate our EQ lane's staging/consumption rather than a wake-bus promise.
+  local require_eq_commit = opts.require_commit == true
+  if require_eq_commit and (type(payload) ~= "table" or type(payload.eq) ~= "string"
+      or type(Q.list) ~= "function" or type(Q.clear) ~= "function"
+      or type(Q.get_staged_owner) ~= "function") then return false end
+  local function clear_required_eq()
+    if not require_eq_commit or Q.list("eq") ~= _trim(payload.eq) then return end
+    local owner = Q.get_staged_owner("eq")
+    if owner and owner.cmd == _trim(payload.eq) and tostring(owner.route or "") == tostring(opts.route or "") then
+      Q.clear("eq")
+    end
   end
 
   if opts.solo == true and type(Q.clear)=="function" then
@@ -700,7 +724,7 @@ function Yso.emit(payload, opts)
     return true
   end
 
-  local do_commit = _should_commit(payload)
+  local do_commit = require_eq_commit or _should_commit(payload)
 
   -- --- stage payload ---
   if type(payload) == "string" then
@@ -728,10 +752,15 @@ function Yso.emit(payload, opts)
   else
     return false
   end
+  if require_eq_commit and Q.list("eq") ~= _trim(payload.eq) then return false end
 
   -- --- commit or stage-only ---
   if do_commit then
     local ok = Q.commit(opts)
+    if require_eq_commit and (not ok or Q.list("eq") == _trim(payload.eq)) then
+      clear_required_eq()
+      return false
+    end
     if ok and Yso.pulse and Yso.pulse.state and Yso.pulse.state._in_flush then
       Yso.pulse.state._did_emit = true
     end

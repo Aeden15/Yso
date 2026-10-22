@@ -204,7 +204,7 @@ end
 local function _assess()
   if type(RC.get_target_hp_percent) == "function" then
     local ok, v = pcall(RC.get_target_hp_percent)
-    if ok and tonumber(v) then return tonumber(v) end
+    if ok then return tonumber(v) end
   end
   local assess = tonumber(Yso and Yso.magi_assess)
   if assess then return assess end
@@ -269,20 +269,22 @@ function M.can_run(reason)
   return true
 end
 
-function M.build(reason)
+local function _select_command(reason)
   local tgt = _target()
   if tgt == "" then return nil end
 
   local assess = _assess()
+
+  if not _shielded(tgt) and type(RC.special_action) == "function" then
+    local special, _, hold = RC.special_action(tgt)
+    if special or hold then return special, hold end
+  end
 
   -- Shield handling
   if _shielded(tgt) then
     return "cast erode " .. tgt .. " maintain"
 
   -- Instant kills (skip when target HP is unknown)
-  elseif assess ~= nil and _score("conflagrate") >= 100 and assess <= 40 then
-    return "cast destroy at " .. tgt
-
   elseif assess ~= nil and (assess <= 25 or (assess <= 30 and _score("sensitivity") >= 100)) then
     return "cast stormhammer at " .. tgt
 
@@ -325,6 +327,13 @@ function M.build(reason)
   end
 
   return nil
+end
+
+function M.build(reason)
+  if _target() == "" then return nil end
+  local cmd, hold = _select_command(reason)
+  if hold then return nil end
+  return RC.with_bloodboil(cmd)
 end
 
 function M.after_send(cmd, reason)
@@ -380,6 +389,8 @@ local function _emit_payload(cmd, target, reason)
     reason = "magi_dmg:" .. tostring(reason or "attack"),
     kind = "offense",
     commit = true,
+    require_commit = cmd == "cast bloodboil",
+    repeat_command = cmd == "cast bloodboil",
     route = "magi_dmg",
     target = target,
   }
@@ -392,7 +403,7 @@ local function _emit_payload(cmd, target, reason)
       meta = {
         route = "magi_dmg",
         main_lane = "eq",
-        main_category = "duel_damage",
+        main_category = cmd == "cast bloodboil" and "self_purge" or "duel_damage",
       },
     }, opts)
   end
@@ -432,8 +443,12 @@ function M.attack_function(arg)
   if not ok_build or not cmd or cmd == "" then return false, "empty" end
 
   local tgt = _target()
+  if ctx.preview then
+    return {target=tgt,lanes={eq=cmd},meta={main_category=cmd == "cast bloodboil" and "self_purge" or "duel_damage"}}
+  end
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, ctx.reason or "loop")
   if sent ~= true then return false, (emit_detail or "emit_failed") end
+  if type(RC.note_special_queued) == "function" then RC.note_special_queued(cmd, tgt) end
 
   if RI and type(RI.mark_waiting) == "function" then
     RI.mark_waiting(M.state, "magi_dmg", ack_payload or { eq = cmd, target = tgt }, {

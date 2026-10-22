@@ -17,35 +17,11 @@
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList />
 			<regexCodePropertyList />
-			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-				<name>Venom Wipe/Reset/Gagging</name>
-				<script>currentvenoms = {}
-ak.deleteFull()</script>
-				<triggerType>0</triggerType>
-				<conditonLineDelta>0</conditonLineDelta>
-				<mStayOpen>0</mStayOpen>
-				<mCommand></mCommand>
-				<packageName></packageName>
-				<mFgColor>#ff0000</mFgColor>
-				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile></mSoundFile>
-				<colorTriggerFgColor>#000000</colorTriggerFgColor>
-				<colorTriggerBgColor>#000000</colorTriggerBgColor>
-				<regexCodeList>
-					<string>Being careful not to poison yourself, you wipe off all the venoms from an ornate steel rapier.</string>
-					<string>There are no venoms on that item at present.</string>
-					<string>You carefully wipe the venoms from your claws.</string>
-					<string>Being careful not to poison yourself, you wipe off all the venoms from a sharpened buckawn's spine.</string>
-					<string>You are already wielding </string>
-				</regexCodeList>
-				<regexCodePropertyList>
-					<integer>3</integer>
-					<integer>3</integer>
-					<integer>3</integer>
-					<integer>3</integer>
-					<integer>0</integer>
-				</regexCodePropertyList>
-			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Venom Wipe/Reset/Gagging</name><script>local text=matches[1] or ''
+local weapon=text:match('^Being careful not to poison yourself, you wipe off all the venoms from (.+)%.$')
+if text=='You carefully wipe the venoms from your claws.' then weapon='your wickedly sharp claws' end
+ak.apostate.wipe(weapon)
+ak.deleteFull()</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Being careful not to poison yourself, you wipe off all the venoms from (.+)\.$</string><string>^There are no venoms on that item at present\.$</string><string>^You carefully wipe the venoms from your claws\.$</string><string>^You are already wielding </string></regexCodeList><regexCodePropertyList><integer>1</integer><integer>1</integer><integer>1</integer><integer>1</integer></regexCodePropertyList></Trigger>
 			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Slain Target</name>
 				<script>if IsTargetted(matches[2]) and not table.contains(ak.burstfucks,matches[2]) then 
@@ -189,7 +165,7 @@ currentenvenom = matches[3]
 currentvenoms = currentvenoms or {}
 currentvenoms[currentenvenom] = currentvenoms[currentenvenom] or {}
 if #currentvenoms[currentenvenom] &gt; 0 then
-  local lockout = {"torture","tormentone","tormenttwo","exploit"}
+  local lockout = {&quot;torture&quot;,&quot;tormentone&quot;,&quot;tormenttwo&quot;,&quot;exploit&quot;}
   if table.contains(lockout,currentvenoms[currentenvenom][1]) then
     table.insert(currentvenoms[currentenvenom],2,matches[2])
   else
@@ -199,10 +175,11 @@ else
   table.insert(currentvenoms[currentenvenom],1,matches[2])
 end
 --display(currentvenoms[currentenvenom][1])
-if gmcp.Char.Status.class == "Magi" and (inretardation() or inaeon()) then
+if gmcp.Char.Status.class == &quot;Magi&quot; and (inretardation() or inaeon()) then
    ak.scoreup(target)
 end
-</script>
+
+if Yso and Yso.apostate and Yso.apostate.daegger then Yso.apostate.daegger.note_application(matches[2],matches[3]) end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
@@ -1800,17 +1777,7 @@ end</script>
 				<regexCodePropertyList />
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Sicken</name>
-					<script>if ak.ai() then return end
-if IsTargetted(matches[2]) then
-	if affstrack.score.manaleech ~= 100 then
-		OppGainedAff("manaleech")
-	else
-		OppGainedAff("slickness")
-	end
-end
-
-	
-</script>
+					<script>-- Sicken is resolved once by Apostate tracking from the confirmed evileye batch.</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
@@ -1903,58 +1870,10 @@ end</script>
 						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Deadeyes</name>
-					<script>if ak.ai() then
-  return
-end
-ak.apostate.cursePull = ak.apostate.cursePull or {}
-local nextcurse = matches[2]
-if nextcurse == "breach" then
-elseif nextcurse == "sicken" then
-  if affstrack.score.manaleech &lt; 100 then
-    nextcurse = "manaleech"
-  else
-    nextcurse = "slickness"
-  end
-elseif nextcurse == "plague" then
-  nextcurse = "voyria"
-elseif nextcurse == "clumsy" then
-  nextcurse = "clumsiness"
-elseif nextcurse == "dizzy" then
-  nextcurse = "dizziness"
-elseif nextcurse == "stupid" then
-  nextcurse = "stupidity"
-elseif nextcurse == "vomiting" then
-  nextcurse = "nausea"
-elseif nextcurse == "reckless" then
-  nextcurse = "recklessness"
-end
-table.insert(ak.apostate.cursePull, nextcurse)
-enableTrigger("Curse Pull Dump")
-</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand></mCommand>
-					<packageName></packageName>
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile></mSoundFile>
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^Summoning up the curse of (\w+), you stare at (\w+)\, giving \w+ the evil eye\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Deadeyes</name><script>ak.apostate.capture_eye(matches[3], matches[2])</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Summoning up the curse of (\w+), you stare at ([\w'-]+), giving \w+ the evil eye\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="yes" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Clumsy Brick</name>
-					<script>if ak.apostate.cursePull and #ak.apostate.cursePull &gt; 0 then
-  table.remove(ak.apostate.cursePull,#ak.apostate.cursePull)
-end</script>
+					<script>ak.apostate.fail_eye()</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
@@ -1974,12 +1893,7 @@ end</script>
 				</Trigger>
 				<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Curse Pull Dump</name>
-					<script>ak.apostate.cursePull = ak.apostate.cursePull or {}
-if #ak.apostate.cursePull &gt; 0 then
-  OppGainedAff(table.concat(ak.apostate.cursePull," "))
-end
-ak.apostate.cursePull = {}
-disableTrigger("Curse Pull Dump")</script>
+					<script>ak.apostate.commit_eyes()</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
 					<mStayOpen>0</mStayOpen>
@@ -1996,7 +1910,8 @@ disableTrigger("Curse Pull Dump")</script>
 					<regexCodePropertyList>
 						<integer>7</integer>
 					</regexCodePropertyList>
-				</Trigger>
+				</Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate route prompt</name><script>local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_prompt() end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string></string></regexCodeList><regexCodePropertyList><integer>7</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Corrupt retained</name><script>local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_corrupt("retained",matches[3],matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your Baalzadeen informs you that the (\w+) affliction still burdens ([\w'-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Corrupt rejected</name><script>local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_corrupt("rejected",matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your demon is unable to corrupt the soul of ([\w'-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Corrupt accepted</name><script>local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_corrupt("accepted",matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^You command your baalzadeen to corrupt the soul of ([\w'-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Puncture</name><script>ak.apostate.puncture(matches[2])</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your hand guided by the daemon held in its grasp, you puncture ([\w'-]+)'s skin with the daegger's tip\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Necromancy</name><script></script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList /><regexCodePropertyList /><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Shrivel</name><script>ak.apostate.shrivel(matches[2], matches[3], matches[4] ~= "" and matches[4] or nil)</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^You touch ([\w'-]+)'s (left|right) (arm|leg), and it shrivels away\.$</string><string>^You reach out and touch ([\w'-]+)'s (left|right) (arm|leg), but you can shrivel it no further\.$</string><string>^You reach out and grasp ([\w'-]+)'s (leg) in an iron grip, and it shrivels feebly\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer><integer>1</integer><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Shrivel arms</name><script>ak.apostate.shrivel(matches[3], matches[2])</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand></mCommand><packageName></packageName><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile></mSoundFile><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^You reach out and stroke an (arm) of ([\w'-]+), and it withers away\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger></TriggerGroup>
 			</TriggerGroup>
 			<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Bard Group</name>
@@ -27865,25 +27780,26 @@ end
 				<name>Hard Reset</name>
 				<packageName></packageName>
 				<script>function ak.oresetparse()
-  target = target or "Dude"
+  if ak.apostate and type(ak.apostate.reset_tracking) == &quot;function&quot; then ak.apostate.reset_tracking() end
+  target = target or &quot;Dude&quot;
   ak.magi.resonance = {
-  ["Fire"] = 0,
-  ["Air"] = 0,
-  ["Earth"] = 0,
-  ["Water"] = 0,
+  [&quot;Fire&quot;] = 0,
+  [&quot;Air&quot;] = 0,
+  [&quot;Earth&quot;] = 0,
+  [&quot;Water&quot;] = 0,
 }
   ak.bard.crescendo = 0
   ak.dragonTarget = false
   ak.elementalTarget = false
-  ak.stack = ak.stack or "none"
+  ak.stack = ak.stack or &quot;none&quot;
   ak.pariah.wracked = false
   affstrack.impale = false
-  targetparry = "unknown"
+  targetparry = &quot;unknown&quot;
   ak.bleeding = 0
   ak.flyer = false
   mycharacters = mycharacters or {}--This is for my Personal Gui
   if swiftcount == nil then swiftcount = 0 end
-  disableTimer("Hypochondria Timer")
+  disableTimer(&quot;Hypochondria Timer&quot;)
   opponenteat = 0
   promptset = {}
   applycure = {}
@@ -27939,7 +27855,7 @@ end
   ak.alchemist.humour.phlegmatic = 0
   ak.pervasion.initialbleed = false
   ak.pervasion.hitcount = 0
-  ak.shaman.Relapseaff = "none"
+  ak.shaman.Relapseaff = &quot;none&quot;
   ak.shaman.coagulation = true
   ak.shaman.bloodlet = true
   ak.shaman.relapse = true
@@ -27985,12 +27901,12 @@ end
   ak.randomaffs = 0
   ak.knownmaxhealth = ak.knownmaxhealth or {}
   ak.limbs.limb_table_check(target)
-  if gmcp and ak.stack == "none" then
+  if gmcp and ak.stack == &quot;none&quot; then
      ak.classenable()
   end
   ak.scoreup(target)
   if gmcp and gmcp.Char and gmcp.Char.Vitals and gmcp.Char.Vitals.maxhp then
-     ak.knownmaxhealth["Me"] = tonumber(gmcp.Char.Vitals.maxhp) or 5150
+     ak.knownmaxhealth[&quot;Me&quot;] = tonumber(gmcp.Char.Vitals.maxhp) or 5150
      ak.classlockadd()
      if not ak.displaydecide then 
         ak.classenable()
@@ -28004,9 +27920,9 @@ end
      ak.stack = ak.radiancestack
      ak.radiancestack = nil
   end
-  cecho("&lt;cyan&gt; Reset Success!\n\n")
-  if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_external_reset) == "function" then
-    pcall(Yso.off.coord.on_external_reset, "ak_reset_success")
+  cecho(&quot;&lt;cyan&gt; Reset Success!\n\n&quot;)
+  if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_external_reset) == &quot;function&quot; then
+    pcall(Yso.off.coord.on_external_reset, &quot;ak_reset_success&quot;)
   end
 end </script>
 				<eventHandlerList />
@@ -28015,11 +27931,12 @@ end </script>
 				<name>Soft Reset</name>
 				<packageName></packageName>
 				<script>function ak.softreset()
+  if ak.apostate and type(ak.apostate.reset_tracking) == &quot;function&quot; then ak.apostate.reset_tracking() end
   ak.magi.resonance = {
-  ["Fire"] = 0,
-  ["Air"] = 0,
-  ["Earth"] = 0,
-  ["Water"] = 0,
+  [&quot;Fire&quot;] = 0,
+  [&quot;Air&quot;] = 0,
+  [&quot;Earth&quot;] = 0,
+  [&quot;Water&quot;] = 0,
   }
   ak.tza = false
   ak.bard.crescendo = 0
@@ -28027,7 +27944,7 @@ end </script>
   ak.pariah.wracked = false
   ak.dragon.enmeshed = false
   ak.dragon.enmeshing = false
-	ak.shaman.Relapseaff = "none"
+	ak.shaman.Relapseaff = &quot;none&quot;
   ak.shaman.coagulation = true
   ak.shaman.bloodlet = true
 	ak.shaman.GetFashions = false
@@ -28036,12 +27953,12 @@ end </script>
   ak.waterbonded = false
 	ak.bleeding = 0
   ak.shaman.relapse = true
-	cecho("&lt;cyan&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!")
-	cecho("&lt;yellow&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!")
-	cecho("&lt;cyan&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!")
-	cecho("&lt;yellow&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!\n\n")
-	disableTrigger("Swiftstring")
-	disableTimer("Hypochondria Timer")
+	cecho(&quot;&lt;cyan&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!&quot;)
+	cecho(&quot;&lt;yellow&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!&quot;)
+	cecho(&quot;&lt;cyan&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!&quot;)
+	cecho(&quot;&lt;yellow&gt; \nINITATED A SOFT OPPONENT AFFLICTON RESET, DID NOT RESET ANY BALANCES!!\n\n&quot;)
+	disableTrigger(&quot;Swiftstring&quot;)
+	disableTimer(&quot;Hypochondria Timer&quot;)
 	ak.resetbacktrack()
 	targetlyred = 0
 	applycure = {}
@@ -28522,120 +28439,121 @@ end
 					<script>--OppGainedAff
 
 function OppGainedAff(aff,source)
+  if ak.apostate and ak.apostate.note_gain then ak.apostate.note_gain(aff,source) end
   if not aff then return end
   local affStr = {}
   aff = aff:lower()
-  if string.find(aff," ") then                          --Multi Venoms
+  if string.find(aff,&quot; &quot;) then                          --Multi Venoms
     ak.eatsbetweenaffs = 0
-    for word in string.gmatch(aff, "%a+") do
-         if (word == "sensitivity" or word == "prefarar") and affstrack.score.deaf == 0 then 
-            word = "deaf" 
+    for word in string.gmatch(aff, &quot;%a+&quot;) do
+         if (word == &quot;sensitivity&quot; or word == &quot;prefarar&quot;) and affstrack.score.deaf == 0 and source ~= &quot;evileye&quot; then 
+            word = &quot;deaf&quot; 
          end
-         if word == "slickness" then ak.defs.sileris = false end
+         if word == &quot;slickness&quot; then ak.defs.sileris = false end
          if table.contains(affstrack.mentallist, word) then
             ak.occie.aura.mental = ak.occie.aura.mental + 1 
          end
          if table.contains(affstrack.physicallist, word) then
             ak.occie.aura.physical = ak.occie.aura.physical + 1 
          end
-         if word == "amnesia" then
+         if word == &quot;amnesia&quot; then
             affstrack.score.amnesia = 100
             if amnesiatimer then 
               killTimer(amnesiatimer)
               amnesiatimer = nil 
             end
-            amnesiatimer = tempTimer(1, [[OppLostAff("amnesia")]])
-         elseif string.find(word,"unweave") then
+            amnesiatimer = tempTimer(1, [[OppLostAff(&quot;amnesia&quot;)]])
+         elseif string.find(word,&quot;unweave&quot;) then
             affstrack.score[word] = affstrack.score[word] + 100
             table.insert(affStr,word:title())
-         elseif word == "calcifiedhead" then
+         elseif word == &quot;calcifiedhead&quot; then
             affstrack.score[word] = 100
             table.insert(affStr,word:title())
-         elseif word == "wrenchhead" then
+         elseif word == &quot;wrenchhead&quot; then
             affstrack.score.wrenchhead = 100
-            OppGainedAff("dizziness")
-            disableTimer("Wrench Head Timer")
-            enableTimer("Wrench Head Timer")
+            OppGainedAff(&quot;dizziness&quot;)
+            disableTimer(&quot;Wrench Head Timer&quot;)
+            enableTimer(&quot;Wrench Head Timer&quot;)
             ak.HeadWrenchDisable = tempTimer(24,[[affstrack.score.wrenchhead = 0;ak.scoreup(target)]])
-            ak.InitialWrench = tempTimer(3.5,[[OppGainedAff("dizziness")]])
+            ak.InitialWrench = tempTimer(3.5,[[OppGainedAff(&quot;dizziness&quot;)]])
             table.insert(affStr,word:title())
-         elseif word == "scrambledbrains" then
+         elseif word == &quot;scrambledbrains&quot; then
             affstrack.score.scrambledbrains = 100
             ak.brainTimer = tempTimer(ak.brainDuration,[[affstrack.score.scrambledbrains = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "waterdisrupt" then
+         elseif word == &quot;waterdisrupt&quot; then
             affstrack.score.waterdisrupt = 100
             ak.armexpendtimer = tempTimer(12,[[affstrack.score.waterdisrupt = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "reeling" then
+         elseif word == &quot;reeling&quot; then
             affstrack.score.reeling = 100
             ak.armexpendtimer = tempTimer(20,[[affstrack.score.reeling = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "armexpend" then
+         elseif word == &quot;armexpend&quot; then
             affstrack.score.armexpend = 100
             ak.armexpendtimer = tempTimer(15,[[affstrack.score.armexpend = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "ensorcell" then
+         elseif word == &quot;ensorcell&quot; then
             affstrack.score.ensorcell = 100
             table.insert(affStr,word:title())
-        elseif word == "focusextend" then
+        elseif word == &quot;focusextend&quot; then
             affstrack.score.focusextend = 100
             ak.focusextenddisable = tempTimer(8,[[affstrack.score.focusextend = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())        
-         elseif word == "vitiate" then
+         elseif word == &quot;vitiate&quot; then
             affstrack.score.vitiate = 100
             ak.vitiatetimer = tempTimer(150,[[affstrack.score.vitiate = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "blisters" then
+         elseif word == &quot;blisters&quot; then
             affstrack.score.blisters = 100
             ak.blisterkiller = tempTimer(20,[[affstrack.score.blisters = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "hamstring" then
+         elseif word == &quot;hamstring&quot; then
             affstrack.score.hamstring = 100
             if ak.hamstringtimer then killTimer(ak.hamstringtimer) end
             ak.hamstringtimer = tempTimer(9.5,[[affstrack.score.hamstring = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())         
-         elseif word == "worm" then
+         elseif word == &quot;worm&quot; then
             affstrack.score.worm = 100
             ak.wormtimer = tempTimer(20,[[affstrack.score.worm = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())             
-         elseif word == "wrenchtorso" then
+         elseif word == &quot;wrenchtorso&quot; then
             affstrack.score.wrenchtorso = 100
             ak.TorsoWrenchDisable = tempTimer(24,[[affstrack.score.wrenchtorso = 0;ak.scoreup(target)]])
             table.insert(affStr,word:title())
-         elseif word == "epseth" or word == "crippledleg" then
-            if affstrack.score["leftleg"] &lt; 100 then       
-              affstrack.score["leftleg"] = 100
-              ak.AddedAffReset("leftleg") 
+         elseif word == &quot;epseth&quot; or word == &quot;crippledleg&quot; then
+            if affstrack.score[&quot;leftleg&quot;] &lt; 100 then       
+              affstrack.score[&quot;leftleg&quot;] = 100
+              ak.AddedAffReset(&quot;leftleg&quot;) 
               table.insert(affStr,word:title())
-            elseif affstrack.score["rightleg"] &lt; 100 then       
-              affstrack.score["rightleg"] = 100
-              ak.AddedAffReset("rightleg") 
-              table.insert(affStr,word:title())
-            end
-         elseif word == "epteth" or word == "crippledarm" then
-            if affstrack.score["leftarm"] &lt; 100 then       
-              affstrack.score["leftarm"] = 100
-              ak.AddedAffReset("leftarm") 
-              table.insert(affStr,word:title())
-            elseif affstrack.score["rightarm"] &lt; 100 then       
-              affstrack.score["rightarm"] = 100
-              ak.AddedAffReset("rightarm") 
+            elseif affstrack.score[&quot;rightleg&quot;] &lt; 100 then       
+              affstrack.score[&quot;rightleg&quot;] = 100
+              ak.AddedAffReset(&quot;rightleg&quot;) 
               table.insert(affStr,word:title())
             end
-         elseif word == "frozen" then
+         elseif word == &quot;epteth&quot; or word == &quot;crippledarm&quot; then
+            if affstrack.score[&quot;leftarm&quot;] &lt; 100 then       
+              affstrack.score[&quot;leftarm&quot;] = 100
+              ak.AddedAffReset(&quot;leftarm&quot;) 
+              table.insert(affStr,word:title())
+            elseif affstrack.score[&quot;rightarm&quot;] &lt; 100 then       
+              affstrack.score[&quot;rightarm&quot;] = 100
+              ak.AddedAffReset(&quot;rightarm&quot;) 
+              table.insert(affStr,word:title())
+            end
+         elseif word == &quot;frozen&quot; then
             affstrack.score[word] = affstrack.score[word] + 100 
             table.insert(affStr,aff:title()) 
             if affstrack.score.frozen &gt; 300 then
                affstrack.score.frozen = 300
             end
-         --elseif word == "insulationstrip" then
+         --elseif word == &quot;insulationstrip&quot; then
          --   if affstrack.score.frozen == 0 then
          --     affstrack.score.frozen = 100
          --   end
-         elseif word == "deepfreeze" then
-            affstrack.score["frozen"] = affstrack.score["frozen"] + 200 
-            table.insert(affStr,"Frozen") 
+         elseif word == &quot;deepfreeze&quot; then
+            affstrack.score[&quot;frozen&quot;] = affstrack.score[&quot;frozen&quot;] + 200 
+            table.insert(affStr,&quot;Frozen&quot;) 
             if affstrack.score.frozen &gt; 300 then
                affstrack.score.frozen = 300
             end
@@ -28643,8 +28561,8 @@ function OppGainedAff(aff,source)
             if affstrack.score[word] &lt; 100 then       
                affstrack.score[word] = 100
                ak.AddedAffReset(word)
-               if (word == "deaf" or word == "sensitivity") then 
-                  word = "prefarar" 
+               if (word == &quot;deaf&quot; or word == &quot;sensitivity&quot;) and source ~= &quot;evileye&quot; then 
+                  word = &quot;prefarar&quot; 
                end   
                table.insert(affStr,word:title())
             end
@@ -28652,8 +28570,8 @@ function OppGainedAff(aff,source)
             if affstrack.score[affstrack.venoms[word]] &lt; 100 then    
                affstrack.score[affstrack.venoms[word]] = 100
                ak.AddedAffReset(affstrack.venoms[word])
-               if (word == "deaf" or word == "sensitivity") then 
-                  word = "prefarar" 
+               if (word == &quot;deaf&quot; or word == &quot;sensitivity&quot;) and source ~= &quot;evileye&quot; then 
+                  word = &quot;prefarar&quot; 
                end
                table.insert(affStr,affstrack.venoms[word]:title())  
             end
@@ -28661,9 +28579,9 @@ function OppGainedAff(aff,source)
       end
   else          --Single venom
      ak.eatsbetweenaffs = 1
-     if aff == "slickness" then ak.defs.sileris = false end
-     if (aff == "sensitivity" or aff == "prefarar") and affstrack.score.deaf == 0 then 
-        aff = "deaf" 
+     if aff == &quot;slickness&quot; then ak.defs.sileris = false end
+     if (aff == &quot;sensitivity&quot; or aff == &quot;prefarar&quot;) and affstrack.score.deaf == 0 and source ~= &quot;evileye&quot; then 
+        aff = &quot;deaf&quot; 
      end  
      if table.contains(affstrack.mentallist, aff) then
         ak.occie.aura.mental = ak.occie.aura.mental + 1 
@@ -28671,103 +28589,103 @@ function OppGainedAff(aff,source)
      if table.contains(affstrack.physicallist, aff) then
         ak.occie.aura.physical = ak.occie.aura.physical + 1 
      end
-     if aff == "amnesia" then
+     if aff == &quot;amnesia&quot; then
         affstrack.score.amnesia = 100
         if amnesiatimer then 
            killTimer(amnesiatimer)
            amnesiatimer = nil 
         end
-        amnesiatimer = tempTimer(1, [[OppLostAff("amnesia")]])
-     elseif string.find(aff,"unweave") then
+        amnesiatimer = tempTimer(1, [[OppLostAff(&quot;amnesia&quot;)]])
+     elseif string.find(aff,&quot;unweave&quot;) then
         affstrack.score[aff] = affstrack.score[aff] + 100
         table.insert(affStr,aff:title())
-     elseif aff == "calcifiedhead" then
+     elseif aff == &quot;calcifiedhead&quot; then
         affstrack.score[aff] = 100
         table.insert(affStr,aff:title())
-     elseif aff == "wrenchhead" then
+     elseif aff == &quot;wrenchhead&quot; then
         affstrack.score.wrenchhead = 100
         affstrack.score.torso = 100
-        OppGainedAff("dizziness")
-        disableTimer("Wrench Head Timer")
-        enableTimer("Wrench Head Timer")
+        OppGainedAff(&quot;dizziness&quot;)
+        disableTimer(&quot;Wrench Head Timer&quot;)
+        enableTimer(&quot;Wrench Head Timer&quot;)
         ak.HeadWrenchDisable = tempTimer(24,[[affstrack.score.wrenchhead = 0;ak.scoreup(target)]])
-        ak.InitialWrench = tempTimer(3.5,[[OppGainedAff("dizziness")]])
+        ak.InitialWrench = tempTimer(3.5,[[OppGainedAff(&quot;dizziness&quot;)]])
         table.insert(affStr,aff:title())
-    elseif aff == "scrambledbrains" then
+    elseif aff == &quot;scrambledbrains&quot; then
         affstrack.score.scrambledbrains = 100
         ak.brainTimer = tempTimer(ak.brainDuration,[[affstrack.score.scrambledbrains = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())
-     elseif aff == "blisters" then
+     elseif aff == &quot;blisters&quot; then
         affstrack.score.blisters = 100
         ak.blisterkiller = tempTimer(20,[[affstrack.score.blisters = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())
-     elseif aff == "wrenchtorso" then
+     elseif aff == &quot;wrenchtorso&quot; then
         affstrack.score.wrenchtorso = 100
         ak.TorsoWrenchDisable = tempTimer(24,[[affstrack.score.wrenchtorso = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())      
-     elseif aff == "vitiate" then
+     elseif aff == &quot;vitiate&quot; then
         affstrack.score.vitiate = 100
         ak.vitiatetimer = tempTimer(150,[[affstrack.score.vitiate = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())         
-     elseif aff == "armexpend" then
+     elseif aff == &quot;armexpend&quot; then
         affstrack.score.armexpend = 100
         ak.TorsoWrenchDisable = tempTimer(15,[[affstrack.score.armexpend = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())
-     elseif aff == "waterdisrupt" then
+     elseif aff == &quot;waterdisrupt&quot; then
         affstrack.score.waterdisrupt = 100
         ak.armexpendtimer = tempTimer(12,[[affstrack.score.waterdisrupt = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())
-      elseif aff == "reeling" then
+      elseif aff == &quot;reeling&quot; then
         affstrack.score.reeling = 100
         ak.armexpendtimer = tempTimer(20,[[affstrack.score.reeling = 0;ak.scoreup(target)]])
         table.insert(affStr,word:title())
-     elseif aff == "focusextend" then
+     elseif aff == &quot;focusextend&quot; then
         affstrack.score.focusextend = 100
         ak.focusextenddisable = tempTimer(8,[[affstrack.score.focusextend = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())         
-     elseif aff == "ensorcell" then
+     elseif aff == &quot;ensorcell&quot; then
         affstrack.score.ensorcell = 100
         table.insert(affStr,aff:title())        
-     elseif aff == "hamstring" then
+     elseif aff == &quot;hamstring&quot; then
         affstrack.score.hamstring = 100
         if ak.hamstringtimer then killTimer(ak.hamstringtimer) end
         ak.hamstringtimer = tempTimer(9.5,[[affstrack.score.hamstring = 0;ak.scoreup(target)]])
         table.insert(affStr,aff:title())
-     elseif aff == "worm" then
+     elseif aff == &quot;worm&quot; then
           affstrack.score.worm = 100
           ak.wormtimer = tempTimer(20,[[affstrack.score.worm = 0;ak.scoreup(target)]])
           table.insert(affStr,aff:title())               
-     elseif aff == "epseth" or aff == "crippledleg" then
-        if affstrack.score["leftleg"] &lt; 100 then       
-           affstrack.score["leftleg"] = 100
-           ak.AddedAffReset("leftleg") 
-        elseif affstrack.score["rightleg"] &lt; 100 then       
-           affstrack.score["rightleg"] = 100
-           ak.AddedAffReset("rightleg") 
+     elseif aff == &quot;epseth&quot; or aff == &quot;crippledleg&quot; then
+        if affstrack.score[&quot;leftleg&quot;] &lt; 100 then       
+           affstrack.score[&quot;leftleg&quot;] = 100
+           ak.AddedAffReset(&quot;leftleg&quot;) 
+        elseif affstrack.score[&quot;rightleg&quot;] &lt; 100 then       
+           affstrack.score[&quot;rightleg&quot;] = 100
+           ak.AddedAffReset(&quot;rightleg&quot;) 
         end
-        table.insert(affStr,"Epseth")
-     elseif aff == "epteth" or aff == "crippledarm" then
-        if affstrack.score["leftarm"] &lt; 100 then       
-           affstrack.score["leftarm"] = 100
-           ak.AddedAffReset("leftarm") 
-        elseif affstrack.score["rightarm"] &lt; 100 then       
-           affstrack.score["rightarm"] = 100
-           ak.AddedAffReset("rightarm") 
+        table.insert(affStr,&quot;Epseth&quot;)
+     elseif aff == &quot;epteth&quot; or aff == &quot;crippledarm&quot; then
+        if affstrack.score[&quot;leftarm&quot;] &lt; 100 then       
+           affstrack.score[&quot;leftarm&quot;] = 100
+           ak.AddedAffReset(&quot;leftarm&quot;) 
+        elseif affstrack.score[&quot;rightarm&quot;] &lt; 100 then       
+           affstrack.score[&quot;rightarm&quot;] = 100
+           ak.AddedAffReset(&quot;rightarm&quot;) 
         end
-        table.insert(affStr,"Epteth")    
-    elseif aff == "frozen" then 
+        table.insert(affStr,&quot;Epteth&quot;)    
+    elseif aff == &quot;frozen&quot; then 
         affstrack.score[aff] = affstrack.score[aff] + 100
         table.insert(affStr,aff:title())
         if affstrack.score.frozen &gt; 300 then
            affstrack.score.frozen = 300
         end 
-    elseif aff == "deepfreeze" then
-        affstrack.score["frozen"] = affstrack.score["frozen"] + 200 
-        table.insert(affStr,"Frozen") 
+    elseif aff == &quot;deepfreeze&quot; then
+        affstrack.score[&quot;frozen&quot;] = affstrack.score[&quot;frozen&quot;] + 200 
+        table.insert(affStr,&quot;Frozen&quot;) 
         if affstrack.score.frozen &gt; 300 then
            affstrack.score.frozen = 300
         end
-    elseif aff == "insulationstrip" then
+    elseif aff == &quot;insulationstrip&quot; then
         if affstrack.score.frozen == 0 then
           affstrack.score.frozen = 100
         end                                         
@@ -28775,13 +28693,13 @@ function OppGainedAff(aff,source)
         if affstrack.score[aff] &lt; 100 then       
            affstrack.score[aff] = 100
            ak.AddedAffReset(aff)
-           if aff == "deaf" or aff == "sensitivity" then 
-              aff = "prefarar" 
+           if (aff == &quot;deaf&quot; or aff == &quot;sensitivity&quot;) and source ~= &quot;evileye&quot; then 
+              aff = &quot;prefarar&quot; 
            end
-         if aff == "hypochondria" then
-           enableTimer("Hypochondria Timer")
+         if aff == &quot;hypochondria&quot; then
+           enableTimer(&quot;Hypochondria Timer&quot;)
          end
-         if aff == "hellsight" then
+         if aff == &quot;hellsight&quot; then
            affstrack.score.slickness = 100
          end
            table.insert(affStr,aff:title())   
@@ -28790,26 +28708,27 @@ function OppGainedAff(aff,source)
         if affstrack.score[affstrack.venoms[aff]] &lt; 100 then    
            affstrack.score[affstrack.venoms[aff]] = 100
            ak.AddedAffReset(affstrack.venoms[aff])
-           if aff == "deaf" or aff == "sensitivity" then 
-              aff = "prefarar" 
+           if (aff == &quot;deaf&quot; or aff == &quot;sensitivity&quot;) and source ~= &quot;evileye&quot; then 
+              aff = &quot;prefarar&quot; 
            end
            table.insert(affStr,affstrack.venoms[aff]:title())       
         end 
      end
   end
-  if #affStr &gt; 0 and not source then 
-      ak.echogain(table.concat(affStr, " ")) 
-      if rtpkrnl then ApK(table.concat(affStr, " rtpkrnl ")) end--AKG Display
+  if #affStr &gt; 0 and (not source or source == &quot;evileye&quot;) then 
+      ak.echogain(table.concat(affStr, &quot; &quot;)) 
+      if rtpkrnl then ApK(table.concat(affStr, &quot; rtpkrnl &quot;)) end--AKG Display
   end
-  raiseEvent("AK got aff", affStr)
+  raiseEvent(&quot;AK got aff&quot;, affStr)
   ak.scoreup(target)
 end
 
 function OppLostAff(aff)
-  local affStr = ""
+  if ak.apostate and ak.apostate.note_loss then ak.apostate.note_loss(aff) end
+  local affStr = &quot;&quot;
   aff = aff:lower()
-  if string.find(aff," ") then
-    for word in string.gmatch(aff, "%a+") do
+  if string.find(aff,&quot; &quot;) then
+    for word in string.gmatch(aff, &quot;%a+&quot;) do
       if affstrack.score[word] &gt; 0 then
        affstrack.score[word] = 0
        affStr = word:title()
@@ -28824,7 +28743,7 @@ function OppLostAff(aff)
   ak.scoreup(target)
   if affStr:len() &gt; 0 then 
     ak.echolost(affStr) 
-    raiseEvent("AK lost aff", affStr)
+    raiseEvent(&quot;AK lost aff&quot;, affStr)
   end
 end
 
@@ -28850,23 +28769,16 @@ end</script>
 				<Script isActive="yes" isFolder="no">
 					<name>Target Check</name>
 					<packageName></packageName>
-					<script>--Targetted Script
--------------------------------------------------
---         Put your Lua functions here.        --
---                                             --
--- Note that you can also use external Scripts --
--------------------------------------------------
+					<script>-- Maintained AK Target Check. Game names and typed targets may differ in case.
+-- Preserve AK&apos;s existing support for abbreviated target prefixes.
 function IsTargetted(person)
-   if not person then return end
-   target = target or "Dude"
-   if person == target then 
-     return true
-   elseif string.starts(person, target) then
-      return true
-   else
-      return false
-   end
-end</script>
+ if type(person)~=&apos;string&apos; or person==&apos;&apos; then return false end
+ target=target or &apos;Dude&apos;
+ local wanted=tostring(target):lower()
+ if wanted==&apos;&apos; then return false end
+ return person:lower():sub(1,#wanted)==wanted
+end
+</script>
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
@@ -32973,7 +32885,153 @@ registerAnonymousEventHandler("Git Pushing","ak.git.push")</script>
 				</Script>
 			</ScriptGroup>
 		</ScriptGroup>
-	</ScriptPackage>
+	<Script isActive="yes" isFolder="no"><name>Apostate tracking</name><packageName /><script>-- Embedded in AK.xml. Independent of Yso package load order.
+ak=ak or {};ak.apostate=ak.apostate or {}
+local A=ak.apostate
+A.evileye_map={deaf=&apos;deaf&apos;,impatience=&apos;impatience&apos;,clumsy=&apos;clumsiness&apos;,vertigo=&apos;vertigo&apos;,
+  amnesia=&apos;amnesia&apos;,agoraphobia=&apos;agoraphobia&apos;,dizzy=&apos;dizziness&apos;,paralysis=&apos;paralysis&apos;,
+  claustrophobia=&apos;claustrophobia&apos;,paranoia=&apos;paranoia&apos;,blind=&apos;blind&apos;,masochism=&apos;masochism&apos;,
+  asthma=&apos;asthma&apos;,reckless=&apos;recklessness&apos;,epilepsy=&apos;epilepsy&apos;,confusion=&apos;confusion&apos;,
+  peace=&apos;pacifism&apos;,dementia=&apos;dementia&apos;,plague=&apos;voyria&apos;,addiction=&apos;addiction&apos;,stupid=&apos;stupidity&apos;,
+  manaleech=&apos;manaleech&apos;,sensitivity=&apos;sensitivity&apos;,vomiting=&apos;nausea&apos;,anorexia=&apos;anorexia&apos;,weariness=&apos;weariness&apos;}
+A.shrivel_unresolved=A.shrivel_unresolved or {}
+A.evileye_active=A.evileye_active or {}
+local function route()
+  return Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
+end
+local function current(name)
+  return type(name)==&apos;string&apos; and type(target)==&apos;string&apos; and name:lower()==target:lower()
+end
+local function present(aff)
+  return ((affstrack and affstrack.score and tonumber(affstrack.score[aff])) or 0)&gt;=100
+end
+function A.clear_pending()
+  A.cursePull={};A.eye_target=nil;A.eye_pending={};A.eye_scores=nil
+  if type(disableTrigger)==&apos;function&apos; then disableTrigger(&apos;Curse Pull Dump&apos;) end
+end
+A.clear_pending()
+function A.reset_tracking()
+  A.clear_pending();A.shrivel_unresolved={};A.evileye_active={};A.pending_daegger_wipe=nil
+  local M=route();if M and M.is_enabled() then M.stop(&apos;tracking_reset&apos;) end
+end
+function A.capture_eye(name,curse)
+  if (ak.ai and ak.ai()) or not current(name) then return false end
+  if A.eye_target and A.eye_target:lower()~=name:lower() then A.clear_pending() end
+  A.eye_target=name
+  A.eye_scores=affstrack.score
+  local aff=A.evileye_map[curse]
+  if curse==&apos;sicken&apos; then
+    local function has(k)
+      if present(k) then return true end
+      for _,row in ipairs(A.eye_pending) do if row.aff==k then return true end end
+      return false
+    end
+    aff=not has(&apos;manaleech&apos;) and &apos;manaleech&apos; or (not has(&apos;slickness&apos;) and &apos;slickness&apos; or nil)
+  end
+  -- One row per announced eye, including non-affliction effects, so a clumsy failure
+  -- always removes the correct slot rather than a preceding successful affliction.
+  A.eye_pending[#A.eye_pending+1]={curse=curse,aff=aff}
+  A.cursePull={}
+  for _,row in ipairs(A.eye_pending) do if row.aff then A.cursePull[#A.cursePull+1]=row.aff end end
+  if type(enableTrigger)==&apos;function&apos; then enableTrigger(&apos;Curse Pull Dump&apos;) end
+  return true
+end
+function A.fail_eye()
+  if not A.eye_target or not current(A.eye_target) then A.clear_pending();return end
+  table.remove(A.eye_pending)
+  A.cursePull={}
+  for _,row in ipairs(A.eye_pending) do if row.aff then A.cursePull[#A.cursePull+1]=row.aff end end
+end
+function A.commit_eyes()
+  local name=A.eye_target
+  local affs=A.cursePull
+  local scores=A.eye_scores
+  A.clear_pending()
+  if (ak.ai and ak.ai()) or not current(name) or scores~=affstrack.score then return false end
+  if #affs&gt;0 then
+    OppGainedAff(table.concat(affs,&apos; &apos;),&apos;evileye&apos;)
+    for _,aff in ipairs(affs) do A.evileye_active[aff]=name:lower() end
+  end
+  local M=route();if M then M.note_pressure(&apos;eyes&apos;,name) end
+  return true
+end
+-- Called by the real AK gain/loss writers, including cures and other delivery sources.
+function A.note_gain(aff,source)
+  if source==&apos;evileye&apos; then return end
+  for word in tostring(aff):gmatch(&apos;%a+&apos;) do
+    A.evileye_active[(affstrack.venoms or {})[word] or word]=nil
+  end
+end
+function A.note_loss(aff)
+  for word in tostring(aff):gmatch(&apos;%a+&apos;) do A.evileye_active[word]=nil end
+end
+function A.consume_corrupt(name,retained)
+  if not current(name) then return false end
+  A.clear_pending()
+  local lost={}
+  for aff,owner in pairs(A.evileye_active) do
+    if owner==name:lower() and aff~=retained then lost[#lost+1]=aff end
+  end
+  for _,aff in ipairs(lost) do OppLostAff(aff);A.evileye_active[aff]=nil end
+  if retained==&apos;paralysis&apos; then OppGainedAff(&apos;paralysis&apos;,&apos;evileye&apos;) end
+  return true
+end
+function A.wipe(weapon)
+  currentvenoms=currentvenoms or {}
+  if weapon then currentvenoms[weapon]={}
+  elseif A.pending_daegger_wipe then
+    for key in pairs(currentvenoms) do
+      if key:lower():find(&apos;daegger&apos;,1,true) then currentvenoms[key]={} end
+    end
+  end
+  A.pending_daegger_wipe=nil
+end
+function A.puncture(name)
+  if ak.ai and ak.ai() then return false end
+  local weapon,delivered
+  for key,coating in pairs(currentvenoms or {}) do
+    if key:lower():find(&apos;daegger&apos;,1,true) and #coating&gt;0 then
+      if weapon then return false end -- ambiguous inventory: never choose another weapon&apos;s venom
+      weapon=key
+    end
+  end
+  if weapon then
+    local venom=table.remove(currentvenoms[weapon],1)
+    local aff=(affstrack.venoms or {})[venom]
+    if aff and current(name) then OppGainedAff(aff);A.note_gain(aff);delivered=true end
+  end
+  local M=route();if M then M.note_pressure(&apos;puncture&apos;,name,delivered==true) end
+  return true
+end
+function A.shrivel(name,side,limb)
+  if (ak.ai and ak.ai()) or not current(name) then return false end
+  if limb then
+    if (side~=&apos;left&apos; and side~=&apos;right&apos;) or (limb~=&apos;arm&apos; and limb~=&apos;leg&apos;) then return false end
+    local key=side..limb
+    if not present(key) then OppGainedAff(key) end
+    return true
+  end
+  if side~=&apos;arm&apos; and side~=&apos;leg&apos; then return false end
+  local key=name:lower()
+  local observation=A.shrivel_unresolved[key] or {arms=0,legs=0}
+  A.shrivel_unresolved[key]=observation
+  observation[side..&apos;s&apos;]=observation[side..&apos;s&apos;]+1
+  observation.last_kind=side
+  observation.at=type(getEpoch)==&apos;function&apos; and getEpoch() or os.time()
+  return true
+end
+if type(registerAnonymousEventHandler)==&apos;function&apos; then
+  A.tracking_handlers=A.tracking_handlers or {}
+  for _,event in ipairs({&apos;yso.target.changed&apos;,&apos;yso.target.cleared&apos;,&apos;sysDisconnectionEvent&apos;,&apos;gmcp.Char.Status&apos;}) do
+    if A.tracking_handlers[event] and type(killAnonymousEventHandler)==&apos;function&apos; then
+      killAnonymousEventHandler(A.tracking_handlers[event])
+    end
+    A.tracking_handlers[event]=registerAnonymousEventHandler(event,A.reset_tracking)
+  end
+end
+return A
+</script><eventHandlerList /></Script>
+</ScriptPackage>
 	<KeyPackage>
 		<KeyGroup isActive="yes" isFolder="yes">
 			<name>AK Opponent Tracking</name>

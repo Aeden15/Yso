@@ -316,6 +316,8 @@ function Core.set_active(key)
 end
 
 function Core.on(key)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return false, "enemy_deliverance" end
   local id, entry = _resolve_id(key)
   if not id then return false, "unknown_route" end
   if entry and not _class_ok(entry) then return false, "wrong_class" end
@@ -394,6 +396,8 @@ function Core.toggle(key)
 end
 
 function Core.tick(reason)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return false, "enemy_deliverance" end
   local id, entry = _resolve_id("")
   if not id then return false, "inactive" end
   if entry and not _class_ok(entry) then return false, "wrong_class" end

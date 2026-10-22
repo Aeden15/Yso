@@ -1,0 +1,136 @@
+1V1 KILL ROUTES
+---------------
+
+=== DISPATCH (Limb-Based) - PRIMARY KILL ===
+
+Requirements for DISPATCH <target>:
+1. Target must be PRONE (from Sweep)
+2. At least ONE LEG broken (100%+ damage) (to keep prone)
+3. HEAD broken/damaged (100%+ or damagedhead affliction)
+4. WINDPIPE damaged (from Needle - damagedwindpipe or crushedthroat)
+
+CRITICAL RULE: NEVER break legs until head is also prepped!
+Breaking legs prematurely wastes your setup.
+
+Phase 1 - Leg Prep (Willow -> Rain Form):
+- Goal: Both legs to ~90.8% (one Kuro from breaking)
+- Use: Kuro left, Kuro right to balance prep
+- Protection: Use LIGHT modifier on prepped legs to avoid breaks
+- Transition: Rain -> Oak when kata >= 5 and legs prepped
+- Note: Rain has 24 kata capacity = ~8 combos of sustained prep
+
+Phase 2 - Head Prep (Oak Form):
+- Goal: Head to ~92% (one hit from breaking)
+- Use: NERVESTRIKE (paralysis prevents parrying!) then Risingkick head
+- Order: Staff attacks FIRST (Nervestrike + staff), then kick
+  Example: COMBO <target> nervestrike kuro left risingkick head
+- Paralysis from Nervestrike stops them parrying your head attacks
+- Transition: Oak -> Gaital when BOTH legs AND head prepped
+
+Phase 3 - Kill (Gaital Form):
+- Combo 1: SWEEP + KURO (prones + breaks both legs)
+  Syntax: COMBO <target> sweep flashheel left
+- Combo 2: Flashheel right + NEEDLE + NEEDLE (breaks head + windpipe
+damage, plus breaks other leg)
+  Syntax: COMBO <target> spinkick needle needle
+- Combo 3: DISPATCH <target> (instant kill)
+- Could also Spinkick to raise head from 1 to 2 depending on Kata.
+
+If kill fails: Gaital -> Maelstrom -> Oak (cycle back for more prep)
+
+
+=== LOCK ROUTE (Affliction-Based) ===
+
+Goal: Build to riftlock and then truelock, then kill through sustained
+damage pressure.
+
+Lock Progression:
+  Softlock:   asthma + anorexia + slickness
+  Venomlock:  softlock + paralysis
+  Riftlock: Both arms broken, addiction, softlock into hard lock
+  Hardlock:   venomlock + impatience (Telepathy)
+  Truelock:   hardlock + weariness (blocks Fitness)
+
+Shikudo Affliction Sources:
+- Hiraku (Willow): anorexia + stuttering
+- Livestrike (Oak/Maelstrom): asthma
+- Ruku torso (Rain/Oak/Gaital/Maelstrom): slickness
+- Nervestrike (Oak): paralysis
+- Kuro (Rain/Oak/Gaital): weariness/lethargy
+
+Telepathy Integration:
+- Establish MINDLOCK first (required for other Telepathy)
+- MIND IMPATIENCE for hardlock (use in Rain for speed bonus!)
+- MIND BATTER for stupidity + epilepsy + dizziness stack
+
+Form Strategy:
+1. Willow: Hiraku for anorexia
+2. Rain: Ruku torso for slickness, build kata
+3. Oak: Livestrike for asthma, Nervestrike for paralysis
+4. Stay in Oak/Rain: Mind Impatience for hardlock, maintain afflictions
+
+Kill Method: Pure damage pressure on truelocked target.
+
+
+=== RIFTLOCK (Blackout Burst) - ADVANCED ===
+
+The Riftlock combines hidden Blackout bursts with affliction pressure.
+Opponent sees NOTHING during Blackout - they must DIAGNOSE to know
+state.
+
+Setup Phase (Oak):
+- Build hindrance: Nervestrike (paralysis), Ruku (clumsiness)
+- Establish mindlock
+- Transition: Oak -> Willow -> Rain when para + clumsy established
+
+Prep Phase (Rain):
+- Build to 9+ kata
+- Optional: Additional afflictions with Kuro (weariness) and Hiru
+(dizziness)
+
+Blackout Burst (Rain at 9+ kata):
+1. MIND BLACKOUT (opponent goes blind)
+2. MIND PARALYSE (stops parry - HIDDEN)
+3. Frontkick + Kuro + Ruku burst (all HIDDEN)
+   Example: COMBO target frontkick left kuro left ruku right
+
+Result State After Burst:
+- Limbs: Both arms damaged, one leg damaged
+- Afflictions: paralysis, clumsiness, healthleech, weariness, lethargy
+
+Continuation (Oak):
+1. Transition to Oak
+2. Livestrike for asthma (buried in kelp stack)
+3. Ruku torso for slickness
+4. Nervestrike for paralysis refresh
+5. MIND IMPATIENCE for hardlock
+6. Continue pressure or transition to Gaital for Dispatch
+
+Psychology: Most opponents assume you're just disrupting during Blackout
+and will CONCENTRATE. Meanwhile you've paralyzed them, burst limbs, and
+stacked afflictions. When Blackout ends, they're in terrible state with
+ZERO information about what happened.
+
+
+=== SCYTHE FORK (Gaital) - ADVANCED ===
+
+Fork the opponent into choosing between head or leg death.
+
+Setup Combo:
+1. SWEEP + break right leg to level 2 (prone + leg damage)
+2. SPINKICK + break left leg to level 3 + crushed throat
+3. Hit right leg to level 2
+
+Enemy Forced Choices:
+
+If they MENDING HEAD (for crushed throat):
+- Counter: If they restoration leg, transition Rain and push for Scythe
+
+If they RESTORATION HEAD (level 3):
+- Counter: Needle Dispatch is now available
+
+If they HOLD SALVE:
+- Counter: Mind Impatience, Mind Batter on repeat to pressure Scythe
+
+Outcome: They pick head or leg first, or die to Scythe.
+

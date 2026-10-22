@@ -16,6 +16,7 @@ Yso.affs = Yso.affs or {}
 Yso.util = Yso.util or {}
 
 local SA = Yso.selfaff
+local first_install = (SA._hooks_installed ~= true)
 
 SA.cfg = SA.cfg or {
   debug = false,
@@ -49,6 +50,18 @@ SA.meta = SA.meta or {
   last_text_at = 0,
   last_source = "",
 }
+-- Empty initialization is not evidence of a cured character. A new session
+-- requires a full list before retained rows can be authoritative again.
+SA.meta.afflictions_ready = (SA.meta.afflictions_ready == true)
+SA.meta.full_sync_confirmed = (SA.meta.full_sync_confirmed == true)
+SA.meta.awaiting_full_sync = (SA.meta.awaiting_full_sync == true)
+local bridge = Yso.curing and Yso.curing.afflictions
+if first_install and bridge and bridge.awaiting_full_sync == true then
+  SA.meta.afflictions_ready = false
+  SA.meta.full_sync_confirmed = false
+  SA.meta.awaiting_full_sync = true
+end
+SA._syncing_full = false
 
 SA._eh = SA._eh or {}
 SA._tr = SA._tr or {}
@@ -412,6 +425,9 @@ local function _set_aff_active(key, active, source, opts)
   end
 
   _mark_meta(source)
+  if source ~= "gmcp.vitals" and SA.meta.awaiting_full_sync ~= true then
+    SA.meta.afflictions_ready = true
+  end
   if was ~= is and type(raiseEvent) == "function" then
     raiseEvent("yso.self.aff.changed", key, is, source)
     if is then
@@ -420,38 +436,40 @@ local function _set_aff_active(key, active, source, opts)
       raiseEvent("yso.self.aff.lost", key, source)
     end
   end
+  -- A cure observation can prove absence even when this tracker never saw the gain.
+  if not is and was == is and type(raiseEvent) == "function" then
+    raiseEvent("yso.self.aff.cure_confirmed", key, false, source)
+  end
   return true
 end
 
 local function _parse_aff_list(payload)
   local out = {}
-  if type(payload) ~= "table" then return out end
-
-  local function add_one(v)
-    if type(v) == "string" then
-      local n = SA.normalize(v)
-      if n ~= "" then out[n] = true end
-      return
-    end
-    if type(v) == "table" then
-      local name = v.name or v.affliction or v.aff or v[1]
-      local n = SA.normalize(name)
-      if n ~= "" then out[n] = true end
+  if type(payload) ~= "table" then return nil end
+  local entries = payload
+  for _, key in ipairs({ "List", "list", "Afflictions", "afflictions" }) do
+    if payload[key] ~= nil then
+      if type(payload[key]) ~= "table" then return nil end
+      entries = payload[key]
+      break
     end
   end
-
-  if type(payload.List) == "table" then
-    for _, v in ipairs(payload.List) do add_one(v) end
-  elseif type(payload.list) == "table" then
-    for _, v in ipairs(payload.list) do add_one(v) end
-  elseif type(payload.Afflictions) == "table" then
-    for _, v in ipairs(payload.Afflictions) do add_one(v) end
-  elseif type(payload.afflictions) == "table" then
-    for _, v in ipairs(payload.afflictions) do add_one(v) end
-  else
-    for _, v in ipairs(payload) do add_one(v) end
+  local count = 0
+  for key in pairs(entries) do
+    if type(key) ~= "number" or key < 1 or key % 1 ~= 0 then return nil end
+    count = count + 1
   end
-
+  for i = 1, count do
+    local value = entries[i]
+    local name = value
+    if type(value) == "table" then
+      name = value.name or value.affliction or value.aff or value[1]
+    end
+    if type(name) ~= "string" then return nil end
+    local normalized = SA.normalize(name)
+    if normalized == "" then return nil end
+    out[normalized] = true
+  end
   return out
 end
 
@@ -466,7 +484,9 @@ end
 function SA.sync_full(list, source)
   source = tostring(source or "gmcp.full")
   local next_map = _parse_aff_list(list)
+  if not next_map then return false end
   local seen = {}
+  SA._syncing_full = true
 
   for aff in pairs(next_map) do
     _set_aff_active(aff, true, source)
@@ -480,6 +500,10 @@ function SA.sync_full(list, source)
   end
 
   _mark_meta(source)
+  SA.meta.awaiting_full_sync = false
+  SA.meta.afflictions_ready = true
+  SA.meta.full_sync_confirmed = true
+  SA._syncing_full = false
   if type(raiseEvent) == "function" then
     raiseEvent("yso.self.aff.synced", source)
   end
@@ -550,8 +574,7 @@ function SA.ingest_gmcp_aff_list()
   local pkt = gmcp and gmcp.Char and gmcp.Char.Afflictions
   if type(pkt) ~= "table" then return false end
   if type(pkt.List) == "table" or type(pkt.list) == "table" then
-    SA.sync_full(pkt, "gmcp.full")
-    return true
+    return SA.sync_full(pkt, "gmcp.full")
   end
   return false
 end
@@ -560,7 +583,7 @@ function SA.ingest_gmcp_add()
   local pkt = gmcp and gmcp.Char and gmcp.Char.Afflictions and gmcp.Char.Afflictions.Add
   if type(pkt) ~= "table" then return false end
   local name = pkt.name or pkt.affliction or pkt.aff or pkt[1]
-  if not name then return false end
+  if type(name) ~= "string" then return false end
   return SA.gain(name, "gmcp.add")
 end
 
@@ -568,7 +591,7 @@ function SA.ingest_gmcp_remove()
   local pkt = gmcp and gmcp.Char and gmcp.Char.Afflictions and gmcp.Char.Afflictions.Remove
   if type(pkt) ~= "table" then return false end
   local name = pkt.name or pkt.affliction or pkt.aff or pkt[1]
-  if not name then return false end
+  if type(name) ~= "string" then return false end
   return SA.cure(name, "gmcp.remove")
 end
 
@@ -772,6 +795,21 @@ local function _kill_tr(id)
 end
 
 function SA.install_hooks()
+  -- Install these even when upgrading a previously installed tracker.
+  if type(registerAnonymousEventHandler) == "function" then
+    local function invalidate_session()
+      SA.meta.afflictions_ready = false
+      SA.meta.full_sync_confirmed = false
+      SA.meta.awaiting_full_sync = true
+      SA.meta.last_gmcp_at = 0
+      SA.meta.last_gmcp_list_at = 0
+    end
+    for _, event in ipairs({ "sysConnectionEvent", "sysDisconnectionEvent" }) do
+      if not SA._eh[event] then
+        SA._eh[event] = registerAnonymousEventHandler(event, invalidate_session)
+      end
+    end
+  end
   if SA._hooks_installed == true then return true end
 
   if type(registerAnonymousEventHandler) == "function" then
@@ -823,7 +861,11 @@ function SA.install_hooks()
 end
 
 SA.install_hooks()
-SA.ingest_gmcp_aff_list()
+-- The cached list can predate later Add/Remove events. Replay it only when
+-- bootstrapping a new tracker, never when reloading live tracker code.
+if first_install and SA.meta.awaiting_full_sync ~= true then
+  SA.ingest_gmcp_aff_list()
+end
 SA.ingest_gmcp_vitals()
 _install_affs_proxy()
 _sync_writhe_lane_blocks("init")

@@ -36,7 +36,7 @@
 				<regexCodePropertyList>
 					<integer>1</integer>
 				</regexCodePropertyList>
-			</Trigger>
+			</Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>dealt limb damage</name><script>lb.addHit(matches.name, matches.limb, tonumber(matches.amount))</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^As your blow lands with a crunch, you perceive that you have dealt (?&lt;amount&gt;[0-9]+(?:\.[0-9]+)?)% damage to (?&lt;name&gt;[\w&apos;-]+)&apos;s (?&lt;limb&gt;.+)\.$</string><string>^As you carve into (?&lt;name&gt;[\w&apos;-]+), you perceive that you have dealt (?&lt;amount&gt;[0-9]+(?:\.[0-9]+)?)% damage to (?:his|her) (?&lt;limb&gt;.+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer><integer>1</integer></regexCodePropertyList></Trigger>
 			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>open limb hit gate</name>
 				<script></script>
@@ -56,28 +56,7 @@
 				<regexCodePropertyList>
 					<integer>2</integer>
 				</regexCodePropertyList>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>dealt limb damage</name>
-					<script>lb.addHit(matches.name, matches.limb, tonumber(matches.amount))</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand></mCommand>
-					<packageName></packageName>
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile></mSoundFile>
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^As your blow lands with a crunch, you perceive that you have dealt (?&lt;amount&gt;.+)% damage to (?&lt;name&gt;\w+)'s (?&lt;limb&gt;.+)\.$</string>
-						<string>^As you carve into (?&lt;name&gt;\w+), you perceive that you have dealt (?&lt;amount&gt;.+)% damage to (?:his|her) (?&lt;limb&gt;.+).$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
+				
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>end prompt</name>
 					<script>setTriggerStayOpen("open limb hit gate", 0)</script>
@@ -101,10 +80,7 @@
 			</Trigger>
 			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>limb salve</name>
-				<script>if lb[matches[2]] then 
-  -- Add your own highlights here!
-  lb.salve(matches[2], matches[3])
-end</script>
+				<script>lb.salve(matches[2], matches[3])</script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
@@ -121,7 +97,7 @@ end</script>
 				<regexCodePropertyList>
 					<integer>1</integer>
 				</regexCodePropertyList>
-			</Trigger>
+			</Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Shikudo Ruku observed</name><script>local B=Yso and Yso.monk and Yso.monk.limbs; if B then B.note_success(matches[2],&quot;ruku&quot;) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^([\w&apos;-]+) staggers as the staff cracks across [\w&apos;-]+ ribs, sweat breaking out upon [\w&apos;-]+ forehead\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Shikudo Kuro observed</name><script>local B=Yso and Yso.monk and Yso.monk.limbs; if B then B.note_success(matches[2],&quot;kuro&quot;) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^The staff cracks across the [\w&apos;-]+ thigh of ([\w&apos;-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Shikudo Hiraku observed</name><script>local B=Yso and Yso.monk and Yso.monk.limbs; if B then B.note_success(matches[2],&quot;hiraku&quot;) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^The staff smashes into the face of ([\w&apos;-]+) with a sickening crunch\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
 		</TriggerGroup>
 	</TriggerPackage>
 	<TimerPackage />
@@ -134,7 +110,7 @@ end</script>
 			<regex></regex>
 			<Alias isActive="yes" isFolder="no">
 				<name>^lra$</name>
-				<script>lb.resetAll(target)</script>
+				<script>lb.resetCurrentTarget()</script>
 				<command></command>
 				<packageName></packageName>
 				<regex>^lra$</regex>
@@ -142,32 +118,32 @@ end</script>
 			<Alias isActive="yes" isFolder="no">
 				<name>^lr (.+)$</name>
 				<script>local convert = {
-  head = "head",
-  hh = "head",
-  h = "head",
+  head = &quot;head&quot;,
+  hh = &quot;head&quot;,
+  h = &quot;head&quot;,
    
-  torso = "torso",
-  tt = "torso",
-  t = "torso",
+  torso = &quot;torso&quot;,
+  tt = &quot;torso&quot;,
+  t = &quot;torso&quot;,
   
-  ["right arm"] = "right arm",
-  ra = "right arm",
-  rarm = "right arm",
+  [&quot;right arm&quot;] = &quot;right arm&quot;,
+  ra = &quot;right arm&quot;,
+  rarm = &quot;right arm&quot;,
   
-  ["left arm"] = "left arm",
-  la = "left arm",
-  larm = "left arm",
+  [&quot;left arm&quot;] = &quot;left arm&quot;,
+  la = &quot;left arm&quot;,
+  larm = &quot;left arm&quot;,
   
-  ["right leg"] = "right leg",
-  rl = "right leg",
-  rleg = "right leg",
+  [&quot;right leg&quot;] = &quot;right leg&quot;,
+  rl = &quot;right leg&quot;,
+  rleg = &quot;right leg&quot;,
   
-  ["left leg"] = "left leg",
-  ll = "left leg",
-  lleg = "left leg",
+  [&quot;left leg&quot;] = &quot;left leg&quot;,
+  ll = &quot;left leg&quot;,
+  lleg = &quot;left leg&quot;,
 }
 
-if convert[matches[2]] and target and lb[target] then
+if convert[matches[2]] and target and lb[lb.normalizeName(target)] then
   lb.resetLimb(target, convert[matches[2]])
 end</script>
 				<command></command>
@@ -196,113 +172,120 @@ target = matches[2]:lower():title()
 			<Script isActive="yes" isFolder="no">
 				<name>limb init</name>
 				<packageName></packageName>
-				<script>lb = lb or {}
-
-function lb.initTarget(name)
-  name = name:lower():title()
-  
-  lb[name] = lb[name] or {}
-  lb[name].t = lb[name].t or {}
-  lb[name].hits = lb[name].hits or {
-    head = 0,
-    torso = 0,
-    ["left arm"] = 0,
-    ["right arm"] = 0,
-    ["left leg"] = 0,
-    ["right leg"] = 0,
-  }
-  
-  raiseEvent("limb hits updated", name, "all")
+				<script>-- Maintained limb.1.2 core. Keep lb[name].hits/t and public methods compatible.
+lb=lb or {}
+local keys={&apos;head&apos;,&apos;torso&apos;,&apos;left arm&apos;,&apos;right arm&apos;,&apos;left leg&apos;,&apos;right leg&apos;}
+local aliases={head=&apos;head&apos;,torso=&apos;torso&apos;,leftarm=&apos;left arm&apos;,rightarm=&apos;right arm&apos;,leftleg=&apos;left leg&apos;,rightleg=&apos;right leg&apos;}
+function lb.normalizeName(name)
+  name=tostring(name or &apos;&apos;):gsub(&apos;^%s+&apos;,&apos;&apos;):gsub(&apos;%s+$&apos;,&apos;&apos;):lower()
+  if not name:match(&quot;^[%a%d_&apos;-]+$&quot;) then return nil end
+  return name:sub(1,1):upper()..name:sub(2)
 end
-
-function lb.echo(str)
-  cecho("&lt;turquoise&gt;[Limb]: &lt;white&gt;" .. str .. "\n")
+function lb.normalizeLimb(limb)
+  return aliases[tostring(limb or &apos;&apos;):lower():gsub(&apos;[%s_]&apos;,&apos;&apos;)]
+end
+local function event(name,limb,amount,source)
+  if type(raiseEvent)==&apos;function&apos; then
+    raiseEvent(&apos;limb hits updated&apos;,name,limb,amount)
+    raiseEvent(&apos;yso.limb.sample&apos;,name,limb,amount,source)
+  end
+end
+function lb.echo(text) if type(cecho)==&apos;function&apos; then cecho(&apos;&lt;turquoise&gt;[Limb]: &lt;white&gt;&apos;..text..&apos;\n&apos;) end end
+function lb.initTarget(name)
+  name=lb.normalizeName(name);if not name then return false end
+  lb[name]=lb[name] or {}
+  local row=lb[name];row.hits=row.hits or {};row.t=row.t or {}
+  for _,key in ipairs(keys) do if row.hits[key]==nil then row.hits[key]=0 end end
+  row.meta=row.meta or {source=&apos;unverified&apos;,calibrated=false,uncertain={},samples=0}
+  -- Historical calibrated=true does not prove that every limb started at zero.
+  row.meta.known=row.meta.known or {};row.meta.uncertain=row.meta.uncertain or {}
+  event(name,&apos;all&apos;,nil,&apos;init&apos;);return row
+end
+local function cancel(id) if id and type(killTimer)==&apos;function&apos; then killTimer(id) end end
+function lb.addHit(name,limb,amount)
+  name=lb.normalizeName(name);limb=lb.normalizeLimb(limb);amount=tonumber(amount)
+  if not name or not limb or not amount or amount~=amount or amount&lt;0 or amount==math.huge then return false end
+  local row=lb.initTarget(name)
+  row.hits[limb]=row.hits[limb]+amount
+  row.meta.samples=row.meta.samples+1;row.meta.calibrated=true;row.meta.source=&apos;game_reported&apos;
+  cancel(row.t[limb])
+  if type(tempTimer)==&apos;function&apos; then
+    row.t[limb]=tempTimer(180,function() lb.resetLimb(name,limb,&apos;expired&apos;) end)
+  end
+  if type(cecho)==&apos;function&apos; then cecho(&apos; &lt;yellow&gt;(&apos;..row.hits[limb]..&apos;%)&apos;) end
+  event(name,limb,amount,&apos;game_reported&apos;);return true
+end
+function lb.resetLimb(name,limb,source)
+  name=lb.normalizeName(name);limb=lb.normalizeLimb(limb)
+  local row=name and lb[name]
+  if not row or not limb then return false end
+  row.meta=row.meta or {source=&apos;unverified&apos;,uncertain={},samples=0}
+  row.meta.known=row.meta.known or {};row.meta.uncertain=row.meta.uncertain or {}
+  source=type(source)==&apos;string&apos; and source or &apos;manual_reset&apos;
+  row.hits[limb]=0;cancel(row.t[limb]);row.t[limb]=nil
+  if source==&apos;manual_reset&apos; or source==&apos;confirmed_recovery&apos; then
+    row.meta.uncertain[limb]=nil;row.meta.known[limb]=true;row.meta.calibrated=true
+  else row.meta.uncertain[limb]=true end
+  row.meta.source=source
+  event(name,limb,0,source);return true
+end
+function lb.confirmRecovery(name,limb) return lb.resetLimb(name,limb,&apos;confirmed_recovery&apos;) end
+function lb.salve(name,area)
+  name=lb.normalizeName(name);local row=name and lb[name]
+  local groups={head={&apos;head&apos;},torso={&apos;torso&apos;},arms={&apos;left arm&apos;,&apos;right arm&apos;},legs={&apos;left leg&apos;,&apos;right leg&apos;}}
+  local limbs=groups[tostring(area or &apos;&apos;):lower()]
+  if not row or not limbs then return false end
+  row.meta=row.meta or {source=&apos;unverified&apos;,uncertain={},samples=0}
+  for _,limb in ipairs(limbs) do row.meta.uncertain[limb]=true end
+  row.meta.source=&apos;salve_observed&apos;
+  event(name,tostring(area),nil,&apos;salve_observed&apos;)
+  cancel(row.t.cure)
+  if type(tempTimer)==&apos;function&apos; then
+    row.t.cure=tempTimer(3.7,function()
+      row.t.cure=nil
+      for _,limb in ipairs(limbs) do
+        if row.hits[limb]&gt;=100 then lb.resetLimb(name,limb,&apos;salve_estimate&apos;);break end
+      end
+    end)
+  end
+  return true
+end
+function lb.resetAll(name)
+  name=lb.normalizeName(name);if not name then return false end
+  local row=lb.initTarget(name);cancel(row.t.cure);row.t.cure=nil
+  for _,limb in ipairs(keys) do lb.resetLimb(name,limb,&apos;manual_reset&apos;) end
+  return true
+end
+function lb.resetCurrentTarget()
+  local resolver=Yso and Yso.get_target
+  local name
+  if type(resolver)==&apos;function&apos; then name=resolver() else name=rawget(_G,&apos;target&apos;) end
+  name=lb.normalizeName(name)
+  if not name then lb.echo(&apos;Reset failed: no valid current target.&apos;);return false end
+  if not lb.resetAll(name) then lb.echo(&apos;Reset failed for &apos;..name..&apos;.&apos;);return false end
+  lb.echo(&apos;Reset &apos;..name..&apos;: all six limbs known at 0% (manual baseline).&apos;)
+  return true
 end</script>
 				<eventHandlerList />
 			</Script>
 			<Script isActive="yes" isFolder="no">
 				<name>limb management</name>
 				<packageName></packageName>
-				<script>function lb.addHit(name, ltar, amount)
-  name = name:lower():title()
-  if not lb[name] then lb.initTarget(name) end
-  if not lb[name].hits[ltar] then 
-    cecho("&lt;red&gt;(!) Limb not found: " .. tostring(ltar) .. ".\n")
-    return
-  end
-  lb[name].hits[ltar] = lb[name].hits[ltar] + amount
-  if lb[name].t[ltar] then killTimer(lb[name].t[ltar]) end
-  lb[name].t[ltar] = tempTimer(180, [[
-    lb.resetLimb("]] .. name .. [[", "]] .. ltar .. [[")
-    lb["]] .. name .. [["].t["]] .. ltar .. [["] = nil
-  ]])
-  cecho(" " .. ((lb[name].hits[ltar] &gt; 100 and "&lt;firebrick&gt;") or "&lt;ansi_yellow&gt;") .. "("
-            .. ((lb[name].hits[ltar] &gt; 100 and "&lt;orange_red&gt;") or "&lt;yellow&gt;") .. lb[name].hits[ltar] .. "%"
-            .. ((lb[name].hits[ltar] &gt; 100 and "&lt;firebrick&gt;") or "&lt;ansi_yellow&gt;") .. ")")    
-  raiseEvent("limb hits updated", name, ltar, amount)
-end
-
-function lb.resetLimb(name, ltar)
-  name = name:lower():title()
-  if not lb[name].hits[ltar] then
-    cecho("&lt;red&gt;(!) Limb not found: " .. tostring(ltar) .. ".\n")
-    return
-  end
-  lb[name].hits[ltar] = 0
-  lb.echo("Reset " .. name .. ((name:sub(-1) == "s" and "'") or "'s") .. " " .. ltar .. ".")
-end
-
-function lb.salve(name, area)
-  lb[name].t.cure = tempTimer(3.7, [[
-    local convert = {
-      head = {"head"},
-      torso = {"torso"},
-      arms = {[1] = "left arm", [2] = "right arm"},
-      legs = {[1] = "left leg", [2] = "right leg"},
-    }
-    if not convert["]] .. area .. [["] then return end
-    for _, ltar in ipairs(convert["]] .. area .. [["]) do 
-      if lb["]] .. name .. [["].hits[ltar] &gt;= 100 then 
-        if lb["]] .. name .. [["].t.cure then killTimer(lb["]] .. name .. [["].t.cure) end
-        lb.resetLimb("]] .. name .. [[", ltar, true)
-        if lb["]] .. name .. [["].t[ltar] then
-          killTimer(lb["]] .. name .. [["].t[ltar])
-          lb["]] .. name .. [["].t[ltar] = nil
-        end
-        lb["]] .. name .. [["].t.cure = nil
-        break
-      end
-    end
-  ]])
-end
-
-function lb.resetAll(name)
-  for _, v in ipairs({"head", "torso", "left arm", "right arm", "left leg", "right leg"}) do 
-    if lb[name] then
-      if lb[name].hits[v] &gt; 0 then 
-        lb.resetLimb(name, v)
-      end
-      if lb[name].t[v] then 
-        killTimer(lb[name].t[v])
-        lb[name].t[v] = nil
-      end
-    end
-  end
-end</script>
+				<script>-- Maintained methods are embedded in limb init from Monk/limb_tracker.lua.</script>
 				<eventHandlerList />
 			</Script>
 			<Script isActive="yes" isFolder="no">
 				<name>limb prompt</name>
 				<packageName></packageName>
 				<script>function lb.prompt()
-  if not lb[target] then return "" end
+  if not lb[lb.normalizeName(target)] then return &quot;&quot; end
   local ret = {}
   -- CHANGE ORDER BELOW! CHANGE ORDER BELOW! CHANGE ORDER BELOW! CHANGE ORDER BELOW! CHANGE ORDER BELOW! CHANGE ORDER BELOW! --
-  for _, v in ipairs({"head", "torso", "left arm", "right arm", "left leg", "right leg"}) do 
+  for _, v in ipairs({&quot;head&quot;, &quot;torso&quot;, &quot;left arm&quot;, &quot;right arm&quot;, &quot;left leg&quot;, &quot;right leg&quot;}) do 
   -----------------------------------------------------------------------------------------------------------------------------
-    table.insert(ret, ((lb[target].hits[v] &gt; 100 and "&lt;red&gt;") or ((lb[target].hits[v] &gt; 0 and "&lt;orange&gt;") or "&lt;grey&gt;")) .. lb[target].hits[v])
+    table.insert(ret, ((lb[lb.normalizeName(target)].hits[v] &gt; 100 and &quot;&lt;red&gt;&quot;) or ((lb[lb.normalizeName(target)].hits[v] &gt; 0 and &quot;&lt;orange&gt;&quot;) or &quot;&lt;grey&gt;&quot;)) .. lb[lb.normalizeName(target)].hits[v])
   end
-  return "&lt;DimGrey&gt;[" .. table.concat(ret, "&lt;DimGrey&gt;|") .. "&lt;DimGrey&gt;]"
+  return &quot;&lt;DimGrey&gt;[&quot; .. table.concat(ret, &quot;&lt;DimGrey&gt;|&quot;) .. &quot;&lt;DimGrey&gt;]&quot;
 end</script>
 				<eventHandlerList />
 			</Script>

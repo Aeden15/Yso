@@ -433,6 +433,8 @@ local function _snapshot(tgt)
     target = tgt,
     affs = {
       "waterbonds",
+      "nausea",
+      "weariness",
       "frozen",
       "frostbite",
       "clumsiness",
@@ -448,8 +450,6 @@ local function _snapshot(tgt)
       "anorexia",
       "dizziness",
       "stupidity",
-      "nausea",
-      "weariness",
       "ablaze",
     },
     pending_slots = PENDING_SLOTS,

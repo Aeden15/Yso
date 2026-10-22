@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$doc = [xml](Get-Content -LiteralPath (Join-Path $root 'mudlet packages/Yso system.xml') -Raw)
+$doc = [xml]([IO.File]::ReadAllText((Join-Path $root 'mudlet packages/Yso system.xml')))
 $scratch = Join-Path ([IO.Path]::GetTempPath()) ('yso-shikudo-package-' + [guid]::NewGuid())
 $mapping = [ordered]@{
   'Yso modes' = 'Yso/xml/yso_modes.lua'

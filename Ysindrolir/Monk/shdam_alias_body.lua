@@ -1,5 +1,5 @@
 -- ^shdam$: embedded implementation; no runtime file loading.
-local revision = 'a9790ada4ef361523068f1050d557364279b6acd9fd5ef4fdf89785faafa090c'
+local revision = 'dac6055270daee634e055dc8de424a0c79a6e3919e36252430ce47bc8b9b4c93'
 local installed = Yso and Yso.off and Yso.off.monk and Yso.off.monk.group_damage
 if not installed or installed._source_revision ~= revision then
   (function()
@@ -83,13 +83,19 @@ function M.target_in_room(tgt)
   tgt=trim(tgt):lower()
   if M.state.melee_missing==tgt then return false end
   if M.state.room_snapshot_invalid then return nil end
-  if type(M.state.room_players)=='table' then return M.state.room_players[tgt]==true end
+  if type(M.state.room_players)=='table' and M.state.room_players[tgt]~=nil then return M.state.room_players[tgt]==true end
   local players=Legacy and Legacy.Room and Legacy.Room.players
   if type(players)=='table' then
     for name,present in pairs(players) do if trim(name):lower()==tgt then return present==true end end
-    return false
+    return nil
   end
   return nil
+end
+function M.note_local_target_activity(name)
+  name=trim(name):lower()
+  if name~=current_target():lower() then return false end
+  M.state.room_players=M.state.room_players or {};M.state.room_players[name]=true
+  M.state.melee_missing=nil;M.state.room_snapshot_invalid=false;return true
 end
 local function has_aff(tgt, aff)
   -- AK's current-target predicate prevents old target scores being reused.
@@ -184,6 +190,11 @@ local function pending_blocks()
     (p.kind=='combo' and p.recovered['left arm'] and p.recovered['right arm'] and p.recovered.legs)
   local lane_ready=ready()
   if mental_kind(p.kind) then recovered=p.eq_recovered; lane_ready=eq_ready() end
+  if p.kind=='mindlock' then
+    -- Locking is a confirmation handshake, not a fabricated BAL/EQ spend.
+    confirmed=(L and L.is_locked(p.target)==true) or trim(p.target):lower()~=current_target():lower()
+    recovered=confirmed
+  end
   if confirmed and recovered and lane_ready then
     M.state.pending=nil; M.state.cooldown=nil; return false
   end
@@ -379,7 +390,8 @@ if type(registerAnonymousEventHandler)=='function' then
     ['gmcp.Room.AddPlayer']=function()
       local entry=gmcp and gmcp.Room and gmcp.Room.AddPlayer
       local name=type(entry)=='table' and entry.name or entry
-      if type(name)=='string' and M.state.room_players then
+      if type(name)=='string' then
+        M.state.room_players=M.state.room_players or {}
         M.state.room_players[trim(name):lower()]=true
         if trim(name):lower()==current_target():lower() then M.state.melee_missing=nil end
       end
@@ -388,7 +400,10 @@ if type(registerAnonymousEventHandler)=='function' then
     ['gmcp.Room.RemovePlayer']=function()
       local entry=gmcp and gmcp.Room and gmcp.Room.RemovePlayer
       local name=type(entry)=='table' and entry.name or entry
-      if type(name)=='string' and M.state.room_players then M.state.room_players[trim(name):lower()]=nil end
+      if type(name)=='string' and M.state.room_players then
+        M.state.room_players[trim(name):lower()]=false
+        if trim(name):lower()==current_target():lower() then M.state.melee_missing=trim(name):lower() end
+      end
       Yso.mode.nudge_route_loop(M.key,'room_remove_player')
     end,
     ['gmcp.Room.Info']=function() M.state.room_players=nil; M.state.room_snapshot_invalid=true; M.state.melee_missing=nil end,
