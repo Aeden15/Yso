@@ -9,16 +9,29 @@ $helper=$doc.SelectSingleNode('//Script[name="Apostate hunting Soulstorm"]')
 $lua=[Collections.Generic.List[string]]::new()
 $lua.Add(@'
 local sent,events,timers={},{},{}
-local callbacks={}
+local callbacks,handlers={},{}
+local nextHandler=0
 local clock=1000
 getEpoch=function() return clock end
 send=function(s) sent[#sent+1]=s end
 cecho=function() end
 registerAnonymousEventHandler=function(e,f)
- events[e]=f;callbacks[e]=callbacks[e] or {};table.insert(callbacks[e],f);return e
+ nextHandler=nextHandler+1
+ events[e]=f;callbacks[e]=callbacks[e] or {};callbacks[e][nextHandler]=f
+ handlers[nextHandler]=e;return nextHandler
 end
-killAnonymousEventHandler=function() end
-raiseEvent=function() end
+killAnonymousEventHandler=function(id)
+ local e=handlers[id];if e then callbacks[e][id]=nil;handlers[id]=nil end
+end
+raiseEvent=function(e,...)
+ local pending={};for id,f in pairs(callbacks[e] or {}) do pending[id]=f end
+ for _,f in pairs(pending) do
+  if type(f)=='string' then
+   local resolved=_G;for key in f:gmatch('[^.]+') do resolved=resolved[key] end;f=resolved
+  end
+  f(e,...)
+ end
+end
 tempTimer=function(_,f) timers[#timers+1]=f;return #timers end
 killTimer=function() end
 table.contains=function(t,value) for _,v in pairs(t or {}) do if v==value then return true end end return false end
@@ -33,20 +46,34 @@ $lua.Add($basher.script)
 if($helper){$lua.Add('assert(load([====['+$helper.script+']====]))()')}
 $lua.Add('local toggle=function() '+$toggle.script+"`n"+'end')
 $lua.Add('local triggers={}')
+$slain=$doc.SelectSingleNode('//Trigger[name="Mob Slain"]')
+$lua.Add('triggers.slain=function(label) matches={"",label};'+$slain.script+' end')
 foreach($kind in @('confirmed','already active','faded')){
  $trigger=$doc.SelectSingleNode('//Trigger[name="Apostate Soulstorm '+$kind+'"]')
  if($trigger){$lua.Add('triggers["'+$kind+'"]=function(label) matches={"",label};'+$trigger.script+' end')}
 }
 $lua.Add(@'
-Basher_Setup()
+-- Legacy_Load restores data-only tables AFTER all package scripts initialize.
+-- The runtime must rebind its functions to the restored tables before setup.
+local sentinelCalls=0
+local sentinel=registerAnonymousEventHandler('unrelated-event',function() sentinelCalls=sentinelCalls+1 end)
+Legacy.Basher={Targets={Test={'a massive gour'}},Soulstorm={pending=true,handlers={['gmcp.Char.Status']=sentinel}}}
+local loaded,loadError=pcall(raiseEvent,'LegacyLoaded')
+assert(loaded,'saved-profile startup must finish: '..tostring(loadError))
+raiseEvent('unrelated-event')
+assert(sentinelCalls==1,'restored handler IDs must not unregister unrelated runtime events')
+assert(table.size(callbacks.sysDisconnectionEvent)==1,'saved restore must replace old helper callbacks')
 local H=assert(Legacy.Basher.Soulstorm,'missing Soulstorm startup integration')
 local S=Legacy.Settings.Basher
 local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
+eq(S.currentTar,'')
+assert(type(S.possibleTargets)=='table','fresh startup must initialize target candidates')
 local function queues()
  local out={};for _,s in ipairs(sent) do if s:match('^queue ') then out[#out+1]=s end end;return out
 end
 local function reset(class)
  H.reset();sent={};attacked=false;sendCount=0
+ S._removedHuntTarget=nil;S.roomMobs=nil;S.mobRoom=nil
  gmcp.Char.Status.class=class or 'Apostate';gmcp.Char.Vitals={hp='5000',eq='1',bal='1'}
  gmcp.IRE.Target.Set='214001';gmcp.IRE.Target.Info={npc=true,hpperc='100',short_desc='a massive gour'}
  gmcp.Room.Info.num=1
@@ -66,7 +93,7 @@ toggle();eq(S.status,false);sent={};toggle();Legacy.Basher.Attack()
 eq(queues()[1],'queue add freestand basher') -- Retoggle skips a confirmed active effect.
 triggers.faded('A massive gour');eq(H.effect.active,false)
 S.queued=false;sent={};Legacy.Basher.Attack();eq(queues()[1],'queue add freestand basher')
-toggle();toggle();sent={};Legacy.Basher.Attack();eq(queues()[1],'queue addclear freestand soulstorm 214001')
+toggle();toggle();sent={};Legacy.Basher.Attack();eq(queues()[1],'queue add freestand basher')
 triggers['already active']('a massive gour');eq(H.effect.active,true)
 triggers.faded('a different creature');eq(H.effect.active,true)
 -- Readiness and existing basher safety gates hold the opener until legal.
@@ -113,15 +140,100 @@ Legacy.Basher.Attack();eq(S.status,false);eq(H.pending,false);eq(#queues(),0)
 Legacy.Basher.queueAttackPackage=original
 reset();triggers.confirmed('a massive gour');events['sysDisconnectionEvent']();eq(H.effect,nil)
 reset();triggers.confirmed('a massive gour');H.stop();gmcp.Room.Info.num=2
-for _,fn in ipairs(callbacks['gmcp.Room.Info'] or {}) do if type(fn)=='function' then fn() end end
+raiseEvent('gmcp.Room.Info')
 eq(H.effect,nil);gmcp.Room.Info.num=1;toggle();Legacy.Basher.Attack()
 eq(queues()[1],'queue addclear freestand soulstorm 214001')
 reset();triggers.confirmed('a massive gour');local expires=H.effect.expires_at
 clock=clock+20;triggers['already active']('a massive gour');eq(H.effect.expires_at,expires)
 clock=clock+20;toggle();Legacy.Basher.Attack()
-eq(queues()[1],'queue addclear freestand soulstorm 214001') -- Missed fade cannot cache forever.
+eq(queues()[1],'queue add freestand basher') -- No refresh on a surviving target, even after expiry.
 reset();triggers.confirmed('a massive gour');gmcp.Char.Status.class='Magi';events['gmcp.Char.Status']();eq(H.effect,nil)
+-- Replay Legacy's actual target selector and slain trigger through three mobs.
+reset();S.roomMobs=nil;S.mobRoom=nil;S.currentTar='';gmcp.IRE.Target.Set=''
+gmcp.Char.Items.List.items={
+ {id='214001',attrib='m',name='a massive gour'},
+ {id='214002',attrib='m',name='a massive gour'},
+ {id='214003',attrib='m',name='a massive gour'},
+}
+toggle()
+local opened={}
+for index=1,3 do
+ local selected=S.currentTar
+ assert(selected~='' and not opened[selected],'Legacy must select a different living mob')
+ gmcp.IRE.Target.Set=selected
+ gmcp.IRE.Target.Info={id=selected,npc=true,hpperc='100',short_desc='a massive gour'}
+ sent={};raiseEvent('gmcp.Char.Vitals')
+ eq(queues()[1],'queue addclear freestand soulstorm '..selected)
+ eq(queues()[2],'queue add freestand basher');eq(#queues(),2)
+ opened[selected]=true;triggers.confirmed('a massive gour')
+ S.queued=false;sent={};raiseEvent('gmcp.Char.Vitals')
+ eq(queues()[1],'queue add freestand basher')
+ triggers.slain('a massive gour')
+ eq(H.effect,nil);eq(S.possibleTargets[selected],nil)
+ assert(S.currentTar~=selected,'slain target must be removed before Legacy selects again')
+ -- GMCP may still describe the slain mob until the server confirms retargeting.
+ sent={};raiseEvent('gmcp.Char.Vitals');eq(#queues(),0)
+end
+eq(table.size(opened),3)
+-- Removing an old mob before its slain line must not clear its selected successor.
+reset();S.roomMobs=nil;S.mobRoom=nil
+gmcp.Char.Items.List.items={
+ {id='214001',attrib='m',name='a massive gour'},
+ {id='214002',attrib='m',name='a massive gour'},
+}
+toggle();raiseEvent('gmcp.Char.Vitals');triggers.confirmed('a massive gour')
+gmcp.Char.Items.Remove={location='room',item={id='214001',name='a massive gour'}}
+raiseEvent('gmcp.Char.Items.Remove');eq(H.effect,nil);eq(S.currentTar,'214002')
+gmcp.IRE.Target.Set='214002';gmcp.IRE.Target.Info={id='214002',npc=true,hpperc='100',short_desc='a massive gour'}
+-- The delayed slain line belongs to the same output batch, before next Vitals.
+triggers.slain('a massive gour');eq(S.currentTar,'214002')
+sent={};raiseEvent('gmcp.Char.Vitals');eq(queues()[1],'queue addclear freestand soulstorm 214002')
+triggers.confirmed('a massive gour')
+-- Returning to an opened living target must not issue another opener.
+gmcp.Char.Items.Add={location='room',item={id='214003',attrib='m',name='another gour'}}
+raiseEvent('gmcp.Char.Items.Add')
+S.currentTar='214003';gmcp.IRE.Target.Set='214003';gmcp.IRE.Target.Info={id='214003',npc=true,hpperc='100',short_desc='another gour'}
+S.queued=false;sent={};raiseEvent('gmcp.Char.Vitals');eq(queues()[1],'queue addclear freestand soulstorm 214003')
+S.currentTar='214002';gmcp.IRE.Target.Set='214002';gmcp.IRE.Target.Info={id='214002',npc=true,hpperc='100',short_desc='a massive gour'}
+S.queued=false;sent={};raiseEvent('gmcp.Char.Vitals');eq(queues()[1],'queue add freestand basher')
+-- A flee with no slain line must not steal a later same-named target's death.
+reset();S.roomMobs=nil;S.mobRoom=nil
+gmcp.Char.Items.List.items={
+ {id='214001',attrib='m',name='a massive gour'},
+ {id='214002',attrib='m',name='a massive gour'},
+}
+toggle();raiseEvent('gmcp.Char.Vitals');triggers.confirmed('a massive gour')
+gmcp.Char.Items.Remove={location='room',item={id='214001',name='a massive gour'}}
+raiseEvent('gmcp.Char.Items.Remove');eq(S.currentTar,'214002')
+gmcp.IRE.Target.Set='214002';gmcp.IRE.Target.Info={id='214002',npc=true,hpperc='100',short_desc='a massive gour'}
+sent={};raiseEvent('gmcp.Char.Vitals');triggers.confirmed('a massive gour')
+triggers.slain('a massive gour');eq(S.currentTar,'');eq(H.effect,nil);eq(S.possibleTargets['214002'],nil)
+gmcp.Char.Items.List.items={{id='214001',attrib='m',name='a massive gour'}}
+-- Use registered event handlers, with no helper calls to manually drive Attack.
+reset('Magi');gmcp.IRE.Target.Set='';S.currentTar='';S.possibleTargets={}
+raiseEvent('gmcp.Char.Items.List');eq(next(S.possibleTargets),nil)
+sent={};toggle()
+eq(S.currentTar,'214001');assert(table.concat(sent,'|'):find('st 214001',1,true),'hunt must select a mob already in the room')
+gmcp.IRE.Target.Set='214001';sent={};raiseEvent('gmcp.Char.Vitals')
+eq(queues()[1],'queue add freestand basher')
+toggle();sent={};raiseEvent('gmcp.Char.Vitals');eq(#queues(),0)
+-- Unknown status is off, not an instruction to deactivate hunting again.
+S.status=nil;toggle();eq(S.status,true)
+-- Room additions/removals use ID keys and the current area's name priorities.
+gmcp.Char.Items.List.items={};raiseEvent('gmcp.Char.Items.List')
+S.currentTar='';gmcp.IRE.Target.Set='';sent={}
+gmcp.Char.Items.Add={location='room',item={id=214002,attrib='mx',name='A massive gour'}}
+raiseEvent('gmcp.Char.Items.Add');eq(S.possibleTargets['214002'],'A massive gour')
+eq(S.currentTar,'214002');eq(Legacy.Settings.Basher.mobCount(),1)
+gmcp.Char.Items.Remove={location='room',item={id=214002,name='A massive gour'}}
+raiseEvent('gmcp.Char.Items.Remove');eq(S.possibleTargets['214002'],nil)
+eq(Legacy.Settings.Basher.mobCount(),0)
+S.Ignore={'a massive gour'};raiseEvent('gmcp.Char.Items.Add');eq(S.possibleTargets['214002'],nil)
+S.Ignore={};gmcp.Char.Items.List.items={{id='214001',attrib='mx',name='a massive gour'}}
+raiseEvent('gmcp.Char.Items.List');eq(S.possibleTargets['214001'],'a massive gour')
 print('PASS Soulstorm startup, trigger confirmations, expiry, readiness, target guards, other classes and queue order')
+print('PASS saved-profile restore, fresh target initialization, hunt activation/deactivation and room mob events')
+print('PASS per-denizen openers, three identical-name targets, slain cleanup, reversed removal order and no survivor refresh')
 '@)
 ($lua -join "`n") | & lua -
 if($LASTEXITCODE -ne 0){throw 'Apostate hunting behavior checks failed'}

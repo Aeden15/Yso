@@ -1,4 +1,8 @@
--- Embedded in Legacy Basher. One opener per hunt activation; user-confirmed 40s duration.
+-- Embedded in Legacy Basher. One opener per selected denizen; 40s effect duration.
+-- Keep the installer outside Legacy: table.load restores data but not functions.
+LegacyBasher_SoulstormHandlers=LegacyBasher_SoulstormHandlers or {}
+local handlers=LegacyBasher_SoulstormHandlers
+function LegacyBasher_InstallSoulstorm()
 Legacy=Legacy or {};Legacy.Basher=Legacy.Basher or {}
 local B=Legacy.Basher
 B.Soulstorm=B.Soulstorm or {}
@@ -37,24 +41,34 @@ function H.begin()
  H.attempt=nil
 end
 function H.stop() H.pending=false;H.attempt=nil end
-function H.reset() H.stop();H.effect=nil end
+function H.reset() H.stop();H.effect=nil;H.targets={} end
+local function key(id,room_id) return tostring(room_id or room())..':'..tostring(id) end
+function H.forget(id,room_id)
+ id=tostring(id or '')
+ local where=tostring(room_id or room())
+ if H.targets then H.targets[key(id,where)]=nil end
+ if H.effect and H.effect.id==id and H.effect.room==where then H.effect=nil end
+ if H.attempt and H.attempt.id==id and H.attempt.room==where then H.attempt=nil end
+end
 function H.before_attack(id,info,is_denizen)
  if not H.pending or not apostate() or settings().status~=true then return false end
  if not is_denizen or settings().shield==true then return false end
  local ctx=current()
  if not ctx or ctx.id~=tostring(id) then return false end
+ -- Wait for the server to confirm Legacy's newly selected target.
+ if tostring(settings().currentTar or '')~=ctx.id then return true end
+ if info and info.id and tostring(info.id)~=ctx.id then return true end
  local health=tonumber((tostring((info or {}).hpperc or ''):gsub('%%','')))
- if health and health<=0 then return false end
+ if health and health<=0 then return true end
  local effect=H.effect
  if effect and effect.expires_at and now()>=effect.expires_at then effect.active=false end
- if effect and effect.active and effect.id==ctx.id and effect.room==ctx.room then
-  H.pending=false;return false
- end
+ H.targets=H.targets or {}
+ if H.targets[key(ctx.id,ctx.room)] then return false end
  if type(B.queueAttackPackage)~='function' then return true end
  H.attempt=ctx
  local ok,queued=pcall(B.queueAttackPackage,'addclear','soulstorm '..ctx.id,true,'apostate-soulstorm-opener')
  if ok and queued==true then
-  H.pending=false
+  H.targets[key(ctx.id,ctx.room)]=ctx
   settings().queued=true
   sendCount=(tonumber(sendCount) or 0)+1
  elseif not ok then
@@ -80,6 +94,8 @@ function H.note(kind,name)
  if not ctx or ctx.name~=name then return false end
  local attempt=H.attempt
  if attempt and (attempt.id~=ctx.id or attempt.room~=ctx.room or (attempt.name~='' and attempt.name~=name)) then return false end
+ H.targets=H.targets or {}
+ if settings().status==true and not attempt and not H.targets[key(ctx.id,ctx.room)] then return false end
  local effect=H.effect
  local expires_at=now()+40
  -- "Still profanes" confirms presence, not a new cast or a refreshed duration.
@@ -87,21 +103,30 @@ function H.note(kind,name)
   expires_at=effect.expires_at
  end
  H.effect={id=ctx.id,name=name,room=ctx.room,active=true,expires_at=expires_at}
- H.pending=false;H.attempt=nil
+ H.targets[key(ctx.id,ctx.room)]=ctx
+ H.attempt=nil
  return true
 end
 -- Reimport replaces event handlers instead of multiplying reset callbacks.
+H.reset()
+local tracked_room=room()
 if type(registerAnonymousEventHandler)=='function' then
- H.handlers=H.handlers or {}
+ -- Saved IDs belong to another runtime; never use them to unregister handlers.
+ H.handlers=nil
  for event,fn in pairs({
   ['sysDisconnectionEvent']=H.reset,
   ['gmcp.Char.Status']=function() if not apostate() then H.reset() end end,
   ['gmcp.Room.Info']=function()
-   if H.effect and H.effect.room~=room() then H.effect=nil end
+   if tracked_room~=room() then
+    H.reset();tracked_room=room()
+    if settings().status==true then H.begin() end
+   end
   end,
  }) do
-  if H.handlers[event] and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(H.handlers[event]) end
-  H.handlers[event]=registerAnonymousEventHandler(event,fn)
+  if handlers[event] and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(handlers[event]) end
+  handlers[event]=registerAnonymousEventHandler(event,fn)
  end
 end
 return H
+end
+return LegacyBasher_InstallSoulstorm()

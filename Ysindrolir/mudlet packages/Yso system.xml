@@ -9908,6 +9908,58 @@ end</script>
 						<packageName />
 						<regex>^blac([whc])$</regex>
 					</Alias>
+<Alias isActive="yes" isFolder="no">
+						<name>Horrify(fear denizen)</name>
+						<script>-- Read entries such as "Rage: 35" from GMCP.
+local status = gmcp and gmcp.Char and gmcp.Char.Status
+local class = tostring(status and status.class or ""):lower()
+
+if class ~= "apostate" then
+    cecho("\n&lt;yellow&gt;Horrify requires Apostate class.\n")
+    return
+end
+local stats = gmcp and gmcp.Char
+    and gmcp.Char.Vitals
+    and gmcp.Char.Vitals.charstats
+
+local rage
+
+for _, stat in ipairs(stats or {}) do
+    local value = tostring(stat):match("^%s*Rage:%s*(%d+)")
+    if value then
+        rage = tonumber(value)
+        break
+    end
+end
+
+if not rage then
+    cecho("\n&lt;red&gt;Horrify: rage data unavailable.\n")
+    return
+end
+
+if rage &lt; 29 then
+    cecho("\n&lt;yellow&gt;Horrify needs 29 rage. Current: "
+        .. rage .. ".\n")
+    return
+end
+
+-- Hunting uses the server target; the combat target can still name a player.
+local serverTarget = gmcp and gmcp.IRE and gmcp.IRE.Target
+local victim = tostring(serverTarget and serverTarget.Set or ""):match("^%s*(.-)%s*$")
+if victim == "" then
+    victim = tostring(target or ""):match("^%s*(.-)%s*$")
+end
+
+if victim == "" then
+    cecho("\n&lt;red&gt;Horrify: set a target first.\n")
+    return
+end
+
+send("stare " .. victim .. " horrify")</script>
+						<command />
+						<packageName />
+						<regex>^hor$</regex>
+					</Alias>
 				</AliasGroup>
 			</AliasGroup>
 		</AliasGroup>
