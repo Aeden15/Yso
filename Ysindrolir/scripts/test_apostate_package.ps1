@@ -12,8 +12,9 @@ local sent, events = {}, {}
 Yso = {}; yso = Yso
 gmcp = {Char={Status={class="Apostate"}}}
 send = function(s) sent[#sent+1]=s end
-cecho = function() end
-deleteLine = function() end
+local echoes,gags={},0
+cecho = function(s) echoes[#echoes+1]=s end
+deleteLine = function() gags=gags+1 end
 registerAnonymousEventHandler = function(e,f) events[e]=f; return e end
 killAnonymousEventHandler = function() end
 Yso.get_target = function() return target end
@@ -74,6 +75,10 @@ for _,s in ipairs(samples) do
   clear(); matches={"",s[2]}; aliases[s[1]]()
   check(sent[1],"cq all"); check(sent[2],s[3]); check(#sent,2)
 end
+for _,label in ipairs({'TRACING','MINDREADING','SYPHON'}) do
+ local before=gags;triggers['Demon taste '..label]()
+ check(gags,before+1);check(echoes[#echoes],'<DeepPink>[Apostasy] <violet_red>'..label..'\n')
+end
 triggers["Pentagram present"](); check(A.pentagram,true)
 triggers["Pentagram vanishes"](); check(A.pentagram,false)
 triggers["Baalzadeen presence"](); check(A.baalzadeen,true)
@@ -102,6 +107,19 @@ foreach ($name in @('Pentagram present','Pentagram vanishes')) {
   if ($doc.SelectSingleNode('//Trigger[name="' + $name + '"]').isActive -ne 'yes') { throw "$name is disabled" }
 }
 Write-Output 'PASS: XML parsing, source parity, pentagram trigger activation'
+$tasteSamples=@{
+ 'TRACING'="Your Baalzadeen is tracing the movements of Sinit."
+ 'MINDREADING'='Your Baalzadeen is reading the minds of those nearby.'
+ 'SYPHON'='Your Baalzadeen is syphoning that which afflicts you.'
+}
+foreach($label in $tasteSamples.Keys){
+ $node=$doc.SelectSingleNode('//TriggerGroup[name="Apostate"]/TriggerGroup[name="Apostasy"]/Trigger[name="Demon taste '+$label+'"]')
+ if(-not $node -or $node.isActive -ne 'yes'){throw ('Missing active taste trigger '+$label)}
+ if($tasteSamples[$label] -cnotmatch $node.regexCodeList.string){throw ('Taste line did not match '+$label)}
+ foreach($unrelated in @('(Party): '+$tasteSamples[$label], 'You taste 66% health remaining.', 'You may taste of your Baalzadeen once more.')){
+  if($unrelated -cmatch $node.regexCodeList.string){throw ('Taste trigger matched unrelated line '+$label)}
+ }
+}
 $examples = @{
   'Beckoning' = @('beck','beck Bob')
   'Shrivel' = @('shriv arms','shriv legs','shriv left arm','shriv right arm','shriv left leg','shriv right leg')

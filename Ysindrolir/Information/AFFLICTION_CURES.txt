@@ -72,6 +72,8 @@ Webbed:           Writhe        —             —
 
 (*) Apply = salve/ointment as appropriate.
 (**) Scrub = soap/water.
+Tracking alias: Necromancy Disfigure is recorded as disloyalty in AK and the
+Apostate skill reference; use that key for the Disfigurement smoke-cure entry.
 
 Last updated: 2026-03-14
 Source: Ada-Young pastebin ZKNS7w3m (Achaea affliction list).

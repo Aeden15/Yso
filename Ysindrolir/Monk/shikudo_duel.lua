@@ -471,6 +471,7 @@ function M.alias_loop_on_started()
 end
 function M.alias_loop_on_stopped(ctx)
   if ctx and ctx.reason=='confirmation_timeout' then M.state.retry_after_timeout=true end
+  if ctx and ctx.reason=='target_slain' then return end
   echo('OFF ('..tostring(ctx and ctx.reason or 'manual')..').')
 end
 function M.alias_loop_on_error(err) stop('error');echo(tostring(err)) end
@@ -538,7 +539,7 @@ if type(registerAnonymousEventHandler)=='function' then
     end,
     ['sysDisconnectionEvent']=function() stop('disconnect');M.state.cooldown=nil;M.state.mental=nil;M.state.mindlock_request=nil;M.state.lock_plan=nil;M.state.hyperfocus=nil;M.note_room_info() end,
     ['yso.target.changed']=function() M.state.blackout_attempted=nil;M.state.blackout_burst_done=nil end,
-    ['yso.target.cleared']=function() stop('target_cleared') end,
+    ['yso.target.cleared']=function() if M.state.loop_enabled then stop('target_cleared') end end,
     ['yso.target.aff.gained']=function(_,name,aff) M.note_aff(name,aff) end}
   for event,fn in pairs(events) do
     if M.handlers[event] and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(M.handlers[event]) end

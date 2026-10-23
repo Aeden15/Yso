@@ -20,14 +20,26 @@ AK's target comparison ignores capitalization while retaining abbreviated target
 prefixes, so a typed target such as `MAldrantus` matches game responses naming
 `Maldrantus`. Import the updated AK package as well as Yso for this correction.
 
-The default giving order is paralysis, asthma, slickness, impatience, anorexia,
-weariness, stupidity, recklessness, clumsiness and addiction, plus AK's
-target-class requirements. Clumsiness uses the `clumsy` eye syntax; addiction
-uses `addiction`. Reloading upgrades the old shipped priority order but preserves
-deliberately customized priorities. Both new afflictions remain required even
-with a custom priority list. Two useful eyes
-use Deadeyes; one uses Stare. Sicken progresses through confirmed manaleech to
-slickness. Missing requirements that cannot be supplied are reported as holds.
+Pressure builds impatience plus two distinct Goldenseal/Plumbum afflictions,
+then asthma plus two distinct Kelp/Aurum afflictions. These six conditions accept
+AK scores of at least 50. Plumbum padding is dizziness, epilepsy, shyness or
+stupidity; Aurum padding is clumsiness, sensitivity or weariness. Existing
+qualifying padding is retained; missing slots are chosen randomly each replan.
+Shyness uses Digitalis through the daegger; other padding has an Evileye source.
+
+With both padded pools established, use Manaleech plus a missing padding eye.
+If every padding eye is already confirmed, use Manaleech alone. Sicken is then
+eligible only with confirmed manaleech and missing slickness; pair it with
+Anorexia when both are missing. Class-specific and custom additional requirements
+precede the final Paralysis. Earlier stages are repaired if their scores fall
+below the threshold. Two useful eyes use Deadeyes; one uses Stare.
+Old shipped priorities migrate to impatience, asthma, manaleech, slickness,
+anorexia, paralysis. Custom requirements remain, but cannot bypass stage gates.
+The old mandatory weariness/stupidity/recklessness/clumsiness/addiction list is
+replaced by the pool requirements and AK's target-class requirements.
+Corrupt still requires every core/class requirement at 100, plus both padding
+pools at 50 or higher. Uncertain core afflictions are reconfirmed before Corrupt.
+Missing requirements that cannot be supplied are reported as holds.
 Unknown target class does not count as a verified complete class lock.
 
 During pressure, the route uses available equilibrium for support in this order:
@@ -40,7 +52,7 @@ During pressure, the route uses available equilibrium for support in this order:
 3. `chill <target>` when either slickness or anorexia is confirmed and frozen
    is missing.
 
-These conditions use AK scores of at least 100 (or true), including the existing
+These EQ support conditions use AK scores of at least 100 (or true), including the existing
 frozen score convention. They do not infer freezing stages or award afflictions
 on send. Support respects target, pause, shield, mana and equilibrium gates,
 with recovery guards of 3s for Disfigure, 2.1s for Shrivel and 2.2s for Chill.

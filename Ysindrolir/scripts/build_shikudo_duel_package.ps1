@@ -35,6 +35,10 @@ function Trigger([string]$name,[string]$body,[string[]]$patterns) {
   '<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>'+$name+'</name><script>'+(Escape $body)+'</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList>'+$codes+'</regexCodeList><regexCodePropertyList>'+$types+'</regexCodePropertyList></Trigger>'
 }
 $text=[IO.File]::ReadAllText($PackagePath)
+foreach($lane in @('eq','bal')){
+  $text=$text.Replace('handle_line_event("line:'+$lane+'_blocked", { gag = true, echo = true })',
+    'handle_line_event("line:'+$lane+'_blocked", { gag = true, echo = false })')
+}
 $text=SetBody $text 'Script' 'Combo logic' (Body 'Monk/combo.lua')
 $text=SetBody $text 'Script' 'Route registry' (Body 'Yso/xml/route_registry.lua')
 $text=UpsertScript $text 'Shikudo limb bridge' 'Monk/shikudo_limb_bridge.lua' 'Dispatch execute logic'

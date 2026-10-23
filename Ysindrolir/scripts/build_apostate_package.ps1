@@ -66,6 +66,11 @@ foreach($resetEntry in @(@('Hard Reset','ak.oresetparse'),@('Soft Reset','ak.sof
  }
  $akText=Set-Body $akText Script $resetEntry[0] $body
 }
+# Reset coordination is called directly; the old visual diagnostic is unnecessary.
+$resetDoc=[xml]$akText
+$hardReset=$resetDoc.SelectSingleNode('//Script[name="Hard Reset"]').script
+$hardReset=$hardReset.Replace('  cecho("<cyan> Reset Success!\n\n")','')
+$akText=Set-Body $akText Script 'Hard Reset' $hardReset
 $akDoc=[xml]$akText
 $eye=$akDoc.SelectSingleNode('//TriggerGroup[name="Apostate Group"]/Trigger[name="Deadeyes"]')
 $eye.regexCodeList.string="^Summoning up the curse of (\w+), you stare at ([\w'-]+), giving \w+ the evil eye\.$"
@@ -102,6 +107,16 @@ if($akDoc.SelectSingleNode('//Trigger[name="Apostate Shrivel"]')){
  if(-not $dump.Success){throw 'Cannot locate Apostate group insertion point'}
  $akText=$akText.Insert($dump.Index+$dump.Length,"`n"+$newGroup)
 }
+# An unsided exhausted response confirms the whole matching limb pair.
+$akText=[regex]::Replace($akText,'(?s)<Trigger\b[^>]*>\s*<name>Shrivel (?:arms|legs)</name>.*?</Trigger>','')
+$exhaustedDoc=[xml]$akText
+$exhaustedGroup=$exhaustedDoc.SelectSingleNode('//TriggerGroup[name="Apostate Group"]/TriggerGroup[name="Necromancy"]')
+$exhausted=''
+foreach($limb in @('arm','leg')){
+ $exhausted+=New-Trigger $exhaustedDoc ('Shrivel '+$limb+'s') ('ak.apostate.shrivel_exhausted(matches[2], "'+$limb+'")') @("^You reach out and touch ([\w'-]+)'s "+$limb+", but you can shrivel it no further\.$")
+}
+$groupText=$exhaustedGroup.OuterXml.Replace('</TriggerGroup>',$exhausted+'</TriggerGroup>')
+$akText=[regex]::Replace($akText,'(?s)<TriggerGroup\b[^>]*>\s*<name>Necromancy</name>.*?</TriggerGroup>',[Text.RegularExpressions.MatchEvaluator]{param($m) $groupText},1)
 $newAk=[xml]$akText
 if($newAk.SelectSingleNode('//TriggerGroup[name="Occultist Group"]').OuterXml -cne $oldOccultist){throw 'Occultist group changed'}
 # Confirmations are adapters only; the maintained Lua owns state transitions.
@@ -202,6 +217,21 @@ $eyeRejected.regexCodeList.InnerXml=@'
 $eyeRejected.regexCodePropertyList.InnerXml='<integer>1</integer><integer>1</integer><integer>1</integer><integer>1</integer>'
 $anchor=[regex]::Match($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Nightmare unavailable</name>.*?</Trigger>')
 $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,"`n"+$eyeRejected.OuterXml)
+# Taste summaries use the existing Apostasy palette and leave the rest of Taste intact.
+foreach($entry in @(
+ @('TRACING',"^Your Baalzadeen is tracing the movements of ([\w'-]+)\.$"),
+ @('MINDREADING','^Your Baalzadeen is reading the minds of those nearby\.$'),
+ @('SYPHON','^Your Baalzadeen is syphoning that which afflicts you\.$')
+)){
+ $name='Demon taste '+$entry[0]
+ $ysoText=[regex]::Replace($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>'+[regex]::Escape($name)+'</name>.*?</Trigger>','')
+ $taste=$template.CloneNode($true);$taste.name=$name;$taste.SetAttribute('isActive','yes')
+ $taste.script='deleteLine()'+"`n"+'cecho("<DeepPink>[Apostasy] <violet_red>'+$entry[0]+'\n")'
+ $taste.regexCodeList.InnerXml='<string>'+(Escape $entry[1])+'</string>'
+ $taste.regexCodePropertyList.InnerXml='<integer>1</integer>'
+ $anchor=[regex]::Match($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Banished Baalzadeen</name>.*?</Trigger>')
+ $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,$taste.OuterXml)
+}
 [void][xml]$ysoText
 if($PSCmdlet.ShouldProcess('AK.xml and Yso system.xml','Synchronize Apostate tracking, reference, Deadeyes helpers, and Catharsis')){
  [IO.File]::WriteAllText($akPath,$akText,[Text.UTF8Encoding]::new($false))

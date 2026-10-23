@@ -7,7 +7,8 @@ tempTimer=function(_,fn) serial=serial+1;timers[serial]=fn;return serial end
 killTimer=function(id) timers[id]=nil end
 tempAlias=function() serial=serial+1;return serial end
 killAlias=function() end
-registerAnonymousEventHandler=function() serial=serial+1;return serial end
+local registered={}
+registerAnonymousEventHandler=function(event,fn) serial=serial+1;registered[event]=fn;return serial end
 killAnonymousEventHandler=function() end
 cecho=function(text) output[#output+1]=text end
 raiseEvent=function() end
@@ -27,6 +28,15 @@ local locked=false
 Yso.monk.mindlock={is_locked=function() return locked end}
 dofile(arg[2] or root..'/Monk/shikudo_duel.lua')
 local M,F=Yso.off.monk.duel,Yso.monk.shikudo
+do
+ local count=#output
+ M.alias_loop_on_stopped({reason='target_slain'})
+ assert(#output==count,'target slain must not print the old SHDUEL diagnostic')
+ registered['yso.target.cleared']()
+ assert(#output==count,'a delayed clear must not print OFF for an inactive route')
+ M.alias_loop_on_stopped({reason='manual'})
+ assert(#output==count+1,'manual stop feedback must remain visible')
+end
 assert(type(M.note_impatience_success)=='function','Telepathy success adapter missing')
 local gains=0
 OppGainedAff=function(aff) gains=gains+1;affs[aff]=true end

@@ -116,6 +116,15 @@ function A.puncture(name)
   local M=route();if M then M.note_pressure('puncture',name,delivered==true) end
   return true
 end
+function A.shrivel_exhausted(name,limb)
+  if (ak.ai and ak.ai()) or not current(name) then return false end
+  if limb~='arm' and limb~='leg' then return false end
+  for _,side in ipairs({'left','right'}) do
+    local key=side..limb
+    if not present(key) then OppGainedAff(key) end
+  end
+  return true
+end
 function A.shrivel(name,side,limb)
   if (ak.ai and ak.ai()) or not current(name) then return false end
   if limb then

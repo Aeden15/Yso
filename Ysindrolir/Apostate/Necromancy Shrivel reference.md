@@ -35,9 +35,17 @@ existing score at 100. AK's normal cure/reset handling can clear it.
 Eight responses omit a side (four arm and four leg responses). They are kept in
 `ak.apostate.shrivel_unresolved[lowercase_target]` with arm/leg observation counts,
 last kind, and timestamp. These are historical observations, not current limb
-status. They never assign left or right, never imply successive casts hit
-different limbs, and never establish Vivisect readiness. Target changes,
+status. Ordinary unsided successes never assign left or right or imply
+successive casts hit different limbs. Target changes,
 disconnects and class updates clear the observations.
+
+An unsided exhausted response (`You reach out and touch <target>'s arm/leg,
+but you can shrivel it no further.`) confirms both matching limbs as broken:
+`leftarm` and `rightarm`, or `leftleg` and `rightleg`, each at 100. The active
+`Shrivel arms` and `Shrivel legs` triggers call `ak.apostate.shrivel_exhausted`.
+A side-specific exhausted response still confirms only the named side.
+Repeated confirmation does not duplicate gains, and normal cure handling can
+clear either limb independently. These confirmations do not invoke Vivisect.
 
 Only responses for the current target are accepted. A repeated confirmation of
 an already-confirmed limb does not add another gain. No automatic Vivisect is

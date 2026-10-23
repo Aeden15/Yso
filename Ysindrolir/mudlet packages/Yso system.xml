@@ -971,7 +971,7 @@ local D=Yso and Yso.off and Yso.off.monk and Yso.off.monk.duel; if D then D.note
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: BAL blocked</name>
 						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
-  Yso.pulse.handle_line_event("line:bal_blocked", { gag = true, echo = true })
+  Yso.pulse.handle_line_event("line:bal_blocked", { gag = true, echo = false })
 elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
   Yso.pulse.set_ready("bal", false, "line:bal_blocked")
   if type(deleteLine)=="function" then pcall(deleteLine) end
@@ -1115,7 +1115,7 @@ end</script>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Pulse: EQ blocked</name>
 						<script>if Yso and Yso.pulse and type(Yso.pulse.handle_line_event)=="function" then
-  Yso.pulse.handle_line_event("line:eq_blocked", { gag = true, echo = true })
+  Yso.pulse.handle_line_event("line:eq_blocked", { gag = true, echo = false })
 elseif Yso and Yso.pulse and type(Yso.pulse.set_ready)=="function" then
   Yso.pulse.set_ready("eq", false, "line:eq_blocked")
   if type(deleteLine)=="function" then pcall(deleteLine) end
@@ -4877,6 +4877,13 @@ cecho("&lt;DeepPink&gt;[Apostasy] &lt;violet_red&gt;REDRAW THE PENTAGRAM!\n")</s
 							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Demon taste TRACING</name><script>deleteLine()
+cecho("&lt;DeepPink&gt;[Apostasy] &lt;violet_red&gt;TRACING\n")</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your Baalzadeen is tracing the movements of ([\w'-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Demon taste MINDREADING</name><script>deleteLine()
+cecho("&lt;DeepPink&gt;[Apostasy] &lt;violet_red&gt;MINDREADING\n")</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your Baalzadeen is reading the minds of those nearby\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Demon taste SYPHON</name><script>deleteLine()
+cecho("&lt;DeepPink&gt;[Apostasy] &lt;violet_red&gt;SYPHON\n")</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your Baalzadeen is syphoning that which afflicts you\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+
 <Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Nightmare unavailable</name><script>yso.apostate.nightmare = false</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^A nightmare may only be summoned in the slumber of night\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
 <Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Truelocks eye rejected</name><script>-- Exact rejection lines only; never call this for "Equilibrium/Balance used".
 local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
@@ -26112,6 +26119,7 @@ function M.alias_loop_on_started()
 end
 function M.alias_loop_on_stopped(ctx)
   if ctx and ctx.reason=='confirmation_timeout' then M.state.retry_after_timeout=true end
+  if ctx and ctx.reason=='target_slain' then return end
   echo('OFF ('..tostring(ctx and ctx.reason or 'manual')..').')
 end
 function M.alias_loop_on_error(err) stop('error');echo(tostring(err)) end
@@ -26179,7 +26187,7 @@ if type(registerAnonymousEventHandler)=='function' then
     end,
     ['sysDisconnectionEvent']=function() stop('disconnect');M.state.cooldown=nil;M.state.mental=nil;M.state.mindlock_request=nil;M.state.lock_plan=nil;M.state.hyperfocus=nil;M.note_room_info() end,
     ['yso.target.changed']=function() M.state.blackout_attempted=nil;M.state.blackout_burst_done=nil end,
-    ['yso.target.cleared']=function() stop('target_cleared') end,
+    ['yso.target.cleared']=function() if M.state.loop_enabled then stop('target_cleared') end end,
     ['yso.target.aff.gained']=function(_,name,aff) M.note_aff(name,aff) end}
   for event,fn in pairs(events) do
     if M.handlers[event] and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(M.handlers[event]) end
@@ -26187,7 +26195,8 @@ if type(registerAnonymousEventHandler)=='function' then
   end
 end
 M.init()
-return M</script>
+return M
+</script>
 							<eventHandlerList />
 						</Script>
 					</ScriptGroup>
@@ -27706,7 +27715,7 @@ end
 					<Script isActive="yes" isFolder="no">
 						<name>Apostate Truelocks</name>
 						<packageName />
-						<script>-- Alias-owned controller. All affliction decisions consume confirmed AK scores.
+						<script>-- Alias-owned controller. Padding accepts AK scores &gt;=50; finishers require confirmation.
 Yso=Yso or {};Yso.off=Yso.off or {};Yso.off.apostate=Yso.off.apostate or {}
 local M=Yso.off.apostate.truelock or {};Yso.off.apostate.truelock=M
 M.key=&apos;apostate_truelock&apos;;M.alias_owned=true
@@ -27715,13 +27724,15 @@ M.cfg=M.cfg or {timeout=10,eye_balance=1.9,puncture_balance=2.15,corrupt_eq=3}
 -- Migrate the old shipped order on reload, while preserving custom priorities.
 if type(M.priorities)~=&apos;table&apos;
  or table.concat(M.priorities,&apos;,&apos;)==&apos;paralysis,impatience,asthma,slickness,anorexia,weariness,stupidity,recklessness&apos;
- or table.concat(M.priorities,&apos;,&apos;)==&apos;paralysis,clumsiness,addiction,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness&apos; then
- M.priorities={&apos;paralysis&apos;,&apos;asthma&apos;,&apos;slickness&apos;,&apos;impatience&apos;,&apos;anorexia&apos;,&apos;weariness&apos;,&apos;stupidity&apos;,&apos;recklessness&apos;,&apos;clumsiness&apos;,&apos;addiction&apos;}
+ or table.concat(M.priorities,&apos;,&apos;)==&apos;paralysis,clumsiness,addiction,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness&apos;
+ or table.concat(M.priorities,&apos;,&apos;)==&apos;paralysis,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness,clumsiness,addiction&apos; then
+ M.priorities={&apos;impatience&apos;,&apos;asthma&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;paralysis&apos;}
 end
-local baseline={&apos;paralysis&apos;,&apos;asthma&apos;,&apos;slickness&apos;,&apos;impatience&apos;,&apos;anorexia&apos;,&apos;weariness&apos;,&apos;stupidity&apos;,&apos;recklessness&apos;,&apos;clumsiness&apos;,&apos;addiction&apos;}
+local baseline={&apos;impatience&apos;,&apos;asthma&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;paralysis&apos;}
 local eyes={paralysis=&apos;paralysis&apos;,impatience=&apos;impatience&apos;,asthma=&apos;asthma&apos;,slickness=&apos;sicken&apos;,
  anorexia=&apos;anorexia&apos;,weariness=&apos;weariness&apos;,stupidity=&apos;stupid&apos;,recklessness=&apos;reckless&apos;,
- voyria=&apos;plague&apos;,confusion=&apos;confusion&apos;,clumsiness=&apos;clumsy&apos;,addiction=&apos;addiction&apos;}
+ voyria=&apos;plague&apos;,confusion=&apos;confusion&apos;,clumsiness=&apos;clumsy&apos;,addiction=&apos;addiction&apos;,
+ manaleech=&apos;manaleech&apos;,dizziness=&apos;dizzy&apos;,epilepsy=&apos;epilepsy&apos;,sensitivity=&apos;sensitivity&apos;}
 local function now()
  local t=type(getEpoch)==&apos;function&apos; and tonumber(getEpoch()) or os.time()
  return t&gt;20000000000 and t/1000 or t
@@ -27730,6 +27741,63 @@ local function target_name() return type(Yso.get_target)==&apos;function&apos; a
 local function valid(n) return type(n)==&apos;string&apos; and n:match(&quot;^[A-Za-z][A-Za-z&apos;%-]*$&quot;) end
 local function same(a,b) return type(a)==&apos;string&apos; and type(b)==&apos;string&apos; and a:lower()==b:lower() end
 local function present(v) return v==true or (tonumber(v) or 0)&gt;=100 end
+local function likely(v) return v==true or (tonumber(v) or 0)&gt;=50 end
+local plumbum={&apos;dizziness&apos;,&apos;epilepsy&apos;,&apos;shyness&apos;,&apos;stupidity&apos;}
+local aurum={&apos;clumsiness&apos;,&apos;sensitivity&apos;,&apos;weariness&apos;}
+local function padding_count(scores,pool)
+ local count=0;for _,aff in ipairs(pool) do if likely(scores[aff]) then count=count+1 end end
+ return count
+end
+local function padded(scores)
+ return likely(scores.impatience) and likely(scores.asthma)
+  and padding_count(scores,plumbum)&gt;=2 and padding_count(scores,aurum)&gt;=2
+end
+local function choose(candidates,count,out)
+ for _=1,math.min(count,#candidates) do
+  out[#out+1]=table.remove(candidates,math.random(#candidates))
+ end
+end
+-- Return desired afflictions, not inferred deliveries. Replan after every confirmed batch.
+function M.pressure_plan(scores,required)
+ for _,stage in ipairs({{core=&apos;impatience&apos;,pool=plumbum},{core=&apos;asthma&apos;,pool=aurum}}) do
+  local out,candidates={},{}
+  if not likely(scores[stage.core]) then out[#out+1]=stage.core end
+  for _,aff in ipairs(stage.pool) do if not likely(scores[aff]) then candidates[#candidates+1]=aff end end
+  choose(candidates,math.max(0,2-padding_count(scores,stage.pool)),out)
+  if #out&gt;0 then return out end
+ end
+ if not present(scores.manaleech) then
+  local out,candidates={&apos;manaleech&apos;},{}
+  for _,pool in ipairs({plumbum,aurum}) do
+   for _,aff in ipairs(pool) do
+    if eyes[aff] and not likely(scores[aff]) then candidates[#candidates+1]=aff end
+   end
+  end
+  if #candidates==0 then
+   for _,pool in ipairs({plumbum,aurum}) do
+    for _,aff in ipairs(pool) do
+     if eyes[aff] and not present(scores[aff]) then candidates[#candidates+1]=aff end
+    end
+   end
+  end
+  choose(candidates,1,out);return out
+ end
+ local out={}
+ for _,aff in ipairs({&apos;slickness&apos;,&apos;anorexia&apos;}) do
+  if not present(scores[aff]) then out[#out+1]=aff end
+ end
+ if #out&gt;0 then return out end
+ -- Class-specific and custom requirements precede the closing paralysis.
+ for _,aff in ipairs(required or {}) do
+  local core=false;for _,key in ipairs(baseline) do if key==aff then core=true;break end end
+  if not core and not present(scores[aff]) then out[#out+1]=aff end
+ end
+ if #out&gt;0 then return out end
+ if not present(scores.paralysis) then return {&apos;paralysis&apos;} end
+ -- Uncertain core afflictions must be confirmed before the existing Corrupt finisher.
+ for _,aff in ipairs(required or {}) do if not present(scores[aff]) then out[#out+1]=aff end end
+ return out
+end
 local function say(s) if cecho then cecho(&apos;&lt;DeepPink&gt;[Truelocks] &lt;reset&gt;&apos;..s..&apos;\n&apos;) end end
 local function hold(reason)
  if M.state.reason~=reason and (reason:find(&apos;missing_&apos;,1,true) or reason:find(&apos;unsupported_&apos;,1,true)
@@ -27925,7 +27993,8 @@ local function pressure_attack()
  local scores=snapshot();if not scores then return hold(&apos;tracking_unavailable&apos;) end
  local list=requirements();if not list then return hold(&apos;class_requirements_unavailable&apos;) end
  local missing={};for _,aff in ipairs(list) do if not present(scores[aff]) then missing[#missing+1]=aff end end
- if #missing==0 then
+ local planned=M.pressure_plan(scores,list)
+ if #missing==0 and #planned==0 then
   if not M.state.class_verified then return hold(&apos;class_coverage_unverified&apos;) end
   if not ready(&apos;eq&apos;) then return hold(&apos;equilibrium&apos;) end
   if emit({eq=&apos;demon corrupt &apos;..M.state.victim..&apos; paralysis&apos;},&apos;corrupt&apos;) then
@@ -27935,10 +28004,13 @@ local function pressure_attack()
  end
  if ak.defs and ak.defs.shield then return hold(&apos;shield&apos;) end
  if not ready(&apos;bal&apos;) then return hold(&apos;balance&apos;) end
+ missing=planned
  local picks,seen={},{}
  local breach=ak.defs and ak.defs.curseward
  for _,aff in ipairs(missing) do
   local eye=eyes[aff]
+  -- A random shyness pick uses Digitalis through the existing daegger path.
+  if not eye then break end
   if eye and not seen[eye] and #picks&lt;2 then seen[eye]=true;picks[#picks+1]=eye end
  end
  if #picks&gt;0 then
@@ -27987,7 +28059,7 @@ local function support_attack(spent_mana)
  if not ready(&apos;eq&apos;) then return false end
  local scores=snapshot();if not scores then return false end
  local list=requirements();if not list then return false end
- local complete=true
+ local complete=padded(scores)
  for _,aff in ipairs(list) do if not present(scores[aff]) then complete=false;break end end
  if complete then return false end
  local skill,arg
@@ -28048,14 +28120,16 @@ Yso=Yso or {};Yso.apostate=Yso.apostate or {}
 local D=Yso.apostate.daegger or {};Yso.apostate.daegger=D
 D.stock=D.stock or {curare=true,kalmia=true,slike=true,gecko=true,vernalius=true,
  aconite=true,eurypteria=true,voyria=true,selarnia=true,notechis=false,delphinium=true,
- xentio=true,prefarar=true,epseth=true}
+ xentio=true,prefarar=true,epseth=true,digitalis=true}
+-- Add the new default on package reimport without replacing explicit stock overrides.
+if D.stock.digitalis==nil then D.stock.digitalis=true end
 local standard={xentio=true,eurypteria=true,kalmia=true,delphinium=true,digitalis=true,
  darkshade=true,curare=true,epteth=true,prefarar=true,monkshood=true,euphorbia=true,
  colocasia=true,vernalius=true,epseth=true,larkspur=true,slike=true,notechis=true,
  vardrax=true,aconite=true,selarnia=true,gecko=true,scytherus=true,voyria=true}
 local preferred={paralysis=&apos;curare&apos;,asthma=&apos;kalmia&apos;,slickness=&apos;gecko&apos;,anorexia=&apos;slike&apos;,
  weariness=&apos;vernalius&apos;,stupidity=&apos;aconite&apos;,recklessness=&apos;eurypteria&apos;,voyria=&apos;voyria&apos;,
- haemophilia=&apos;notechis&apos;,selarnia=&apos;selarnia&apos;}
+ haemophilia=&apos;notechis&apos;,selarnia=&apos;selarnia&apos;,shyness=&apos;digitalis&apos;}
 function D.venom_for(aff)
  local v=preferred[aff]
  local map=affstrack and affstrack.venoms or {}

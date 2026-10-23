@@ -18,6 +18,10 @@ try {
   $after=[IO.File]::ReadAllText($files[0]);$limbAfter=[IO.File]::ReadAllText($files[1])
   [xml]$doc=$after;[xml]$ldoc=$limbAfter
   [xml]$beforeDoc=$before
+  foreach($lane in @('EQ','BAL')){
+    $blocked=$doc.SelectSingleNode('//Trigger[name="Pulse: '+$lane+' blocked"]')
+    Assert ($blocked.script.Contains('gag = true, echo = false')) ('Blocked diagnostic still enabled: '+$lane)
+  }
   foreach($name in @('Pulse: EQ recovered','Pulse: BAL recovered','Pulse: Monk limb recovered')){
     $oldBody=[string]$beforeDoc.SelectSingleNode('//Trigger[name="'+$name+'"]').script
     $newBody=[string]$doc.SelectSingleNode('//Trigger[name="'+$name+'"]').script

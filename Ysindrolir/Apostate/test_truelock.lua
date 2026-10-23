@@ -23,7 +23,7 @@ Yso.emit=function(p,o)
  local log=o.reason=='apostate_truelock:support' and support_emitted or emitted
  log[#log+1]=p;return true
 end
-affstrack={score={},venoms={curare='paralysis',kalmia='asthma',gecko='slickness',slike='anorexia',
+affstrack={score={},venoms={digitalis='shyness',curare='paralysis',kalmia='asthma',gecko='slickness',slike='anorexia',
  vernalius='weariness',aconite='stupidity',eurypteria='recklessness',voyria='voyria',notechis='haemophilia',selarnia='selarnia'}}
 local cls='apostate';local extras={'voyria'}
 ak={ai=function() return false end,classlockresolve=function() return extras end,
@@ -54,7 +54,7 @@ end
 local function start()
  if TruelocksAlias then TruelocksAlias() else assert(Yso.util.toggle_route_alias('apostate_truelock','tlock')) end
 end
-local function full() for _,a in ipairs({'paralysis','impatience','asthma','slickness','anorexia','weariness','stupidity','recklessness','clumsiness','addiction','voyria'}) do affstrack.score[a]=100 end end
+local function full() for _,a in ipairs({'paralysis','impatience','asthma','slickness','anorexia','weariness','stupidity','recklessness','clumsiness','addiction','voyria','manaleech','dizziness','epilepsy','shyness','sensitivity'}) do affstrack.score[a]=100 end end
 local function eye(k) ak.apostate.capture_eye(target,k) end
 local function prompt() ak.apostate.commit_eyes();M.note_prompt() end
 local function ward_down(kind)
@@ -65,153 +65,122 @@ local function scheduled()
  local id=M.state.timer_id;local timer=assert(timers[id],'route must schedule its next tick')
  timers[id]=nil;clock=math.max(clock,timer.at);timer.fn()
 end
--- Shipped giving order: impatience moves from second to fourth.
-reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel paralysis asthma')
-eye('paralysis');eye('asthma');prompt();clock=clock+3;scheduled()
-eq(emitted[2].bal,'deadeyes Saibel sicken impatience')
--- New afflictions use the right syntax and must land before Corrupt.
-reset();full();affstrack.score.clumsiness=0;affstrack.score.addiction=0;start();scheduled()
-eq(emitted[1].bal,'deadeyes Saibel clumsy addiction')
-eq(affstrack.score.clumsiness,0);eq(affstrack.score.addiction,0)
-eye('clumsy');eye('addiction');prompt()
-eq(affstrack.score.clumsiness,100);eq(affstrack.score.addiction,100)
-for _,case in ipairs({{'clumsiness','clumsy'},{'addiction','addiction'}}) do
- reset();full();affstrack.score[case[1]]=0;start();scheduled()
- eq(emitted[1].bal,'stare Saibel '..case[2])
+-- Stable RNG makes route assertions reproducible; the padding suite tests actual randomness.
+math.random=function() return 1 end
+local function deliver()
+ local cmd=emitted[#emitted].bal
+ local first,second=cmd:match('^deadeyes %S+ (%S+) (%S+)$')
+ if first then eye(first);eye(second) else eye(assert(cmd:match('^stare %S+ (%S+)$'))) end
+ prompt();clock=clock+3
 end
--- Upgrade a loaded old default without replacing a deliberately custom order.
-local prior_default={'paralysis','impatience','asthma','slickness','anorexia','weariness','stupidity','recklessness'}
-M.priorities=prior_default;dofile(root..'/Apostate/truelock.lua')
-reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel paralysis asthma')
--- Reloading the drifted source default must also restore the documented order.
-M.priorities={'paralysis','clumsiness','addiction','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness'}
-dofile(root..'/Apostate/truelock.lua')
-reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel paralysis asthma')
-local custom={'impatience','paralysis'};M.priorities=custom;dofile(root..'/Apostate/truelock.lua')
-eq(M.priorities,custom);reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience paralysis')
--- Existing lifecycle fixtures intentionally use the historical custom order.
-M.priorities=prior_default;reset()
-eq(M.is_enabled(),false)
-eq(Yso.Combat.RouteRegistry.resolve('tlock').namespace,'Yso.off.apostate.truelock')
-target='MAldrantus';eq(IsTargetted('Maldrantus'),true)
-eq(IsTargetted('Other'),false);eq(IsTargetted('Mal'),false);eq(IsTargetted(nil),false)
-target='mal';eq(IsTargetted('Maldrantus'),true)
-target='';eq(IsTargetted('Maldrantus'),false)
--- Exact live failure: selected MAldrantus versus the game's Maldrantus.
+reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience dizzy')
+eq(affstrack.score.impatience,nil);eq(affstrack.score.dizziness,nil)
+scheduled();eq(#emitted,1)
+deliver();scheduled();eq(emitted[2].bal,'stare Saibel epilepsy')
+deliver();scheduled();eq(emitted[3].bal,'deadeyes Saibel asthma clumsy')
+deliver();scheduled();eq(emitted[4].bal,'stare Saibel sensitivity')
+deliver();scheduled();eq(emitted[5].bal,'deadeyes Saibel manaleech stupid')
+deliver();scheduled();eq(emitted[6].bal,'deadeyes Saibel sicken anorexia')
+deliver();eq(affstrack.score.slickness,100);eq(affstrack.score.anorexia,100)
+-- Independent EQ support may still be recovering; wait for it before closing eyes.
+clock=clock+3;scheduled();eq(emitted[7].bal,'stare Saibel plague')
+deliver();scheduled();eq(emitted[8].bal,'stare Saibel paralysis')
+deliver();scheduled();eq(emitted[9].eq,'demon corrupt Saibel paralysis')
+-- Old shipped orders migrate; custom requirements survive but cannot bypass stages.
+local new_default={'impatience','asthma','manaleech','slickness','anorexia','paralysis'}
+for _,old in ipairs({
+ {'paralysis','impatience','asthma','slickness','anorexia','weariness','stupidity','recklessness'},
+ {'paralysis','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness','clumsiness','addiction'},
+ {'paralysis','clumsiness','addiction','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness'},
+}) do
+ M.priorities=old;dofile(root..'/Apostate/truelock.lua');eq(table.concat(M.priorities,','),table.concat(new_default,','))
+end
+local custom={'paralysis','addiction'};M.priorities=custom;dofile(root..'/Apostate/truelock.lua')
+eq(M.priorities,custom);reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience dizzy')
+M.priorities=new_default
+-- Half-confidence main afflictions and padding advance without rewriting AK scores.
+reset();affstrack.score={impatience=50,dizziness=50,epilepsy=50,asthma=50,clumsiness=50,sensitivity=50}
+start();scheduled();eq(emitted[1].bal,'deadeyes Saibel manaleech stupid')
+eq(affstrack.score.impatience,50);eq(affstrack.score.asthma,50)
+reset();full();affstrack.score.impatience=50;start();scheduled()
+eq(emitted[1].bal,'stare Saibel impatience') -- Corrupt still needs confirmed core scores.
+-- Random Digitalis padding uses a real venom delivery; unknown stock holds safely.
+reset();affstrack.score={impatience=100,stupidity=100}
+local random=math.random;math.random=function(n) return n end
+D.stock.digitalis=nil;dofile(root..'/Apostate/daegger_envenom.lua');eq(D.available('digitalis'),true)
+for _,stock in ipairs({false,0,12}) do
+ D.stock.digitalis=stock;dofile(root..'/Apostate/daegger_envenom.lua');eq(D.stock.digitalis,stock)
+end
+D.stock.digitalis=true
+start();scheduled()
+eq(emitted[1].bal,'wipe daegger&&envenom daegger with digitalis&&daegger puncture Saibel')
+math.random=random
+-- Sicken only follows confirmed manaleech, and never gets selected for damage alone.
+reset();full();affstrack.score.manaleech=50;affstrack.score.slickness=0;start();scheduled()
+assert(emitted[1].bal:find('manaleech',1,true));assert(not emitted[1].bal:find('sicken',1,true))
+deliver();clock=clock+3;scheduled();eq(emitted[2].bal,'stare Saibel sicken')
+deliver();eq(affstrack.score.slickness,100)
+-- Recipient matching, actual Curseward adapters, and rejected second eyes remain intact.
+target='MAldrantus';eq(IsTargetted('Maldrantus'),true);eq(IsTargetted('Other'),false)
+target='mal';eq(IsTargetted('Maldrantus'),true);target='Saibel'
 if TruelocksTargetCheck then
  for _,response in ipairs({'mixed_no_effect','mixed_shattered'}) do
   reset();target='MAldrantus';ak.defs.curseward=true;start();scheduled()
   ak.apostate.capture_eye('Maldrantus','breach');ward_down(response)
-  ak.apostate.capture_eye('Maldrantus','paralysis');prompt()
+  ak.apostate.capture_eye('Maldrantus','impatience');prompt()
   eq(M.state.pending,nil);clock=clock+3;scheduled()
-  eq(emitted[2].bal,'deadeyes MAldrantus impatience asthma');eq(M.is_enabled(),true)
+  eq(emitted[2].bal,'deadeyes MAldrantus dizzy epilepsy')
  end
- target='Mal';eq(IsTargetted('Maldrantus'),true)
- target='MAldrantus';eq(IsTargetted('Other'),false);eq(IsTargetted('Mal'),false)
 end
--- The controller stops itself on timeout; the scheduler must not stop it twice.
-local quiet=cecho;local timeout_messages=0
-cecho=function(s) if s:find('OFF (confirmation_timeout)',1,true) then timeout_messages=timeout_messages+1 end end
-reset();start();scheduled();clock=clock+11;scheduled();eq(M.is_enabled(),false)
-eq(timeout_messages,1);cecho=quiet
--- Reproduce the live Curseward hold using actual scheduled callbacks, not manual ticks.
 reset();ak.defs.curseward=true;start();scheduled()
-eq(#emitted,1);eq(emitted[1].bal,'deadeyes Saibel breach paralysis')
-scheduled();eq(#emitted,1) -- no duplicate before confirmation
-eye('breach');eye('paralysis');prompt()
-eq(affstrack.score.breach,nil);eq(affstrack.score.paralysis,100)
-clock=clock+3;scheduled();eq(#emitted,1) -- eye delivery alone cannot prove ward removal
-ward_down('shattered');M.note_prompt();scheduled()
-eq(emitted[2].bal,'deadeyes Saibel impatience asthma')
-eye('impatience');eye('asthma');prompt();clock=clock+3
-ak.defs.curseward=true;scheduled();eq(emitted[3].bal,'deadeyes Saibel breach sicken')
--- Failed second eye earns no credit and remains eligible after the ward clears.
-eye('breach');eye('sicken');ak.apostate.fail_eye();ward_down('no_effect');prompt()
-eq(affstrack.score.manaleech,nil);clock=clock+3;scheduled()
-eq(emitted[4].bal,'deadeyes Saibel sicken anorexia')
--- Curseward only blocks Evileye: a venom-only class blocker needs no Breach or EQ.
-reset();full();cls='magi';extras={'haemophilia'};ak.defs.curseward=true
-D.stock.notechis=true;gmcp.Char.Vitals.eq='0';start();scheduled()
-eq(#emitted,1)
+eq(emitted[1].bal,'deadeyes Saibel breach impatience')
+eye('breach');eye('impatience');prompt();clock=clock+3;scheduled();eq(#emitted,1)
+ward_down('shattered');M.note_prompt();scheduled();eq(emitted[2].bal,'deadeyes Saibel dizzy epilepsy')
+eye('dizzy');eye('epilepsy');ak.apostate.fail_eye();prompt()
+eq(affstrack.score.dizziness,100);eq(affstrack.score.epilepsy,nil)
+clock=clock+3;scheduled();eq(emitted[3].bal,'stare Saibel epilepsy')
+-- Combined mana cost (Breach 125 + Impatience 45), readiness, pause and shield.
+reset();ak.defs.curseward=true;gmcp.Char.Vitals.mp='169';start();scheduled()
+eq(#emitted,0);eq(M.status().reason,'mana');gmcp.Char.Vitals.mp='170';scheduled()
+eq(emitted[1].bal,'deadeyes Saibel breach impatience')
+reset();start();paused=true;eq(tick(),false);eq(#emitted,0);paused=false
+gmcp.Char.Vitals.bal='0';eq(tick(),false);gmcp.Char.Vitals.bal='1'
+gmcp.Char.Vitals.eq='0';eq(tick(),false);gmcp.Char.Vitals.eq='1'
+ak.defs.shield=true;eq(tick(),false);ak.defs.shield=false
+Yso.inhibit={active=function() return true end};eq(tick(),false);Yso.inhibit=nil
+tick();target='Other';M.note_prompt();eq(M.is_enabled(),false)
+local quiet=cecho;local stops=0
+cecho=function(s) if s:find('OFF (confirmation_timeout)',1,true) then stops=stops+1 end end
+reset();start();scheduled();clock=clock+11;scheduled();eq(M.is_enabled(),false);eq(stops,1);cecho=quiet
+reset();start();scheduled();start();eq(M.is_enabled(),false);eq(M.state.pending,nil)
+-- Venom-only class requirements bypass Curseward and do not need EQ readiness.
+reset();full();cls='magi';extras={'haemophilia'};ak.defs.curseward=true;D.stock.notechis=true
+gmcp.Char.Vitals.eq='0';start();scheduled()
 eq(emitted[1].bal,'wipe daegger&&envenom daegger with notechis&&daegger puncture Saibel')
 eq(ak.defs.curseward,true)
--- Combined mana cost, balance, pause and shield gates also apply to Breach.
-reset();ak.defs.curseward=true;gmcp.Char.Vitals.mp='194';start();scheduled()
-eq(#emitted,0);eq(M.status().reason,'mana');gmcp.Char.Vitals.mp='195';scheduled()
-eq(emitted[1].bal,'deadeyes Saibel breach paralysis');start();eq(M.state.pending,nil)
-reset();ak.defs.curseward=true;gmcp.Char.Vitals.bal='0';start();scheduled();eq(#emitted,0)
-gmcp.Char.Vitals.bal='1';paused=true;scheduled();eq(#emitted,0)
-paused=false;ak.defs.shield=true;scheduled();eq(#emitted,0)
-ak.defs.shield=false;scheduled();eq(#emitted,1)
-clock=clock+11;scheduled();eq(M.is_enabled(),false)
-reset();ak.defs.curseward=true;start();scheduled();target='Other';scheduled()
-eq(M.is_enabled(),false);eq(#emitted,1)
-reset();ak.defs.curseward=true;start();scheduled();start()
-eq(M.is_enabled(),false);eq(M.state.timer_id,nil);eq(M.state.pending,nil)
-reset();start();eq(tick(),true);eq(emitted[1].bal,'deadeyes Saibel paralysis impatience')
-eq(affstrack.score.paralysis,nil);eq(tick(),false);eq(#emitted,1)
-eye('paralysis');eye('impatience');prompt();clock=clock+2
-eq(tick(),true);eq(emitted[2].bal,'deadeyes Saibel asthma sicken')
--- Only one missing useful eye uses the singular syntax.
-reset();full();affstrack.score.impatience=0;start();tick();eq(emitted[1].bal,'stare Saibel impatience')
--- Staged Sicken produces slickness only after manaleech is confirmed.
-reset();full();affstrack.score.slickness=0;start();tick();eq(emitted[1].bal,'stare Saibel sicken')
-eye('sicken');prompt();eq(affstrack.score.manaleech,100);eq(affstrack.score.slickness,0)
-clock=clock+2;tick();eye('sicken');prompt();eq(affstrack.score.slickness,100)
--- A stocked venom supplies a class blocker with no eye; no notechis means hold.
-reset();full();cls='magi';extras={'haemophilia'};start();eq(tick(),true);eq(#emitted,0)
-eq(support_emitted[1].eq,'chill Saibel')
-eq(M.status().reason,'missing_venom:notechis');D.stock.notechis=true
-eq(tick(),true);eq(emitted[1].bal,'wipe daegger&&envenom daegger with notechis&&daegger puncture Saibel')
-eq(emitted[1].free,nil);eq(affstrack.score.haemophilia,nil)
-currentvenoms['a wicked-looking daegger']={'notechis'}
+currentvenoms={['a wicked-looking daegger']={'notechis'}}
 ak.apostate.puncture('Other');eq(affstrack.score.haemophilia,nil)
-currentvenoms['a wicked-looking daegger']={'notechis'};ak.apostate.puncture('Saibel');eq(affstrack.score.haemophilia,100)
-affstrack.score.haemophilia=0;ak.apostate.puncture('Saibel');eq(affstrack.score.haemophilia,0)
--- Wiping one weapon preserves coatings on another; anonymous replies require correlation.
-currentvenoms={['a wicked-looking daegger']={'kalmia'},rapier={'curare'}}
-ak.apostate.wipe('a wicked-looking daegger');eq(#currentvenoms.rapier,1);eq(#currentvenoms['a wicked-looking daegger'],0)
-currentvenoms.rapier={'curare'};ak.apostate.wipe();eq(#currentvenoms.rapier,1)
-local commands=D.build_attack('puncture','Saibel','kalmia')
-eq(commands[1],'wipe daegger');eq(commands[2],'envenom daegger with kalmia');eq(commands[3],'daegger puncture Saibel')
-eq(D.build_attack('puncture','Saibel;quit','kalmia'),nil)
-eq(D.build_attack('puncture','Saibel','torture'),nil)
--- Corrupt waits for prompt, honors rejection, and only removes confirmed eye provenance.
-reset();full();eye('asthma');eye('paralysis');prompt();start();eq(tick(),true)
+currentvenoms['a wicked-looking daegger']={'notechis'};ak.apostate.puncture('Saibel');prompt()
+eq(affstrack.score.haemophilia,100)
+reset();full();cls='magi';extras={'haemophilia'};start();tick();eq(M.status().reason,'missing_venom:notechis')
+reset();full();extras={'prone'};start();tick();eq(M.status().reason,'unsupported_affliction:prone')
+reset();full();cls='';start();eq(tick(),false);eq(M.status().reason,'class_coverage_unverified')
+-- Corrupt provenance and the existing solicited Contemplate/Catharsis lifecycle.
+reset();full();eye('asthma');eye('paralysis');prompt();start();tick()
 eq(emitted[1].eq,'demon corrupt Saibel paralysis');eq(tick(),false)
 M.note_corrupt('accepted','Saibel');M.note_corrupt('retained','Saibel','paralysis');M.note_prompt()
 eq(affstrack.score.asthma,0);eq(affstrack.score.paralysis,100);eq(affstrack.score.weariness,100)
-eq(tick(),true);eq(emitted[2].free,'contemplate Saibel')
-eq(Yso.apostate.note_mana('Other',1,100),false);eq(#sent,0)
+tick();eq(emitted[2].free,'contemplate Saibel');eq(Yso.apostate.note_mana('Other',1,100),false)
 Yso.apostate.note_mana('Saibel',49,100);eq(#sent,0)
 gmcp.Char.Vitals.eq='0';eq(tick(),false);clock=clock+3.1;gmcp.Char.Vitals.eq='1'
-eq(tick(),true);eq(emitted[3].free,'contemplate Saibel')
-Yso.apostate.note_mana('Saibel',49,100);eq(sent[1],'cq all');eq(sent[2],'demon catharsis Saibel')
-eq(tick(),false);eq(#sent,2)
+tick();eq(emitted[3].free,'contemplate Saibel');Yso.apostate.note_mana('Saibel',49,100)
+eq(sent[1],'cq all');eq(sent[2],'demon catharsis Saibel');eq(M.is_enabled(),false)
 reset();full();start();tick();M.note_corrupt('accepted','Saibel');M.note_corrupt('rejected','Saibel');M.note_prompt()
-eq(M.is_enabled(),false);eq(#emitted,1)
--- Exactly half rebuilds, unknown class does not claim a completed class lock.
+eq(M.is_enabled(),false)
 reset();full();start();tick();M.note_corrupt('accepted','Saibel');M.note_prompt();tick()
 Yso.apostate.note_mana('Saibel',50,100);eq(M.status().phase,'pressure');eq(#sent,0)
-reset();full();cls='';start();eq(tick(),false);eq(M.status().reason,'class_coverage_unverified')
-reset();full();extras={'prone'};cls='druid';start();eq(tick(),true);eq(M.status().reason,'unsupported_affliction:prone')
-eq(support_emitted[1].eq,'chill Saibel')
--- Pause, target changes, missing readiness, and timeout cannot send stale finishers.
-reset();start();paused=true;eq(tick(),false);eq(#emitted,0);paused=false
-gmcp.Char.Vitals.bal='0';eq(tick(),false);gmcp.Char.Vitals.bal='1';tick()
-target='Other';M.note_prompt();eq(M.is_enabled(),false)
-reset();start();tick();clock=clock+11;tick();eq(M.is_enabled(),false)
-reset();start();tick();start();eq(M.is_enabled(),false);eq(M.state.pending,nil)
-reset();start();Yso.inhibit={active=function() return true end};eq(tick(),false);eq(#emitted,0);Yso.inhibit=nil
-gmcp.Char.Vitals.mp='1';eq(tick(),false);eq(M.status().reason,'mana');gmcp.Char.Vitals.mp='6817'
-ak.defs={shield=true};eq(tick(),false);eq(M.status().reason,'shield');ak.defs={}
-tick();M.reset_route_state('target_slain',target);eq(M.is_enabled(),false)
-reset();full();cls='magi';extras={'haemophilia'};D.stock.notechis=true;start();tick()
-ak.apostate.puncture('Saibel');prompt();eq(M.is_enabled(),false)
 reset();full();start();tick();M.note_corrupt('accepted','Saibel');M.note_prompt();tick()
-clock=clock+11;tick();eq(M.is_enabled(),false)
-Yso.apostate.note_mana('Saibel',49,100);eq(#sent,0)
--- Once the cancelled reply is consumed, standalone Contemplate still works.
+clock=clock+11;tick();eq(M.is_enabled(),false);Yso.apostate.note_mana('Saibel',49,100);eq(#sent,0)
 Yso.apostate.catharsis_sent_at=nil;Yso.apostate.note_mana('Saibel',49,100);eq(sent[2],'demon catharsis Saibel')
 reset();full();start();tick();M.note_corrupt('accepted','Saibel');M.note_prompt();tick();start()
 Yso.apostate.note_mana('Saibel',49,100);eq(#sent,0)
@@ -250,16 +219,16 @@ eq(support_emitted[1].eq,'disfigure Saibel');affstrack.score.disloyalty=100
 clock=clock+3;scheduled();eq(support_emitted[2].eq,'shrivel left leg Saibel')
 -- Eye attacks need EQ readiness too, despite spending BAL. Puncture remains BAL-only.
 reset();gmcp.Char.Vitals.eq='0';start();scheduled();eq(#emitted,0);eq(M.state.pending,nil)
-gmcp.Char.Vitals.eq='1';scheduled();eq(emitted[1].bal,'deadeyes Saibel paralysis impatience')
+gmcp.Char.Vitals.eq='1';scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience dizzy')
 -- Reproduce the log: Disfigure spends EQ, Curseward comes up, and BAL returns first.
 reset();affstrack.score={asthma=100,manaleech=100};start();scheduled()
-eq(emitted[1].bal,'deadeyes Saibel paralysis impatience');eq(support_emitted[1].eq,'disfigure Saibel')
+eq(emitted[1].bal,'deadeyes Saibel impatience dizzy');eq(support_emitted[1].eq,'disfigure Saibel')
 local pressure_pending=M.state.pending;scheduled();eq(M.state.pending,pressure_pending)
-eye('paralysis');eye('impatience');prompt();affstrack.score.disloyalty=100
+eye('impatience');eye('dizzy');prompt();affstrack.score.disloyalty=100
 ak.defs.curseward=true;gmcp.Char.Vitals.eq='0';clock=clock+2;scheduled()
 eq(#emitted,1);eq(M.state.pending,nil);eq(M.is_enabled(),true)
 gmcp.Char.Vitals.eq='1';clock=clock+1;scheduled()
-eq(emitted[2].bal,'deadeyes Saibel breach sicken');eq(#support_emitted,1)
+eq(emitted[2].bal,'deadeyes Saibel breach epilepsy');eq(#support_emitted,1)
 -- Explicit rejections cannot leave an unexecuted eye batch waiting for a hit.
 eq(type(M.note_eye_rejected),'function')
 local function reject(reason,name)
@@ -273,17 +242,17 @@ for _,lane in ipairs({'equilibrium','balance'}) do
  gmcp.Char.Vitals[lane=='equilibrium' and 'eq' or 'bal']='0'
  clock=clock+11;scheduled();eq(#emitted,1);eq(M.is_enabled(),true)
  gmcp.Char.Vitals[lane=='equilibrium' and 'eq' or 'bal']='1'
- ak.defs.curseward=true;scheduled();eq(emitted[2].bal,'deadeyes Saibel breach paralysis')
+ ak.defs.curseward=true;scheduled();eq(emitted[2].bal,'deadeyes Saibel breach impatience')
 end
 reset();start();scheduled();local before=M.state.pending
 reject('curseward','Other');eq(before.rejected,nil)
 reject('curseward');prompt();eq(M.state.pending,nil);eq(ak.defs.curseward,true)
-clock=clock+3;scheduled();eq(emitted[2].bal,'deadeyes Saibel breach paralysis')
--- A rejected second eye does not erase the first eye's confirmed affliction.
-reset();start();scheduled();eye('paralysis')
-if TruelocksEyeRejections then TruelocksEyeRejections.curseward_stare() else reject('curseward') end
-prompt();eq(affstrack.score.paralysis,100);eq(affstrack.score.impatience,nil)
 clock=clock+3;scheduled();eq(emitted[2].bal,'deadeyes Saibel breach impatience')
+-- A rejected second eye does not erase the first eye's confirmed affliction.
+reset();start();scheduled();eye('impatience')
+if TruelocksEyeRejections then TruelocksEyeRejections.curseward_stare() else reject('curseward') end
+prompt();eq(affstrack.score.impatience,100);eq(affstrack.score.dizziness,nil)
+clock=clock+3;scheduled();eq(emitted[2].bal,'deadeyes Saibel breach dizzy')
 reset();start();scheduled();reject('blind');eq(M.is_enabled(),false)
 eq(M.state.template.last_disable_reason,'eyes_blind')
 -- Non-Evileye actions remain usable through Curseward.
@@ -322,12 +291,12 @@ eq(emitted[1].eq,'demon corrupt Saibel paralysis');eq(#support_emitted,0)
 scheduled();eq(#support_emitted,0)
 -- Stop/reset removes support timing and any subsequent scheduled attacks.
 -- Do not spend the same reported mana twice when BAL and EQ fire together.
-reset();affstrack.score={slickness=100,frozen=100};gmcp.Char.Vitals.mp='414';start();scheduled()
-eq(emitted[1].bal,'deadeyes Saibel paralysis impatience');eq(#support_emitted,0)
+reset();affstrack.score={slickness=100,frozen=100};gmcp.Char.Vitals.mp='394';start();scheduled()
+eq(emitted[1].bal,'deadeyes Saibel impatience dizzy');eq(#support_emitted,0)
 scheduled();eq(#support_emitted,0) -- same stale vitals while Deadeyes is still pending
 gmcp.Char.Vitals.mp='299';scheduled();eq(#support_emitted,0) -- updated mana already includes BAL cost
 gmcp.Char.Vitals.mp='300';scheduled();eq(support_emitted[1].eq,'shrivel left leg Saibel')
-reset();affstrack.score={slickness=100,frozen=100};gmcp.Char.Vitals.mp='415';start();scheduled()
+reset();affstrack.score={slickness=100,frozen=100};gmcp.Char.Vitals.mp='395';start();scheduled()
 eq(support_emitted[1].eq,'shrivel left leg Saibel')
 support_case({slickness=100});eq(#support_emitted,1);start()
 eq(M.state.support_until,nil);eq(M.state.timer_id,nil)

@@ -7,6 +7,17 @@ $tracking=$ak.SelectSingleNode('//Script[name="Apostate tracking"]')
 if(-not $tracking){throw 'Missing Apostate tracking script'}
 $shrivel=$ak.SelectSingleNode('//TriggerGroup[name="Apostate Group"]/TriggerGroup[name="Necromancy"]/Trigger[name="Apostate Shrivel"]')
 if(-not $shrivel){throw 'Missing Apostate Necromancy Shrivel trigger'}
+foreach($limb in @('arm','leg')){
+ $node=$ak.SelectSingleNode('//TriggerGroup[name="Apostate Group"]/TriggerGroup[name="Necromancy"]/Trigger[name="Shrivel '+$limb+'s"]')
+ if(-not $node -or $node.isActive -ne 'yes'){throw ('Missing exhausted '+$limb+' trigger')}
+ $sample="You reach out and touch Beltsa's "+$limb+", but you can shrivel it no further."
+ if($sample -cnotmatch $node.regexCodeList.string){throw ('Exhausted '+$limb+' does not match')}
+ foreach($other in @('(Party): '+$sample,"You reach out and touch Beltsa's left "+$limb+", but you can shrivel it no further.")){
+  if($other -cmatch $node.regexCodeList.string){throw 'Pair confirmation accepted a chat or sided message'}
+ }
+ if($node.script -cne ('ak.apostate.shrivel_exhausted(matches[2], "'+$limb+'")')){throw 'Wrong limb-pair adapter'}
+}
+if($ak.SelectSingleNode('//Script[name="Hard Reset"]').script.Contains('Reset Success!')){throw 'Reset diagnostic still present'}
 $h=[Collections.Generic.List[string]]::new()
 $h.Add(@'
 local now=100
@@ -105,6 +116,16 @@ reset();A.capture_eye('Beltsa','sicken');A.commit_eyes();OppLostAff('manaleech')
 A.capture_eye('Beltsa','sicken');A.commit_eyes();check(affstrack.score.manaleech,100)
 reset();A.shrivel('Beltsa','right','leg');check(affstrack.score.rightleg,100)
 OppLostAff('rightleg');check(affstrack.score.rightleg,0)
+for _,limb in ipairs({'arm','leg'}) do
+ reset();check(A.shrivel_exhausted('Other',limb),false)
+ check(affstrack.score['left'..limb],0)
+ check(A.shrivel_exhausted('Beltsa',limb),true)
+ check(affstrack.score['left'..limb],100);check(affstrack.score['right'..limb],100)
+ local count=#gained;A.shrivel_exhausted('Beltsa',limb);check(#gained,count)
+ OppLostAff('left'..limb);check(affstrack.score['left'..limb],0)
+ A.shrivel_exhausted('Beltsa',limb);check(affstrack.score['left'..limb],100)
+end
+check(A.shrivel_exhausted('Beltsa','torso'),false)
 -- Corrupt must not erase an affliction that was cured and re-applied elsewhere.
 reset();A.reset_tracking();A.capture_eye('Beltsa','asthma');A.capture_eye('Beltsa','paralysis');A.commit_eyes()
 OppLostAff('asthma');OppGainedAff('asthma')

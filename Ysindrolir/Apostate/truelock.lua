@@ -1,4 +1,4 @@
--- Alias-owned controller. All affliction decisions consume confirmed AK scores.
+-- Alias-owned controller. Padding accepts AK scores >=50; finishers require confirmation.
 Yso=Yso or {};Yso.off=Yso.off or {};Yso.off.apostate=Yso.off.apostate or {}
 local M=Yso.off.apostate.truelock or {};Yso.off.apostate.truelock=M
 M.key='apostate_truelock';M.alias_owned=true
@@ -7,13 +7,15 @@ M.cfg=M.cfg or {timeout=10,eye_balance=1.9,puncture_balance=2.15,corrupt_eq=3}
 -- Migrate the old shipped order on reload, while preserving custom priorities.
 if type(M.priorities)~='table'
  or table.concat(M.priorities,',')=='paralysis,impatience,asthma,slickness,anorexia,weariness,stupidity,recklessness'
- or table.concat(M.priorities,',')=='paralysis,clumsiness,addiction,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness' then
- M.priorities={'paralysis','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness','clumsiness','addiction'}
+ or table.concat(M.priorities,',')=='paralysis,clumsiness,addiction,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness'
+ or table.concat(M.priorities,',')=='paralysis,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness,clumsiness,addiction' then
+ M.priorities={'impatience','asthma','manaleech','slickness','anorexia','paralysis'}
 end
-local baseline={'paralysis','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness','clumsiness','addiction'}
+local baseline={'impatience','asthma','manaleech','slickness','anorexia','paralysis'}
 local eyes={paralysis='paralysis',impatience='impatience',asthma='asthma',slickness='sicken',
  anorexia='anorexia',weariness='weariness',stupidity='stupid',recklessness='reckless',
- voyria='plague',confusion='confusion',clumsiness='clumsy',addiction='addiction'}
+ voyria='plague',confusion='confusion',clumsiness='clumsy',addiction='addiction',
+ manaleech='manaleech',dizziness='dizzy',epilepsy='epilepsy',sensitivity='sensitivity'}
 local function now()
  local t=type(getEpoch)=='function' and tonumber(getEpoch()) or os.time()
  return t>20000000000 and t/1000 or t
@@ -22,6 +24,63 @@ local function target_name() return type(Yso.get_target)=='function' and Yso.get
 local function valid(n) return type(n)=='string' and n:match("^[A-Za-z][A-Za-z'%-]*$") end
 local function same(a,b) return type(a)=='string' and type(b)=='string' and a:lower()==b:lower() end
 local function present(v) return v==true or (tonumber(v) or 0)>=100 end
+local function likely(v) return v==true or (tonumber(v) or 0)>=50 end
+local plumbum={'dizziness','epilepsy','shyness','stupidity'}
+local aurum={'clumsiness','sensitivity','weariness'}
+local function padding_count(scores,pool)
+ local count=0;for _,aff in ipairs(pool) do if likely(scores[aff]) then count=count+1 end end
+ return count
+end
+local function padded(scores)
+ return likely(scores.impatience) and likely(scores.asthma)
+  and padding_count(scores,plumbum)>=2 and padding_count(scores,aurum)>=2
+end
+local function choose(candidates,count,out)
+ for _=1,math.min(count,#candidates) do
+  out[#out+1]=table.remove(candidates,math.random(#candidates))
+ end
+end
+-- Return desired afflictions, not inferred deliveries. Replan after every confirmed batch.
+function M.pressure_plan(scores,required)
+ for _,stage in ipairs({{core='impatience',pool=plumbum},{core='asthma',pool=aurum}}) do
+  local out,candidates={},{}
+  if not likely(scores[stage.core]) then out[#out+1]=stage.core end
+  for _,aff in ipairs(stage.pool) do if not likely(scores[aff]) then candidates[#candidates+1]=aff end end
+  choose(candidates,math.max(0,2-padding_count(scores,stage.pool)),out)
+  if #out>0 then return out end
+ end
+ if not present(scores.manaleech) then
+  local out,candidates={'manaleech'},{}
+  for _,pool in ipairs({plumbum,aurum}) do
+   for _,aff in ipairs(pool) do
+    if eyes[aff] and not likely(scores[aff]) then candidates[#candidates+1]=aff end
+   end
+  end
+  if #candidates==0 then
+   for _,pool in ipairs({plumbum,aurum}) do
+    for _,aff in ipairs(pool) do
+     if eyes[aff] and not present(scores[aff]) then candidates[#candidates+1]=aff end
+    end
+   end
+  end
+  choose(candidates,1,out);return out
+ end
+ local out={}
+ for _,aff in ipairs({'slickness','anorexia'}) do
+  if not present(scores[aff]) then out[#out+1]=aff end
+ end
+ if #out>0 then return out end
+ -- Class-specific and custom requirements precede the closing paralysis.
+ for _,aff in ipairs(required or {}) do
+  local core=false;for _,key in ipairs(baseline) do if key==aff then core=true;break end end
+  if not core and not present(scores[aff]) then out[#out+1]=aff end
+ end
+ if #out>0 then return out end
+ if not present(scores.paralysis) then return {'paralysis'} end
+ -- Uncertain core afflictions must be confirmed before the existing Corrupt finisher.
+ for _,aff in ipairs(required or {}) do if not present(scores[aff]) then out[#out+1]=aff end end
+ return out
+end
 local function say(s) if cecho then cecho('<DeepPink>[Truelocks] <reset>'..s..'\n') end end
 local function hold(reason)
  if M.state.reason~=reason and (reason:find('missing_',1,true) or reason:find('unsupported_',1,true)
@@ -217,7 +276,8 @@ local function pressure_attack()
  local scores=snapshot();if not scores then return hold('tracking_unavailable') end
  local list=requirements();if not list then return hold('class_requirements_unavailable') end
  local missing={};for _,aff in ipairs(list) do if not present(scores[aff]) then missing[#missing+1]=aff end end
- if #missing==0 then
+ local planned=M.pressure_plan(scores,list)
+ if #missing==0 and #planned==0 then
   if not M.state.class_verified then return hold('class_coverage_unverified') end
   if not ready('eq') then return hold('equilibrium') end
   if emit({eq='demon corrupt '..M.state.victim..' paralysis'},'corrupt') then
@@ -227,10 +287,13 @@ local function pressure_attack()
  end
  if ak.defs and ak.defs.shield then return hold('shield') end
  if not ready('bal') then return hold('balance') end
+ missing=planned
  local picks,seen={},{}
  local breach=ak.defs and ak.defs.curseward
  for _,aff in ipairs(missing) do
   local eye=eyes[aff]
+  -- A random shyness pick uses Digitalis through the existing daegger path.
+  if not eye then break end
   if eye and not seen[eye] and #picks<2 then seen[eye]=true;picks[#picks+1]=eye end
  end
  if #picks>0 then
@@ -279,7 +342,7 @@ local function support_attack(spent_mana)
  if not ready('eq') then return false end
  local scores=snapshot();if not scores then return false end
  local list=requirements();if not list then return false end
- local complete=true
+ local complete=padded(scores)
  for _,aff in ipairs(list) do if not present(scores[aff]) then complete=false;break end end
  if complete then return false end
  local skill,arg
