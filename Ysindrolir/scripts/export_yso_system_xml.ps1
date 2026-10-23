@@ -3,7 +3,7 @@
 # Run:  cd Ysindrolir\scripts ; .\export_yso_system_xml.ps1
 # Validate:  [xml](Get-Content -Raw -LiteralPath '..\mudlet packages\Yso system.xml')
 [CmdletBinding(SupportsShouldProcess = $true)]
-param([switch]$FocusOnly, [switch]$ShikudoOnly, [switch]$KaiSoarOnly)
+param([switch]$FocusOnly, [switch]$ShikudoOnly, [switch]$KaiSoarOnly, [switch]$ShikudoDuelOnly, [switch]$CombatSafetyOnly)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -120,6 +120,13 @@ $XmlPackage = Join-Path $Ysindrolir 'mudlet packages\Yso system.xml'
 $ScriptToSourcePath = [ordered]@{
   'AK+Legacy wiring'              = Join-Path $YsoDir 'Integration\ak_legacy_wiring.lua'
   'Api stuff'                     = Join-Path $YsoDir 'xml\api_stuff.lua'
+  'Apostate utilities'            = Join-Path $YsoDir 'xml\apostate_utilities.lua'
+  'Apostate reference'            = Join-Path $Ysindrolir 'Apostate\evileye_reference.lua'
+  'Apostasy reference'            = Join-Path $Ysindrolir 'Apostate\apostasy_reference.lua'
+  'Necromancy reference'          = Join-Path $Ysindrolir 'Apostate\necromancy_reference.lua'
+  'Deadeye combo sorter'          = Join-Path $Ysindrolir 'Apostate\deadeyes.lua'
+  'Apostate daegger envenom'       = Join-Path $Ysindrolir 'Apostate\daegger_envenom.lua'
+  'Apostate Truelocks'             = Join-Path $Ysindrolir 'Apostate\truelock.lua'
   'Alchemist aurify route'        = Join-Path $AlchemistDir 'Aurify route.lua'
   'Alchemist duel route'          = Join-Path $AlchemistDir 'Core\duel route.lua'
   'Alchemist group damage'        = Join-Path $AlchemistDir 'Core\group damage.lua'
@@ -128,6 +135,7 @@ $ScriptToSourcePath = [ordered]@{
   'Cureset Baselines'             = Join-Path $YsoDir 'xml\cureset_baselines.lua'
   'Defensive checks'              = Join-Path $YsoDir 'xml\magi_defensive_checks.lua'
   'Magi route core'               = Join-Path $MagiDir 'magi_route_core.lua'
+  'Magi group route retirement'   = Join-Path $MagiDir 'retire_group_damage.lua'
   'Magi weapons'                  = Join-Path $MagiDir 'magi_weapons.lua'
   'Magi shalestorm'               = Join-Path $MagiDir 'magi_shalestorm.lua'
   'Magi hellfumes'                = Join-Path $MagiDir 'magi_hellfumes.lua'
@@ -135,6 +143,7 @@ $ScriptToSourcePath = [ordered]@{
   'Magi firestorm'                = Join-Path $MagiDir 'Magi_firestorm.lua'
   'Magi water group'              = Join-Path $MagiDir 'Magi_water_group.lua'
   'Magi elemental helpers'        = Join-Path $YsoDir 'xml\magi_elemental_helpers.lua'
+  'Convergence logic'             = Join-Path $MagiDir 'magi_convergence.lua'
   'formulation'                   = Join-Path $AlchemistDir 'Core\formulation.lua'
   'formulation_build'             = Join-Path $AlchemistDir 'Core\formulation_build.lua'
   'formulation_chart'             = Join-Path $AlchemistDir 'Core\formulation_chart.lua'
@@ -181,6 +190,7 @@ $ScriptInserts = @(
   @{ Name = 'Yso party targeting';   After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_party_targeting.lua' },
   @{ Name = 'Yso pulse';             After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua' },
   @{ Name = 'Route registry';        After = 'Yso pulse';                Source = Join-Path $YsoDir 'Combat\route_registry.lua' },
+  @{ Name = 'Magi group route retirement'; After = 'Route registry'; Source = Join-Path $MagiDir 'retire_group_damage.lua' },
   @{ Name = 'Offense core';          After = 'Yso.offense.request_tick'; Source = Join-Path $YsoDir 'Combat\offense_core.lua' },
   @{ Name = 'Alchemist duel route';  After = 'Alchemist physiology';     Source = Join-Path $AlchemistDir 'Core\duel route.lua' },
   @{ Name = 'Alchemist aurify route'; After = 'Alchemist duel route';    Source = Join-Path $AlchemistDir 'Aurify route.lua' },
@@ -207,16 +217,26 @@ if (-not (Test-Path -LiteralPath $XmlPackage)) {
 
 $ScriptsToRemove = @('Yso Bootstrap loader', 'Yso.queue', 'Magi group damage', 'Magi focus', 'Bloodboil auto')
 $TriggersToRemove = @('Reflection up', 'Reflection down')
-$MdamAliasSource = Join-Path $MagiDir 'mdam_alias_body.lua'
+$MdamAliasSource = Join-Path $MagiDir 'mdam_retired_alias.lua'
 $MfocusAliasSource = Join-Path $MagiDir 'mfocus_alias_body.lua'
 $MreflectAliasSource = Join-Path $MagiDir 'mreflect_alias_body.lua'
 
 $content = Get-Content -LiteralPath $XmlPackage -Raw -Encoding UTF8
 $original = $content
 
+if ($CombatSafetyOnly) {
+  if ($FocusOnly -or $ShikudoOnly -or $KaiSoarOnly -or $ShikudoDuelOnly) {
+    throw 'CombatSafetyOnly must be run separately from other scoped exports.'
+  }
+  if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Deliverance safety and resonance feedback')) {
+    & (Join-Path $ScriptsDir 'build_combat_safety_package.ps1') -PackagePath $XmlPackage
+  }
+  return
+}
+
 # Scoped maintenance preserves package-native scripts that have no current disk source.
 # Run both switches together for the Monk/Kai/soar update, without the legacy full refresh.
-if ($ShikudoOnly -or $KaiSoarOnly) {
+if ($ShikudoOnly -or $KaiSoarOnly -or $ShikudoDuelOnly) {
   if ($FocusOnly) { throw 'FocusOnly cannot be combined with ShikudoOnly or KaiSoarOnly.' }
   if ($ShikudoOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Shikudo sources and embedded shdam alias')) {
     & (Join-Path $ScriptsDir 'build_shdam_alias_body.ps1') | Out-Null
@@ -248,6 +268,9 @@ if ($ShikudoOnly -or $KaiSoarOnly) {
   }
   if ($KaiSoarOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Kaido states, Deliverance, Kai cripple and soar')) {
     & (Join-Path $ScriptsDir 'build_kai_soar_package.ps1')
+  }
+  if ($ShikudoDuelOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Shikudo duel and limb packages')) {
+    & (Join-Path $ScriptsDir 'build_shikudo_duel_package.ps1')
   }
   return
 }
@@ -333,7 +356,6 @@ if ($PSCmdlet.ShouldProcess('Targeting', 'Remove y targeting alias')) {
 }
 
 if ($PSCmdlet.ShouldProcess('mdam', 'Replace mdam alias script body')) {
-  & (Join-Path $ScriptsDir 'build_mdam_alias_body.ps1') | Out-Null
   $content = Set-AliasScriptByName $content 'mdam' $MdamAliasSource
 }
 

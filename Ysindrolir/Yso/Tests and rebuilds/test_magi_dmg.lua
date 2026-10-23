@@ -120,9 +120,19 @@ _G.Yso = {
 _G.yso = _G.Yso
 
 dofile(RI_PATH)
+dofile(join_path(SCRIPT_DIR, "..", "..", "Magi", "magi_route_core.lua"))
+dofile(join_path(SCRIPT_DIR, "..", "..", "Magi", "magi_convergence.lua"))
 dofile(ROUTE_PATH)
 
 local M = Yso.off.magi.dmg
+local C = Yso.magi.convergence
+local function confirm_destroy_setup()
+  affstrack.score.conflagrate = 100
+  affstrack.score.aflame = 200
+  gmcp.Char.Vitals.charstats = { "Channels: Fire" }
+  C.capture_items({location="inv",items={{id="staff",name="elemental staff",attrib="l"}}},"List")
+  C.note_assess("foe",40,100)
+end
 M.on()
 
 print("=== Test 1: magi_dmg emits through Yso.emit route pipeline ===")
@@ -155,6 +165,9 @@ do
   emit_rows = {}
   affstrack.score.conflagrate = 100
   Yso.magi_assess = 40
+  assert_eq("3z: unscoped legacy HP is not confirmed assessment", C.hp("foe"), nil)
+  assert_true("3y: incomplete Destroy setup must not execute", M.build("test") ~= "cast destroy at foe")
+  confirm_destroy_setup()
   local ok = M.attack_function()
   assert_true("3a: destroy attack succeeded", ok == true)
   assert_eq("3b: one destroy emit payload", #emit_rows, 1)
@@ -170,6 +183,7 @@ do
   affstrack.score.conflagrate = 0
   Yso.magi_assess = nil
   hellfumes_up = false
+  now_s = now_s + 4
   M.on_payload_sent({
     route = "magi_dmg",
     target = "foe",
@@ -188,6 +202,7 @@ do
   emit_rows = {}
   affstrack.score.conflagrate = 100
   Yso.magi_assess = 40
+  confirm_destroy_setup()
   hellfumes_up = false
   M.on_payload_sent({
     route = "magi_dmg",

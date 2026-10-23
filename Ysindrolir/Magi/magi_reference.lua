@@ -22,7 +22,7 @@ local runtime_resonance = type(Yso.magi.resonance) == "table" and Yso.magi.reson
 
 M.meta = {
   class = "Magi",
-  updated = "2026-03-29",
+  updated = "2026-10-23",
   notes = {
     "Resonance is a core Magi mechanic. Resonant spells build elemental resonance (air/fire/earth/water).",
     "Yso resonance keeps a lowercase state table and can sync from AK's live Magi resonance tracker.",
@@ -302,6 +302,7 @@ M.elementalism = {
       "Convergence",
     },
     resonant = {
+      "Pebble",
       "Gust",
       "Firelash",
       "Freeze",
@@ -317,6 +318,21 @@ M.elementalism = {
   },
 
   -- Captured ABs
+  pebble = {
+    name = "Pebble",
+    abadmin_id = 3290,
+    syntax = "CAST PEBBLE AT <target>",
+    channels = { "earth" },
+    works_on = "adventurers",
+    cooldown_s = 2.30,
+    resource_mana = 90,
+    notes = {
+      "Deals damage and breaks one healthy limb on a confirmed hit.",
+      "If all limbs are already broken, still deals damage but does not increase earth resonance.",
+      "Track the limb named by the confirmed hit; submitting a cast does not confirm damage or a break.",
+    },
+  },
+
   bloodboil = {
     name = "Bloodboil",
     abadmin_id = 717,
@@ -525,6 +541,63 @@ M.crystalism = {
   -- NOTE: In addition to these embeds, Magi have a "vibration type" system
   -- (vibes) such as harmony/grounding/heat/reverberation/etc. Track that
   -- separately if you build automation around it.
+
+  destabilise = {
+    name = "Destabilise",
+    abadmin_id = 2060,
+    syntax = "VIBE DESTABILISE <vibe type>",
+    works_on = "room",
+    resource_mana = 400,
+    requires = { "balance", "equilibrium" },
+    cooldown = "equilibrium",
+    -- No numeric equilibrium cost is supplied by the captured AB.
+    consumes_vibration = true,
+    effects = {
+      adduction = "Attempts to draw everyone in adjacent locations into the room.",
+      alarm = "Informs you of everyone in the local area.",
+      creeps = "Afflicts everyone in the room with fear, agoraphobia, and claustrophobia.",
+      disorientation = "Prones and afflicts everyone in the room with dizziness.",
+      dissipate = "Drains mana from everyone in the room.",
+      dissonance = "Breaks all magical shields protecting adventurers in the room.",
+      energise = "Restores some health for each person besides the destabiliser.",
+      forest = "Causes nontrivial bleeding to everyone in the room.",
+      gravity = "Forces everyone in the sky above back to the ground.",
+      grounding = "Launches everyone in the room into the sky.",
+      harmony = "Restores health to everyone in the room.",
+      heat = "Deals fire damage and causes ablaze to everyone in the room.",
+      lullaby = "Strips the metawake and insomnia defences.",
+      oscillate = "Deals minor damage and afflicts everyone in the room with epilepsy and stupidity.",
+      palpitation = "Deals damage to everyone in the room.",
+      plague = "Breaks the limbs of everyone in the room.",
+      retardation = "Afflicts everyone in the room with Aeon.",
+      reverberation = "Destroys all monolith, cube, knife, and eye sigils on the ground in the room.",
+      silence = "Briefly blocks communication channels for everyone present when used, even after they leave.",
+      revelation = "Strips phase, astralform, or blackwind from everyone in the room.",
+      stridulation = "Disrupts the mental equilibrium of everyone in the room.",
+      tremors = "Creates rubble to block the room's exits.",
+    },
+    notes = {
+      "Destroys the chosen vibration after applying its destabilise effects to the location.",
+      "Requires both balance and equilibrium; numeric equilibrium costs are unspecified in the captured AB.",
+    },
+  },
+
+  overload = {
+    name = "Overload",
+    abadmin_id = 3289,
+    syntax = "VIBE DESTABILISE <vibe> <target> <affliction>",
+    works_on = "target in room, plus usual destabilise room effects",
+    requires = { "balance", "equilibrium" },
+    consumes_vibration = true,
+    afflictions = { "paralysis", "asthma", "slickness", "anorexia", "stupidity" },
+    cooldown = "equilibrium: maximum of the destabilised vibration cost and overload cost",
+    notes = {
+      "Applies the chosen affliction to a target in the room in addition to the vibration's usual destabilise room effects.",
+      "Consumes the vibration and requires both balance and equilibrium.",
+      "Equilibrium recovery uses the greater of the destabilised vibration and overload costs.",
+      "Numeric mana and equilibrium costs are unspecified; do not infer them from Destabilise.",
+    },
+  },
 
   adduction = {
     name = "Adduction",

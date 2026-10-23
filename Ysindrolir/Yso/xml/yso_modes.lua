@@ -2,18 +2,21 @@
 -- yso_modes.lua (DROP-IN)
 -- Purpose:
 --   * Central "mode of play" switch for Yso
---   * Modes: "bash" (hunt) and "combat" only
---   * All combat routes (duel, group, aurify, focus, …) run when mode is combat
+--   * Selected contexts: hunt, duel, group; internal modes: bash and combat
+--   * Context selection prepares play and stops incompatible loops without starting one
 --   * Non-destructive: only flips optional toggles if present
 --
 -- API:
+--   Yso.mode.set_context("hunt"|"duel"|"group"[, reason])
 --   Yso.mode.set("bash"|"combat"[, reason])
 --   Yso.mode.toggle([reason])                 -- toggles bash <-> combat
 --   Yso.mode.is_bash() / is_hunt() / is_combat()
 --   raiseEvent("yso.mode.changed", old, new, reason) on mode change
+--   raiseEvent("yso.context.changed", old, new, reason) on context change
 --
 -- Runtime aliases (tempAlias, auto-registered if available):
---   ^hunt$    -> switch to bash mode without forcing a huntmode reset on noop
+--   ^mode (hunt|duel|group)$ -> prepare selected context
+--   Legacy owns ^hunt$ and synchronizes context when its basher starts
 --   ^mbash$   -> if already in bash, force a huntmode refresh/reset
 --
 -- Back-compat:
@@ -89,6 +92,10 @@ if not M.profile.hunt and M.profile.bash then M.profile.hunt = M.profile.bash en
 
 M.state = M.state or _norm(M.cfg.default or "combat")
 M.state = _norm(M.state)
+if M.selected_context ~= "hunt" and M.selected_context ~= "duel" and M.selected_context ~= "group" then
+  M.selected_context = M.state == "bash" and "hunt" or "duel"
+end
+M.state = M.selected_context == "hunt" and "bash" or "combat"
 M.last_change = M.last_change or _now()
 M.last_reason = M.last_reason or "init"
 
@@ -200,6 +207,9 @@ local function _loop_set_enabled(mod, on)
   local enabled = (on == true)
   state.enabled = enabled
   state.loop_enabled = enabled
+  -- Older route init() functions merge this flag back into state. Synchronize
+  -- it before invoking lifecycle hooks so shutdown cannot resurrect a loop.
+  if type(mod.enabled) == "boolean" then mod.enabled = enabled end
   if type(mod.cfg) == "table" then
     mod.cfg.enabled = enabled
   end
@@ -224,6 +234,7 @@ end
 
 local function _loop_kill_timer(mod)
   local state = type(mod) == "table" and mod.state or nil
+  if state then state.timer_generation = (tonumber(state.timer_generation) or 0) + 1 end
   if state and state.timer_id then
     pcall(killTimer, state.timer_id)
     state.timer_id = nil
@@ -247,7 +258,11 @@ local function _loop_activate(entry, reason)
   M.route_loop.activating_id = _norm(entry.id or "")
 
   local mode = _norm(entry.mode or "")
-  if mode ~= "" and type(M.set) == "function" then
+  if entry.context then
+    M.set_context(entry.context, reason)
+  elseif mode == "combat" and type(entry.contexts) == "table" then
+    M.set_context(entry.contexts[M.selected_context] and M.selected_context or "duel", reason)
+  elseif mode ~= "" and type(M.set) == "function" then
     if mode == "bash" or mode == "combat" then
       pcall(M.set, mode, reason)
     end
@@ -278,9 +293,8 @@ local function _stop_other_loops(active_id)
       if type(mod) == "table"
         and mod.alias_owned == true
         and mod.state
-        and mod.state.loop_enabled == true
-        and type(mod.stop) == "function" then
-        pcall(mod.stop)
+        and mod.state.loop_enabled == true then
+        M.stop_route_loop(entry.id, "route_switch", true)
       end
     end
   end
@@ -339,7 +353,9 @@ function M.schedule_route_loop(name, delay)
   if delay < 0 then delay = 0 end
   if type(tempTimer) ~= "function" then return false end
 
+  local generation = state.timer_generation
   state.timer_id = tempTimer(delay, function()
+    if mod.state ~= state or state.timer_generation ~= generation or state.loop_enabled ~= true then return end
     if mod.state then mod.state.timer_id = nil end
     if Yso and Yso.mode and type(Yso.mode.tick_route_loop) == "function" then
       Yso.mode.tick_route_loop(entry.id)
@@ -382,6 +398,8 @@ function M.nudge_route_loop(name, reason)
 end
 
 function M.start_route_loop(name, reason)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return false, "enemy_deliverance" end
   local entry = _loop_entry(name)
   if not entry then
     _echo(("Route <yellow>%s<reset> is not registered."):format(tostring(name)))
@@ -456,15 +474,16 @@ function M.stop_route_loop(name, reason, silent)
   mod.state.template = mod.state.template or {}
   mod.state.template.last_disable_reason = ctx.reason
 
+  local stopped_ok, stopped_error = true, nil
   if type(mod.alias_loop_on_stopped) == "function" then
-    pcall(mod.alias_loop_on_stopped, ctx)
+    stopped_ok, stopped_error = pcall(mod.alias_loop_on_stopped, ctx)
   end
 
   _loop_release(entry)
   if _combat_loop_count() <= 0 then
     _send_usequeueing(true)
   end
-  return true
+  return stopped_ok, stopped_error
 end
 
 function M.toggle_route_loop(name, reason)
@@ -559,7 +578,12 @@ function Yso.is_actively_fighting()
 end
 
 function M.echo()
-  _echo(("Mode: %s"):format(M.state))
+  local curing = Legacy and Legacy.Curing or nil
+  local C = Yso.curing and Yso.curing.coordinator or nil
+  _echo(("Context: %s | Mode: %s | Route: %s | Curingset: %s | Pending: %s | Override: %s"):format(
+    tostring(M.selected_context), tostring(M.state), M.active_route_id() ~= "" and M.active_route_id() or "none",
+    tostring(curing and curing.ActiveServerSet or "unknown"), tostring(C and C.pending and C.pending.set or "none"),
+    tostring(C and C.context_override or "none")))
 end
 
 function M.apply_profile(mode)
@@ -576,23 +600,33 @@ function M.apply_profile(mode)
   end
 end
 
-function M.set(mode, reason)
-  mode = _norm(mode)
-  if mode ~= "bash" and mode ~= "combat" then
-    _echo(("Invalid mode: <yellow>%s<reset> (use bash|combat)"):format(tostring(mode)))
-    return false
+function M.set_context(context, reason)
+  context = tostring(context or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+  if context ~= "hunt" and context ~= "duel" and context ~= "group" then
+    _echo(("Invalid context: <yellow>%s<reset> (use hunt|duel|group)"):format(context))
+    return false, "invalid_context"
   end
-
+  local prior = M.selected_context
+  local mode = context == "hunt" and "bash" or "combat"
   local old = M.state
-  if old == mode then
+  if prior == context and old == mode then
     M.last_reason = reason or M.last_reason
-    return true
+    return true, "unchanged"
   end
-
-  if mode == "bash" then
-    _stop_all_route_loops("mode_bash", true)
+  if context == "hunt" then
+    _stop_all_route_loops("context_hunt", true)
+  else
+    local basher = Legacy and Legacy.Basher or nil
+    if basher and type(basher.stop) == "function" then pcall(basher.stop, reason or "context_" .. context) end
+    for _, entry in ipairs(_route_entries()) do
+      local compatible = entry.context == context or (type(entry.contexts) == "table" and entry.contexts[context])
+        or (not entry.context and not entry.contexts and _norm(entry.mode) == "combat")
+      if not compatible and M.route_loop_active(entry.id) then
+        M.stop_route_loop(entry.id, "context_" .. context, true)
+      end
+    end
   end
-
+  M.selected_context = context
   M.state = mode
   M.last_change = _now()
   M.last_reason = reason or "manual"
@@ -600,12 +634,24 @@ function M.set(mode, reason)
   M.apply_profile(mode)
 
   if type(raiseEvent) == "function" then
-    raiseEvent("yso.mode.changed", old, mode, M.last_reason)
+    if old ~= mode then raiseEvent("yso.mode.changed", old, mode, M.last_reason) end
+    if prior ~= context then raiseEvent("yso.context.changed", prior, context, M.last_reason) end
   end
 
   M.echo()
 
-  return true
+  return true, "changed"
+end
+
+function M.set(mode, reason)
+  mode = _norm(mode)
+  if mode == "bash" then return M.set_context("hunt", reason) end
+  if mode == "combat" then
+    return M.set_context(M.selected_context == "group" and "group" or "duel", reason)
+  end
+  if mode == "duel" or mode == "group" then return M.set_context(mode, reason) end
+  _echo(("Invalid mode: <yellow>%s<reset> (use hunt|duel|group|combat)"):format(tostring(mode)))
+  return false, "invalid_mode"
 end
 
 function M.toggle(reason)
@@ -660,6 +706,9 @@ end
 M._alias = M._alias or {}
 local function _kill_alias(id) if id then pcall(killAlias, id) end end
 
+_kill_alias(M._alias.hunt)
+M._alias.hunt = nil
+
 if type(tempAlias) == "function" then
   _kill_alias(M._alias.mode)
   _kill_alias(M._alias.mode_set)
@@ -679,7 +728,6 @@ if type(tempAlias) == "function" then
     end
   end)
 
-  M._alias.hunt = tempAlias([[^hunt$]], function() _set_bash_mode("alias:hunt") end)
   M._alias.bash = tempAlias([[^bash$]], function() _set_bash_mode("alias:bash") end)
   M._alias.mbash = tempAlias([[^mbash$]], function() _set_bash_mode("alias:mbash", { refresh_if_already_bash = true }) end)
   M._alias.mhunt = tempAlias([[^mhunt$]], function() _set_bash_mode("alias:mhunt", { refresh_if_already_bash = true }) end)

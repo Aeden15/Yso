@@ -76,6 +76,11 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
+  apostate_truelock = {
+    id = 'apostate_truelock', context = 'duel', mode = 'combat',
+    namespace = 'Yso.off.apostate.truelock', description = 'Apostate Truelocks',
+    priority = 65, class = 'apostate', active = true, module_name = 'apostate_truelock',
+  },
   airlord_damage = {
     id = "airlord_damage",
     contexts = { duel = true, group = true },
@@ -107,6 +112,11 @@ local ROUTES = {
     class = "monk",
     active = true,
     module_name = "shikudo_group_damage",
+  },
+  monk_shikudo_duel = {
+    id = "monk_shikudo_duel", context = "duel", mode = "combat",
+    namespace = "Yso.off.monk.duel", description = "Shikudo selectable duel route",
+    priority = 55, class = "monk", active = true, module_name = "shikudo_duel",
   },
   magi_focus = {
     id = "magi_focus",
@@ -152,17 +162,6 @@ local ROUTES = {
     active = true,
     module_name = "alchemist_aurify_route",
   },
-  magi_group_damage = {
-    id = "magi_group_damage",
-    context = "group",
-    mode = "combat",
-    namespace = "Yso.off.magi.group_damage",
-    description = "Magi group damage",
-    priority = 56,
-    class = "magi",
-    active = true,
-    module_name = "magi_group_damage",
-  },
   magi_firestorm = {
     id = "magi_firestorm",
     context = "group",
@@ -199,13 +198,14 @@ local ROUTES = {
 }
 
 local ALIASES = {
+  tlock = { apostate = 'apostate_truelock' },
   aidam = "airlord_damage",
   alock = "airlord_lock",
   shdam = { monk = "monk_shikudo_group_damage" },
+  shduel = { monk = "monk_shikudo_duel" },
   focus = { magi = "magi_focus" },
   mfocus = { magi = "magi_focus" },
   magi_focus = { magi = "magi_focus" },
-  mdam = { magi = "magi_group_damage" },
   fstorm = { magi = "magi_firestorm" },
   magi_firestorm = { magi = "magi_firestorm" },
   gwater = { magi = "magi_water_group" },
@@ -217,9 +217,9 @@ local ALIASES = {
   alchemist_aurify_route = { alchemist = "alchemist_aurify_route" },
   adam = { alchemist = "alchemist_group_damage" },
   alchemist_group_damage = { alchemist = "alchemist_group_damage" },
-  gd = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  dmg = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
-  dam = { magi = "magi_group_damage", alchemist = "alchemist_group_damage" },
+  gd = { alchemist = "alchemist_group_damage" },
+  dmg = { alchemist = "alchemist_group_damage" },
+  dam = { alchemist = "alchemist_group_damage" },
 }
 
 local function _route_id(name)

@@ -122,13 +122,13 @@ _G.Yso = {
       resolve = function(id)
         if tostring(id) == "magi_focus" then
           return { id = "magi_focus", namespace = "Yso.off.magi.focus", module_name = "magi_focus" }
-        elseif tostring(id) == "magi_group_damage" then
-          return { id = "magi_group_damage", namespace = "Yso.off.magi.group_damage", module_name = "magi_group_damage" }
+        elseif tostring(id) == "magi_water_group" then
+          return { id = "magi_water_group", namespace = "Yso.off.magi.water_group", module_name = "magi_water_group" }
         end
         return nil
       end,
       active_ids = function()
-        return { "magi_focus", "magi_group_damage" }
+        return { "magi_focus", "magi_water_group" }
       end,
       for_mode = function()
         return {}
@@ -168,11 +168,11 @@ do
   Q.clear()
   assert_true("2a: stage eq lane", Q.stage("eq", "cast magma at foe"))
   assert_true("2b: stage bal lane", Q.stage("bal", "fling needle at foe"))
-  local committed = Q.commit({ route = "magi_group_damage", target = "foe", allow_eqbal = true })
+  local committed = Q.commit({ route = "magi_water_group", target = "foe", allow_eqbal = true })
   assert_true("2c: commit success", committed == true)
   local ack = ack_payloads[#ack_payloads] or {}
   assert_eq("2d: eq route_by_lane", type(ack.route_by_lane) == "table" and ack.route_by_lane.eq, nil)
-  assert_eq("2e: bal route_by_lane", type(ack.route_by_lane) == "table" and ack.route_by_lane.bal, "magi_group_damage")
+  assert_eq("2e: bal route_by_lane", type(ack.route_by_lane) == "table" and ack.route_by_lane.bal, "magi_water_group")
   assert_eq("2f: eq target_by_lane", type(ack.target_by_lane) == "table" and ack.target_by_lane.eq, nil)
   assert_eq("2g: bal target_by_lane", type(ack.target_by_lane) == "table" and ack.target_by_lane.bal, "foe")
 end
@@ -211,11 +211,11 @@ do
   calls = {}
   Yso.pulse.on_payload_ack({
     route = "magi_focus",
-    route_by_lane = { eq = "magi_focus", bal = "magi_magi_group_damage" },
+    route_by_lane = { eq = "magi_focus", bal = "magi_water_group" },
   }, "queue.commit")
   assert_eq("4c: payload ack deduped route count", #calls, 2)
   assert_eq("4d: payload ack first route", calls[1] and calls[1].route or "", "magi_focus")
-  assert_eq("4e: payload ack second route", calls[2] and calls[2].route or "", "magi_magi_group_damage")
+  assert_eq("4e: payload ack second route", calls[2] and calls[2].route or "", "magi_water_group")
 end
 
 io.write(string.format("PASS: %d\n", pass_count))

@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $MagiDir = Join-Path (Split-Path $PSScriptRoot -Parent) 'Magi'
 $routeCore = Join-Path $MagiDir 'magi_route_core.lua'
+$convergence = Join-Path $MagiDir 'magi_convergence.lua'
 $dissonance = Join-Path $MagiDir 'magi_dissonance.lua'
 $src = Join-Path $MagiDir 'magi_focus.lua'
 $dst = Join-Path $MagiDir 'mfocus_alias_body.lua'
@@ -22,6 +23,7 @@ end
 
 $parts = @(
   ((Get-Content -LiteralPath $routeCore -Raw -Encoding UTF8).TrimEnd() -replace '(?m)^return RC\s*$', '-- return omitted: alias body uses Yso.off.magi.route_core')
+  ((Get-Content -LiteralPath $convergence -Raw -Encoding UTF8).TrimEnd() -replace '(?m)^return C\s*$', '-- return omitted: shared convergence helper')
   ((Get-Content -LiteralPath $dissonance -Raw -Encoding UTF8).TrimEnd() -replace '(?m)^return D\s*$', '-- return omitted: alias body uses Yso.magi.dissonance')
   ((Get-Content -LiteralPath $src -Raw -Encoding UTF8).TrimEnd() -replace '(?m)^return MF\s*$', '-- return omitted: alias body assigns Yso.off.magi.focus above')
   $toggle.TrimStart()

@@ -123,13 +123,18 @@ function C.build_shikudo(target, opts)
     if not row or not allowed[key] then return nil, 'attack_unavailable' end
     local role = row.commands[1].role
     if role ~= 'strike' and role ~= 'kick' then return nil, 'invalid_attack' end
+    local light = arg == 'light' or arg:match('^light%s+') ~= nil
+    if light then
+      if role ~= 'strike' or key == 'sweep' or key == 'shatter' then return nil, 'invalid_light' end
+      arg = arg:gsub('^light%s*', '')
+    end
     if row.limb_options then
       if not row.limb_options[arg] then return nil, 'invalid_limb' end
     elseif arg ~= '' then return nil, 'unexpected_limb' end
     if role == 'kick' then kicks = kicks + 1
     else arms = arms + (key == 'sweep' and 2 or 1) end
     if kicks > 1 or arms > 2 then return nil, 'balance_slots' end
-    out[#out+1] = key .. (arg ~= '' and (' '..arg) or '')
+    out[#out+1] = key .. (light and ' light' or '') .. (arg ~= '' and (' '..arg) or '')
   end
   if opts.transition then
     if (tonumber(opts.kata) or 0) < 5 then return nil, 'insufficient_kata' end

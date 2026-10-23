@@ -14,7 +14,7 @@ raiseEvent = function() end
 registerAnonymousEventHandler = function() serial=serial+1; return serial end
 killAnonymousEventHandler = function() end
 target = 'Bob'; shikstaff = 'staff123'
-gmcp = {Char={Status={class='Monk'},Vitals={bal='1',eq='1'}},Room={Players={{name='Bob'}}}}
+gmcp = {Char={Status={class='Monk'},Vitals={bal='1',eq='1'}},Room={Players={{name='Tester'}}}}
 local locked, shield, affs = false, false, {}
 IsTargetted = function(who) return who == target end
 Yso.get_target = function() return target end
@@ -41,8 +41,8 @@ eq(M.state.loop_enabled,true)
 local function tick() return Yso.mode.tick_route_loop(M.key) end
 eq(tick(),true); eq(emitted[#emitted].eq,'mind lock Bob')
 eq(tick(),false); eq(#emitted,1) -- stale ready packet
-locked=true; gmcp.Char.Vitals.eq='0'; M.note_vitals()
-gmcp.Char.Vitals.eq='1'; M.note_vitals()
+-- Captured live output confirms mindlock without a BAL/EQ spend.
+locked=true
 eq(tick(),true); eq(emitted[#emitted].bal,'wield staff123&&adopt rain form')
 eq(F.form,nil) -- sending adoption cannot confirm it
 F.set_form('rain'); F.set_kata(0); gmcp.Char.Vitals.bal='0'; M.note_vitals()
@@ -63,7 +63,7 @@ eq(tick(),true); eq(emitted[#emitted].eq,'mind lock Alice')
 alias(); eq(M.state.loop_enabled,false); eq(M.state.pending,nil)
 local count=#emitted; alias(); eq(tick(),false); eq(#emitted,count)
 gmcp.Char.Vitals.eq='0'; M.note_vitals(); gmcp.Char.Vitals.eq='1'; M.note_vitals(); locked=true
-M.state.room_players={}; shikstaff='staff456'
+M.state.room_players={}; M.state.melee_missing='alice'; shikstaff='staff456'
 eq(tick(),true); eq(emitted[#emitted].eq,'mind crush Alice')
 gmcp.Char.Vitals.eq='0'; M.note_vitals(); gmcp.Char.Vitals.eq='1'; M.note_vitals()
 hadoken=10; eq(tick(),true); eq(emitted[#emitted].eq,'kai choke Alice')

@@ -809,6 +809,8 @@ end
 ------------------------------------------------------------
 
 function Q.install_lane(lane, cmd, opts)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
   local key = _lane_key(lane)
   if not key then return false, "invalid_lane" end
@@ -920,6 +922,8 @@ function Q.list(lane)
 end
 
 function Q.stage(lane, payload, opts)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
   local key, staged_payload, compat = _coerce_stage_args(lane, payload)
   if not key then return false end
@@ -980,6 +984,8 @@ end
 ------------------------------------------------------------
 
 function Q.commit(opts)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.blocks(opts) then return false, "enemy_deliverance" end
   local payload = _commit_payload(opts)
   payload = _only_clearfull_lane(payload, opts)
   if not _payload_has_value(payload) then return false end

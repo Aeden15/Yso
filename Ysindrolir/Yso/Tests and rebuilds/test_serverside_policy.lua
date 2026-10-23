@@ -186,17 +186,17 @@ P.tick("unit.reconcile.2", true)
 assert_false("2a: untrusted cleared after stable reads", P.state.set_untrusted == true)
 assert_eq("2b: current set reconciled", P.state.current_set, "default")
 
-print("\n=== Test 3: blademaster overlay applies in aggression ===")
+print("\n=== Test 3: enemy class does not restore retired priority overlays ===")
 clear_calls()
 Legacy.Curing.ActiveServerSet = "default"
 _G.CurrentCureset = "default"
 Legacy.CT.Enemies.enemy = "Blademaster"
 P.note_hostile_hit("attacker1", "unit")
 local _, reason_overlay = P.tick("unit.overlay", true)
-assert_eq("3a: mode", P.state.mode, "class_overlay")
-assert_eq("3b: overlay", P.state.active_overlay, "blademaster")
-assert_true("3c: priorities applied", #_prio_calls > 0)
-assert_eq("3d: tick reason", reason_overlay, "applied")
+assert_eq("3a: class observation preserves default mode", P.state.mode, "default")
+assert_eq("3b: no retired overlay", P.state.active_overlay, nil)
+assert_eq("3c: class observation writes no priorities", #_prio_calls, 0)
+assert_eq("3d: unchanged policy remains stable", reason_overlay, "stable")
 local prio_count = #_prio_calls
 P.tick("unit.overlay.stable", true)
 assert_eq("3e: delta-only no repeat prios", #_prio_calls, prio_count)
@@ -213,7 +213,7 @@ advance(8.1)
 local _, reason_post_grace = P.tick("unit.manual.expired", true)
 assert_false("4d: grace expired", reason_post_grace == "manual_grace")
 
-print("\n=== Test 5: group override takes precedence over overlay ===")
+print("\n=== Test 5: group override takes precedence over default mode ===")
 clear_calls()
 P.set_group_override(true, "unit.group")
 assert_eq("5a: mode is group", P.state.mode, "group")
@@ -222,7 +222,7 @@ assert_eq("5c: overlay suspended", P.state.active_overlay, nil)
 assert_true("5d: switched to group set", _profile_calls[#_profile_calls] == "group")
 assert_false("5e: yso-initiated set switch did not mark untrusted", P.state.set_untrusted == true)
 
-print("\n=== Test 6: clearing group restores default then re-evaluates overlay ===")
+print("\n=== Test 6: clearing group restores default ===")
 clear_calls()
 P.set_group_override(nil, "unit.group.clear")
 local saw_default = false
@@ -233,7 +233,7 @@ for i = 1, #_profile_calls do
 end
 assert_true("6a: restores default first", saw_default)
 
-print("\n=== Test 7: aggression timeout clears overlay and returns default mode ===")
+print("\n=== Test 7: aggression timeout retains default mode without overlays ===")
 clear_calls()
 P.state.aggression_until = now() - 1
 P.state.last_hostile_at = now() - 999

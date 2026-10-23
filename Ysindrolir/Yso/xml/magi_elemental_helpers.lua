@@ -8,7 +8,7 @@ M.cfg = M.cfg or {}
 M.cfg.destroy = M.cfg.destroy or {
   require_conflagration = true,
   hp_threshold = 40,
-  enforce_hp_gate = false,
+  enforce_hp_gate = true,
 }
 
 M.state = M.state or {}
@@ -132,46 +132,29 @@ end
 
 function M.destroy_current_target()
   local tgt = _resolve_current_target()
-  if tgt == "" then
-    _echo("No target set for destroy.")
+  local C = Yso.magi and Yso.magi.convergence
+  if not C or type(C.destroy_command) ~= "function" then
+    _echo("Destroy blocked: shared finisher helper unavailable.")
     return false
   end
-
-  if M.cfg.destroy.require_conflagration ~= false and not _target_has_aff("conflagration") then
-    _echo(string.format("Destroy blocked on %s: conflagration not confirmed.", tgt))
+  local cmd, why = C.destroy_command(tgt)
+  if not cmd then
+    _echo("Destroy blocked: " .. tostring(why))
     return false
   end
-
-  if M.cfg.destroy.enforce_hp_gate == true then
-    local hp_pct = M.get_target_hp_percent(tgt)
-    if not hp_pct then
-      _echo("Destroy HP gate is enabled but target HP% is not wired yet.")
-      return false
-    end
-    if hp_pct > (tonumber(M.cfg.destroy.hp_threshold or 40) or 40) then
-      _echo(string.format(
-        "Destroy blocked on %s: %.1f%%%% is above the %d%%%% threshold.",
-        tgt,
-        hp_pct,
-        tonumber(M.cfg.destroy.hp_threshold or 40) or 40
-      ))
-      return false
-    end
-  elseif M.state.destroy_hp_stub_noted ~= true then
-    M.state.destroy_hp_stub_noted = true
-    _echo(string.format(
-      "Destroy HP gate is stubbed for now; only conflagration is checked (planned threshold: %d%%%%).",
-      tonumber(M.cfg.destroy.hp_threshold or 40) or 40
-    ))
+  local ok = false
+  if type(Yso.emit) == "function" then
+    ok = Yso.emit({ eq=cmd, target=tgt }, {
+      route="magi_destroy", target=tgt, kind="offense", commit=true,
+      reason="magi_destroy:" .. tostring(why),
+    }) == true
+  elseif type(send) == "function" then
+    local sent, result = pcall(send, "queue addclearfull eq " .. cmd, false)
+    ok = sent and result ~= false
   end
-
-  local ok = _queue_eqbal("cast destroy at " .. tgt, { queue_verb = "addclearfull" })
-  if ok then
-    _echo("Destroy queued on " .. tgt .. ".")
-  end
+  if ok then C.note_queued(cmd, tgt) end
   return ok
 end
-
 local function _cast_timed_spell(spell, seconds)
   local secs = tonumber(seconds)
   if not secs then

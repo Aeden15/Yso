@@ -4,7 +4,7 @@
 --========================================================--
 -- Yso/Curing/serverside_policy.lua
 -- Serverside curing coordinator (phase 1 scaffold + working policy).
---  * Mode arbitration: group > class_overlay > default
+--  * Mode arbitration: group > default
 --  * Delta-only write strategy
 --  * Manual intervention grace window
 --  * Conservative group hysteresis
@@ -94,32 +94,8 @@ P.state.tree_ready_known = (P.state.tree_ready_known == true)
 P.state.tree_last_ready_at = tonumber(P.state.tree_last_ready_at or 0) or 0
 P.state.tree_last_source = tostring(P.state.tree_last_source or "")
 
-P.overlays = P.overlays or {
-  blademaster = {
-    class = "Blademaster",
-    raise = {
-      "paralysis",
-      "asthma",
-      "slickness",
-      "impatience",
-      "anorexia",
-      "weariness",
-      "clumsiness",
-      "dizziness",
-      "sensitivity",
-      "damagedlimb",
-      "crippledlimb",
-      "mangledlimb",
-    },
-    lower = {},
-    queue_emergency = {
-      -- phase-1 scaffold
-    },
-    tree_hints = {
-      prefer = "aff_trigger",
-    },
-  },
-}
+-- Discard definitions retained from an older loaded policy.
+P.overlays = nil
 
 local function _now()
   if Yso and Yso.util and type(Yso.util.now) == "function" then
@@ -224,6 +200,12 @@ local function _is_touch_tree_cmd(cmd)
 end
 
 local function _request_authoritative_resync(reason, force)
+  local coordinator=Yso.curing.coordinator
+  if coordinator then
+    local a=coordinator.request('sets')
+    local b=coordinator.request('priorities')
+    return a or b
+  end
   local now = _now()
   if force ~= true and (now - (tonumber(P.state.set_last_resync_req_at or 0) or 0)) < 2.0 then
     return false
@@ -402,37 +384,6 @@ local function _read_current_set()
   return resolved
 end
 
-local function _target_name()
-  if Yso and type(Yso.get_target) == "function" then
-    local ok, t = pcall(Yso.get_target)
-    t = ok and _trim(t) or ""
-    if t ~= "" then return t end
-  end
-  return _trim(rawget(_G, "target"))
-end
-
-local function _legacy_enemy_class()
-  local tgt = _target_name()
-  if tgt == "" then return "" end
-
-  local cls = ""
-  if Legacy and Legacy.CT and type(Legacy.CT.Enemies) == "table" then
-    cls = Legacy.CT.Enemies[tgt]
-      or Legacy.CT.Enemies[tgt:lower()]
-      or Legacy.CT.Enemies[tgt:sub(1, 1):upper() .. tgt:sub(2):lower()]
-      or ""
-  end
-
-  if cls == "" and Legacy and Legacy.CT and type(Legacy.CT.timers) == "table" then
-    local timer = Legacy.CT.timers[tgt] or Legacy.CT.timers[tgt:lower()]
-    if type(timer) == "table" then
-      cls = timer.class or ""
-    end
-  end
-
-  return _norm_class(cls)
-end
-
 local function _legacy_group_signal()
   local en_class = _norm_class(rawget(_G, "enClass"))
   if en_class == "Group" then return true end
@@ -555,20 +506,7 @@ local function _compute_group_active(now)
   return legacy or fallback
 end
 
-local function _select_overlay(now)
-  now = tonumber(now) or _now()
-  if not _aggression_active(now) then
-    return nil
-  end
-
-  local cls = _legacy_enemy_class()
-  if cls == "Blademaster" then
-    return "blademaster"
-  end
-
-  return nil
-end
-
+-- Restore any deltas retained by a previously loaded class-overlay policy.
 local function _clear_overlay_deltas()
   local had = false
   for aff in pairs(P.state.overlay_applied or {}) do
@@ -580,44 +518,7 @@ local function _clear_overlay_deltas()
   return had
 end
 
-local function _apply_overlay(name)
-  if _trim(name) == "" then
-    return _clear_overlay_deltas()
-  end
-
-  if P.state.active_overlay == name then
-    return false
-  end
-
-  _clear_overlay_deltas()
-
-  local spec = P.overlays[name]
-  if type(spec) ~= "table" then
-    return false
-  end
-
-  for i = 1, #(spec.raise or {}) do
-    local aff = _canon_aff(spec.raise[i])
-    if aff ~= "" then
-      _set_prio(aff, 1)
-      P.state.overlay_applied[aff] = 1
-    end
-  end
-
-  for i = 1, #(spec.lower or {}) do
-    local aff = _canon_aff(spec.lower[i])
-    if aff ~= "" then
-      _set_prio(aff, 26)
-      P.state.overlay_applied[aff] = 26
-    end
-  end
-
-  P.state.active_overlay = name
-  _echo("overlay -> " .. name)
-  return true
-end
-
-local function _compute_tree_policy(now, overlay)
+local function _compute_tree_policy(now)
   now = tonumber(now) or _now()
 
   local in_hunt = false
@@ -632,11 +533,11 @@ local function _compute_tree_policy(now, overlay)
   end
 
   if in_hunt then return "aff_count" end
-  if overlay ~= nil or _aggression_active(now) then return "aff_trigger" end
+  if _aggression_active(now) then return "aff_trigger" end
   return "aff_count"
 end
 
-local function _apply_tree_policy(policy, overlay)
+local function _apply_tree_policy(policy)
   -- Phase-one note: tree adapter currently carries policy mode only.
   -- Cooldown-aware tree command orchestration stays intentionally deferred.
   policy = _trim(policy)
@@ -653,7 +554,7 @@ local function _apply_tree_policy(policy, overlay)
   P.state.last_tree_at = now
 
   if type(raiseEvent) == "function" then
-    raiseEvent("yso.curing.tree_policy", policy, overlay)
+    raiseEvent("yso.curing.tree_policy", policy, nil)
   end
 
   return true
@@ -768,6 +669,11 @@ function P.clear_emergency_dedupe(reason)
 end
 
 function P.resync(reason)
+  local coordinator=Yso.curing.coordinator
+  if coordinator then
+    coordinator.request('sets')
+    return coordinator.refresh()
+  end
   reason = tostring(reason or "resync")
   _request_authoritative_resync("resync:" .. reason)
   _read_current_set()
@@ -804,6 +710,14 @@ function P.set_group_override(v, reason)
 end
 
 function P.tick(source, force)
+  local coordinator=Yso.curing.coordinator
+  if coordinator then
+    coordinator.refresh()
+    P.state.mode=coordinator.mode or 'hunt'
+    local tree_policy=_compute_tree_policy(_now())
+    _apply_tree_policy(tree_policy)
+    return true, 'class_coordinator'
+  end
   local now = _now()
   local min_tick = tonumber(P.cfg.tick_min_s or 0.25) or 0.25
   if force ~= true and (now - (tonumber(P.state.last_tick or 0) or 0)) < min_tick then
@@ -817,10 +731,8 @@ function P.tick(source, force)
   end
 
   local group_on = _compute_group_active(now)
-  local overlay = (group_on and nil) or _select_overlay(now)
-
   if _manual_grace_active() then
-    P.state.mode = group_on and "group" or (overlay and "class_overlay" or "default")
+    P.state.mode = group_on and "group" or "default"
     return true, "manual_grace"
   end
 
@@ -836,7 +748,8 @@ function P.tick(source, force)
     if _clear_overlay_deltas() then changed = true end
     P.state.mode = "group"
   else
-    if P.state.group_active == true then
+    if P.state.group_active == true
+      or _trim(P.state.current_set):lower() == _trim(P.cfg.group_set):lower() then
       P.state.group_active = false
       if _send_profile(P.cfg.base_set) then changed = true end
     else
@@ -845,27 +758,19 @@ function P.tick(source, force)
       end
     end
 
-    if overlay then
-      if _trim(P.state.current_set):lower() ~= _trim(P.cfg.base_set):lower() then
-        if _send_profile(P.cfg.base_set) then changed = true end
-      end
-      if _apply_overlay(overlay) then changed = true end
-      P.state.mode = "class_overlay"
-    else
-      if _clear_overlay_deltas() then changed = true end
-      P.state.mode = "default"
-    end
+    if _clear_overlay_deltas() then changed = true end
+    P.state.mode = "default"
   end
 
-  local tree_policy = _compute_tree_policy(now, overlay)
-  if _apply_tree_policy(tree_policy, overlay) then
+  local tree_policy = _compute_tree_policy(now)
+  if _apply_tree_policy(tree_policy) then
     changed = true
   end
 
   if changed then
     P.state.last_apply = now
     if type(raiseEvent) == "function" then
-      raiseEvent("yso.curing.policy.applied", P.state.mode, overlay or "")
+      raiseEvent("yso.curing.policy.applied", P.state.mode, "")
     end
   end
 

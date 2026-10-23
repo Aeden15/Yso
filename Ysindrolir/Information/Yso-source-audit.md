@@ -20,7 +20,7 @@ Before deletion, byte-identical backups were verified with SHA-256 under the wor
 
 - `xml/`: retained package source mappings and development mirrors, including API, targeting, modes, pulse, offense, priority baselines, and class-neutral helpers. The exporter names its authoritative inputs explicitly; the directory is not a blanket runtime loader.
 - `Combat/`, `Curing/`, and `Integration/`: retained implementations referenced by the exporter, test harnesses, or compatibility module paths. These include route registry/interface/gates, offense, parry, AK wiring, and curing services.
-- `Core/`: retained direct test dependencies and compatibility modules. In particular, `Core/queue.lua` is loaded by `test_magi_group_damage.lua`, `test_queue_writhe_block.lua`, and `test_wake_route_contract.lua`; optional queue consumers remain in the package. It cannot be deleted just because the package no longer installs a standalone `Yso.queue` script.
+- `Core/`: retained direct test dependencies and compatibility modules. In particular, `Core/queue.lua` is loaded by `test_queue_writhe_block.lua`, and `test_wake_route_contract.lua`; optional queue consumers remain in the package. It cannot be deleted just because the package no longer installs a standalone `Yso.queue` script.
 - `Tests and rebuilds/`: retained the entire shared, class, and integration regression suite.
 - Root-level modules, `_entry.lua`, `init.lua`, and `Yso.lua`: retained disk/test compatibility entrypoints and namespace wrappers. For example, `Combat/offense_core.lua` still has a compatibility reference to `Yso._entry`.
 - `Debug/`: retained optional diagnostics; no claim that they are part of the default installed runtime.

@@ -40,6 +40,10 @@ end
 function W.get(kind)
   kind = _kind(kind)
   if not KINDS[kind] then return "" end
+  if kind == "staff" then
+    local configured = _trim(rawget(_G, "magistaff") or "")
+    if configured ~= "" then return configured:match("^staff(%d+)$") or "" end
+  end
   W.ids = W.ids or { staff = "", shield = "" }
   return _trim(W.ids[kind] or "")
 end

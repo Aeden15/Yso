@@ -17,28 +17,45 @@
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList />
 			<regexCodePropertyList />
-			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Soulstorm confirmed</name><script>local H=Legacy and Legacy.Basher and Legacy.Basher.Soulstorm; if H then H.note(&quot;confirmed&quot;,matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^You call forth an unholy tide of necromantic essence and release it, engulfing (.+) in a profane soulstorm\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Soulstorm already active</name><script>local H=Legacy and Legacy.Basher and Legacy.Basher.Soulstorm; if H then H.note(&quot;already active&quot;,matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Necromantic essence still profanes (.+)&apos;s soul\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Soulstorm faded</name><script>local H=Legacy and Legacy.Basher and Legacy.Basher.Soulstorm; if H then H.note(&quot;faded&quot;,matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^([A-Za-z][^:\r\n]*) steadies as the profane aura around (?:it|him|her|them) fades\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Mob Slain</name>
 				<script>if Legacy.Settings.Basher.status == true then
-  Legacy.Settings.Basher.lastTar = Legacy.Settings.Basher.currentTar
-  Legacy.Settings.Basher.currentTar = ""
-  Legacy.Settings.Basher._attend = nil
-  Legacy.Settings.Basher.shield = false
-  Legacy.Settings.Basher.desc = ""
-  send('ql')
-  if Legacy.Basher.Targets[gmcp.Room.Info.area] then
-    if not table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], matches[2]:lower()) then
-      table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], matches[2]:lower())
-      Legacy.echo("Added '&lt;gold&gt;"..matches[2].."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
-    end
-  else
-    Legacy.Basher.Targets[gmcp.Room.Info.area] = {}
-    table.insert(Legacy.Basher.Targets[gmcp.Room.Info.area], matches[2]:lower())
+  local S = Legacy.Settings.Basher
+  local slain = tostring(S.currentTar or "")
+  local removed = S._removedHuntTarget
+  local name = tostring(matches[2] or ""):lower()
+  -- GMCP removal may select the successor before this slain line arrives.
+  if removed and removed.room == tostring(gmcp.Room.Info.num or "") and removed.name:lower() == name then
+    slain = removed.id
+    S._removedHuntTarget = nil
   end
-  
+  local soulstorm = Legacy.Basher.Soulstorm
+  if soulstorm and type(soulstorm.forget) == "function" then soulstorm.forget(slain) end
+  if S.possibleTargets then S.possibleTargets[slain] = nil end
+  if S.roomMobs then S.roomMobs[slain] = nil end
+  S.lastTar = slain
+  if tostring(S.currentTar or "") == slain then
+    S.currentTar = ""
+    S._attend = nil
+    S.shield = false
+    S.desc = ""
+    S.queued = false
+  end
+  send('ql')
+  local priorities = Legacy.Basher.Targets[gmcp.Room.Info.area]
+  if not priorities then
+    priorities = {}
+    Legacy.Basher.Targets[gmcp.Room.Info.area] = priorities
+  end
+  if not table.contains(priorities, name) then
+    table.insert(priorities, name)
+    Legacy.echo("Added '&lt;gold&gt;"..matches[2].."&lt;white&gt;' to hunting targets in &lt;gold&gt;"..gmcp.Room.Info.area)
+  end
   Legacy.Basher.Target()
-end
-  </script>
+end</script>
 				<triggerType>0</triggerType>
 				<conditonLineDelta>0</conditonLineDelta>
 				<mStayOpen>0</mStayOpen>
@@ -1070,7 +1087,12 @@ Legacy.Settings.Basher = Legacy.Settings.Basher or {}
 Legacy.Settings.Basher.Classes = Legacy.Settings.Basher.Classes or {}
 
 Legacy.Settings.Basher.totalDamage = {}
-if Legacy.Settings.Basher.status == false then
+-- Apostate Soulstorm toggle adapter: arm before status events can invoke Attack.
+local soulstorm=Legacy.Basher.Soulstorm
+if soulstorm and type(soulstorm.begin) == "function" and type(soulstorm.stop) == "function" then
+  if Legacy.Settings.Basher.status ~= true then soulstorm.begin() else soulstorm.stop() end
+end
+if Legacy.Settings.Basher.status ~= true then
   Legacy.Settings.Basher.status = true
   if raiseEvent then raiseEvent("LegacyBasherStatus", true) end
   if Legacy.Settings.Basher.Classes[gmcp.Char.Status.class] == nil then
@@ -1094,6 +1116,7 @@ if Legacy.Settings.Basher.status == false then
   Legacy.echo("&lt;green&gt;Bashing Activated.")
   Legacy.Settings.Basher.queued = false 
   sendCount = 0
+  Legacy.Settings.Basher.Mobs()
   Legacy.Basher.Target()
 else
   Legacy.Settings.Basher.status = false
@@ -1526,7 +1549,140 @@ end</script>
 			<packageName>Legacy Basher V2.1</packageName>
 			<script />
 			<eventHandlerList />
-			<Script isActive="yes" isFolder="no">
+			<Script isActive="yes" isFolder="no"><name>Apostate hunting Soulstorm</name><packageName /><script>-- Embedded in Legacy Basher. One opener per selected denizen; 40s effect duration.
+-- Keep the installer outside Legacy: table.load restores data but not functions.
+LegacyBasher_SoulstormHandlers=LegacyBasher_SoulstormHandlers or {}
+local handlers=LegacyBasher_SoulstormHandlers
+function LegacyBasher_InstallSoulstorm()
+Legacy=Legacy or {};Legacy.Basher=Legacy.Basher or {}
+local B=Legacy.Basher
+B.Soulstorm=B.Soulstorm or {}
+local H=B.Soulstorm
+local function now()
+ local value=type(getEpoch)=='function' and tonumber(getEpoch()) or os.time()
+ return value&gt;20000000000 and value/1000 or value
+end
+local function settings() return Legacy.Settings and Legacy.Settings.Basher or {} end
+local function apostate()
+ local status=gmcp and gmcp.Char and gmcp.Char.Status
+ return status and tostring(status.class or ''):lower()=='apostate'
+end
+local function room()
+ return tostring(gmcp and gmcp.Room and gmcp.Room.Info and gmcp.Room.Info.num or '')
+end
+local function normalize(name)
+ return tostring(name or ''):lower():gsub('^%s+',''):gsub('%s+$','')
+end
+local function current()
+ local target=gmcp and gmcp.IRE and gmcp.IRE.Target or {}
+ local id=tostring(target.Set or '')
+ local info=target.Info or {}
+ if not id:match("^[A-Za-z0-9][A-Za-z0-9_'%-]*$") then return nil end
+ local npc=tostring(info.npc):lower()
+ if npc=='false' or npc=='0' then return nil end
+ local kind=tostring(info.type or ''):lower()
+ if npc~='true' and npc~='1' and kind~='npc' and kind~='denizen' and not id:match('^%d+$') then return nil end
+ local name=normalize(info.short_desc)
+ if name=='' then name=normalize(info.name) end
+ if name=='' then name=normalize(settings().desc) end
+ return {id=id,name=name,room=room(),info=info}
+end
+function H.begin()
+ H.pending=apostate() and true or false
+ H.attempt=nil
+end
+function H.stop() H.pending=false;H.attempt=nil end
+function H.reset() H.stop();H.effect=nil;H.targets={} end
+local function key(id,room_id) return tostring(room_id or room())..':'..tostring(id) end
+function H.forget(id,room_id)
+ id=tostring(id or '')
+ local where=tostring(room_id or room())
+ if H.targets then H.targets[key(id,where)]=nil end
+ if H.effect and H.effect.id==id and H.effect.room==where then H.effect=nil end
+ if H.attempt and H.attempt.id==id and H.attempt.room==where then H.attempt=nil end
+end
+function H.before_attack(id,info,is_denizen)
+ if not H.pending or not apostate() or settings().status~=true then return false end
+ if not is_denizen or settings().shield==true then return false end
+ local ctx=current()
+ if not ctx or ctx.id~=tostring(id) then return false end
+ -- Wait for the server to confirm Legacy's newly selected target.
+ if tostring(settings().currentTar or '')~=ctx.id then return true end
+ if info and info.id and tostring(info.id)~=ctx.id then return true end
+ local health=tonumber((tostring((info or {}).hpperc or ''):gsub('%%','')))
+ if health and health&lt;=0 then return true end
+ local effect=H.effect
+ if effect and effect.expires_at and now()&gt;=effect.expires_at then effect.active=false end
+ H.targets=H.targets or {}
+ if H.targets[key(ctx.id,ctx.room)] then return false end
+ if type(B.queueAttackPackage)~='function' then return true end
+ H.attempt=ctx
+ local ok,queued=pcall(B.queueAttackPackage,'addclear','soulstorm '..ctx.id,true,'apostate-soulstorm-opener')
+ if ok and queued==true then
+  H.targets[key(ctx.id,ctx.room)]=ctx
+  settings().queued=true
+  sendCount=(tonumber(sendCount) or 0)+1
+ elseif not ok then
+  -- A partial queue send must not be retried indefinitely or leave an attack behind.
+  settings().status=false;H.stop()
+  if type(send)=='function' then pcall(send,'cq freestand') end
+  if type(raiseEvent)=='function' then pcall(raiseEvent,'LegacyBasherStatus',false) end
+  if type(Legacy.echo)=='function' then Legacy.echo('&lt;red&gt;Soulstorm opener could not be queued; hunting stopped.') end
+ else H.attempt=nil end
+ return true
+end
+function H.note(kind,name)
+ if not apostate() then return false end
+ name=normalize(name)
+ if name=='' then return false end
+ if kind=='faded' then
+  local effect=H.effect
+  if not effect or effect.name~=name then return false end
+  effect.active=false;return true
+ end
+ if kind~='confirmed' and kind~='already active' then return false end
+ local ctx=current()
+ if not ctx or ctx.name~=name then return false end
+ local attempt=H.attempt
+ if attempt and (attempt.id~=ctx.id or attempt.room~=ctx.room or (attempt.name~='' and attempt.name~=name)) then return false end
+ H.targets=H.targets or {}
+ if settings().status==true and not attempt and not H.targets[key(ctx.id,ctx.room)] then return false end
+ local effect=H.effect
+ local expires_at=now()+40
+ -- "Still profanes" confirms presence, not a new cast or a refreshed duration.
+ if kind=='already active' and effect and effect.id==ctx.id and effect.room==ctx.room and effect.expires_at then
+  expires_at=effect.expires_at
+ end
+ H.effect={id=ctx.id,name=name,room=ctx.room,active=true,expires_at=expires_at}
+ H.targets[key(ctx.id,ctx.room)]=ctx
+ H.attempt=nil
+ return true
+end
+-- Reimport replaces event handlers instead of multiplying reset callbacks.
+H.reset()
+local tracked_room=room()
+if type(registerAnonymousEventHandler)=='function' then
+ -- Saved IDs belong to another runtime; never use them to unregister handlers.
+ H.handlers=nil
+ for event,fn in pairs({
+  ['sysDisconnectionEvent']=H.reset,
+  ['gmcp.Char.Status']=function() if not apostate() then H.reset() end end,
+  ['gmcp.Room.Info']=function()
+   if tracked_room~=room() then
+    H.reset();tracked_room=room()
+    if settings().status==true then H.begin() end
+   end
+  end,
+ }) do
+  if handlers[event] and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(handlers[event]) end
+  handlers[event]=registerAnonymousEventHandler(event,fn)
+ end
+end
+return H
+end
+return LegacyBasher_InstallSoulstorm()
+</script><eventHandlerList /></Script>
+<Script isActive="yes" isFolder="no">
 				<name>Basher</name>
 				<packageName />
 				<script>--[[ Legacy Basher bootstrap (non-destructive, safe with/without Legacy Core) ]]
@@ -1565,6 +1721,7 @@ Legacy.echo = Legacy.echo or function(msg) cecho("\n[Legacy]: "..tostring(msg)) 
 Legacy.bigEcho = Legacy.bigEcho or function(msg) Legacy.echo(tostring(msg)) end
 
 function Basher_Setup()
+  if type(LegacyBasher_InstallSoulstorm) == "function" then LegacyBasher_InstallSoulstorm() end
   -- Saved settings can replace this table after the script first loads.
   Legacy.Settings=Legacy.Settings or {}
   Legacy.Settings.Basher=Legacy.Settings.Basher or {}
@@ -1589,7 +1746,16 @@ function Basher_Setup()
     Legacy.Settings.Basher.Gold = 0
     Legacy.Settings.Basher.shield = false
     if Legacy.Settings.Basher.hasLycantha == nil then Legacy.Settings.Basher.hasLycantha = false end
+    -- Reset transient targeting after saved settings load.
+    Legacy.Settings.Basher._removedHuntTarget = nil
+    Legacy.Settings.Basher.mobRoom = nil
+    Legacy.Settings.Basher.roomMobs = nil
+    Legacy.Settings.Basher.currentTar = ""
+    Legacy.Settings.Basher.possibleTargets = {}
+    Legacy.Settings.Basher.desc = ""
+    Legacy.Settings.Basher.queued = false
     Legacy.Settings.Basher.status = false
+    if Legacy.Basher.Soulstorm and type(Legacy.Basher.Soulstorm.stop) == "function" then Legacy.Basher.Soulstorm.stop() end
     Legacy.Settings.Basher.fleeing = false
     Legacy.Settings.Basher.fleeRoom = 1234
     Legacy.Settings.Basher.damage = 0
@@ -1646,13 +1812,41 @@ function Basher_Setup()
      end
   end
     
-  function Legacy.Settings.Basher.Mobs()
-    Legacy.Settings.Basher.possibleTargets = {}
-    for k,v in pairs(gmcp.Char.Items.List.items) do
-      if v.attrib == "m" and table.contains(Legacy.Basher.Targets[gmcp.Room.Info.area], v.name:lower()) and Legacy.Settings.Basher.status == true and not table.contains(Legacy.Settings.Basher.Ignore, v.name:lower()) then
-        Legacy.Settings.Basher.possibleTargets[v.id] = v.name
+  local function room_mob(item)
+    return type(item) == "table" and tostring(item.attrib or ""):find("m", 1, true) ~= nil
+  end
+  local function wanted_mob(item)
+    if not room_mob(item) then return false end
+    local name = tostring(item.name or ""):lower()
+    local priorities = Legacy.Basher.Targets[gmcp.Room.Info.area] or {}
+    return table.contains(priorities, name) and not table.contains(Legacy.Settings.Basher.Ignore, name)
+  end
+  local function live_room_mobs(refresh)
+    local S = Legacy.Settings.Basher
+    local room = tostring(gmcp.Room.Info.num or "")
+    if refresh or S.mobRoom ~= room or type(S.roomMobs) ~= "table" then
+      if S.mobRoom ~= room then S._removedHuntTarget = nil end
+      S.roomMobs = {}
+      S.mobRoom = room
+      local list = gmcp.Char.Items and gmcp.Char.Items.List or {}
+      local items = (not list.location or list.location == "room") and list.items or {}
+      for _, item in pairs(items) do
+        if room_mob(item) then S.roomMobs[tostring(item.id)] = item end
       end
-    end 
+    end
+    return S.roomMobs
+  end
+  function Legacy.Settings.Basher.Mobs(event)
+    local S = Legacy.Settings.Basher
+    local list = gmcp.Char.Items and gmcp.Char.Items.List or {}
+    if event == "gmcp.Char.Items.List" and list.location and list.location ~= "room" then return end
+    S.possibleTargets = {}
+    local items = live_room_mobs(event == "gmcp.Char.Items.List")
+    for _, item in pairs(items) do
+      if S.status == true and wanted_mob(item) then
+        S.possibleTargets[tostring(item.id)] = item.name
+      end
+    end
   end
   registerAnonymousEventHandler("gmcp.Char.Items.List", "Legacy.Settings.Basher.Mobs")
   
@@ -1675,26 +1869,39 @@ function Basher_Setup()
   registerAnonymousEventHandler("gmcp.Room.Info", "Legacy.Settings.Basher.possibleEcho")
 
   function Legacy.Settings.Basher.mobRemove()
-    if table.contains(Legacy.Settings.Basher.possibleTargets, gmcp.Char.Items.Remove.item.id) and Legacy.Settings.Basher.status == true then
-    
-      Legacy.Settings.Basher.possibleTargets[gmcp.Char.Items.Remove.item.id] = nil
-      if not gmcp.Char.Items.Remove.item.name:match("the corpse of") then
-        Legacy.bigEcho(gmcp.Char.Items.Remove.item.name.." ran away!!!", "red", "gold")
-        Legacy.Settings.Basher.queued = false
-        Legacy.Settings.Basher.currentTar = ""
-        Legacy.Settings.Basher.possibleTargets[gmcp.Char.Items.Remove.item.id] = nil
+    local S = Legacy.Settings.Basher
+    local removed = gmcp.Char.Items.Remove or {}
+    if removed.location and removed.location ~= "room" then return end
+    local item = removed.item or {}
+    local id = tostring(item.id or "")
+    live_room_mobs()[id] = nil
+    local soulstorm = Legacy.Basher.Soulstorm
+    if soulstorm and type(soulstorm.forget) == "function" then soulstorm.forget(id) end
+    if S.status ~= true or not S.possibleTargets[id] then return end
+    S.possibleTargets[id] = nil
+    if tostring(S.currentTar or "") == id then
+      S._removedHuntTarget = {id=id, name=tostring(item.name or ""), room=tostring(gmcp.Room.Info.num or "")}
+      S.queued = false
+      S.currentTar = ""
+      if not tostring(item.name or ""):find("the corpse of", 1, true) then
+        Legacy.bigEcho(tostring(item.name or id).." ran away!!!", "red", "gold")
       end
+      Legacy.Basher.Target()
     end
   end
   registerAnonymousEventHandler("gmcp.Char.Items.Remove", "Legacy.Settings.Basher.mobRemove")
   
   function Legacy.Settings.Basher.mobAdd()
-    if gmcp.Char.Items.Add.item.attrib == "m" and table.contains(Legacy.Basher.Targets, gmcp.Char.Items.Add.item.name) and Legacy.Settings.Basher.status == true then
-      if not table.contains(Legacy.Settings.Basher.possibleTargets, gmcp.Char.Items.Add.item.id) then
-        Legacy.Settings.Basher.possibleTargets[gmcp.Char.Items.Add.item.id] = gmcp.Char.Items.Add.item.name
-        Legacy.echo("&lt;green&gt;Added &lt;gold&gt;"..gmcp.Char.Items.Add.item.name.."&lt;green&gt; to possible targets")
-        Legacy.Basher.Target()
-      end
+    local S = Legacy.Settings.Basher
+    local added = gmcp.Char.Items.Add or {}
+    if added.location and added.location ~= "room" then return end
+    local item = added.item or {}
+    local id = tostring(item.id or "")
+    if room_mob(item) and id ~= "" then live_room_mobs()[id] = item end
+    if S.status == true and id ~= "" and wanted_mob(item) and not S.possibleTargets[id] then
+      S.possibleTargets[id] = item.name
+      Legacy.echo("&lt;green&gt;Added &lt;gold&gt;"..item.name.."&lt;green&gt; to possible targets")
+      Legacy.Basher.Target()
     end
   end
   registerAnonymousEventHandler("gmcp.Char.Items.Add", "Legacy.Settings.Basher.mobAdd")
@@ -1715,12 +1922,11 @@ function Basher_Setup()
       Legacy.Settings.Basher.flee = true
     end
     
-    function Legacy.Settings.Basher.mobCount()
+  function Legacy.Settings.Basher.mobCount()
     local mobs = 0
-    for k,v in pairs(gmcp.Char.Items.List.items) do
-      if v.attrib == "m" then
-        mobs = mobs + 1
-      end
+    local items = live_room_mobs()
+    for _, item in pairs(items) do
+      if room_mob(item) then mobs = mobs + 1 end
     end
     return mobs
   end
@@ -1838,6 +2044,9 @@ function Basher_Setup()
   
   --send("queue addclear freestand go "..Legacy.Settings.Basher.fleeExit)
   function Legacy.Basher.Attack()
+    -- A removal/slain pair belongs to the preceding output batch.
+    -- Do not let a flee steal a later same-named target's slain line.
+    Legacy.Settings.Basher._removedHuntTarget = nil
     if Legacy.Settings.Basher.status == false then return end
     if not (gmcp and gmcp.IRE and gmcp.IRE.Target and gmcp.Char and gmcp.Char.Status and gmcp.Char.Vitals) then return end
     if Legacy.Settings.Basher.fleeing == true then return end
@@ -1931,6 +2140,9 @@ function Basher_Setup()
 
     if health ~= nil and targetHpPerc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and targetSet ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and hp_ok and targetSet ~= "" and eq_ready and bal_ready and mobCount &gt; 0 and hasAttack and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
       local isDenizenTarget = _attack_is_denizen_target(targetSet)
+      -- Apostate Soulstorm attack adapter: precedes rage and ordinary basher queues.
+      local soulstorm=Legacy.Basher.Soulstorm
+      if soulstorm and type(soulstorm.before_attack) == "function" and soulstorm.before_attack(targetSet,targetInfo,isDenizenTarget) then return end
       if class == "Occultist" and isDenizenTarget and health ~= nil and health &gt;= 100 then
         Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
         local attend = Legacy.Settings.Basher._attend

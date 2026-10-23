@@ -2,7 +2,7 @@
 -- Magi_firestorm.lua
 --  * Alias-owned Magi firestorm route (^fstorm$ / magi_firestorm).
 --  * One EQ cast per tick via Yso.emit. No queues or pipe stacks.
---  * Affs via AK (RC.has_aff / RC.score_aff). Shalestorm via Yso.magi.shalestorm.
+--  * AK resonance: Magma -> Bombard/Fulminate -> Firestorm -> Conflagrate.
 --========================================================--
 
 Yso = Yso or {}
@@ -22,7 +22,12 @@ local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
 
+-- Magma's Scalded effect lasts 20 seconds. Keep the send window target-local
+-- while AK catches up; Earth setup must not bypass an existing Scalded effect.
+local MAGMA_DURATION = 20
+
 local PENDING_SLOTS = {
+  "pebble",
   "stormhammer",
   "destroy",
   "erode",
@@ -33,6 +38,9 @@ local PENDING_SLOTS = {
   "dehydrate",
   "emanation",
   "firelash",
+  "fulminate",
+  "firestorm",
+  "bombard",
 }
 
 M.route_contract = M.route_contract or {
@@ -142,16 +150,6 @@ local function _shielded(tgt)
   return false
 end
 
-local function _shalestorm_up(tgt)
-  local S = Yso and Yso.magi and Yso.magi.shalestorm
-  if type(S) ~= "table" then return false end
-  if type(S.is_up) == "function" then
-    local ok, v = pcall(S.is_up, tgt)
-    if ok then return v == true end
-  end
-  return S.active == true
-end
-
 local function _cast(spell, tgt, extra)
   extra = _trim(extra)
   if extra ~= "" then
@@ -171,98 +169,75 @@ local function _route_is_active()
   return M.state and M.state.loop_enabled == true
 end
 
+local function _room_key()
+  local g = rawget(_G, "gmcp")
+  local info = g and g.Room and g.Room.Info or {}
+  return tostring(info.num or info.id or "unknown")
+end
+
 local function _select_command(tgt)
   local hp = _target_hp()
-  local res = (type(RC.read_resonance) == "function" and RC.read_resonance()) or { air = 0, earth = 0, fire = 0, water = 0 }
-  local conflag = RC.has_aff("conflagrate")
+  local res = RC.read_resonance()
+  local air, earth, fire = tonumber(res.air) or 0, tonumber(res.earth) or 0, tonumber(res.fire) or 0
+  local water = tonumber(res.water) or 0
+  local conflag = RC.has_aff("conflagrate") or RC.has_aff("conflagration")
   local aflame_ready = RC.score_aff("aflame") >= 200
-  local scalded = RC.has_aff("scalded")
-  local storm = _shalestorm_up(tgt)
+  local scalded = RC.has_aff("scalded") or RC.pending_active(M.state, "magma", tgt)
+  local threshold = 3 -- Firestorm requires major resonance in both Air and Fire.
+  local room_sent = M.state.firestorm_rooms and M.state.firestorm_rooms[_room_key()] == true
 
-  if hp ~= nil and hp < 25 then
-    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
-  end
-  if hp ~= nil and hp < 35 and conflag then
-    return _cast("destroy", tgt), "execute", "hp_destroy"
-  end
   if _shielded(tgt) then
     return _cast("erode", tgt, "shield"), "defense_break", "shielded"
   end
-  if not conflag and aflame_ready and (tonumber(res.fire) or 0) >= 2 then
+  local special, reason, hold = RC.special_action(tgt)
+  if special or hold then return special, "special", reason end
+  if hp ~= nil and hp < 25 then
+    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
+  end
+
+  if RC.score_aff("scalded") < 100 and earth == 0 then
+    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
+  end
+
+  if not scalded then
+    return _cast("magma", tgt), "fire_build", "scalded_missing"
+  end
+
+  -- Bombard builds Air/Earth; Fulminate builds Air/Fire. Read the actual
+  -- resonance triggers each tick rather than incrementing on a send.
+  if not room_sent then
+    if air < threshold and earth < 2 then
+      return _cast("bombard", tgt), "resonance_build", "air_earth_build"
+    end
+    if air >= threshold and fire < threshold and water < 2 then
+      return _cast("dehydrate", tgt), "resonance_build", "fire_water_build"
+    end
+    if air >= threshold and fire < threshold then
+      return _cast("firelash", tgt), "resonance_build", "fire_only_build"
+    end
+    if air < threshold or fire < threshold then
+      return _cast("fulminate", tgt), "resonance_build", "air_fire_build"
+    end
+    -- Firestorm is a room spell: no 'at <target>' suffix.
+    return "cast firestorm", "firestorm", "firestorm_ready"
+  end
+
+  if not conflag and aflame_ready and fire >= 2 then
     return _cast("conflagrate", tgt), "fire_payoff", "conflagrate_ready"
   end
-
-  if storm and not conflag then
-    if not scalded then
-      return _cast("magma", tgt), "fire_build", "storm_scalded_missing"
-    end
-    local earth = tonumber(res.earth) or 0
-    local fire = tonumber(res.fire) or 0
-    local water = tonumber(res.water) or 0
-    local air = tonumber(res.air) or 0
-    if earth == 0 then
-      return _cast("magma", tgt), "fire_build", "storm_earth0"
-    end
-    if earth == 1 then
-      return _cast("mudslide", tgt), "salve_pressure", "storm_earth1"
-    end
-    if earth == 2 then
-      if fire >= 3 then return _cast("emanation", tgt, "fire"), "fire_promotion", "storm_earth2_fire" end
-      if water >= 3 then return _cast("emanation", tgt, "water"), "water_promotion", "storm_earth2_water" end
-      if air >= 3 then return _cast("emanation", tgt, "air"), "air_promotion", "storm_earth2_air" end
-      return _cast("dehydrate", tgt), "disrupt_setup", "storm_earth2_dehydrate"
-    end
-    if earth >= 3 then
-      if fire >= 3 then return _cast("emanation", tgt, "fire"), "fire_promotion", "storm_earth3_fire" end
-      if water >= 3 then return _cast("emanation", tgt, "water"), "water_promotion", "storm_earth3_water" end
-      if air >= 3 then return _cast("emanation", tgt, "air"), "air_promotion", "storm_earth3_air" end
-      return _cast("emanation", tgt, "earth"), "earth_promotion", "storm_earth3"
-    end
-    if fire >= 3 then
-      return _cast("emanation", tgt, "fire"), "fire_promotion", "storm_fire_major"
-    end
-    if aflame_ready and fire == 2 then
-      return _cast("firelash", tgt), "fire_build", "storm_aflame_firelash"
-    end
-    if fire == 2 then
-      return _cast("magma", tgt), "fire_build", "storm_fire2_magma"
-    end
-    return _cast("firelash", tgt), "fire_build", "storm_firelash"
+  if not conflag and fire >= 3 then
+    return _cast("emanation", tgt, "fire"), "fire_promotion", "ablaze_setup"
   end
-
-  if not storm then
-    local earth = tonumber(res.earth) or 0
-    if earth == 0 then
-      return _cast("magma", tgt), "fire_build", "setup_earth0"
-    end
-    if earth == 1 then
-      return _cast("mudslide", tgt), "salve_pressure", "setup_earth1"
-    end
-    if earth == 2 then
-      return _cast("shalestorm", tgt), "storm_setup", "setup_shalestorm"
-    end
+  if conflag and earth >= 3 then
+    return _cast("emanation", tgt, "earth"), "earth_promotion", "conflag_emanate_earth"
   end
-
-  if conflag then
-    if not scalded then
-      return _cast("magma", tgt), "fire_build", "conflag_scalded_missing"
-    end
-    if (tonumber(res.earth) or 0) >= 3 then
-      return _cast("emanation", tgt, "earth"), "earth_promotion", "conflag_emanate_earth"
-    end
-    if (tonumber(res.fire) or 0) >= 3 then
-      return _cast("emanation", tgt, "fire"), "fire_promotion", "conflag_emanate_fire"
-    end
-    if (tonumber(res.water) or 0) >= 3 then
-      return _cast("emanation", tgt, "water"), "water_promotion", "conflag_emanate_water"
-    end
-    if (tonumber(res.air) or 0) >= 3 then
-      return _cast("emanation", tgt, "air"), "air_promotion", "conflag_emanate_air"
-    end
-    return _cast("firelash", tgt), "fire_build", "conflag_firelash"
+  if fire < threshold and water < 2 then
+    return _cast("dehydrate", tgt), "fire_build", "fire_water_pressure"
   end
-
-  return _cast("firelash", tgt), "fire_build", "fallback_firelash"
+  if air >= threshold and fire < threshold then
+    return _cast("firelash", tgt), "fire_build", "fire_only_pressure"
+  end
+  return _cast("fulminate", tgt), "fire_build", "fulminate_pressure"
 end
 
 local function _emit_payload(cmd, target, category)
@@ -274,6 +249,8 @@ local function _emit_payload(cmd, target, category)
     reason = "magi_firestorm:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
+    require_commit = cmd == "cast bloodboil",
+    repeat_command = cmd == "cast bloodboil",
     route = "magi_firestorm",
     target = target,
   }
@@ -352,12 +329,27 @@ function M.attack_function(arg)
   if not ok then return false, info end
   local tgt = info
   local cmd, category, reason = _select_command(tgt)
+  if not (category == "special" and not cmd) then
+    local selected, purge_reason = RC.with_bloodboil(cmd)
+    cmd = selected
+    if purge_reason then category, reason = "self_purge", purge_reason end
+  end
   M.state.template.last_reason = reason
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
 
+  if cmd == _cast("pebble", tgt) and RC.pending_active(M.state, "pebble", tgt) then
+    M.state.template.last_reason = "pebble_pending"
+    return false, "pebble_pending"
+  end
+
+  if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
+
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
+  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
+  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
+  RC.note_special_queued(cmd, tgt)
 
   if RI and type(RI.mark_waiting) == "function" then
     RI.mark_waiting(M.state, "magi_firestorm", ack_payload or { eq = cmd, target = tgt }, {
@@ -387,7 +379,14 @@ function M.on_payload_queued(payload)
   local tgt = _trim(payload.target or _target())
   if cmd ~= "" and type(RC.mark_pending) == "function" then
     local slot = cmd:match("^cast%s+(%S+)")
-    if slot then RC.mark_pending(M.state, slot, tgt, 1.0) end
+    if slot then RC.mark_pending(M.state, slot, tgt, slot == "magma" and MAGMA_DURATION or 1.0) end
+  end
+  if cmd == "cast firestorm" then
+    -- This records a dispatched attempt, not a confirmed active room effect.
+    -- One attempt per room per loop activation prevents a room-spell resend
+    -- on every EQ regain, including when the target changes.
+    M.state.firestorm_rooms = M.state.firestorm_rooms or {}
+    M.state.firestorm_rooms[_room_key()] = true
   end
   if RI and type(RI.clear_waiting_on_ack) == "function" then
     RI.clear_waiting_on_ack(M.state, "magi_firestorm", payload, { require_route = false })
@@ -421,6 +420,7 @@ end
 
 function M.alias_loop_on_started(ctx)
   M.init()
+  M.state.firestorm_rooms = {}
   if type(RC.clear_pending_all) == "function" then
     RC.clear_pending_all(M.state, PENDING_SLOTS)
   end
@@ -429,6 +429,13 @@ function M.alias_loop_on_started(ctx)
   if tgt == "" then
     _echo("No target yet; holding.")
   end
+end
+
+-- A confirmed end/failure trigger can reopen the room step without toggling.
+function M.on_firestorm_ended()
+  M.state.firestorm_rooms = M.state.firestorm_rooms or {}
+  M.state.firestorm_rooms[_room_key()] = nil
+  return true
 end
 
 function M.alias_loop_on_stopped(ctx)

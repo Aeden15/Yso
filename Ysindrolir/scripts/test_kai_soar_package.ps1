@@ -26,7 +26,9 @@ try {
   Assert ($soar.regex -eq '^soa([lhs])$') 'Soar shortcuts incorrect'
   foreach ($suffix in @('l','h','s')) { Assert (('soa' + $suffix) -match $soar.regex) 'Supported shortcut rejected' }
   foreach ($bad in @('soax','soahs','soa','xsoah')) { Assert (-not ($bad -match $soar.regex)) 'Unsupported shortcut accepted' }
-  $strip = '(?s)<Trigger\b[^>]*>\s*<name>Kai cripple</name>.*?</Trigger>|<Alias\b[^>]*>\s*<name>Soaring</name>.*?</Alias>'
+  # The shared builder now also maintains self-Deliverance and Kai resource
+  # feedback. Enemy Deliverance safety remains outside its allowed changes.
+  $strip = '(?s)<Trigger\b[^>]*>\s*<name>(?:Kai cripple|Kai burst used|Kai burst resource rejection|Kai burst cooldown|Kai burst ready|Deliverance channeling|Deliverance up|Deliverance down)</name>.*?</Trigger>|<Alias\b[^>]*>\s*<name>(?:Soaring|Deliverance)</name>.*?</Alias>|<Script\b[^>]*>\s*<name>Kai resource</name>.*?</Script>'
   Assert (([regex]::Replace($before,$strip,'')) -ceq ([regex]::Replace($after,$strip,''))) 'Builder modified unrelated XML'
   & $builder -PackagePath $scratch
   Assert ($after -ceq [System.IO.File]::ReadAllText($scratch)) 'Builder is not idempotent'

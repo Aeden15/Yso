@@ -105,6 +105,8 @@ function Yso.util.echo(msg, color)
 end
 
 function Yso.util.toggle_route_alias(route_id, source)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return false, "enemy_deliverance" end
   local function _trim(s)
     return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
   end
@@ -138,8 +140,7 @@ function Yso.util.toggle_route_alias(route_id, source)
       adam = alc and alc.group_damage,
       alchemist_duel_route = alc and (alc.duel_route or alc.duel or alc.group_damage),
       alchemist_aurify_route = alc and alc.aurify_route,
-      magi_dmg = magi and (magi.dmg or magi.group_damage),
-      magi_group_damage = magi and (magi.group_damage or magi.dmg),
+      magi_dmg = magi and magi.dmg,
       magi_focus = magi and magi.focus,
     }
     local route = map[id]
@@ -768,6 +769,8 @@ Yso.pause = Yso.pause or {}
 Yso.pause.offense = Yso.pause.offense or { active = false, reason = "", at = 0 }
 
 function Yso.offense_paused()
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.is_held() then return true end
   return (Yso.pause and Yso.pause.offense and Yso.pause.offense.active == true) or false
 end
 
@@ -871,6 +874,8 @@ local function _trim(s)
 end
 
 function Yso.emit(payload, opts)
+  local D = Yso.Combat and Yso.Combat.Deliverance
+  if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
   if type(payload) == "table" and _trim(opts.target or "") == "" then
     local tgt = _trim(payload.target)

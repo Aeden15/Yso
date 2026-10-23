@@ -23,6 +23,7 @@ Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
 
 local PENDING_SLOTS = {
+  "pebble",
   "stormhammer",
   "erode",
   "glaciate",
@@ -174,16 +175,21 @@ local function _select_command(tgt)
   local nausea = RC.has_aff("nausea")
   local calcified = RC.has_aff("calcifiedtorso")
 
-  if hp ~= nil and hp <= 20 then
-    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
-  end
   if _shielded(tgt) then
     return _cast("erode", tgt, "shield"), "defense_break", "shielded"
   end
-  if frozen and hypothermia and water == 2 and air == 2 then
+  local special, reason, hold = RC.special_action(tgt)
+  if special or hold then return special, "special", reason end
+  if hp ~= nil and hp <= 20 then
+    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
+  end
+  if RC.score_aff("scalded") < 100 and earth == 0 then
+    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
+  end
+  if frozen and hypothermia and water >= 2 and air >= 2 then
     return _cast("glaciate", tgt), "glaciate_burst", "glaciate_ready"
   end
-  if frozen and water == 2 and air == 2 and not hypothermia then
+  if frozen and water >= 2 and air >= 2 and not hypothermia then
     return _cast("hypothermia", tgt), "freeze_setup", "hypothermia_missing"
   end
   if shivering and nausea and not frozen then
@@ -241,6 +247,8 @@ local function _emit_payload(cmd, target, category)
     reason = "magi_water_group:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
+    require_commit = cmd == "cast bloodboil",
+    repeat_command = cmd == "cast bloodboil",
     route = "magi_water_group",
     target = target,
   }
@@ -319,13 +327,37 @@ function M.attack_function(arg)
   if not ok then return false, info end
   local tgt = info
   local cmd, category, reason = _select_command(tgt)
+  if not (category == "special" and not cmd) then
+    local selected, purge_reason = RC.with_bloodboil(cmd)
+    cmd = selected
+    if purge_reason then category, reason = "self_purge", purge_reason end
+  end
   M.state.template.last_reason = reason
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
 
-  _send_wields()
+  -- Honor the same-target pending window before wielding or emitting again.
+  if type(RC.guard_spell) == "function" then
+    local allowed, why = RC.guard_spell({
+      state = M.state,
+      target = tgt,
+      cmd = cmd,
+      slot = cmd:match("^cast%s+(%S+)"),
+      cfg = M.cfg,
+    })
+    if not allowed then
+      M.state.template.last_reason = why
+      return false, why
+    end
+  end
+
+  if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
+  if category ~= "self_purge" then _send_wields() end
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
+  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
+  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
+  RC.note_special_queued(cmd, tgt)
 
   if RI and type(RI.mark_waiting) == "function" then
     RI.mark_waiting(M.state, "magi_water_group", ack_payload or { eq = cmd, target = tgt }, {
