@@ -328,7 +328,11 @@ do
 
         if v ~= nil then return v end
 
-        return true
+        local g = rawget(_G, "gmcp")
+        local vitals = g and g.Char and g.Char.Vitals or {}
+        local bal = vitals.bal
+        if bal == nil then bal = vitals.balance end
+        return bal == true or tostring(bal) == "1"
       elseif lane == "class" then
         if st and tonumber(st.backoff_until or 0) > now then return false end
         local v = nil
@@ -663,6 +667,10 @@ function Yso.emit(payload, opts)
       return Q.emit(payload, opts)
     end
     local sent_direct = _emit_direct(payload)
+    if sent_direct == true and type(payload) == "table" and _trim(payload.eq) ~= "" then
+      -- Keep EQ history across later free/balance/entity acknowledgements.
+      Yso._last_eq_ack_payload = payload
+    end
     if sent_direct == true and Yso.locks and type(Yso.locks.note_payload) == "function" then
       pcall(Yso.locks.note_payload, payload)
     end

@@ -249,8 +249,6 @@ local function _emit_payload(cmd, target, category)
     reason = "magi_firestorm:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
-    require_commit = cmd == "cast bloodboil",
-    repeat_command = cmd == "cast bloodboil",
     route = "magi_firestorm",
     target = target,
   }
@@ -329,11 +327,6 @@ function M.attack_function(arg)
   if not ok then return false, info end
   local tgt = info
   local cmd, category, reason = _select_command(tgt)
-  if not (category == "special" and not cmd) then
-    local selected, purge_reason = RC.with_bloodboil(cmd)
-    cmd = selected
-    if purge_reason then category, reason = "self_purge", purge_reason end
-  end
   M.state.template.last_reason = reason
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
@@ -375,8 +368,16 @@ function M.on_payload_queued(payload)
   M.init()
   payload = type(payload) == "table" and payload or {}
   local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  local cmd = _trim(lanes.eq or payload.eq or payload.cmd)
+  local cmd = _trim(lanes.eq or payload.eq)
+  if cmd == "" and payload.lanes == nil and not (payload.bal or payload.free
+      or payload.class or payload.ent or payload.entity) then
+    cmd = _trim(payload.cmd)
+  end
   local tgt = _trim(payload.target or _target())
+  -- A generic server rejection belongs only to the outstanding EQ action.
+  -- Shared EQ history also detects later actions sent by another route,
+  -- even when subsequent acknowledgements spend only other lanes.
+  if cmd ~= "" then M.state.firestorm_dispatch = nil end
   if cmd ~= "" and type(RC.mark_pending) == "function" then
     local slot = cmd:match("^cast%s+(%S+)")
     if slot then RC.mark_pending(M.state, slot, tgt, slot == "magma" and MAGMA_DURATION or 1.0) end
@@ -387,6 +388,10 @@ function M.on_payload_queued(payload)
     -- on every EQ regain, including when the target changes.
     M.state.firestorm_rooms = M.state.firestorm_rooms or {}
     M.state.firestorm_rooms[_room_key()] = true
+    M.state.firestorm_dispatch = {
+      payload = payload, room = _room_key(),
+      eq_ack = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload),
+    }
   end
   if RI and type(RI.clear_waiting_on_ack) == "function" then
     RI.clear_waiting_on_ack(M.state, "magi_firestorm", payload, { require_route = false })
@@ -402,7 +407,28 @@ function M.on_send_result(payload, ctx)
   payload = type(payload) == "table" and payload or {}
   local lanes = type(payload.lanes) == "table" and payload.lanes or payload
   M.state.last_fired_cmd = _trim(lanes.eq or payload.eq or payload.cmd)
+  local dispatch = M.state.firestorm_dispatch
+  if type(ctx) == "table" and ctx.success == false and dispatch
+      and dispatch.payload == payload and M.state.last_fired_cmd == "cast firestorm" then
+    M.state.firestorm_rooms[dispatch.room] = nil
+    M.state.firestorm_dispatch = nil
+    if type(RC.clear_pending) == "function" then RC.clear_pending(M.state, "firestorm") end
+  end
   return true
+end
+
+function M.on_resonance_failure(required, element)
+  local dispatch = M.state.firestorm_dispatch
+  if not dispatch or required ~= 3 or (element ~= "air" and element ~= "fire") then return false end
+  local latest = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload)
+  if latest and latest ~= dispatch.eq_ack and latest ~= dispatch.payload then
+    local lanes = type(latest.lanes) == "table" and latest.lanes or latest
+    if _trim(lanes.eq or latest.eq) ~= "" then
+      M.state.firestorm_dispatch = nil
+      return false
+    end
+  end
+  return M.on_send_result(dispatch.payload, { success = false })
 end
 
 M.alias_loop_stop_details = M.alias_loop_stop_details or {
@@ -421,6 +447,7 @@ end
 function M.alias_loop_on_started(ctx)
   M.init()
   M.state.firestorm_rooms = {}
+  M.state.firestorm_dispatch = nil
   if type(RC.clear_pending_all) == "function" then
     RC.clear_pending_all(M.state, PENDING_SLOTS)
   end

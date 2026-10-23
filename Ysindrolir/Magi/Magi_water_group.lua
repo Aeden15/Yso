@@ -247,8 +247,6 @@ local function _emit_payload(cmd, target, category)
     reason = "magi_water_group:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
-    require_commit = cmd == "cast bloodboil",
-    repeat_command = cmd == "cast bloodboil",
     route = "magi_water_group",
     target = target,
   }
@@ -327,11 +325,6 @@ function M.attack_function(arg)
   if not ok then return false, info end
   local tgt = info
   local cmd, category, reason = _select_command(tgt)
-  if not (category == "special" and not cmd) then
-    local selected, purge_reason = RC.with_bloodboil(cmd)
-    cmd = selected
-    if purge_reason then category, reason = "self_purge", purge_reason end
-  end
   M.state.template.last_reason = reason
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
@@ -352,7 +345,7 @@ function M.attack_function(arg)
   end
 
   if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
-  if category ~= "self_purge" then _send_wields() end
+  _send_wields()
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
   -- Cover the submission-to-ack gap without predicting resonance or limb damage.

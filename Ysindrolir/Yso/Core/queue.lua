@@ -460,6 +460,7 @@ end
 local function _mark_payload_fired(payload)
   local ack_payload = _ack_payload(payload)
   Q._last_ack_payload = ack_payload
+  if _trim(ack_payload.eq) ~= "" then Yso._last_eq_ack_payload = ack_payload end
 
   if Yso and Yso.locks then
     if type(Yso.locks.note_payload) == "function" then

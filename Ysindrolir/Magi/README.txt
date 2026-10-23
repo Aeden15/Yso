@@ -11,6 +11,15 @@ of ordinary in-Mudlet play.
 
 Current fixes
 -------------
+  Bloodboil is manual-only through boi. Its ready/cast triggers maintain
+  yso.magi.bloodboil and display readiness/cooldown feedback. The old automatic
+  self-purge selection, shared cooldown state, and Bloodboil EQ lock are removed.
+  The existing alias command and server feedback patterns are preserved.
+
+  Confirmed Firestorm resonance/send rejections reopen the matching outstanding
+  room attempt. Later EQ actions invalidate rejection correlation; AK resonance
+  remains authoritative.
+
   Pebble experiment (gwater, fstorm, mfocus): when AK Scalded is below 100 and
   Earth resonance is zero, cast Pebble before normal setup. Shield handling,
   special actions and execution retain priority; Focus still opens Hellfumes

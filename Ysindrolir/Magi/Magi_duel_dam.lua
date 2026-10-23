@@ -333,7 +333,7 @@ function M.build(reason)
   if _target() == "" then return nil end
   local cmd, hold = _select_command(reason)
   if hold then return nil end
-  return RC.with_bloodboil(cmd)
+  return cmd
 end
 
 function M.after_send(cmd, reason)
@@ -389,8 +389,6 @@ local function _emit_payload(cmd, target, reason)
     reason = "magi_dmg:" .. tostring(reason or "attack"),
     kind = "offense",
     commit = true,
-    require_commit = cmd == "cast bloodboil",
-    repeat_command = cmd == "cast bloodboil",
     route = "magi_dmg",
     target = target,
   }
@@ -403,7 +401,7 @@ local function _emit_payload(cmd, target, reason)
       meta = {
         route = "magi_dmg",
         main_lane = "eq",
-        main_category = cmd == "cast bloodboil" and "self_purge" or "duel_damage",
+        main_category = "duel_damage",
       },
     }, opts)
   end
@@ -444,7 +442,7 @@ function M.attack_function(arg)
 
   local tgt = _target()
   if ctx.preview then
-    return {target=tgt,lanes={eq=cmd},meta={main_category=cmd == "cast bloodboil" and "self_purge" or "duel_damage"}}
+    return {target=tgt,lanes={eq=cmd},meta={main_category="duel_damage"}}
   end
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, ctx.reason or "loop")
   if sent ~= true then return false, (emit_detail or "emit_failed") end

@@ -29,6 +29,10 @@ function F.failure(word, element)
   end
   F.last_failure = { element = element, required = required,
     at = type(getEpoch) == 'function' and getEpoch() or os.time() }
+  local firestorm = Yso.off and Yso.off.magi and Yso.off.magi.firestorm
+  if firestorm and type(firestorm.on_resonance_failure) == 'function' then
+    firestorm.on_resonance_failure(required, element)
+  end
   report('Spell rejected: ' .. tostring(word) .. ' ' .. element
     .. ' resonance required. Actual level remains supplied by AK.')
   F.notice()

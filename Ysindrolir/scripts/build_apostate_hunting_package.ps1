@@ -4,7 +4,11 @@ $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $text=[IO.File]::ReadAllText($PackagePath)
 $doc=[xml]$text
-function Escape([string]$value){[Security.SecurityElement]::Escape($value)}
+$newline=[regex]::Match($text,'\r\n|\n|\r').Value
+if(-not $newline){$newline="`n"}
+# XmlDocument normalizes parsed bodies to LF; source files and here-strings may
+# use either checkout style. Embed every body using the destination's newlines.
+function Escape([string]$value){[Security.SecurityElement]::Escape([regex]::Replace($value,'\r\n?|\n',$newline))}
 function Entry([string]$tag,[string]$name){
  $pattern='(?s)<'+$tag+'\b[^>]*>\s*<name>'+[regex]::Escape($name)+'</name>.*?</'+$tag+'>'
  $hits=[regex]::Matches($script:text,$pattern)
@@ -221,7 +225,7 @@ else{
  $anchor=Entry Script 'Basher'
  $escaped=(Escape $body).Replace('&quot;','"').Replace('&apos;',"'")
  $block='<Script isActive="yes" isFolder="no"><name>Apostate hunting Soulstorm</name><packageName /><script>'+$escaped+'</script><eventHandlerList /></Script>'
- $text=$text.Insert($anchor.Index,$block+"`n")
+ $text=$text.Insert($anchor.Index,$block+$newline)
 }
 $triggers=@(
  @('confirmed','^You call forth an unholy tide of necromantic essence and release it, engulfing (.+) in a profane soulstorm\.$'),
@@ -235,7 +239,7 @@ foreach($row in $triggers){
  if($text.Contains('<name>'+$name+'</name>')){
   $hit=Entry Trigger $name;$text=$text.Substring(0,$hit.Index)+$block+$text.Substring($hit.Index+$hit.Length)
  }else{
-  $anchor=Entry Trigger 'Mob Slain';$text=$text.Insert($anchor.Index,$block+"`n")
+  $anchor=Entry Trigger 'Mob Slain';$text=$text.Insert($anchor.Index,$block+$newline)
  }
 }
 [void][xml]$text

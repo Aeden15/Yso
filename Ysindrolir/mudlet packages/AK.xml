@@ -27032,82 +27032,61 @@ end </script>
 			<regex></regex>
 			<Alias isActive="yes" isFolder="no">
 				<name>^t (.+)$</name>
-				<script>target = tostring(matches[2] or ""):gsub("^%s+",""):gsub("%s+$","")
-if target == "" then return end
-
+				<script>-- Maintained body for AK's ^t (.+)$ alias. Keep the request local across callbacks.
+local requested = tostring(matches[2] or ""):gsub("^%s+", ""):gsub("%s+$", "")
+if requested == "" then return end
 ak = ak or {}
-
--- default true; allows false
-if ak.highlighttarget == nil then ak.highlighttarget = true end
-
--- Canonicalize
-local ok, titled = pcall(function() return target:title() end)
-if ok and type(titled) == "string" and titled ~= "" then
-  target = titled
-end
-
-local prev_target = ""
-if Yso and type(Yso.get_target) == "function" then
-  local ok_prev, prev_name = pcall(Yso.get_target)
-  if ok_prev and type(prev_name) == "string" then
-    prev_target = prev_name
-  end
-end
-if prev_target == "" then
-  prev_target = tostring(rawget(_G, "target") or "")
-end
-
--- Canonical global target slot (AK/Legacy compatibility)
-_G.target = target
-
--- Optional highlight (safe; no leaked globals)
 ak._target_hl = ak._target_hl or {}
 local HL = ak._target_hl
-
-local function _kill(id)
-  if id and type(killTrigger) == "function" then pcall(killTrigger, id) end
+local function clear_highlight()
+  for _, key in ipairs({ "raw", "title" }) do
+    if HL[key] and type(killTrigger) == "function" then pcall(killTrigger, HL[key]) end
+    HL[key] = nil
+  end
 end
 
-_kill(HL.raw);   HL.raw   = nil
-_kill(HL.title); HL.title = nil
+local key = requested:lower()
+if key == "none" or key == "clear" or key == "off" or key == "nil" or key == "null" then
+  local TG = Yso and Yso.targeting
+  if TG and type(TG.clear) == "function" then
+    TG.clear("ak", "manual_clear", true, { no_ak = true })
+  else
+    clear_highlight()
+    if type(ak.oresetparse) == "function" then pcall(ak.oresetparse) end
+    rawset(_G, "target", "")
+  end
+  if type(send) == "function" then send("st none") end
+  if type(cecho) == "function" then cecho("\n&lt;cyan&gt; Target cleared\n\n") end
+  return
+end
 
+local previous = tostring(rawget(_G, "target") or "")
+if Yso and type(Yso.get_target) == "function" then
+  local ok, value = pcall(Yso.get_target)
+  if ok and type(value) == "string" then previous = value end
+end
+local ok, titled = pcall(function() return requested:title() end)
+if ok and type(titled) == "string" and titled ~= "" then requested = titled end
+rawset(_G, "target", requested)
+
+if ak.highlighttarget == nil then ak.highlighttarget = true end
+clear_highlight()
 if ak.highlighttarget and type(tempTrigger) == "function" then
-  local q = string.format("%q", target)
-  HL.title = tempTrigger(target, "selectString("..q..", 1) fg('red') resetFormat()")
+  local quoted = string.format("%q", requested)
+  HL.title = tempTrigger(requested, "selectString(" .. quoted .. ", 1) fg('red') resetFormat()")
 end
-
--- YSO hook: let the AK-backed bridge observe the target change
 if Yso and type(Yso.set_target) == "function" then
-  pcall(Yso.set_target, target, "ak", { prev = prev_target, keep_class_queue = true, keep_rawsend = true })
+  Yso.set_target(requested, "ak", { prev = previous, keep_class_queue = true, keep_rawsend = true })
 end
-
--- Kick offense pipeline on target change
-local core = Yso and Yso.off and Yso.off.core or nil
-if core and type(core.tick) == "function" then
-  pcall(core.tick, "target_change")
-end
-
-if ak.stack and ak.stack == "none" and type(ak.classenable) == "function" then
-  ak.classenable()
-end
-
-echo("\n")
-cecho("&lt;cyan&gt; Target Changed to "..target)
-echo("\n\n")
-
--- server-side target
-if type(send) == "function" then
-  send("st "..target)
-end
-
-if type(ak.oresetparse) == "function" then
-  ak.oresetparse()
-end
-
--- If your targeting errors, try setting: ak.highlighttarget = false
+local core = Yso and Yso.off and Yso.off.core
+if core and type(core.tick) == "function" then pcall(core.tick, "target_change") end
+if ak.stack == "none" and type(ak.classenable) == "function" then ak.classenable() end
+if type(cecho) == "function" then cecho("\n&lt;cyan&gt; Target Changed to " .. requested .. "\n\n") end
+if type(send) == "function" then send("st " .. requested) end
+if type(ak.oresetparse) == "function" then ak.oresetparse() end
 </script>
-				<command></command>
-				<packageName></packageName>
+				<command />
+				<packageName />
 				<regex>^t (.+)$</regex>
 			</Alias>
 			<Alias isActive="yes" isFolder="no">

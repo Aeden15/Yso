@@ -22,10 +22,12 @@ Yso = Yso or {}
 Yso.targeting = Yso.targeting or {}
 local TG = Yso.targeting
 
-if TG._svc_loaded then
+local SERVICE_VERSION = 3
+if TG._svc_loaded and TG._svc_version == SERVICE_VERSION then
   return
 end
 TG._svc_loaded = true
+TG._svc_version = SERVICE_VERSION
 
 TG.cfg = TG.cfg or {
   echo = false,
@@ -76,7 +78,7 @@ local function _clean(s)
   s = s:gsub("%s*%b()$", "")
   -- strip Mudlet / GMCP placeholder-ish values
   local lc = s:lower()
-  if lc == "none" or lc == "nil" or lc == "null" then return "" end
+  if lc == "none" or lc == "clear" or lc == "off" or lc == "nil" or lc == "null" then return "" end
   return s
 end
 
@@ -195,6 +197,10 @@ local function _forward_to_ak(fn, arg)
 end
 
 local function _reset_combat_lane_state(reason)
+  if Yso and Yso.state then
+    Yso.state._last_ent_cmd = nil
+    Yso.state._last_ent_cmd_ts = nil
+  end
   local Q = Yso and Yso.queue
   if type(Q) == "table" then
     if type(Q.flush_staged) == "function" then
@@ -226,13 +232,39 @@ function TG.clear(source, reason, silent, opts)
   end
 
   local old = _clean(TG.state.name)
-  if old == "" then return true, "noop" end
+  local canonical = _clean(rawget(_G, "target"))
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local highlights = rawget(ak, "_target_hl")
+    local had_highlights = false
+    if type(highlights) == "table" then
+      for _, key in ipairs({ "raw", "title" }) do
+        local id = highlights[key]
+        if id then
+          had_highlights = true
+          if type(killTrigger) == "function" then pcall(killTrigger, id) end
+        end
+        highlights[key] = nil
+      end
+    end
+    -- Reset opponent tracking while the old canonical target is still
+    -- available. A forwarded alias clear performs this in the inner call;
+    -- the outer call then sees empty state and does not reset it again.
+    if (old ~= "" or canonical ~= "" or _clean(Yso.target) ~= "" or had_highlights)
+       and type(ak.oresetparse) == "function" then
+      pcall(ak.oresetparse)
+    end
+  end
 
   TG.state.name = ""
   TG.state.source = source
   TG.state.at = _now()
   TG.state.locked, TG.state.lock_source, TG.state.lock_reason = false, "", ""
 
+  -- A clear invalidates the canonical AK target even when mirroring writes
+  -- are disabled, otherwise the next passive read imports the old target.
+  rawset(_G, "target", "")
+  Yso.target = ""
   _sync_mirrors("")
   if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_target_cleared) == "function" then
     pcall(Yso.off.coord.on_target_cleared, old, reason or "target_clear")
@@ -290,20 +322,10 @@ function TG.set(name, source, opts)
   -- Target swap hygiene: do NOT carry staged work or lane blocks across targets.
   if old ~= "" and old:lower() ~= name:lower() then
     _reset_combat_lane_state("target_swap")
-    if Yso and Yso.state then
-      Yso.state._last_ent_cmd = nil
-      Yso.state._last_ent_cmd_ts = nil
-    end
   end
 
-
--- If offense automation was paused (e.g., target leapt out), auto-resume on an explicit target set.
-if Yso and type(Yso.offense_paused) == "function" and Yso.offense_paused()
-   and type(Yso.pause_offense) == "function"
-then
-  pcall(Yso.pause_offense, false, "target_set", true)
-end
-
+  -- Target changes (including passive AK imports) preserve every offense
+  -- pause. Only an explicit resume operation may release a pause.
 
   -- Phase 1 plumbing: mirror into Yso.state
   if Yso and Yso.ingest and type(Yso.ingest.target_set) == "function" then
@@ -378,36 +400,52 @@ function TG.unlock()
   return true
 end
 
--- Public wrappers (avoid clobbering if already defined)
-if type(Yso.get_target) ~= "function" then
+-- Upgrade our wrappers in a running session while preserving external ones.
+-- Legacy versions did not record ownership, but closed over this TG table.
+TG._public_wrappers = TG._public_wrappers or {}
+local function _install_wrapper(key)
+  local current = Yso[key]
+  if type(current) ~= "function" or TG._public_wrappers[key] == current then return true end
+  if debug and type(debug.getupvalue) == "function" then
+    local index = 1
+    while true do
+      local name, value = debug.getupvalue(current, index)
+      if not name then break end
+      if name == "TG" and value == TG then return true end
+      index = index + 1
+    end
+  end
+  return false
+end
+if _install_wrapper("get_target") then
   function Yso.get_target() return TG.get() end
+  TG._public_wrappers.get_target = Yso.get_target
 end
 
-if type(Yso.set_target) ~= "function" then
+if _install_wrapper("set_target") then
   function Yso.set_target(who, source, opts)
-    who = _clean(who)
-    if who == "" then
-      if type(echo) == "function" then echo("[YSO] No target supplied. Usage: y NAME\n") end
-      return false
-    end
+    if _trim(who) == "" then return false, "no_target" end
     return TG.set(who, source or "manual", opts)
   end
+  TG._public_wrappers.set_target = Yso.set_target
 end
 
-if type(Yso.clear_target) ~= "function" then
+if _install_wrapper("clear_target") then
   function Yso.clear_target(reason) return TG.clear("system", reason) end
+  TG._public_wrappers.clear_target = Yso.clear_target
 end
 
-if type(Yso.resolve_target) ~= "function" then
+if _install_wrapper("resolve_target") then
   function Yso.resolve_target(arg, opts)
     opts = opts or {}
     local a = _clean(arg)
-    if a ~= "" then
-      if opts.set then pcall(Yso.set_target, a, opts.source or "manual") end
-      return a
+    if _trim(arg) ~= "" then
+      if opts.set then pcall(Yso.set_target, arg, opts.source or "manual") end
+      return a ~= "" and a or nil
     end
     return TG.get()
   end
+  TG._public_wrappers.resolve_target = Yso.resolve_target
 end
 
 Yso.ak = Yso.ak or {}
@@ -427,9 +465,7 @@ TG._trig.set = tempRegexTrigger([[^You are now targeting ([\w'\-]+)\.$]], functi
 end)
 
 TG._trig.clear = tempRegexTrigger([[^You (?:stop|are no longer) targeting anyone\.$]], function()
-  -- Achaea clears server-side target on room moves. Only mirror that into Yso.targeting
-  -- while the offense driver is actively fighting (AUTO).
-  if type(Yso.is_actively_fighting) == "function" and not Yso.is_actively_fighting() then return end
+  -- This is authoritative even while offense is inactive or paused.
   if TG and TG.clear then TG.clear("ak", "server_target_clear", true) end
 end)
 

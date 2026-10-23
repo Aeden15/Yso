@@ -3,7 +3,10 @@
 # Run:  cd Ysindrolir\scripts ; .\export_yso_system_xml.ps1
 # Validate:  [xml](Get-Content -Raw -LiteralPath '..\mudlet packages\Yso system.xml')
 [CmdletBinding(SupportsShouldProcess = $true)]
-param([switch]$FocusOnly, [switch]$ShikudoOnly, [switch]$KaiSoarOnly, [switch]$ShikudoDuelOnly, [switch]$CombatSafetyOnly)
+param(
+  [switch]$FocusOnly, [switch]$ShikudoOnly, [switch]$KaiSoarOnly, [switch]$ShikudoDuelOnly, [switch]$CombatSafetyOnly,
+  [string]$PackagePath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'mudlet packages/Yso system.xml')
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -71,7 +74,7 @@ function Remove-ScriptByName([string]$content, [string]$mudletName) {
   $nameRe = [regex]::Escape($mudletName)
   $pattern = '(?s)\s*<Script isActive="yes" isFolder="no">\s*<name>' + $nameRe + '</name>.*?</Script>'
   if (-not [regex]::IsMatch($content, $pattern)) { return $content }
-  return [regex]::Replace($content, $pattern, '', 1)
+  return ([regex]::new($pattern)).Replace($content, '', 1)
 }
 
 function Remove-AliasByName([string]$content, [string]$aliasName) {
@@ -101,9 +104,8 @@ function Remove-TriggerByName([string]$content, [string]$triggerName) {
 function Remove-OrphanTargetingBlock([string]$content) {
   $pattern = '(?s)\r?\n        <script>-- Auto-exported from Mudlet package script: Yso\.targeting\r?\n.*?\r?\n</script>\r?\n        <eventHandlerList />\r?\n        <Script isActive="yes" isFolder="no">\r?\n          <name>AK\+Legacy wiring</name>'
   if (-not [regex]::IsMatch($content, $pattern)) { return $content }
-  return [regex]::Replace(
+  return ([regex]::new($pattern)).Replace(
     $content,
-    $pattern,
     "`n        <Script isActive=`"yes`" isFolder=`"no`">`n          <name>AK+Legacy wiring</name>",
     1
   )
@@ -115,7 +117,7 @@ $YsoDir = Join-Path $Ysindrolir 'Yso'
 $AlchemistDir = Join-Path $Ysindrolir 'Alchemist'
 $MagiDir = Join-Path $Ysindrolir 'Magi'
 $MonkDir = Join-Path $Ysindrolir 'Monk'
-$XmlPackage = Join-Path $Ysindrolir 'mudlet packages\Yso system.xml'
+$XmlPackage = [IO.Path]::GetFullPath($PackagePath)
 
 $ScriptToSourcePath = [ordered]@{
   'AK+Legacy wiring'              = Join-Path $YsoDir 'Integration\ak_legacy_wiring.lua'
@@ -267,10 +269,10 @@ if ($ShikudoOnly -or $KaiSoarOnly -or $ShikudoDuelOnly) {
     Write-Host 'Synchronized Shikudo; unrelated package content preserved.'
   }
   if ($KaiSoarOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Kaido states, Deliverance, Kai cripple and soar')) {
-    & (Join-Path $ScriptsDir 'build_kai_soar_package.ps1')
+    & (Join-Path $ScriptsDir 'build_kai_soar_package.ps1') -PackagePath $XmlPackage
   }
   if ($ShikudoDuelOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Shikudo duel and limb packages')) {
-    & (Join-Path $ScriptsDir 'build_shikudo_duel_package.ps1')
+    & (Join-Path $ScriptsDir 'build_shikudo_duel_package.ps1') -PackagePath $XmlPackage
   }
   return
 }
@@ -298,6 +300,17 @@ if ($FocusOnly) {
     Write-Host 'Synchronized Focus script and alias; unrelated package content preserved.'
   }
   return
+}
+
+# A full refresh includes the final scoped builders. Keep every package mutation
+# on a sibling file until all stages have succeeded and their XML is validated.
+$destination = $XmlPackage
+$stagedPackage = $null
+try {
+if (-not $WhatIfPreference) {
+  $stagedPackage = Join-Path (Split-Path $destination -Parent) ('.yso-export-' + [guid]::NewGuid() + '.xml')
+  [IO.File]::Copy($destination, $stagedPackage)
+  $XmlPackage = $stagedPackage
 }
 
 foreach ($rm in $ScriptsToRemove) {
@@ -371,6 +384,8 @@ if ($PSCmdlet.ShouldProcess('Reflection', 'Replace mreflect alias script body'))
 
 if ($content -ne $original) {
   if ($PSCmdlet.ShouldProcess($XmlPackage, 'Write updated Yso system.xml')) {
+    $document = New-Object System.Xml.XmlDocument
+    $document.LoadXml($content)
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($XmlPackage, $content, $utf8NoBom)
   }
@@ -383,5 +398,19 @@ Write-Host "Done. Manifest entries: $($ScriptToSourcePath.Count). Inserts: $($Sc
 
 # Keep the maintained combat entries synchronized after a legacy full refresh too.
 if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize maintained Shikudo, Kai cripple and soar entries')) {
-  & $PSCommandPath -ShikudoOnly -KaiSoarOnly
+  & $PSCommandPath -ShikudoOnly -KaiSoarOnly -PackagePath $XmlPackage
+}
+
+if ($null -ne $stagedPackage) {
+  $document = New-Object System.Xml.XmlDocument
+  $document.Load($stagedPackage)
+  if ([IO.File]::ReadAllText($stagedPackage) -cne $original -and
+      $PSCmdlet.ShouldProcess($destination, 'Publish validated full package export')) {
+    [IO.File]::Replace($stagedPackage, $destination, [System.Management.Automation.Language.NullString]::Value)
+  }
+}
+} finally {
+  if ($null -ne $stagedPackage -and [IO.File]::Exists($stagedPackage)) {
+    [IO.File]::Delete($stagedPackage)
+  }
 }

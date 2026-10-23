@@ -90,8 +90,6 @@ function RC.target_valid(tgt)
 end
 
 function RC.eq_ready()
-  -- Reserve EQ immediately after a purge submission, before GMCP catches up.
-  if RC.bloodboil and RC.now() < (RC.bloodboil.pending_until or 0) then return false end
   if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
     local ok, v = pcall(Yso.locks.eq_ready)
     if ok then return v == true end
@@ -388,77 +386,17 @@ function RC.special_action(tgt)
 end
 
 function RC.note_special_queued(cmd, tgt)
-  if RC.lc(cmd) == "cast bloodboil" then
-    RC.bloodboil.pending_until = RC.now() + 4
-    return
-  end
   local C = Yso.magi and Yso.magi.convergence
   if C and type(C.note_queued) == "function" then C.note_queued(cmd, tgt) end
 end
 
--- Self-purge state is shared by every Magi route and survives route/core reloads.
--- Submission is not proof of a cast: only the success trigger starts cooldown.
-RC.bloodboil = RC.bloodboil or { cooling = false, pending_until = 0 }
-local bloodboil_affs = {
-  "stupidity", "dizziness", "weariness", "recklessness",
-  "anorexia", "impatience", "slickness", "asthma",
-}
-function RC.bloodboil_note_cast()
-  RC.bloodboil.cooling = true
-  RC.bloodboil.pending_until = RC.now() + 4
-end
-function RC.bloodboil_note_ready()
-  RC.bloodboil.cooling = false
-end
-function RC.bloodboil_note_eq_recovered()
-  RC.bloodboil.pending_until = 0
-end
-function RC.bloodboil_command()
-  local g = rawget(_G, "gmcp")
-  local status = g and g.Char and g.Char.Status
-  if not status or RC.lc(status.class or status.classname) ~= "magi" then return nil, "wrong_class" end
-  if Yso.mode and type(Yso.mode.is_combat) == "function" and not Yso.mode.is_combat() then return nil, "not_combat" end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return nil, "paused" end
-  if RC.bloodboil.cooling then return nil, "bloodboil_cooldown" end
-  if not RC.eq_ready() then return nil, "eq_down" end
-  local tracker = Yso.curing and Yso.curing.afflictions
-  if tracker then
-    if type(tracker.is_complete) ~= "function" or not tracker.is_complete() then
-      return nil, "self_afflictions_incomplete"
-    end
-    if type(tracker.sync_legacy) == "function" then
-      if not tracker.sync_legacy() then return nil, "self_afflictions_unknown" end
-    elseif type(tracker.snapshot) ~= "function" or not tracker.snapshot() then
-      return nil, "self_afflictions_unknown"
-    end
-  end
-  -- This is Legacy's SELF table, never RC.has_aff/affstrack (enemy evidence).
-  local Aff = Legacy and Legacy.Curing and Legacy.Curing.Affs
-  if type(Aff) ~= "table" then return nil, "self_afflictions_unknown" end
-  if Aff.haemophilia then return nil, "haemophilia" end
-  local count = 0
-  for _,aff in ipairs(bloodboil_affs) do if Aff[aff] == true then count = count + 1 end end
-  if count < 2 then return nil, "below_two_afflictions" end
-  local vitals = g.Char.Vitals or {}
-  if (tonumber(vitals.mp) or 0) < 75 then return nil, "insufficient_mana" end
-  local channels = ""
-  for _,stat in pairs(vitals.charstats or {}) do
-    local value = tostring(stat):match("^[Cc]hannels:%s*(.*)$")
-    if value then channels = value:lower(); break end
-  end
-  for _,element in ipairs({"fire", "water"}) do
-    if not channels:find("%f[%a]" .. element .. "%f[%A]") then return nil, "channels_unconfirmed" end
-  end
-  return "cast bloodboil", "bloodboil_self_purge"
-end
-function RC.with_bloodboil(cmd)
-  -- Only an actual selected finisher wins; Assess and preparatory spells do not.
-  local spell = RC.lc(cmd):match("^cast%s+(%S+)")
-  if spell == "destroy" or spell == "convergence" or spell == "stormhammer" or spell == "glaciate" then return cmd end
-  local purge, reason = RC.bloodboil_command()
-  if purge then return purge, reason end
-  return cmd
-end
+-- Remove obsolete automatic-purge state and functions when reloading a reused core.
+RC.bloodboil = nil
+RC.bloodboil_note_cast = nil
+RC.bloodboil_note_ready = nil
+RC.bloodboil_note_eq_recovered = nil
+RC.bloodboil_command = nil
+RC.with_bloodboil = nil
 
 -- return omitted: alias body uses Yso.off.magi.route_core
 

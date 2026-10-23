@@ -2880,29 +2880,9 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(EMBED ENERGISE!).\n")</scr
 					<regexCodeList />
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Bloodboil: EQ recovered</name>
-						<script>local RC=Yso and Yso.off and Yso.off.magi and Yso.off.magi.route_core; if RC and type(RC.bloodboil_note_eq_recovered)=="function" then RC.bloodboil_note_eq_recovered() end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile>
-            </mSoundFile>
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You have recovered equilibrium.</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>3</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Bloodboil ready</name>
-						<script>local RC=Yso and Yso.off and Yso.off.magi and Yso.off.magi.route_core; if RC and type(RC.bloodboil_note_ready)=="function" then RC.bloodboil_note_ready() end</script>
+						<script>yso.magi.bloodboil = true
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(BLOODBOIL READY!).\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2923,7 +2903,8 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(EMBED ENERGISE!).\n")</scr
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Bloodboil cast</name>
-						<script>local RC=Yso and Yso.off and Yso.off.magi and Yso.off.magi.route_core; if RC and type(RC.bloodboil_note_cast)=="function" then RC.bloodboil_note_cast() end</script>
+						<script>yso.magi.bloodboil = false
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(BLOODBOIL ON CD!).\n")</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -2937,9 +2918,11 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(EMBED ENERGISE!).\n")</scr
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
 							<string>^You summon spirits of fire to burn off that which afflicts you\.$</string>
+							<string>You have not recovered enough to boil your blood again as of yet.</string>
 						</regexCodeList>
 						<regexCodePropertyList>
 							<integer>1</integer>
+							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -5923,8 +5906,6 @@ function RC.target_valid(tgt)
 end
 
 function RC.eq_ready()
-  -- Reserve EQ immediately after a purge submission, before GMCP catches up.
-  if RC.bloodboil and RC.now() &lt; (RC.bloodboil.pending_until or 0) then return false end
   if Yso and Yso.locks and type(Yso.locks.eq_ready) == &quot;function&quot; then
     local ok, v = pcall(Yso.locks.eq_ready)
     if ok then return v == true end
@@ -6221,77 +6202,17 @@ function RC.special_action(tgt)
 end
 
 function RC.note_special_queued(cmd, tgt)
-  if RC.lc(cmd) == &quot;cast bloodboil&quot; then
-    RC.bloodboil.pending_until = RC.now() + 4
-    return
-  end
   local C = Yso.magi and Yso.magi.convergence
   if C and type(C.note_queued) == &quot;function&quot; then C.note_queued(cmd, tgt) end
 end
 
--- Self-purge state is shared by every Magi route and survives route/core reloads.
--- Submission is not proof of a cast: only the success trigger starts cooldown.
-RC.bloodboil = RC.bloodboil or { cooling = false, pending_until = 0 }
-local bloodboil_affs = {
-  &quot;stupidity&quot;, &quot;dizziness&quot;, &quot;weariness&quot;, &quot;recklessness&quot;,
-  &quot;anorexia&quot;, &quot;impatience&quot;, &quot;slickness&quot;, &quot;asthma&quot;,
-}
-function RC.bloodboil_note_cast()
-  RC.bloodboil.cooling = true
-  RC.bloodboil.pending_until = RC.now() + 4
-end
-function RC.bloodboil_note_ready()
-  RC.bloodboil.cooling = false
-end
-function RC.bloodboil_note_eq_recovered()
-  RC.bloodboil.pending_until = 0
-end
-function RC.bloodboil_command()
-  local g = rawget(_G, &quot;gmcp&quot;)
-  local status = g and g.Char and g.Char.Status
-  if not status or RC.lc(status.class or status.classname) ~= &quot;magi&quot; then return nil, &quot;wrong_class&quot; end
-  if Yso.mode and type(Yso.mode.is_combat) == &quot;function&quot; and not Yso.mode.is_combat() then return nil, &quot;not_combat&quot; end
-  if type(Yso.offense_paused) == &quot;function&quot; and Yso.offense_paused() then return nil, &quot;paused&quot; end
-  if RC.bloodboil.cooling then return nil, &quot;bloodboil_cooldown&quot; end
-  if not RC.eq_ready() then return nil, &quot;eq_down&quot; end
-  local tracker = Yso.curing and Yso.curing.afflictions
-  if tracker then
-    if type(tracker.is_complete) ~= &quot;function&quot; or not tracker.is_complete() then
-      return nil, &quot;self_afflictions_incomplete&quot;
-    end
-    if type(tracker.sync_legacy) == &quot;function&quot; then
-      if not tracker.sync_legacy() then return nil, &quot;self_afflictions_unknown&quot; end
-    elseif type(tracker.snapshot) ~= &quot;function&quot; or not tracker.snapshot() then
-      return nil, &quot;self_afflictions_unknown&quot;
-    end
-  end
-  -- This is Legacy&apos;s SELF table, never RC.has_aff/affstrack (enemy evidence).
-  local Aff = Legacy and Legacy.Curing and Legacy.Curing.Affs
-  if type(Aff) ~= &quot;table&quot; then return nil, &quot;self_afflictions_unknown&quot; end
-  if Aff.haemophilia then return nil, &quot;haemophilia&quot; end
-  local count = 0
-  for _,aff in ipairs(bloodboil_affs) do if Aff[aff] == true then count = count + 1 end end
-  if count &lt; 2 then return nil, &quot;below_two_afflictions&quot; end
-  local vitals = g.Char.Vitals or {}
-  if (tonumber(vitals.mp) or 0) &lt; 75 then return nil, &quot;insufficient_mana&quot; end
-  local channels = &quot;&quot;
-  for _,stat in pairs(vitals.charstats or {}) do
-    local value = tostring(stat):match(&quot;^[Cc]hannels:%s*(.*)$&quot;)
-    if value then channels = value:lower(); break end
-  end
-  for _,element in ipairs({&quot;fire&quot;, &quot;water&quot;}) do
-    if not channels:find(&quot;%f[%a]&quot; .. element .. &quot;%f[%A]&quot;) then return nil, &quot;channels_unconfirmed&quot; end
-  end
-  return &quot;cast bloodboil&quot;, &quot;bloodboil_self_purge&quot;
-end
-function RC.with_bloodboil(cmd)
-  -- Only an actual selected finisher wins; Assess and preparatory spells do not.
-  local spell = RC.lc(cmd):match(&quot;^cast%s+(%S+)&quot;)
-  if spell == &quot;destroy&quot; or spell == &quot;convergence&quot; or spell == &quot;stormhammer&quot; or spell == &quot;glaciate&quot; then return cmd end
-  local purge, reason = RC.bloodboil_command()
-  if purge then return purge, reason end
-  return cmd
-end
+-- Remove obsolete automatic-purge state and functions when reloading a reused core.
+RC.bloodboil = nil
+RC.bloodboil_note_cast = nil
+RC.bloodboil_note_ready = nil
+RC.bloodboil_note_eq_recovered = nil
+RC.bloodboil_command = nil
+RC.with_bloodboil = nil
 
 -- return omitted: alias body uses Yso.off.magi.route_core
 
@@ -8443,7 +8364,12 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>boil</name>
-						<script>send("cq all&amp;&amp;cast bloodboil")</script>
+						<script>if yso.magi.bloodboil then
+send("cq all&amp;&amp;cast bloodboil")
+else
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(BLOODBOIL NOT READY!).\n")
+cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(BLOODBOIL NOT READY!).\n")
+end</script>
 						<command />
 						<packageName />
 						<regex>^boi$</regex>
@@ -8907,7 +8833,11 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Mind strip</name>
-						<script>send("mind strip " ..target)</script>
+						<script>local char = gmcp and gmcp.Char or {}
+local class = char.Status and char.Status.class
+if not class or class == "" then class = char.Vitals and char.Vitals.class end
+if not class or class == "" then class = Yso and Yso.class end
+if tostring(class or ""):lower() == "monk" then send("mind strip " ..target) end</script>
 						<command />
 						<packageName />
 						<regex>^strip$</regex>
@@ -9886,7 +9816,11 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Demon strip</name>
-						<script>Yso.apostate.alias("strip")</script>
+						<script>local char = gmcp and gmcp.Char or {}
+local class = char.Status and char.Status.class
+if not class or class == "" then class = char.Vitals and char.Vitals.class end
+if not class or class == "" then class = Yso and Yso.class end
+if tostring(class or ""):lower() == "apostate" then Yso.apostate.alias("strip") end</script>
 						<command />
 						<packageName />
 						<regex>^strip$</regex>
@@ -10341,7 +10275,11 @@ do
 
         if v ~= nil then return v end
 
-        return true
+        local g = rawget(_G, &quot;gmcp&quot;)
+        local vitals = g and g.Char and g.Char.Vitals or {}
+        local bal = vitals.bal
+        if bal == nil then bal = vitals.balance end
+        return bal == true or tostring(bal) == &quot;1&quot;
       elseif lane == &quot;class&quot; then
         if st and tonumber(st.backoff_until or 0) &gt; now then return false end
         local v = nil
@@ -10676,6 +10614,10 @@ function Yso.emit(payload, opts)
       return Q.emit(payload, opts)
     end
     local sent_direct = _emit_direct(payload)
+    if sent_direct == true and type(payload) == &quot;table&quot; and _trim(payload.eq) ~= &quot;&quot; then
+      -- Keep EQ history across later free/balance/entity acknowledgements.
+      Yso._last_eq_ack_payload = payload
+    end
     if sent_direct == true and Yso.locks and type(Yso.locks.note_payload) == &quot;function&quot; then
       pcall(Yso.locks.note_payload, payload)
     end
@@ -11694,7 +11636,10 @@ function D.command(command)
   return s
 end
 return D
-</script><eventHandlerList /></Script><Script isActive="yes" isFolder="no"><name>Magi resonance feedback</name><packageName /><script>-- AK owns elemental resonance. These triggers diagnose tracking/failures only.
+</script><eventHandlerList /></Script><Script isActive="yes" isFolder="no">
+					<name>Magi resonance feedback</name>
+					<packageName />
+					<script>-- AK owns elemental resonance. These triggers diagnose tracking/failures only.
 Yso = Yso or {}
 Yso.magi = Yso.magi or {}
 local F = Yso.magi.resonance_feedback or {}
@@ -11725,13 +11670,19 @@ function F.failure(word, element)
   end
   F.last_failure = { element = element, required = required,
     at = type(getEpoch) == &apos;function&apos; and getEpoch() or os.time() }
+  local firestorm = Yso.off and Yso.off.magi and Yso.off.magi.firestorm
+  if firestorm and type(firestorm.on_resonance_failure) == &apos;function&apos; then
+    firestorm.on_resonance_failure(required, element)
+  end
   report(&apos;Spell rejected: &apos; .. tostring(word) .. &apos; &apos; .. element
     .. &apos; resonance required. Actual level remains supplied by AK.&apos;)
   F.notice()
   return true
 end
 return F
-</script><eventHandlerList /></Script>
+</script>
+					<eventHandlerList />
+				</Script>
 				<Script isActive="yes" isFolder="no">
 					<name>Yso.targeting</name>
 					<packageName />
@@ -11759,10 +11710,12 @@ Yso = Yso or {}
 Yso.targeting = Yso.targeting or {}
 local TG = Yso.targeting
 
-if TG._svc_loaded then
+local SERVICE_VERSION = 3
+if TG._svc_loaded and TG._svc_version == SERVICE_VERSION then
   return
 end
 TG._svc_loaded = true
+TG._svc_version = SERVICE_VERSION
 
 TG.cfg = TG.cfg or {
   echo = false,
@@ -11813,7 +11766,7 @@ local function _clean(s)
   s = s:gsub("%s*%b()$", "")
   -- strip Mudlet / GMCP placeholder-ish values
   local lc = s:lower()
-  if lc == "none" or lc == "nil" or lc == "null" then return "" end
+  if lc == "none" or lc == "clear" or lc == "off" or lc == "nil" or lc == "null" then return "" end
   return s
 end
 
@@ -11932,6 +11885,10 @@ local function _forward_to_ak(fn, arg)
 end
 
 local function _reset_combat_lane_state(reason)
+  if Yso and Yso.state then
+    Yso.state._last_ent_cmd = nil
+    Yso.state._last_ent_cmd_ts = nil
+  end
   local Q = Yso and Yso.queue
   if type(Q) == "table" then
     if type(Q.flush_staged) == "function" then
@@ -11963,13 +11920,39 @@ function TG.clear(source, reason, silent, opts)
   end
 
   local old = _clean(TG.state.name)
-  if old == "" then return true, "noop" end
+  local canonical = _clean(rawget(_G, "target"))
+  local ak = rawget(_G, "ak")
+  if type(ak) == "table" then
+    local highlights = rawget(ak, "_target_hl")
+    local had_highlights = false
+    if type(highlights) == "table" then
+      for _, key in ipairs({ "raw", "title" }) do
+        local id = highlights[key]
+        if id then
+          had_highlights = true
+          if type(killTrigger) == "function" then pcall(killTrigger, id) end
+        end
+        highlights[key] = nil
+      end
+    end
+    -- Reset opponent tracking while the old canonical target is still
+    -- available. A forwarded alias clear performs this in the inner call;
+    -- the outer call then sees empty state and does not reset it again.
+    if (old ~= "" or canonical ~= "" or _clean(Yso.target) ~= "" or had_highlights)
+       and type(ak.oresetparse) == "function" then
+      pcall(ak.oresetparse)
+    end
+  end
 
   TG.state.name = ""
   TG.state.source = source
   TG.state.at = _now()
   TG.state.locked, TG.state.lock_source, TG.state.lock_reason = false, "", ""
 
+  -- A clear invalidates the canonical AK target even when mirroring writes
+  -- are disabled, otherwise the next passive read imports the old target.
+  rawset(_G, "target", "")
+  Yso.target = ""
   _sync_mirrors("")
   if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_target_cleared) == "function" then
     pcall(Yso.off.coord.on_target_cleared, old, reason or "target_clear")
@@ -12027,20 +12010,10 @@ function TG.set(name, source, opts)
   -- Target swap hygiene: do NOT carry staged work or lane blocks across targets.
   if old ~= "" and old:lower() ~= name:lower() then
     _reset_combat_lane_state("target_swap")
-    if Yso and Yso.state then
-      Yso.state._last_ent_cmd = nil
-      Yso.state._last_ent_cmd_ts = nil
-    end
   end
 
-
--- If offense automation was paused (e.g., target leapt out), auto-resume on an explicit target set.
-if Yso and type(Yso.offense_paused) == "function" and Yso.offense_paused()
-   and type(Yso.pause_offense) == "function"
-then
-  pcall(Yso.pause_offense, false, "target_set", true)
-end
-
+  -- Target changes (including passive AK imports) preserve every offense
+  -- pause. Only an explicit resume operation may release a pause.
 
   -- Phase 1 plumbing: mirror into Yso.state
   if Yso and Yso.ingest and type(Yso.ingest.target_set) == "function" then
@@ -12115,36 +12088,52 @@ function TG.unlock()
   return true
 end
 
--- Public wrappers (avoid clobbering if already defined)
-if type(Yso.get_target) ~= "function" then
+-- Upgrade our wrappers in a running session while preserving external ones.
+-- Legacy versions did not record ownership, but closed over this TG table.
+TG._public_wrappers = TG._public_wrappers or {}
+local function _install_wrapper(key)
+  local current = Yso[key]
+  if type(current) ~= "function" or TG._public_wrappers[key] == current then return true end
+  if debug and type(debug.getupvalue) == "function" then
+    local index = 1
+    while true do
+      local name, value = debug.getupvalue(current, index)
+      if not name then break end
+      if name == "TG" and value == TG then return true end
+      index = index + 1
+    end
+  end
+  return false
+end
+if _install_wrapper("get_target") then
   function Yso.get_target() return TG.get() end
+  TG._public_wrappers.get_target = Yso.get_target
 end
 
-if type(Yso.set_target) ~= "function" then
+if _install_wrapper("set_target") then
   function Yso.set_target(who, source, opts)
-    who = _clean(who)
-    if who == "" then
-      if type(echo) == "function" then echo("[YSO] No target supplied. Usage: y NAME\n") end
-      return false
-    end
+    if _trim(who) == "" then return false, "no_target" end
     return TG.set(who, source or "manual", opts)
   end
+  TG._public_wrappers.set_target = Yso.set_target
 end
 
-if type(Yso.clear_target) ~= "function" then
+if _install_wrapper("clear_target") then
   function Yso.clear_target(reason) return TG.clear("system", reason) end
+  TG._public_wrappers.clear_target = Yso.clear_target
 end
 
-if type(Yso.resolve_target) ~= "function" then
+if _install_wrapper("resolve_target") then
   function Yso.resolve_target(arg, opts)
     opts = opts or {}
     local a = _clean(arg)
-    if a ~= "" then
-      if opts.set then pcall(Yso.set_target, a, opts.source or "manual") end
-      return a
+    if _trim(arg) ~= "" then
+      if opts.set then pcall(Yso.set_target, arg, opts.source or "manual") end
+      return a ~= "" and a or nil
     end
     return TG.get()
   end
+  TG._public_wrappers.resolve_target = Yso.resolve_target
 end
 
 Yso.ak = Yso.ak or {}
@@ -12164,9 +12153,7 @@ TG._trig.set = tempRegexTrigger([[^You are now targeting ([\w'\-]+)\.$]], functi
 end)
 
 TG._trig.clear = tempRegexTrigger([[^You (?:stop|are no longer) targeting anyone\.$]], function()
-  -- Achaea clears server-side target on room moves. Only mirror that into Yso.targeting
-  -- while the offense driver is actively fighting (AUTO).
-  if type(Yso.is_actively_fighting) == "function" and not Yso.is_actively_fighting() then return end
+  -- This is authoritative even while offense is inactive or paused.
   if TG and TG.clear then TG.clear("ak", "server_target_clear", true) end
 end)
 
@@ -17649,7 +17636,7 @@ function M.build(reason)
   if _target() == &quot;&quot; then return nil end
   local cmd, hold = _select_command(reason)
   if hold then return nil end
-  return RC.with_bloodboil(cmd)
+  return cmd
 end
 
 function M.after_send(cmd, reason)
@@ -17705,8 +17692,6 @@ local function _emit_payload(cmd, target, reason)
     reason = &quot;magi_dmg:&quot; .. tostring(reason or &quot;attack&quot;),
     kind = &quot;offense&quot;,
     commit = true,
-    require_commit = cmd == &quot;cast bloodboil&quot;,
-    repeat_command = cmd == &quot;cast bloodboil&quot;,
     route = &quot;magi_dmg&quot;,
     target = target,
   }
@@ -17719,7 +17704,7 @@ local function _emit_payload(cmd, target, reason)
       meta = {
         route = &quot;magi_dmg&quot;,
         main_lane = &quot;eq&quot;,
-        main_category = cmd == &quot;cast bloodboil&quot; and &quot;self_purge&quot; or &quot;duel_damage&quot;,
+        main_category = &quot;duel_damage&quot;,
       },
     }, opts)
   end
@@ -17760,7 +17745,7 @@ function M.attack_function(arg)
 
   local tgt = _target()
   if ctx.preview then
-    return {target=tgt,lanes={eq=cmd},meta={main_category=cmd == &quot;cast bloodboil&quot; and &quot;self_purge&quot; or &quot;duel_damage&quot;}}
+    return {target=tgt,lanes={eq=cmd},meta={main_category=&quot;duel_damage&quot;}}
   end
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, ctx.reason or &quot;loop&quot;)
   if sent ~= true then return false, (emit_detail or &quot;emit_failed&quot;) end
@@ -18167,8 +18152,6 @@ local function _emit_payload(cmd, target, category)
     reason = "magi_firestorm:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
-    require_commit = cmd == "cast bloodboil",
-    repeat_command = cmd == "cast bloodboil",
     route = "magi_firestorm",
     target = target,
   }
@@ -18247,11 +18230,6 @@ function M.attack_function(arg)
   if not ok then return false, info end
   local tgt = info
   local cmd, category, reason = _select_command(tgt)
-  if not (category == "special" and not cmd) then
-    local selected, purge_reason = RC.with_bloodboil(cmd)
-    cmd = selected
-    if purge_reason then category, reason = "self_purge", purge_reason end
-  end
   M.state.template.last_reason = reason
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
@@ -18293,8 +18271,16 @@ function M.on_payload_queued(payload)
   M.init()
   payload = type(payload) == "table" and payload or {}
   local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  local cmd = _trim(lanes.eq or payload.eq or payload.cmd)
+  local cmd = _trim(lanes.eq or payload.eq)
+  if cmd == "" and payload.lanes == nil and not (payload.bal or payload.free
+      or payload.class or payload.ent or payload.entity) then
+    cmd = _trim(payload.cmd)
+  end
   local tgt = _trim(payload.target or _target())
+  -- A generic server rejection belongs only to the outstanding EQ action.
+  -- Shared EQ history also detects later actions sent by another route,
+  -- even when subsequent acknowledgements spend only other lanes.
+  if cmd ~= "" then M.state.firestorm_dispatch = nil end
   if cmd ~= "" and type(RC.mark_pending) == "function" then
     local slot = cmd:match("^cast%s+(%S+)")
     if slot then RC.mark_pending(M.state, slot, tgt, slot == "magma" and MAGMA_DURATION or 1.0) end
@@ -18305,6 +18291,10 @@ function M.on_payload_queued(payload)
     -- on every EQ regain, including when the target changes.
     M.state.firestorm_rooms = M.state.firestorm_rooms or {}
     M.state.firestorm_rooms[_room_key()] = true
+    M.state.firestorm_dispatch = {
+      payload = payload, room = _room_key(),
+      eq_ack = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload),
+    }
   end
   if RI and type(RI.clear_waiting_on_ack) == "function" then
     RI.clear_waiting_on_ack(M.state, "magi_firestorm", payload, { require_route = false })
@@ -18320,7 +18310,28 @@ function M.on_send_result(payload, ctx)
   payload = type(payload) == "table" and payload or {}
   local lanes = type(payload.lanes) == "table" and payload.lanes or payload
   M.state.last_fired_cmd = _trim(lanes.eq or payload.eq or payload.cmd)
+  local dispatch = M.state.firestorm_dispatch
+  if type(ctx) == "table" and ctx.success == false and dispatch
+      and dispatch.payload == payload and M.state.last_fired_cmd == "cast firestorm" then
+    M.state.firestorm_rooms[dispatch.room] = nil
+    M.state.firestorm_dispatch = nil
+    if type(RC.clear_pending) == "function" then RC.clear_pending(M.state, "firestorm") end
+  end
   return true
+end
+
+function M.on_resonance_failure(required, element)
+  local dispatch = M.state.firestorm_dispatch
+  if not dispatch or required ~= 3 or (element ~= "air" and element ~= "fire") then return false end
+  local latest = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload)
+  if latest and latest ~= dispatch.eq_ack and latest ~= dispatch.payload then
+    local lanes = type(latest.lanes) == "table" and latest.lanes or latest
+    if _trim(lanes.eq or latest.eq) ~= "" then
+      M.state.firestorm_dispatch = nil
+      return false
+    end
+  end
+  return M.on_send_result(dispatch.payload, { success = false })
 end
 
 M.alias_loop_stop_details = M.alias_loop_stop_details or {
@@ -18339,6 +18350,7 @@ end
 function M.alias_loop_on_started(ctx)
   M.init()
   M.state.firestorm_rooms = {}
+  M.state.firestorm_dispatch = nil
   if type(RC.clear_pending_all) == "function" then
     RC.clear_pending_all(M.state, PENDING_SLOTS)
   end
@@ -18648,8 +18660,6 @@ local function _emit_payload(cmd, target, category)
     reason = "magi_water_group:" .. tostring(category or "attack"),
     kind = "offense",
     commit = true,
-    require_commit = cmd == "cast bloodboil",
-    repeat_command = cmd == "cast bloodboil",
     route = "magi_water_group",
     target = target,
   }
@@ -18728,11 +18738,6 @@ function M.attack_function(arg)
   if not ok then return false, info end
   local tgt = info
   local cmd, category, reason = _select_command(tgt)
-  if not (category == "special" and not cmd) then
-    local selected, purge_reason = RC.with_bloodboil(cmd)
-    cmd = selected
-    if purge_reason then category, reason = "self_purge", purge_reason end
-  end
   M.state.template.last_reason = reason
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
@@ -18753,7 +18758,7 @@ function M.attack_function(arg)
   end
 
   if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
-  if category ~= "self_purge" then _send_wields() end
+  _send_wields()
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
   -- Cover the submission-to-ack gap without predicting resonance or limb damage.
@@ -19158,8 +19163,6 @@ function RC.target_valid(tgt)
 end
 
 function RC.eq_ready()
-  -- Reserve EQ immediately after a purge submission, before GMCP catches up.
-  if RC.bloodboil and RC.now() &lt; (RC.bloodboil.pending_until or 0) then return false end
   if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
     local ok, v = pcall(Yso.locks.eq_ready)
     if ok then return v == true end
@@ -19456,77 +19459,17 @@ function RC.special_action(tgt)
 end
 
 function RC.note_special_queued(cmd, tgt)
-  if RC.lc(cmd) == "cast bloodboil" then
-    RC.bloodboil.pending_until = RC.now() + 4
-    return
-  end
   local C = Yso.magi and Yso.magi.convergence
   if C and type(C.note_queued) == "function" then C.note_queued(cmd, tgt) end
 end
 
--- Self-purge state is shared by every Magi route and survives route/core reloads.
--- Submission is not proof of a cast: only the success trigger starts cooldown.
-RC.bloodboil = RC.bloodboil or { cooling = false, pending_until = 0 }
-local bloodboil_affs = {
-  "stupidity", "dizziness", "weariness", "recklessness",
-  "anorexia", "impatience", "slickness", "asthma",
-}
-function RC.bloodboil_note_cast()
-  RC.bloodboil.cooling = true
-  RC.bloodboil.pending_until = RC.now() + 4
-end
-function RC.bloodboil_note_ready()
-  RC.bloodboil.cooling = false
-end
-function RC.bloodboil_note_eq_recovered()
-  RC.bloodboil.pending_until = 0
-end
-function RC.bloodboil_command()
-  local g = rawget(_G, "gmcp")
-  local status = g and g.Char and g.Char.Status
-  if not status or RC.lc(status.class or status.classname) ~= "magi" then return nil, "wrong_class" end
-  if Yso.mode and type(Yso.mode.is_combat) == "function" and not Yso.mode.is_combat() then return nil, "not_combat" end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return nil, "paused" end
-  if RC.bloodboil.cooling then return nil, "bloodboil_cooldown" end
-  if not RC.eq_ready() then return nil, "eq_down" end
-  local tracker = Yso.curing and Yso.curing.afflictions
-  if tracker then
-    if type(tracker.is_complete) ~= "function" or not tracker.is_complete() then
-      return nil, "self_afflictions_incomplete"
-    end
-    if type(tracker.sync_legacy) == "function" then
-      if not tracker.sync_legacy() then return nil, "self_afflictions_unknown" end
-    elseif type(tracker.snapshot) ~= "function" or not tracker.snapshot() then
-      return nil, "self_afflictions_unknown"
-    end
-  end
-  -- This is Legacy's SELF table, never RC.has_aff/affstrack (enemy evidence).
-  local Aff = Legacy and Legacy.Curing and Legacy.Curing.Affs
-  if type(Aff) ~= "table" then return nil, "self_afflictions_unknown" end
-  if Aff.haemophilia then return nil, "haemophilia" end
-  local count = 0
-  for _,aff in ipairs(bloodboil_affs) do if Aff[aff] == true then count = count + 1 end end
-  if count &lt; 2 then return nil, "below_two_afflictions" end
-  local vitals = g.Char.Vitals or {}
-  if (tonumber(vitals.mp) or 0) &lt; 75 then return nil, "insufficient_mana" end
-  local channels = ""
-  for _,stat in pairs(vitals.charstats or {}) do
-    local value = tostring(stat):match("^[Cc]hannels:%s*(.*)$")
-    if value then channels = value:lower(); break end
-  end
-  for _,element in ipairs({"fire", "water"}) do
-    if not channels:find("%f[%a]" .. element .. "%f[%A]") then return nil, "channels_unconfirmed" end
-  end
-  return "cast bloodboil", "bloodboil_self_purge"
-end
-function RC.with_bloodboil(cmd)
-  -- Only an actual selected finisher wins; Assess and preparatory spells do not.
-  local spell = RC.lc(cmd):match("^cast%s+(%S+)")
-  if spell == "destroy" or spell == "convergence" or spell == "stormhammer" or spell == "glaciate" then return cmd end
-  local purge, reason = RC.bloodboil_command()
-  if purge then return purge, reason end
-  return cmd
-end
+-- Remove obsolete automatic-purge state and functions when reloading a reused core.
+RC.bloodboil = nil
+RC.bloodboil_note_cast = nil
+RC.bloodboil_note_ready = nil
+RC.bloodboil_note_eq_recovered = nil
+RC.bloodboil_command = nil
+RC.with_bloodboil = nil
 
 return RC
 </script>
@@ -26349,7 +26292,9 @@ magistaff = "staff276791"
 --this is so to make it easier more direct as to what weapon is to be used/called
 
 --ex: send("wield " ..shikstaff) or send("wield " ..magistaff")
-
+--Magi variables/functions
+yso.magi = yso.magi or {}
+yso.magi.bloodboil = ""
 
 --Apostate variables/functions
 yso.apostate = yso.apostate or {}
@@ -26389,13 +26334,17 @@ function D.emit(command,lane,kind)
   local payload=type(command)=='table' and command or {[lane or 'eq']=command}
   for _,key in ipairs({'eq','bal'}) do
     if payload[key] and payload[key]~='' then
+      local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
+      local value=v[key]
+      if key=='bal' and value==nil then value=v.balance end
+      if key=='eq' and value==nil then value=v.equilibrium end
+      -- Explicit GMCP balance loss overrides even a stale shared ready helper.
+      if key=='bal' and (value==false or tostring(value)=='0') then return false end
       local ready=Yso.locks and Yso.locks[key..'_ready'] or Yso.state and Yso.state[key..'_ready']
       if type(ready)=='function' then
-        if not ready() then return false end
+        local ok,result=pcall(ready)
+        if not ok or result~=true then return false end
       else
-        local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
-        local value=v[key]
-        if key=='eq' and value==nil then value=v.equilibrium end
         if value~=true and tostring(value)~='1' then return false end
       end
     end
