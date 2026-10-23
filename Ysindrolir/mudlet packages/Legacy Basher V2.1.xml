@@ -17,7 +17,10 @@
 			<colorTriggerBgColor>#000000</colorTriggerBgColor>
 			<regexCodeList />
 			<regexCodePropertyList />
-			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Soulstorm confirmed</name><script>local H=Legacy and Legacy.Basher and Legacy.Basher.Soulstorm; if H then H.note(&quot;confirmed&quot;,matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^You call forth an unholy tide of necromantic essence and release it, engulfing (.+) in a profane soulstorm\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Soulstorm already active</name><script>local H=Legacy and Legacy.Basher and Legacy.Basher.Soulstorm; if H then H.note(&quot;already active&quot;,matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Necromantic essence still profanes (.+)&apos;s soul\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Apostate Soulstorm faded</name><script>local H=Legacy and Legacy.Basher and Legacy.Basher.Soulstorm; if H then H.note(&quot;faded&quot;,matches[2]) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^([A-Za-z][^:\r\n]*) steadies as the profane aura around (?:it|him|her|them) fades\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Mob Slain</name>
 				<script>if Legacy.Settings.Basher.status == true then
   Legacy.Settings.Basher.lastTar = Legacy.Settings.Basher.currentTar
@@ -1070,6 +1073,11 @@ Legacy.Settings.Basher = Legacy.Settings.Basher or {}
 Legacy.Settings.Basher.Classes = Legacy.Settings.Basher.Classes or {}
 
 Legacy.Settings.Basher.totalDamage = {}
+-- Apostate Soulstorm toggle adapter: arm before status events can invoke Attack.
+local soulstorm=Legacy.Basher.Soulstorm
+if soulstorm then
+  if Legacy.Settings.Basher.status == false then soulstorm.begin() else soulstorm.stop() end
+end
 if Legacy.Settings.Basher.status == false then
   Legacy.Settings.Basher.status = true
   if raiseEvent then raiseEvent("LegacyBasherStatus", true) end
@@ -1526,7 +1534,115 @@ end</script>
 			<packageName>Legacy Basher V2.1</packageName>
 			<script />
 			<eventHandlerList />
-			<Script isActive="yes" isFolder="no">
+			<Script isActive="yes" isFolder="no"><name>Apostate hunting Soulstorm</name><packageName /><script>-- Embedded in Legacy Basher. One opener per hunt activation; user-confirmed 40s duration.
+Legacy=Legacy or {};Legacy.Basher=Legacy.Basher or {}
+local B=Legacy.Basher
+B.Soulstorm=B.Soulstorm or {}
+local H=B.Soulstorm
+local function now()
+ local value=type(getEpoch)=='function' and tonumber(getEpoch()) or os.time()
+ return value&gt;20000000000 and value/1000 or value
+end
+local function settings() return Legacy.Settings and Legacy.Settings.Basher or {} end
+local function apostate()
+ local status=gmcp and gmcp.Char and gmcp.Char.Status
+ return status and tostring(status.class or ''):lower()=='apostate'
+end
+local function room()
+ return tostring(gmcp and gmcp.Room and gmcp.Room.Info and gmcp.Room.Info.num or '')
+end
+local function normalize(name)
+ return tostring(name or ''):lower():gsub('^%s+',''):gsub('%s+$','')
+end
+local function current()
+ local target=gmcp and gmcp.IRE and gmcp.IRE.Target or {}
+ local id=tostring(target.Set or '')
+ local info=target.Info or {}
+ if not id:match("^[A-Za-z0-9][A-Za-z0-9_'%-]*$") then return nil end
+ local npc=tostring(info.npc):lower()
+ if npc=='false' or npc=='0' then return nil end
+ local kind=tostring(info.type or ''):lower()
+ if npc~='true' and npc~='1' and kind~='npc' and kind~='denizen' and not id:match('^%d+$') then return nil end
+ local name=normalize(info.short_desc)
+ if name=='' then name=normalize(info.name) end
+ if name=='' then name=normalize(settings().desc) end
+ return {id=id,name=name,room=room(),info=info}
+end
+function H.begin()
+ H.pending=apostate() and true or false
+ H.attempt=nil
+end
+function H.stop() H.pending=false;H.attempt=nil end
+function H.reset() H.stop();H.effect=nil end
+function H.before_attack(id,info,is_denizen)
+ if not H.pending or not apostate() or settings().status~=true then return false end
+ if not is_denizen or settings().shield==true then return false end
+ local ctx=current()
+ if not ctx or ctx.id~=tostring(id) then return false end
+ local health=tonumber((tostring((info or {}).hpperc or ''):gsub('%%','')))
+ if health and health&lt;=0 then return false end
+ local effect=H.effect
+ if effect and effect.expires_at and now()&gt;=effect.expires_at then effect.active=false end
+ if effect and effect.active and effect.id==ctx.id and effect.room==ctx.room then
+  H.pending=false;return false
+ end
+ if type(B.queueAttackPackage)~='function' then return true end
+ H.attempt=ctx
+ local ok,queued=pcall(B.queueAttackPackage,'addclear','soulstorm '..ctx.id,true,'apostate-soulstorm-opener')
+ if ok and queued==true then
+  H.pending=false
+  settings().queued=true
+  sendCount=(tonumber(sendCount) or 0)+1
+ elseif not ok then
+  -- A partial queue send must not be retried indefinitely or leave an attack behind.
+  settings().status=false;H.stop()
+  if type(send)=='function' then pcall(send,'cq freestand') end
+  if type(raiseEvent)=='function' then pcall(raiseEvent,'LegacyBasherStatus',false) end
+  if type(Legacy.echo)=='function' then Legacy.echo('&lt;red&gt;Soulstorm opener could not be queued; hunting stopped.') end
+ else H.attempt=nil end
+ return true
+end
+function H.note(kind,name)
+ if not apostate() then return false end
+ name=normalize(name)
+ if name=='' then return false end
+ if kind=='faded' then
+  local effect=H.effect
+  if not effect or effect.name~=name then return false end
+  effect.active=false;return true
+ end
+ if kind~='confirmed' and kind~='already active' then return false end
+ local ctx=current()
+ if not ctx or ctx.name~=name then return false end
+ local attempt=H.attempt
+ if attempt and (attempt.id~=ctx.id or attempt.room~=ctx.room or (attempt.name~='' and attempt.name~=name)) then return false end
+ local effect=H.effect
+ local expires_at=now()+40
+ -- "Still profanes" confirms presence, not a new cast or a refreshed duration.
+ if kind=='already active' and effect and effect.id==ctx.id and effect.room==ctx.room and effect.expires_at then
+  expires_at=effect.expires_at
+ end
+ H.effect={id=ctx.id,name=name,room=ctx.room,active=true,expires_at=expires_at}
+ H.pending=false;H.attempt=nil
+ return true
+end
+-- Reimport replaces event handlers instead of multiplying reset callbacks.
+if type(registerAnonymousEventHandler)=='function' then
+ H.handlers=H.handlers or {}
+ for event,fn in pairs({
+  ['sysDisconnectionEvent']=H.reset,
+  ['gmcp.Char.Status']=function() if not apostate() then H.reset() end end,
+  ['gmcp.Room.Info']=function()
+   if H.effect and H.effect.room~=room() then H.effect=nil end
+  end,
+ }) do
+  if H.handlers[event] and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(H.handlers[event]) end
+  H.handlers[event]=registerAnonymousEventHandler(event,fn)
+ end
+end
+return H
+</script><eventHandlerList /></Script>
+<Script isActive="yes" isFolder="no">
 				<name>Basher</name>
 				<packageName />
 				<script>--[[ Legacy Basher bootstrap (non-destructive, safe with/without Legacy Core) ]]
@@ -1590,6 +1706,7 @@ function Basher_Setup()
     Legacy.Settings.Basher.shield = false
     if Legacy.Settings.Basher.hasLycantha == nil then Legacy.Settings.Basher.hasLycantha = false end
     Legacy.Settings.Basher.status = false
+    if Legacy.Basher.Soulstorm then Legacy.Basher.Soulstorm.stop() end
     Legacy.Settings.Basher.fleeing = false
     Legacy.Settings.Basher.fleeRoom = 1234
     Legacy.Settings.Basher.damage = 0
@@ -1931,6 +2048,9 @@ function Basher_Setup()
 
     if health ~= nil and targetHpPerc ~= "-1" and not (Legacy.Curing.Affs.brokenleftarm and Legacy.Curing.Affs.brokenrightarm) and targetSet ~= "Aranos" and Legacy.Settings.Basher.queued == false and sendCount &lt; 50 and Legacy.Settings.Basher.status == true and hp_ok and targetSet ~= "" and eq_ready and bal_ready and mobCount &gt; 0 and hasAttack and not Legacy.Curing.Affs.transfixed and not Legacy.Curing.Affs.impaled and not Legacy.Curing.Affs.entangled and not Legacy.Curing.Affs.sleeping and not Legacy.Curing.Affs.webbed and not Legacy.Curing.Affs.aeon then
       local isDenizenTarget = _attack_is_denizen_target(targetSet)
+      -- Apostate Soulstorm attack adapter: precedes rage and ordinary basher queues.
+      local soulstorm=Legacy.Basher.Soulstorm
+      if soulstorm and soulstorm.before_attack(targetSet,targetInfo,isDenizenTarget) then return end
       if class == "Occultist" and isDenizenTarget and health ~= nil and health &gt;= 100 then
         Legacy.Settings.Basher._attend = Legacy.Settings.Basher._attend or {}
         local attend = Legacy.Settings.Basher._attend
