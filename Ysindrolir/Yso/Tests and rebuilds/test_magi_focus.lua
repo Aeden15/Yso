@@ -263,7 +263,7 @@ end
 
 print("=== Opening Dehydrate ===")
 do
-  local world=make_world({hellfumes_up=false})
+  local world=make_world({hellfumes_up=false,aff_scores={scalded=100}})
   assert_eq("hellfumes first", preview_eq(world), "cast hellfumes")
   note_sent(world,"cast hellfumes")
   assert_eq("dehydrate immediately after hellfumes",preview_eq(world),"cast dehydrate at foe")
@@ -282,6 +282,93 @@ do
   world.MF.reset("test")
   world.advance(3)
   assert_eq("reset opens again",preview_eq(world),"cast dehydrate at other")
+end
+
+print("=== Conditional Pebble ===")
+do
+  for _,case in ipairs({
+    {score=0,earth=0,want="cast pebble at foe"},
+    {score=99,earth=0,want="cast pebble at foe"},
+    {score=100,earth=0,want="cast dehydrate at foe"},
+    {score=0,earth=1,want="cast dehydrate at foe"},
+    {score=99,earth=2,want="cast dehydrate at foe"},
+    {score=100,earth=1,want="cast dehydrate at foe"},
+  }) do
+    local world=make_world({aff_scores={scalded=case.score},earth_res=case.earth})
+    assert_eq("Pebble condition "..case.score.."/"..case.earth,preview_eq(world),case.want)
+  end
+  local world=make_world({hellfumes_up=false})
+  assert_eq("Hellfumes precedes Pebble",preview_eq(world),"cast hellfumes")
+  note_sent(world,"cast hellfumes")
+  world.set_hellfumes(true)
+  assert_eq("Pebble precedes opening Dehydrate",preview_eq(world),"cast pebble at foe")
+  local payload=world.MF.build_payload({})
+  assert_eq("Pebble occupies only eq",payload.lanes.eq,"cast pebble at foe")
+  assert_eq("Pebble has no balance action",payload.lanes.bal,nil)
+  assert_true("Pebble submission succeeds",world.MF.attack_function({})==true)
+  assert_eq("Pebble does not fabricate earth",Yso.magi.resonance.get("earth"),0)
+  assert_eq("Pebble does not fabricate scalded",world.scores.scalded,0)
+  local cmd,why=preview_eq(world)
+  assert_eq("pending Pebble holds setup",cmd,nil)
+  assert_eq("pending Pebble explained",why,"pebble_pending")
+  world.advance(1.1)
+  assert_eq("expired Pebble retries",preview_eq(world),"cast pebble at foe")
+  note_sent(world,"cast pebble at foe")
+  world.set_res("earth",1)
+  assert_eq("actual earth feedback releases opener",preview_eq(world),"cast dehydrate at foe")
+  note_sent(world,"cast dehydrate at foe")
+  assert_eq("earth feedback allows Horripilation",preview_eq(world),"staff cast horripilation foe")
+  world.advance(2)
+  world.set_res("earth",0)
+  assert_eq("Pebble condition may recur",preview_eq(world),"cast pebble at foe")
+  world=make_world()
+  assert_eq("Pebble preview remains eligible",preview_eq(world),"cast pebble at foe")
+  assert_eq("preview creates no pending cast",world.MF.state.pending.pebble.target,"")
+  Yso.emit=function() return false end
+  assert_eq("failed submit reported",world.MF.attack_function({}),false)
+  assert_eq("failed submit creates no pending cast",world.MF.state.pending.pebble.target,"")
+  assert_eq("failed submit permits retry",preview_eq(world),"cast pebble at foe")
+  Yso.emit=function() return true end
+  assert_true("failed submit can retry successfully",world.MF.attack_function({})==true)
+  world=make_world()
+  Yso.locks={note_payload=function() end}
+  assert_true("ack bus submission succeeds",world.MF.attack_function({})==true)
+  assert_eq("accepted submission suppresses duplicate before ack",world.MF.attack_function({}),false)
+  assert_eq("accepted submission arms pending",world.MF.state.pending.pebble.target,"foe")
+  assert_eq("unacknowledged submission does not fabricate earth",Yso.magi.resonance.get("earth"),0)
+  assert_eq("unacknowledged submission does not fabricate scalded",world.scores.scalded,0)
+  world.advance(1.1)
+  assert_true("submission retries after timeout without ack",world.MF.attack_function({})==true)
+  assert_eq("retry suppresses another preack duplicate",world.MF.attack_function({}),false)
+  world.advance(0.8)
+  note_sent(world,"cast pebble at foe")
+  assert_eq("sent ack retains pending",world.MF.state.pending.pebble.target,"foe")
+  world.advance(0.3)
+  assert_eq("delayed ack renews pending beyond submit expiry",world.MF.attack_function({}),false)
+  assert_eq("ack bus pending suppresses duplicate",preview_eq(world),nil)
+  assert_eq("delayed ack does not fabricate earth",Yso.magi.resonance.get("earth"),0)
+  world.scores.scalded=100
+  assert_eq("confirmed scalded releases pending hold",preview_eq(world),"cast dehydrate at foe")
+  world=make_world({eq_ready=false})
+  assert_eq("Pebble obeys eq gate",preview_eq(world),nil)
+  world=make_world()
+  Yso.offense_paused=function() return true end
+  assert_eq("Pebble obeys pause gate",preview_eq(world),nil)
+  world=make_world()
+  Yso.target_is_valid=function() return false end
+  assert_eq("Pebble obeys target gate",preview_eq(world),nil)
+  world=make_world()
+  world.MF.state.enabled=false
+  world.MF.state.loop_enabled=false
+  assert_eq("Pebble obeys disabled gate",preview_eq(world),nil)
+  world=make_world()
+  Yso.mode.is_combat=function() return false end
+  assert_eq("Pebble obeys inactive gate",preview_eq(world),nil)
+  world=settled({aff_scores={scalded=0,conflagrate=100},earth_res=0})
+  note_sent(world,"cast convergence at foe")
+  assert_eq("postconv Destroy retains precedence",preview_eq(world),"cast destroy at foe")
+  world.MF.reset("test")
+  assert_eq("reset clears Pebble",world.MF.state.pending.pebble and world.MF.state.pending.pebble.target,"")
 end
 
 print("=== Core lock priorities ===")

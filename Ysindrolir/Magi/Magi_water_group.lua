@@ -23,6 +23,7 @@ Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
 
 local PENDING_SLOTS = {
+  "pebble",
   "stormhammer",
   "erode",
   "glaciate",
@@ -181,6 +182,9 @@ local function _select_command(tgt)
   if special or hold then return special, "special", reason end
   if hp ~= nil and hp <= 20 then
     return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
+  end
+  if RC.score_aff("scalded") < 100 and earth == 0 then
+    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
   end
   if frozen and hypothermia and water >= 2 and air >= 2 then
     return _cast("glaciate", tgt), "glaciate_burst", "glaciate_ready"
@@ -351,6 +355,8 @@ function M.attack_function(arg)
   if category ~= "self_purge" then _send_wields() end
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
+  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
+  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
   RC.note_special_queued(cmd, tgt)
 
   if RI and type(RI.mark_waiting) == "function" then

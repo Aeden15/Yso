@@ -24,6 +24,7 @@ local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
 
 local PENDING_SLOTS = {
   "hellfumes",
+  "pebble",       -- Conditional earth seed; confirmation comes from resonance feedback.
   "horripilation", --gives waterbonds
   "dehydrate",     -- Nausea/weariness; existing weariness gives burning, otherwise existing nausea gives freeze. Never both stacks.
   "mudslide",      -- Slickness against a frozen target.
@@ -106,6 +107,7 @@ MF.cfg = MF.cfg or {
   loop_delay = 0.15,
   same_target_repeat_s = 0.75,
   hellfumes_pending_s = 1.00,
+  pebble_pending_s = 1.00,
   horripilation_pending_s = 1.00,
   dehydrate_pending_s = 1.00,
   mudslide_pending_s = 1.00,
@@ -520,6 +522,7 @@ local function _snapshot(tgt)
     st[aff] = tonumber(st.raw[aff] or 0) >= 100
   end
   st.fulm_stage = _fulm_stage_from_state(st)
+  st.pebble_needed = tonumber(st.raw.scalded or 0) < 100 and st.res.earth == 0
   st.epilepsy_live = st.epilepsy == true
   st.para_conversion_ready = st.fulm_stage == 2
   st.lock_missing_core = {}
@@ -580,6 +583,12 @@ end
 local function _can_cast_hellfumes(tgt)
   local cmd = "cast hellfumes"
   local ok, why = _spell_guard("hellfumes", tgt, cmd)
+  return ok, why, cmd
+end
+
+local function _can_cast_pebble(tgt)
+  local cmd = ("cast pebble at %s"):format(tgt)
+  local ok, why = _spell_guard("pebble", tgt, cmd)
   return ok, why, cmd
 end
 
@@ -888,6 +897,16 @@ local function _select_command(tgt)
     return nil, st, rejects, why ~= "" and why or "hellfumes_missing"
   end
 
+  if st.pebble_needed == true and st.postconv ~= true then
+    local ok, why, cmd = _can_cast_pebble(tgt)
+    _set_route_stage(tgt, ok and "opener" or "hold", "pebble", "opener_setup")
+    if ok then
+      return _choice(cmd, "opener_setup", "pebble_seed", "scalded_unconfirmed_earth_absent", "opener", "pebble", "opener_setup"), st, rejects, ""
+    end
+    _reject(rejects, "pebble_seed", why)
+    return nil, st, rejects, why
+  end
+
   if st.route.opening_dehydrate_done ~= true then
     local ok, why, cmd = _can_cast_dehydrate(tgt)
     _set_route_stage(tgt, ok and "opener" or "hold", "dehydrate", "opener_setup")
@@ -1140,7 +1159,7 @@ function MF.init()
   MF.cfg = MF.cfg or {}
   -- Backfill settings for an already-loaded route when the alias is refreshed.
   if MF.cfg.shock_lightning_enabled == nil then MF.cfg.shock_lightning_enabled = true end
-  for key, value in pairs({ dehydrate_pending_s = 1.00, mudslide_pending_s = 1.00,
+  for key, value in pairs({ pebble_pending_s = 1.00, dehydrate_pending_s = 1.00, mudslide_pending_s = 1.00,
       lightning_pending_s = 1.00, emanation_pending_s = 2.40 }) do
     if MF.cfg[key] == nil then MF.cfg[key] = value end
   end
@@ -1247,6 +1266,10 @@ function MF.attack_function(arg)
   local queued_payload = { eq = choice.cmd, target = tgt }
   local sent, emit_detail, ack_payload = _emit_payload(queued_payload, choice.category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
+  if choice.decision == "pebble_seed" then
+    -- Submission may precede the sent acknowledgement; bound duplicate retries now.
+    _mark_pending("pebble", tgt, MF.cfg.pebble_pending_s)
+  end
   if RI and type(RI.mark_waiting) == "function" then
     RI.mark_waiting(MF.state, "magi_focus", ack_payload or queued_payload, {
       cmd = _trim(choice.cmd),
@@ -1325,6 +1348,15 @@ function MF.on_payload_queued(payload)
       _mark_pending("hellfumes", hell_tgt, MF.cfg.hellfumes_pending_s)
       _ensure_context(hell_tgt).opening_dehydrate_done = false
       _set_route_stage(hell_tgt, "opener", "hellfumes", "opener_setup")
+      return
+    end
+
+    local pebble_tgt = _capture_target(lc, "^cast%s+pebble%s+at%s+(.+)$")
+    if pebble_tgt ~= "" then
+      MF.state.last_sent_target = pebble_tgt
+      MF.state.last_sent_category = "opener_setup"
+      _mark_pending("pebble", pebble_tgt, MF.cfg.pebble_pending_s)
+      _set_route_stage(pebble_tgt, "opener", "pebble", "opener_setup")
       return
     end
 

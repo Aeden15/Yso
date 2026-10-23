@@ -1,6 +1,6 @@
 Magi workspace notes
 ====================
-Last updated: May 5, 2026
+Last updated: October 23, 2026
 
 This folder is the class-specific home for Magi work. Live behavior is defined by
 the installed Mudlet package (Ysindrolir/mudlet packages/Yso system.xml): use
@@ -11,6 +11,26 @@ of ordinary in-Mudlet play.
 
 Current fixes
 -------------
+  Pebble experiment (gwater, fstorm, mfocus): when AK Scalded is below 100 and
+  Earth resonance is zero, cast Pebble before normal setup. Shield handling,
+  special actions and execution retain priority; Focus still opens Hellfumes
+  first and preserves its post-Convergence finishers. Pending sends suppress
+  duplicates; resonance and limb breaks advance only from game feedback.
+
+  AK.xml now confirms Pebble's named broken limb, independently of Earth
+  resonance's separate crack message. Import both updated AK.xml and
+  Yso system.xml into Mudlet. The skill reference adds Pebble, Destabilise's
+  room effects and current balance requirements, and Overload. Automatic
+  Destabilise/Overload use remains deferred.
+
+  For this scoped rebuild, run scripts/build_magi_pebble_package.ps1 from
+  Ysindrolir. It updates Water, Firestorm, and the Focus alias/native script
+  without replacing unrelated package entries. Validation:
+    scripts/test_magi_pebble_package.ps1
+    scripts/test_magi_pebble_tracking.ps1
+    lua "Yso/Tests and rebuilds/test_magi_group_pebble.lua"
+    lua "Yso/Tests and rebuilds/test_magi_focus.lua"
+
   Magi aliases and triggers in Yso system.xml were corrected for the current
   Elementalism / Crystalism helpers.
 

@@ -27,6 +27,7 @@ local RC = Yso.off.magi.route_core
 local MAGMA_DURATION = 20
 
 local PENDING_SLOTS = {
+  "pebble",
   "stormhammer",
   "destroy",
   "erode",
@@ -194,6 +195,10 @@ local function _select_command(tgt)
     return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
   end
 
+  if RC.score_aff("scalded") < 100 and earth == 0 then
+    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
+  end
+
   if not scalded then
     return _cast("magma", tgt), "fire_build", "scalded_missing"
   end
@@ -333,10 +338,17 @@ function M.attack_function(arg)
   M.state.template.last_target = tgt
   if not cmd or cmd == "" then return false, reason or "empty" end
 
+  if cmd == _cast("pebble", tgt) and RC.pending_active(M.state, "pebble", tgt) then
+    M.state.template.last_reason = "pebble_pending"
+    return false, "pebble_pending"
+  end
+
   if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
 
   local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
   if sent ~= true then return false, emit_detail or "emit_failed" end
+  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
+  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
   RC.note_special_queued(cmd, tgt)
 
   if RI and type(RI.mark_waiting) == "function" then
