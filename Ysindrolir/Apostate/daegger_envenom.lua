@@ -3,9 +3,14 @@ Yso=Yso or {};Yso.apostate=Yso.apostate or {}
 local D=Yso.apostate.daegger or {};Yso.apostate.daegger=D
 D.stock=D.stock or {curare=true,kalmia=true,slike=true,gecko=true,vernalius=true,
  aconite=true,eurypteria=true,voyria=true,selarnia=true,notechis=false,delphinium=true,
- xentio=true,prefarar=true,epseth=true,digitalis=true}
--- Add the new default on package reimport without replacing explicit stock overrides.
-if D.stock.digitalis==nil then D.stock.digitalis=true end
+ xentio=true,prefarar=true,epseth=true,digitalis=false}
+-- The first padding release assumed Digitalis stock that was never confirmed.
+-- Discard that legacy assumption on reimport; preserve measured doses and later overrides.
+if (tonumber(D.stock_defaults_version) or 0)<1 then
+ if D.stock.digitalis==true then D.stock.digitalis=false end
+ D.stock_defaults_version=1
+end
+if D.stock.digitalis==nil then D.stock.digitalis=false end
 local standard={xentio=true,eurypteria=true,kalmia=true,delphinium=true,digitalis=true,
  darkshade=true,curare=true,epteth=true,prefarar=true,monkshood=true,euphorbia=true,
  colocasia=true,vernalius=true,epseth=true,larkspur=true,slike=true,notechis=true,

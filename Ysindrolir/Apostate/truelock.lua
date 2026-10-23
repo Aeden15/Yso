@@ -8,10 +8,11 @@ M.cfg=M.cfg or {timeout=10,eye_balance=1.9,puncture_balance=2.15,corrupt_eq=3}
 if type(M.priorities)~='table'
  or table.concat(M.priorities,',')=='paralysis,impatience,asthma,slickness,anorexia,weariness,stupidity,recklessness'
  or table.concat(M.priorities,',')=='paralysis,clumsiness,addiction,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness'
- or table.concat(M.priorities,',')=='paralysis,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness,clumsiness,addiction' then
- M.priorities={'impatience','asthma','manaleech','slickness','anorexia','paralysis'}
+ or table.concat(M.priorities,',')=='paralysis,asthma,slickness,impatience,anorexia,weariness,stupidity,recklessness,clumsiness,addiction'
+ or table.concat(M.priorities,',')=='impatience,asthma,manaleech,slickness,anorexia,paralysis' then
+ M.priorities={'paralysis','impatience','asthma','manaleech','slickness','anorexia'}
 end
-local baseline={'impatience','asthma','manaleech','slickness','anorexia','paralysis'}
+local baseline={'paralysis','impatience','asthma','manaleech','slickness','anorexia'}
 local eyes={paralysis='paralysis',impatience='impatience',asthma='asthma',slickness='sicken',
  anorexia='anorexia',weariness='weariness',stupidity='stupid',recklessness='reckless',
  voyria='plague',confusion='confusion',clumsiness='clumsy',addiction='addiction',
@@ -41,11 +42,13 @@ local function choose(candidates,count,out)
  end
 end
 -- Return desired afflictions, not inferred deliveries. Replan after every confirmed batch.
-function M.pressure_plan(scores,required)
+local function stage_plan(scores,required,can_give)
  for _,stage in ipairs({{core='impatience',pool=plumbum},{core='asthma',pool=aurum}}) do
   local out,candidates={},{}
   if not likely(scores[stage.core]) then out[#out+1]=stage.core end
-  for _,aff in ipairs(stage.pool) do if not likely(scores[aff]) then candidates[#candidates+1]=aff end end
+  for _,aff in ipairs(stage.pool) do
+   if not likely(scores[aff]) and (not can_give or can_give(aff)) then candidates[#candidates+1]=aff end
+  end
   choose(candidates,math.max(0,2-padding_count(scores,stage.pool)),out)
   if #out>0 then return out end
  end
@@ -76,9 +79,15 @@ function M.pressure_plan(scores,required)
   if not core and not present(scores[aff]) then out[#out+1]=aff end
  end
  if #out>0 then return out end
- if not present(scores.paralysis) then return {'paralysis'} end
  -- Uncertain core afflictions must be confirmed before the existing Corrupt finisher.
  for _,aff in ipairs(required or {}) do if not present(scores[aff]) then out[#out+1]=aff end end
+ return out
+end
+function M.pressure_plan(scores,required,can_give)
+ local planned=stage_plan(scores,required,can_give)
+ if present(scores.paralysis) then return planned end
+ local out={'paralysis'}
+ for _,aff in ipairs(planned) do if aff~='paralysis' then out[#out+1]=aff end end
  return out
 end
 local function say(s) if cecho then cecho('<DeepPink>[Truelocks] <reset>'..s..'\n') end end
@@ -96,7 +105,7 @@ local function clear()
   A.cancelled_contemplates[key]=(A.cancelled_contemplates[key] or 0)+1
  end
  M.state.pending=nil;M.state.phase='pressure';M.state.victim=nil;M.state.reason=nil
- M.state.support_until=nil
+ M.state.support_until=nil;M.state.startup_error=nil
  if ak and ak.apostate then ak.apostate.pending_daegger_wipe=nil end
 end
 function M.is_enabled() return M.state.loop_enabled==true end
@@ -106,12 +115,45 @@ function M.is_active()
 end
 function M.stop(reason)
  if Yso.mode and Yso.mode.stop_route_loop then Yso.mode.stop_route_loop(M.key,reason,false)
- else M.state.loop_enabled=false;clear() end
+ else M.state.loop_enabled=false;M.alias_loop_on_stopped({reason=reason}) end
  return false,reason
 end
 function M.alias_loop_prepare_start(ctx) clear();return ctx end
-function M.alias_loop_on_started() say('ON.') end
+local function creature_orders(victim)
+ local commands={}
+ for _,creature in ipairs({'bloodworms','daemonite','nightmare'}) do
+  commands[#commands+1]='order '..creature..(victim and (' kill '..victim) or ' passive')
+ end
+ local sep=Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)) or '&&'
+ local batch=table.concat(commands,sep)
+ -- Direct sends keep balanceless orders outside the pressure/queue confirmation slot.
+ if type(Yso.send)=='function' then
+  local ok,result=pcall(Yso.send,batch);return ok and result==true
+ end
+ if type(send)=='function' then
+  local ok,result=pcall(send,batch,false);return ok and result~=false
+ end
+ return false
+end
+function M.alias_loop_on_started()
+ if M.state.creatures_ordered then return true end
+ local victim=target_name()
+ if not valid(victim) then M.state.startup_error='no_target';return false end
+ if not (Yso.apostate and type(Yso.apostate.active)=='function' and Yso.apostate.active()) then
+  M.state.startup_error='wrong_class';return false
+ end
+ if not same(victim,target) then M.state.startup_error='ak_target_mismatch';return false end
+ M.state.victim=victim
+ -- Reserve cleanup even when the sender throws after partially sending a batch.
+ M.state.creatures_ordered=true
+ if not creature_orders(victim) then M.state.startup_error='creature_orders_failed';return false end
+ say('ON.');return true
+end
 function M.alias_loop_on_stopped(ctx)
+ if M.state.creatures_ordered then
+  M.state.creatures_ordered=nil
+  if not creature_orders() then say('Unable to send creature passive orders.') end
+ end
  local Q=Yso.queue
  if Q and type(Q.get_owned)=='function' then
   for _,lane in ipairs({'bal','eq','free'}) do
@@ -248,11 +290,14 @@ function M.note_mana(name,current,maximum)
  if not p.final or not ready('eq') then M.state.phase='catharsis_ready';return true end
  if type(sendAll)~='function' then M.stop('sender_unavailable');return false end
  -- A fresh, solicited response and every route gate were checked above.
- sendAll('cq all','demon catharsis '..name)
+ -- A partial send must neither leave the route running nor immediately replay Catharsis.
  Yso.apostate.catharsis_sent_at=now()
+ local ok,result=pcall(sendAll,'cq all','demon catharsis '..name)
+ if not ok or result==false then M.stop('sender_failed');return false end
  M.stop('catharsis_sent');return true
 end
 local function pressure_attack()
+ if M.state.startup_error then return M.stop(M.state.startup_error) end
  local ok,why=guarded()
  if not ok then
   if why=='target_changed' or why=='no_target' then return M.stop(why) end
@@ -276,7 +321,13 @@ local function pressure_attack()
  local scores=snapshot();if not scores then return hold('tracking_unavailable') end
  local list=requirements();if not list then return hold('class_requirements_unavailable') end
  local missing={};for _,aff in ipairs(list) do if not present(scores[aff]) then missing[#missing+1]=aff end end
- local planned=M.pressure_plan(scores,list)
+ local function can_give(aff)
+  if aff~='shyness' then return true end
+  local D=Yso.apostate and Yso.apostate.daegger
+  return D and type(D.venom_for)=='function' and type(D.available)=='function'
+   and D.available(D.venom_for(aff))
+ end
+ local planned=M.pressure_plan(scores,list,can_give)
  if #missing==0 and #planned==0 then
   if not M.state.class_verified then return hold('class_coverage_unverified') end
   if not ready('eq') then return hold('equilibrium') end

@@ -32,6 +32,14 @@ sent={};Yso.queue.set_owned('eq',{route='another_route',cmd='unrelated'})
 M.alias_loop_on_stopped({reason='manual'})
 assert(sent[1]=='CLEARQUEUE b!p!w!t','stopping must cancel its own queued BAL batch')
 assert(Yso.queue.get_owned('eq').route=='another_route','unrelated lane ownership must survive')
+-- Creature orders bypass compatibility queues and readiness, without taking an attack slot.
+sent={};gmcp.Char.Vitals={bal='0',eq='0'}
+M.state.loop_enabled=true;M.alias_loop_on_started()
+assert(#sent==1 and sent[1]=='order bloodworms kill Saibel&&order daemonite kill Saibel&&order nightmare kill Saibel')
+assert(M.state.pending==nil)
+M.alias_loop_on_stopped({reason='manual'})
+assert(sent[2]=='order bloodworms passive&&order daemonite passive&&order nightmare passive')
+assert(Yso.queue.get_owned('eq').route=='another_route')
 -- Conditional support uses the real EQ queue even with BAL unavailable.
 sent={};clock=clock+5
 gmcp.Char.Vitals={bal='0',eq='1',mp='6817'}

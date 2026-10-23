@@ -46,7 +46,7 @@ local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
 local function tick() return Yso.mode.tick_route_loop(M.key) end
 local function reset()
  if M.is_enabled() then Yso.mode.stop_route_loop(M.key,'test',true) end
- clock=clock+20;emitted={};support_emitted={};sent={};affstrack.score={};ak.apostate.reset_tracking()
+ clock=clock+20;emitted={};support_emitted={};sent={};affstrack.score={paralysis=100};ak.apostate.reset_tracking()
  target='Saibel';cls='apostate';extras={'voyria'};paused=false;ak.defs={}
  gmcp.Char.Status.class='Apostate';gmcp.Char.Vitals.bal='1';gmcp.Char.Vitals.eq='1';gmcp.Char.Vitals.mp='6817'
  currentvenoms={};D.stock.notechis=false
@@ -73,6 +73,12 @@ local function deliver()
  if first then eye(first);eye(second) else eye(assert(cmd:match('^stare %S+ (%S+)$'))) end
  prompt();clock=clock+3
 end
+-- Opening and every later cure put Paralysis ahead of the next stage's useful eye.
+reset();affstrack.score.paralysis=nil;start();scheduled()
+eq(emitted[1].bal,'deadeyes Saibel paralysis impatience');eq(affstrack.score.paralysis,nil)
+deliver();scheduled();eq(emitted[2].bal,'deadeyes Saibel dizzy epilepsy')
+deliver();affstrack.score.paralysis=50;scheduled()
+eq(emitted[3].bal,'deadeyes Saibel paralysis asthma');deliver()
 reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience dizzy')
 eq(affstrack.score.impatience,nil);eq(affstrack.score.dizziness,nil)
 scheduled();eq(#emitted,1)
@@ -84,14 +90,15 @@ deliver();scheduled();eq(emitted[6].bal,'deadeyes Saibel sicken anorexia')
 deliver();eq(affstrack.score.slickness,100);eq(affstrack.score.anorexia,100)
 -- Independent EQ support may still be recovering; wait for it before closing eyes.
 clock=clock+3;scheduled();eq(emitted[7].bal,'stare Saibel plague')
-deliver();scheduled();eq(emitted[8].bal,'stare Saibel paralysis')
+deliver();affstrack.score.paralysis=0;scheduled();eq(emitted[8].bal,'stare Saibel paralysis')
 deliver();scheduled();eq(emitted[9].eq,'demon corrupt Saibel paralysis')
 -- Old shipped orders migrate; custom requirements survive but cannot bypass stages.
-local new_default={'impatience','asthma','manaleech','slickness','anorexia','paralysis'}
+local new_default={'paralysis','impatience','asthma','manaleech','slickness','anorexia'}
 for _,old in ipairs({
  {'paralysis','impatience','asthma','slickness','anorexia','weariness','stupidity','recklessness'},
  {'paralysis','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness','clumsiness','addiction'},
  {'paralysis','clumsiness','addiction','asthma','slickness','impatience','anorexia','weariness','stupidity','recklessness'},
+ {'impatience','asthma','manaleech','slickness','anorexia','paralysis'},
 }) do
  M.priorities=old;dofile(root..'/Apostate/truelock.lua');eq(table.concat(M.priorities,','),table.concat(new_default,','))
 end
@@ -99,21 +106,25 @@ local custom={'paralysis','addiction'};M.priorities=custom;dofile(root..'/Aposta
 eq(M.priorities,custom);reset();start();scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience dizzy')
 M.priorities=new_default
 -- Half-confidence main afflictions and padding advance without rewriting AK scores.
-reset();affstrack.score={impatience=50,dizziness=50,epilepsy=50,asthma=50,clumsiness=50,sensitivity=50}
+reset();affstrack.score={paralysis=100,impatience=50,dizziness=50,epilepsy=50,asthma=50,clumsiness=50,sensitivity=50}
 start();scheduled();eq(emitted[1].bal,'deadeyes Saibel manaleech stupid')
 eq(affstrack.score.impatience,50);eq(affstrack.score.asthma,50)
 reset();full();affstrack.score.impatience=50;start();scheduled()
 eq(emitted[1].bal,'stare Saibel impatience') -- Corrupt still needs confirmed core scores.
 -- Random Digitalis padding uses a real venom delivery; unknown stock holds safely.
-reset();affstrack.score={impatience=100,stupidity=100}
+reset();affstrack.score={paralysis=100,impatience=100,stupidity=100}
 local random=math.random;math.random=function(n) return n end
-D.stock.digitalis=nil;dofile(root..'/Apostate/daegger_envenom.lua');eq(D.available('digitalis'),true)
+D.stock_defaults_version=nil;D.stock.digitalis=true
+dofile(root..'/Apostate/daegger_envenom.lua');eq(D.available('digitalis'),false)
+D.stock.digitalis=nil;dofile(root..'/Apostate/daegger_envenom.lua');eq(D.available('digitalis'),false)
 for _,stock in ipairs({false,0,12}) do
  D.stock.digitalis=stock;dofile(root..'/Apostate/daegger_envenom.lua');eq(D.stock.digitalis,stock)
 end
 D.stock.digitalis=true
 start();scheduled()
 eq(emitted[1].bal,'wipe daegger&&envenom daegger with digitalis&&daegger puncture Saibel')
+reset();D.stock.digitalis=false;affstrack.score={paralysis=100,impatience=100,stupidity=100}
+start();scheduled();eq(emitted[1].bal,'stare Saibel epilepsy')
 math.random=random
 -- Sicken only follows confirmed manaleech, and never gets selected for damage alone.
 reset();full();affstrack.score.manaleech=50;affstrack.score.slickness=0;start();scheduled()
@@ -185,6 +196,16 @@ Yso.apostate.catharsis_sent_at=nil;Yso.apostate.note_mana('Saibel',49,100);eq(se
 reset();full();start();tick();M.note_corrupt('accepted','Saibel');M.note_prompt();tick();start()
 Yso.apostate.note_mana('Saibel',49,100);eq(#sent,0)
 -- EQ support is independent of BAL pressure and never infers afflictions on send.
+do
+ reset();full();start();tick();M.note_corrupt('accepted','Saibel');M.note_prompt();tick()
+ Yso.apostate.note_mana('Saibel',49,100);clock=clock+4;tick()
+ local original=sendAll
+ sendAll=function() error('failed after partial Catharsis batch') end
+ local ok=pcall(Yso.apostate.note_mana,'Saibel',49,100)
+ eq(ok,true);eq(M.is_enabled(),false);eq(M.state.creatures_ordered,nil)
+ eq(M.state.pending,nil);eq(M.state.template.last_disable_reason,'sender_failed')
+ sendAll=original
+end
 local function support_case(scores)
  reset();affstrack.score=scores;gmcp.Char.Vitals.bal='0';start();scheduled()
 end
@@ -221,7 +242,7 @@ clock=clock+3;scheduled();eq(support_emitted[2].eq,'shrivel left leg Saibel')
 reset();gmcp.Char.Vitals.eq='0';start();scheduled();eq(#emitted,0);eq(M.state.pending,nil)
 gmcp.Char.Vitals.eq='1';scheduled();eq(emitted[1].bal,'deadeyes Saibel impatience dizzy')
 -- Reproduce the log: Disfigure spends EQ, Curseward comes up, and BAL returns first.
-reset();affstrack.score={asthma=100,manaleech=100};start();scheduled()
+reset();affstrack.score={paralysis=100,asthma=100,manaleech=100};start();scheduled()
 eq(emitted[1].bal,'deadeyes Saibel impatience dizzy');eq(support_emitted[1].eq,'disfigure Saibel')
 local pressure_pending=M.state.pending;scheduled();eq(M.state.pending,pressure_pending)
 eye('impatience');eye('dizzy');prompt();affstrack.score.disloyalty=100
@@ -291,12 +312,12 @@ eq(emitted[1].eq,'demon corrupt Saibel paralysis');eq(#support_emitted,0)
 scheduled();eq(#support_emitted,0)
 -- Stop/reset removes support timing and any subsequent scheduled attacks.
 -- Do not spend the same reported mana twice when BAL and EQ fire together.
-reset();affstrack.score={slickness=100,frozen=100};gmcp.Char.Vitals.mp='394';start();scheduled()
+reset();affstrack.score={paralysis=100,slickness=100,frozen=100};gmcp.Char.Vitals.mp='394';start();scheduled()
 eq(emitted[1].bal,'deadeyes Saibel impatience dizzy');eq(#support_emitted,0)
 scheduled();eq(#support_emitted,0) -- same stale vitals while Deadeyes is still pending
 gmcp.Char.Vitals.mp='299';scheduled();eq(#support_emitted,0) -- updated mana already includes BAL cost
 gmcp.Char.Vitals.mp='300';scheduled();eq(support_emitted[1].eq,'shrivel left leg Saibel')
-reset();affstrack.score={slickness=100,frozen=100};gmcp.Char.Vitals.mp='395';start();scheduled()
+reset();affstrack.score={paralysis=100,slickness=100,frozen=100};gmcp.Char.Vitals.mp='395';start();scheduled()
 eq(support_emitted[1].eq,'shrivel left leg Saibel')
 support_case({slickness=100});eq(#support_emitted,1);start()
 eq(M.state.support_until,nil);eq(M.state.timer_id,nil)

@@ -81,5 +81,7 @@ if(Test-Path -LiteralPath $LogPath){
 Write-Output 'PASS active alias, embedded source parity, route integration'
 & 'C:\Program Files\Lua\5.4.8\lua.exe' (Join-Path $root 'Apostate/test_truelock_padding.lua') $root
 if($LASTEXITCODE -ne 0){throw 'Staged padding tests failed'}
+& 'C:\Program Files\Lua\5.4.8\lua.exe' (Join-Path $root 'Apostate/test_truelock_creatures.lua') $root
+if($LASTEXITCODE -ne 0){throw 'Creature toggle lifecycle tests failed'}
 & 'C:\Program Files\Lua\5.4.8\lua.exe' (Join-Path $root 'Apostate/test_truelock_emission.lua') $root
 if($LASTEXITCODE -ne 0){throw 'Real emitter integration failed'}

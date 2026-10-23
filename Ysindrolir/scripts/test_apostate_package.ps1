@@ -77,7 +77,7 @@ for _,s in ipairs(samples) do
 end
 for _,label in ipairs({'TRACING','MINDREADING','SYPHON'}) do
  local before=gags;triggers['Demon taste '..label]()
- check(gags,before+1);check(echoes[#echoes],'<DeepPink>[Apostasy] <violet_red>'..label..'\n')
+ check(gags,before+1);check(echoes[#echoes],'\n<DeepPink>[Apostasy] <violet_red>'..label..'<reset>\n')
 end
 triggers["Pentagram present"](); check(A.pentagram,true)
 triggers["Pentagram vanishes"](); check(A.pentagram,false)

@@ -226,7 +226,7 @@ foreach($entry in @(
  $name='Demon taste '+$entry[0]
  $ysoText=[regex]::Replace($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>'+[regex]::Escape($name)+'</name>.*?</Trigger>','')
  $taste=$template.CloneNode($true);$taste.name=$name;$taste.SetAttribute('isActive','yes')
- $taste.script='deleteLine()'+"`n"+'cecho("<DeepPink>[Apostasy] <violet_red>'+$entry[0]+'\n")'
+ $taste.script='deleteLine()'+"`n"+'cecho("\n<DeepPink>[Apostasy] <violet_red>'+$entry[0]+'<reset>\n")'
  $taste.regexCodeList.InnerXml='<string>'+(Escape $entry[1])+'</string>'
  $taste.regexCodePropertyList.InnerXml='<integer>1</integer>'
  $anchor=[regex]::Match($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Banished Baalzadeen</name>.*?</Trigger>')
