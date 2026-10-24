@@ -122,9 +122,6 @@ if($newAk.SelectSingleNode('//TriggerGroup[name="Occultist Group"]').OuterXml -c
 # Confirmations are adapters only; the maintained Lua owns state transitions.
 $adapters=@(
  @('Apostate Puncture','ak.apostate.puncture(matches[2])',@("^Your hand guided by the daemon held in its grasp, you puncture ([\w'-]+)'s skin with the daegger's tip\.$")),
- @('Apostate Corrupt accepted','local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_corrupt("accepted",matches[2]) end',@("^You command your baalzadeen to corrupt the soul of ([\w'-]+)\.$")),
- @('Apostate Corrupt rejected','local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_corrupt("rejected",matches[2]) end',@("^Your demon is unable to corrupt the soul of ([\w'-]+)\.$")),
- @('Apostate Corrupt retained','local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_corrupt("retained",matches[3],matches[2]) end',@("^Your Baalzadeen informs you that the (\w+) affliction still burdens ([\w'-]+)\.$")),
  @('Apostate route prompt','local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_prompt() end',@(''))
 )
 foreach($entry in $adapters){
@@ -135,6 +132,8 @@ foreach($entry in $adapters){
  $anchor=[regex]::Match($akText,'(?s)<Trigger\b[^>]*>\s*<name>Curse Pull Dump</name>.*?</Trigger>')
  $akText=$akText.Insert($anchor.Index+$anchor.Length,$node.OuterXml)
 }
+# Retired route finishers must not call removed controller methods.
+$akText=[regex]::Replace($akText,'(?s)<Trigger\b[^>]*>\s*<name>Apostate Corrupt (?:accepted|rejected|retained)</name>.*?</Trigger>','')
 $newAk=[xml]$akText
 $envenom=$newAk.SelectSingleNode('//Trigger[name="Weapon Envenomed"]').script
 if(-not $envenom.Contains('note_application')){
@@ -164,7 +163,7 @@ foreach($entry in @(@('Apostate reference','Apostate/evileye_reference.lua'),@('
   $ysoText=$ysoText.Insert($anchor.Index,(New-Script $entry[0] $body)+"`n")
  }else{$ysoText=Set-Body $ysoText Script $entry[0] $body}
 }
-foreach($entry in @(@('Apostate daegger envenom','Apostate/daegger_envenom.lua'),@('Apostate Truelocks','Apostate/truelock.lua'))){
+foreach($entry in @(@('Apostate daegger envenom','Apostate/daegger_envenom.lua'),@('Apostate Truelocks','Apostate/lock_route.lua'))){
  $body=[IO.File]::ReadAllText((Join-Path $root $entry[1]))
  if(([xml]$ysoText).SelectSingleNode('//Script[name="'+$entry[0]+'"]')){$ysoText=Set-Body $ysoText Script $entry[0] $body}
  else{
@@ -190,7 +189,7 @@ $cath=[regex]::Replace($cath,'(?s)<regexCodeList\s*/>|<regexCodeList>.*?</regexC
 $cath=[regex]::Replace($cath,'(?s)<regexCodePropertyList\s*/>|<regexCodePropertyList>.*?</regexCodePropertyList>','<regexCodePropertyList><integer>1</integer></regexCodePropertyList>',1)
 $ysoText=[regex]::Replace($ysoText,$cathPattern,[Text.RegularExpressions.MatchEvaluator]{param($m) $cath},1)
 # Keep the summon failure beside the existing Apostasy presence triggers.
-$ysoText=[regex]::Replace($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Nightmare unavailable</name>.*?</Trigger>','')
+$ysoText=[regex]::Replace($ysoText,'(?s)(?:\r?\n)?<Trigger\b[^>]*>\s*<name>Nightmare unavailable</name>.*?</Trigger>','')
 $nightmareDoc=[xml]$ysoText
 $template=$nightmareDoc.SelectSingleNode('//TriggerGroup[name="Apostate"]/TriggerGroup[name="Apostasy"]/Trigger[name="Banished Baalzadeen"]')
 if(-not $template){throw 'Missing Apostate/Apostasy trigger insertion point'}
@@ -203,7 +202,7 @@ $nightmare.regexCodePropertyList.InnerXml='<integer>1</integer>'
 $anchor=[regex]::Match($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Banished Baalzadeen</name>.*?</Trigger>')
 if(-not $anchor.Success){throw 'Missing Banished Baalzadeen trigger text'}
 $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,"`n"+$nightmare.OuterXml)
-$ysoText=[regex]::Replace($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Truelocks eye rejected</name>.*?</Trigger>','')
+$ysoText=[regex]::Replace($ysoText,'(?s)(?:\r?\n)?<Trigger\b[^>]*>\s*<name>Truelocks eye rejected</name>.*?</Trigger>','')
 $eyeRejected=$template.CloneNode($true)
 $eyeRejected.name='Truelocks eye rejected'
 $eyeRejected.script=[IO.File]::ReadAllText((Join-Path $root 'Apostate/eye_rejected.lua'))
@@ -215,7 +214,7 @@ $eyeRejected.regexCodeList.InnerXml=@'
 <string>^You stare at ([\w'-]+), giving [\w'-]+ the evil eye, but [\w'-]+ is warded\.$</string>
 '@
 $eyeRejected.regexCodePropertyList.InnerXml='<integer>1</integer><integer>1</integer><integer>1</integer><integer>1</integer>'
-$anchor=[regex]::Match($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Nightmare unavailable</name>.*?</Trigger>')
+$anchor=[regex]::Match($ysoText,'(?s)(?:\r?\n)?<Trigger\b[^>]*>\s*<name>Nightmare unavailable</name>.*?</Trigger>')
 $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,"`n"+$eyeRejected.OuterXml)
 # Taste summaries use the existing Apostasy palette and leave the rest of Taste intact.
 foreach($entry in @(

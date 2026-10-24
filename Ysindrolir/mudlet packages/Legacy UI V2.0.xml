@@ -1419,7 +1419,7 @@ end
       local vitals = gmcp.Char.Vitals or {}
       local hp, mp = tonumber(vitals.hp), tonumber(vitals.mp)
       -- Partial GMCP samples must not erase the baseline or invent zero vitals.
-      if hp and mp then
+      if profile and hp and mp then
       profile.newHealth, profile.newMana = hp, mp
       profile.oldHealth = tonumber(profile.oldHealth) or hp
       profile.oldMana = tonumber(profile.oldMana) or mp
@@ -1465,8 +1465,9 @@ end
         end
         Prompt:cecho("&lt;DimGrey&gt;)")
         
-        if Legacy[gmcp.Char.Status.name].Vitals.bleed &gt; 100 then
-          Prompt:cecho(" &lt;DimGrey&gt;(&lt;ansiRed&gt;"..Legacy[gmcp.Char.Status.name].Vitals.bleed.."B&lt;DimGrey&gt;)")
+        local bleed = tonumber(profile.Vitals and profile.Vitals.bleed) or 0
+        if bleed &gt; 100 then
+          Prompt:cecho(" &lt;DimGrey&gt;(&lt;ansiRed&gt;"..bleed.."B&lt;DimGrey&gt;)")
         end
       end
       

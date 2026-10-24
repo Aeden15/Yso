@@ -15,9 +15,9 @@ Yso={get_target=function() return target end}
 dofile(root..'/Yso/Combat/route_registry.lua')
 dofile(root..'/Yso/xml/yso_modes.lua')
 dofile(root..'/Yso/xml/apostate_utilities.lua')
-local M=dofile(root..'/Apostate/truelock.lua')
-local kill='order bloodworms kill Saibel&&order daemonite kill Saibel&&order nightmare kill Saibel'
-local passive='order bloodworms passive&&order daemonite passive&&order nightmare passive'
+local M=dofile(root..'/Apostate/lock_route.lua')
+local kill='order entourage kill Saibel&&order daemonite kill Saibel&&order bloodworms kill Saibel&&order nightmare kill Saibel'
+local passive='order entourage passive&&order daemonite passive&&order bloodworms passive&&order nightmare passive'
 local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
 local function orders()
  local out={};for _,s in ipairs(sent) do if s:match('^order ') then out[#out+1]=s end end;return out

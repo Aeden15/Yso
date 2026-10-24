@@ -1,55 +1,45 @@
--- Exercise the real emitter and compatible queue implementation at the send boundary.
+-- Exercise the simplified route through the real emitter, with and without legacy queues.
 local root=assert(arg[1],'pass Ysindrolir root')
 local sent,clock={},100
 getEpoch=function() return clock end
-send=function(s) sent[#sent+1]=s end
+send=function(command) sent[#sent+1]=command end
 cecho=function() end
 tempTimer=function() return 1 end;killTimer=function() end
 tempRegexTrigger=function() return 1 end;killTrigger=function() end
-registerAnonymousEventHandler=function() return 1 end
-killAnonymousEventHandler=function() end
+registerAnonymousEventHandler=function() return 1 end;killAnonymousEventHandler=function() end
 raiseEvent=function() end
-gmcp={Char={Status={class='Apostate'},Vitals={bal='1',eq='0'}}}
-Yso={cfg={cmd_sep='&&'},get_target=function() return 'Saibel' end}
-ak={apostate={}};affstrack={venoms={notechis='haemophilia'}}
+target='Saibel';gmcp={Char={Status={class='Apostate'},Vitals={bal='1',eq='1',mp='1000'}}}
+Yso={cfg={cmd_sep='&&'},get_target=function() return target end,mode={is_combat=function() return true end}}
+ak={defs={}};affstrack={score={}}
 dofile(root..'/Yso/xml/api_stuff.lua')
-local D=dofile(root..'/Apostate/daegger_envenom.lua');D.stock.notechis=true
-assert(D.emit_attack('puncture','Saibel',{'haemophilia'},{}))
-assert(#sent==1 and sent[1]=='wipe daegger&&envenom daegger with notechis&&daegger puncture Saibel')
-sent={}
-clock=clock+3
-dofile(root..'/Yso/Core/queue.lua')
-assert(D.emit_attack('puncture','Saibel',{'haemophilia'},{}))
-assert(#sent==1,'preparation must not use a separate EQ-gated queue')
-assert(sent[1]:find('b!p!w!t wipe daegger&&envenom daegger with notechis&&daegger puncture Saibel',1,true),sent[1])
--- Contemplate remains balanceless even in profiles with the compatibility queue.
-sent={};target='Saibel';Yso.mode={is_combat=function() return true end}
 dofile(root..'/Yso/xml/apostate_utilities.lua')
-local M=dofile(root..'/Apostate/truelock.lua')
-M.state.loop_enabled=true;M.state.victim='Saibel';M.state.phase='contemplate'
-assert(M.attack_function());assert(#sent==1 and sent[1]=='contemplate Saibel',sent[1])
-sent={};Yso.queue.set_owned('eq',{route='another_route',cmd='unrelated'})
-M.alias_loop_on_stopped({reason='manual'})
-assert(sent[1]=='CLEARQUEUE b!p!w!t','stopping must cancel its own queued BAL batch')
-assert(Yso.queue.get_owned('eq').route=='another_route','unrelated lane ownership must survive')
--- Creature orders bypass compatibility queues and readiness, without taking an attack slot.
-sent={};gmcp.Char.Vitals={bal='0',eq='0'}
-M.state.loop_enabled=true;M.alias_loop_on_started()
-assert(#sent==1 and sent[1]=='order bloodworms kill Saibel&&order daemonite kill Saibel&&order nightmare kill Saibel')
-assert(M.state.pending==nil)
-M.alias_loop_on_stopped({reason='manual'})
-assert(sent[2]=='order bloodworms passive&&order daemonite passive&&order nightmare passive')
-assert(Yso.queue.get_owned('eq').route=='another_route')
--- Conditional support uses the real EQ queue even with BAL unavailable.
-sent={};clock=clock+5
-gmcp.Char.Vitals={bal='0',eq='1',mp='6817'}
-affstrack.score={asthma=100,manaleech=100}
-ak.classlockresolve=function() return {'voyria'} end
-ak.classlockresolveclass=function() return 'apostate' end
 dofile(root..'/Apostate/evileye_reference.lua')
-dofile(root..'/Apostate/necromancy_reference.lua')
-M.state.loop_enabled=true;M.state.phase='pressure';M.state.pending=nil
-assert(M.attack_function());assert(#sent==1 and sent[1]:find('disfigure Saibel',1,true),sent[1])
-assert(Yso.queue.get_owned('eq').route==M.key,'support must be owned by Truelocks')
-assert(M.state.pending==nil,'support must not replace the pressure confirmation slot')
-print('PASS real emitter: ordered daegger batch with BAL ready / EQ down, direct and queued profiles')
+local M=dofile(root..'/Apostate/lock_route.lua')
+M.state.loop_enabled=true
+assert(M.attack_function());assert(#sent==1 and sent[1]:find('deadeyes Saibel paralysis impatience',1,true),tostring(sent[1]))
+assert(affstrack.score.paralysis==nil)
+M.note_pressure('eyes',target);M.note_prompt();clock=clock+3;sent={}
+dofile(root..'/Yso/Core/queue.lua')
+assert(M.attack_function());assert(#sent==1 and sent[1]:find('deadeyes Saibel paralysis impatience',1,true),tostring(sent[1]))
+assert(Yso.queue.get_owned('bal').route==M.key)
+Yso.queue.set_owned('eq',{route='another_route',cmd='unrelated'})
+sent={};M.alias_loop_on_stopped({reason='manual'})
+assert(sent[1]=='CLEARQUEUE b!p!w!t','stop must cancel its own BAL batch')
+assert(Yso.queue.get_owned('eq').route=='another_route')
+sent={};gmcp.Char.Vitals.bal='0';gmcp.Char.Vitals.eq='0'
+M.alias_loop_on_started()
+assert(sent[1]=='order entourage kill Saibel&&order daemonite kill Saibel&&order bloodworms kill Saibel&&order nightmare kill Saibel')
+M.alias_loop_on_stopped({reason='manual'})
+assert(sent[2]=='order entourage passive&&order daemonite passive&&order bloodworms passive&&order nightmare passive')
+-- A failed send can leave a staged command without dispatched ownership.
+clock=clock+10;gmcp.Char.Vitals.bal='1';gmcp.Char.Vitals.eq='1'
+M.alias_loop_prepare_start({});M.state.loop_enabled=true;sent={}
+local rawsend=send;send=function() error('simulated sender failure') end
+local ok=pcall(M.attack_function)
+assert(not ok);assert(Yso.queue.list('bal')=='deadeyes Saibel paralysis impatience')
+assert(Yso.queue.get_owned('bal')==nil)
+send=rawsend;M.stop('route_error')
+assert(Yso.queue.list('bal')==nil,'OFF must discard its staged attack even without dispatched ownership')
+Yso.queue.commit({route=M.key,target=target})
+for _,command in ipairs(sent) do assert(not command:find('deadeyes',1,true),'attack leaked after OFF') end
+print('PASS lock route real emitter, legacy queue ownership and balanceless creature orders')

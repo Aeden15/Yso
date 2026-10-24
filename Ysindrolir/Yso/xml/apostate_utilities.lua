@@ -128,7 +128,7 @@ function A.note_mana(name, current, maximum)
     Yso.tgt.set_mana_pct(victim, current * 100 / maximum)
   end
   local route = Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
-  if route and route.is_enabled() then return route.note_mana(name, current, maximum) end
+  if route and route.is_enabled() then return false end -- Lock route owns offense; no automatic Catharsis.
   if current * 2 >= maximum or type(sendAll) ~= 'function' then return false end
   local now = type(getEpoch) == 'function' and tonumber(getEpoch()) or os.time()
   if now > 20000000000 then now = now / 1000 end

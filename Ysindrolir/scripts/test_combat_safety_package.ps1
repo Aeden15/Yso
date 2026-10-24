@@ -34,7 +34,7 @@ try {
     @('Magi water group','Magi/Magi_water_group.lua'),@('Magi elemental helpers','Yso/xml/magi_elemental_helpers.lua'),
     @('Yso serverside policy','Yso/Curing/serverside_policy.lua'),@('Yso self aff','Yso/Core/self_aff.lua'),
     @('Yso pulse','Yso/xml/yso_pulse_wake_bus.lua'),@('Convergence logic','Magi/magi_convergence.lua'),
-    @('Apostate Truelocks','Apostate/truelock.lua'))){
+    @('Apostate Truelocks','Apostate/lock_route.lua'))){
     $nodes=$doc.SelectNodes('//Script[name="'+$row[0]+'"]')
     Assert ($nodes.Count -eq 1 -and $nodes[0].isActive -eq 'yes') ('Missing active script '+$row[0])
     Assert ((Normalize $nodes[0].script) -ceq (Normalize ([IO.File]::ReadAllText((Join-Path $root $row[1]))))) ('Source/XML mismatch '+$row[0])
