@@ -49,7 +49,9 @@ eye('cowardice',105,150,nil,'Moves the victim in a random direction; does not ca
   '193216','adventurers and denizens')
 eye('stupid',106,60,'stupidity','Causes stupidity.','193216')
 eye('manaleech',107,75,'manaleech','Saps the target mana.','193232')
-eye('sensitivity',108,70,'sensitivity','Makes the victim extremely sensitive to pain.','193232')
+eye('sensitivity',108,70,'sensitivity','First removes deafness; a subsequent hit while hearing increases sensitivity to pain. Same conditional effect as prefarar from any source.','193232')
+R.skills.sensitivity.role='conditional'
+R.skills.sensitivity.outcomes={'deafness_removed','sensitivity'}
 eye('vomiting',109,75,'nausea','Induces severe vomiting.','193247')
 eye('sleep',110,55,'sleep','Puts the target to sleep or removes sleep defences; announcement alone does not distinguish outcomes.','193247')
 eye('anorexia',111,70,'anorexia','Prevents eating.','193256')

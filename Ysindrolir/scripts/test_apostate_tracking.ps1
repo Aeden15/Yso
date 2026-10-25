@@ -101,16 +101,58 @@ for _,method in ipairs({'oresetparse','softreset'}) do
  check(affstrack.score.asthma,0);check(A.shrivel_unresolved.beltsa,nil)
 end
 '@)
-# Exercise the real AK score writer, including source-scoped Sensitivity and cure handling.
+# Exercise the real AK score writer, including conditional Sensitivity and cure handling.
 $h.Add($ak.SelectSingleNode('//Script[name="oscore edit functions"]').script)
 $h.Add(@'
 tempTimer=function() return 1 end;killTimer=function() end
 ApK=function() end
-reset();OppGainedAff('sensitivity','evileye');check(affstrack.score.sensitivity,100);check(affstrack.score.deaf,0)
-reset();OppGainedAff('sensitivity');check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+affstrack.venoms.prefarar='sensitivity'
+reset();currentvenoms={['a wicked-looking daegger']={'prefarar'}}
+A.puncture('Beltsa');check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+currentvenoms['a wicked-looking daegger']={'prefarar'}
+A.puncture('Beltsa');check(affstrack.score.sensitivity,100)
+reset();currentvenoms={['a wicked-looking daegger']={'prefarar'}}
+A.puncture('Other');check(affstrack.score.deaf,0);check(affstrack.score.sensitivity,0)
+for _,source in ipairs({'evileye',false,'other'}) do
+ reset();OppGainedAff('sensitivity',source or nil)
+ check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+ OppGainedAff('sensitivity',source or nil);check(affstrack.score.sensitivity,100)
+ reset();OppGainedAff('prefarar',source or nil)
+ check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+ OppGainedAff('prefarar',source or nil);check(affstrack.score.sensitivity,100)
+ reset();OppGainedAff('sensitivity sensitivity',source or nil)
+ check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,100)
+ reset();OppGainedAff('prefarar prefarar',source or nil)
+ check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,100)
+end
+local labels={};ak.echogain=function(label) labels[#labels+1]=label end
+reset();OppGainedAff('sensitivity','evileye');check(labels[#labels],'deaf')
+OppGainedAff('sensitivity','evileye');check(labels[#labels],'sensitivity')
+reset();OppGainedAff('sensitivity');check(labels[#labels],'prefarar')
+-- Confirmed batches resolve successful eyes in order; undeaf is not Corrupt fodder.
+reset();A.reset_tracking();A.capture_eye('Beltsa','sensitivity');A.commit_eyes()
+check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+check(A.evileye_active.deaf,nil);check(A.evileye_active.sensitivity,nil)
+A.consume_corrupt('Beltsa',nil);check(affstrack.score.deaf,100)
+A.capture_eye('Beltsa','sensitivity');A.commit_eyes();check(affstrack.score.sensitivity,100)
+check(A.evileye_active.sensitivity,'beltsa')
+A.consume_corrupt('Beltsa',nil);check(affstrack.score.sensitivity,0);check(affstrack.score.deaf,100)
+reset();A.reset_tracking();A.capture_eye('Beltsa','sensitivity');A.capture_eye('Beltsa','sensitivity');A.commit_eyes()
+check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,100)
+reset();A.reset_tracking();A.capture_eye('Beltsa','sensitivity');A.capture_eye('Beltsa','sensitivity');A.fail_eye();A.commit_eyes()
+check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+reset();A.reset_tracking();A.capture_eye('Beltsa','sensitivity');A.fail_eye();A.capture_eye('Beltsa','asthma');A.commit_eyes()
+check(affstrack.score.deaf,0);check(affstrack.score.sensitivity,0);check(affstrack.score.asthma,100)
+reset();A.reset_tracking();A.capture_eye('Beltsa','sensitivity');A.capture_eye('Beltsa','breach');A.fail_eye();A.commit_eyes()
+check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+reset();A.reset_tracking();A.capture_eye('Other','sensitivity');A.commit_eyes()
+check(affstrack.score.deaf,0);check(affstrack.score.sensitivity,0)
+A.capture_eye('Beltsa','sensitivity');target='Other';A.commit_eyes();target='Beltsa'
+check(affstrack.score.deaf,0);check(affstrack.score.sensitivity,0)
 for curse,aff in pairs(A.evileye_map) do
  reset();A.clear_pending();A.capture_eye('Beltsa',curse);A.commit_eyes()
- check(affstrack.score[aff],100);OppLostAff(aff);check(affstrack.score[aff],0)
+ if aff=='sensitivity' then check(affstrack.score.deaf,100);check(affstrack.score.sensitivity,0)
+ else check(affstrack.score[aff],100);OppLostAff(aff);check(affstrack.score[aff],0) end
 end
 reset();A.capture_eye('Beltsa','sicken');A.commit_eyes();OppLostAff('manaleech')
 A.capture_eye('Beltsa','sicken');A.commit_eyes();check(affstrack.score.manaleech,100)
@@ -143,6 +185,7 @@ $h.Add(@'
 local R=Yso.ref.apostate.evileye
 local n=0;for _ in pairs(R.skills) do n=n+1 end;check(n,35)
 check(R.skills.paralysis.abadmin_id,2940);check(R.skills.sicken.outcomes[1],'manaleech')
+check(R.skills.sensitivity.role,'conditional');check(R.skills.sensitivity.outcomes[1],'deafness_removed')
 for curse,aff in pairs(A.evileye_map) do check(R.skills[curse].affliction,aff) end
 local D=Yso.apostate.deadeyes
 check(D.build('Beltsa','asthma','impatience'),'deadeyes Beltsa asthma impatience')

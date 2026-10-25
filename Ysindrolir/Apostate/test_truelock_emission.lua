@@ -10,10 +10,11 @@ registerAnonymousEventHandler=function() return 1 end;killAnonymousEventHandler=
 raiseEvent=function() end
 target='Saibel';gmcp={Char={Status={class='Apostate'},Vitals={bal='1',eq='1',mp='1000'}}}
 Yso={cfg={cmd_sep='&&'},get_target=function() return target end,mode={is_combat=function() return true end}}
-ak={defs={}};affstrack={score={}}
+ak={defs={}};affstrack={score={deaf=100}}
 dofile(root..'/Yso/xml/api_stuff.lua')
 dofile(root..'/Yso/xml/apostate_utilities.lua')
 dofile(root..'/Apostate/evileye_reference.lua')
+dofile(root..'/Apostate/entourage.lua')
 local M=dofile(root..'/Apostate/lock_route.lua')
 M.state.loop_enabled=true
 assert(M.attack_function());assert(#sent==1 and sent[1]:find('deadeyes Saibel paralysis impatience',1,true),tostring(sent[1]))
@@ -28,9 +29,9 @@ assert(sent[1]=='CLEARQUEUE b!p!w!t','stop must cancel its own BAL batch')
 assert(Yso.queue.get_owned('eq').route=='another_route')
 sent={};gmcp.Char.Vitals.bal='0';gmcp.Char.Vitals.eq='0'
 M.alias_loop_on_started()
-assert(sent[1]=='order entourage kill Saibel&&order daemonite kill Saibel&&order bloodworms kill Saibel&&order nightmare kill Saibel')
+assert(sent[1]=='order entourage kill Saibel')
 M.alias_loop_on_stopped({reason='manual'})
-assert(sent[2]=='order entourage passive&&order daemonite passive&&order bloodworms passive&&order nightmare passive')
+assert(sent[2]=='order entourage passive')
 -- A failed send can leave a staged command without dispatched ownership.
 clock=clock+10;gmcp.Char.Vitals.bal='1';gmcp.Char.Vitals.eq='1'
 M.alias_loop_prepare_start({});M.state.loop_enabled=true;sent={}

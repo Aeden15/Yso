@@ -1156,10 +1156,11 @@ end</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList>
 						<string>^\(Army\): A caravan bearing</string>
-						<string>^The industrious bustle of workers in Quartz Peak echoes across Sapience as they prepare a caravan\.$</string>
+						<string>^The industrious bustle of workers in (.+?) echoes across Sapience as they prepare a caravan\.$</string>
 					</regexCodeList>
 					<regexCodePropertyList>
-						<integer>1</integer> 						<integer>1</integer>
+						<integer>1</integer>
+						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
@@ -1178,7 +1179,7 @@ end</script>
 					<regexCodeList />
 					<regexCodePropertyList />
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Prospect start</name>
+						<name>General prospect</name>
 						<script>send("clan mmc tell Started full prospect at " ..gmcp.Room.Info.name.." in "..gmcp.Room.Info.area)</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -1191,14 +1192,14 @@ end</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>You pay the 5000 gold sovereigns in order to hire a general purpose </string>
+							<string>^You pay the 5000 gold sovereigns in order to hire a general purpose prospecting crew. They swiftly set off to search for untapped riches\.$</string>
 						</regexCodeList>
 						<regexCodePropertyList>
-							<integer>3</integer>
+							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
 					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Off to prospect</name>
+						<name>Specific prospect</name>
 						<script>send("clan mmc tell Started prospect for - " ..matches[2].. " - at " ..gmcp.Room.Info.name.." in "..gmcp.Room.Info.area) </script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -4202,9 +4203,13 @@ OppGainedAff("leftleg rightleg rightarm leftarm prone")</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Enemy Deliverance</name>
-						<script>local D = Yso and Yso.Combat and Yso.Combat.Deliverance
+						<script>cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE CHANNELING.)\n")
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE CHANNELING.)\n")
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE CHANNELING.)\n")
+--The cecho should also state the person who is bowing their head in prayer
+local D = Yso and Yso.Combat and Yso.Combat.Deliverance
 if D and type(D.observe) == "function" then D.observe(matches[2], "channeling") end</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
@@ -4213,7 +4218,7 @@ if D and type(D.observe) == "function" then D.observe(matches[2], "channeling") 
 						<packageName />
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile>C:/Windows/Media/Alarm05.wav</mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -4223,10 +4228,16 @@ if D and type(D.observe) == "function" then D.observe(matches[2], "channeling") 
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="yes" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Enemy Deliverance stage 2</name>
 						<script>local D = Yso and Yso.Combat and Yso.Combat.Deliverance
-if D and type(D.observe) == "function" then D.observe(matches[2], "active") end</script>
+if D and type(D.observe) == "function" then D.observe(matches[2], "active") end
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE UP!! STOP ATTACKING!!.)\n")
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE UP!! STOP ATTACKING!!.)\n")
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE UP!! STOP ATTACKING!!.)\n")
+cecho("\n&lt;SpringGreen&gt;[Monk] &lt;aquamarine&gt;(ENEMY DELIVERANCE UP!! STOP ATTACKING!!.)\n")
+--the cecho should state the person who's eyes are glowing bright white
+</script>
 						<triggerType>0</triggerType>
 						<conditonLineDelta>0</conditonLineDelta>
 						<mStayOpen>0</mStayOpen>
@@ -4234,7 +4245,7 @@ if D and type(D.observe) == "function" then D.observe(matches[2], "active") end<
 						<packageName />
 						<mFgColor>#ff0000</mFgColor>
 						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
+						<mSoundFile>C:/Windows/Media/Alarm06.wav</mSoundFile>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
@@ -4983,10 +4994,6 @@ else M.note_eye_rejected('curseward',matches[2]) end
 <string>^You cannot use the evil eye while blind\.$</string>
 <string>^You try to curse ([\w'-]+), but [\w'-]+ is warded\.$</string>
 <string>^You stare at ([\w'-]+), giving [\w'-]+ the evil eye, but [\w'-]+ is warded\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer><integer>1</integer><integer>1</integer><integer>1</integer></regexCodePropertyList></Trigger>
-
-
-
-
 
 
 
@@ -27512,7 +27519,9 @@ eye(&apos;cowardice&apos;,105,150,nil,&apos;Moves the victim in a random directi
   &apos;193216&apos;,&apos;adventurers and denizens&apos;)
 eye(&apos;stupid&apos;,106,60,&apos;stupidity&apos;,&apos;Causes stupidity.&apos;,&apos;193216&apos;)
 eye(&apos;manaleech&apos;,107,75,&apos;manaleech&apos;,&apos;Saps the target mana.&apos;,&apos;193232&apos;)
-eye(&apos;sensitivity&apos;,108,70,&apos;sensitivity&apos;,&apos;Makes the victim extremely sensitive to pain.&apos;,&apos;193232&apos;)
+eye(&apos;sensitivity&apos;,108,70,&apos;sensitivity&apos;,&apos;First removes deafness; a subsequent hit while hearing increases sensitivity to pain. Same conditional effect as prefarar from any source.&apos;,&apos;193232&apos;)
+R.skills.sensitivity.role=&apos;conditional&apos;
+R.skills.sensitivity.outcomes={&apos;deafness_removed&apos;,&apos;sensitivity&apos;}
 eye(&apos;vomiting&apos;,109,75,&apos;nausea&apos;,&apos;Induces severe vomiting.&apos;,&apos;193247&apos;)
 eye(&apos;sleep&apos;,110,55,&apos;sleep&apos;,&apos;Puts the target to sleep or removes sleep defences; announcement alone does not distinguish outcomes.&apos;,&apos;193247&apos;)
 eye(&apos;anorexia&apos;,111,70,&apos;anorexia&apos;,&apos;Prevents eating.&apos;,&apos;193256&apos;)
@@ -27923,7 +27932,49 @@ if type(registerAnonymousEventHandler) == &apos;function&apos; then
 end
 </script>
 						<eventHandlerList />
-					</Script>
+					</Script><Script isActive="yes" isFolder="no"><name>Apostate entourage</name><packageName /><script>-- Shared balanceless orders. Summoning and pentagram setup stay manual.
+Yso = Yso or {}
+Yso.apostate = Yso.apostate or {}
+local E = Yso.apostate.entourage or {}
+Yso.apostate.entourage = E
+
+local function dispatch(command)
+    local sender = Yso.send
+    if type(sender) == &apos;function&apos; then
+        local ok, result = pcall(sender, command)
+        return ok and result == true
+    end
+    if type(send) ~= &apos;function&apos; then return false end
+    local ok, result = pcall(send, command, false)
+    return ok and result ~= false
+end
+
+function E.attack(target)
+    if type(target) ~= &apos;string&apos; or not target:match(&quot;^[A-Za-z][A-Za-z&apos;%-]*$&quot;) then
+        return false, &apos;invalid_target&apos;
+    end
+    if E.target and E.target:lower() == target:lower() then return true end
+
+    -- A sender can fail after transmitting: preserve the need for cleanup.
+    E.needs_passive = true
+    E.target = nil
+    if not dispatch(&apos;order entourage kill &apos; .. target) then return false, &apos;send_failed&apos; end
+    E.target = target
+    return true
+end
+
+function E.passive()
+    if not E.needs_passive then return true end
+    E.target = nil
+    if not dispatch(&apos;order entourage passive&apos;) then return false, &apos;send_failed&apos; end
+    E.target = nil
+    E.needs_passive = false
+    return true
+end
+
+return E
+</script><eventHandlerList /></Script>
+
 					<Script isActive="yes" isFolder="no">
 						<name>Apostate Truelocks</name>
 						<packageName />
@@ -27932,13 +27983,14 @@ Yso=Yso or {};Yso.off=Yso.off or {};Yso.off.apostate=Yso.off.apostate or {}
 local M=Yso.off.apostate.truelock or {};Yso.off.apostate.truelock=M
 M.key=&apos;apostate_truelock&apos;;M.alias_owned=true
 M.state=M.state or {};M.state.loop_delay=0.15
-M.Affliction_giving=M.Affliction_giving or {
- &apos;paralysis&apos;,&apos;impatience&apos;,&apos;asthma&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;disloyalty&apos;,
+M.Affliction_giving={
+ &apos;paralysis&apos;,&apos;undeaf&apos;,&apos;impatience&apos;,&apos;asthma&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;disloyalty&apos;,
 }
-M.Padding_mental_afflictions=M.Padding_mental_afflictions or {
+M.Padding_mental_afflictions={
  &apos;stupidity&apos;,&apos;confusion&apos;,&apos;dizziness&apos;,&apos;dementia&apos;,
 }
-local eyes={slickness=&apos;sicken&apos;,stupidity=&apos;stupid&apos;,dizziness=&apos;dizzy&apos;}
+M.undeaf_delivery=&apos;evileye&apos; -- Optional: &apos;prefarar&apos; uses Puncture when available.
+local eyes={undeaf=&apos;sensitivity&apos;,slickness=&apos;sicken&apos;,stupidity=&apos;stupid&apos;,dizziness=&apos;dizzy&apos;}
 local function present(value) return value==true or (tonumber(value) or 0)&gt;=100 end
 local function same(a,b) return type(a)==&apos;string&apos; and type(b)==&apos;string&apos; and a:lower()==b:lower() end
 local function valid(name) return type(name)==&apos;string&apos; and name:match(&quot;^[A-Za-z][A-Za-z&apos;%-]*$&quot;) end
@@ -27952,13 +28004,15 @@ end
 function M.select(scores)
  local opening=not present(scores.asthma) or not present(scores.impatience)
  local needs_manaleech=not present(scores.manaleech)
- local eligible={paralysis=true}
+ local eligible={paralysis=true,undeaf=true}
  if opening then eligible.impatience=true;eligible.asthma=true
  elseif needs_manaleech then eligible.manaleech=true
  else eligible.slickness=true;eligible.anorexia=true end
  local out,seen={},{}
  local function add(aff)
-  if #out&lt;2 and not seen[aff] and not present(scores[aff]) then
+  -- AK&apos;s deaf=100 means deafness has been stripped; no new score is invented.
+  local score=aff==&apos;undeaf&apos; and scores.deaf or scores[aff]
+  if #out&lt;2 and not seen[aff] and not present(score) then
    out[#out+1]=aff;seen[aff]=true
   end
  end
@@ -27976,17 +28030,6 @@ function M.eye_command(name,picks,curseward)
  return &apos;stare &apos;..name..&apos; &apos;..first
 end
 
--- Balanceless orders run once per toggle, outside the confirmation slot.
-local function order_creatures(name)
- local commands={}
- for _,creature in ipairs({&apos;entourage&apos;,&apos;daemonite&apos;,&apos;bloodworms&apos;,&apos;nightmare&apos;}) do
-  commands[#commands+1]=&apos;order &apos;..creature..(name and (&apos; kill &apos;..name) or &apos; passive&apos;)
- end
- local batch=table.concat(commands,Yso.sep or (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)) or &apos;&amp;&amp;&apos;)
- if type(Yso.send)==&apos;function&apos; then return Yso.send(batch)==true end
- if type(send)~=&apos;function&apos; then return false end
- return send(batch,false)~=false
-end
 local function note(text)
  if type(cecho)==&apos;function&apos; then cecho(&apos;&lt;DeepPink&gt;[Truelocks] &lt;reset&gt;&apos;..text..&apos;\n&apos;) end
 end
@@ -28007,21 +28050,22 @@ function M.alias_loop_prepare_start(ctx)
  return ctx
 end
 function M.alias_loop_on_started()
- if M.state.creatures_ordered then return end
+ if M.state.creatures_ordered and M.state.victim then return end
  local name=victim()
  if not valid(name) then M.state.startup_error=&apos;no_target&apos;;return end
  if not (Yso.apostate and Yso.apostate.active()) then M.state.startup_error=&apos;wrong_class&apos;;return end
  if not same(name,target) then M.state.startup_error=&apos;ak_target_mismatch&apos;;return end
+ local entourage=Yso.apostate.entourage
+ if not entourage then M.state.startup_error=&apos;entourage_unavailable&apos;;return end
  M.state.victim=name;M.state.creatures_ordered=true
- local ok,sent=pcall(order_creatures,name)
- if not ok or not sent then M.state.startup_error=&apos;creature_orders_failed&apos; end
+ if not entourage.attack(name) then M.state.startup_error=&apos;creature_orders_failed&apos; end
  note(&apos;ON.&apos;)
 end
 function M.alias_loop_on_stopped(ctx)
  if M.state.creatures_ordered then
-  M.state.creatures_ordered=nil
-  local ok,sent=pcall(order_creatures)
-  if not ok or not sent then note(&apos;Unable to send creature passive orders.&apos;) end
+  local entourage=Yso.apostate and Yso.apostate.entourage
+  if entourage and entourage.passive() then M.state.creatures_ordered=nil
+  else note(&apos;Unable to send entourage passive order.&apos;) end
  end
  -- Older profiles may still have route-owned compatibility queue entries.
  local Q=Yso.queue
@@ -28036,6 +28080,7 @@ function M.alias_loop_on_stopped(ctx)
   end
  end
  M.state.pending=nil;M.state.victim=nil;M.state.reason=nil
+ if ak and ak.apostate then ak.apostate.pending_daegger_wipe=nil end
  note(&apos;OFF (&apos;..tostring(ctx and ctx.reason or &apos;manual&apos;)..&apos;).&apos;)
 end
 function M.alias_loop_clear_waiting() M.state.waiting={} end
@@ -28050,13 +28095,15 @@ local function ready(lane)
   and not (Yso.locks and type(Yso.locks.ready)==&apos;function&apos; and not Yso.locks.ready(lane))
 end
 local function hold(reason) M.state.reason=reason;return false,reason end
-function M.note_pressure(kind,name)
+function M.note_pressure(kind,name,delivered)
  local p=M.state.pending
- if p and kind==&apos;eyes&apos; and same(name,p.target) and same(name,victim()) then p.confirmed=true end
+ if not p or kind~=p.action or not same(name,p.target) or not same(name,victim()) then return end
+ if kind==&apos;puncture&apos; and delivered~=true then return M.stop(&apos;venom_delivery_unconfirmed&apos;) end
+ p.confirmed=true
 end
 function M.note_eye_rejected(reason,name)
  local p=M.state.pending
- if not M.is_enabled() or not p or not same(p.target,victim()) or (name and not same(name,p.target)) then return false end
+ if not M.is_enabled() or not p or p.action~=&apos;eyes&apos; or not same(p.target,victim()) or (name and not same(name,p.target)) then return false end
  if reason==&apos;blind&apos; then return M.stop(&apos;eyes_blind&apos;) end
  if reason~=&apos;equilibrium&apos; and reason~=&apos;balance&apos; and reason~=&apos;curseward&apos; then return false end
  if reason==&apos;curseward&apos; then ak.defs=ak.defs or {};ak.defs.curseward=true end
@@ -28082,22 +28129,32 @@ function M.attack_function()
  local pending=M.state.pending
  if pending then
   if now()-pending.at&gt;=10 then return M.stop(&apos;confirmation_timeout&apos;) end
-  return hold(&apos;waiting_eyes&apos;)
+  return hold(&apos;waiting_&apos;..pending.action)
  end
  if not (ak and affstrack and type(affstrack.score)==&apos;table&apos;) then return hold(&apos;tracking_unavailable&apos;) end
  local scores=affstrack.score
  local picks=M.select(scores)
  local lane,cmd,cost,breach=&apos;bal&apos;,nil,0,ak.defs and ak.defs.curseward
+ local action=&apos;eyes&apos;
  if #picks&gt;0 then
   -- Curseward is eye shielding. Magical shield does not block Truestare eyes.
-  cmd=M.eye_command(name,picks,breach)
   if not ready(&apos;bal&apos;) then return hold(&apos;balance&apos;) end
-  local keys=breach and {&apos;breach&apos;,eyes[picks[1]] or picks[1]} or picks
-  local R=Yso.ref and Yso.ref.apostate and Yso.ref.apostate.evileye
-  for _,key in ipairs(keys) do
-   local ref=R and R.skills[eyes[key] or key]
-   if not ref then return hold(&apos;unsupported_eye:&apos;..key) end
-   cost=cost+(ref.resource_mana or 0)
+  local D=Yso.apostate.daegger
+  if picks[1]==&apos;undeaf&apos; and M.undeaf_delivery==&apos;prefarar&apos; and not (ak.defs and ak.defs.shield)
+   and D and D.available(&apos;prefarar&apos;) then
+   local commands=D.build_attack(&apos;puncture&apos;,name,&apos;prefarar&apos;)
+   if not commands then return hold(&apos;prefarar_unavailable&apos;) end
+   cmd=table.concat(commands,Yso.sep or (Yso.cfg and Yso.cfg.cmd_sep) or &apos;&amp;&amp;&apos;)
+   action=&apos;puncture&apos;;breach=false
+  else
+   cmd=M.eye_command(name,picks,breach)
+   local keys=breach and {&apos;breach&apos;,eyes[picks[1]] or picks[1]} or picks
+   local R=Yso.ref and Yso.ref.apostate and Yso.ref.apostate.evileye
+   for _,key in ipairs(keys) do
+    local ref=R and R.skills[eyes[key] or key]
+    if not ref then return hold(&apos;unsupported_eye:&apos;..key) end
+    cost=cost+(ref.resource_mana or 0)
+   end
   end
  else
   if not (present(scores.paralysis) and present(scores.impatience) and present(scores.asthma)
@@ -28108,16 +28165,20 @@ function M.attack_function()
   if ak.defs and ak.defs.shield then return hold(&apos;shield&apos;) end
   lane=&apos;eq&apos;;cmd=&apos;disfigure &apos;..name
  end
- if not ready(&apos;eq&apos;) then return hold(&apos;equilibrium&apos;) end
+ if (lane==&apos;eq&apos; or action==&apos;eyes&apos;) and not ready(&apos;eq&apos;) then return hold(&apos;equilibrium&apos;) end
  local mana=tonumber(vitals.mp or vitals.mana)
  if mana and mana&lt;cost then return hold(&apos;mana&apos;) end
  local payload={target=name,route=M.key};payload[lane]=cmd
  -- Record before emission: a throwing sender can leave a staged queue entry.
  M.state.commands=M.state.commands or {};M.state.commands[lane]=cmd
- if type(Yso.emit)~=&apos;function&apos; or Yso.emit(payload,{kind=&apos;offense&apos;,route=M.key,target=name,reason=M.key,commit=true})~=true then return hold(&apos;emit_blocked&apos;) end
- M.state[lane..&apos;_until&apos;]=now()+(lane==&apos;bal&apos; and 1.9 or 3)
- if lane==&apos;bal&apos; then M.state.pending={target=name,at=now(),breach=breach} end
- M.state.reason=lane==&apos;bal&apos; and &apos;waiting_eyes&apos; or &apos;disfigure&apos;
+ if action==&apos;puncture&apos; and ak.apostate then ak.apostate.pending_daegger_wipe=true end
+ if type(Yso.emit)~=&apos;function&apos; or Yso.emit(payload,{kind=&apos;offense&apos;,route=M.key,target=name,reason=M.key,commit=true})~=true then
+  if action==&apos;puncture&apos; and ak.apostate then ak.apostate.pending_daegger_wipe=nil end
+  return hold(&apos;emit_blocked&apos;)
+ end
+ M.state[lane..&apos;_until&apos;]=now()+(lane==&apos;eq&apos; and 3 or (action==&apos;puncture&apos; and 2.15 or 1.9))
+ if lane==&apos;bal&apos; then M.state.pending={target=name,at=now(),breach=breach,action=action} end
+ M.state.reason=lane==&apos;bal&apos; and (&apos;waiting_&apos;..action) or &apos;disfigure&apos;
  return true
 end
 if type(registerAnonymousEventHandler)==&apos;function&apos; then

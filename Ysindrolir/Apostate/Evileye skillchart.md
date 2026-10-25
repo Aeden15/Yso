@@ -50,7 +50,7 @@ in `C:/Users/shuji/OneDrive/Pictures/Screenshots/`.
 | COWARDICE | 105 | 150 mana | Forced movement | A+D; moves the victim randomly. Does not cancel tumble from hindered opponents. | 193216 |
 | STUPID | 106 | 60 mana | `stupidity` | Causes stupidity. | 193216 |
 | MANALEECH | 107 | 75 mana | `manaleech` | Saps the target's mana. | 193232 |
-| SENSITIVITY | 108 | 70 mana | `sensitivity` | Increased sensitivity to pain; Evileye source bypasses AK's venom deafness substitution. | 193232 |
+| SENSITIVITY | 108 | 70 mana | `sensitivity` | First strips deafness; the next hit while hearing gives sensitivity, as with prefarar from any source. AK uses `deaf=0` for deaf and `deaf=100` for hearing. | 193232 |
 | VOMITING | 109 | 75 mana | `nausea` | Severe vomiting. | 193247 |
 | SLEEP | 110 | 55 mana | `sleep` only on sleep confirmation | Can remove sleep defences instead; generic eye announcement does not confirm sleep. | 193247 |
 | ANOREXIA | 111 | 70 mana | `anorexia` | Prevents eating. | 193256 |

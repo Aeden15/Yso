@@ -44,11 +44,11 @@ $akText=Set-Body $akText Trigger 'Curse Pull Dump' 'ak.apostate.commit_eyes()'
 # The generic eye announcement now owns Sicken; remove its overlapping outcome inference.
 $akText=Set-Body $akText Trigger 'Sicken' '-- Sicken is resolved once by Apostate tracking from the confirmed evileye batch.'
 $gain=$akDoc.SelectSingleNode('//Script[name="oscore edit functions"]').script
-if(-not $gain.Contains('source ~= "evileye"')){
- $old='and affstrack.score.deaf == 0 then'
- if(([regex]::Matches($gain,[regex]::Escape($old))).Count -ne 2){throw 'Unexpected AK Sensitivity writer shape'}
- $gain=$gain.Replace($old,'and affstrack.score.deaf == 0 and source ~= "evileye" then')
-}
+# Sensitivity from every source first strips deafness (AK deaf=100 means hearing).
+# Keep source-specific display labels below; they do not change the score outcome.
+$gain=$gain.Replace('and affstrack.score.deaf == 0 and source ~= "evileye" then','and affstrack.score.deaf == 0 then')
+$gain=[regex]::Replace($gain,'(?m)(and affstrack.score.deaf == 0 then)[\t ]+(?=\r?$)','$1')
+if(([regex]::Matches($gain,[regex]::Escape('and affstrack.score.deaf == 0 then'))).Count -ne 2){throw 'Unexpected AK Sensitivity writer shape'}
 $gain=$gain.Replace('if (word == "deaf" or word == "sensitivity") then','if (word == "deaf" or word == "sensitivity") and source ~= "evileye" then')
 $gain=$gain.Replace('if aff == "deaf" or aff == "sensitivity" then','if (aff == "deaf" or aff == "sensitivity") and source ~= "evileye" then')
 $gain=$gain.Replace('if #affStr > 0 and not source then','if #affStr > 0 and (not source or source == "evileye") then')
@@ -163,11 +163,13 @@ foreach($entry in @(@('Apostate reference','Apostate/evileye_reference.lua'),@('
   $ysoText=$ysoText.Insert($anchor.Index,(New-Script $entry[0] $body)+"`n")
  }else{$ysoText=Set-Body $ysoText Script $entry[0] $body}
 }
-foreach($entry in @(@('Apostate daegger envenom','Apostate/daegger_envenom.lua'),@('Apostate Truelocks','Apostate/lock_route.lua'))){
+foreach($entry in @(@('Apostate entourage','Apostate/entourage.lua'),@('Apostate daegger envenom','Apostate/daegger_envenom.lua'),@('Apostate Truelocks','Apostate/lock_route.lua'))){
  $body=[IO.File]::ReadAllText((Join-Path $root $entry[1]))
  if(([xml]$ysoText).SelectSingleNode('//Script[name="'+$entry[0]+'"]')){$ysoText=Set-Body $ysoText Script $entry[0] $body}
  else{
-  $anchor=[regex]::Match($ysoText,'(?s)<Script\b[^>]*>\s*<name>Apostate utilities</name>.*?</Script>')
+  $anchorName=if($entry[0] -eq 'Apostate Truelocks'){'Apostate entourage'}else{'Apostate utilities'}
+  $anchor=[regex]::Match($ysoText,'(?s)<Script\b[^>]*>\s*<name>'+[regex]::Escape($anchorName)+'</name>.*?</Script>')
+  if(-not $anchor.Success){throw ('Missing script insertion point: '+$anchorName)}
   $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,(New-Script $entry[0] $body)+"`n")
  }
 }

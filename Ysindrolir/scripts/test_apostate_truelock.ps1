@@ -6,6 +6,8 @@ $a=[xml][IO.File]::ReadAllText((Join-Path $root 'mudlet packages/AK.xml'))
 $alias=$y.SelectSingleNode('//Alias[name="Truelocks"]')
 if(-not $alias -or $alias.regex -cne '^tlock$' -or $alias.isActive -ne 'yes'){throw 'Missing active Truelocks alias'}
 $pairs=@(
+ @('Apostate/entourage.lua','Apostate entourage',$y),
+ @('Apostate/daegger_envenom.lua','Apostate daegger envenom',$y),
  @('Apostate/lock_route.lua','Apostate Truelocks',$y),
  @('Apostate/evileye_reference.lua','Apostate reference',$y),
  @('Apostate/ak_tracking.lua','Apostate tracking',$a),
@@ -22,11 +24,13 @@ foreach($entry in $pairs){
  $prefix.Add('embedded[ [==['+$luaRoot+'/'+$entry[0]+']==] ]=[====['+$node.script+']====]')
 }
 $prefix.Add('dofile=function(path) if embedded[path] then return assert(load(embedded[path],path))() end return original(path) end')
-foreach($test in @('test_lock_route.lua','test_lock_route_delivery.lua','test_truelock_creatures.lua','test_truelock_emission.lua')){
+foreach($test in @('test_entourage.lua','test_lock_route.lua','test_lock_route_delivery.lua','test_truelock_creatures.lua','test_truelock_emission.lua')){
  $code=($prefix -join "`n")+"`n"+'arg={[1]=[==['+$luaRoot+']==]};original([==['+$luaRoot+'/Apostate/'+$test+']==])'
  $code | & lua -
  if($LASTEXITCODE -ne 0){throw ('Embedded route test failed: '+$test)}
 }
+$scriptNames=@($y.SelectNodes('//Script') | ForEach-Object {$_.name})
+if([array]::IndexOf($scriptNames,'Apostate entourage') -ge [array]::IndexOf($scriptNames,'Apostate Truelocks')){throw 'Entourage must load before the lock route'}
 # Replay the actual packaged curseward trigger scripts, including other targets.
 $checks=[Collections.Generic.List[string]]::new()
 $checks.Add('target="Saibel";ak={defs={},ai=function() return false end,scoreup=function() end};IsTargetted=function(name) return name==target end')

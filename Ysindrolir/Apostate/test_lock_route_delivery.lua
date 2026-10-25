@@ -11,8 +11,11 @@ local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
 local function reset(scores)
  clock=clock+20;sent={};M.alias_loop_prepare_start({});M.state.loop_enabled=true
  M.state.victim=target;affstrack.score=scores or {};ak.defs={}
+ if affstrack.score.deaf==nil then affstrack.score.deaf=100 end
  gmcp.Char.Vitals={bal='1',eq='1',mp='1000'}
 end
+reset({deaf=0});assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel paralysis sensitivity')
+reset({deaf=0,paralysis=100});assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel sensitivity impatience')
 reset();ak.defs.shield=true;assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel paralysis impatience')
 eq(affstrack.score.paralysis,nil);assert(not M.attack_function());eq(#sent,1)
 M.note_pressure('eyes','Other');M.note_prompt();assert(M.state.pending)
@@ -37,6 +40,22 @@ local complete={paralysis=100,impatience=100,asthma=100,manaleech=100,slickness=
 reset(complete);gmcp.Char.Vitals.bal='0';assert(M.attack_function());eq(sent[1].eq,'disfigure Saibel')
 assert(not M.attack_function());clock=clock+3;complete.disloyalty=100;assert(not M.attack_function());eq(#sent,1)
 complete.disloyalty=0;reset(complete);ak.defs.shield=true;assert(not M.attack_function());eq(#sent,0)
+-- Optional Prefarar uses the existing stock/build helper and waits for Puncture.
+reset({paralysis=100,deaf=0});M.undeaf_delivery='prefarar'
+affstrack.venoms={prefarar='sensitivity'};ak.apostate={}
+local D=dofile(root..'/Apostate/daegger_envenom.lua');D.stock.prefarar=2
+gmcp.Char.Vitals.eq='0';assert(M.attack_function())
+eq(sent[1].bal,'wipe daegger&&envenom daegger with prefarar&&daegger puncture Saibel')
+eq(D.stock.prefarar,2);eq(affstrack.score.deaf,0)
+M.note_pressure('eyes',target);M.note_prompt();assert(M.state.pending)
+M.note_pressure('puncture',target,false);eq(M.is_enabled(),false)
+reset({paralysis=100,deaf=0});assert(M.attack_function())
+M.note_pressure('puncture',target,true);M.note_prompt();eq(M.state.pending,nil)
+reset({paralysis=100,deaf=0});D.stock.prefarar=false;assert(M.attack_function())
+eq(sent[1].bal,'deadeyes Saibel sensitivity impatience')
+reset({paralysis=100,deaf=0});D.stock.prefarar=true;ak.defs.shield=true;assert(M.attack_function())
+eq(sent[1].bal,'deadeyes Saibel sensitivity impatience')
+M.undeaf_delivery='evileye'
 -- No Corrupt, Contemplate, or unsolicited Catharsis is part of the replacement.
 sendAll=function() error('unexpected Catharsis') end
 dofile(root..'/Yso/xml/apostate_utilities.lua')

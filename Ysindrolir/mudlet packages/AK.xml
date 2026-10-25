@@ -28458,7 +28458,7 @@ function OppGainedAff(aff,source)
   if string.find(aff,&quot; &quot;) then                          --Multi Venoms
     ak.eatsbetweenaffs = 0
     for word in string.gmatch(aff, &quot;%a+&quot;) do
-         if (word == &quot;sensitivity&quot; or word == &quot;prefarar&quot;) and affstrack.score.deaf == 0 and source ~= &quot;evileye&quot; then 
+         if (word == &quot;sensitivity&quot; or word == &quot;prefarar&quot;) and affstrack.score.deaf == 0 then
             word = &quot;deaf&quot; 
          end
          if word == &quot;slickness&quot; then ak.defs.sileris = false end
@@ -28592,7 +28592,7 @@ function OppGainedAff(aff,source)
   else          --Single venom
      ak.eatsbetweenaffs = 1
      if aff == &quot;slickness&quot; then ak.defs.sileris = false end
-     if (aff == &quot;sensitivity&quot; or aff == &quot;prefarar&quot;) and affstrack.score.deaf == 0 and source ~= &quot;evileye&quot; then 
+     if (aff == &quot;sensitivity&quot; or aff == &quot;prefarar&quot;) and affstrack.score.deaf == 0 then
         aff = &quot;deaf&quot; 
      end  
      if table.contains(affstrack.mentallist, aff) then
@@ -32964,8 +32964,20 @@ function A.commit_eyes()
   A.clear_pending()
   if (ak.ai and ak.ai()) or not current(name) or scores~=affstrack.score then return false end
   if #affs&gt;0 then
+    -- Resolve provenance in batch order too: the first Sensitivity while deaf
+    -- removes a defence, so Corrupt must not consume it as an evileye affliction.
+    local hearing=affstrack.score.deaf~=0
+    local applied={}
+    for _,aff in ipairs(affs) do
+      if aff==&apos;sensitivity&apos; and not hearing then
+        hearing=true
+      else
+        applied[#applied+1]=aff
+        if aff==&apos;deaf&apos; then hearing=true end
+      end
+    end
     OppGainedAff(table.concat(affs,&apos; &apos;),&apos;evileye&apos;)
-    for _,aff in ipairs(affs) do A.evileye_active[aff]=name:lower() end
+    for _,aff in ipairs(applied) do A.evileye_active[aff]=name:lower() end
   end
   local M=route();if M then M.note_pressure(&apos;eyes&apos;,name) end
   return true

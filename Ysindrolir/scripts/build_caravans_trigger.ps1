@@ -12,7 +12,10 @@ $entry=$entries[0]
 $block=$entry.Value
 $newline=if($block.Contains("`r`n")){"`r`n"}else{"`n"}
 # Mudlet single-line trigger rows are OR alternatives. Type 1 is Perl regex.
-$patterns=@('^\(Army\): A caravan bearing','^The industrious bustle of workers in Quartz Peak echoes across Sapience as they prepare a caravan\.$')
+$patterns=@(
+  '^\(Army\): A caravan bearing',
+  '^The industrious bustle of workers in (.+?) echoes across Sapience as they prepare a caravan\.$'
+)
 foreach($list in @('regexCodeList','regexCodePropertyList')){
   $matches=[regex]::Matches($block,'(?m)^(?<indent>[\t ]*)<'+$list+'>[\s\S]*?</'+$list+'>')
   if($matches.Count -ne 1){throw "Expected exactly one $list in Caravans"}
@@ -20,7 +23,7 @@ foreach($list in @('regexCodeList','regexCodePropertyList')){
   $indent=$match.Groups['indent'].Value
   $rows=if($list -eq 'regexCodeList'){
     @($patterns | ForEach-Object {$indent+"`t<string>"+$_+'</string>'})
-  }else{@($indent+"`t<integer>1</integer>",$indent+"`t<integer>1</integer>")}
+  }else{@($patterns | ForEach-Object {$indent+"`t<integer>1</integer>"})}
   $replacement=$indent+'<'+$list+'>'+$newline+($rows -join $newline)+$newline+$indent+'</'+$list+'>'
   $block=$block.Substring(0,$match.Index)+$replacement+$block.Substring($match.Index+$match.Length)
 }

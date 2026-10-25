@@ -62,8 +62,20 @@ function A.commit_eyes()
   A.clear_pending()
   if (ak.ai and ak.ai()) or not current(name) or scores~=affstrack.score then return false end
   if #affs>0 then
+    -- Resolve provenance in batch order too: the first Sensitivity while deaf
+    -- removes a defence, so Corrupt must not consume it as an evileye affliction.
+    local hearing=affstrack.score.deaf~=0
+    local applied={}
+    for _,aff in ipairs(affs) do
+      if aff=='sensitivity' and not hearing then
+        hearing=true
+      else
+        applied[#applied+1]=aff
+        if aff=='deaf' then hearing=true end
+      end
+    end
     OppGainedAff(table.concat(affs,' '),'evileye')
-    for _,aff in ipairs(affs) do A.evileye_active[aff]=name:lower() end
+    for _,aff in ipairs(applied) do A.evileye_active[aff]=name:lower() end
   end
   local M=route();if M then M.note_pressure('eyes',name) end
   return true
