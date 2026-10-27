@@ -1,4 +1,4 @@
--- Shared balanceless orders. Summoning and pentagram setup stay manual.
+-- Daemonite-only balanceless orders. Summoning and pentagram setup stay manual.
 Yso = Yso or {}
 Yso.apostate = Yso.apostate or {}
 local E = Yso.apostate.entourage or {}
@@ -24,7 +24,7 @@ function E.attack(target)
     -- A sender can fail after transmitting: preserve the need for cleanup.
     E.needs_passive = true
     E.target = nil
-    if not dispatch('order entourage kill ' .. target) then return false, 'send_failed' end
+    if not dispatch('order daemonite kill ' .. target) then return false, 'send_failed' end
     E.target = target
     return true
 end
@@ -32,7 +32,7 @@ end
 function E.passive()
     if not E.needs_passive then return true end
     E.target = nil
-    if not dispatch('order entourage passive') then return false, 'send_failed' end
+    if not dispatch('order daemonite passive') then return false, 'send_failed' end
     E.target = nil
     E.needs_passive = false
     return true

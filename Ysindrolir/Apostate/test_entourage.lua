@@ -7,26 +7,26 @@ assert(E==Yso.apostate.entourage)
 eq(#sent,0);assert(E.passive());eq(#sent,0)
 for _,name in ipairs({'','Bad&&quit','two names'}) do assert(not E.attack(name)) end
 eq(#sent,0)
-assert(E.attack('Saibel'));eq(sent[1],'order entourage kill Saibel')
+assert(E.attack('Saibel'));eq(sent[1],'order daemonite kill Saibel')
 assert(E.attack('saibel'));eq(#sent,1)
-assert(E.attack('Other'));eq(sent[2],'order entourage kill Other')
-assert(E.passive());eq(sent[3],'order entourage passive')
+assert(E.attack('Other'));eq(sent[2],'order daemonite kill Other')
+assert(E.passive());eq(sent[3],'order daemonite passive')
 assert(E.passive());eq(#sent,3)
 -- Prefer Yso.send without silently retrying a rejected send through raw send.
 local attempts=0
 Yso.send=function() attempts=attempts+1;return false end
 assert(not E.attack('Saibel'));assert(not E.attack('Saibel'));eq(attempts,2);eq(#sent,3)
 Yso.send=function(command) sent[#sent+1]=command;return true end
-assert(E.passive());eq(sent[4],'order entourage passive')
-assert(E.attack('Saibel'));eq(sent[5],'order entourage kill Saibel')
+assert(E.passive());eq(sent[4],'order daemonite passive')
+assert(E.attack('Saibel'));eq(sent[5],'order daemonite kill Saibel')
 Yso.send=function() error('sender failed') end
 assert(not E.passive())
 Yso.send=function(command) sent[#sent+1]=command;return true end
-assert(E.passive());eq(sent[6],'order entourage passive')
+assert(E.passive());eq(sent[6],'order daemonite passive')
 -- Cleanup remains possible after an attack send throws after partial transmission.
 Yso.send=function(command) sent[#sent+1]=command;error('partial send') end
 assert(not E.attack('Saibel'))
-Yso.send=nil;assert(E.passive());eq(sent[8],'order entourage passive')
+Yso.send=nil;assert(E.passive());eq(sent[8],'order daemonite passive')
 send=nil;assert(not E.attack('Saibel'))
 -- Failed retarget/passive attempts invalidate the previous successful target cache.
 send=function(command) sent[#sent+1]=command end

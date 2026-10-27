@@ -4,7 +4,7 @@ assert(type(M)=='table' and type(M.select)=='function','missing simplified selec
 local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
 local function picks(scores,a,b)
  local snapshot={deaf=100};for k,v in pairs(scores) do snapshot[k]=v end
- local out=M.select(snapshot);eq(out[1],a);eq(out[2],b);return out
+ local out=M.select(snapshot);eq(out[1],a);eq(out[2],b);eq(out[3],nil);return out
 end
 picks({deaf=0},'paralysis','undeaf')
 picks({paralysis=100,deaf=0},'undeaf','impatience')
@@ -13,6 +13,22 @@ picks({},'paralysis','impatience')
 picks({paralysis=100},'impatience','asthma')
 picks({paralysis=99,impatience=100},'paralysis','asthma')
 picks({asthma=100,impatience=100},'paralysis','manaleech')
+-- Masochism pads either opening affliction without displacing core requirements.
+picks({paralysis=100,impatience=100},'asthma','masochism')
+picks({paralysis=100,asthma=100},'impatience','masochism')
+picks({paralysis=100,impatience=100,masochism=99},'asthma','masochism')
+picks({paralysis=100,asthma=100,masochism=99},'impatience','masochism')
+picks({paralysis=100,asthma=100,masochism=100},'impatience','stupidity')
+picks({paralysis=100,asthma=100,masochism=100,stupidity=100},'impatience','confusion')
+local asthma={paralysis=100,impatience=100,masochism=100}
+picks(asthma,'asthma','stupidity')
+asthma.stupidity=99;picks(asthma,'asthma','stupidity')
+asthma.stupidity=100;picks(asthma,'asthma','confusion')
+asthma.confusion=true;picks(asthma,'asthma','dizziness')
+asthma.dizziness='100';picks(asthma,'asthma','dementia')
+asthma.dementia=100;picks(asthma,'asthma',nil)
+picks({paralysis=100,asthma=100,masochism=100,stupidity=100,confusion=100,dizziness=100,dementia=100},'impatience',nil)
+picks({paralysis=100,impatience=100,deaf=0},'undeaf','asthma')
 local s={paralysis=100,asthma=100,impatience=100}
 picks(s,'manaleech','stupidity')
 s.stupidity=100;picks(s,'manaleech','confusion')
@@ -28,6 +44,13 @@ picks({},'asthma','impatience');picks({paralysis=100,asthma=100,impatience=100,m
 M.Affliction_giving=original
 local mental=M.Padding_mental_afflictions;M.Padding_mental_afflictions={'dementia','confusion'}
 picks({paralysis=100,asthma=100,impatience=100},'manaleech','dementia')
+M.Padding_mental_afflictions=mental
+M.Padding_mental_afflictions={'dementia','confusion'}
+picks({paralysis=100,impatience=100,masochism=100},'asthma','dementia')
+picks({paralysis=100,impatience=100,masochism=100,dementia=100},'asthma','confusion')
+M.Padding_mental_afflictions={}
+picks({paralysis=100,impatience=100,masochism=100},'asthma',nil)
+picks({paralysis=100,asthma=100,masochism=100},'impatience',nil)
 M.Padding_mental_afflictions=mental
 eq(M.eye_command('Saibel',{'paralysis','impatience'},true),'deadeyes Saibel breach paralysis')
 eq(M.eye_command('Saibel',{'slickness','anorexia'},false),'deadeyes Saibel sicken anorexia')

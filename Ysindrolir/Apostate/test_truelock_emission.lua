@@ -29,9 +29,9 @@ assert(sent[1]=='CLEARQUEUE b!p!w!t','stop must cancel its own BAL batch')
 assert(Yso.queue.get_owned('eq').route=='another_route')
 sent={};gmcp.Char.Vitals.bal='0';gmcp.Char.Vitals.eq='0'
 M.alias_loop_on_started()
-assert(sent[1]=='order entourage kill Saibel')
+assert(sent[1]=='order daemonite kill Saibel')
 M.alias_loop_on_stopped({reason='manual'})
-assert(sent[2]=='order entourage passive')
+assert(sent[2]=='order daemonite passive')
 -- A failed send can leave a staged command without dispatched ownership.
 clock=clock+10;gmcp.Char.Vitals.bal='1';gmcp.Char.Vitals.eq='1'
 M.alias_loop_prepare_start({});M.state.loop_enabled=true;sent={}

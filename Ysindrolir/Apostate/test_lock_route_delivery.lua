@@ -14,6 +14,18 @@ local function reset(scores)
  if affstrack.score.deaf==nil then affstrack.score.deaf=100 end
  gmcp.Char.Vitals={bal='1',eq='1',mp='1000'}
 end
+-- Self paralysis pauses the route without staging an attack or disabling it.
+local self_paralyzed=true
+Yso.self={has_aff=function(aff) return aff=='paralysis' and self_paralyzed end}
+reset();local ok,reason=M.attack_function()
+eq(ok,false);eq(reason,'paralysis');eq(#sent,0);eq(M.state.pending,nil);eq(M.is_enabled(),true)
+self_paralyzed=false
+assert(M.attack_function());eq(#sent,1)
+-- A queued finisher must obey the same guard.
+reset();self_paralyzed=true;M.state.finisher={phase='contemplate',at=clock}
+ok,reason=M.attack_function();eq(ok,false);eq(reason,'paralysis');eq(#sent,0)
+eq(M.state.finisher.phase,'contemplate')
+self_paralyzed=false
 reset({deaf=0});assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel paralysis sensitivity')
 reset({deaf=0,paralysis=100});assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel sensitivity impatience')
 reset();ak.defs.shield=true;assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel paralysis impatience')
@@ -38,7 +50,8 @@ reset();M.state.victim='Other';assert(not M.attack_function());eq(M.is_enabled()
 reset();assert(M.attack_function());clock=clock+11;assert(not M.attack_function());eq(M.is_enabled(),false)
 local complete={paralysis=100,impatience=100,asthma=100,manaleech=100,slickness=100,anorexia=100}
 reset(complete);gmcp.Char.Vitals.bal='0';assert(M.attack_function());eq(sent[1].eq,'disfigure Saibel')
-assert(not M.attack_function());clock=clock+3;complete.disloyalty=100;assert(not M.attack_function());eq(#sent,1)
+assert(not M.attack_function());clock=clock+3;complete.disloyalty=100;assert(not M.attack_function())
+eq(M.state.reason,'corrupt_confirmation_unconfigured');eq(#sent,1)
 complete.disloyalty=0;reset(complete);ak.defs.shield=true;assert(not M.attack_function());eq(#sent,0)
 -- Optional Prefarar uses the existing stock/build helper and waits for Puncture.
 reset({paralysis=100,deaf=0});M.undeaf_delivery='prefarar'
@@ -56,8 +69,23 @@ eq(sent[1].bal,'deadeyes Saibel sensitivity impatience')
 reset({paralysis=100,deaf=0});D.stock.prefarar=true;ak.defs.shield=true;assert(M.attack_function())
 eq(sent[1].bal,'deadeyes Saibel sensitivity impatience')
 M.undeaf_delivery='evileye'
--- No Corrupt, Contemplate, or unsolicited Catharsis is part of the replacement.
+-- Opening afflictions get Masochism first, then mental fallback if it is present.
+reset({paralysis=100,impatience=100});assert(M.attack_function())
+eq(sent[1].bal,'deadeyes Saibel asthma masochism')
+eq(affstrack.score.asthma,nil);eq(affstrack.score.masochism,nil)
+reset({paralysis=100,asthma=100});assert(M.attack_function())
+eq(sent[1].bal,'deadeyes Saibel impatience masochism')
+reset({paralysis=100,impatience=100,masochism=100});assert(M.attack_function())
+eq(sent[1].bal,'deadeyes Saibel asthma stupid')
+eq(affstrack.score.asthma,nil);eq(affstrack.score.stupidity,nil)
+reset({paralysis=100,asthma=100,masochism=100});assert(M.attack_function())
+eq(sent[1].bal,'deadeyes Saibel impatience stupid')
+reset({paralysis=100,impatience=100,masochism=100,stupidity=100,confusion=100,dizziness=100,dementia=100})
+assert(M.attack_function());eq(sent[1].bal,'stare Saibel asthma')
+reset({paralysis=100,impatience=100});ak.defs.curseward=true
+assert(M.attack_function());eq(sent[1].bal,'deadeyes Saibel breach asthma')
+-- An unsolicited mana report cannot launch a route finisher.
 sendAll=function() error('unexpected Catharsis') end
 dofile(root..'/Yso/xml/apostate_utilities.lua')
-assert(not Yso.apostate.note_mana('Saibel',1,100));eq(type(M.note_corrupt),'nil')
+assert(not Yso.apostate.note_mana('Saibel',1,100));eq(type(M.note_corrupt),'function')
 print('PASS lock delivery: confirmation, Breach, readiness, mana, suppression, timeout, Disfigure and finisher retirement')

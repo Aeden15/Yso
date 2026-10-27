@@ -182,6 +182,16 @@ else{
  $alias='<Alias isActive="yes" isFolder="no"><name>Truelocks</name><script>'+(Escape $aliasBody)+'</script><command /><packageName /><regex>^tlock$</regex></Alias>'
  $ysoText=$ysoText.Insert($anchor.Index,$alias)
 }
+# Maintain the exact manual Numbness alias beside Pentagram in Apostasy.
+$apostasyGroups=[regex]::Matches($ysoText,'(?s)<AliasGroup\b[^>]*>\s*<name>Apostasy</name>.*?</AliasGroup>')
+if($apostasyGroups.Count -ne 1){throw 'Expected unique Apostasy alias folder'}
+$apostasyGroup=$apostasyGroups[0]
+$apostasyText=[regex]::Replace($apostasyGroup.Value,'(?s)<Alias\b[^>]*>\s*<name>Numbness</name>.*?</Alias>','')
+$pentagram=[regex]::Match($apostasyText,'(?s)<Alias\b[^>]*>\s*<name>Pentagram</name>.*?</Alias>')
+if(-not $pentagram.Success){throw 'Missing Apostasy Pentagram alias insertion point'}
+$numbAlias='<Alias isActive="yes" isFolder="no"><name>Numbness</name><script>sendAll("cq all", "demon apathy")</script><command /><packageName /><regex>^numb$</regex></Alias>'
+$apostasyText=$apostasyText.Insert($pentagram.Index+$pentagram.Length,$numbAlias)
+$ysoText=$ysoText.Substring(0,$apostasyGroup.Index)+$apostasyText+$ysoText.Substring($apostasyGroup.Index+$apostasyGroup.Length)
 $ysoText=Set-Body $ysoText Trigger 'Catharsis' 'Yso.apostate.note_mana(matches[2], matches[3], matches[4])'
 $cathPattern='(?s)<Trigger\b[^>]*>\s*<name>Catharsis</name>.*?</Trigger>'
 $cath=[regex]::Match($ysoText,$cathPattern).Value
@@ -218,6 +228,7 @@ $eyeRejected.regexCodeList.InnerXml=@'
 $eyeRejected.regexCodePropertyList.InnerXml='<integer>1</integer><integer>1</integer><integer>1</integer><integer>1</integer>'
 $anchor=[regex]::Match($ysoText,'(?s)(?:\r?\n)?<Trigger\b[^>]*>\s*<name>Nightmare unavailable</name>.*?</Trigger>')
 $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,"`n"+$eyeRejected.OuterXml)
+$ysoText=[regex]::Replace($ysoText,'(?s)(?:\r?\n)?<Trigger\b[^>]*>\s*<name>Truelocks Contemplate cooldown</name>.*?</Trigger>','')
 # Taste summaries use the existing Apostasy palette and leave the rest of Taste intact.
 foreach($entry in @(
  @('TRACING',"^Your Baalzadeen is tracing the movements of ([\w'-]+)\.$"),

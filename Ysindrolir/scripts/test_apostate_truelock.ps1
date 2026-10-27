@@ -24,7 +24,7 @@ foreach($entry in $pairs){
  $prefix.Add('embedded[ [==['+$luaRoot+'/'+$entry[0]+']==] ]=[====['+$node.script+']====]')
 }
 $prefix.Add('dofile=function(path) if embedded[path] then return assert(load(embedded[path],path))() end return original(path) end')
-foreach($test in @('test_entourage.lua','test_lock_route.lua','test_lock_route_delivery.lua','test_truelock_creatures.lua','test_truelock_emission.lua')){
+foreach($test in @('test_entourage.lua','test_lock_route.lua','test_lock_route_delivery.lua','test_truelock_creatures.lua','test_truelock_emission.lua','test_truelock_finisher.lua','test_truelock_finisher_emission.lua')){
  $code=($prefix -join "`n")+"`n"+'arg={[1]=[==['+$luaRoot+']==]};original([==['+$luaRoot+'/Apostate/'+$test+']==])'
  $code | & lua -
  if($LASTEXITCODE -ne 0){throw ('Embedded route test failed: '+$test)}
@@ -49,6 +49,24 @@ foreach($entry in @(@('CurseWard Up','A shimmering curseward appears around Saib
 $checks.Add('print("PASS packaged curseward triggers and target isolation")')
 ($checks -join "`n") | & lua -
 if($LASTEXITCODE -ne 0){throw 'Curseward trigger replay failed'}
+# Execute the embedded module to obtain the actual installed Corrupt patterns.
+# The first two fixtures are transcribed verbatim from the supplied live capture.
+$patternCode=($prefix -join "`n")+"`n"+@'
+Yso={};local serial=0
+tempRegexTrigger=function(pattern) serial=serial+1;io.write(pattern..'\n');return serial end
+'@+"`n"+'dofile([==['+$luaRoot+'/Apostate/lock_route.lua]==])'
+$corruptPatterns=@($patternCode | & lua -)
+if($LASTEXITCODE -ne 0 -or $corruptPatterns.Count -ne 2){throw 'Corrupt confirmation patterns were not both installed'}
+$acceptedLine='You command your baalzadeen to corrupt the soul of Saibel.'
+$retainedLine='Your Baalzadeen informs you that the manaleech affliction still burdens Saibel.'
+if($acceptedLine -cnotmatch $corruptPatterns[0] -or $Matches[1] -cne 'Saibel'){throw 'Captured Corrupt acceptance did not match'}
+if($retainedLine -cnotmatch $corruptPatterns[1] -or $Matches[1] -cne 'manaleech' -or $Matches[2] -cne 'Saibel'){throw 'Captured Corrupt retention did not match'}
+$anorexiaLine='Your Baalzadeen informs you that the anorexia affliction still burdens Saibel.'
+if($anorexiaLine -cnotmatch $corruptPatterns[1] -or $Matches[1] -cne 'anorexia' -or $Matches[2] -cne 'Saibel'){throw 'Requested retained-affliction variant did not match'}
+foreach($line in @(('(Party): '+$acceptedLine),('(Party): '+$retainedLine),($acceptedLine+' extra'),($retainedLine+' extra'),'You must regain equilibrium first.')){
+ foreach($pattern in $corruptPatterns){if($line -cmatch $pattern){throw ('Corrupt trigger accepted unrelated text: '+$line)}}
+}
+Write-Output 'PASS live Corrupt acceptance/retention patterns, capture groups and unrelated-text rejection'
 if($a.SelectNodes('//Trigger[starts-with(name,"Apostate Corrupt ")]').Count -ne 0){throw 'Obsolete Corrupt adapters remain'}
 $rejection=$y.SelectSingleNode('//Trigger[name="Truelocks eye rejected"]')
 if(-not $rejection -or $rejection.script.Trim() -cne ([IO.File]::ReadAllText((Join-Path $root 'Apostate/eye_rejected.lua'))).Trim()){throw 'Eye rejection source/package drift'}

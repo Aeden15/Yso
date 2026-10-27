@@ -104,6 +104,14 @@ skill('bloodpact',{abadmin_id=319,syntax={'DEMON BLOODPACT <target> FOR <NIGHTMA
 skill('corrupt',{abadmin_id=224,syntax={'DEMON CORRUPT <target> [affliction]'},works_on='adventurers',
   cooldown_lane='equilibrium',cooldown_s=3.00,resource_baalzadeen_health=200,role='curse_conversion',
   notes={'Lifts curses applied through Evileye at a terrible price.',
-    'The capture does not specify the resulting damage/effect formula or the optional affliction argument semantics.',
+    'User confirmed 2026-10-25: the specified affliction remains; other Evileye-applied curses are lifted.',
     'Do not invent a new corruption affliction or remove tracked afflictions on command send.'},source='210646'})
+-- Recovery/resource data verified against the game-hosted Apostasy reference.
+skill('sap',{syntax={'DEMON SAP <target>'},works_on='adventurers',
+  cooldown_lane='equilibrium',cooldown_s=2.75,resource_baalzadeen_health=50,
+  role='mana_drain',source='game-wiki'})
+R.skills.sap.source='https://wiki.achaea.com/Apostasy'
+skill('catharsis',{abadmin_id=226,syntax={'DEMON CATHARSIS <target>'},works_on='adventurers',
+  cooldown_lane='equilibrium',cooldown_s=4.40,resource_baalzadeen_health=1000,
+  role='instant_kill',requires={'target_mana_strictly_below_half'},source='user-capture-2026-10-25'})
 return R

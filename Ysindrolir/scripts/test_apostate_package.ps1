@@ -7,11 +7,15 @@ $nightmare=$doc.SelectSingleNode('//TriggerGroup[name="Apostate"]/TriggerGroup[n
 if(-not $nightmare -or $nightmare.isActive -ne 'yes'){throw 'Missing active Nightmare unavailable trigger in Apostate/Apostasy'}
 if('A nightmare may only be summoned in the slumber of night.' -cnotmatch $nightmare.regexCodeList.string){throw 'Nightmare failure line does not match'}
 $lines = [Collections.Generic.List[string]]::new()
+$numb=$doc.SelectNodes('//AliasGroup[name="Apostate"]/AliasGroup[name="Apostasy"]/Alias[name="Numbness"]')
+if($numb.Count -ne 1 -or $numb[0].isActive -ne 'yes' -or $numb[0].regex -cne '^numb$' -or $numb[0].command -ne '' -or $numb[0].script -cne 'sendAll("cq all", "demon apathy")'){throw 'Missing exact active Apostasy Numbness alias'}
+if($numb[0].PreviousSibling.name -cne 'Pentagram'){throw 'Numbness must follow Pentagram'}
 $lines.Add(@'
 local sent, events = {}, {}
 Yso = {}; yso = Yso
 gmcp = {Char={Status={class="Apostate"}}}
 send = function(s) sent[#sent+1]=s end
+sendAll = function(...) for _,s in ipairs({...}) do send(s) end end
 local echoes,gags={},0
 cecho = function(s) echoes[#echoes+1]=s end
 deleteLine = function() gags=gags+1 end
@@ -32,6 +36,7 @@ foreach ($type in @('Alias','Trigger')) {
 }
 $lines.Add(@'
 local A=Yso.apostate
+clear();aliases['Numbness']();check(#sent,2);check(sent[1],'cq all');check(sent[2],'demon apathy');clear()
 A.nightmare=true;triggers['Nightmare unavailable']();check(A.nightmare,false)
 target=nil
 A.alias("sap"); check(#sent,0)

@@ -9962,7 +9962,7 @@ if tostring(class or ""):lower() == "apostate" then Yso.apostate.alias("strip") 
 						<command />
 						<packageName />
 						<regex>^pen([cd])$</regex>
-					</Alias>
+					</Alias><Alias isActive="yes" isFolder="no"><name>Numbness</name><script>sendAll("cq all", "demon apathy")</script><command /><packageName /><regex>^numb$</regex></Alias>
 				</AliasGroup>
 				<AliasGroup isActive="yes" isFolder="yes">
 					<name>Necromancy</name>
@@ -27656,8 +27656,16 @@ skill(&apos;bloodpact&apos;,{abadmin_id=319,syntax={&apos;DEMON BLOODPACT &lt;ta
 skill(&apos;corrupt&apos;,{abadmin_id=224,syntax={&apos;DEMON CORRUPT &lt;target&gt; [affliction]&apos;},works_on=&apos;adventurers&apos;,
   cooldown_lane=&apos;equilibrium&apos;,cooldown_s=3.00,resource_baalzadeen_health=200,role=&apos;curse_conversion&apos;,
   notes={&apos;Lifts curses applied through Evileye at a terrible price.&apos;,
-    &apos;The capture does not specify the resulting damage/effect formula or the optional affliction argument semantics.&apos;,
+    &apos;User confirmed 2026-10-25: the specified affliction remains; other Evileye-applied curses are lifted.&apos;,
     &apos;Do not invent a new corruption affliction or remove tracked afflictions on command send.&apos;},source=&apos;210646&apos;})
+-- Recovery/resource data verified against the game-hosted Apostasy reference.
+skill(&apos;sap&apos;,{syntax={&apos;DEMON SAP &lt;target&gt;&apos;},works_on=&apos;adventurers&apos;,
+  cooldown_lane=&apos;equilibrium&apos;,cooldown_s=2.75,resource_baalzadeen_health=50,
+  role=&apos;mana_drain&apos;,source=&apos;game-wiki&apos;})
+R.skills.sap.source=&apos;https://wiki.achaea.com/Apostasy&apos;
+skill(&apos;catharsis&apos;,{abadmin_id=226,syntax={&apos;DEMON CATHARSIS &lt;target&gt;&apos;},works_on=&apos;adventurers&apos;,
+  cooldown_lane=&apos;equilibrium&apos;,cooldown_s=4.40,resource_baalzadeen_health=1000,
+  role=&apos;instant_kill&apos;,requires={&apos;target_mana_strictly_below_half&apos;},source=&apos;user-capture-2026-10-25&apos;})
 return R
 </script>
 						<eventHandlerList />
@@ -27900,7 +27908,9 @@ function A.note_mana(name, current, maximum)
     Yso.tgt.set_mana_pct(victim, current * 100 / maximum)
   end
   local route = Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
-  if route and route.is_enabled() then return false end -- Lock route owns offense; no automatic Catharsis.
+  if route and route.is_enabled() then
+    return type(route.note_mana)==&apos;function&apos; and route.note_mana(name,current,maximum) or false
+  end
   if current * 2 &gt;= maximum or type(sendAll) ~= &apos;function&apos; then return false end
   local now = type(getEpoch) == &apos;function&apos; and tonumber(getEpoch()) or os.time()
   if now &gt; 20000000000 then now = now / 1000 end
@@ -27920,7 +27930,10 @@ if type(registerAnonymousEventHandler) == &apos;function&apos; then
       if id == nil or A.room_id ~= id then A.pentagram = nil end
       A.room_id = id
     end,
-    [&apos;sysDisconnectionEvent&apos;] = function() A.reset(); A.room_id = nil; A.catharsis_sent_at = nil end,
+    [&apos;sysDisconnectionEvent&apos;] = function()
+      A.reset(); A.room_id = nil; A.catharsis_sent_at = nil
+      A.cancelled_corrupts={}; A.cancelled_contemplates={}
+    end,
     [&apos;gmcp.Char.Status&apos;] = function() if not A.active() then A.reset() end end,
   }
   for event, fn in pairs(events) do
@@ -27932,7 +27945,7 @@ if type(registerAnonymousEventHandler) == &apos;function&apos; then
 end
 </script>
 						<eventHandlerList />
-					</Script><Script isActive="yes" isFolder="no"><name>Apostate entourage</name><packageName /><script>-- Shared balanceless orders. Summoning and pentagram setup stay manual.
+					</Script><Script isActive="yes" isFolder="no"><name>Apostate entourage</name><packageName /><script>-- Daemonite-only balanceless orders. Summoning and pentagram setup stay manual.
 Yso = Yso or {}
 Yso.apostate = Yso.apostate or {}
 local E = Yso.apostate.entourage or {}
@@ -27958,7 +27971,7 @@ function E.attack(target)
     -- A sender can fail after transmitting: preserve the need for cleanup.
     E.needs_passive = true
     E.target = nil
-    if not dispatch(&apos;order entourage kill &apos; .. target) then return false, &apos;send_failed&apos; end
+    if not dispatch(&apos;order daemonite kill &apos; .. target) then return false, &apos;send_failed&apos; end
     E.target = target
     return true
 end
@@ -27966,7 +27979,7 @@ end
 function E.passive()
     if not E.needs_passive then return true end
     E.target = nil
-    if not dispatch(&apos;order entourage passive&apos;) then return false, &apos;send_failed&apos; end
+    if not dispatch(&apos;order daemonite passive&apos;) then return false, &apos;send_failed&apos; end
     E.target = nil
     E.needs_passive = false
     return true
@@ -27984,12 +27997,38 @@ local M=Yso.off.apostate.truelock or {};Yso.off.apostate.truelock=M
 M.key=&apos;apostate_truelock&apos;;M.alias_owned=true
 M.state=M.state or {};M.state.loop_delay=0.15
 M.Affliction_giving={
- &apos;paralysis&apos;,&apos;undeaf&apos;,&apos;impatience&apos;,&apos;asthma&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;disloyalty&apos;,
+ &apos;paralysis&apos;,&apos;undeaf&apos;,&apos;impatience&apos;,&apos;asthma&apos;,&apos;masochism&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;disloyalty&apos;,
 }
 M.Padding_mental_afflictions={
  &apos;stupidity&apos;,&apos;confusion&apos;,&apos;dizziness&apos;,&apos;dementia&apos;,
 }
 M.undeaf_delivery=&apos;evileye&apos; -- Optional: &apos;prefarar&apos; uses Puncture when available.
+-- Captured live output, 2026-10-26. Both lines are required: the command&apos;s
+-- acceptance does not establish which curse the Baalzadeen actually retained.
+local corrupt_success_pattern=[[^You command your baalzadeen to corrupt the soul of ([\w&apos;-]+)\.$]]
+local corrupt_retained_pattern=[[^Your Baalzadeen informs you that the ([a-z]+) affliction still burdens ([\w&apos;-]+)\.$]]
+function M.configure_corrupt_confirmation(pattern,retained_pattern)
+ if M.corrupt_trigger and type(killTrigger)==&apos;function&apos; then killTrigger(M.corrupt_trigger) end
+ if M.corrupt_retained_trigger and type(killTrigger)==&apos;function&apos; then killTrigger(M.corrupt_retained_trigger) end
+ M.corrupt_trigger=nil;M.corrupt_retained_trigger=nil
+ M.Corrupt_success_pattern=pattern;M.Corrupt_retained_pattern=retained_pattern
+ if type(pattern)~=&apos;string&apos; or pattern==&apos;&apos; or type(retained_pattern)~=&apos;string&apos;
+  or retained_pattern==&apos;&apos; or type(tempRegexTrigger)~=&apos;function&apos; then return false end
+ local ok,id=pcall(tempRegexTrigger,pattern,function()
+  M.note_corrupt_started(matches[2])
+ end)
+ if not ok or not tonumber(id) or tonumber(id)&lt;=0 then return false end
+ M.corrupt_trigger=id
+ local retained_ok,retained_id=pcall(tempRegexTrigger,retained_pattern,function()
+  M.note_corrupt(matches[3],matches[2])
+ end)
+ if retained_ok and tonumber(retained_id) and tonumber(retained_id)&gt;0 then
+  M.corrupt_retained_trigger=retained_id;return true
+ end
+ if type(killTrigger)==&apos;function&apos; then killTrigger(M.corrupt_trigger) end
+ M.corrupt_trigger=nil
+ return false
+end
 local eyes={undeaf=&apos;sensitivity&apos;,slickness=&apos;sicken&apos;,stupidity=&apos;stupid&apos;,dizziness=&apos;dizzy&apos;}
 local function present(value) return value==true or (tonumber(value) or 0)&gt;=100 end
 local function same(a,b) return type(a)==&apos;string&apos; and type(b)==&apos;string&apos; and a:lower()==b:lower() end
@@ -28005,7 +28044,7 @@ function M.select(scores)
  local opening=not present(scores.asthma) or not present(scores.impatience)
  local needs_manaleech=not present(scores.manaleech)
  local eligible={paralysis=true,undeaf=true}
- if opening then eligible.impatience=true;eligible.asthma=true
+ if opening then eligible.impatience=true;eligible.asthma=true;eligible.masochism=true
  elseif needs_manaleech then eligible.manaleech=true
  else eligible.slickness=true;eligible.anorexia=true end
  local out,seen={},{}
@@ -28017,7 +28056,9 @@ function M.select(scores)
   end
  end
  for _,aff in ipairs(M.Affliction_giving) do if eligible[aff] then add(aff) end end
- if not opening and needs_manaleech then
+ -- Core eyes claim slots before Masochism; fall back to mental padding if needed.
+ if (opening and #out==1 and (out[1]==&apos;asthma&apos; or out[1]==&apos;impatience&apos;))
+  or (not opening and needs_manaleech) then
   for _,aff in ipairs(M.Padding_mental_afflictions) do add(aff) end
  end
  return out
@@ -28045,6 +28086,9 @@ function M.stop(reason)
 end
 function M.alias_loop_prepare_start(ctx)
  M.state.pending=nil;M.state.victim=nil;M.state.reason=nil
+ M.state.finisher=nil
+ M.state.confirmation_warning=nil
+ M.state.quarantine_warning=nil
  M.state.commands={}
  M.state.bal_until=nil;M.state.eq_until=nil;M.state.startup_error=nil
  return ctx
@@ -28065,7 +28109,7 @@ function M.alias_loop_on_stopped(ctx)
  if M.state.creatures_ordered then
   local entourage=Yso.apostate and Yso.apostate.entourage
   if entourage and entourage.passive() then M.state.creatures_ordered=nil
-  else note(&apos;Unable to send entourage passive order.&apos;) end
+  else note(&apos;Unable to send daemonite passive order.&apos;) end
  end
  -- Older profiles may still have route-owned compatibility queue entries.
  local Q=Yso.queue
@@ -28079,7 +28123,17 @@ function M.alias_loop_on_stopped(ctx)
    end
   end
  end
- M.state.pending=nil;M.state.victim=nil;M.state.reason=nil
+ local pending=M.state.pending
+ if pending and pending.action==&apos;contemplate&apos; and Yso.apostate then
+  local A=Yso.apostate;local key=pending.target:lower()
+  A.cancelled_contemplates=A.cancelled_contemplates or {}
+  A.cancelled_contemplates[key]=(A.cancelled_contemplates[key] or 0)+1
+ elseif pending and pending.action==&apos;corrupt&apos; and Yso.apostate then
+  local A=Yso.apostate;local key=pending.target:lower()
+  A.cancelled_corrupts=A.cancelled_corrupts or {}
+  A.cancelled_corrupts[key]=(A.cancelled_corrupts[key] or 0)+1
+ end
+ M.state.pending=nil;M.state.finisher=nil;M.state.victim=nil;M.state.reason=nil
  if ak and ak.apostate then ak.apostate.pending_daegger_wipe=nil end
  note(&apos;OFF (&apos;..tostring(ctx and ctx.reason or &apos;manual&apos;)..&apos;).&apos;)
 end
@@ -28088,6 +28142,17 @@ function M.alias_loop_waiting_blocks() return false end
 function M.alias_loop_on_error() M.stop(&apos;route_error&apos;) end
 function M.reset_route_state(reason) if M.is_enabled() then M.stop(reason or &apos;external_reset&apos;) end end
 function M.status() return {enabled=M.is_enabled(),target=M.state.victim,reason=M.state.reason} end
+-- Explicit reconciliation only: use while stopped after verifying the cancelled
+-- commands cannot still reply. New requests never silently consume old replies.
+function M.clear_cancelled_finishers(name)
+ if M.is_enabled() or not valid(name) then return false end
+ local A=Yso.apostate
+ if not A then return false end
+ local key=name:lower()
+ if A.cancelled_corrupts then A.cancelled_corrupts[key]=nil end
+ if A.cancelled_contemplates then A.cancelled_contemplates[key]=nil end
+ return true
+end
 local function ready(lane)
  local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
  local value=v[lane];if value==nil then value=v[lane==&apos;bal&apos; and &apos;balance&apos; or &apos;equilibrium&apos;] end
@@ -28095,6 +28160,113 @@ local function ready(lane)
   and not (Yso.locks and type(Yso.locks.ready)==&apos;function&apos; and not Yso.locks.ready(lane))
 end
 local function hold(reason) M.state.reason=reason;return false,reason end
+-- Server confirmations, never command sends, settle Corrupt&apos;s curse conversion.
+function M.note_corrupt_started(name)
+ local p=M.state.pending
+ if not M.is_active() or not p or p.action~=&apos;corrupt&apos;
+  or not same(name,p.target) or not same(name,victim()) or not same(name,target) then return false end
+ if now()-p.at&gt;=10 then return M.stop(&apos;confirmation_timeout&apos;) end
+ p.accepted=true
+ return true
+end
+function M.note_corrupt(name,retained)
+ local A=Yso.apostate
+ local key=type(name)==&apos;string&apos; and name:lower() or &apos;&apos;
+ local cancelled=A and A.cancelled_corrupts and A.cancelled_corrupts[key] or 0
+ if cancelled&gt;0 then A.cancelled_corrupts[key]=cancelled-1;return false end
+ local p=M.state.pending
+ if not M.is_active() or not p or p.action~=&apos;corrupt&apos; or not p.accepted
+  or type(retained)~=&apos;string&apos; or retained==&apos;&apos;
+  or not same(name,p.target) or not same(name,victim()) or not same(name,target) then return false end
+ if now()-p.at&gt;=10 then return M.stop(&apos;confirmation_timeout&apos;) end
+ local A=ak and ak.apostate
+ if not (A and type(A.consume_corrupt)==&apos;function&apos; and A.consume_corrupt(name,retained)) then
+  return M.stop(&apos;corrupt_tracking_unavailable&apos;)
+ end
+ M.state.pending=nil
+ if retained~=&apos;anorexia&apos; then
+  note(&apos;Corrupt retained &apos;..retained..&apos; instead of anorexia; stopping the finisher.&apos;)
+  return M.stop(&apos;corrupt_retained_mismatch&apos;)
+ end
+ M.state.finisher={phase=&apos;contemplate&apos;,at=now()}
+ return true
+end
+function M.note_mana(name,current,maximum)
+ local p=M.state.pending
+ if not M.is_active() or not p or p.action~=&apos;contemplate&apos;
+  or not same(name,p.target) or not same(name,victim()) or not same(name,target) then return false end
+ if now()-p.at&gt;=10 then return M.stop(&apos;confirmation_timeout&apos;) end
+ current,maximum=tonumber(current),tonumber(maximum)
+ if not current or not maximum or maximum&lt;=0 or current&lt;0 or current&gt;maximum
+  or current~=current or maximum~=maximum or maximum==math.huge then return false end
+ M.state.pending=nil
+ M.state.finisher={phase=current*2&lt;maximum and &apos;catharsis&apos; or &apos;sap&apos;,at=now()}
+ return true
+end
+local function emit_finisher(name,action)
+ local A=Yso.apostate or {};local key=name:lower()
+ if action==&apos;corrupt&apos; or action==&apos;contemplate&apos; then
+  local blocked
+  if A.cancelled_corrupts and (A.cancelled_corrupts[key] or 0)&gt;0 then blocked=&apos;corrupt&apos;
+  elseif A.cancelled_contemplates and (A.cancelled_contemplates[key] or 0)&gt;0 then blocked=&apos;contemplate&apos; end
+  if blocked then
+   if not M.state.quarantine_warning then
+    note(&apos;Finisher held: an earlier &apos;..blocked..&apos; reply remains unresolved. Stop and reconcile before retrying.&apos;)
+    M.state.quarantine_warning=true
+   end
+   return hold(&apos;waiting_cancelled_&apos;..blocked)
+  end
+ end
+ if action==&apos;corrupt&apos; and not (M.corrupt_trigger and M.corrupt_retained_trigger) then
+  if not M.state.confirmation_warning then
+   note(&apos;Lock sealed; Corrupt awaits a verified success trigger.&apos;)
+   M.state.confirmation_warning=true
+  end
+  return hold(&apos;corrupt_confirmation_unconfigured&apos;)
+ end
+ local lane=action==&apos;contemplate&apos; and &apos;free&apos; or &apos;eq&apos;
+ if action==&apos;contemplate&apos; then
+  -- Scheduling policy waits for balance; Contemplate itself spends neither lane.
+  if not ready(&apos;bal&apos;) then return hold(&apos;balance&apos;) end
+ elseif not ready(&apos;eq&apos;) then return hold(&apos;equilibrium&apos;) end
+ local cmd=action==&apos;contemplate&apos; and (&apos;contemplate &apos;..name) or (&apos;demon &apos;..action..&apos; &apos;..name)
+ if action==&apos;corrupt&apos; then cmd=cmd..&apos; anorexia&apos; end
+ local payload={target=name,route=M.key};payload[lane]=cmd
+ M.state.commands=M.state.commands or {};M.state.commands[lane]=cmd
+ if action==&apos;contemplate&apos; then
+  -- Send immediately: a balanceless query must not linger in the server queue.
+  local sender=Yso.send or send
+  if type(sender)~=&apos;function&apos; then return hold(&apos;emit_blocked&apos;) end
+  local ok,result=pcall(sender,cmd,false)
+  if not ok or result==false or (sender==Yso.send and result~=true) then return hold(&apos;emit_blocked&apos;) end
+ else
+  local Q=Yso.queue
+  local previous=Q and type(Q.get_owned)==&apos;function&apos; and Q.get_owned(&apos;eq&apos;)
+  local function discard_staged()
+   if Q and type(Q.list)==&apos;function&apos; and Q.list(&apos;eq&apos;)==cmd and Q.clear then Q.clear(&apos;eq&apos;) end
+  end
+  if type(Yso.emit)~=&apos;function&apos; or Yso.emit(payload,{kind=&apos;offense&apos;,route=M.key,target=name,
+   reason=M.key,commit=true})~=true then discard_staged();return hold(&apos;emit_blocked&apos;) end
+  -- The canonical emitter may report a staged wake as success. Require actual
+  -- ownership of a freshly dispatched EQ command before advancing the phase.
+  if Q and type(Q.get_owned)==&apos;function&apos; then
+   local owned=Q.get_owned(&apos;eq&apos;)
+   if not owned or owned==previous or owned.route~=M.key or owned.cmd~=cmd then
+    discard_staged()
+    return hold(&apos;emit_blocked&apos;)
+   end
+  end
+ end
+ if action==&apos;corrupt&apos; or action==&apos;contemplate&apos; or action==&apos;catharsis&apos; then
+  M.state.pending={target=name,at=now(),action=action}
+ end
+ if lane==&apos;eq&apos; then
+  M.state.eq_until=now()+({corrupt=3,sap=2.75,catharsis=4.4})[action]
+ end
+ M.state.reason=&apos;waiting_&apos;..action
+ if action==&apos;sap&apos; then M.state.finisher=nil;M.state.reason=&apos;rebuild_lock&apos; end
+ return true
+end
 function M.note_pressure(kind,name,delivered)
  local p=M.state.pending
  if not p or kind~=p.action or not same(name,p.target) or not same(name,victim()) then return end
@@ -28112,6 +28284,12 @@ end
 function M.note_prompt()
  local p=M.state.pending;if not p then return end
  if not same(p.target,victim()) then return M.stop(&apos;target_changed&apos;) end
+ if p.action==&apos;catharsis&apos; then
+  local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
+  local eq=v.eq;if eq==nil then eq=v.equilibrium end
+  if eq==false or tostring(eq)==&apos;0&apos; then p.spent=true end
+  return
+ end
  if p.rejected or (p.confirmed and (not p.breach or (ak.defs and ak.defs.curseward==false))) then M.state.pending=nil end
 end
 function M.attack_function()
@@ -28124,14 +28302,24 @@ function M.attack_function()
  if type(Yso.offense_paused)==&apos;function&apos; and Yso.offense_paused() then return hold(&apos;pause&apos;) end
  if Yso.inhibit and type(Yso.inhibit.active)==&apos;function&apos; and Yso.inhibit.active() then return hold(&apos;manual_suppression&apos;) end
  local vitals=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
- if tostring(vitals.dead or &apos;&apos;)==&apos;1&apos; then return hold(&apos;dead&apos;) end
+ if tostring(vitals.dead or &apos;&apos;)==&apos;1&apos; then return M.stop(&apos;dead&apos;) end
  M.state.victim=name
  local pending=M.state.pending
  if pending then
+  if pending.action==&apos;catharsis&apos; then
+   M.note_prompt()
+   if pending.spent and ready(&apos;eq&apos;) then return M.stop(&apos;catharsis_complete&apos;) end
+  end
   if now()-pending.at&gt;=10 then return M.stop(&apos;confirmation_timeout&apos;) end
   return hold(&apos;waiting_&apos;..pending.action)
  end
+ if Yso.self and type(Yso.self.has_aff)==&apos;function&apos; and Yso.self.has_aff(&apos;paralysis&apos;) then return hold(&apos;paralysis&apos;) end
  if not (ak and affstrack and type(affstrack.score)==&apos;table&apos;) then return hold(&apos;tracking_unavailable&apos;) end
+ local finisher=M.state.finisher
+ if finisher then
+  if now()-finisher.at&gt;=10 then return M.stop(&apos;finisher_timeout&apos;) end
+  return emit_finisher(name,finisher.phase)
+ end
  local scores=affstrack.score
  local picks=M.select(scores)
  local lane,cmd,cost,breach=&apos;bal&apos;,nil,0,ak.defs and ak.defs.curseward
@@ -28161,8 +28349,9 @@ function M.attack_function()
    and present(scores.manaleech) and present(scores.slickness) and present(scores.anorexia)) then return hold(&apos;no_eligible_eye&apos;) end
   local enabled=false
   for _,aff in ipairs(M.Affliction_giving) do if aff==&apos;disloyalty&apos; then enabled=true end end
-  if not enabled or present(scores.disloyalty) then return hold(&apos;lock_complete&apos;) end
+  if not enabled then return hold(&apos;lock_complete&apos;) end
   if ak.defs and ak.defs.shield then return hold(&apos;shield&apos;) end
+  if present(scores.disloyalty) then return emit_finisher(name,&apos;corrupt&apos;) end
   lane=&apos;eq&apos;;cmd=&apos;disfigure &apos;..name
  end
  if (lane==&apos;eq&apos; or action==&apos;eyes&apos;) and not ready(&apos;eq&apos;) then return hold(&apos;equilibrium&apos;) end
@@ -28186,7 +28375,10 @@ if type(registerAnonymousEventHandler)==&apos;function&apos; then
  local events={
   [&apos;yso.target.changed&apos;]=function() if M.is_enabled() then M.stop(&apos;target_changed&apos;) end end,
   [&apos;yso.target.cleared&apos;]=function() if M.is_enabled() then M.stop(&apos;no_target&apos;) end end,
-  [&apos;sysDisconnectionEvent&apos;]=function() if M.is_enabled() then M.stop(&apos;disconnect&apos;) end end,
+  [&apos;sysDisconnectionEvent&apos;]=function()
+   if M.is_enabled() then M.stop(&apos;disconnect&apos;) end
+   if Yso.apostate then Yso.apostate.cancelled_corrupts={};Yso.apostate.cancelled_contemplates={} end
+  end,
   [&apos;gmcp.Char.Status&apos;]=function() if M.is_enabled() and not Yso.apostate.active() then M.stop(&apos;wrong_class&apos;) end end,
  }
  for event,fn in pairs(events) do
@@ -28194,6 +28386,7 @@ if type(registerAnonymousEventHandler)==&apos;function&apos; then
   M.handlers[event]=registerAnonymousEventHandler(event,fn)
  end
 end
+M.configure_corrupt_confirmation(corrupt_success_pattern,corrupt_retained_pattern)
 return M
 </script>
 						<eventHandlerList />

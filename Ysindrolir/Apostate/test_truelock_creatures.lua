@@ -17,8 +17,8 @@ dofile(root..'/Yso/xml/yso_modes.lua')
 dofile(root..'/Yso/xml/apostate_utilities.lua')
 dofile(root..'/Apostate/entourage.lua')
 local M=dofile(root..'/Apostate/lock_route.lua')
-local kill='order entourage kill Saibel'
-local passive='order entourage passive'
+local kill='order daemonite kill Saibel'
+local passive='order daemonite passive'
 local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
 local function orders()
  local out={};for _,s in ipairs(sent) do if s:match('^order ') then out[#out+1]=s end end;return out
