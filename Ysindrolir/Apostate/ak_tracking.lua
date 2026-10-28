@@ -154,13 +154,34 @@ function A.shrivel(name,side,limb)
   observation.at=type(getEpoch)=='function' and getEpoch() or os.time()
   return true
 end
+local function current_class()
+  local status=gmcp and gmcp.Char and gmcp.Char.Status
+  local class=status and (status.class or status.classname)
+  if type(class)~='string' then return nil end
+  class=class:match('^%s*(.-)%s*$'):lower()
+  if class~='' then return class end
+end
+local last_class=current_class()
+local function on_status()
+  local class=current_class()
+  if not class then return end
+  local changed=last_class~=nil and class~=last_class
+  last_class=class
+  if changed then A.reset_tracking() end
+end
 if type(registerAnonymousEventHandler)=='function' then
   A.tracking_handlers=A.tracking_handlers or {}
-  for _,event in ipairs({'yso.target.changed','yso.target.cleared','sysDisconnectionEvent','gmcp.Char.Status'}) do
+  local handlers={
+    ['yso.target.changed']=A.reset_tracking,
+    ['yso.target.cleared']=A.reset_tracking,
+    ['sysDisconnectionEvent']=function() last_class=nil;A.reset_tracking() end,
+    ['gmcp.Char.Status']=on_status,
+  }
+  for event,handler in pairs(handlers) do
     if A.tracking_handlers[event] and type(killAnonymousEventHandler)=='function' then
       killAnonymousEventHandler(A.tracking_handlers[event])
     end
-    A.tracking_handlers[event]=registerAnonymousEventHandler(event,A.reset_tracking)
+    A.tracking_handlers[event]=registerAnonymousEventHandler(event,handler)
   end
 end
 return A

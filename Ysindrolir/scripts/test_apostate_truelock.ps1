@@ -24,7 +24,7 @@ foreach($entry in $pairs){
  $prefix.Add('embedded[ [==['+$luaRoot+'/'+$entry[0]+']==] ]=[====['+$node.script+']====]')
 }
 $prefix.Add('dofile=function(path) if embedded[path] then return assert(load(embedded[path],path))() end return original(path) end')
-foreach($test in @('test_entourage.lua','test_lock_route.lua','test_lock_route_delivery.lua','test_truelock_creatures.lua','test_truelock_emission.lua','test_truelock_finisher.lua','test_truelock_finisher_emission.lua')){
+foreach($test in @('test_entourage.lua','test_lock_route.lua','test_lock_route_delivery.lua','test_tracking_events.lua','test_truelock_creatures.lua','test_truelock_emission.lua','test_truelock_finisher.lua','test_truelock_finisher_emission.lua')){
  $code=($prefix -join "`n")+"`n"+'arg={[1]=[==['+$luaRoot+']==]};original([==['+$luaRoot+'/Apostate/'+$test+']==])'
  $code | & lua -
  if($LASTEXITCODE -ne 0){throw ('Embedded route test failed: '+$test)}
