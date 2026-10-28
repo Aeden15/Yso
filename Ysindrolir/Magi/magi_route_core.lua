@@ -89,6 +89,44 @@ function RC.target_valid(tgt)
   return true
 end
 
+-- Pet orders have no BAL/EQ cost and must stay outside spell queue/pending gates.
+-- Keep this state on the reused core so reloading the Focus alias does not spam.
+RC.entourage = RC.entourage or {}
+local function entourage_dispatch(command)
+  if Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true then return false end
+  if type(Yso.send) == "function" then
+    local ok, result = pcall(Yso.send, command)
+    return ok and result == true
+  end
+  if type(send) ~= "function" then return false end
+  local ok, result = pcall(send, command, false)
+  return ok and result ~= false
+end
+
+function RC.entourage_sync(route, target, is_magi, preview)
+  if preview or not is_magi then return false end
+  if not route.is_enabled() or not route.is_active() then return false end
+  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false end
+  target = RC.trim(target)
+  if not target:match("^[A-Za-z][A-Za-z'%-]*$") or not RC.target_valid(target) then return false end
+  if Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true then return false end
+  local E = RC.entourage
+  if E.owner == route and RC.same_target(E.target, target) then return true end
+  -- Dispatch may throw after transmitting; still allow stop cleanup in that case.
+  E.owner, E.needs_passive, E.target = route, true, nil
+  if not entourage_dispatch("order entourage kill " .. target) then return false end
+  E.target = target
+  return true
+end
+
+function RC.entourage_passive(route)
+  local E = RC.entourage
+  if E.owner ~= route or not E.needs_passive then return true end
+  if not entourage_dispatch("order entourage passive") then return false end
+  E.owner, E.target, E.needs_passive = nil, nil, false
+  return true
+end
+
 function RC.eq_ready()
   if Yso and Yso.locks and type(Yso.locks.eq_ready) == "function" then
     local ok, v = pcall(Yso.locks.eq_ready)

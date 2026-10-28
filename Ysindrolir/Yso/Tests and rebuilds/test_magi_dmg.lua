@@ -68,7 +68,9 @@ _G.expandAlias = function() return true end
 _G.raiseEvent = function() end
 _G.cecho = function() end
 _G.echo = function() end
-_G.send = function()
+_G.send = function(command)
+  -- Balanceless pet orders intentionally use direct sends; spells must not.
+  if command:match('^order entourage ') then return true end
   send_count = send_count + 1
   return true
 end

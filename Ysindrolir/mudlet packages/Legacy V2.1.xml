@@ -8852,6 +8852,12 @@ end
   else
     Legacy.Settings.usePrompt = false
   end
+  -- Reimports restore settings separately from the exported trigger state.
+  if Legacy.Settings.usePrompt then
+    enableTrigger("Legacy Prompt")
+  else
+    disableTrigger("Legacy Prompt")
+  end
   Legacy.Settings.Curing = Legacy.Settings.Curing or {}
   Legacy.Settings.Curing.SS = Legacy.Settings.Curing.SS or {}
   if Legacy.Settings.Curing.affPrompt ~= false or Legacy.Settings.Curing.affPrompt == nil then
@@ -9897,20 +9903,20 @@ function Keepup(arg)
       Sylvan = {"barkskin", "flailingstaff"},
       Unnamable = {"gripping", "weathering", "resistance"},
       Dragon = {"dragonarmour", "dragonbreath"},
-      ["air Elemental Lord"] = {},
-      ["water Elemental Lord"] = {},
-      ["fire Elemental Lord"] = {},
-      ["earth Elemental Lord"] = {},
+      ["Air Elemental Lord"] = {"tempest", "susurrating", "skysight"},
+      ["Water Elemental Lord"] = {},
+      ["Fire Elemental Lord"] = {},
+      ["Earth Elemental Lord"] = {},
       
-      ["air Elemental Lady"] = {},
-      ["water Elemental Lady"] = {},
-      ["fire Elemental Lady"] = {},
-      ["earth Elemental Lady"] = {},
+      ["Air Elemental Lady"] = {},
+      ["Water Elemental Lady"] = {},
+      ["Fire Elemental Lady"] = {},
+      ["Earth Elemental Lady"] = {},
       
-      ["air Elemental Fae"] = {},
-      ["water Elemental Fae"] = {},
-      ["fire Elemental Fae"] = {},
-      ["earth Elemental Fae"] = {},
+      ["Air Elemental Fae"] = {},
+      ["Water Elemental Fae"] = {},
+      ["Fire Elemental Fae"] = {},
+      ["Earth Elemental Fae"] = {},
     }
   
     local WepSpec = {
@@ -10010,7 +10016,7 @@ function Keepup(arg)
         keepupsTable(Class["Dragon"])
       else
         cecho("\n\n&lt;ansi_white&gt;Class Specific Defences\n")
-        keepupsTable(Class[gmcp.Char.Status.class])
+        keepupsTable(Class[gmcp.Char.Status.class] or {})
       end
     
       local warriors = {"Paladin", "Runewarden", "Unnamable", "Infernal"}
@@ -10023,7 +10029,7 @@ function Keepup(arg)
     
       -- These should be toggled off if they're showing up:
       local OtherDefs = table.n_complement(Legacy.Curing.Defs.temp.defences, defs)
-      OtherDefs = table.n_complement(OtherDefs, Class[gmcp.Char.Status.class])
+      OtherDefs = table.n_complement(OtherDefs, Class[gmcp.Char.Status.class] or {})
       if table.contains(warriors, gmcp.Char.Status.class) then OtherDefs = table.n_complement(OtherDefs, WepSpec[Legacy[gmcp.Char.Status.name].wepspec]) end
       cecho("\n\nOther Class Specific Defences\n")
       if table.size(OtherDefs) &gt; 0 then

@@ -106,6 +106,13 @@ Current Magi helpers
 
   magi_route_core.lua
     Provides the shared Magi route chassis/runtime helpers.
+    Focus, duel damage, Firestorm and Water order entourage kill on start and
+    target changes without waiting for BAL/EQ. Toggling off or leaving a route
+    orders entourage passive. Offense pauses leave pets attacking.
+    Orders are deduplicated, and preview/dry-run does not transmit them.
+    Scoped rebuild: scripts/build_magi_entourage_package.ps1.
+    Verification: scripts/test_magi_entourage_package.ps1 and
+    Yso/Tests and rebuilds/test_magi_entourage.lua.
 
   mfocus_alias_body.lua
     Built Focus alias body used for package embedding by export_yso_system_xml.ps1.

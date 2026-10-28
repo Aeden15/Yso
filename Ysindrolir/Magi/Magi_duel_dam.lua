@@ -433,6 +433,9 @@ end
 function M.attack_function(arg)
   M.init()
   local ctx = type(arg) == "table" and arg or { reason = tostring(arg or "loop") }
+  if type(RC.entourage_sync) == "function" then
+    RC.entourage_sync(M, ctx.target or _target(), _is_magi(), ctx.preview)
+  end
 
   local ok_check, can, why = pcall(M.can_run, ctx)
   if not ok_check or not can then return false, (why or "cannot_run") end
@@ -481,6 +484,7 @@ end
 
 function M.off()
   M.init()
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
   M.enabled = false
   M.state.enabled = false
   M.state.loop_enabled = false
@@ -492,6 +496,7 @@ function M.toggle()
   M.enabled = not (M.enabled == true or M.state.enabled == true or M.state.loop_enabled == true)
   M.state.enabled = (M.enabled == true)
   M.state.loop_enabled = (M.enabled == true)
+  if not M.enabled and type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
   return M.enabled
 end
 
@@ -547,6 +552,9 @@ end
 
 function M.alias_loop_on_started(ctx)
   M.init()
+  if type(RC.entourage_sync) == "function" then
+    RC.entourage_sync(M, _target(), _is_magi())
+  end
   local tgt = _target()
   _echo("Duel damage loop ON.")
   if tgt == "" then
@@ -558,6 +566,7 @@ end
 
 function M.alias_loop_on_stopped(ctx)
   M.init()
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
   ctx = ctx or {}
   local reason = tostring(ctx.reason or "manual")
   M.state.template = M.state.template or {}
@@ -581,6 +590,7 @@ function M.alias_loop_clear_waiting()
 end
 
 function M.on_exit(ctx)
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
   if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
     Yso.mode.stop_route_loop("magi_dmg", "exit", true)
   end

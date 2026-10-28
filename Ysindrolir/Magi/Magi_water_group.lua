@@ -321,6 +321,9 @@ end
 function M.attack_function(arg)
   M.init()
   local ctx = type(arg) == "table" and arg or { reason = tostring(arg or "loop") }
+  if type(RC.entourage_sync) == "function" then
+    RC.entourage_sync(M, ctx.target or _target(), _is_magi(), ctx.preview)
+  end
   local ok, info = M.can_run(ctx)
   if not ok then return false, info end
   local tgt = info
@@ -414,6 +417,9 @@ end
 
 function M.alias_loop_on_started(ctx)
   M.init()
+  if type(RC.entourage_sync) == "function" then
+    RC.entourage_sync(M, _target(), _is_magi())
+  end
   if type(RC.clear_pending_all) == "function" then
     RC.clear_pending_all(M.state, PENDING_SLOTS)
   end
@@ -426,6 +432,7 @@ end
 
 function M.alias_loop_on_stopped(ctx)
   M.init()
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
   ctx = ctx or {}
   local reason = tostring(ctx.reason or "manual")
   M.state.template.last_disable_reason = reason
@@ -450,6 +457,7 @@ function M.alias_loop_on_error(err)
 end
 
 function M.on_exit(ctx)
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
   if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
     Yso.mode.stop_route_loop("magi_water_group", "exit", true)
   end

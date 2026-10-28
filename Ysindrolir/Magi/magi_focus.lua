@@ -1218,6 +1218,10 @@ end
 
 function MF.attack_function(arg)
   local ctx, preview = _attack_opts(arg)
+  MF.init()
+  if type(RC.entourage_sync) == "function" then
+    RC.entourage_sync(MF, (ctx and ctx.target) or _target(), _is_magi(), preview)
+  end
   local ok, info = MF.can_run(ctx)
   if not ok then
     if preview then return nil, info end
@@ -1504,6 +1508,7 @@ function MF.on_enter(ctx)
 end
 
 function MF.on_exit(ctx)
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(MF) end
   if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
     Yso.mode.stop_route_loop("magi_focus", "exit", true)
   end
@@ -1570,6 +1575,10 @@ function MF.alias_loop_prepare_start(ctx)
 end
 
 function MF.alias_loop_on_started(ctx)
+  MF.init()
+  if type(RC.entourage_sync) == "function" then
+    RC.entourage_sync(MF, _target(), _is_magi())
+  end
   _clear_pending_all()
   _reset_route("loop_start")
   _clear_eq_queue()
@@ -1586,6 +1595,7 @@ end
 
 function MF.alias_loop_on_stopped(ctx)
   MF.init()
+  if type(RC.entourage_passive) == "function" then RC.entourage_passive(MF) end
   ctx = ctx or {}
   local reason = tostring(ctx.reason or "manual")
   _clear_pending_all()

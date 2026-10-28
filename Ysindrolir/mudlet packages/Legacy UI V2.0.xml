@@ -1635,9 +1635,64 @@ registerAnonymousEventHandler("gmcp.Comm.Channel.Text", "ChatBoxMessages")</scri
 			<Script isActive="yes" isFolder="no">
 				<name>Legacy AK Display</name>
 				<packageName></packageName>
-				<script>function Legacy_AK_Draw()
-if Legacy then
-if not ak then return end
+				<script>-- Runtime GUI objects and handler IDs must survive Legacy's saved-table reloads.
+Legacy_AK_Runtime = Legacy_AK_Runtime or {}
+local runtime = Legacy_AK_Runtime
+
+local function live_view(view)
+  return type(view) == "table" and view.Console and view.TargetConsole
+    and type(view.Console.clear) == "function" and type(view.Console.cecho) == "function"
+    and type(view.TargetConsole.clear) == "function" and type(view.TargetConsole.cecho) == "function"
+end
+
+local function cancel_retry()
+  if runtime.retry_timer and type(killTimer) == "function" then killTimer(runtime.retry_timer) end
+  runtime.retry_timer = nil
+end
+
+local function retry_draw()
+  if runtime.retry_timer or type(tempTimer) ~= "function" then return end
+  runtime.retry_timer = tempTimer(5, function()
+    runtime.retry_timer = nil
+    Legacy_AK_Draw()
+  end)
+end
+
+local function target_name(value)
+  if type(value) == "table" then
+    if type(value.title) == "function" then
+      local ok, name = pcall(value.title, value)
+      value = ok and name or value.name
+    else
+      value = type(value.title) == "string" and value.title or value.name
+    end
+  end
+  if type(value) ~= "string" then return nil end
+  value = value:match("^%s*(.-)%s*$")
+  if value == "" or value:lower() == "none" then return nil end
+  return value:title()
+end
+
+local function current_target()
+  if Yso and type(Yso.get_target) == "function" then
+    local ok, value = pcall(Yso.get_target)
+    -- An explicitly cleared canonical target overrides the old global mirror.
+    if ok then return target_name(value) end
+  end
+  return target_name(target)
+end
+
+function Legacy_AK_Draw()
+  cancel_retry()
+  if type(Legacy) ~= "table" or not (Adjustable and Adjustable.Container and Geyser and Geyser.Label and Geyser.MiniConsole) then
+    retry_draw()
+    return
+  end
+  Legacy.UI = Legacy.UI or {}
+  Legacy.UI.borderColor = Legacy.UI.borderColor or "DimGrey"
+  if live_view(runtime.container) then
+    Legacy.UI.AK = runtime.container
+  else
 Legacy.UI.AK = Adjustable.Container:new({
   name = "Aff Tracking",
   x = 0, y = 0,
@@ -1697,38 +1752,33 @@ Legacy.UI.AK.Console = Geyser.MiniConsole:new({
       autoWrap = false
   }, Legacy.UI.AK.Label)
 
-
-function Legacy.UI.AK.Update()
-
-  if not ak then return end
-  if target == nil or target == "None" or target == "none" then return end
-  if Legacy and Legacy.Settings and Legacy.Settings.Basher and Legacy.Settings.Basher.status == true then return end
-
-  local tname = target
-  if type(target) == "table" then
-    if type(target.title) == "function" then
-      tname = target:title()
-    elseif type(target.title) == "string" then
-      tname = target.title
-    elseif type(target.name) == "string" then
-      tname = target.name
-    end
-  elseif type(target) == "string" and type(target.title) == "function" then
-    tname = target:title()
+    runtime.container = Legacy.UI.AK
   end
-  if type(tname) ~= "string" or tname == "" or tname == "None" or tname == "none" then return end
-  if not (Legacy and Legacy.NDB and Legacy.NDB.db) or Legacy.NDB.db[tname] == nil then return end
-  if not (Legacy.UI and Legacy.UI.AK and Legacy.UI.AK.Console and Legacy.UI.AK.TargetConsole) then return end
+  Legacy.UI.AK.Update = Legacy_AK_Update
+  Legacy_AK_Update()
+end
 
-  Legacy.UI.AK.Console:clear()
-  Legacy.UI.AK.TargetConsole:clear()
+function Legacy_AK_Update()
+  local view = runtime.container
+  if not live_view(view) or not (Legacy and Legacy.UI and Legacy.UI.AK == view) then
+    Legacy_AK_Draw()
+    return
+  end
+  view.Console:clear()
+  view.TargetConsole:clear()
+  if type(ak) ~= "table" then retry_draw(); return end
+  cancel_retry()
+  if Legacy.Settings and Legacy.Settings.Basher and Legacy.Settings.Basher.status == true then return end
+  local tname = current_target()
+  if not tname then return end
   local maxhp = tonumber(ak.maxhealth) or 0
   local maxmp = tonumber(ak.maxmana) or 0
   ak.healthpercent = (maxhp &gt; 0) and math.floor((tonumber(ak.currenthealth) or 0) / maxhp * 100) or 0
   ak.manapercent   = (maxmp &gt; 0) and math.floor((tonumber(ak.currentmana) or 0) / maxmp * 100) or 0
 
   local citycolor = "gold"
-  local ndb = Legacy.NDB.db[tname]
+  local db = Legacy.NDB and Legacy.NDB.db
+  local ndb = type(db) == "table" and (db[tname] or db[tname:lower()])
   if ndb and type(ndb.city) == "string" and Legacy.Settings and Legacy.Settings.NDB and Legacy.Settings.NDB.Config then
     local cfg = Legacy.Settings.NDB.Config[ndb.city:lower()]
     if type(cfg) == "table" and type(cfg.color) == "string" then
@@ -1771,13 +1821,13 @@ function Legacy.UI.AK.Update()
     end
   end
 end
-registerAnonymousEventHandler("LPrompt", "Legacy.UI.AK.Update")
-else
-tempTimer(5, [[Legacy_AK_Draw()]])
+if type(killAnonymousEventHandler) == "function" then
+  if runtime.prompt_handler then killAnonymousEventHandler(runtime.prompt_handler) end
+  if runtime.loaded_handler then killAnonymousEventHandler(runtime.loaded_handler) end
 end
-end
-
-registerAnonymousEventHandler("LegacyLoaded", "Legacy_AK_Draw")</script>
+runtime.prompt_handler = registerAnonymousEventHandler("LPrompt", "Legacy_AK_Update")
+runtime.loaded_handler = registerAnonymousEventHandler("LegacyLoaded", "Legacy_AK_Draw")
+Legacy_AK_Draw()</script>
 				<eventHandlerList />
 			</Script>
 		</ScriptGroup>
