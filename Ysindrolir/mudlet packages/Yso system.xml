@@ -28124,6 +28124,9 @@ M.Affliction_giving={
 M.Padding_mental_afflictions={
  &apos;stupidity&apos;,&apos;confusion&apos;,&apos;dizziness&apos;,&apos;dementia&apos;,
 }
+M.Padding_kelp_afflictions={
+ &apos;clumsiness&apos;,&apos;weariness&apos;,&apos;sensitivity&apos;,
+}
 M.undeaf_delivery=&apos;evileye&apos; -- Optional: &apos;prefarar&apos; uses Puncture when available.
 -- Captured live output, 2026-10-26. Both lines are required: the command&apos;s
 -- acceptance does not establish which curse the Baalzadeen actually retained.
@@ -28151,7 +28154,7 @@ function M.configure_corrupt_confirmation(pattern,retained_pattern)
  M.corrupt_trigger=nil
  return false
 end
-local eyes={undeaf=&apos;sensitivity&apos;,slickness=&apos;sicken&apos;,stupidity=&apos;stupid&apos;,dizziness=&apos;dizzy&apos;}
+local eyes={undeaf=&apos;sensitivity&apos;,clumsiness=&apos;clumsy&apos;,slickness=&apos;sicken&apos;,stupidity=&apos;stupid&apos;,dizziness=&apos;dizzy&apos;}
 local function present(value) return value==true or (tonumber(value) or 0)&gt;=100 end
 local function same(a,b) return type(a)==&apos;string&apos; and type(b)==&apos;string&apos; and a:lower()==b:lower() end
 local function valid(name) return type(name)==&apos;string&apos; and name:match(&quot;^[A-Za-z][A-Za-z&apos;%-]*$&quot;) end
@@ -28177,8 +28180,19 @@ function M.select(scores)
    out[#out+1]=aff;seen[aff]=true
   end
  end
- for _,aff in ipairs(M.Affliction_giving) do if eligible[aff] then add(aff) end end
- -- Core eyes claim slots before Masochism; fall back to mental padding if needed.
+ -- Core eyes claim slots before padding, including Masochism.
+ for _,aff in ipairs(M.Affliction_giving) do
+  if eligible[aff] and aff~=&apos;masochism&apos; then add(aff) end
+ end
+ if opening and #out==1 and out[1]==&apos;asthma&apos; then
+  for _,aff in ipairs(M.Padding_kelp_afflictions) do add(aff) end
+ end
+ if opening then
+  for _,aff in ipairs(M.Affliction_giving) do
+   if aff==&apos;masochism&apos; then add(aff) end
+  end
+ end
+ -- Retain mental padding for Impatience/Manaleech and exhausted kelp padding.
  if (opening and #out==1 and (out[1]==&apos;asthma&apos; or out[1]==&apos;impatience&apos;))
   or (not opening and needs_manaleech) then
   for _,aff in ipairs(M.Padding_mental_afflictions) do add(aff) end

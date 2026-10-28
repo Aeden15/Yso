@@ -9,6 +9,9 @@ M.Affliction_giving={
 M.Padding_mental_afflictions={
  'stupidity','confusion','dizziness','dementia',
 }
+M.Padding_kelp_afflictions={
+ 'clumsiness','weariness','sensitivity',
+}
 M.undeaf_delivery='evileye' -- Optional: 'prefarar' uses Puncture when available.
 -- Captured live output, 2026-10-26. Both lines are required: the command's
 -- acceptance does not establish which curse the Baalzadeen actually retained.
@@ -36,7 +39,7 @@ function M.configure_corrupt_confirmation(pattern,retained_pattern)
  M.corrupt_trigger=nil
  return false
 end
-local eyes={undeaf='sensitivity',slickness='sicken',stupidity='stupid',dizziness='dizzy'}
+local eyes={undeaf='sensitivity',clumsiness='clumsy',slickness='sicken',stupidity='stupid',dizziness='dizzy'}
 local function present(value) return value==true or (tonumber(value) or 0)>=100 end
 local function same(a,b) return type(a)=='string' and type(b)=='string' and a:lower()==b:lower() end
 local function valid(name) return type(name)=='string' and name:match("^[A-Za-z][A-Za-z'%-]*$") end
@@ -62,8 +65,19 @@ function M.select(scores)
    out[#out+1]=aff;seen[aff]=true
   end
  end
- for _,aff in ipairs(M.Affliction_giving) do if eligible[aff] then add(aff) end end
- -- Core eyes claim slots before Masochism; fall back to mental padding if needed.
+ -- Core eyes claim slots before padding, including Masochism.
+ for _,aff in ipairs(M.Affliction_giving) do
+  if eligible[aff] and aff~='masochism' then add(aff) end
+ end
+ if opening and #out==1 and out[1]=='asthma' then
+  for _,aff in ipairs(M.Padding_kelp_afflictions) do add(aff) end
+ end
+ if opening then
+  for _,aff in ipairs(M.Affliction_giving) do
+   if aff=='masochism' then add(aff) end
+  end
+ end
+ -- Retain mental padding for Impatience/Manaleech and exhausted kelp padding.
  if (opening and #out==1 and (out[1]=='asthma' or out[1]=='impatience'))
   or (not opening and needs_manaleech) then
   for _,aff in ipairs(M.Padding_mental_afflictions) do add(aff) end
