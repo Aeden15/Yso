@@ -4,6 +4,10 @@ The package includes **Magi**, **Alchemist**, **Monk/Shikudo**, **Airlord**, and
 
 For the current Shikudo/Kai/soar changes, use `Ysindrolir/scripts/export_yso_system_xml.ps1 -ShikudoOnly -KaiSoarOnly`. This scoped refresh preserves unrelated package-native scripts. The legacy full refresh also changes other classes and removes older package entries; use it only when deliberately refreshing those sources.
 
+For the four-mode `shduel` controller and limb tracker, use `-ShikudoDuelOnly`.
+See `Ysindrolir/Monk/README.md` for the first lock-mode test and import both
+updated `Yso system.xml` and `limb.1.2.xml` packages.
+
 Kaido's `delv` alias requires more than 81 Kai and no self paralysis or prone.
 It pauses curing through `pp` before sending `kai deliverance`, then keeps it
 paused through channeling and active Deliverance. The down/interruption message
@@ -24,6 +28,7 @@ The `Ysindrolir/Yso` folder remains in use for shared sources, export inputs, an
 - **Command emission:** **`Yso.queue` was removed.** Routes and helpers send through **`Yso.emit`** / **`Yso.emit_now`** (and direct **`send`** where appropriate). There is no client-side queue layer.
 - **Operating:** Use the package **aliases** and toggles in Mudlet (for example Magi **`mdam`** for group damage, **`mfocus`** for focus/duel convergence, **`magi_dmg`** for duel lock, **`mreflect`** to cast reflection; Alchemist **`adam`**, **`aduel`**). Combat mode plus per-route toggles drive the offense loops.
 - **Repo vs package:** Lua under `Ysindrolir/Yso/`, `Ysindrolir/Magi/`, and `Ysindrolir/Alchemist/` is the git-side source tree. When editing split-layout sources, sync back into the package with the scripts below.
+- **Linked Achaea profile:** After rebuilding an affected XML, run `Ysindrolir/scripts/publish_workspace_link.ps1` to publish byte-exact validation snapshots. The independent **Yso Workspace Link** package then applies both built XMLs with `ysoreload` while automation is stopped. Use `ysostatus` to check pending updates. See [workspace-link setup and recovery](Ysindrolir/Information/workspace-link.md). Do not point native modules directly at workspace source files.
 
 ### Export and Magi alias build
 
