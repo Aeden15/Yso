@@ -443,7 +443,10 @@ function M.start_route_loop(name, reason)
   mod.state.template.last_reason = "start_loop"
   M.schedule_route_loop(entry.id, 0)
 
-  if type(mod.alias_loop_on_started) == "function" then
+  local pause = Yso.Combat and Yso.Combat.Pause
+  if entry.mode == 'combat' and pause and pause.blocked(entry.id) then
+    mod.state.combat_start_deferred = ctx
+  elseif type(mod.alias_loop_on_started) == "function" then
     pcall(mod.alias_loop_on_started, ctx)
   end
 
@@ -468,6 +471,7 @@ function M.stop_route_loop(name, reason, silent)
   }
 
   _loop_kill_timer(mod)
+  mod.state.combat_start_deferred = nil
   _loop_set_enabled(mod, false)
   mod.state.busy = false
   _loop_clear_waiting(mod)
@@ -524,6 +528,30 @@ function M.tick_route_loop(name)
   if state.busy == true then
     M.schedule_route_loop(entry.id, state.loop_delay)
     return false
+  end
+
+  local pause = Yso.Combat and Yso.Combat.Pause
+  if entry.mode == 'combat' and pause then
+    local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
+    if v.dead==true or tostring(v.dead)=='1' or (v.hp~=nil and tonumber(v.hp)==0) then
+      return M.stop_route_loop(entry.id,'dead',false)
+    end
+    local victim=type(Yso.get_target)=='function' and Yso.get_target() or nil
+    if victim~=nil and tostring(victim):match('^%s*$') then
+      return M.stop_route_loop(entry.id,'no_target',false)
+    end
+    local blocked, reason = pause.blocked(entry.id)
+    if blocked then
+      pause.discard_staged(entry.id)
+      state.template = state.template or {}
+      state.template.last_reason = reason
+      M.schedule_route_loop(entry.id, state.loop_delay)
+      return false, reason
+    end
+  end
+  if state.combat_start_deferred then
+    local ctx=state.combat_start_deferred;state.combat_start_deferred=nil
+    if type(mod.alias_loop_on_started)=='function' then pcall(mod.alias_loop_on_started,ctx) end
   end
 
   if type(mod.alias_loop_waiting_blocks) == "function" then

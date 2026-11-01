@@ -20,6 +20,8 @@ under `Ysindrolir/` for the Kaido lifecycle and Legacy prompt regressions.
 
 The `Ysindrolir/Yso` folder remains in use for shared sources, export inputs, and tests. See [the source audit](Ysindrolir/Information/Yso-source-audit.md) for retained modules and the three retired loader files removed in this cleanup.
 
+Combat routes share self-paralysis pause/resume through the scheduler and emitter. See [the combat paralysis contract](Ysindrolir/Information/combat-paralysis.md) for future route requirements and the scoped package builder.
+
 ## Mudlet workflow (package-first)
 
 - **Canonical runtime:** Install/import the package under `Ysindrolir/mudlet packages/`, especially **`Yso system.xml`** (and `.mpackage` exports when you use them). Combat behavior comes from the embedded scripts and Mudlet’s script **load order**, not from ad-hoc filesystem loading.

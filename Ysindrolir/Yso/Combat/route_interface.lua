@@ -297,6 +297,12 @@ function RI.emit_route_payload(route_id, payload, opts)
   if route_id == "" then return false, "missing_route" end
 
   opts = type(opts) == "table" and _copy(opts) or {}
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause then
+    local check=_copy(opts);check.route=route_id;check.kind=check.kind or 'offense'
+    local blocked,reason=pause.blocks_emission(payload,check)
+    if blocked then return false,reason end
+  end
   payload = type(payload) == "table" and payload or {}
   local lanes = RI.normalize_lanes(payload)
 
@@ -361,6 +367,11 @@ function RI.emit_route_payload(route_id, payload, opts)
   ack_payload.cmd = RI.payload_line(ack_payload)
 
   return true, ack_payload.cmd, ack_payload
+end
+
+function RI.confirmation_now(route_id)
+  local pause=Yso.Combat and Yso.Combat.Pause
+  return pause and pause.confirmation_now(route_id) or _now()
 end
 
 function RI.ensure_waiting_state(state, route_id)

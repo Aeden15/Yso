@@ -1091,6 +1091,11 @@ function P.clear_pending_class(reason, opts)
   return true
 end
 
+local function confirmation_now(route)
+  local pause=Yso.Combat and Yso.Combat.Pause
+  return pause and pause.confirmation_now(route) or _now()
+end
+
 function P.note_pending_class(action, target, humour, cmd, route, source)
   action = _lc(action)
   if action == "" then
@@ -1120,17 +1125,24 @@ function P.note_pending_class(action, target, humour, cmd, route, source)
     route = _trim(route),
     source = tostring(source or "route"),
     sent_at = now,
+    confirmation_at = confirmation_now(route),
     timeout_s = timeout_s,
     token = token,
   }
 
   if timeout_s > 0 and type(tempTimer) == "function" then
-    pending.timer_id = tempTimer(timeout_s, function()
+    local function check_confirmation()
       local current = P.state.pending_class
       if type(current) ~= "table" then
         return
       end
       if tonumber(current.token or 0) ~= token then
+        return
+      end
+      local pause=Yso.Combat and Yso.Combat.Pause
+      local remaining=timeout_s-(confirmation_now(current.route)-current.confirmation_at)
+      if (pause and pause.blocked(current.route)) or remaining>0 then
+        current.timer_id=tempTimer(math.max(0.15,remaining),check_confirmation)
         return
       end
       P.state.pending_timeout_event = {
@@ -1141,7 +1153,8 @@ function P.note_pending_class(action, target, humour, cmd, route, source)
         reason = "temper_pending_longer_than_expected",
         at = _now(),
       }
-    end)
+    end
+    pending.timer_id=tempTimer(timeout_s,check_confirmation)
   end
 
   P.state.pending_class = pending
@@ -1181,7 +1194,7 @@ function P.pending_class_status(route, target, max_age_s)
   end
 
   local sent_at = tonumber(pending.sent_at or 0) or 0
-  local age = _now() - sent_at
+  local age = pending.confirmation_at and (confirmation_now(pending.route)-pending.confirmation_at) or (_now()-sent_at)
   local timeout_s = tonumber(max_age_s or pending.timeout_s or P.cfg.pending_class_timeout_s or 2.5) or 2.5
   if timeout_s > 0 and sent_at > 0 and age >= timeout_s then
     P.state.pending_timeout_event = {
@@ -1855,6 +1868,11 @@ end
 
 function P.fire_reave(name, profile, opts)
   opts = opts or {}
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause then
+    local blocked,reason=pause.blocks_emission({}, {route=opts.route or 'alchemist_reave',kind='offense'})
+    if blocked then return false,reason end
+  end
   local target = _trim(name)
   if target == "" then
     target = _current_target()

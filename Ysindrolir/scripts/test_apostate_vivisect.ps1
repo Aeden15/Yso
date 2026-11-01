@@ -46,7 +46,7 @@ if(-not $alias -or $alias.regex -cne '^vivi$' -or $alias.isActive -ne 'yes'){thr
 if($alias.script -cne "Yso.util.toggle_route_alias('apostate_vivisect', 'vivi')"){throw 'Incorrect vivi toggle body'}
 if(-not $alias.ParentNode.SelectSingleNode('./Alias[name="Truelocks"]')){throw 'Vivisect must be beside Truelocks'}
 $prefix="local original=dofile;local embedded={}`n"
-foreach($entry in @(@('Apostate Truelocks','Apostate/lock_route.lua'),@('Apostate Vivisect','Apostate/vivisect_route.lua'),@('Apostate reference','Apostate/evileye_reference.lua'),@('Apostate utilities','Yso/xml/apostate_utilities.lua'),@('Route registry','Yso/Combat/route_registry.lua'))){
+foreach($entry in @(@('Combat paralysis policy','Yso/Combat/combat_pause.lua'),@('Apostate Truelocks','Apostate/lock_route.lua'),@('Apostate Vivisect','Apostate/vivisect_route.lua'),@('Apostate reference','Apostate/evileye_reference.lua'),@('Apostate utilities','Yso/xml/apostate_utilities.lua'),@('Route registry','Yso/Combat/route_registry.lua'))){
  $body=$y.SelectSingleNode('//Script[name="'+$entry[0]+'"]').script
  $source=[IO.File]::ReadAllText((Join-Path $root $entry[1]))
  if($body.Replace("`r`n","`n").Trim() -cne $source.Replace("`r`n","`n").Trim()){throw ('Source drift: '+$entry[0])}

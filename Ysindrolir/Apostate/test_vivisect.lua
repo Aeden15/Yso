@@ -8,6 +8,7 @@ Yso={get_target=function() return target end,mode={is_combat=function() return t
  selfaff={meta={afflictions_ready=true,full_sync_confirmed=true,awaiting_full_sync=false}},
  emit=function(p) sent[#sent+1]=p;return true end}
 ak={defs={}};affstrack={score={}}
+dofile(root..'/Yso/Combat/combat_pause.lua')
 local T=dofile(root..'/Apostate/lock_route.lua')
 local V=dofile(root..'/Apostate/vivisect_route.lua')
 dofile(root..'/Apostate/evileye_reference.lua')
@@ -49,7 +50,7 @@ reset();ak.defs.curseward=true;affstrack.score.confusion=0;assert(V.attack_funct
 reset();T.state.loop_enabled=true;ok,why=V.attack_function();eq(why,'other_route_active');eq(#sent,0)
 reset();assert(V.attack_function());V.note_eye_rejected('balance');V.note_prompt();eq(V.state.pending,nil)
 reset();assert(V.attack_function());gmcp.Char.Vitals.bal='0';V.note_prompt();eq(V.state.pending,nil)
-reset();assert(V.attack_function());paralyzed=true;clock=clock+11
+reset();assert(V.attack_function());paralyzed=true;Yso.Combat.Pause.blocked(V.key);clock=clock+11
 ok,why=V.attack_function();eq(why,'paralysis');eq(V.is_enabled(),true)
 paralyzed=false;gmcp.Char.Vitals.bal='0';V.note_prompt();clock=clock+5;gmcp.Char.Vitals.bal='1'
 assert(V.attack_function());eq(sent[2].bal,'trample')
@@ -58,7 +59,7 @@ OppGainedAff=function(a) affstrack.score[a]=100 end
 assert(V.attack_function());assert(A.trample(target,'left','arm'));eq(affstrack.score.leftarm,100)
 V.note_prompt();eq(V.state.pending,nil);assert(not A.trample('Other','right','leg'));eq(affstrack.score.rightleg,nil)
 -- A queued action remains pending across a long paralysis pause; no duplicate send.
-reset();assert(V.attack_function());paralyzed=true;clock=clock+11
+reset();assert(V.attack_function());paralyzed=true;Yso.Combat.Pause.blocked(V.key);clock=clock+11
 eq(select(2,V.attack_function()),'paralysis');paralyzed=false
 assert(not V.attack_function());eq(V.is_enabled(),true);eq(V.state.reason,'waiting_trample');eq(#sent,1)
 print('PASS Vivisect: lock/confusion, prone, confirmed limbs, cures, pauses, readiness and active AK callbacks')

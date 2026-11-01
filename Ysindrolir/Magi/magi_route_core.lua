@@ -105,6 +105,8 @@ end
 
 function RC.entourage_sync(route, target, is_magi, preview)
   if preview or not is_magi then return false end
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause and pause.blocked(route.key) then return false end
   if not route.is_enabled() or not route.is_active() then return false end
   if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false end
   target = RC.trim(target)

@@ -15,13 +15,14 @@ dofile(root..'/Yso/xml/apostate_utilities.lua')
 dofile(root..'/Yso/Core/queue.lua')
 dofile(root..'/Yso/Core/self_aff.lua');Yso.selfaff.sync_full({},'gmcp.full')
 dofile(root..'/Apostate/entourage.lua')
+dofile(root..'/Yso/Combat/combat_pause.lua')
 dofile(root..'/Apostate/lock_route.lua')
 local V=dofile(root..'/Apostate/vivisect_route.lua')
 V.alias_loop_prepare_start({});V.state.loop_enabled=true;V.alias_loop_on_started()
 assert(V.attack_function());assert(sent[2]:find('trample',1,true),tostring(sent[2]))
 assert(Yso.queue.get_owned('bal').route==V.key)
 local n=#sent
-Yso.selfaff.gain('paralysis','text.paralysis.gained',{force_text=true});clock=clock+11
+Yso.selfaff.gain('paralysis','text.paralysis.gained',{force_text=true});Yso.Combat.Pause.blocked(V.key);clock=clock+11
 assert(not V.attack_function());assert(V.is_enabled());assert(V.state.reason=='paralysis')
 Yso.selfaff.cure('paralysis','text.paralysis.cured',{force_text=true})
 assert(not V.attack_function());assert(V.is_enabled());assert(V.state.pending.action=='trample');assert(#sent==n)

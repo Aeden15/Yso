@@ -54,6 +54,11 @@ local function now()
  return t>20000000000 and t/1000 or t
 end
 
+local function confirmation_now()
+ local P=Yso.Combat and Yso.Combat.Pause
+ return P and P.confirmation_now(M.key) or now()
+end
+
 -- Conditions control eligibility; the editable lists control giving order.
 function M.select(scores)
  local opening=not present(scores.asthma) or not present(scores.impatience)
@@ -119,7 +124,6 @@ function M.alias_loop_prepare_start(ctx)
  M.state.quarantine_warning=nil
  M.state.commands={}
  M.state.bal_until=nil;M.state.eq_until=nil;M.state.startup_error=nil
- M.state.paralysis_paused=nil
  return ctx
 end
 function M.alias_loop_on_started()
@@ -194,7 +198,7 @@ function M.note_corrupt_started(name)
  local p=M.state.pending
  if not M.is_active() or not p or p.action~='corrupt'
   or not same(name,p.target) or not same(name,victim()) or not same(name,target) then return false end
- if now()-p.at>=10 then return M.stop('confirmation_timeout') end
+ if confirmation_now()-p.at>=10 then return M.stop('confirmation_timeout') end
  p.accepted=true
  return true
 end
@@ -207,7 +211,7 @@ function M.note_corrupt(name,retained)
  if not M.is_active() or not p or p.action~='corrupt' or not p.accepted
   or type(retained)~='string' or retained==''
   or not same(name,p.target) or not same(name,victim()) or not same(name,target) then return false end
- if now()-p.at>=10 then return M.stop('confirmation_timeout') end
+ if confirmation_now()-p.at>=10 then return M.stop('confirmation_timeout') end
  local A=ak and ak.apostate
  if not (A and type(A.consume_corrupt)=='function' and A.consume_corrupt(name,retained)) then
   return M.stop('corrupt_tracking_unavailable')
@@ -217,19 +221,19 @@ function M.note_corrupt(name,retained)
   note('Corrupt retained '..retained..' instead of anorexia; stopping the finisher.')
   return M.stop('corrupt_retained_mismatch')
  end
- M.state.finisher={phase='contemplate',at=now()}
+ M.state.finisher={phase='contemplate',at=confirmation_now()}
  return true
 end
 function M.note_mana(name,current,maximum)
  local p=M.state.pending
  if not M.is_active() or not p or p.action~='contemplate'
   or not same(name,p.target) or not same(name,victim()) or not same(name,target) then return false end
- if now()-p.at>=10 then return M.stop('confirmation_timeout') end
+ if confirmation_now()-p.at>=10 then return M.stop('confirmation_timeout') end
  current,maximum=tonumber(current),tonumber(maximum)
  if not current or not maximum or maximum<=0 or current<0 or current>maximum
   or current~=current or maximum~=maximum or maximum==math.huge then return false end
  M.state.pending=nil
- M.state.finisher={phase=current*2<maximum and 'catharsis' or 'sap',at=now()}
+ M.state.finisher={phase=current*2<maximum and 'catharsis' or 'sap',at=confirmation_now()}
  return true
 end
 local function emit_finisher(name,action)
@@ -287,7 +291,7 @@ local function emit_finisher(name,action)
   end
  end
  if action=='corrupt' or action=='contemplate' or action=='catharsis' then
-  M.state.pending={target=name,at=now(),action=action}
+  M.state.pending={target=name,cmd=cmd,at=confirmation_now(),action=action}
  end
  if lane=='eq' then
   M.state.eq_until=now()+({corrupt=3,sap=2.75,catharsis=4.4})[action]
@@ -359,18 +363,17 @@ function M.attack_function()
  local vitals=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
  if tostring(vitals.dead or '')=='1' then return M.stop('dead') end
  M.state.victim=name
- if vivisect then
+ local pause=Yso.Combat and Yso.Combat.Pause
+ if vivisect and not pause then
   local meta=Yso.selfaff and Yso.selfaff.meta
-  if not (Yso.self and type(Yso.self.has_aff)=='function' and meta
-   and meta.afflictions_ready==true and meta.full_sync_confirmed==true
-   and meta.awaiting_full_sync~=true) then return hold('self_tracking_unavailable') end
-  if Yso.self.has_aff('paralysis') then M.state.paralysis_paused=true;return hold('paralysis') end
-  if M.state.paralysis_paused then
-   -- Queued attacks may wait on the server's !p gate throughout the pause.
-   -- Resume their confirmation window instead of timing out or resending.
-   if M.state.pending then M.state.pending.at=now() end
-   M.state.paralysis_paused=nil
-  end
+  if not (Yso.self and type(Yso.self.has_aff)=='function' and meta and meta.afflictions_ready==true
+   and meta.full_sync_confirmed==true and meta.awaiting_full_sync~=true) then return hold('self_tracking_unavailable') end
+ end
+ if pause then
+  local blocked,reason=pause.blocked(M.key)
+  if blocked then return hold(reason) end
+ elseif Yso.self and type(Yso.self.has_aff)=='function' and Yso.self.has_aff('paralysis') then
+  return hold('paralysis')
  end
  local pending=M.state.pending
  if pending then
@@ -379,14 +382,14 @@ function M.attack_function()
    if pending.rejected then M.state.pending=nil;return hold('replan') end
    if pending.spent and ready('eq') then return M.stop(vivisect and 'vivisect_attempt_complete' or 'catharsis_complete') end
   end
-  if now()-pending.at>=10 then return M.stop('confirmation_timeout') end
+  if confirmation_now()-pending.at>=10 then return M.stop('confirmation_timeout') end
   return hold('waiting_'..pending.action)
  end
  if Yso.self and type(Yso.self.has_aff)=='function' and Yso.self.has_aff('paralysis') then return hold('paralysis') end
  if not (ak and affstrack and type(affstrack.score)=='table') then return hold('tracking_unavailable') end
  local finisher=M.state.finisher
  if finisher then
-  if now()-finisher.at>=10 then return M.stop('finisher_timeout') end
+  if confirmation_now()-finisher.at>=10 then return M.stop('finisher_timeout') end
   return emit_finisher(name,finisher.phase)
  end
  local scores=affstrack.score
@@ -461,7 +464,7 @@ function M.attack_function()
  end
  M.state[lane..'_until']=now()+(action=='vivisect' and 4 or (action=='trample' and 4 or (lane=='eq' and 3 or (action=='puncture' and 2.15 or 1.9))))
  if lane=='bal' or vivisect then
-  M.state.pending={target=name,at=now(),breach=action=='eyes' and breach or false,
+  M.state.pending={target=name,cmd=cmd,at=confirmation_now(),breach=action=='eyes' and breach or false,
    action=action=='eyes' and lane=='eq' and 'disfigure' or action,lane=lane,
    owned=Q and type(Q.get_owned)=='function' and Q.get_owned(lane) or nil}
  end

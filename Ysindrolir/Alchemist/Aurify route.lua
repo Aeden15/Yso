@@ -1098,6 +1098,8 @@ local function _post_send(payload)
 end
 
 local function _emit_payload(payload)
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause and pause.blocks_emission(payload,{route='alchemist_aurify_route',kind='offense'}) then return false end
   local P = _phys()
   local execute_lane = _execute_lane(payload)
 

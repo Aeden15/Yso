@@ -1,5 +1,5 @@
 -- ^shdam$: embedded implementation; no runtime file loading.
-local revision = 'dac6055270daee634e055dc8de424a0c79a6e3919e36252430ce47bc8b9b4c93'
+local revision = '7ed1585320c1bad9410a4b10f6b56e563131d40e6e2ba8d862a4bb8619de3c33'
 local installed = Yso and Yso.off and Yso.off.monk and Yso.off.monk.group_damage
 if not installed or installed._source_revision ~= revision then
   (function()
@@ -23,6 +23,11 @@ local function now()
   if value > 20000000000 then value=value/1000 end
   return value
 end
+local function confirmation_now()
+ local P=Yso.Combat and Yso.Combat.Pause
+ return P and P.confirmation_now(M.key) or now()
+end
+
 local function echo_status(text)
   if type(cecho)=='function' then cecho('<cyan>[SHIKUDO] <reset>'..text..'\n') end
 end
@@ -198,7 +203,7 @@ local function pending_blocks()
   if confirmed and recovered and lane_ready then
     M.state.pending=nil; M.state.cooldown=nil; return false
   end
-  if now()-p.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then
+  if confirmation_now()-p.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then
     Yso.mode.stop_route_loop(M.key,'confirmation_timeout',false)
   end
   return true
@@ -262,7 +267,7 @@ local function emit_action(cmd,kind,tgt,lane,form)
   local payload={target=tgt,route=M.key}
   payload[lane]=cmd
   if Yso.emit(payload,{kind='offense',reason=M.key,route=M.key,target=tgt,commit=true})~=true then return false,'emit_failed' end
-  M.state.pending={at=now(),target=tgt,form=form,kind=kind,recovered={}}
+  M.state.pending={at=confirmation_now(),target=tgt,form=form,kind=kind,recovered={}}
   M.state.cooldown=M.state.pending
   M.state.last_cmd=cmd
   M.state.template.last_reason=kind
@@ -273,7 +278,7 @@ end
 function M.note_target_unavailable()
   local p=M.state.pending
   if not M.is_active() or not p or trim(p.target):lower()~=current_target():lower() then return false end
-  if now()-p.at>(tonumber(M.cfg.target_response_window) or 2) then return false end
+  if confirmation_now()-p.at>(tonumber(M.cfg.target_response_window) or 2) then return false end
   if p.kind=='combo' or p.kind=='dispatch' then
     M.note_vitals()
     M.state.melee_missing=current_target():lower()

@@ -620,6 +620,11 @@ local function _emit_direct(payload)
 end
 
 function Yso.emit(payload, opts)
+  local pause = Yso.Combat and Yso.Combat.Pause
+  if pause then
+    local blocked, reason = pause.blocks_emission(payload, opts)
+    if blocked then return false, reason end
+  end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}

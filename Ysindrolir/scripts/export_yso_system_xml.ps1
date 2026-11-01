@@ -160,6 +160,8 @@ $ScriptToSourcePath = [ordered]@{
   'Parry Module'                  = Join-Path $YsoDir 'Combat\parry.lua'
   'Prio Baselines'                = Join-Path $YsoDir 'xml\prio_baselines.lua'
   'Radiance event'                = Join-Path $YsoDir 'xml\radiance_event.lua'
+  'Combat paralysis policy'       = Join-Path $YsoDir 'Combat\combat_pause.lua'
+  'Airlord attack logic'           = Join-Path $Ysindrolir 'Airlord\combat_routes.lua'
   'Route registry'                = Join-Path $YsoDir 'Combat\route_registry.lua'
   'route_gate'                    = Join-Path $YsoDir 'Combat\route_gate.lua'
   'Route chassis loader'          = Join-Path $YsoDir 'xml\route_chassis_loader.lua'
@@ -192,6 +194,7 @@ $ScriptInserts = @(
   @{ Name = 'Yso serverside policy'; After = 'Yso modes';                Source = Join-Path $YsoDir 'Curing\serverside_policy.lua' },
   @{ Name = 'Yso party targeting';   After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_party_targeting.lua' },
   @{ Name = 'Yso pulse';             After = 'Yso modes';                Source = Join-Path $YsoDir 'xml\yso_pulse_wake_bus.lua' },
+  @{ Name = 'Combat paralysis policy'; After = 'Route registry'; Source = Join-Path $YsoDir 'Combat\combat_pause.lua' },
   @{ Name = 'Route registry';        After = 'Yso pulse';                Source = Join-Path $YsoDir 'Combat\route_registry.lua' },
   @{ Name = 'Magi group route retirement'; After = 'Route registry'; Source = Join-Path $MagiDir 'retire_group_damage.lua' },
   @{ Name = 'Offense core';          After = 'Yso.offense.request_tick'; Source = Join-Path $YsoDir 'Combat\offense_core.lua' },

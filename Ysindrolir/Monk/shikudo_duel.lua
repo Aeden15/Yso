@@ -18,6 +18,11 @@ local function now()
   local n=type(getEpoch)=='function' and tonumber(getEpoch()) or os.time()
   return n>20000000000 and n/1000 or n
 end
+local function confirmation_now()
+ local P=Yso.Combat and Yso.Combat.Pause
+ return P and P.confirmation_now(M.key) or now()
+end
+
 local function who()
   local n=type(Yso.get_target)=='function' and Yso.get_target() or rawget(_G,'target')
   return tostring(n or ''):gsub('^%s+',''):gsub('%s+$','')
@@ -179,7 +184,7 @@ function M.note_resource_refusal(lane)
   -- A refused mental cast has no new recovery cycle. Never interpret the
   -- generic "Balance used" banner as a refusal; callers match exact denials.
   local p=M.state.mental
-  if not M.is_enabled() or not p or p.target:lower()~=who():lower() or now()-p.at>2 then return false end
+  if not M.is_enabled() or not p or p.target:lower()~=who():lower() or confirmation_now()-p.at>2 then return false end
   p.rejected=true
   if not p.eq_down then M.state.mental=nil end
   echo(p.kind..' refused: '..tostring(lane)..' unavailable; no effect assumed')
@@ -235,19 +240,19 @@ function M.note_target_unavailable()
   local p=pending()
   if M.cfg.strategy=='lock' then
     local mental=M.state.mental
-    if M.is_enabled() and mental and mental.target:lower()==who():lower() and now()-mental.at<=2 then
+    if M.is_enabled() and mental and mental.target:lower()==who():lower() and confirmation_now()-mental.at<=2 then
       mental.rejected=true
       if not mental.eq_down then M.state.mental=nil end
       M.state.melee_missing=who():lower();stop('mental_target_unavailable');return true
     end
     local r=M.state.mindlock_request
-    if M.is_enabled() and r and r.target:lower()==who():lower() and now()-r.at<=2 then
+    if M.is_enabled() and r and r.target:lower()==who():lower() and confirmation_now()-r.at<=2 then
       M.state.mindlock_request=nil;M.state.melee_missing=who():lower()
       if p and p.target:lower()==who():lower() then p.rejected=true;if not p.bal_down then M.state.pending=nil;M.state.cooldown=nil end end
       stop('target_unavailable');return true
     end
   end
-  if not M.is_enabled() or not p or p.target:lower()~=who():lower() or now()-p.at>2 then return false end
+  if not M.is_enabled() or not p or p.target:lower()~=who():lower() or confirmation_now()-p.at>2 then return false end
   if p.kind=='combo' or p.kind=='dispatch' then
     M.state.melee_missing=p.target:lower();M.state.pending=nil
     if not p.bal_down then M.state.cooldown=nil end
@@ -262,9 +267,9 @@ function M.note_target_grace(name)
     if not M.is_enabled() or tostring(name or ''):lower()~=who():lower() then return false end
     local matched=false
     local r=M.state.mindlock_request
-    if r and r.target:lower()==who():lower() and now()-r.at<=2 then M.state.mindlock_request=nil;matched=true end
+    if r and r.target:lower()==who():lower() and confirmation_now()-r.at<=2 then M.state.mindlock_request=nil;matched=true end
     each_pending(function(p)
-      if p.target:lower()==who():lower() and now()-p.at<=2 and p.kind~='adopt' and p.kind~='transition' and p.kind~='hyperfocus' then
+      if p.target:lower()==who():lower() and confirmation_now()-p.at<=2 and p.kind~='adopt' and p.kind~='transition' and p.kind~='hyperfocus' then
         matched=true;p.rejected=true
         if p.lane=='bal' and not p.bal_down then M.state.pending=nil;M.state.cooldown=nil end
         if p.lane=='eq' and not p.eq_down then M.state.mental=nil end
@@ -274,7 +279,7 @@ function M.note_target_grace(name)
     return matched
   end
   local p=pending()
-  if not M.is_enabled() or not p or now()-p.at>2
+  if not M.is_enabled() or not p or confirmation_now()-p.at>2
       or p.kind=='adopt' or p.kind=='transition' or p.kind=='hyperfocus'
       or tostring(name or ''):lower()~=p.target:lower() or p.target:lower()~=who():lower() then return false end
   -- A refusal cannot produce action confirmation. Preserve any real recovery
@@ -315,7 +320,7 @@ local function waiting()
     end
     M.state.pending=nil; M.state.cooldown=nil; return false
   end
-  if now()-p.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then timed_out(p) end
+  if confirmation_now()-p.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then timed_out(p) end
   return true
 end
 local function waiting_mental()
@@ -323,7 +328,7 @@ local function waiting_mental()
   M.note_vitals()
   -- Resource completion frees the slot; only AK observations establish effects.
   if p.eq_recovered and lane_ready('eq') then M.state.mental=nil;return false end
-  if now()-p.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then timed_out(p) end
+  if confirmation_now()-p.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then timed_out(p) end
   return true
 end
 local function missing_lock_affs(c)
@@ -361,7 +366,7 @@ end
 local function record(a,target)
   local expected=a.command:match('^mind (impatience)') or a.command:match('^mind (blackout)')
   if a.command:match('^mind batter') then expected='stupidity' end
-  local p={at=now(),target=target,lane=a.lane,kind=a.kind,command=a.command,expected=expected,
+  local p={at=confirmation_now(),target=target,lane=a.lane,kind=a.kind,command=a.command,expected=expected,
     next_lock_plan=a.next_lock_plan,
     destination=a.kind=='adopt' and a.command:match('^adopt (%a+)') or a.opts and a.opts.destination}
   if a.opts and a.opts.attacks then
@@ -379,8 +384,8 @@ local function free_lock_command(c)
   local L=Yso.monk.mindlock
   if L.locked_target and tostring(L.locked_target):lower()~=c.target:lower() then return nil end
   local forming=tostring(L.pending_target or ''):lower()==c.target:lower()
-  if not r and forming then r={target=c.target,at=now()};M.state.mindlock_request=r end
-  if r and not forming and now()-r.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then M.state.mindlock_request=nil;r=nil end
+  if not r and forming then r={target=c.target,at=confirmation_now()};M.state.mindlock_request=r end
+  if r and not forming and confirmation_now()-r.at>=(tonumber(M.cfg.confirmation_timeout) or 10) then M.state.mindlock_request=nil;r=nil end
   if not r then return 'mind lock '..c.target end
 end
 local function lock_tick()
@@ -413,7 +418,7 @@ local function lock_tick()
   end
   if type(Yso.emit)~='function' or Yso.queue then return hold('no_emitter') end
   if Yso.emit(payload,{kind='offense',route=M.key,reason=physical and physical.phase or mental and mental.phase or 'mindlock',target=c.target,commit=true})~=true then return hold('emit_failed') end
-  if free then M.state.mindlock_request={target=c.target,at=now()} end
+  if free then M.state.mindlock_request={target=c.target,at=confirmation_now()} end
   if physical then
     local p=record(physical,c.target);M.state.pending=p;M.state.cooldown=p
     M.state.mental_opening_target=nil

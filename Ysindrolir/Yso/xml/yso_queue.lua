@@ -508,6 +508,9 @@ local function _commit_payload(opts)
   local piggyback = (opts.piggyback == true)
 
   local function _staged_cmd(lane)
+    local pause=Yso.Combat and Yso.Combat.Pause
+    local owner=type(Q.get_staged_owner)=='function' and Q.get_staged_owner(lane)
+    if pause and owner and pause.blocks_emission({},owner) then return '' end
     return _trim(Q._staged[lane])
   end
 
@@ -556,9 +559,17 @@ local function _commit_payload(opts)
   return out
 end
 
-local function _clear_payload(payload)
+local function _clear_payload(payload, free_mask)
   if type(payload.free) == "table" and #payload.free > 0 then
-    Q._staged.free = {}
+    if free_mask then
+      local kept,meta={},{}
+      for i,cmd in ipairs(Q._staged.free) do
+        if not free_mask[i] then
+          kept[#kept+1]=cmd;meta[#kept]=Q._staged_meta.free[i] or {cmd=cmd,route=''}
+        end
+      end
+      Q._staged.free=kept;Q._staged_meta.free=meta
+    else Q._staged.free = {} end
   end
   if _trim(payload.eq) ~= "" then Q._staged.eq = nil end
   if _trim(payload.bal) ~= "" then Q._staged.bal = nil end
@@ -809,6 +820,8 @@ end
 ------------------------------------------------------------
 
 function Q.install_lane(lane, cmd, opts)
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause then local blocked,reason=pause.blocks_emission({},opts);if blocked then return false,reason end end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
@@ -921,7 +934,40 @@ function Q.list(lane)
   return Q._staged[key]
 end
 
+-- Staging ownership is local bookkeeping; it never cancels dispatched lanes.
+Q._staged_meta=Q._staged_meta or {free={}}
+function Q.discard_staged_route(route)
+  route=tostring(route or ''):lower()
+  local removed={}
+  local function offensive(meta) return not meta.kind or meta.kind=='' or meta.kind=='offense' end
+  for _,lane in ipairs({'eq','bal','class'}) do
+    local meta=Q._staged_meta[lane]
+    if meta and meta.route==route and offensive(meta) and Q._staged[lane]==meta.cmd then
+      removed[#removed+1]={lane=lane,cmd=meta.cmd}
+      Q._staged[lane]=nil;Q._staged_meta[lane]=nil
+    end
+  end
+  local kept,meta={},{}
+  for i,cmd in ipairs(Q._staged.free or {}) do
+    local owner=Q._staged_meta.free[i]
+    if owner and owner.route==route and offensive(owner) and owner.cmd==cmd then
+      removed[#removed+1]={lane="free",cmd=cmd}
+    else
+      kept[#kept+1]=cmd;meta[#kept]=owner or {cmd=cmd,route=''}
+    end
+  end
+  Q._staged.free=kept;Q._staged_meta.free=meta
+  return removed
+end
+
+function Q.get_staged_owner(lane)
+ local meta=Q._staged_meta[lane]
+ if meta and meta.cmd==Q._staged[lane] then return meta end
+end
+
 function Q.stage(lane, payload, opts)
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause then local blocked,reason=pause.blocks_emission({},opts);if blocked then return false,reason end end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
@@ -944,11 +990,13 @@ function Q.stage(lane, payload, opts)
     if type(payload) ~= "string" and type(payload) ~= "table" then return false end
     if opts.clear == true or opts.replace == true then
       Q._staged.free = {}
+      Q._staged_meta.free = {}
     end
     local parts = _split_free(payload)
     if #parts == 0 then return false end
     for i = 1, #parts do
       table_insert(Q._staged.free, parts[i])
+      Q._staged_meta.free[#Q._staged.free]={cmd=parts[i],route=tostring(opts.route or ""):lower(),kind=tostring(opts.kind or ""):lower()}
     end
     return true
   end
@@ -964,6 +1012,7 @@ function Q.stage(lane, payload, opts)
   payload = _trim(payload)
   if payload == "" then return false end
   Q._staged[key] = payload
+  Q._staged_meta[key]={cmd=payload,route=tostring(opts.route or ""):lower(),kind=tostring(opts.kind or ""):lower()}
   return true
 end
 
@@ -984,9 +1033,26 @@ end
 ------------------------------------------------------------
 
 function Q.commit(opts)
+  local pause=Yso.Combat and Yso.Combat.Pause
+  if pause then local blocked,reason=pause.blocks_emission({},opts);if blocked then return false,reason end end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.blocks(opts) then return false, "enemy_deliverance" end
   local payload = _commit_payload(opts)
+  local free_mask
+  if pause then
+    for _,lane in ipairs({'eq','bal','class'}) do
+      local owner=Q.get_staged_owner(lane)
+      if owner and pause.blocks_emission({},owner) then payload[lane]=nil end
+    end
+    local free={};free_mask={}
+    for i,cmd in ipairs(payload.free or {}) do
+      local owner=Q._staged_meta.free[i]
+      if not (owner and pause.blocks_emission({},owner)) then
+        free[#free+1]=cmd;free_mask[i]=true
+      end
+    end
+    payload.free=free
+  end
   payload = _only_clearfull_lane(payload, opts)
   if not _payload_has_value(payload) then return false end
 
@@ -1037,11 +1103,11 @@ function Q.commit(opts)
   end
 
   if not any then
-    _clear_payload(consumed)
+    _clear_payload(consumed, free_mask)
     return false
   end
 
-  _clear_payload(consumed)
+  _clear_payload(consumed, free_mask)
   if type(Q.mark_lane_dispatched) == "function" then
     if _trim(queued.eq) ~= "" then pcall(Q.mark_lane_dispatched, "eq", "queue.commit") end
     if _trim(queued.bal) ~= "" then pcall(Q.mark_lane_dispatched, "bal", "queue.commit") end
