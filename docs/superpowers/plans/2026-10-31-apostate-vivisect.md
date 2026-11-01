@@ -21,7 +21,7 @@
 - [x] Refactor lock route factory, add vivisect policy, route registry and active-route tracking adapters; preserve truelock behavior.
 - [x] Extend scoped builder with permanent Curing triggers, generic Riding tracking, route script/alias and callback adapters; rebuild affected XMLs.
 - [x] Run source and packaged regression tests, verify rebuild stability, obtain independent review and resolve substantive findings.
-- [ ] Synchronize scoped files to canonical clone, commit and push; verify remote commit and matching workspace files.
+- [x] Synchronize scoped files to canonical clone, commit and push; verify remote commit and matching workspace files.
 
 ## Execution ledger
 Ruling: implement in the user-designated Desktop editing workspace; Git integration is a separate scoped copy to the canonical clone. No repository exists here for worktree creation.
@@ -29,3 +29,5 @@ Ruling: without verified live Vivisect kill/failure messages, stop after observe
 Ruling: ordinary Riding mount setup, prone delivery and command costs follow the existing captured references and agreed plan; no live game verification is available.
 Final review: independent read-only reviewer found repeated-command ownership and long-paralysis timeout defects. Both received failing reproductions before fixes: release only the exact settled action's client ownership; renew its confirmation window after curing without resending.
 Final review: no deferred minor findings. Live message exhaustiveness and Mudlet event ordering are limited to available fixtures; verify through real gameplay after import.
+Delivery: implementation commit ebd834d6c2789590a4604735b669e798bd76e040 pushed to Aeden15/Yso main and verified with ls-remote. Existing credential-manager login used through a per-command helper override; no global Git settings changed.
+Verification: all four Apostate PowerShell suites pass in the canonical clone; 60 self-affliction checks and 24 wake-route checks pass in the Desktop workspace. Repeated scoped builds are byte-stable. Both packages parse and maintained route registry mirrors agree. No live game commands or Mudlet imports were performed.
