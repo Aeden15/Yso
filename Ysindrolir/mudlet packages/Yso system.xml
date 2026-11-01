@@ -9743,21 +9743,23 @@ bash()
 				<regex />
 				<Alias isActive="yes" isFolder="no">
 					<name>Glide(Flying)</name>
-					<script>Yso.dragon.manual("glide", matches[2].." "..matches[3])</script>
+					<script>sendAll("cq all", "glide " .. matches[2] .. " " .. matches[3])</script>
 					<command />
 					<packageName />
 					<regex>^gli (\w+) (\w+)$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Leap</name>
-					<script>Yso.dragon.manual("leap", matches[2])</script>
+					<script>sendAll("cq all", "leap " .. matches[2])</script>
 					<command />
 					<packageName />
 					<regex>^lea (\w+)$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Breath blast</name>
-					<script>Yso.dragon.manual("blast")</script>
+					<script>local t = Yso.dragon.target()
+if not t then return end
+sendAll("cq all", "blast " .. t)</script>
 					<command />
 					<packageName />
 					<regex>^blas$</regex>
@@ -9770,7 +9772,9 @@ bash()
 					<regex />
 					<Alias isActive="yes" isFolder="no">
 						<name>Left  arm</name>
-						<script>Yso.dragon.manual("rend_left")</script>
+						<script>local t = Yso.dragon.target()
+if not t then return end
+sendAll("cq all", "rend " .. t .. " left arm curare")</script>
 						<command />
 						<packageName />
 						<regex>^dla$</regex>
@@ -9778,35 +9782,41 @@ bash()
 				</AliasGroup>
 				<Alias isActive="yes" isFolder="no">
 					<name>Breathstorm</name>
-					<script>Yso.dragon.manual("breathstorm")</script>
+					<script>sendAll("cq all", "breathstorm")</script>
 					<command />
 					<packageName />
 					<regex>^storm$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Breath stream</name>
-					<script>Yso.dragon.manual("breathstream", matches[2])</script>
+					<script>local t = Yso.dragon.target()
+if not t then return end
+sendAll("cq all", "breathstream " .. t .. " " .. matches[2])</script>
 					<command />
 					<packageName />
 					<regex>^stre (\w+)$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Tailsweep</name>
-					<script>Yso.dragon.manual("tailsweep")</script>
+					<script>sendAll("cq all", "tailsweep")</script>
 					<command />
 					<packageName />
 					<regex>^sweep$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>Attack</name>
-					<script>Yso.dragon.manual("attack")</script>
+					<script>local t = Yso.dragon.target()
+if not t then return end
+sendAll("cq all", "dragoncurse " .. t .. " sensitivity 1", "rend " .. t .. " curare")</script>
 					<command />
 					<packageName />
 					<regex>^atk$</regex>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>roar</name>
-					<script>Yso.dragon.manual("roar")</script>
+					<script>local t = Yso.dragon.target()
+if not t then return end
+sendAll("cq all", "dragonroar " .. t)</script>
 					<command />
 					<packageName />
 					<regex>^roar$</regex>
