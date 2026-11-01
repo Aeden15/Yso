@@ -76,6 +76,11 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
+  apostate_vivisect = {
+    id = 'apostate_vivisect', context = 'duel', mode = 'combat',
+    namespace = 'Yso.off.apostate.vivisect', description = 'Apostate Vivisect',
+    priority = 66, class = 'apostate', active = true, module_name = 'apostate_vivisect',
+  },
   apostate_truelock = {
     id = 'apostate_truelock', context = 'duel', mode = 'combat',
     namespace = 'Yso.off.apostate.truelock', description = 'Apostate Truelocks',
@@ -199,6 +204,7 @@ local ROUTES = {
 
 local ALIASES = {
   tlock = { apostate = 'apostate_truelock' },
+  vivi = { apostate = 'apostate_vivisect' },
   aidam = "airlord_damage",
   alock = "airlord_lock",
   shdam = { monk = "monk_shikudo_group_damage" },

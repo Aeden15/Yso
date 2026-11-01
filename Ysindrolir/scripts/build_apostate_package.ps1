@@ -38,6 +38,23 @@ if($akDoc.SelectSingleNode('//Script[name="Apostate tracking"]')){
 }else{
  $akText=$akText.Replace('</ScriptPackage>',(New-Script 'Apostate tracking' $akSource)+"`n</ScriptPackage>")
 }
+# Match confirmed Riding outcomes independently of mount descriptions.
+$ridingPattern='(?s)<TriggerGroup\b[^>]*>\s*<name>Riding Group</name>.*?</TriggerGroup>'
+$riding=[regex]::Match($akText,$ridingPattern)
+if(-not $riding.Success){throw 'Missing Riding Group'}
+$ridingDoc=[xml]('<Root>'+$riding.Value+'</Root>')
+$trample=$ridingDoc.SelectSingleNode('//Trigger[name="Trample"]')
+if(-not $trample){throw 'Missing Riding Trample'}
+$trample.script='ak.apostate.trample(matches[4], matches[2], matches[3])'
+$trample.regexCodeList.InnerXml=@'
+<string>^.+? (?:breaks|crushes|pulverises|smashes) the (left|right) (arm|leg) of ([\w'-]+)\.$</string>
+<string>^The (left|right) (arm|leg) of ([\w'-]+) is smashed to a bloody pulp\.$</string>
+'@
+$trample.regexCodePropertyList.InnerXml='<integer>1</integer><integer>1</integer>'
+$ridingText=Set-Body $riding.Value Trigger 'Trample' $trample.script
+$tramplePattern='(?s)<Trigger\b[^>]*>\s*<name>Trample</name>.*?</Trigger>'
+$ridingText=[regex]::Replace($ridingText,$tramplePattern,[Text.RegularExpressions.MatchEvaluator]{param($m) $trample.OuterXml},1)
+$akText=$akText.Substring(0,$riding.Index)+$ridingText+$akText.Substring($riding.Index+$riding.Length)
 $akText=Set-Body $akText Trigger 'Deadeyes' 'ak.apostate.capture_eye(matches[3], matches[2])'
 $akText=Set-Body $akText Trigger 'Clumsy Brick' 'ak.apostate.fail_eye()'
 $akText=Set-Body $akText Trigger 'Curse Pull Dump' 'ak.apostate.commit_eyes()'
@@ -122,7 +139,7 @@ if($newAk.SelectSingleNode('//TriggerGroup[name="Occultist Group"]').OuterXml -c
 # Confirmations are adapters only; the maintained Lua owns state transitions.
 $adapters=@(
  @('Apostate Puncture','ak.apostate.puncture(matches[2])',@("^Your hand guided by the daemon held in its grasp, you puncture ([\w'-]+)'s skin with the daegger's tip\.$")),
- @('Apostate route prompt','local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock; if M then M.note_prompt() end',@(''))
+ @('Apostate route prompt','local A=Yso and Yso.off and Yso.off.apostate; local M=A and (type(A.active_route)=="function" and A.active_route() or A.truelock); if M then M.note_prompt() end',@(''))
 )
 foreach($entry in $adapters){
  $akText=[regex]::Replace($akText,'(?s)<Trigger\b[^>]*>\s*<name>'+[regex]::Escape($entry[0])+'</name>.*?</Trigger>','')
@@ -163,11 +180,11 @@ foreach($entry in @(@('Apostate reference','Apostate/evileye_reference.lua'),@('
   $ysoText=$ysoText.Insert($anchor.Index,(New-Script $entry[0] $body)+"`n")
  }else{$ysoText=Set-Body $ysoText Script $entry[0] $body}
 }
-foreach($entry in @(@('Apostate entourage','Apostate/entourage.lua'),@('Apostate daegger envenom','Apostate/daegger_envenom.lua'),@('Apostate Truelocks','Apostate/lock_route.lua'))){
+foreach($entry in @(@('Apostate entourage','Apostate/entourage.lua'),@('Apostate daegger envenom','Apostate/daegger_envenom.lua'),@('Apostate Truelocks','Apostate/lock_route.lua'),@('Apostate Vivisect','Apostate/vivisect_route.lua'))){
  $body=[IO.File]::ReadAllText((Join-Path $root $entry[1]))
  if(([xml]$ysoText).SelectSingleNode('//Script[name="'+$entry[0]+'"]')){$ysoText=Set-Body $ysoText Script $entry[0] $body}
  else{
-  $anchorName=if($entry[0] -eq 'Apostate Truelocks'){'Apostate entourage'}else{'Apostate utilities'}
+  $anchorName=if($entry[0] -eq 'Apostate Vivisect'){'Apostate Truelocks'}elseif($entry[0] -eq 'Apostate Truelocks'){'Apostate entourage'}else{'Apostate utilities'}
   $anchor=[regex]::Match($ysoText,'(?s)<Script\b[^>]*>\s*<name>'+[regex]::Escape($anchorName)+'</name>.*?</Script>')
   if(-not $anchor.Success){throw ('Missing script insertion point: '+$anchorName)}
   $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,(New-Script $entry[0] $body)+"`n")
@@ -175,6 +192,20 @@ foreach($entry in @(@('Apostate entourage','Apostate/entourage.lua'),@('Apostate
 }
 $registry=[IO.File]::ReadAllText((Join-Path $root 'Yso/Combat/route_registry.lua'))
 $ysoText=Set-Body $ysoText Script 'Route registry' $registry
+# Two permanent, exact self-paralysis observations in the user's Curing folder.
+foreach($entry in @(
+ @('Self paralysis gained','^A prickly stinging overcomes your body, fading away into numbness\.$','Yso.selfaff.gain("paralysis", "text.paralysis.gained", { force_text = true })'),
+ @('Self paralysis cured','^Your muscles unlock; you are no longer paralysed\.$','Yso.selfaff.cure("paralysis", "text.paralysis.cured", { force_text = true })')
+)){
+ $ysoText=[regex]::Replace($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>'+[regex]::Escape($entry[0])+'</name>.*?</Trigger>','')
+ $curingDoc=[xml]$ysoText
+ $curing=$curingDoc.SelectSingleNode('//TriggerGroup[name="Yso Triggers"]/TriggerGroup[name="Curing"]')
+ if(-not $curing){throw 'Missing Yso Triggers/Curing folder'}
+ $node=New-Trigger $newAk $entry[0] $entry[2] @($entry[1])
+ $anchor=[regex]::Match($ysoText,'(?s)<Trigger\b[^>]*>\s*<name>Ignored affs</name>.*?</Trigger>')
+ if(-not $anchor.Success){throw 'Missing Curing trigger insertion point'}
+ $ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,$node)
+}
 $aliasBody="Yso.util.toggle_route_alias('apostate_truelock', 'tlock')"
 if(([xml]$ysoText).SelectSingleNode('//Alias[name="Truelocks"]')){$ysoText=Set-Body $ysoText Alias 'Truelocks' $aliasBody}
 else{
@@ -182,6 +213,13 @@ else{
  $alias='<Alias isActive="yes" isFolder="no"><name>Truelocks</name><script>'+(Escape $aliasBody)+'</script><command /><packageName /><regex>^tlock$</regex></Alias>'
  $ysoText=$ysoText.Insert($anchor.Index,$alias)
 }
+# Keep the named Vivisect toggle directly beside Truelocks in Apostasy.
+$ysoText=[regex]::Replace($ysoText,'(?s)<Alias\b[^>]*>\s*<name>Vivisect(?: route)?</name>.*?</Alias>','')
+$viviBody="Yso.util.toggle_route_alias('apostate_vivisect', 'vivi')"
+$anchor=[regex]::Match($ysoText,'(?s)<Alias\b[^>]*>\s*<name>Truelocks</name>.*?</Alias>')
+if(-not $anchor.Success){throw 'Missing Truelocks alias insertion point'}
+$alias='<Alias isActive="yes" isFolder="no"><name>Vivisect route</name><script>'+(Escape $viviBody)+'</script><command /><packageName /><regex>^vivi$</regex></Alias>'
+$ysoText=$ysoText.Insert($anchor.Index+$anchor.Length,$alias)
 # Maintain the exact manual Numbness alias beside Pentagram in Apostasy.
 $apostasyGroups=[regex]::Matches($ysoText,'(?s)<AliasGroup\b[^>]*>\s*<name>Apostasy</name>.*?</AliasGroup>')
 if($apostasyGroups.Count -ne 1){throw 'Expected unique Apostasy alias folder'}
@@ -246,6 +284,7 @@ foreach($entry in @(
 }
 [void][xml]$ysoText
 if($PSCmdlet.ShouldProcess('AK.xml and Yso system.xml','Synchronize Apostate tracking, reference, Deadeyes helpers, and Catharsis')){
+ [IO.File]::WriteAllText((Join-Path $root 'Yso/xml/route_registry.lua'),$registry,[Text.UTF8Encoding]::new($false))
  [IO.File]::WriteAllText($akPath,$akText,[Text.UTF8Encoding]::new($false))
  [IO.File]::WriteAllText($ysoPath,$ysoText,[Text.UTF8Encoding]::new($false))
 }

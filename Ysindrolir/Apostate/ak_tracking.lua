@@ -10,7 +10,8 @@ A.evileye_map={deaf='deaf',impatience='impatience',clumsy='clumsiness',vertigo='
 A.shrivel_unresolved=A.shrivel_unresolved or {}
 A.evileye_active=A.evileye_active or {}
 local function route()
-  return Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
+  local A=Yso and Yso.off and Yso.off.apostate
+  return A and (type(A.active_route)=='function' and A.active_route() or A.truelock)
 end
 local function current(name)
   return type(name)=='string' and type(target)=='string' and name:lower()==target:lower()
@@ -89,6 +90,15 @@ function A.note_gain(aff,source)
 end
 function A.note_loss(aff)
   for word in tostring(aff):gmatch('%a+') do A.evileye_active[word]=nil end
+end
+-- Generic Riding confirmations: the mount description is deliberately ignored.
+function A.trample(name,side,limb)
+  if (ak.ai and ak.ai()) or not current(name) then return false end
+  if (side~='left' and side~='right') or (limb~='arm' and limb~='leg') then return false end
+  local key=side..limb
+  if not present(key) then OppGainedAff(key) end
+  local M=route();if M then M.note_pressure('trample',name) end
+  return true
 end
 function A.consume_corrupt(name,retained)
   if not current(name) then return false end

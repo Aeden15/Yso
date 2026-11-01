@@ -1,5 +1,6 @@
 -- Exact rejection lines only; never call this for "Equilibrium/Balance used".
-local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
+local A=Yso and Yso.off and Yso.off.apostate
+local M=A and (type(A.active_route)=='function' and A.active_route() or A.truelock)
 if not (M and type(M.note_eye_rejected)=='function') then return end
 local line=matches[1] or ''
 if line=='You must regain equilibrium first.' then M.note_eye_rejected('equilibrium')

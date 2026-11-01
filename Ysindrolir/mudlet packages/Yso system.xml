@@ -207,7 +207,7 @@ end</script>
 					<regexCodePropertyList>
 						<integer>1</integer>
 					</regexCodePropertyList>
-				</Trigger>
+				</Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Self paralysis cured</name><script>Yso.selfaff.cure("paralysis", "text.paralysis.cured", { force_text = true })</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your muscles unlock; you are no longer paralysed\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Self paralysis gained</name><script>Yso.selfaff.gain("paralysis", "text.paralysis.gained", { force_text = true })</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^A prickly stinging overcomes your body, fading away into numbness\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Miscellaneous combat</name>
 					<script />
@@ -4983,7 +4983,8 @@ cecho("\n&lt;DeepPink&gt;[Apostasy] &lt;violet_red&gt;MINDREADING&lt;reset&gt;\n
 cecho("\n&lt;DeepPink&gt;[Apostasy] &lt;violet_red&gt;TRACING&lt;reset&gt;\n")</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^Your Baalzadeen is tracing the movements of ([\w'-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
 <Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Nightmare unavailable</name><script>yso.apostate.nightmare = false</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^A nightmare may only be summoned in the slumber of night\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
 <Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Truelocks eye rejected</name><script>-- Exact rejection lines only; never call this for "Equilibrium/Balance used".
-local M=Yso and Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
+local A=Yso and Yso.off and Yso.off.apostate
+local M=A and (type(A.active_route)=='function' and A.active_route() or A.truelock)
 if not (M and type(M.note_eye_rejected)=='function') then return end
 local line=matches[1] or ''
 if line=='You must regain equilibrium first.' then M.note_eye_rejected('equilibrium')
@@ -9957,7 +9958,7 @@ end</script>
 						<command />
 						<packageName />
 						<regex>^tlock$</regex>
-					</Alias>
+					</Alias><Alias isActive="yes" isFolder="no"><name>Vivisect route</name><script>Yso.util.toggle_route_alias(&apos;apostate_vivisect&apos;, &apos;vivi&apos;)</script><command /><packageName /><regex>^vivi$</regex></Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Tracing</name>
 						<script>Yso.apostate.trace(matches[2], matches[3], matches[4])</script>
@@ -16491,6 +16492,11 @@ local function _alias_target(value)
 end
 
 local ROUTES = {
+  apostate_vivisect = {
+    id = &apos;apostate_vivisect&apos;, context = &apos;duel&apos;, mode = &apos;combat&apos;,
+    namespace = &apos;Yso.off.apostate.vivisect&apos;, description = &apos;Apostate Vivisect&apos;,
+    priority = 66, class = &apos;apostate&apos;, active = true, module_name = &apos;apostate_vivisect&apos;,
+  },
   apostate_truelock = {
     id = &apos;apostate_truelock&apos;, context = &apos;duel&apos;, mode = &apos;combat&apos;,
     namespace = &apos;Yso.off.apostate.truelock&apos;, description = &apos;Apostate Truelocks&apos;,
@@ -16614,6 +16620,7 @@ local ROUTES = {
 
 local ALIASES = {
   tlock = { apostate = &apos;apostate_truelock&apos; },
+  vivi = { apostate = &apos;apostate_vivisect&apos; },
   aidam = &quot;airlord_damage&quot;,
   alock = &quot;airlord_lock&quot;,
   shdam = { monk = &quot;monk_shikudo_group_damage&quot; },
@@ -28029,7 +28036,8 @@ function A.note_mana(name, current, maximum)
   if Yso.tgt and type(Yso.tgt.set_mana_pct) == &apos;function&apos; then
     Yso.tgt.set_mana_pct(victim, current * 100 / maximum)
   end
-  local route = Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
+  local routes = Yso.off and Yso.off.apostate
+  local route = routes and (type(routes.active_route)==&apos;function&apos; and routes.active_route() or routes.truelock)
   if route and route.is_enabled() then
     return type(route.note_mana)==&apos;function&apos; and route.note_mana(name,current,maximum) or false
   end
@@ -28115,8 +28123,12 @@ return E
 						<packageName />
 						<script>-- Lock decisions are separate from delivery; AK owns confirmed target state.
 Yso=Yso or {};Yso.off=Yso.off or {};Yso.off.apostate=Yso.off.apostate or {}
-local M=Yso.off.apostate.truelock or {};Yso.off.apostate.truelock=M
-M.key=&apos;apostate_truelock&apos;;M.alias_owned=true
+-- Both finishers share pressure/delivery code, but never state or ownership.
+function Yso.off.apostate.create_lock_route(kind)
+local vivisect=kind==&apos;vivisect&apos;
+local slot=vivisect and &apos;vivisect&apos; or &apos;truelock&apos;
+local M=Yso.off.apostate[slot] or {};Yso.off.apostate[slot]=M
+M.key=vivisect and &apos;apostate_vivisect&apos; or &apos;apostate_truelock&apos;;M.alias_owned=true
 M.state=M.state or {};M.state.loop_delay=0.15
 M.Affliction_giving={
  &apos;paralysis&apos;,&apos;undeaf&apos;,&apos;impatience&apos;,&apos;asthma&apos;,&apos;masochism&apos;,&apos;manaleech&apos;,&apos;slickness&apos;,&apos;anorexia&apos;,&apos;disloyalty&apos;,
@@ -28128,6 +28140,7 @@ M.Padding_kelp_afflictions={
  &apos;clumsiness&apos;,&apos;weariness&apos;,&apos;sensitivity&apos;,
 }
 M.undeaf_delivery=&apos;evileye&apos; -- Optional: &apos;prefarar&apos; uses Puncture when available.
+if vivisect then M.Affliction_giving[#M.Affliction_giving+1]=&apos;confusion&apos; end
 -- Captured live output, 2026-10-26. Both lines are required: the command&apos;s
 -- acceptance does not establish which curse the Baalzadeen actually retained.
 local corrupt_success_pattern=[[^You command your baalzadeen to corrupt the soul of ([\w&apos;-]+)\.$]]
@@ -28208,7 +28221,7 @@ function M.eye_command(name,picks,curseward)
 end
 
 local function note(text)
- if type(cecho)==&apos;function&apos; then cecho(&apos;&lt;DeepPink&gt;[Truelocks] &lt;reset&gt;&apos;..text..&apos;\n&apos;) end
+ if type(cecho)==&apos;function&apos; then cecho(&apos;&lt;DeepPink&gt;[&apos;..(vivisect and &apos;Vivisect&apos; or &apos;Truelocks&apos;)..&apos;] &lt;reset&gt;&apos;..text..&apos;\n&apos;) end
 end
 function M.is_enabled() return M.state.loop_enabled==true end
 function M.is_active()
@@ -28221,12 +28234,15 @@ function M.stop(reason)
  return false
 end
 function M.alias_loop_prepare_start(ctx)
+ local other=Yso.off.apostate[vivisect and &apos;truelock&apos; or &apos;vivisect&apos;]
+ if other and other.is_enabled() then other.stop(&apos;route_changed&apos;) end
  M.state.pending=nil;M.state.victim=nil;M.state.reason=nil
  M.state.finisher=nil
  M.state.confirmation_warning=nil
  M.state.quarantine_warning=nil
  M.state.commands={}
  M.state.bal_until=nil;M.state.eq_until=nil;M.state.startup_error=nil
+ M.state.paralysis_paused=nil
  return ctx
 end
 function M.alias_loop_on_started()
@@ -28411,26 +28427,52 @@ function M.note_pressure(kind,name,delivered)
 end
 function M.note_eye_rejected(reason,name)
  local p=M.state.pending
- if not M.is_enabled() or not p or p.action~=&apos;eyes&apos; or not same(p.target,victim()) or (name and not same(name,p.target)) then return false end
+ if not M.is_enabled() or not p or (p.action~=&apos;eyes&apos; and not vivisect) or not same(p.target,victim()) or (name and not same(name,p.target)) then return false end
+ if p.action~=&apos;eyes&apos; and reason~=&apos;equilibrium&apos; and reason~=&apos;balance&apos; then return false end
  if reason==&apos;blind&apos; then return M.stop(&apos;eyes_blind&apos;) end
  if reason~=&apos;equilibrium&apos; and reason~=&apos;balance&apos; and reason~=&apos;curseward&apos; then return false end
  if reason==&apos;curseward&apos; then ak.defs=ak.defs or {};ak.defs.curseward=true end
  p.rejected=reason;return true
 end
+local function release_confirmed_owner(p)
+ -- A confirmed/rejected command no longer needs client deduplication. Keep
+ -- server queues intact and never release a replacement owned by another send.
+ local Q=Yso.queue
+ if vivisect and p.owned and Q and type(Q.get_owned)==&apos;function&apos;
+  and Q.get_owned(p.lane)==p.owned and type(Q.clear_owned)==&apos;function&apos; then
+  Q.clear_owned(p.lane)
+ end
+end
 function M.note_prompt()
  local p=M.state.pending;if not p then return end
  if not same(p.target,victim()) then return M.stop(&apos;target_changed&apos;) end
- if p.action==&apos;catharsis&apos; then
+ if p.action==&apos;catharsis&apos; or p.action==&apos;vivisect&apos; then
+  if vivisect and p.rejected then release_confirmed_owner(p);M.state.pending=nil;return end
   local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
   local eq=v.eq;if eq==nil then eq=v.equilibrium end
   if eq==false or tostring(eq)==&apos;0&apos; then p.spent=true end
   return
  end
- if p.rejected or (p.confirmed and (not p.breach or (ak.defs and ak.defs.curseward==false))) then M.state.pending=nil end
+ if p.action==&apos;trample&apos; then
+  local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
+  local bal=v.bal;if bal==nil then bal=v.balance end
+  if bal==false or tostring(bal)==&apos;0&apos; then p.confirmed=true end
+ end
+ if vivisect and p.action==&apos;disfigure&apos; then
+  local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
+  local eq=v.eq;if eq==nil then eq=v.equilibrium end
+  if present(affstrack and affstrack.score and affstrack.score.disloyalty)
+   or eq==false or tostring(eq)==&apos;0&apos; then p.confirmed=true end
+ end
+ if p.rejected or (p.confirmed and (not p.breach or (ak.defs and ak.defs.curseward==false))) then
+  release_confirmed_owner(p);M.state.pending=nil
+ end
 end
 function M.attack_function()
  if M.state.startup_error then return M.stop(M.state.startup_error) end
  if not M.is_active() then return hold(&apos;route_inactive&apos;) end
+ local other=Yso.off.apostate[vivisect and &apos;truelock&apos; or &apos;vivisect&apos;]
+ if other and other.is_enabled() then return hold(&apos;other_route_active&apos;) end
  local name=victim()
  if not valid(name) then return M.stop(&apos;no_target&apos;) end
  if M.state.victim and not same(name,M.state.victim) then return M.stop(&apos;target_changed&apos;) end
@@ -28440,11 +28482,25 @@ function M.attack_function()
  local vitals=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
  if tostring(vitals.dead or &apos;&apos;)==&apos;1&apos; then return M.stop(&apos;dead&apos;) end
  M.state.victim=name
+ if vivisect then
+  local meta=Yso.selfaff and Yso.selfaff.meta
+  if not (Yso.self and type(Yso.self.has_aff)==&apos;function&apos; and meta
+   and meta.afflictions_ready==true and meta.full_sync_confirmed==true
+   and meta.awaiting_full_sync~=true) then return hold(&apos;self_tracking_unavailable&apos;) end
+  if Yso.self.has_aff(&apos;paralysis&apos;) then M.state.paralysis_paused=true;return hold(&apos;paralysis&apos;) end
+  if M.state.paralysis_paused then
+   -- Queued attacks may wait on the server&apos;s !p gate throughout the pause.
+   -- Resume their confirmation window instead of timing out or resending.
+   if M.state.pending then M.state.pending.at=now() end
+   M.state.paralysis_paused=nil
+  end
+ end
  local pending=M.state.pending
  if pending then
-  if pending.action==&apos;catharsis&apos; then
+  if pending.action==&apos;catharsis&apos; or pending.action==&apos;vivisect&apos; then
    M.note_prompt()
-   if pending.spent and ready(&apos;eq&apos;) then return M.stop(&apos;catharsis_complete&apos;) end
+   if pending.rejected then M.state.pending=nil;return hold(&apos;replan&apos;) end
+   if pending.spent and ready(&apos;eq&apos;) then return M.stop(vivisect and &apos;vivisect_attempt_complete&apos; or &apos;catharsis_complete&apos;) end
   end
   if now()-pending.at&gt;=10 then return M.stop(&apos;confirmation_timeout&apos;) end
   return hold(&apos;waiting_&apos;..pending.action)
@@ -28458,6 +28514,7 @@ function M.attack_function()
  end
  local scores=affstrack.score
  local picks=M.select(scores)
+ if vivisect and #picks==0 and present(scores.disloyalty) and not present(scores.confusion) then picks={&apos;confusion&apos;} end
  local lane,cmd,cost,breach=&apos;bal&apos;,nil,0,ak.defs and ak.defs.curseward
  local action=&apos;eyes&apos;
  if #picks&gt;0 then
@@ -28487,8 +28544,20 @@ function M.attack_function()
   for _,aff in ipairs(M.Affliction_giving) do if aff==&apos;disloyalty&apos; then enabled=true end end
   if not enabled then return hold(&apos;lock_complete&apos;) end
   if ak.defs and ak.defs.shield then return hold(&apos;shield&apos;) end
-  if present(scores.disloyalty) then return emit_finisher(name,&apos;corrupt&apos;) end
-  lane=&apos;eq&apos;;cmd=&apos;disfigure &apos;..name
+  if not present(scores.disloyalty) then lane=&apos;eq&apos;;cmd=&apos;disfigure &apos;..name
+  elseif not vivisect then return emit_finisher(name,&apos;corrupt&apos;)
+  else
+   local all=true
+   for _,limb in ipairs({&apos;leftarm&apos;,&apos;rightarm&apos;,&apos;leftleg&apos;,&apos;rightleg&apos;}) do
+    if not present(scores[limb]) then all=false end
+   end
+   if all then lane=&apos;eq&apos;;cmd=&apos;vivisect &apos;..name;action=&apos;vivisect&apos;;cost=300
+   else
+    if not present(scores.prone) then return hold(&apos;waiting_prone&apos;) end
+    if not ready(&apos;bal&apos;) then return hold(&apos;balance&apos;) end
+    cmd=&apos;trample&apos;;action=&apos;trample&apos;
+   end
+  end
  end
  if (lane==&apos;eq&apos; or action==&apos;eyes&apos;) and not ready(&apos;eq&apos;) then return hold(&apos;equilibrium&apos;) end
  local mana=tonumber(vitals.mp or vitals.mana)
@@ -28496,13 +28565,29 @@ function M.attack_function()
  local payload={target=name,route=M.key};payload[lane]=cmd
  -- Record before emission: a throwing sender can leave a staged queue entry.
  M.state.commands=M.state.commands or {};M.state.commands[lane]=cmd
+ local Q=Yso.queue
+ local previous=Q and type(Q.get_owned)==&apos;function&apos; and Q.get_owned(lane)
+ local function discard_staged()
+  if Q and type(Q.list)==&apos;function&apos; and Q.list(lane)==cmd and Q.clear then Q.clear(lane) end
+ end
  if action==&apos;puncture&apos; and ak.apostate then ak.apostate.pending_daegger_wipe=true end
  if type(Yso.emit)~=&apos;function&apos; or Yso.emit(payload,{kind=&apos;offense&apos;,route=M.key,target=name,reason=M.key,commit=true})~=true then
   if action==&apos;puncture&apos; and ak.apostate then ak.apostate.pending_daegger_wipe=nil end
+  if vivisect then discard_staged() end
   return hold(&apos;emit_blocked&apos;)
  end
- M.state[lane..&apos;_until&apos;]=now()+(lane==&apos;eq&apos; and 3 or (action==&apos;puncture&apos; and 2.15 or 1.9))
- if lane==&apos;bal&apos; then M.state.pending={target=name,at=now(),breach=breach,action=action} end
+ if vivisect and Q and type(Q.get_owned)==&apos;function&apos; then
+  local owned=Q.get_owned(lane)
+  if not owned or owned==previous or owned.route~=M.key or owned.cmd~=cmd then
+   discard_staged();return hold(&apos;emit_blocked&apos;)
+  end
+ end
+ M.state[lane..&apos;_until&apos;]=now()+(action==&apos;vivisect&apos; and 4 or (action==&apos;trample&apos; and 4 or (lane==&apos;eq&apos; and 3 or (action==&apos;puncture&apos; and 2.15 or 1.9))))
+ if lane==&apos;bal&apos; or vivisect then
+  M.state.pending={target=name,at=now(),breach=action==&apos;eyes&apos; and breach or false,
+   action=action==&apos;eyes&apos; and lane==&apos;eq&apos; and &apos;disfigure&apos; or action,lane=lane,
+   owned=Q and type(Q.get_owned)==&apos;function&apos; and Q.get_owned(lane) or nil}
+ end
  M.state.reason=lane==&apos;bal&apos; and (&apos;waiting_&apos;..action) or &apos;disfigure&apos;
  return true
 end
@@ -28522,11 +28607,21 @@ if type(registerAnonymousEventHandler)==&apos;function&apos; then
   M.handlers[event]=registerAnonymousEventHandler(event,fn)
  end
 end
-M.configure_corrupt_confirmation(corrupt_success_pattern,corrupt_retained_pattern)
+if not vivisect then M.configure_corrupt_confirmation(corrupt_success_pattern,corrupt_retained_pattern) end
 return M
+end
+function Yso.off.apostate.active_route()
+ local V=Yso.off.apostate.vivisect
+ if V and V.is_enabled() then return V end
+ return Yso.off.apostate.truelock
+end
+return Yso.off.apostate.create_lock_route(&apos;truelock&apos;)
 </script>
 						<eventHandlerList />
-					</Script>
+					</Script><Script isActive="yes" isFolder="no"><name>Apostate Vivisect</name><packageName /><script>-- Shared pressure engine; independent route state and limb-based finisher.
+return Yso.off.apostate.create_lock_route(&apos;vivisect&apos;)
+</script><eventHandlerList /></Script>
+
 					<Script isActive="yes" isFolder="no">
 						<name>Apostate daegger envenom</name>
 						<packageName />

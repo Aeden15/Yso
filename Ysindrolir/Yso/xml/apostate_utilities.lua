@@ -127,7 +127,8 @@ function A.note_mana(name, current, maximum)
   if Yso.tgt and type(Yso.tgt.set_mana_pct) == 'function' then
     Yso.tgt.set_mana_pct(victim, current * 100 / maximum)
   end
-  local route = Yso.off and Yso.off.apostate and Yso.off.apostate.truelock
+  local routes = Yso.off and Yso.off.apostate
+  local route = routes and (type(routes.active_route)=='function' and routes.active_route() or routes.truelock)
   if route and route.is_enabled() then
     return type(route.note_mana)=='function' and route.note_mana(name,current,maximum) or false
   end
