@@ -9900,7 +9900,7 @@ sendAll("cq all", "dragonroar " .. t)</script>
 				</Alias>
 				<Alias isActive="yes" isFolder="no">
 					<name>alupdraft</name>
-					<script>Yso.off.airlord.lock.toggle_updraft()</script>
+					<script>Yso.off.airlord.damage.toggle_updraft()</script>
 					<command />
 					<packageName />
 					<regex>^alupdraft$</regex>
@@ -34045,15 +34045,15 @@ return R
 					<Script isActive="yes" isFolder="no">
 						<name>Compression logic</name>
 						<packageName />
-						<script>-- Gauge observations belong to Yso's current target; no separate target selector.
+						<script>-- Gauge observations belong to Yso&apos;s current target; no separate target selector.
 Yso = Yso or {}; Yso.off = Yso.off or {}; Yso.off.airlord = Yso.off.airlord or {}
 local C = {}; Yso.off.airlord.compression = C
 C.state = {}
 C.fresh_s = 3
 local function now() return Yso.util.now() end
 local function current(who)
-  local t=type(Yso.get_target)=='function' and Yso.get_target() or ''
-  return type(who)=='string' and type(t)=='string' and t~='' and who:lower()==t:lower()
+  local t=type(Yso.get_target)==&apos;function&apos; and Yso.get_target() or &apos;&apos;
+  return type(who)==&apos;string&apos; and type(t)==&apos;string&apos; and t~=&apos;&apos; and who:lower()==t:lower()
 end
 function C.clear() C.state={} end
 function C.observe(who,level)
@@ -34062,19 +34062,19 @@ function C.observe(who,level)
   C.state={who=who,level=level,at=now()}
   for _,route in pairs({Yso.off.airlord.lock,Yso.off.airlord.damage}) do
     if level&lt;6 then route.release_execute() end
-    route.sync_updraft()
-    route.sync_buffet()
+    if route.sync_updraft then route.sync_updraft() end
+    if route.sync_buffet then route.sync_buffet() end
   end
   C.wake(); return true
 end
 local gauge_levels={
-  ['at normal levels']=0,
-  ['slightly elevated']=1,
-  ['elevated']=2,
-  ['moderately elevated']=3,
-  ['severely elevated']=4,
-  ['extremely elevated']=5,
-  ['terminally elevated']=6,
+  [&apos;at normal levels&apos;]=0,
+  [&apos;slightly elevated&apos;]=1,
+  [&apos;elevated&apos;]=2,
+  [&apos;moderately elevated&apos;]=3,
+  [&apos;severely elevated&apos;]=4,
+  [&apos;extremely elevated&apos;]=5,
+  [&apos;terminally elevated&apos;]=6,
 }
 function C.observe_description(who,description)
   local level=gauge_levels[description]
@@ -34086,8 +34086,8 @@ function C.invalidate(who)
   C.clear()
   for _,route in pairs({Yso.off.airlord.lock,Yso.off.airlord.damage}) do
     route.release_execute()
-    route.sync_updraft()
-    route.sync_buffet()
+    if route.sync_updraft then route.sync_updraft() end
+    if route.sync_buffet then route.sync_buffet() end
   end
   C.wake(); return true
 end
@@ -34099,23 +34099,29 @@ function C.ready()
   return (C.level() or 0)&gt;=6
 end
 function C.wake()
-  if Yso.mode and type(Yso.mode.nudge_route_loop)=='function' then
-    Yso.mode.nudge_route_loop('airlord_lock','pressure_observation')
-    Yso.mode.nudge_route_loop('airlord_damage','pressure_observation')
+  if Yso.mode and type(Yso.mode.nudge_route_loop)==&apos;function&apos; then
+    Yso.mode.nudge_route_loop(&apos;airlord_lock&apos;,&apos;pressure_observation&apos;)
+    Yso.mode.nudge_route_loop(&apos;airlord_damage&apos;,&apos;pressure_observation&apos;)
   end
 end
 return C
 </script>
 						<eventHandlerList />
 					</Script>
-					<Script isActive="yes" isFolder="no">
-						<name>Airlord attack logic</name>
-						<packageName />
-						<script>-- Airlord pressure/Compression offense, driven by Yso&apos;s alias route scheduler.
+					<Script isActive="yes" isFolder="no"><name>Airlord route runtime</name><packageName /><script>-- Shared Airlord delivery and lifecycle. Route modules supply only their decisions.
 Yso = Yso or {}; Yso.off = Yso.off or {}; Yso.off.airlord = Yso.off.airlord or {}
 local A=Yso.off.airlord
-local function make_route(slot,key,name)
+function A.make_route(slot,key,name)
 local M = A[slot] or {}; A[slot]=M
+-- Native module reload retains Lua tables: retire old owned work and strategy.
+if type(M.reset)==&apos;function&apos; then M.reset() end
+if M.room_handler and type(killAnonymousEventHandler)==&apos;function&apos; then
+  killAnonymousEventHandler(M.room_handler)
+end
+M.room_handler=nil
+for _,hook in ipairs({&apos;select_command&apos;,&apos;observations&apos;,&apos;on_command&apos;,&apos;outdoor_room&apos;,
+    &apos;release_updraft&apos;,&apos;sync_updraft&apos;,&apos;toggle_updraft&apos;,&apos;note_updraft&apos;,&apos;note_landed&apos;,
+    &apos;buffet_ready&apos;,&apos;sync_buffet&apos;}) do M[hook]=nil end
 M.key=key; M.name=name; M.alias_owned=true
 M.cfg=M.cfg or {loop_delay=0.15,pending_s=2.5,gauge_s=1.05}
 M.state=M.state or {enabled=false,loop_enabled=false}
@@ -34139,10 +34145,6 @@ local function lane_ready(lane)
   local state=Yso.state
   if state and type(state[lane..&apos;_ready&apos;])==&apos;function&apos; then return state[lane..&apos;_ready&apos;]()==true end
   return value==true or tostring(value)==&apos;1&apos;
-end
-local function score(aff)
-  local s=affstrack and affstrack.score
-  return tonumber(s and s[aff]) or 0
 end
 local function echo(text)
   if Yso.util and Yso.util.echo then Yso.util.echo(text)
@@ -34176,65 +34178,7 @@ local function clear_staged(cmd)
     if not hint or hint.route==M.key then q.clear(&apos;bal&apos;) end
   end
 end
--- Room.Info uses an indoors flag; outdoor rooms can have an empty details array.
--- Require a complete room packet so missing GMCP never implies outdoors.
-function M.outdoor_room()
-  local r=gmcp and gmcp.Room and gmcp.Room.Info
-  if type(r)~=&apos;table&apos; or not tonumber(r.num) or type(r.name)~=&apos;string&apos; or r.name==&apos;&apos;
-      or type(r.details)~=&apos;table&apos; then return nil end
-  if r.name:lower():find(&apos;(indoors)&apos;,1,true) then return nil end
-  for _,flag in pairs(r.details) do
-    if tostring(flag):lower()==&apos;indoors&apos; then return nil end
-  end
-  return tostring(r.num)
-end
-function M.release_updraft()
-  local p=M.state.pending
-  if not p or p.category~=&apos;updraft&apos; then return end
-  clear_staged(p.cmd)
-  local q=Yso.queue
-  local owned=q and type(q.get_owned)==&apos;function&apos; and q.get_owned(&apos;bal&apos;) or nil
-  if owned and owned.route==M.key and owned.cmd==p.cmd and type(q.clear_lane)==&apos;function&apos; then
-    q.clear_lane(&apos;bal&apos;)
-  end
-  M.state.pending=nil; M.state.staged_bal=nil
-end
-function M.sync_updraft()
-  local room=M.outdoor_room()
-  local context=room and target():lower()..&apos;:&apos;..room or nil
-  if M.state.updraft_context~=context then
-    M.release_updraft()
-    M.state.updraft_context=context; M.state.updraft_launched=nil
-  end
-  local pressure=M.compression.level() or 0
-  if not M.cfg.updraft_enabled or not room or pressure&lt;4 or pressure&gt;=6
-      or (ak and ak.defs and ak.defs.shield) then
-    M.release_updraft()
-  end
-  return context
-end
-function M.toggle_updraft()
-  M.cfg.updraft_enabled=not M.cfg.updraft_enabled
-  for _,route in ipairs({A.lock,A.damage}) do
-    route.cfg.updraft_enabled=M.cfg.updraft_enabled
-    route.sync_updraft()
-  end
-  echo(&apos;Airlord optional Updraft &apos;..(M.cfg.updraft_enabled and &apos;ON.&apos; or &apos;OFF.&apos;))
-  return M.cfg.updraft_enabled
-end
-function M.note_updraft(who)
-  if type(who)~=&apos;string&apos; or who:lower()~=target():lower() then return false end
-  local context=M.sync_updraft()
-  if not context then return false end
-  M.state.updraft_launched=context
-  M.note_success(who)
-  return true
-end
-function M.note_landed(who)
-  if type(who)~=&apos;string&apos; or who:lower()~=target():lower() then return false end
-  M.state.updraft_launched=nil
-  return true
-end
+M.clear_staged=clear_staged
 function M.reset()
   local q=Yso.queue
   if q then
@@ -34246,7 +34190,11 @@ function M.reset()
         local keep={}
         for _,cmd in ipairs(q._staged.free) do
           local observed=tostring(M.state.observation_target or &apos;&apos;)
-          if cmd~=&apos;gauge &apos;..observed and not (slot==&apos;damage&apos; and cmd==&apos;assess &apos;..observed) then keep[#keep+1]=cmd end
+          local observations=M.observations and M.observations(observed) or {&apos;gauge &apos;..observed}
+          if type(observations)==&apos;string&apos; then observations={observations} end
+          local remove=false
+          for _,observation in ipairs(observations) do if cmd==observation then remove=true end end
+          if not remove then keep[#keep+1]=cmd end
         end
         q._staged.free=keep
       end
@@ -34280,63 +34228,6 @@ function M.can_run()
   if type(valid)==&apos;function&apos; and not valid(t) then return false,&apos;invalid_target&apos; end
   return true,t
 end
-function M.select_command(t)
-  local context=M.sync_updraft()
-  local d=ak and ak.duress or {}
-  if ak and ak.defs and ak.defs.shield then return &apos;manifest gale &apos;..t,&apos;defense_break&apos; end
-  if M.compression.ready() then return &apos;aero compression &apos;..t,&apos;execute&apos; end
-  -- Weave Buffet with setup/Pressure instead of letting eligibility monopolize BAL.
-  if slot==&apos;damage&apos; and M.buffet_ready() and M.state.last_cmd~=&apos;manifest buffet &apos;..t then
-    return &apos;manifest buffet &apos;..t,&apos;buffet&apos;
-  end
-  if M.cfg.updraft_enabled and context and M.state.updraft_launched~=context
-      and (M.compression.level() or 0)&gt;=4 then
-    return &apos;manifest updraft &apos;..t,&apos;updraft&apos;
-  end
-  -- Tension adds pressure and another smoke cure, but is not a Pressure booster.
-  -- Interleave after an immediately cured Tension so setup/Pressure progresses.
-  -- Buffet must not erase the previous setup step when Tension is cured quickly.
-  local last_setup=slot==&apos;damage&apos; and M.state.last_setup_cmd or M.state.last_cmd
-  if score(&apos;tension&apos;)&lt;100 and last_setup~=&apos;aero tension &apos;..t then
-    if d.asphyxiate~=true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
-    return &apos;aero tension &apos;..t,&apos;tension&apos;
-  end
-  -- Confirmed afflictions, not fractional score sums, enable efficient pressure.
-  local count=0
-  for _,a in ipairs({&apos;deadening&apos;,&apos;manaleech&apos;,&apos;disloyalty&apos;}) do if score(a)&gt;=100 then count=count+1 end end
-  -- Once pressure is established, one confirmed booster is enough to keep
-  -- building. Ambiguous smoking must not restart a full setup cycle at level 3.
-  if count&gt;=2 or (count&gt;=1 and (M.compression.level() or 0)&gt;0) then
-    return &apos;aero pressure &apos;..t,&apos;pressure&apos;
-  end
-  if d.asphyxiate~=true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
-  for _,row in ipairs({{&apos;deadening&apos;,&apos;stranglerelapse&apos;,&apos;aero strangle &apos;},
-      {&apos;manaleech&apos;,&apos;zephyrrelapse&apos;,&apos;manifest zephyr &apos;},{&apos;disloyalty&apos;,&apos;scourrelapse&apos;,&apos;aero scour &apos;}}) do
-    if score(row[1])&lt;100 and d[row[2]]~=true then return row[3]..t,&apos;affliction&apos; end
-  end
-  return &apos;aero pressure &apos;..t,&apos;pressure&apos;
-end
-function M.buffet_ready()
-  if (M.compression.level() or 0)&lt;=2 then return false end
-  local count=0
-  for _,aff in ipairs({&apos;disloyalty&apos;,&apos;tension&apos;,&apos;manaleech&apos;,&apos;deadening&apos;}) do
-    if score(aff)&gt;=100 then count=count+1 end
-  end
-  return count&gt;=2
-end
-function M.sync_buffet()
-  local p=M.state.pending
-  if not p or p.category~=&apos;buffet&apos; then return end
-  if M.buffet_ready() and not (ak and ak.defs and ak.defs.shield)
-      and not M.compression.ready() then return end
-  clear_staged(p.cmd)
-  local q=Yso.queue
-  local owned=q and type(q.get_owned)==&apos;function&apos; and q.get_owned(&apos;bal&apos;) or nil
-  if owned and owned.route==M.key and owned.cmd==p.cmd and type(q.clear_lane)==&apos;function&apos; then
-    q.clear_lane(&apos;bal&apos;)
-  end
-  M.state.pending=nil; M.state.staged_bal=nil
-end
 function M.attack_function()
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then local blocked,reason=pause.blocked(M.key);if blocked then return false,reason end end
@@ -34354,12 +34245,11 @@ function M.attack_function()
   M.state.hold_reason=nil
   if M.state.observation_target and M.state.observation_target~=t then M.reset() end
   M.state.observation_target=t
-  M.sync_updraft()
-  M.sync_buffet()
-  -- Gauge is free; this damage build&apos;s balanceless Assess shares its cadence.
-  -- Both observations are sent together without waiting for EQ/BAL.
+  if M.sync_updraft then M.sync_updraft() end
+  if M.sync_buffet then M.sync_buffet() end
+  -- Free observations share a cadence and do not wait for BAL/EQ.
   if not M.state.gauge_at or now()-M.state.gauge_at&gt;=M.cfg.gauge_s then
-    local observations=slot==&apos;damage&apos; and {&apos;gauge &apos;..t,&apos;assess &apos;..t} or &apos;gauge &apos;..t
+    local observations=M.observations and M.observations(t) or &apos;gauge &apos;..t
     if Yso.emit({free=observations,target=t,route=M.key},{kind=&apos;offense&apos;,reason=&apos;airlord:gauge&apos;,target=t,route=M.key,commit=true,wake_lane=&apos;free&apos;,free_immediate=true}) then
       M.state.gauge_at=now()
     end
@@ -34409,7 +34299,7 @@ function M.attack_function()
   M.state.pending={cmd=cmd,category=category,until_at=confirmation_now()+M.cfg.pending_s}
   if category==&apos;execute&apos; then M.state.execute_inflight={at=now(),confirmation_at=confirmation_now(),cmd=cmd,status=&apos;submitted&apos;} end
   M.state.last_cmd=cmd
-  if category~=&apos;buffet&apos; then M.state.last_setup_cmd=cmd end
+  if M.on_command then M.on_command(cmd,category) end
   return true,cmd
 end
 function M.release_execute()
@@ -34465,25 +34355,204 @@ function M.on_exit()
   M.reset(); return true
 end
 if Yso.off.core and Yso.off.core.register then Yso.off.core.register(M.key,M) end
+return M
+end
+-- Existing triggers acknowledge only the active route.
+function A.feedback(method,...)
+  for _,route in pairs({A.lock,A.damage}) do
+    if route.is_active() and type(route[method])==&apos;function&apos; then route[method](...) end
+  end
+end
+return A
+</script><eventHandlerList /></Script><Script isActive="yes" isFolder="no">
+						<name>Airlord lock route</name>
+						<packageName />
+						<script>-- Basic AK decisions. Yso&apos;s Airlord runtime owns scheduling, sends and cleanup.
+local M=Yso.off.airlord.make_route(&apos;lock&apos;,&apos;airlord_lock&apos;,&apos;Airlord lock&apos;)
+
+function M.select_command(target)
+  local affs=affstrack and affstrack.score or {}
+  local duress=ak and ak.duress or {}
+  local function has(aff)
+    return (tonumber(affs[aff]) or 0)&gt;=100
+  end
+  local pressure=M.compression.level()
+
+  if ak and ak.defs and ak.defs.shield then
+    return &apos;manifest gale &apos;..target,&apos;defense_break&apos;
+  end
+  if pressure and pressure&gt;=6 then
+    return &apos;aero compression &apos;..target,&apos;execute&apos;
+  end
+
+  -- Tension first, with another attack between immediate reapplications.
+  if not has(&apos;tension&apos;) and M.state.last_cmd~=&apos;aero tension &apos;..target then
+    if duress.asphyxiate~=true then
+      return &apos;aero asphyxiate &apos;..target,&apos;smoke_tracking&apos;
+    end
+    return &apos;aero tension &apos;..target,&apos;tension&apos;
+  end
+
+  local boosters=0
+  for _,aff in ipairs({&apos;deadening&apos;,&apos;manaleech&apos;,&apos;disloyalty&apos;}) do
+    if has(aff) then boosters=boosters+1 end
+  end
+  if boosters&gt;=2 or (boosters&gt;=1 and pressure and pressure&gt;0) then
+    return &apos;aero pressure &apos;..target,&apos;pressure&apos;
+  end
+
+  if duress.asphyxiate~=true then
+    return &apos;aero asphyxiate &apos;..target,&apos;smoke_tracking&apos;
+  end
+  if not has(&apos;deadening&apos;) and duress.stranglerelapse~=true then
+    return &apos;aero strangle &apos;..target,&apos;affliction&apos;
+  elseif not has(&apos;manaleech&apos;) and duress.zephyrrelapse~=true then
+    return &apos;manifest zephyr &apos;..target,&apos;affliction&apos;
+  elseif not has(&apos;disloyalty&apos;) and duress.scourrelapse~=true then
+    return &apos;aero scour &apos;..target,&apos;affliction&apos;
+  end
+  return &apos;aero pressure &apos;..target,&apos;pressure&apos;
+end
+
+return M
+</script>
+						<eventHandlerList />
+					</Script><Script isActive="yes" isFolder="no"><name>Airlord damage route</name><packageName /><script>-- Independent damage strategy; shared runtime owns delivery and cleanup.
+local A=Yso.off.airlord
+local M=A.make_route(&apos;damage&apos;,&apos;airlord_damage&apos;,&apos;Damage route&apos;)
+local clear_staged=M.clear_staged
+local function target() return type(Yso.get_target)==&apos;function&apos; and Yso.get_target() or &apos;&apos; end
+local function score(aff)
+  local s=affstrack and affstrack.score
+  return tonumber(s and s[aff]) or 0
+end
+local function echo(text)
+  if Yso.util and Yso.util.echo then Yso.util.echo(text)
+  elseif type(cecho)==&apos;function&apos; then cecho(&apos;&lt;cyan&gt;[Yso] &apos;..text..&apos;&lt;reset&gt;\n&apos;) end
+end
+function M.observations(t) return {&apos;gauge &apos;..t,&apos;assess &apos;..t} end
+function M.on_command(cmd,category)
+  if category~=&apos;buffet&apos; then M.state.last_setup_cmd=cmd end
+end
+-- Room.Info uses an indoors flag; outdoor rooms can have an empty details array.
+-- Require a complete room packet so missing GMCP never implies outdoors.
+function M.outdoor_room()
+  local r=gmcp and gmcp.Room and gmcp.Room.Info
+  if type(r)~=&apos;table&apos; or not tonumber(r.num) or type(r.name)~=&apos;string&apos; or r.name==&apos;&apos;
+      or type(r.details)~=&apos;table&apos; then return nil end
+  if r.name:lower():find(&apos;(indoors)&apos;,1,true) then return nil end
+  for _,flag in pairs(r.details) do
+    if tostring(flag):lower()==&apos;indoors&apos; then return nil end
+  end
+  return tostring(r.num)
+end
+function M.release_updraft()
+  local p=M.state.pending
+  if not p or p.category~=&apos;updraft&apos; then return end
+  clear_staged(p.cmd)
+  local q=Yso.queue
+  local owned=q and type(q.get_owned)==&apos;function&apos; and q.get_owned(&apos;bal&apos;) or nil
+  if owned and owned.route==M.key and owned.cmd==p.cmd and type(q.clear_lane)==&apos;function&apos; then
+    q.clear_lane(&apos;bal&apos;)
+  end
+  M.state.pending=nil; M.state.staged_bal=nil
+end
+function M.sync_updraft()
+  local room=M.outdoor_room()
+  local context=room and target():lower()..&apos;:&apos;..room or nil
+  if M.state.updraft_context~=context then
+    M.release_updraft()
+    M.state.updraft_context=context; M.state.updraft_launched=nil
+  end
+  local pressure=M.compression.level() or 0
+  if not M.cfg.updraft_enabled or not room or pressure&lt;4 or pressure&gt;=6
+      or (ak and ak.defs and ak.defs.shield) then
+    M.release_updraft()
+  end
+  return context
+end
+function M.toggle_updraft()
+  M.cfg.updraft_enabled=not M.cfg.updraft_enabled
+  M.sync_updraft()
+  echo(&apos;Airlord optional Updraft &apos;..(M.cfg.updraft_enabled and &apos;ON.&apos; or &apos;OFF.&apos;))
+  return M.cfg.updraft_enabled
+end
+function M.note_updraft(who)
+  if type(who)~=&apos;string&apos; or who:lower()~=target():lower() then return false end
+  local context=M.sync_updraft()
+  if not context then return false end
+  M.state.updraft_launched=context
+  M.note_success(who)
+  return true
+end
+function M.note_landed(who)
+  if type(who)~=&apos;string&apos; or who:lower()~=target():lower() then return false end
+  M.state.updraft_launched=nil
+  return true
+end
+function M.select_command(t)
+  local context=M.sync_updraft()
+  local d=ak and ak.duress or {}
+  if ak and ak.defs and ak.defs.shield then return &apos;manifest gale &apos;..t,&apos;defense_break&apos; end
+  if M.compression.ready() then return &apos;aero compression &apos;..t,&apos;execute&apos; end
+  -- Weave Buffet with setup/Pressure instead of letting eligibility monopolize BAL.
+  if M.buffet_ready() and M.state.last_cmd~=&apos;manifest buffet &apos;..t then
+    return &apos;manifest buffet &apos;..t,&apos;buffet&apos;
+  end
+  if M.cfg.updraft_enabled and context and M.state.updraft_launched~=context
+      and (M.compression.level() or 0)&gt;=4 then
+    return &apos;manifest updraft &apos;..t,&apos;updraft&apos;
+  end
+  -- Tension adds pressure and another smoke cure, but is not a Pressure booster.
+  -- Interleave after an immediately cured Tension so setup/Pressure progresses.
+  -- Buffet must not erase the previous setup step when Tension is cured quickly.
+  local last_setup=M.state.last_setup_cmd
+  if score(&apos;tension&apos;)&lt;100 and last_setup~=&apos;aero tension &apos;..t then
+    if d.asphyxiate~=true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
+    return &apos;aero tension &apos;..t,&apos;tension&apos;
+  end
+  -- Confirmed afflictions, not fractional score sums, enable efficient pressure.
+  local count=0
+  for _,a in ipairs({&apos;deadening&apos;,&apos;manaleech&apos;,&apos;disloyalty&apos;}) do if score(a)&gt;=100 then count=count+1 end end
+  -- Once pressure is established, one confirmed booster is enough to keep
+  -- building. Ambiguous smoking must not restart a full setup cycle at level 3.
+  if count&gt;=2 or (count&gt;=1 and (M.compression.level() or 0)&gt;0) then
+    return &apos;aero pressure &apos;..t,&apos;pressure&apos;
+  end
+  if d.asphyxiate~=true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
+  for _,row in ipairs({{&apos;deadening&apos;,&apos;stranglerelapse&apos;,&apos;aero strangle &apos;},
+      {&apos;manaleech&apos;,&apos;zephyrrelapse&apos;,&apos;manifest zephyr &apos;},{&apos;disloyalty&apos;,&apos;scourrelapse&apos;,&apos;aero scour &apos;}}) do
+    if score(row[1])&lt;100 and d[row[2]]~=true then return row[3]..t,&apos;affliction&apos; end
+  end
+  return &apos;aero pressure &apos;..t,&apos;pressure&apos;
+end
+function M.buffet_ready()
+  if (M.compression.level() or 0)&lt;=2 then return false end
+  local count=0
+  for _,aff in ipairs({&apos;disloyalty&apos;,&apos;tension&apos;,&apos;manaleech&apos;,&apos;deadening&apos;}) do
+    if score(aff)&gt;=100 then count=count+1 end
+  end
+  return count&gt;=2
+end
+function M.sync_buffet()
+  local p=M.state.pending
+  if not p or p.category~=&apos;buffet&apos; then return end
+  if M.buffet_ready() and not (ak and ak.defs and ak.defs.shield)
+      and not M.compression.ready() then return end
+  clear_staged(p.cmd)
+  local q=Yso.queue
+  local owned=q and type(q.get_owned)==&apos;function&apos; and q.get_owned(&apos;bal&apos;) or nil
+  if owned and owned.route==M.key and owned.cmd==p.cmd and type(q.clear_lane)==&apos;function&apos; then
+    q.clear_lane(&apos;bal&apos;)
+  end
+  M.state.pending=nil; M.state.staged_bal=nil
+end
 if type(registerAnonymousEventHandler)==&apos;function&apos; then
   if M.room_handler and type(killAnonymousEventHandler)==&apos;function&apos; then killAnonymousEventHandler(M.room_handler) end
   M.room_handler=registerAnonymousEventHandler(&apos;gmcp.Room.Info&apos;,function() M.sync_updraft() end)
 end
 return M
-end
-local lock=make_route(&apos;lock&apos;,&apos;airlord_lock&apos;,&apos;Airlord lock&apos;)
-local damage=make_route(&apos;damage&apos;,&apos;airlord_damage&apos;,&apos;Damage route&apos;)
-damage.cfg.updraft_enabled=lock.cfg.updraft_enabled==true
--- Feedback follows the active route; inactive state cannot acknowledge its work.
-function A.feedback(method,...)
-  for _,route in ipairs({A.lock,A.damage}) do
-    if route.is_active() and type(route[method])==&apos;function&apos; then route[method](...) end
-  end
-end
-return lock
-</script>
-						<eventHandlerList />
-					</Script>
+</script><eventHandlerList /></Script>
 					<Script isActive="yes" isFolder="no">
 						<name>Airlord manual</name>
 						<packageName />

@@ -5,7 +5,9 @@ $scratch=Join-Path ([IO.Path]::GetTempPath()) ('yso-combat-pause-'+[guid]::NewGu
 $copy=$scratch+'.xml';$luaFile=$scratch+'.lua'
 $mapping=@(
  @('Combat paralysis policy','Yso/Combat/combat_pause.lua'),@('Api stuff','Yso/xml/api_stuff.lua'),@('Yso modes','Yso/xml/yso_modes.lua'),
- @('Apostate Truelocks','Apostate/lock_route.lua'),@('Airlord attack logic','Airlord/combat_routes.lua'),
+ @('Apostate Truelocks','Apostate/lock_route.lua'),@('Airlord route runtime','Airlord/route_runtime.lua'),
+ @('Airlord lock route','Airlord/lock_route.lua'),@('Airlord damage route','Airlord/damage_route.lua'),
+ @('Compression logic','Airlord/compression.lua'),
  @('Shikudo duel controller','Monk/shikudo_duel.lua'),@('Magi route core','Magi/magi_route_core.lua'),
  @('Alchemist physiology','Alchemist/Core/physiology.lua'),@('Alchemist duel route','Alchemist/Core/duel route.lua'),
  @('Alchemist aurify route','Alchemist/Aurify route.lua'),@('Alchemist group damage','Alchemist/Core/group damage.lua')

@@ -161,7 +161,10 @@ $ScriptToSourcePath = [ordered]@{
   'Prio Baselines'                = Join-Path $YsoDir 'xml\prio_baselines.lua'
   'Radiance event'                = Join-Path $YsoDir 'xml\radiance_event.lua'
   'Combat paralysis policy'       = Join-Path $YsoDir 'Combat\combat_pause.lua'
-  'Airlord attack logic'           = Join-Path $Ysindrolir 'Airlord\combat_routes.lua'
+  'Compression logic'             = Join-Path $Ysindrolir 'Airlord\compression.lua'
+  'Airlord route runtime'          = Join-Path $Ysindrolir 'Airlord\route_runtime.lua'
+  'Airlord lock route'             = Join-Path $Ysindrolir 'Airlord\lock_route.lua'
+  'Airlord damage route'           = Join-Path $Ysindrolir 'Airlord\damage_route.lua'
   'Route registry'                = Join-Path $YsoDir 'Combat\route_registry.lua'
   'route_gate'                    = Join-Path $YsoDir 'Combat\route_gate.lua'
   'Route chassis loader'          = Join-Path $YsoDir 'xml\route_chassis_loader.lua'
@@ -188,6 +191,9 @@ $ScriptToSourcePath = [ordered]@{
 }
 
 $ScriptInserts = @(
+  @{ Name = 'Airlord route runtime'; After = 'Compression logic'; Source = Join-Path $Ysindrolir 'Airlord\route_runtime.lua' },
+  @{ Name = 'Airlord lock route'; After = 'Airlord route runtime'; Source = Join-Path $Ysindrolir 'Airlord\lock_route.lua' },
+  @{ Name = 'Airlord damage route'; After = 'Airlord lock route'; Source = Join-Path $Ysindrolir 'Airlord\damage_route.lua' },
   @{ Name = 'Yso self aff';           After = 'Api stuff';                Source = Join-Path $YsoDir 'Core\self_aff.lua' },
   @{ Name = 'Yso self curedefs';      After = 'Yso self aff';             Source = Join-Path $YsoDir 'Curing\self_curedefs.lua' },
   @{ Name = 'Yso modes';             After = 'Api stuff';                Source = Join-Path $YsoDir 'xml\yso_modes.lua' },
@@ -221,7 +227,7 @@ if (-not (Test-Path -LiteralPath $XmlPackage)) {
   throw "Package XML not found: $XmlPackage"
 }
 
-$ScriptsToRemove = @('Yso Bootstrap loader', 'Yso.queue', 'Magi group damage', 'Magi focus', 'Bloodboil auto')
+$ScriptsToRemove = @('Yso Bootstrap loader', 'Yso.queue', 'Magi group damage', 'Magi focus', 'Bloodboil auto', 'Airlord attack logic')
 $TriggersToRemove = @('Reflection up', 'Reflection down')
 $MdamAliasSource = Join-Path $MagiDir 'mdam_retired_alias.lua'
 $MfocusAliasSource = Join-Path $MagiDir 'mfocus_alias_body.lua'
@@ -325,6 +331,10 @@ foreach ($rm in $ScriptsToRemove) {
 
 if ($PSCmdlet.ShouldProcess($XmlPackage, 'Remove orphan Yso.targeting block')) {
   $content = Remove-OrphanTargetingBlock $content
+}
+
+if ($PSCmdlet.ShouldProcess('alupdraft', 'Move optional Updraft to the separate Airlord damage route')) {
+  $content = $content.Replace('Yso.off.airlord.lock.toggle_updraft()', 'Yso.off.airlord.damage.toggle_updraft()')
 }
 
 foreach ($ins in $ScriptInserts) {

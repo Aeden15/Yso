@@ -1,6 +1,6 @@
 local prefix = assert(arg[1], 'pass extracted package script prefix')
 local checks = 0
-local function world(slot)
+local function world(slot,damage_only)
   local clock, sent = 0, {}
   Yso = {util = {now = function() return clock end}, get_target = function() return 'Enemy' end}
   gmcp = {Char = {Status = {class = 'air elemental lord'}, Vitals = {bal = '1'}}}
@@ -11,7 +11,9 @@ local function world(slot)
     return true
   end
   assert(loadfile(prefix .. '.compression.lua'))()
-  assert(loadfile(prefix .. '.attack.lua'))()
+  assert(loadfile(prefix .. '.runtime.lua'))()
+  if not damage_only then assert(loadfile(prefix .. '.lock.lua'))() end
+  assert(loadfile(prefix .. '.damage.lua'))()
   local route = Yso.off.airlord[slot or 'damage']
   route.state.enabled, route.state.loop_enabled = true, true
   local function gauge(level) Yso.off.airlord.compression.observe('Enemy', level) end
@@ -111,3 +113,10 @@ r.attack_function()
 assert(#lines == 1 and lines[1] == 'gauge Enemy', 'lock must retain Gauge-only observations')
 checks = checks + 1
 print('Airlord damage package: ' .. checks .. ' checks passed')
+-- The separate damage module must also work when lock has never loaded.
+r,attack,gauge=world('damage',true)
+assert(Yso.off.airlord.lock==nil,'damage must not create lock')
+attack('manifest buffet Enemy')
+r.toggle_updraft()
+assert(r.cfg.updraft_enabled==true,'damage Updraft must work independently')
+print('PASS independent damage loading and Updraft toggle')

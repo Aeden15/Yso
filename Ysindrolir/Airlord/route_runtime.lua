@@ -1,8 +1,17 @@
--- Airlord pressure/Compression offense, driven by Yso's alias route scheduler.
+-- Shared Airlord delivery and lifecycle. Route modules supply only their decisions.
 Yso = Yso or {}; Yso.off = Yso.off or {}; Yso.off.airlord = Yso.off.airlord or {}
 local A=Yso.off.airlord
-local function make_route(slot,key,name)
+function A.make_route(slot,key,name)
 local M = A[slot] or {}; A[slot]=M
+-- Native module reload retains Lua tables: retire old owned work and strategy.
+if type(M.reset)=='function' then M.reset() end
+if M.room_handler and type(killAnonymousEventHandler)=='function' then
+  killAnonymousEventHandler(M.room_handler)
+end
+M.room_handler=nil
+for _,hook in ipairs({'select_command','observations','on_command','outdoor_room',
+    'release_updraft','sync_updraft','toggle_updraft','note_updraft','note_landed',
+    'buffet_ready','sync_buffet'}) do M[hook]=nil end
 M.key=key; M.name=name; M.alias_owned=true
 M.cfg=M.cfg or {loop_delay=0.15,pending_s=2.5,gauge_s=1.05}
 M.state=M.state or {enabled=false,loop_enabled=false}
@@ -26,10 +35,6 @@ local function lane_ready(lane)
   local state=Yso.state
   if state and type(state[lane..'_ready'])=='function' then return state[lane..'_ready']()==true end
   return value==true or tostring(value)=='1'
-end
-local function score(aff)
-  local s=affstrack and affstrack.score
-  return tonumber(s and s[aff]) or 0
 end
 local function echo(text)
   if Yso.util and Yso.util.echo then Yso.util.echo(text)
@@ -63,65 +68,7 @@ local function clear_staged(cmd)
     if not hint or hint.route==M.key then q.clear('bal') end
   end
 end
--- Room.Info uses an indoors flag; outdoor rooms can have an empty details array.
--- Require a complete room packet so missing GMCP never implies outdoors.
-function M.outdoor_room()
-  local r=gmcp and gmcp.Room and gmcp.Room.Info
-  if type(r)~='table' or not tonumber(r.num) or type(r.name)~='string' or r.name==''
-      or type(r.details)~='table' then return nil end
-  if r.name:lower():find('(indoors)',1,true) then return nil end
-  for _,flag in pairs(r.details) do
-    if tostring(flag):lower()=='indoors' then return nil end
-  end
-  return tostring(r.num)
-end
-function M.release_updraft()
-  local p=M.state.pending
-  if not p or p.category~='updraft' then return end
-  clear_staged(p.cmd)
-  local q=Yso.queue
-  local owned=q and type(q.get_owned)=='function' and q.get_owned('bal') or nil
-  if owned and owned.route==M.key and owned.cmd==p.cmd and type(q.clear_lane)=='function' then
-    q.clear_lane('bal')
-  end
-  M.state.pending=nil; M.state.staged_bal=nil
-end
-function M.sync_updraft()
-  local room=M.outdoor_room()
-  local context=room and target():lower()..':'..room or nil
-  if M.state.updraft_context~=context then
-    M.release_updraft()
-    M.state.updraft_context=context; M.state.updraft_launched=nil
-  end
-  local pressure=M.compression.level() or 0
-  if not M.cfg.updraft_enabled or not room or pressure<4 or pressure>=6
-      or (ak and ak.defs and ak.defs.shield) then
-    M.release_updraft()
-  end
-  return context
-end
-function M.toggle_updraft()
-  M.cfg.updraft_enabled=not M.cfg.updraft_enabled
-  for _,route in ipairs({A.lock,A.damage}) do
-    route.cfg.updraft_enabled=M.cfg.updraft_enabled
-    route.sync_updraft()
-  end
-  echo('Airlord optional Updraft '..(M.cfg.updraft_enabled and 'ON.' or 'OFF.'))
-  return M.cfg.updraft_enabled
-end
-function M.note_updraft(who)
-  if type(who)~='string' or who:lower()~=target():lower() then return false end
-  local context=M.sync_updraft()
-  if not context then return false end
-  M.state.updraft_launched=context
-  M.note_success(who)
-  return true
-end
-function M.note_landed(who)
-  if type(who)~='string' or who:lower()~=target():lower() then return false end
-  M.state.updraft_launched=nil
-  return true
-end
+M.clear_staged=clear_staged
 function M.reset()
   local q=Yso.queue
   if q then
@@ -133,7 +80,11 @@ function M.reset()
         local keep={}
         for _,cmd in ipairs(q._staged.free) do
           local observed=tostring(M.state.observation_target or '')
-          if cmd~='gauge '..observed and not (slot=='damage' and cmd=='assess '..observed) then keep[#keep+1]=cmd end
+          local observations=M.observations and M.observations(observed) or {'gauge '..observed}
+          if type(observations)=='string' then observations={observations} end
+          local remove=false
+          for _,observation in ipairs(observations) do if cmd==observation then remove=true end end
+          if not remove then keep[#keep+1]=cmd end
         end
         q._staged.free=keep
       end
@@ -167,63 +118,6 @@ function M.can_run()
   if type(valid)=='function' and not valid(t) then return false,'invalid_target' end
   return true,t
 end
-function M.select_command(t)
-  local context=M.sync_updraft()
-  local d=ak and ak.duress or {}
-  if ak and ak.defs and ak.defs.shield then return 'manifest gale '..t,'defense_break' end
-  if M.compression.ready() then return 'aero compression '..t,'execute' end
-  -- Weave Buffet with setup/Pressure instead of letting eligibility monopolize BAL.
-  if slot=='damage' and M.buffet_ready() and M.state.last_cmd~='manifest buffet '..t then
-    return 'manifest buffet '..t,'buffet'
-  end
-  if M.cfg.updraft_enabled and context and M.state.updraft_launched~=context
-      and (M.compression.level() or 0)>=4 then
-    return 'manifest updraft '..t,'updraft'
-  end
-  -- Tension adds pressure and another smoke cure, but is not a Pressure booster.
-  -- Interleave after an immediately cured Tension so setup/Pressure progresses.
-  -- Buffet must not erase the previous setup step when Tension is cured quickly.
-  local last_setup=slot=='damage' and M.state.last_setup_cmd or M.state.last_cmd
-  if score('tension')<100 and last_setup~='aero tension '..t then
-    if d.asphyxiate~=true then return 'aero asphyxiate '..t,'smoke_tracking' end
-    return 'aero tension '..t,'tension'
-  end
-  -- Confirmed afflictions, not fractional score sums, enable efficient pressure.
-  local count=0
-  for _,a in ipairs({'deadening','manaleech','disloyalty'}) do if score(a)>=100 then count=count+1 end end
-  -- Once pressure is established, one confirmed booster is enough to keep
-  -- building. Ambiguous smoking must not restart a full setup cycle at level 3.
-  if count>=2 or (count>=1 and (M.compression.level() or 0)>0) then
-    return 'aero pressure '..t,'pressure'
-  end
-  if d.asphyxiate~=true then return 'aero asphyxiate '..t,'smoke_tracking' end
-  for _,row in ipairs({{'deadening','stranglerelapse','aero strangle '},
-      {'manaleech','zephyrrelapse','manifest zephyr '},{'disloyalty','scourrelapse','aero scour '}}) do
-    if score(row[1])<100 and d[row[2]]~=true then return row[3]..t,'affliction' end
-  end
-  return 'aero pressure '..t,'pressure'
-end
-function M.buffet_ready()
-  if (M.compression.level() or 0)<=2 then return false end
-  local count=0
-  for _,aff in ipairs({'disloyalty','tension','manaleech','deadening'}) do
-    if score(aff)>=100 then count=count+1 end
-  end
-  return count>=2
-end
-function M.sync_buffet()
-  local p=M.state.pending
-  if not p or p.category~='buffet' then return end
-  if M.buffet_ready() and not (ak and ak.defs and ak.defs.shield)
-      and not M.compression.ready() then return end
-  clear_staged(p.cmd)
-  local q=Yso.queue
-  local owned=q and type(q.get_owned)=='function' and q.get_owned('bal') or nil
-  if owned and owned.route==M.key and owned.cmd==p.cmd and type(q.clear_lane)=='function' then
-    q.clear_lane('bal')
-  end
-  M.state.pending=nil; M.state.staged_bal=nil
-end
 function M.attack_function()
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then local blocked,reason=pause.blocked(M.key);if blocked then return false,reason end end
@@ -241,12 +135,11 @@ function M.attack_function()
   M.state.hold_reason=nil
   if M.state.observation_target and M.state.observation_target~=t then M.reset() end
   M.state.observation_target=t
-  M.sync_updraft()
-  M.sync_buffet()
-  -- Gauge is free; this damage build's balanceless Assess shares its cadence.
-  -- Both observations are sent together without waiting for EQ/BAL.
+  if M.sync_updraft then M.sync_updraft() end
+  if M.sync_buffet then M.sync_buffet() end
+  -- Free observations share a cadence and do not wait for BAL/EQ.
   if not M.state.gauge_at or now()-M.state.gauge_at>=M.cfg.gauge_s then
-    local observations=slot=='damage' and {'gauge '..t,'assess '..t} or 'gauge '..t
+    local observations=M.observations and M.observations(t) or 'gauge '..t
     if Yso.emit({free=observations,target=t,route=M.key},{kind='offense',reason='airlord:gauge',target=t,route=M.key,commit=true,wake_lane='free',free_immediate=true}) then
       M.state.gauge_at=now()
     end
@@ -296,7 +189,7 @@ function M.attack_function()
   M.state.pending={cmd=cmd,category=category,until_at=confirmation_now()+M.cfg.pending_s}
   if category=='execute' then M.state.execute_inflight={at=now(),confirmation_at=confirmation_now(),cmd=cmd,status='submitted'} end
   M.state.last_cmd=cmd
-  if category~='buffet' then M.state.last_setup_cmd=cmd end
+  if M.on_command then M.on_command(cmd,category) end
   return true,cmd
 end
 function M.release_execute()
@@ -352,19 +245,12 @@ function M.on_exit()
   M.reset(); return true
 end
 if Yso.off.core and Yso.off.core.register then Yso.off.core.register(M.key,M) end
-if type(registerAnonymousEventHandler)=='function' then
-  if M.room_handler and type(killAnonymousEventHandler)=='function' then killAnonymousEventHandler(M.room_handler) end
-  M.room_handler=registerAnonymousEventHandler('gmcp.Room.Info',function() M.sync_updraft() end)
-end
 return M
 end
-local lock=make_route('lock','airlord_lock','Airlord lock')
-local damage=make_route('damage','airlord_damage','Damage route')
-damage.cfg.updraft_enabled=lock.cfg.updraft_enabled==true
--- Feedback follows the active route; inactive state cannot acknowledge its work.
+-- Existing triggers acknowledge only the active route.
 function A.feedback(method,...)
-  for _,route in ipairs({A.lock,A.damage}) do
+  for _,route in pairs({A.lock,A.damage}) do
     if route.is_active() and type(route[method])=='function' then route[method](...) end
   end
 end
-return lock
+return A

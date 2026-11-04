@@ -1,11 +1,12 @@
 # Real full-export regressions. All builders and source writes stay in a disposable copy.
 [CmdletBinding()]
-param([ValidateSet('Full','Failure','PackagePath','Scoped','All')][string]$Case = 'All')
+param([ValidateSet('Full','Failure','PackagePath','Scoped','All')][string]$Case = 'All', [string]$ScratchRoot)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-# Use the writable workspace volume: Windows sandbox temp storage rejects atomic
-# replacement of existing files, whereas the package's actual volume supports it.
-$scratch = Join-Path $root ('.tmp-yso-full-export-' + [guid]::NewGuid())
+# Allow a writable location outside OneDrive when it locks copied XMLs during
+# atomic replacement. The package sources still come from this checkout.
+$scratchParent=if($ScratchRoot){[IO.Path]::GetFullPath($ScratchRoot)}else{$root}
+$scratch = Join-Path $scratchParent ('.tmp-yso-full-export-' + [guid]::NewGuid())
 function Assert([bool]$condition, [string]$message) { if (-not $condition) { throw $message } }
 function XmlSource([string]$path) { [IO.File]::ReadAllText($path).Replace("`r`n", "`n").Replace("`r", "`n") }
 try {
@@ -18,12 +19,23 @@ try {
   $before = [IO.File]::ReadAllText($package)
   $beforeHash = (Get-FileHash -LiteralPath $package).Hash
   if ($Case -in @('Full','All')) {
+    # A legacy combined Airlord package must migrate through the full exporter.
+    $legacy=$before.Replace('<name>Airlord lock route</name>','<name>Airlord attack logic</name>')
+    foreach($name in @('Airlord route runtime','Airlord damage route')){
+      $legacy=[regex]::Replace($legacy,'(?s)<Script\b[^>]*>\s*<name>'+[regex]::Escape($name)+'</name>.*?</Script>','')
+    }
+    $legacy=$legacy.Replace('Yso.off.airlord.damage.toggle_updraft()','Yso.off.airlord.lock.toggle_updraft()')
+    [IO.File]::WriteAllText($package,$legacy)
     # Removing Script nodes must distinguish </Script> from their </script> children.
     try { & $exporter } catch { throw "Full export must succeed with native Magi focus present: $($_.Exception.Message)" }
     $after = [IO.File]::ReadAllText($package)
     $doc = [xml]$after
     Assert ($null -eq $doc.SelectSingleNode("//Script[name='Magi focus']")) 'Full export did not retire the native focus script'
-    foreach ($pair in @(@('Magi route core','Magi/magi_route_core.lua'), @('Magi water group','Magi/Magi_water_group.lua'), @('Shikudo AI logic','Monk/shikudo_ai.lua'))) {
+    Assert ($null -eq $doc.SelectSingleNode("//Script[name='Airlord attack logic']")) 'Full export retained the combined Airlord script'
+    Assert ($doc.SelectSingleNode("//Alias[name='alupdraft']/script").InnerText -eq 'Yso.off.airlord.damage.toggle_updraft()') 'Full export left Updraft attached to lock'
+    foreach ($pair in @(@('Magi route core','Magi/magi_route_core.lua'), @('Magi water group','Magi/Magi_water_group.lua'), @('Shikudo AI logic','Monk/shikudo_ai.lua'),
+      @('Compression logic','Airlord/compression.lua'),@('Airlord route runtime','Airlord/route_runtime.lua'),
+      @('Airlord lock route','Airlord/lock_route.lua'),@('Airlord damage route','Airlord/damage_route.lua'))) {
       Assert ([string]$doc.SelectSingleNode("//Script[name='$($pair[0])']").script -ceq (XmlSource (Join-Path $scratch $pair[1]))) "Source parity failed: $($pair[0])"
     }
     Assert ([string]$doc.SelectSingleNode("//Alias[name='mfocus']").script -ceq (XmlSource (Join-Path $scratch 'Magi/mfocus_alias_body.lua'))) 'Focus alias does not contain the built modern implementation'
@@ -68,7 +80,7 @@ try {
   }
 } finally {
   $resolved = [IO.Path]::GetFullPath($scratch)
-  $expectedParent = [IO.Path]::GetFullPath($root)
+  $expectedParent = [IO.Path]::GetFullPath($scratchParent)
   if ((Split-Path $resolved -Parent) -cne $expectedParent -or (Split-Path $resolved -Leaf) -notlike '.tmp-yso-full-export-*') { throw 'Unsafe scratch cleanup path' }
   if (Test-Path -LiteralPath $resolved) { Remove-Item -LiteralPath $resolved -Recurse -Force }
 }
