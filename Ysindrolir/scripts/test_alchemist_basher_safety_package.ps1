@@ -40,5 +40,31 @@ try{
  & (Join-Path $PSScriptRoot 'build_alchemist_basher_safety_package.ps1') -PackagePath $scratch
  if($first -cne [IO.File]::ReadAllText($scratch)){throw 'Alchemist Basher builder is not idempotent'}
  if($first -cne [IO.File]::ReadAllText($PackagePath)){throw 'Alchemist Basher package drift'}
+ # Git's Windows checkout may use CRLF for the builder while XML bodies are
+ # normalized to LF by XmlDocument. Exercise both inputs independently.
+ $matrixRoot=Join-Path ([IO.Path]::GetTempPath()) ('yso-alc-basher-newlines-'+[guid]::NewGuid())
+ [IO.Directory]::CreateDirectory($matrixRoot) | Out-Null
+ try {
+  $source=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'build_alchemist_basher_safety_package.ps1'))
+  $package=[IO.File]::ReadAllText($PackagePath)
+  foreach($builderNewline in @("`r`n","`n")){
+   foreach($packageNewline in @("`n","`r`n")){
+    $builder=Join-Path $matrixRoot 'builder.ps1'
+    $fixture=Join-Path $matrixRoot 'package.xml'
+    [IO.File]::WriteAllText($builder,[regex]::Replace($source,'\r\n?|\n',$builderNewline),[Text.UTF8Encoding]::new($false))
+    $expected=[regex]::Replace($package,'\r\n?|\n',$packageNewline)
+    [IO.File]::WriteAllText($fixture,$expected,[Text.UTF8Encoding]::new($false))
+    & $builder -PackagePath $fixture
+    $built=[IO.File]::ReadAllText($fixture)
+    & $builder -PackagePath $fixture
+    if($built -cne [IO.File]::ReadAllText($fixture)){throw 'Alchemist Basher builder is not idempotent across LF/CRLF checkout encodings'}
+    if($built -cne $expected){throw 'Alchemist Basher builder changed a current LF/CRLF package'}
+   }
+  }
+  Write-Output 'PASS: Basher builder LF/CRLF checkout and package newline matrix preserves exact bytes and idempotence'
+ }finally{
+  Remove-Item -LiteralPath (Join-Path $matrixRoot 'builder.ps1'),(Join-Path $matrixRoot 'package.xml') -Force -ErrorAction SilentlyContinue
+  if(Test-Path -LiteralPath $matrixRoot){Remove-Item -LiteralPath $matrixRoot -Force}
+ }
  Write-Output 'PASS: Alchemist Legacy hunting suspension, other-class behavior, future enable and builder parity'
 }finally{if(Test-Path -LiteralPath $scratch){Remove-Item -LiteralPath $scratch -Force}}

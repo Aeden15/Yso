@@ -30,7 +30,8 @@ $parts = @(
 )
 
 $utf8 = New-Object System.Text.UTF8Encoding $false
-[System.IO.File]::WriteAllText($dst, ($parts -join "`n`n") + "`n", $utf8)
+$body=(($parts -join "`n`n") + "`n").Replace("`r`n","`n")
+[System.IO.File]::WriteAllText($dst, $body, $utf8)
 Write-Host "Wrote $dst"
 
 $luac = Get-Command luac -ErrorAction SilentlyContinue
