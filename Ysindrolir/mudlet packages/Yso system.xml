@@ -2100,7 +2100,6 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Djinn faded!).\n")</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Waterweird present</name>
 							<script>Yso.elemental = "waterweird"
-Yso.elemental_lev_ready = false
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Waterweird summoned!).\n")</script>
 							<triggerType>0</triggerType>
@@ -2124,7 +2123,6 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Waterweird summoned!).\n")</
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Waterweird not present</name>
 							<script>Yso.elemental = false
-Yso.elemental_lev_ready = false
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Waterweird faded!).\n")</script>
 							<triggerType>0</triggerType>
@@ -2148,7 +2146,6 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Waterweird faded!).\n")</script
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Mistfiend present</name>
 							<script>Yso.elemental = "mistfiend"
-Yso.elemental_lev_ready = false
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Mistfiend summoned!).\n")</script>
 							<triggerType>0</triggerType>
@@ -2172,7 +2169,6 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Mistfiend summoned!).\n")</s
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Mistfiend not present</name>
 							<script>Yso.elemental = false
-Yso.elemental_lev_ready = false
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Mistfiend faded!).\n")</script>
 							<triggerType>0</triggerType>
@@ -2196,7 +2192,6 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Mistfiend faded!).\n")</script>
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stoneback present</name>
 							<script>Yso.elemental = "stoneback"
-Yso.elemental_lev_ready = false
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Stoneback summoned!).\n")</script>
 							<triggerType>0</triggerType>
@@ -2220,7 +2215,6 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;aquamarine&gt;(Stoneback summoned!).\n")</s
 						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Stoneback not present</name>
 							<script>Yso.elemental = false
-Yso.elemental_lev_ready = false
 
 cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 							<triggerType>0</triggerType>
