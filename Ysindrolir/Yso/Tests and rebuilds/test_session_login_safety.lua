@@ -15,7 +15,7 @@ local function fire(event)
 end
 local function count(command) local n=0;for _,s in ipairs(sent) do if s==command then n=n+1 end end;return n end
 local function load() dofile(root..'Yso/Integration/session.lua');dofile(root..'Magi/magi_weapons.lua');dofile(root..'Alchemist/Core/formulation.lua') end
-Yso={};gmcp={Char={Status={name='Cached',class='Magi'},Vitals={hp='100',maxhp='100'}}}
+Yso={features={alchemist_offense=true}};gmcp={Char={Status={name='Cached',class='Magi'},Vitals={hp='100',maxhp='100'}}}
 dofile(root..'Alchemist/Core/formulation.lua');fire('sysConnectionEvent')
 assert(#sent==0,'TCP connect must not send phiallist into credential exchange')
 load();local S=Yso.session

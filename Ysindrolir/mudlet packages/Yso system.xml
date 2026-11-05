@@ -4040,20 +4040,30 @@ end</script>
           </regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>adam</name>
-						<script>Yso = Yso or {}
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+Yso = Yso or {}
 Yso.util = Yso.util or {}
 
-if type(Yso.util.toggle_route_alias) ~= "function" then
-  cecho("&lt;orange&gt;[YSO] route controller unavailable; check Mudlet load order.&lt;reset&gt;\n")
+if type(Yso.util.toggle_route_alias) ~= &quot;function&quot; then
+  cecho(&quot;&lt;orange&gt;[YSO] route controller unavailable; check Mudlet load order.&lt;reset&gt;\n&quot;)
   return
 end
 
-local ok, why = false, "controller_unavailable"
-if type(Yso.util.toggle_route_alias) == "function" then
-  ok, why = Yso.util.toggle_route_alias("alchemist_group_damage", "alias:adam")
+local ok, why = false, &quot;controller_unavailable&quot;
+if type(Yso.util.toggle_route_alias) == &quot;function&quot; then
+  ok, why = Yso.util.toggle_route_alias(&quot;alchemist_group_damage&quot;, &quot;alias:adam&quot;)
 end
 if ok ~= true then
-  cecho("&lt;orange&gt;[YSO] adam toggle failed: " .. tostring(why or "unknown") .. "&lt;reset&gt;\n")
+  cecho(&quot;&lt;orange&gt;[YSO] adam toggle failed: &quot; .. tostring(why or &quot;unknown&quot;) .. &quot;&lt;reset&gt;\n&quot;)
 end</script>
 						<command />
 						<packageName />
@@ -4061,20 +4071,30 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>aduel</name>
-						<script>Yso = Yso or {}
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+Yso = Yso or {}
 Yso.util = Yso.util or {}
 
-if type(Yso.util.toggle_route_alias) ~= "function" then
-  cecho("&lt;orange&gt;[YSO] route controller unavailable; check Mudlet load order.&lt;reset&gt;\n")
+if type(Yso.util.toggle_route_alias) ~= &quot;function&quot; then
+  cecho(&quot;&lt;orange&gt;[YSO] route controller unavailable; check Mudlet load order.&lt;reset&gt;\n&quot;)
   return
 end
 
-local ok, why = false, "controller_unavailable"
-if type(Yso.util.toggle_route_alias) == "function" then
-  ok, why = Yso.util.toggle_route_alias("alchemist_duel_route", "alias:aduel")
+local ok, why = false, &quot;controller_unavailable&quot;
+if type(Yso.util.toggle_route_alias) == &quot;function&quot; then
+  ok, why = Yso.util.toggle_route_alias(&quot;alchemist_duel_route&quot;, &quot;alias:aduel&quot;)
 end
 if ok ~= true then
-  cecho("&lt;orange&gt;[YSO] aduel toggle failed: " .. tostring(why or "unknown") .. "&lt;reset&gt;\n")
+  cecho(&quot;&lt;orange&gt;[YSO] aduel toggle failed: &quot; .. tostring(why or &quot;unknown&quot;) .. &quot;&lt;reset&gt;\n&quot;)
 end</script>
 						<command />
 						<packageName />
@@ -4082,91 +4102,206 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>lead</name>
-						<script>send("educe lead")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;educe lead&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^lead$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>lead (named)</name>
-						<script>send("educe lead " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;educe lead &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^lead\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Bash</name>
-						<script>send("educe iron " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;educe iron &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^iro$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>salt</name>
-						<script>send("educe salt")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;educe salt&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^salt$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Displacement</name>
-						<script>send("ether displace " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;ether displace &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^disp\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>copper</name>
-						<script>send("educe copper " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;educe copper &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^cop$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>silver</name>
-						<script>send("educe silver")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;educe silver&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^silver$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Silver (named)</name>
-						<script>send("educe silver " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;educe silver &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^silver\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Phlogisticate</name>
-						<script>send("phlogisticate " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;phlogisticate &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^phlog$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Vitrify</name>
-						<script>send("vitrify " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;vitrify &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^vit$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Revivification</name>
-						<script>send("revive " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;revive &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^revive\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Aurify</name>
-						<script>send("aurify " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;aurify &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^aur$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Barrier</name>
-						<script>sendAll("cq all&amp;&amp;educe tin")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+sendAll(&quot;cq all&amp;&amp;educe tin&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^tin$</regex>
@@ -4181,203 +4316,398 @@ end</script>
           </regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>Temper</name>
-						<script>send("temper " .. target .. " " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;temper &quot; .. target .. &quot; &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^temper\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Wrack</name>
-						<script>send("wrack " .. target .. " " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;wrack &quot; .. target .. &quot; &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^wrack\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Truewrack</name>
-						<script>send("truewrack " .. target .. " " .. matches[2] .. " " .. matches[3])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;truewrack &quot; .. target .. &quot; &quot; .. matches[2] .. &quot; &quot; .. matches[3])</script>
 						<command />
 						<packageName />
 						<regex>^twrack\s+(\S+)\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Inundation</name>
-						<script>send("inundate " .. target .. " " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;inundate &quot; .. target .. &quot; &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^inun\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Reave-Timed death</name>
-						<script>send("reave " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;reave &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^reav$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Evaluate (name)</name>
-						<script>send("evaluate " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;evaluate &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^eval$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Evaluate humor</name>
-						<script>send("evaluate " .. target .. " humours")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;evaluate &quot; .. target .. &quot; humours&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^evah$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>cultivate</name>
-						<script>send("cultivate nucleus")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;cultivate nucleus&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^cultivate$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>germ &lt;prime&gt;</name>
-						<script>send("germinate nucleus " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;germinate nucleus &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^germ\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Follow</name>
-						<script>send("homunculus follow")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus follow&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^hfol$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Return</name>
-						<script>send("homunculus return")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus return&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^hret$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Homunculus attack</name>
-						<script>send("homunculus attack " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;homunculus attack &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^hkt$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Pacify</name>
-						<script>send("homunculus pacify")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus pacify&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^pac$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Looking</name>
-						<script>send("homunculus look")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus look&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^hlook$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Exits</name>
-						<script>send("homunculus exits")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus exits&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^hexit$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Moving</name>
-						<script>send("homunculus move " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus move &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^hmov\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Listening on</name>
-						<script>send("homunculus listen on")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus listen on&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^list on$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Listening off</name>
-						<script>send("homunculus listen off")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus listen off&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^list off$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Inventory</name>
-						<script>send("homunculus inventory")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus inventory&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^hinv$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Homunculus giving</name>
-						<script>send("homunculus give " .. matches[2] .. " to " .. matches[3])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus give &quot; .. matches[2] .. &quot; to &quot; .. matches[3])</script>
 						<command />
 						<packageName />
 						<regex>^hgive\s+(.+)\s+to\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Homunculus grab</name>
-						<script>send("homunculus get " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus get &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^hget\s+(.+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Homunculus drop</name>
-						<script>send("homunculus drop " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus drop &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^hdrop\s+(.+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Homunculus speak</name>
-						<script>send("homunculus say " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus say &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^hsay\s+(.+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Prime administering</name>
-						<script>send("homunculus administer " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;homunculus administer &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^hadmin\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Homunculus shriek</name>
-						<script>send("homunculus shriek " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;homunculus shriek &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^hshriek$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>Corruption</name>
-						<script>send("homunculus corrupt " .. target)</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+send(&quot;homunculus corrupt &quot; .. target)</script>
 						<command />
 						<packageName />
 						<regex>^hcorrupt$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>incubate</name>
-						<script>send("incubate nucleus")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;incubate nucleus&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^incubate$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tstatus</name>
-						<script>send("transfuse status")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;transfuse status&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^tstatus$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>trans</name>
-						<script>send("transfuse consciousness")</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;transfuse consciousness&quot;)</script>
 						<command />
 						<packageName />
 						<regex>^trans$</regex>
@@ -4392,10 +4722,15 @@ end</script>
           </regex>
 					<Alias isActive="yes" isFolder="no">
 						<name>fchart</name>
-						<script>if Yso and Yso.alc and Yso.alc.form and type(Yso.alc.form.show_chart) == "function" then
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if Yso and Yso.alc and Yso.alc.form and type(Yso.alc.form.show_chart) == &quot;function&quot; then
   Yso.alc.form.show_chart()
 else
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation chart helper is not loaded.\n")
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation chart helper is not loaded.\n&quot;)
 end</script>
 						<command />
 						<packageName />
@@ -4403,11 +4738,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>endo</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Endorphin")
+local phial = Yso.alc.form.require_phial(&quot;Endorphin&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4418,11 +4758,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>nutri</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Nutritional", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Nutritional&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4432,11 +4777,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>cor</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Corrosive")
+local phial = Yso.alc.form.require_phial(&quot;Corrosive&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4447,11 +4802,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>petri</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Petrifying")
+local cmd = Yso.alc.form.build_use(&quot;Petrifying&quot;)
 if cmd then
   send(cmd)
 end</script>
@@ -4461,11 +4821,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>incen</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Incendiary")
+local phial = Yso.alc.form.require_phial(&quot;Incendiary&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4476,11 +4846,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>devit</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Devitalisation")
+local phial = Yso.alc.form.require_phial(&quot;Devitalisation&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4491,11 +4871,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>intox</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Intoxicant")
+local phial = Yso.alc.form.require_phial(&quot;Intoxicant&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4506,11 +4896,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>vap</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Vaporisation")
+local phial = Yso.alc.form.require_phial(&quot;Vaporisation&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4521,11 +4921,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>phos</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Phosphorous")
+local phial = Yso.alc.form.require_phial(&quot;Phosphorous&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4536,11 +4946,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>mono</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Monoxide")
+local phial = Yso.alc.form.require_phial(&quot;Monoxide&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4551,11 +4971,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tox</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Toxin")
+local phial = Yso.alc.form.require_phial(&quot;Toxin&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4566,11 +4996,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>conc</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local phial = Yso.alc.form.require_phial("Concussive")
+local phial = Yso.alc.form.require_phial(&quot;Concussive&quot;)
 local cmd = phial and Yso.alc.form.ensure_wielded(phial)
 if cmd then
   send(cmd)
@@ -4581,11 +5021,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>dest</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Destructive")
+local cmd = Yso.alc.form.build_use(&quot;Destructive&quot;)
 if cmd then
   send(cmd)
 end</script>
@@ -4595,11 +5040,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>enh</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Enhancement")
+local cmd = Yso.alc.form.build_use(&quot;Enhancement&quot;)
 if cmd then
   send(cmd)
 end</script>
@@ -4609,11 +5059,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>bol</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Bolster")
+local cmd = Yso.alc.form.build_use(&quot;Bolster&quot;)
 if cmd then
   send(cmd)
 end</script>
@@ -4623,11 +5078,16 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tendo &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Endorphin", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Endorphin&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4637,11 +5097,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tcor &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Corrosive", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Corrosive&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4651,11 +5121,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tinc &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Incendiary", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Incendiary&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4665,11 +5145,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tdev &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Devitalisation", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Devitalisation&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4679,11 +5169,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tint &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Intoxicant", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Intoxicant&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4693,11 +5193,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tvap &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Vaporisation", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Vaporisation&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4707,11 +5217,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tphos &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Phosphorous", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Phosphorous&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4721,11 +5241,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tmono &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Monoxide", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Monoxide&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4735,11 +5265,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>ttox &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Toxin", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Toxin&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4749,11 +5289,21 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>tconc &lt;arg&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+-- Alchemist offense suspension: retained for future explicit reactivation.
+if not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+  if type(cecho) == &apos;function&apos; then cecho(&apos;&lt;orange&gt;[Yso] Alchemist offense is temporarily suspended.&lt;reset&gt;\n&apos;) end
+  return false, &apos;alchemist_offense_suspended&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local cmd = Yso.alc.form.build_use("Concussive", matches[2])
+local cmd = Yso.alc.form.build_use(&quot;Concussive&quot;, matches[2])
 if cmd then
   send(cmd)
 end</script>
@@ -4763,19 +5313,24 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>ama &lt;compound&gt;</name>
-						<script>if not (Yso and Yso.alc and Yso.alc.form) then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n")
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+if not (Yso and Yso.alc and Yso.alc.form) then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Formulation helpers are not loaded.\n&quot;)
   return
 end
-local compound = tostring(matches[2] or ""):gsub("^%s+", ""):gsub("%s+$", "")
-if compound == "" then
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Usage: ama &lt;compound&gt;\n")
+local compound = tostring(matches[2] or &quot;&quot;):gsub(&quot;^%s+&quot;, &quot;&quot;):gsub(&quot;%s+$&quot;, &quot;&quot;)
+if compound == &quot;&quot; then
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Usage: ama &lt;compound&gt;\n&quot;)
   return
 end
-if type(Yso.alc.form.send_amalgamate_autofix) == "function" then
+if type(Yso.alc.form.send_amalgamate_autofix) == &quot;function&quot; then
   Yso.alc.form.send_amalgamate_autofix(compound)
 else
-  cecho("\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Autofix amalgamate helper is not loaded.\n")
+  cecho(&quot;\n&lt;gold&gt;[FORMULATION:] &lt;aquamarine&gt;Autofix amalgamate helper is not loaded.\n&quot;)
 end</script>
 						<command />
 						<packageName />
@@ -4783,42 +5338,72 @@ end</script>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>pot+ &lt;compound&gt;</name>
-						<script>send("enhance potency of " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;enhance potency of &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^pot\+\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>pot- &lt;compound&gt;</name>
-						<script>send("dilute potency of " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;dilute potency of &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^pot-\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>stab+ &lt;compound&gt;</name>
-						<script>send("enhance stability of " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;enhance stability of &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^stab\+\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>stab- &lt;compound&gt;</name>
-						<script>send("dilute stability of " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;dilute stability of &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^stab-\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>vol+ &lt;compound&gt;</name>
-						<script>send("enhance volatility of " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;enhance volatility of &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^vol\+\s+(\S+)$</regex>
 					</Alias>
 					<Alias isActive="yes" isFolder="no">
 						<name>vol- &lt;compound&gt;</name>
-						<script>send("dilute volatility of " .. matches[2])</script>
+						<script>-- Release quarantine for class aliases; ordinary typed game commands are untouched.
+local controller = rawget(_G, &apos;YsoWorkspaceLink&apos;)
+if type(controller) == &apos;table&apos; and (controller.busy == true or controller.restart_required == true) then
+  return false, controller.busy == true and &apos;workspace_reload&apos; or &apos;restart_required&apos;
+end
+send(&quot;dilute volatility of &quot; .. matches[2])</script>
 						<command />
 						<packageName />
 						<regex>^vol-\s+(\S+)$</regex>
@@ -8224,7 +8809,7 @@ send("stare " .. victim .. " horrify")</script>
 		
 <AliasGroup isActive="yes" isFolder="yes"><name>Target priorities</name><script /><command /><packageName /><regex /><Alias isActive="yes" isFolder="no"><name>Target Group</name><script>tprio.reset(); tprio.addGroup(matches[2])</script><command /><packageName /><regex>^tgh (.+)$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Enemy Prio</name><script>if #tprio.list == 0 then tprio.print(); return end; send("unenemy all"); for _,n in ipairs(tprio.list) do send("enemy " .. n) end</script><command /><packageName /><regex>^(?:ept|etp)$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Targets announce</name><script>tprio.pt()</script><command /><packageName /><regex>^tp$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Target First</name><script>tprio.current = 0; tprio.next()</script><command /><packageName /><regex>^tpf$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Target Next</name><script>tprio.next()</script><command /><packageName /><regex>^tpn$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Target Last</name><script>tprio.previous()</script><command /><packageName /><regex>^tpl$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Partycalling</name><script>partyReporting = not partyReporting; cecho("&lt;yellow&gt;[Yso] Party reporting " .. (partyReporting and "enabled" or "disabled") .. ".\n")</script><command /><packageName /><regex>^prep$</regex></Alias></AliasGroup>
 </AliasGroup>
-	</AliasPackage>
+	<Alias isActive="yes" isFolder="no"><name>Yso unified health</name><script>Yso.system.check()</script><command /><packageName /><regex>^ysocheck$</regex></Alias></AliasPackage>
 	<ActionPackage />
 	<ScriptPackage><Script isActive="yes" isFolder="no"><name>Yso session readiness</name><packageName /><script>-- Shared readiness for automatic game queries. Never infer login from cached GMCP.
 Yso = Yso or {}
@@ -8349,6 +8934,157 @@ do
   _G.yso = root
   Yso = root
   yso = root
+end
+
+-- Temporary class suspension is independent of balance, force, and pause gates.
+-- A future explicit set_enabled(true) reactivates retained Alchemist code.
+function Yso.release_blocked()
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; then
+    if controller.busy == true then return true, &quot;workspace_reload&quot; end
+    if controller.restart_required == true then return true, &quot;restart_required&quot; end
+  end
+  return false
+end
+Yso.features = Yso.features or {}
+if type(Yso.features.alchemist_offense) ~= &quot;boolean&quot; then
+  Yso.features.alchemist_offense = false
+end
+Yso.alchemist_offense = Yso.alchemist_offense or {}
+do
+  local A = Yso.alchemist_offense
+  local function alchemist_route(id)
+    id = tostring(id or &quot;&quot;):lower()
+    if id:match(&quot;^alchemist_&quot;) ~= nil or id == &quot;adam&quot; or id == &quot;aduel&quot; or id == &quot;bleed&quot; then return true end
+    local registry = Yso.Combat and Yso.Combat.RouteRegistry
+    if registry and type(registry.resolve) == &quot;function&quot; then
+      local ok, entry = pcall(registry.resolve, id)
+      return ok and type(entry) == &quot;table&quot; and entry.class == &quot;alchemist&quot;
+    end
+    return false
+  end
+  function A.enabled() return Yso.features.alchemist_offense == true end
+  local function offensive_command(command)
+    command = tostring(command or &quot;&quot;):lower():gsub(&quot;^%s+&quot;, &quot;&quot;)
+    -- Strip queue wrappers before inspecting each command; separators cannot
+    -- hide a class attack behind an otherwise harmless command.
+    command = command:gsub(&quot;^queue%s+addclearfull%s+%S+%s+&quot;, &quot;&quot;)
+      :gsub(&quot;^queue%s+addclear%s+%S+%s+&quot;, &quot;&quot;):gsub(&quot;^queue%s+add%s+%S+%s+&quot;, &quot;&quot;)
+    local verb = command:match(&quot;^(%a+)&quot;) or &quot;&quot;
+    if ({wrack=true,truewrack=true,temper=true,inundate=true,reave=true,aurify=true,
+      phlogisticate=true,vitrify=true})[verb] then return true end
+    if command:match(&quot;^homunculus%s+attack%f[%W]&quot;) or command:match(&quot;^homunculus%s+corrupt%f[%W]&quot;)
+      or command:match(&quot;^homunculus%s+shriek%f[%W]&quot;) then return true end
+    local metal = command:match(&quot;^educe%s+(%a+)&quot;)
+    if metal and ({iron=true,copper=true,lead=true,silver=true,cadmium=true,magnesium=true})[metal] then return true end
+    if command:match(&quot;^ether%s+displace%f[%W]&quot;) then return true end
+    local compound = command:match(&quot;^throw%s+(%a+)&quot;)
+    return compound and ({corrosive=true,incendiary=true,devitalisation=true,intoxicant=true,
+      vaporisation=true,phosphorous=true,monoxide=true,toxin=true,concussive=true,
+      petrifying=true,destructive=true,miasma=true,caustic=true,pathogen=true,hypnotic=true,hypotic=true})[compound] == true or false
+  end
+  local function inspect(value)
+    if type(value) == &quot;table&quot; then
+      for key, lane in pairs(value) do
+        if type(key) == &quot;number&quot; or ({lanes=true,free=true,pre=true,eq=true,bal=true,class=true,ent=true,entity=true})[key] then
+          if inspect(lane) then return true end
+        end
+      end
+    elseif type(value) == &quot;string&quot; then
+      local sep = (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)) or Yso.sep or &quot;&amp;&amp;&quot;
+      local text = value:gsub(&quot;&amp;&amp;&quot;, &quot;\n&quot;):gsub(&quot;;&quot;, &quot;\n&quot;)
+      if sep ~= &quot;&amp;&amp;&quot; and sep ~= &quot;;&quot; and sep ~= &quot;&quot; then
+        local pattern = tostring(sep):gsub(&quot;(%W)&quot;, &quot;%%%1&quot;)
+        text = text:gsub(pattern, &quot;\n&quot;)
+      end
+      for line in text:gmatch(&quot;[^\n]+&quot;) do if offensive_command(line) then return true end end
+    end
+    return false
+  end
+  function A.blocks(payload, opts)
+    if A.enabled() then return false end
+    opts = type(opts) == &quot;table&quot; and opts or {}
+    local route = opts.route or (type(payload) == &quot;table&quot; and payload.route)
+    -- Pacification remains available to stop an existing creature attack.
+    local pacify = type(payload) == &quot;table&quot; and payload.free == &quot;homunculus pacify&quot;
+      and not payload.eq and not payload.bal and not payload.class
+    if (alchemist_route(route) and not pacify) or inspect(payload) then
+      return true, &quot;alchemist_offense_suspended&quot;
+    end
+    return false
+  end
+  function A.stop_owned()
+    local routes = Yso.off and Yso.off.alc or {}
+    local seen = {}
+    local session = Yso.session
+    local authenticated = session and type(session.is_ready) == &quot;function&quot; and session.is_ready() == true
+    local pacify = false
+    for _, route in pairs(routes) do
+      if type(route) == &quot;table&quot; and not seen[route] then
+        seen[route] = true
+        local state = route.state
+        if type(state) == &quot;table&quot; then
+          if state.homunculus_attack_sent == true then pacify = true end
+          if state.timer_id and type(killTimer) == &quot;function&quot; then pcall(killTimer, state.timer_id) end
+          state.timer_id = nil; state.timer_generation = (state.timer_generation or 0) + 1
+          state.enabled = false; state.loop_enabled = false; state.busy = false
+          state.pending = nil; state.waiting = {}; state.in_flight = {}
+          state.last_hold_reason = &quot;alchemist_offense_suspended&quot;
+          state.homunculus_attack_sent = false; state.homunculus_attack_target = &quot;&quot;
+        end
+        if type(route.cfg) == &quot;table&quot; then route.cfg.enabled = false end
+      end
+    end
+    local Q = Yso.queue
+    if type(Q) == &quot;table&quot; then
+      if type(Q.discard_staged_route) == &quot;function&quot; then
+        for _, id in ipairs({&quot;alchemist_duel_route&quot;, &quot;alchemist_group_damage&quot;, &quot;alchemist_aurify_route&quot;, &quot;alchemist_reave&quot;}) do
+          pcall(Q.discard_staged_route, id)
+        end
+      end
+      for _, lane in ipairs({&quot;free&quot;, &quot;eq&quot;, &quot;bal&quot;, &quot;class&quot;}) do
+        local owned = type(Q.get_owned) == &quot;function&quot; and Q.get_owned(lane)
+        if type(owned) == &quot;table&quot; and alchemist_route(owned.route) and type(Q.clear_lane) == &quot;function&quot; then
+          if authenticated then pcall(Q.clear_lane, lane)
+          elseif type(Q.clear_owned) == &quot;function&quot; then pcall(Q.clear_owned, lane) end
+        end
+        local staged = type(Q.get_staged_owner) == &quot;function&quot; and Q.get_staged_owner(lane)
+        if type(staged) == &quot;table&quot; and alchemist_route(staged.route) and type(Q.clear) == &quot;function&quot; then
+          pcall(Q.clear, lane)
+        end
+      end
+    end
+    local mode = Yso.mode
+    if mode and mode.route_loop and alchemist_route(mode.route_loop.active) then mode.route_loop.active = &quot;&quot; end
+    local P = Yso.alc and Yso.alc.phys
+    if P and P.state then
+      if authenticated and type(P.reave_sync_target) == &quot;function&quot; then pcall(P.reave_sync_target, &quot;&quot;, &quot;alchemist_offense_suspended&quot;) end
+      if type(P.clear_pending_class) == &quot;function&quot; then pcall(P.clear_pending_class, &quot;alchemist_offense_suspended&quot;, {clear_any=true,clear_staged=false}) end
+      if type(P.state.evaluate) == &quot;table&quot; then P.state.evaluate={target=&quot;&quot;,active=false,requested_at=0,started_at=0} end
+      if P.state.homunculus_attack then P.state.homunculus_attack.active=false;P.state.homunculus_attack.target=&quot;&quot; end
+    end
+    if Yso.alc then Yso.alc.reaving=false;Yso.alc.reave_target=&quot;&quot;;Yso.alc.reave_pp_paused=false end
+    if pacify and authenticated and type(Yso.send) == &quot;function&quot; then pcall(Yso.send, &quot;homunculus pacify&quot;) end
+    local fallback = Yso.util and Yso.util._route_alias_fallback
+    for id, loop in pairs(fallback and fallback.loops or {}) do
+      if alchemist_route(id) then
+        if loop.timer_id and type(killTimer) == &quot;function&quot; then pcall(killTimer, loop.timer_id) end
+        loop.timer_id=nil;loop.enabled=false;fallback.loops[id]=nil
+      end
+    end
+    local status = gmcp and gmcp.Char and gmcp.Char.Status or {}
+    local basher = Legacy and Legacy.Settings and Legacy.Settings.Basher
+    if basher and tostring(status.class or &quot;&quot;):lower() == &quot;alchemist&quot; then
+      basher.status = false; basher.queued = false
+    end
+  end
+  function A.set_enabled(enabled)
+    if type(enabled) ~= &quot;boolean&quot; then return false, &quot;expected_boolean&quot; end
+    Yso.features.alchemist_offense = enabled
+    if not enabled then A.stop_owned() end
+    return true
+  end
+  if not A.enabled() then A.stop_owned() end
 end
 
 --========================================================--
@@ -8910,8 +9646,12 @@ local function _lane_text(v)
 end
 
 function Yso.send(cmd)
+  local held, reason = Yso.release_blocked()
+  if held then return false, reason end
   cmd = _trim(cmd)
   if cmd == &quot;&quot; then return false end
+  local blocked, why = Yso.alchemist_offense.blocks(cmd)
+  if blocked then return false, why end
   if Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true then
     return true
   end
@@ -8956,6 +9696,10 @@ local function _emit_direct(payload)
 end
 
 function Yso.emit(payload, opts)
+  local held, reason = Yso.release_blocked()
+  if held then return false, reason end
+  local blocked, why = Yso.alchemist_offense.blocks(payload, opts)
+  if blocked then return false, why end
   local pause = Yso.Combat and Yso.Combat.Pause
   if pause then
     local blocked, reason = pause.blocks_emission(payload, opts)
@@ -12354,6 +13098,15 @@ local function _norm(s)
   return s
 end
 
+local function _release_hold()
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; then
+    if controller.busy == true then return true, &quot;workspace_reload&quot; end
+    if controller.restart_required == true then return true, &quot;restart_required&quot; end
+  end
+  return false
+end
+
 local function _echo(msg)
   if not (M.cfg and M.cfg.echo) then return end
   if type(cecho) == &quot;function&quot; then
@@ -12641,8 +13394,14 @@ function M.route_loop_active(name)
 end
 
 function M.schedule_route_loop(name, delay)
+  local held, reason = _release_hold()
+  if held then return false, reason end
   local entry = _loop_entry(name)
   if not entry then return false end
+  if entry.class == &quot;alchemist&quot; and not (Yso.features and Yso.features.alchemist_offense == true) then
+    if Yso.alchemist_offense then Yso.alchemist_offense.stop_owned() end
+    return false, &quot;alchemist_offense_suspended&quot;
+  end
   local mod = _ensure_route_module(entry)
   if type(mod) ~= &quot;table&quot; then return false end
 
@@ -12702,12 +13461,23 @@ function M.nudge_route_loop(name, reason)
 end
 
 function M.start_route_loop(name, reason)
+  local held, hold_reason = _release_hold()
+  if held then return false, hold_reason end
+  local requested = tostring(name or &quot;&quot;):lower()
+  if (requested:match(&quot;^alchemist_&quot;) or requested == &quot;adam&quot; or requested == &quot;aduel&quot; or requested == &quot;bleed&quot;)
+      and not (Yso.features and Yso.features.alchemist_offense == true) then
+    _echo(&quot;Alchemist offense is temporarily suspended.&quot;)
+    return false, &quot;alchemist_offense_suspended&quot;
+  end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.is_held() then return false, &quot;enemy_deliverance&quot; end
   local entry = _loop_entry(name)
   if not entry then
     _echo((&quot;Route &lt;yellow&gt;%s&lt;reset&gt; is not registered.&quot;):format(tostring(name)))
     return false
+  end
+  if entry.class == &quot;alchemist&quot; and not (Yso.features and Yso.features.alchemist_offense == true) then
+    return false, &quot;alchemist_offense_suspended&quot;
   end
 
   local mod = _ensure_route_module(entry)
@@ -12813,8 +13583,14 @@ function M.toggle_route_loop(name, reason)
 end
 
 function M.tick_route_loop(name)
+  local held, reason = _release_hold()
+  if held then return false, reason end
   local entry = _loop_entry(name)
   if not entry then return false end
+  if entry.class == &quot;alchemist&quot; and not (Yso.features and Yso.features.alchemist_offense == true) then
+    if Yso.alchemist_offense then Yso.alchemist_offense.stop_owned() end
+    return false, &quot;alchemist_offense_suspended&quot;
+  end
   local mod = _ensure_route_module(entry)
   if type(mod) ~= &quot;table&quot; then return false end
 
@@ -14775,6 +15551,10 @@ local function _copy(entry)
   local out = {}
   if type(entry) ~= &quot;table&quot; then return out end
   for k, v in pairs(entry) do out[k] = v end
+  if entry.class == &quot;alchemist&quot; and not (Yso.features and Yso.features.alchemist_offense == true) then
+    out.suspended = true
+    out.suspended_reason = &quot;alchemist_offense_suspended&quot;
+  end
   return out
 end
 
@@ -20560,6 +21340,11 @@ function F.note_phiallist()
 end
 
 function F.request_discovery()
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &apos;alchemist_offense_suspended&apos; end
   if not (Yso.session and Yso.session.is_ready()) then return false, &apos;not_authenticated&apos; end
   if F.state.discovery_requested then
     return false
@@ -20602,7 +21387,8 @@ if Yso.session and type(Yso.session.subscribe) == &apos;function&apos; then
     F.state.discovery_requested_at = nil
     F.state.validate_reserved_on_next_phiallist = nil
   end)
-end</script>
+end
+</script>
 						<eventHandlerList />
 					</Script>
 					<Script isActive="yes" isFolder="no">
@@ -20878,18 +21664,18 @@ F.phials = F.phials or {}
 F.last_phiallist = F.last_phiallist or {}
 
 local function _trim(s)
-  s = tostring(s or "")
-  s = s:gsub("^%s+", "")
-  s = s:gsub("%s+$", "")
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;^%s+&quot;, &quot;&quot;)
+  s = s:gsub(&quot;%s+$&quot;, &quot;&quot;)
   return s
 end
 
 local function _strip_ansi(s)
-  s = tostring(s or "")
-  s = s:gsub("\27%[[%d;]*[A-Za-z]", "")
-  s = s:gsub("[\194-\244][\128-\191]*", function(ch)
-    if ch == "\194\160" then
-      return " "
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;\27%[[%d;]*[A-Za-z]&quot;, &quot;&quot;)
+  s = s:gsub(&quot;[\194-\244][\128-\191]*&quot;, function(ch)
+    if ch == &quot;\194\160&quot; then
+      return &quot; &quot;
     end
     return ch
   end)
@@ -20902,93 +21688,93 @@ end
 
 local function _normalize_phial_id(raw)
   local value = _trim(raw)
-  if value == "" then
+  if value == &quot;&quot; then
     return nil
   end
-  local digits = value:match("^[Pp][Hh][Ii][Aa][Ll](%d+)$") or value:match("^(%d+)$")
+  local digits = value:match(&quot;^[Pp][Hh][Ii][Aa][Ll](%d+)$&quot;) or value:match(&quot;^(%d+)$&quot;)
   if not digits then
     return nil
   end
-  return "Phial" .. digits
+  return &quot;Phial&quot; .. digits
 end
 
 local function _is_permanent_months(months)
-  return _trim(months) == "--"
+  return _trim(months) == &quot;--&quot;
 end
 
 local function _normalize_compound_key(name)
   local key = _key(name)
   local aliases = {
-    endo = "endorphin",
-    endorphin = "endorphin",
-    enh = "enhancement",
-    enhancement = "enhancement",
-    cor = "corrosive",
-    corrosive = "corrosive",
-    incen = "incendiary",
-    incendiary = "incendiary",
-    devit = "devitalisation",
-    devitalisation = "devitalisation",
-    intox = "intoxicant",
-    intoxicant = "intoxicant",
-    vap = "vaporisation",
-    vaporisation = "vaporisation",
-    phos = "phosphorous",
-    phosphorous = "phosphorous",
-    mono = "monoxide",
-    monoxide = "monoxide",
-    tox = "toxin",
-    toxin = "toxin",
-    conc = "concussive",
-    concussive = "concussive",
-    halophilic = "halophilic",
+    endo = &quot;endorphin&quot;,
+    endorphin = &quot;endorphin&quot;,
+    enh = &quot;enhancement&quot;,
+    enhancement = &quot;enhancement&quot;,
+    cor = &quot;corrosive&quot;,
+    corrosive = &quot;corrosive&quot;,
+    incen = &quot;incendiary&quot;,
+    incendiary = &quot;incendiary&quot;,
+    devit = &quot;devitalisation&quot;,
+    devitalisation = &quot;devitalisation&quot;,
+    intox = &quot;intoxicant&quot;,
+    intoxicant = &quot;intoxicant&quot;,
+    vap = &quot;vaporisation&quot;,
+    vaporisation = &quot;vaporisation&quot;,
+    phos = &quot;phosphorous&quot;,
+    phosphorous = &quot;phosphorous&quot;,
+    mono = &quot;monoxide&quot;,
+    monoxide = &quot;monoxide&quot;,
+    tox = &quot;toxin&quot;,
+    toxin = &quot;toxin&quot;,
+    conc = &quot;concussive&quot;,
+    concussive = &quot;concussive&quot;,
+    halophilic = &quot;halophilic&quot;,
   }
   return aliases[key] or key
 end
 
 local function _canonical_role(role)
-  local key = _key(role):gsub("%s+", "_"):gsub("%-", "_")
+  local key = _key(role):gsub(&quot;%s+&quot;, &quot;_&quot;):gsub(&quot;%-&quot;, &quot;_&quot;)
   local aliases = {
-    endo = "endorphin",
-    endorphin = "endorphin",
-    enhancement = "enhancement",
-    enh = "enhancement",
-    gas = "offensive_flex",
-    offensive = "offensive_flex",
-    flex = "offensive_flex",
-    offensive_flex = "offensive_flex",
-    offensive_gas = "offensive_flex",
-    offensive_flex_slot = "offensive_flex",
+    endo = &quot;endorphin&quot;,
+    endorphin = &quot;endorphin&quot;,
+    enhancement = &quot;enhancement&quot;,
+    enh = &quot;enhancement&quot;,
+    gas = &quot;offensive_flex&quot;,
+    offensive = &quot;offensive_flex&quot;,
+    flex = &quot;offensive_flex&quot;,
+    offensive_flex = &quot;offensive_flex&quot;,
+    offensive_gas = &quot;offensive_flex&quot;,
+    offensive_flex_slot = &quot;offensive_flex&quot;,
   }
   return aliases[key]
 end
 
 local function _amalgamate_role_for_compound(compound)
   local key = _normalize_compound_key(compound)
-  if key == "endorphin" then
-    return "endorphin", key
+  if key == &quot;endorphin&quot; then
+    return &quot;endorphin&quot;, key
   end
-  if key == "enhancement" then
-    return "enhancement", key
+  if key == &quot;enhancement&quot; then
+    return &quot;enhancement&quot;, key
   end
-  return "offensive_flex", key
+  return &quot;offensive_flex&quot;, key
 end
 
 local function _role_label(role_key)
   local labels = {
-    endorphin = "Endorphin",
-    enhancement = "Enhancement",
-    offensive_flex = "Offensive gas flex",
+    endorphin = &quot;Endorphin&quot;,
+    enhancement = &quot;Enhancement&quot;,
+    offensive_flex = &quot;Offensive gas flex&quot;,
   }
-  return labels[role_key] or tostring(role_key or "Unknown")
+  return labels[role_key] or tostring(role_key or &quot;Unknown&quot;)
 end
 
 local function _reserved_compound_id(target_key)
   local reserved = (F.cfg and F.cfg.reserved_phials) or {}
-  if target_key == "endorphin" then
+  if target_key == &quot;endorphin&quot; then
     return _normalize_phial_id(reserved.endorphin)
   end
-  if target_key == "enhancement" then
+  if target_key == &quot;enhancement&quot; then
     return _normalize_phial_id(reserved.enhancement)
   end
   return nil
@@ -21006,7 +21792,7 @@ local function _reserved_compound_row(target_key)
   return {
     id = id,
     container = id,
-    kind = "phial",
+    kind = &quot;phial&quot;,
     compound = target_key:sub(1, 1):upper() .. target_key:sub(2),
     compound_key = target_key,
     empty = false,
@@ -21020,30 +21806,30 @@ local function _join_ids(rows)
     ids[#ids + 1] = tostring(row.id)
   end
   table.sort(ids)
-  return table.concat(ids, ", ")
+  return table.concat(ids, &quot;, &quot;)
 end
 
 local function _append_raw(line)
   table.insert(F.last_phiallist, line)
-  F.state.last_phiallist = table.concat(F.last_phiallist, "\n")
+  F.state.last_phiallist = table.concat(F.last_phiallist, &quot;\n&quot;)
 end
 
 local function _clear_for_header(line)
-  if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months%s*|%s*Potency") then
+  if line:match(&quot;^%s*Phial%s*|%s*Compound%s*|%s*Months%s*|%s*Potency&quot;) then
     F.reset_phials()
     return true
   end
-  if line:match("^%s*Phial%s+Compound%s+Months%s+Potency%s+Volatility%s+Stability%s*$") then
+  if line:match(&quot;^%s*Phial%s+Compound%s+Months%s+Potency%s+Volatility%s+Stability%s*$&quot;) then
     F.reset_phials()
     return true
   end
-  if line:match("^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity") then
+  if line:match(&quot;^%s*Phial%s*|%s*Compound%s*|%s*Months left%s*|%s*Quantity&quot;) then
     if next(F.phials) == nil then
       F.last_phiallist = {}
     end
     return true
   end
-  if line:match("^%s*Phial%s+Compound%s+Months%s+left%s+Quantity%s*$") then
+  if line:match(&quot;^%s*Phial%s+Compound%s+Months%s+left%s+Quantity%s*$&quot;) then
     if next(F.phials) == nil then
       F.last_phiallist = {}
     end
@@ -21053,7 +21839,7 @@ local function _clear_for_header(line)
 end
 
 local function _store_filled(id, compound, months, potency, volatility, stability)
-  if not id:match("^Phial") then
+  if not id:match(&quot;^Phial&quot;) then
     return nil
   end
   local compound_text = _trim(compound)
@@ -21061,16 +21847,16 @@ local function _store_filled(id, compound, months, potency, volatility, stabilit
   local row = {
     id = _trim(id),
     container = _trim(id),
-    kind = "phial",
+    kind = &quot;phial&quot;,
     compound = compound_text,
     compound_key = compound_key,
-    empty = compound_key == "empty",
+    empty = compound_key == &quot;empty&quot;,
     months = tonumber(months) or _trim(months),
     potency = tonumber(potency) or _trim(potency),
     volatility = tonumber(volatility) or _trim(volatility),
     stability = tonumber(stability) or _trim(stability),
     permanent = _is_permanent_months(months),
-    seen_at = type(F.now) == "function" and F.now() or os.time(),
+    seen_at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
   F.phials[row.id] = row
   F.note_phiallist()
@@ -21078,20 +21864,20 @@ local function _store_filled(id, compound, months, potency, volatility, stabilit
 end
 
 local function _store_empty(id, months, quantity)
-  if not id:match("^Phial") then
+  if not id:match(&quot;^Phial&quot;) then
     return nil
   end
   local row = {
     id = _trim(id),
     container = _trim(id),
-    kind = "phial",
-    compound = "Empty",
-    compound_key = "empty",
+    kind = &quot;phial&quot;,
+    compound = &quot;Empty&quot;,
+    compound_key = &quot;empty&quot;,
     empty = true,
     months = tonumber(months) or _trim(months),
     quantity = tonumber(quantity) or _trim(quantity),
     permanent = _is_permanent_months(months),
-    seen_at = type(F.now) == "function" and F.now() or os.time(),
+    seen_at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
   F.phials[row.id] = row
   F.note_phiallist()
@@ -21099,26 +21885,26 @@ local function _store_empty(id, months, quantity)
 end
 
 function F.parse_phiallist(line_or_block)
-  if type(line_or_block) ~= "string" or line_or_block == "" then
+  if type(line_or_block) ~= &quot;string&quot; or line_or_block == &quot;&quot; then
     return nil
   end
 
-  if line_or_block:find("\n", 1, true) or line_or_block:find("\r", 1, true) then
+  if line_or_block:find(&quot;\n&quot;, 1, true) or line_or_block:find(&quot;\r&quot;, 1, true) then
     local parsed
-    for line in line_or_block:gmatch("[^\r\n]+") do
+    for line in line_or_block:gmatch(&quot;[^\r\n]+&quot;) do
       parsed = F.parse_phiallist(line) or parsed
     end
     return parsed
   end
 
   local line = _trim(_strip_ansi(line_or_block))
-  if line == "" then
+  if line == &quot;&quot; then
     return nil
   end
 
   _append_raw(line)
 
-  if line:match("^%s*Vial") or line:find("| Vial", 1, true) then
+  if line:match(&quot;^%s*Vial&quot;) or line:find(&quot;| Vial&quot;, 1, true) then
     return nil
   end
 
@@ -21127,36 +21913,36 @@ function F.parse_phiallist(line_or_block)
   end
 
   local id, compound, months, potency, volatility, stability =
-    line:match("^(Phial[%w%d]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$")
+    line:match(&quot;^(Phial[%w%d]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$&quot;)
   if id then
     return _store_filled(id, compound, months, potency, volatility, stability)
   end
 
   local eid, emonths, quantity =
-    line:match("^(Phial[%w%d]+)%s*|%s*Empty%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$")
+    line:match(&quot;^(Phial[%w%d]+)%s*|%s*Empty%s*|%s*([^|]+)%s*|%s*([^|]+)%s*$&quot;)
   if eid then
     return _store_empty(eid, emonths, quantity)
   end
 
   local columns = {}
-  for token in line:gmatch("%S+") do
+  for token in line:gmatch(&quot;%S+&quot;) do
     columns[#columns + 1] = token
   end
-  if #columns == 6 and columns[1]:match("^Phial[%w%d]+$") then
+  if #columns == 6 and columns[1]:match(&quot;^Phial[%w%d]+$&quot;) then
     return _store_filled(columns[1], columns[2], columns[3], columns[4], columns[5], columns[6])
   end
-  if #columns == 4 and columns[1]:match("^Phial[%w%d]+$") and _key(columns[2]) == "empty" then
+  if #columns == 4 and columns[1]:match(&quot;^Phial[%w%d]+$&quot;) and _key(columns[2]) == &quot;empty&quot; then
     return _store_empty(columns[1], columns[3], columns[4])
   end
 
   local any_id, any_compound, any_months, any_potency, any_volatility, any_stability =
-    line:match("(Phial[%w%d]+)%s+([A-Za-z]+)%s+([%-%d]+)%s+([%d]+)%s+([%d]+)%s+([%d]+)")
-  if any_id and _key(any_compound) ~= "empty" then
+    line:match(&quot;(Phial[%w%d]+)%s+([A-Za-z]+)%s+([%-%d]+)%s+([%d]+)%s+([%d]+)%s+([%d]+)&quot;)
+  if any_id and _key(any_compound) ~= &quot;empty&quot; then
     return _store_filled(any_id, any_compound, any_months, any_potency, any_volatility, any_stability)
   end
 
   local any_empty_id, any_empty_months, any_empty_qty =
-    line:match("(Phial[%w%d]+)%s+Empty%s+([%-%d]+)%s+([%d]+)")
+    line:match(&quot;(Phial[%w%d]+)%s+Empty%s+([%-%d]+)%s+([%d]+)&quot;)
   if any_empty_id then
     return _store_empty(any_empty_id, any_empty_months, any_empty_qty)
   end
@@ -21165,16 +21951,16 @@ function F.parse_phiallist(line_or_block)
 end
 
 local function _parse_eq_hand(line)
-  local hand, item = line:match("^%s*(Left%s+hand):%s+(.+)$")
+  local hand, item = line:match(&quot;^%s*(Left%s+hand):%s+(.+)$&quot;)
   if not hand then
-    hand, item = line:match("^%s*(Right%s+hand):%s+(.+)$")
+    hand, item = line:match(&quot;^%s*(Right%s+hand):%s+(.+)$&quot;)
   end
   if not hand then
     return nil
   end
 
-  local token = _trim(item):match("^([%w%d_%-']+)")
-  local phial_id = _normalize_phial_id(token or "")
+  local token = _trim(item):match(&quot;^([%w%d_%-&apos;]+)&quot;)
+  local phial_id = _normalize_phial_id(token or &quot;&quot;)
   return {
     hand = _key(hand),
     item = _trim(item),
@@ -21184,26 +21970,26 @@ local function _parse_eq_hand(line)
 end
 
 function F.handle_eq_line(line_or_block)
-  if type(line_or_block) ~= "string" or line_or_block == "" then
+  if type(line_or_block) ~= &quot;string&quot; or line_or_block == &quot;&quot; then
     return nil
   end
 
-  if line_or_block:find("\n", 1, true) or line_or_block:find("\r", 1, true) then
+  if line_or_block:find(&quot;\n&quot;, 1, true) or line_or_block:find(&quot;\r&quot;, 1, true) then
     local parsed
-    for line in line_or_block:gmatch("[^\r\n]+") do
+    for line in line_or_block:gmatch(&quot;[^\r\n]+&quot;) do
       parsed = F.handle_eq_line(line) or parsed
     end
     return parsed
   end
 
   local line = _trim(_strip_ansi(line_or_block))
-  if line == "" then
+  if line == &quot;&quot; then
     return nil
   end
 
-  if line == "You are holding:" or line == "Wielded:" then
+  if line == &quot;You are holding:&quot; or line == &quot;Wielded:&quot; then
     F.state.eq_hands = {}
-    F.state.last_eq_at = type(F.now) == "function" and F.now() or os.time()
+    F.state.last_eq_at = type(F.now) == &quot;function&quot; and F.now() or os.time()
     return {}
   end
 
@@ -21214,7 +22000,7 @@ function F.handle_eq_line(line_or_block)
 
   F.state.eq_hands = F.state.eq_hands or {}
   F.state.eq_hands[parsed.hand] = parsed
-  F.state.last_eq_at = type(F.now) == "function" and F.now() or os.time()
+  F.state.last_eq_at = type(F.now) == &quot;function&quot; and F.now() or os.time()
   return parsed
 end
 
@@ -21233,7 +22019,7 @@ end
 function F.permanent_phials()
   local rows = {}
   for _, row in pairs(F.phials) do
-    if row.kind == "phial" and row.permanent then
+    if row.kind == &quot;phial&quot; and row.permanent then
       rows[#rows + 1] = row
     end
   end
@@ -21244,7 +22030,7 @@ end
 function F.empty_phials()
   local rows = {}
   for _, row in pairs(F.phials) do
-    if row.kind == "phial" and row.empty then
+    if row.kind == &quot;phial&quot; and row.empty then
       rows[#rows + 1] = row
     end
   end
@@ -21261,14 +22047,14 @@ end
 function F.reserved_role(role)
   local role_key = _canonical_role(role)
   if not role_key then
-    return nil, "Unknown reserved role '" .. tostring(role or "") .. "'."
+    return nil, &quot;Unknown reserved role &apos;&quot; .. tostring(role or &quot;&quot;) .. &quot;&apos;.&quot;
   end
 
   local reserved = (F.cfg and F.cfg.reserved_phials) or {}
-  if role_key == "endorphin" or role_key == "enhancement" then
+  if role_key == &quot;endorphin&quot; or role_key == &quot;enhancement&quot; then
     local id = _normalize_phial_id(reserved[role_key])
     if not id then
-      return nil, _role_label(role_key) .. " slot policy is missing a phial ID."
+      return nil, _role_label(role_key) .. &quot; slot policy is missing a phial ID.&quot;
     end
     return {
       role = role_key,
@@ -21312,15 +22098,15 @@ function F.reserved_role(role)
     }
   end
   if #candidates == 0 then
-    return nil, "No permanent offensive flex slot found from phiallist. Keep one permanent phial outside Endorphin/Enhancement reserved IDs."
+    return nil, &quot;No permanent offensive flex slot found from phiallist. Keep one permanent phial outside Endorphin/Enhancement reserved IDs.&quot;
   end
-  return nil, "Multiple permanent offensive flex candidates found (" .. table.concat(candidates, ", ") .. "). Set one dedicated offensive flex slot."
+  return nil, &quot;Multiple permanent offensive flex candidates found (&quot; .. table.concat(candidates, &quot;, &quot;) .. &quot;). Set one dedicated offensive flex slot.&quot;
 end
 
 function F.remind_reserved_mismatch(role)
   local policy, err = F.reserved_role(role)
   if not policy then
-    if type(F.warn) == "function" then
+    if type(F.warn) == &quot;function&quot; then
       F.warn(err)
     end
     return nil, err
@@ -21328,11 +22114,11 @@ function F.remind_reserved_mismatch(role)
 
   local row = F.phials[policy.id]
   if not row then
-    local msg = policy.label .. " slot state is unknown for " .. policy.id .. ". Run PHIALLIST."
-    if type(F.request_discovery) == "function" then
+    local msg = policy.label .. &quot; slot state is unknown for &quot; .. policy.id .. &quot;. Run PHIALLIST.&quot;
+    if type(F.request_discovery) == &quot;function&quot; then
       F.request_discovery()
     end
-    if type(F.warn) == "function" then
+    if type(F.warn) == &quot;function&quot; then
       F.warn(msg)
     end
     return nil, msg
@@ -21343,16 +22129,16 @@ function F.remind_reserved_mismatch(role)
   end
 
   if policy.expected_compound and row.compound_key ~= policy.expected_compound then
-    local msg = string.format("%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.", policy.label, policy.id, tostring(row.compound or "?"), policy.id:upper())
-    if type(F.warn) == "function" then
+    local msg = string.format(&quot;%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.&quot;, policy.label, policy.id, tostring(row.compound or &quot;?&quot;), policy.id:upper())
+    if type(F.warn) == &quot;function&quot; then
       F.warn(msg)
     end
     return true, msg
   end
 
   if policy.expected_pool and not policy.expected_pool[row.compound_key] then
-    local msg = string.format("%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.", policy.label, policy.id, tostring(row.compound or "?"), policy.id:upper())
-    if type(F.warn) == "function" then
+    local msg = string.format(&quot;%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.&quot;, policy.label, policy.id, tostring(row.compound or &quot;?&quot;), policy.id:upper())
+    if type(F.warn) == &quot;function&quot; then
       F.warn(msg)
     end
     return true, msg
@@ -21362,7 +22148,7 @@ function F.remind_reserved_mismatch(role)
 end
 
 function F.find_phial(name)
-  if not name or name == "" then
+  if not name or name == &quot;&quot; then
     return nil
   end
 
@@ -21372,7 +22158,7 @@ function F.find_phial(name)
   end
 
   local target = _key(name)
-  if type(F.resolve) == "function" then
+  if type(F.resolve) == &quot;function&quot; then
     local meta = F.resolve(name, { silent = true })
     if meta and meta.use_name then
       target = _key(meta.use_name)
@@ -21383,7 +22169,7 @@ function F.find_phial(name)
 
   local ids = {}
   for id, row in pairs(F.phials) do
-    if row.kind == "phial" and not row.empty and row.compound_key == target then
+    if row.kind == &quot;phial&quot; and not row.empty and row.compound_key == target then
       ids[#ids + 1] = id
     end
   end
@@ -21405,25 +22191,25 @@ function F.require_phial(name)
     return phial
   end
 
-  local requested = tostring(name or "unknown")
-  if F.cfg and F.cfg.discovery ~= false and type(F.request_discovery) == "function" and F.request_discovery() then
-    if type(F.warn) == "function" then
-      F.warn("No phial found for " .. requested .. ". Requested phiallist refresh.")
+  local requested = tostring(name or &quot;unknown&quot;)
+  if F.cfg and F.cfg.discovery ~= false and type(F.request_discovery) == &quot;function&quot; and F.request_discovery() then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;No phial found for &quot; .. requested .. &quot;. Requested phiallist refresh.&quot;)
     end
     return nil
   end
 
-  if type(F.warn) == "function" then
-    F.warn("No phial found for " .. requested .. ".")
+  if type(F.warn) == &quot;function&quot; then
+    F.warn(&quot;No phial found for &quot; .. requested .. &quot;.&quot;)
   end
   return nil
 end
 
 function F.build_adjustment(action, axis, target)
   local action_key = _key(action)
-  if action_key ~= "enhance" and action_key ~= "dilute" then
-    if type(F.warn) == "function" then
-      F.warn("Adjustment action must be ENHANCE or DILUTE.")
+  if action_key ~= &quot;enhance&quot; and action_key ~= &quot;dilute&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Adjustment action must be ENHANCE or DILUTE.&quot;)
     end
     return nil
   end
@@ -21435,16 +22221,16 @@ function F.build_adjustment(action, axis, target)
     volatility = true,
   }
   if not valid_axis[axis_key] then
-    if type(F.warn) == "function" then
-      F.warn("Adjustment axis must be POTENCY, STABILITY, or VOLATILITY.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Adjustment axis must be POTENCY, STABILITY, or VOLATILITY.&quot;)
     end
     return nil
   end
 
   local target_text = _trim(target)
-  if target_text == "" then
-    if type(F.warn) == "function" then
-      F.warn("Adjustment target is required.")
+  if target_text == &quot;&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Adjustment target is required.&quot;)
     end
     return nil
   end
@@ -21456,15 +22242,19 @@ function F.build_adjustment(action, axis, target)
     target_text = _normalize_compound_key(target_text)
   end
 
-  return string.format("%s %s OF %s", action_key:upper(), axis_key:upper(), target_text:upper())
+  return string.format(&quot;%s %s OF %s&quot;, action_key:upper(), axis_key:upper(), target_text:upper())
 end
 
 function F.send_adjustment(action, axis, target)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
   local cmd = F.build_adjustment(action, axis, target)
   if not cmd then
     return nil
   end
-  if type(send) == "function" then
+  if type(send) == &quot;function&quot; then
     send(cmd)
   end
   return cmd
@@ -21473,33 +22263,33 @@ end
 function F.build_role_amalgamate(role, compound)
   local policy, err = F.reserved_role(role)
   if not policy then
-    if type(F.warn) == "function" then
+    if type(F.warn) == &quot;function&quot; then
       F.warn(err)
     end
     return nil
   end
 
   if next(F.phials or {}) == nil then
-    if type(F.request_discovery) == "function" then
+    if type(F.request_discovery) == &quot;function&quot; then
       F.request_discovery()
     end
-    if type(F.warn) == "function" then
-      F.warn("Unsafe Amalgamate state: phiallist is unknown. Run PHIALLIST.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: phiallist is unknown. Run PHIALLIST.&quot;)
     end
     return nil
   end
 
-  local desired_compound = _normalize_compound_key(compound or policy.expected_compound or "")
-  if desired_compound == "" then
-    if type(F.warn) == "function" then
-      F.warn(policy.label .. " helper needs a compound.")
+  local desired_compound = _normalize_compound_key(compound or policy.expected_compound or &quot;&quot;)
+  if desired_compound == &quot;&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(policy.label .. &quot; helper needs a compound.&quot;)
     end
     return nil
   end
 
   if policy.expected_compound and desired_compound ~= policy.expected_compound then
-    if type(F.warn) == "function" then
-      F.warn(policy.label .. " helper expects " .. policy.expected_compound:sub(1, 1):upper() .. policy.expected_compound:sub(2) .. ".")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(policy.label .. &quot; helper expects &quot; .. policy.expected_compound:sub(1, 1):upper() .. policy.expected_compound:sub(2) .. &quot;.&quot;)
     end
     return nil
   end
@@ -21507,8 +22297,8 @@ function F.build_role_amalgamate(role, compound)
   if policy.expected_pool then
     local ok = policy.expected_pool[desired_compound] == true
     if not ok then
-      if type(F.warn) == "function" then
-        F.warn("Offensive gas flex pool excludes " .. desired_compound:sub(1, 1):upper() .. desired_compound:sub(2) .. ".")
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Offensive gas flex pool excludes &quot; .. desired_compound:sub(1, 1):upper() .. desired_compound:sub(2) .. &quot;.&quot;)
       end
       return nil
     end
@@ -21516,18 +22306,18 @@ function F.build_role_amalgamate(role, compound)
 
   local slot = F.phials[policy.id]
   if not slot then
-    if type(F.warn) == "function" then
-      F.warn("Unsafe Amalgamate state: " .. policy.id .. " is missing from current phiallist. Run PHIALLIST.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; is missing from current phiallist. Run PHIALLIST.&quot;)
     end
-    if type(F.request_discovery) == "function" then
+    if type(F.request_discovery) == &quot;function&quot; then
       F.request_discovery()
     end
     return nil
   end
 
   if not slot.empty then
-    local msg = string.format("%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.", policy.label, policy.id, tostring(slot.compound or "?"), policy.id:upper())
-    if type(F.warn) == "function" then
+    local msg = string.format(&quot;%s slot mismatch: %s currently holds %s. Use EMPTY %s when ready.&quot;, policy.label, policy.id, tostring(slot.compound or &quot;?&quot;), policy.id:upper())
+    if type(F.warn) == &quot;function&quot; then
       F.warn(msg)
     end
     return nil
@@ -21536,24 +22326,24 @@ function F.build_role_amalgamate(role, compound)
   local empties = F.empty_phials()
   if #empties ~= 1 or empties[1].id ~= policy.id then
     if #empties &gt; 1 then
-      if type(F.warn) == "function" then
-        F.warn("Unsafe Amalgamate state: multiple empty phials detected (" .. _join_ids(empties) .. "). Keep only " .. policy.id .. " empty before AMALGAMATE " .. desired_compound:upper() .. ".")
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Unsafe Amalgamate state: multiple empty phials detected (&quot; .. _join_ids(empties) .. &quot;). Keep only &quot; .. policy.id .. &quot; empty before AMALGAMATE &quot; .. desired_compound:upper() .. &quot;.&quot;)
       end
       return nil
     end
     if #empties == 0 then
-      if type(F.warn) == "function" then
-        F.warn("Unsafe Amalgamate state: " .. policy.id .. " is not empty. Use EMPTY " .. policy.id:upper() .. " when ready.")
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; is not empty. Use EMPTY &quot; .. policy.id:upper() .. &quot; when ready.&quot;)
       end
       return nil
     end
-    if type(F.warn) == "function" then
-      F.warn("Unsafe Amalgamate state: " .. policy.id .. " must be the only empty phial before AMALGAMATE " .. desired_compound:upper() .. ".")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; must be the only empty phial before AMALGAMATE &quot; .. desired_compound:upper() .. &quot;.&quot;)
     end
     return nil
   end
 
-  return "AMALGAMATE " .. desired_compound:upper(), {
+  return &quot;AMALGAMATE &quot; .. desired_compound:upper(), {
     role = policy.role,
     role_label = policy.label,
     phial_id = policy.id,
@@ -21562,21 +22352,25 @@ function F.build_role_amalgamate(role, compound)
 end
 
 function F.send_role_amalgamate(role, compound)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
   local cmd, context = F.build_role_amalgamate(role, compound)
   if not cmd then
     return nil
   end
 
-  if type(send) == "function" then
+  if type(send) == &quot;function&quot; then
     send(cmd)
-    send("phiallist")
+    send(&quot;phiallist&quot;)
   end
   F.state.last_amalgamate = {
     cmd = cmd,
     role = context and context.role,
     phial_id = context and context.phial_id,
     compound = context and context.compound,
-    at = type(F.now) == "function" and F.now() or os.time(),
+    at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
   return cmd, context
 end
@@ -21584,33 +22378,33 @@ end
 function F.build_role_amalgamate_autofix(role, compound)
   local policy, err = F.reserved_role(role)
   if not policy then
-    if type(F.warn) == "function" then
+    if type(F.warn) == &quot;function&quot; then
       F.warn(err)
     end
     return nil
   end
 
   if next(F.phials or {}) == nil then
-    if type(F.request_discovery) == "function" then
+    if type(F.request_discovery) == &quot;function&quot; then
       F.request_discovery()
     end
-    if type(F.warn) == "function" then
-      F.warn("Unsafe Amalgamate state: phiallist is unknown. Run PHIALLIST.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: phiallist is unknown. Run PHIALLIST.&quot;)
     end
     return nil
   end
 
-  local desired_compound = _normalize_compound_key(compound or policy.expected_compound or "")
-  if desired_compound == "" then
-    if type(F.warn) == "function" then
-      F.warn(policy.label .. " helper needs a compound.")
+  local desired_compound = _normalize_compound_key(compound or policy.expected_compound or &quot;&quot;)
+  if desired_compound == &quot;&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(policy.label .. &quot; helper needs a compound.&quot;)
     end
     return nil
   end
 
   if policy.expected_compound and desired_compound ~= policy.expected_compound then
-    if type(F.warn) == "function" then
-      F.warn(policy.label .. " helper expects " .. policy.expected_compound:sub(1, 1):upper() .. policy.expected_compound:sub(2) .. ".")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(policy.label .. &quot; helper expects &quot; .. policy.expected_compound:sub(1, 1):upper() .. policy.expected_compound:sub(2) .. &quot;.&quot;)
     end
     return nil
   end
@@ -21618,8 +22412,8 @@ function F.build_role_amalgamate_autofix(role, compound)
   if policy.expected_pool then
     local ok = policy.expected_pool[desired_compound] == true
     if not ok then
-      if type(F.warn) == "function" then
-        F.warn("Offensive gas flex pool excludes " .. desired_compound:sub(1, 1):upper() .. desired_compound:sub(2) .. ".")
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(&quot;Offensive gas flex pool excludes &quot; .. desired_compound:sub(1, 1):upper() .. desired_compound:sub(2) .. &quot;.&quot;)
       end
       return nil
     end
@@ -21627,16 +22421,16 @@ function F.build_role_amalgamate_autofix(role, compound)
 
   local slot = F.phials[policy.id]
   if not slot then
-    if type(F.warn) == "function" then
-      F.warn("Unsafe Amalgamate state: " .. policy.id .. " is missing from current phiallist. Run PHIALLIST.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Unsafe Amalgamate state: &quot; .. policy.id .. &quot; is missing from current phiallist. Run PHIALLIST.&quot;)
     end
-    if type(F.request_discovery) == "function" then
+    if type(F.request_discovery) == &quot;function&quot; then
       F.request_discovery()
     end
     return nil
   end
 
-  local cmd = "AMALGAMATE " .. desired_compound:upper()
+  local cmd = &quot;AMALGAMATE &quot; .. desired_compound:upper()
   local empties = F.empty_phials()
 
   if #empties == 1 and empties[1].id == policy.id and slot.empty then
@@ -21654,11 +22448,11 @@ function F.build_role_amalgamate_autofix(role, compound)
   for _ = 1, #empties do
     plan[#plan + 1] = cmd
   end
-  plan[#plan + 1] = "EMPTY " .. policy.id:upper()
+  plan[#plan + 1] = &quot;EMPTY &quot; .. policy.id:upper()
   plan[#plan + 1] = cmd
 
-  if type(F.warn) == "function" and #empties &gt; 1 then
-    F.warn("Autofix: pre-filling " .. tostring(#empties) .. " empty phials before reserving " .. policy.id .. " for " .. desired_compound:upper() .. ".")
+  if type(F.warn) == &quot;function&quot; and #empties &gt; 1 then
+    F.warn(&quot;Autofix: pre-filling &quot; .. tostring(#empties) .. &quot; empty phials before reserving &quot; .. policy.id .. &quot; for &quot; .. desired_compound:upper() .. &quot;.&quot;)
   end
 
   return plan, {
@@ -21672,39 +22466,43 @@ function F.build_role_amalgamate_autofix(role, compound)
 end
 
 function F.send_role_amalgamate_autofix(role, compound)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
   local plan, context = F.build_role_amalgamate_autofix(role, compound)
   if not plan then
     return nil
   end
 
-  if type(send) == "function" then
-    if type(plan) == "table" then
+  if type(send) == &quot;function&quot; then
+    if type(plan) == &quot;table&quot; then
       for i = 1, #plan do
         send(plan[i])
       end
     else
       send(plan)
     end
-    send("phiallist")
+    send(&quot;phiallist&quot;)
   end
 
   F.state.last_amalgamate = {
-    cmd = type(plan) == "table" and table.concat(plan, " &amp;&amp; ") or tostring(plan),
+    cmd = type(plan) == &quot;table&quot; and table.concat(plan, &quot; &amp;&amp; &quot;) or tostring(plan),
     role = context and context.role,
     phial_id = context and context.phial_id,
     compound = context and context.compound,
     autofix = context and context.autofix == true,
     prefill_count = context and context.prefill_count or 0,
-    at = type(F.now) == "function" and F.now() or os.time(),
+    at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
   return plan, context
 end
 
 function F.send_amalgamate_autofix(compound)
   local role, normalized = _amalgamate_role_for_compound(compound)
-  if normalized == "" then
-    if type(F.warn) == "function" then
-      F.warn("Autofix amalgamate helper needs a compound.")
+  if normalized == &quot;&quot; then
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;Autofix amalgamate helper needs a compound.&quot;)
     end
     return nil
   end
@@ -21712,39 +22510,39 @@ function F.send_amalgamate_autofix(compound)
 end
 
 function F.build_endorphin_amalgamate()
-  return F.build_role_amalgamate("endorphin", "endorphin")
+  return F.build_role_amalgamate(&quot;endorphin&quot;, &quot;endorphin&quot;)
 end
 
 function F.build_enhancement_amalgamate()
-  return F.build_role_amalgamate("enhancement", "enhancement")
+  return F.build_role_amalgamate(&quot;enhancement&quot;, &quot;enhancement&quot;)
 end
 
 function F.build_offensive_gas_amalgamate(compound)
-  return F.build_role_amalgamate("offensive_flex", compound)
+  return F.build_role_amalgamate(&quot;offensive_flex&quot;, compound)
 end
 
 function F.send_endorphin_amalgamate()
-  return F.send_role_amalgamate("endorphin", "endorphin")
+  return F.send_role_amalgamate(&quot;endorphin&quot;, &quot;endorphin&quot;)
 end
 
 function F.send_enhancement_amalgamate()
-  return F.send_role_amalgamate("enhancement", "enhancement")
+  return F.send_role_amalgamate(&quot;enhancement&quot;, &quot;enhancement&quot;)
 end
 
 function F.send_offensive_gas_amalgamate(compound)
-  return F.send_role_amalgamate("offensive_flex", compound)
+  return F.send_role_amalgamate(&quot;offensive_flex&quot;, compound)
 end
 
 function F.send_endorphin_amalgamate_autofix()
-  return F.send_role_amalgamate_autofix("endorphin", "endorphin")
+  return F.send_role_amalgamate_autofix(&quot;endorphin&quot;, &quot;endorphin&quot;)
 end
 
 function F.send_enhancement_amalgamate_autofix()
-  return F.send_role_amalgamate_autofix("enhancement", "enhancement")
+  return F.send_role_amalgamate_autofix(&quot;enhancement&quot;, &quot;enhancement&quot;)
 end
 
 function F.send_offensive_gas_amalgamate_autofix(compound)
-  return F.send_role_amalgamate_autofix("offensive_flex", compound)
+  return F.send_role_amalgamate_autofix(&quot;offensive_flex&quot;, compound)
 end
 
 function F.show_phials()
@@ -21755,8 +22553,8 @@ function F.show_phials()
   table.sort(ids)
 
   if #ids == 0 then
-    if type(F.warn) == "function" then
-      F.warn("No known phials.")
+    if type(F.warn) == &quot;function&quot; then
+      F.warn(&quot;No known phials.&quot;)
     end
     return {}
   end
@@ -21764,25 +22562,25 @@ function F.show_phials()
   local lines = {}
   for _, id in ipairs(ids) do
     local row = F.phials[id]
-    local permanence = row.permanent and " permanent" or ""
+    local permanence = row.permanent and &quot; permanent&quot; or &quot;&quot;
     if row.empty then
-      lines[#lines + 1] = string.format("%s -&gt; Empty (%s months%s, qty %s)", id, tostring(row.months or "?"), permanence, tostring(row.quantity or "?"))
+      lines[#lines + 1] = string.format(&quot;%s -&gt; Empty (%s months%s, qty %s)&quot;, id, tostring(row.months or &quot;?&quot;), permanence, tostring(row.quantity or &quot;?&quot;))
     else
       lines[#lines + 1] = string.format(
-        "%s -&gt; %s (%s months%s, p%s v%s s%s)",
+        &quot;%s -&gt; %s (%s months%s, p%s v%s s%s)&quot;,
         id,
-        tostring(row.compound or "?"),
-        tostring(row.months or "?"),
+        tostring(row.compound or &quot;?&quot;),
+        tostring(row.months or &quot;?&quot;),
         permanence,
-        tostring(row.potency or "?"),
-        tostring(row.volatility or "?"),
-        tostring(row.stability or "?")
+        tostring(row.potency or &quot;?&quot;),
+        tostring(row.volatility or &quot;?&quot;),
+        tostring(row.stability or &quot;?&quot;)
       )
     end
   end
 
-  if type(F.warn) == "function" then
-    F.warn("Known phials:\n" .. table.concat(lines, "\n"))
+  if type(F.warn) == &quot;function&quot; then
+    F.warn(&quot;Known phials:\n&quot; .. table.concat(lines, &quot;\n&quot;))
   end
   return lines
 end
@@ -21799,41 +22597,41 @@ Yso.alc.form = Yso.alc.form or {}
 local F = Yso.alc.form
 
 local function _trim(s)
-  s = tostring(s or "")
-  s = s:gsub("^%s+", "")
-  s = s:gsub("%s+$", "")
+  s = tostring(s or &quot;&quot;)
+  s = s:gsub(&quot;^%s+&quot;, &quot;&quot;)
+  s = s:gsub(&quot;%s+$&quot;, &quot;&quot;)
   return s
 end
 
 -- Commands are case-insensitive; we intentionally uppercase complete tokens.
 local function _upper(s)
-  return tostring(s or ""):upper()
+  return tostring(s or &quot;&quot;):upper()
 end
 
 local function _combine(parts)
   local out = {}
   for _, part in ipairs(parts) do
-    if part and part ~= "" then
+    if part and part ~= &quot;&quot; then
       out[#out + 1] = part
     end
   end
-  return table.concat(out, " " .. ((type(F.sep) == "function" and F.sep()) or "&amp;&amp;") .. " ")
+  return table.concat(out, &quot; &quot; .. ((type(F.sep) == &quot;function&quot; and F.sep()) or &quot;&amp;&amp;&quot;) .. &quot; &quot;)
 end
 
 local function _normalize_phial_id(raw)
-  if type(F.normalize_phial_id) == "function" then
+  if type(F.normalize_phial_id) == &quot;function&quot; then
     return F.normalize_phial_id(raw)
   end
   local value = _trim(raw)
-  local digits = value:match("^[Pp][Hh][Ii][Aa][Ll](%d+)$") or value:match("^(%d+)$")
+  local digits = value:match(&quot;^[Pp][Hh][Ii][Aa][Ll](%d+)$&quot;) or value:match(&quot;^(%d+)$&quot;)
   if not digits then
     return nil
   end
-  return "Phial" .. digits
+  return &quot;Phial&quot; .. digits
 end
 
 function F.ensure_wielded(phial)
-  if not phial or not phial.compound or phial.compound == "" then
+  if not phial or not phial.compound or phial.compound == &quot;&quot; then
     return nil
   end
 
@@ -21841,9 +22639,9 @@ function F.ensure_wielded(phial)
   local eq_hands = F.state and F.state.eq_hands or nil
   local held_target = false
   local foreign_phials = {}
-  if type(eq_hands) == "table" then
+  if type(eq_hands) == &quot;table&quot; then
     for _, hand in pairs(eq_hands) do
-      local held = hand and _normalize_phial_id(hand.phial_id or hand.token or "")
+      local held = hand and _normalize_phial_id(hand.phial_id or hand.token or &quot;&quot;)
       if held then
         if held == target_id then
           held_target = true
@@ -21858,22 +22656,22 @@ function F.ensure_wielded(phial)
   if #foreign_phials &gt; 0 then
     table.sort(foreign_phials)
     for _, held in ipairs(foreign_phials) do
-      parts[#parts + 1] = "UNWIELD " .. held:upper()
+      parts[#parts + 1] = &quot;UNWIELD &quot; .. held:upper()
     end
   end
 
   if not held_target or #foreign_phials &gt; 0 then
     if target_id then
-      parts[#parts + 1] = "WIELD " .. target_id:upper()
+      parts[#parts + 1] = &quot;WIELD &quot; .. target_id:upper()
     else
-      parts[#parts + 1] = "WIELD " .. _upper(phial.compound)
+      parts[#parts + 1] = &quot;WIELD &quot; .. _upper(phial.compound)
     end
   end
 
   F.state.last_wielded = {
     id = phial.id,
     compound = phial.compound,
-    at = type(F.now) == "function" and F.now() or os.time(),
+    at = type(F.now) == &quot;function&quot; and F.now() or os.time(),
   }
 
   if #parts == 0 then
@@ -21886,66 +22684,70 @@ local function _build_action(meta, arg)
   local name = _upper(meta.use_name or meta.name)
   local use_arg = _trim(arg)
 
-  if meta.delivery == "wield_throw" or meta.delivery == "room_throw" then
-    if use_arg == "" then
-      if type(F.warn) == "function" then
-        F.warn(meta.name .. " needs 'ground' or a direction.")
+  if meta.delivery == &quot;wield_throw&quot; or meta.delivery == &quot;room_throw&quot; then
+    if use_arg == &quot;&quot; then
+      if type(F.warn) == &quot;function&quot; then
+        F.warn(meta.name .. &quot; needs &apos;ground&apos; or a direction.&quot;)
       end
       return nil
     end
-    if use_arg:lower() == "ground" or use_arg:lower() == "at ground" then
-      return "THROW " .. name .. " AT GROUND"
+    if use_arg:lower() == &quot;ground&quot; or use_arg:lower() == &quot;at ground&quot; then
+      return &quot;THROW &quot; .. name .. &quot; AT GROUND&quot;
     end
-    return "THROW " .. name .. " " .. _upper(use_arg)
+    return &quot;THROW &quot; .. name .. &quot; &quot; .. _upper(use_arg)
   end
 
-  if meta.delivery == "imbibe_or_administer" then
-    if use_arg == "" then
-      return "IMBIBE " .. name
+  if meta.delivery == &quot;imbibe_or_administer&quot; then
+    if use_arg == &quot;&quot; then
+      return &quot;IMBIBE &quot; .. name
     end
-    return "ADMINISTER " .. name .. " " .. use_arg
+    return &quot;ADMINISTER &quot; .. name .. &quot; &quot; .. use_arg
   end
 
-  if meta.delivery == "imbibe" then
-    if use_arg ~= "" and type(F.warn) == "function" then
-      F.warn(meta.name .. " does not take a target.")
+  if meta.delivery == &quot;imbibe&quot; then
+    if use_arg ~= &quot;&quot; and type(F.warn) == &quot;function&quot; then
+      F.warn(meta.name .. &quot; does not take a target.&quot;)
       return nil
     end
-    return "IMBIBE " .. name
+    return &quot;IMBIBE &quot; .. name
   end
 
-  if meta.delivery == "special_self_imbibe" then
-    if use_arg ~= "" and type(F.warn) == "function" then
-      F.warn(meta.name .. " does not take a target.")
+  if meta.delivery == &quot;special_self_imbibe&quot; then
+    if use_arg ~= &quot;&quot; and type(F.warn) == &quot;function&quot; then
+      F.warn(meta.name .. &quot; does not take a target.&quot;)
       return nil
     end
-    return "IMBIBE " .. name
+    return &quot;IMBIBE &quot; .. name
   end
 
-  if meta.delivery == "enhanced_state_ability" then
-    if use_arg ~= "" and type(F.warn) == "function" then
-      F.warn(meta.name .. " does not take a target.")
+  if meta.delivery == &quot;enhanced_state_ability&quot; then
+    if use_arg ~= &quot;&quot; and type(F.warn) == &quot;function&quot; then
+      F.warn(meta.name .. &quot; does not take a target.&quot;)
       return nil
     end
     return name
   end
 
-  if type(F.warn) == "function" then
-    F.warn(meta.name .. " is manual/utility right now.")
+  if type(F.warn) == &quot;function&quot; then
+    F.warn(meta.name .. &quot; is manual/utility right now.&quot;)
   end
   return nil
 end
 
 function F.build_use(name, arg)
-  local meta = type(F.resolve) == "function" and F.resolve(name) or nil
+  local meta = type(F.resolve) == &quot;function&quot; and F.resolve(name) or nil
   if not meta then
     return nil
   end
+  if type(F.is_offensive_gas) == &quot;function&quot; and F.is_offensive_gas(meta.use_name or meta.name)
+      and not (Yso.features and Yso.features.alchemist_offense == true) then
+    return nil, &quot;alchemist_offense_suspended&quot;
+  end
 
-  local needs_phial = meta.delivery ~= "enhanced_state_ability" and meta.delivery ~= "utility"
+  local needs_phial = meta.delivery ~= &quot;enhanced_state_ability&quot; and meta.delivery ~= &quot;utility&quot;
   local phial
   if needs_phial then
-    phial = type(F.require_phial) == "function" and F.require_phial(meta.use_name or meta.name) or nil
+    phial = type(F.require_phial) == &quot;function&quot; and F.require_phial(meta.use_name or meta.name) or nil
     if not phial then
       return nil
     end
@@ -22103,6 +22905,15 @@ Yso.bal.homunculus = Yso.bal.homunculus ~= false
 
 local P = Yso.alc.phys
 
+-- Diagnostics must never become a dependency of physiology evaluation.
+local function _trace(message, data)
+  if not (P.cfg and P.cfg.debug == true) then return end
+  local trace = Yso.trace
+  if type(trace) == &quot;table&quot; and type(trace.push) == &quot;function&quot; then
+    pcall(trace.push, &quot;alchemist.physiology&quot;, {msg=message,data=data})
+  end
+end
+
 P.state = P.state or {}
 P.targets = P.targets or {}
 P.humours = P.humours or { &quot;choleric&quot;, &quot;melancholic&quot;, &quot;phlegmatic&quot;, &quot;sanguine&quot; }
@@ -22206,6 +23017,10 @@ local function _phys_echo_corruption(msg)
 end
 
 local function _send_cmd(cmd)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false
+  end
   cmd = tostring(cmd or &quot;&quot;)
   if cmd == &quot;&quot; or type(send) ~= &quot;function&quot; then
     return false
@@ -23386,44 +24201,11 @@ function P.evaluate_staged_for_target(target)
   if _same_target(P.state.evaluate and P.state.evaluate.target or &quot;&quot;, target) then
     local row = P.state.evaluate or {}
     if row.active == true then
-      -- #region agent log
-      local payload = {
-        sessionId = &quot;f528bd&quot;,
-        runId = &quot;baseline&quot;,
-        hypothesisId = &quot;H10&quot;,
-        location = &quot;physiology.lua:evaluate_staged_for_target&quot;,
-        message = &quot;evaluate_staged_active_true&quot;,
-        data = { target = tostring(target or &quot;&quot;) },
-        timestamp = os.time() * 1000,
-      }
-      local ok, json = pcall(yajl.to_string, payload)
-      if ok and type(json) == &quot;string&quot; then
-        local f = io.open(&quot;C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log&quot;, &quot;a&quot;)
-        if f then f:write(json .. &quot;\n&quot;); f:close() end
-      end
-      -- #endregion
+  _trace(&quot;evaluate&quot;, {target=tostring(target or name or &quot;&quot;)})
       return true
     end
     if tonumber(row.requested_at or 0) &gt; 0 then
-      -- #region agent log
-      local payload = {
-        sessionId = &quot;f528bd&quot;,
-        runId = &quot;baseline&quot;,
-        hypothesisId = &quot;H10&quot;,
-        location = &quot;physiology.lua:evaluate_staged_for_target&quot;,
-        message = &quot;evaluate_staged_requested_at_true&quot;,
-        data = {
-          target = tostring(target or &quot;&quot;),
-          requested_at = tonumber(row.requested_at or 0) or 0,
-        },
-        timestamp = os.time() * 1000,
-      }
-      local ok, json = pcall(yajl.to_string, payload)
-      if ok and type(json) == &quot;string&quot; then
-        local f = io.open(&quot;C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log&quot;, &quot;a&quot;)
-        if f then f:write(json .. &quot;\n&quot;); f:close() end
-      end
-      -- #endregion
+  _trace(&quot;evaluate&quot;, {target=tostring(target or name or &quot;&quot;)})
       return true
     end
   end
@@ -23499,28 +24281,7 @@ function P.note_evaluate_request(name, source)
   P.state.evaluate.started_at = 0
   P.state.evaluate.active = false
   P.state.evaluate.request_source = tostring(source or &quot;route&quot;)
-  -- #region agent log
-  do
-    local payload = {
-      sessionId = &quot;f528bd&quot;,
-      runId = &quot;baseline&quot;,
-      hypothesisId = &quot;H10&quot;,
-      location = &quot;physiology.lua:note_evaluate_request&quot;,
-      message = &quot;evaluate_request_noted&quot;,
-      data = {
-        target = tostring(target_row.name or &quot;&quot;),
-        source = tostring(source or &quot;route&quot;),
-        requested_at = tonumber(P.state.evaluate.requested_at or 0) or 0,
-      },
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if ok and type(json) == &quot;string&quot; then
-      local f = io.open(&quot;C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log&quot;, &quot;a&quot;)
-      if f then f:write(json .. &quot;\n&quot;); f:close() end
-    end
-  end
-  -- #endregion
+  _trace(&quot;evaluate&quot;, {target=tostring(target or name or &quot;&quot;)})
   _debug(string.format(&quot;[Alchemist] evaluate staged for %s&quot;, target_row.name))
   return true
 end
@@ -23568,24 +24329,7 @@ function P.finish_evaluate(name)
   P.state.evaluate.active = false
   P.state.evaluate.requested_at = 0
   P.state.evaluate.started_at = 0
-  -- #region agent log
-  do
-    local payload = {
-      sessionId = &quot;f528bd&quot;,
-      runId = &quot;baseline&quot;,
-      hypothesisId = &quot;H10&quot;,
-      location = &quot;physiology.lua:finish_evaluate&quot;,
-      message = &quot;evaluate_finished&quot;,
-      data = { target = tostring(target_row.name or &quot;&quot;) },
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if ok and type(json) == &quot;string&quot; then
-      local f = io.open(&quot;C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log&quot;, &quot;a&quot;)
-      if f then f:write(json .. &quot;\n&quot;); f:close() end
-    end
-  end
-  -- #endregion
+  _trace(&quot;evaluate&quot;, {target=tostring(target or name or &quot;&quot;)})
   target_row.last_evaluated_at = _now()
   target_row.eval_dirty = false
   P.state.humour_eval_target = target_row.name
@@ -23958,6 +24702,11 @@ function P.can_reave(name)
 end
 
 function P.fire_reave(name, profile, opts)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   opts = opts or {}
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then
@@ -24889,7 +25638,9 @@ end
 
 local function _homunculus_pacify_on_stop(R)
   R.state = R.state or {}
-  if type(send) == &quot;function&quot; then
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  local held = type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true)
+  if not held and type(send) == &quot;function&quot; then
     pcall(send, &quot;homunculus pacify&quot;, false)
   end
   if type(Yso.set_homunculus_attack) == &quot;function&quot; then
@@ -25284,6 +26035,10 @@ local function _post_send(payload)
 end
 
 local function _emit_payload(payload)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause and pause.blocks_emission(payload,{route=&apos;alchemist_group_damage&apos;,kind=&apos;offense&apos;}) then return false end
   local P = _phys()
@@ -25591,12 +26346,22 @@ function GD.reset_route_state(reason, target)
 end
 
 function GD.alias_loop_prepare_start(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   ctx = ctx or {}
   GD.reset_route_state(tostring(ctx.reason or &quot;prepare_start&quot;), _target())
   return ctx
 end
 
 function GD.alias_loop_on_started(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   ctx = ctx or {}
   GD.reset_route_state(tostring(ctx.reason or &quot;loop_started&quot;), _target())
   _echo(&quot;Alchemist group damage loop ON.&quot;)
@@ -25645,10 +26410,20 @@ GD.alias_loop_stop_details = GD.alias_loop_stop_details or {
 }
 
 function GD.build_payload(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   return _select_payload(ctx or {})
 end
 
 function GD.attack_function(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   GD.init()
   if not GD.is_active() then
     local P = _phys()
@@ -25705,6 +26480,11 @@ function GD.attack_function(ctx)
 end
 
 function GD.start(reason)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   GD.init()
   GD.cfg.enabled = true
   GD.state.enabled = true
@@ -26261,7 +27041,9 @@ end
 
 local function _homunculus_pacify_on_stop(R)
   R.state = R.state or {}
-  if type(send) == &quot;function&quot; then
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  local held = type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true)
+  if not held and type(send) == &quot;function&quot; then
     pcall(send, &quot;homunculus pacify&quot;, false)
   end
   if type(Yso.set_homunculus_attack) == &quot;function&quot; then
@@ -26941,6 +27723,10 @@ local function _post_send(payload)
 end
 
 local function _emit_payload(payload)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause and pause.blocks_emission(payload,{route=&apos;alchemist_aurify_route&apos;,kind=&apos;offense&apos;}) then return false end
   local P = _phys()
@@ -27203,12 +27989,22 @@ function AR.reset_route_state(reason, target)
 end
 
 function AR.alias_loop_prepare_start(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   ctx = ctx or {}
   AR.reset_route_state(tostring(ctx.reason or &quot;prepare_start&quot;), _target())
   return ctx
 end
 
 function AR.alias_loop_on_started(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   ctx = ctx or {}
   AR.reset_route_state(tostring(ctx.reason or &quot;loop_started&quot;), _target())
   _echo(&quot;Alchemist aurify route loop ON.&quot;)
@@ -27260,10 +28056,20 @@ AR.alias_loop_stop_details = AR.alias_loop_stop_details or {
 }
 
 function AR.build_payload(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   return _select_payload(ctx or {})
 end
 
 function AR.attack_function(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   AR.init()
   if not AR.is_active() then
     local P = _phys()
@@ -27319,6 +28125,11 @@ function AR.attack_function(ctx)
 end
 
 function AR.start(reason)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   AR.init()
   AR.cfg.enabled = true
   AR.state.enabled = true
@@ -27878,7 +28689,9 @@ end
 
 local function _homunculus_pacify_on_stop(R)
   R.state = R.state or {}
-  if type(send) == &quot;function&quot; then
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  local held = type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true)
+  if not held and type(send) == &quot;function&quot; then
     pcall(send, &quot;homunculus pacify&quot;, false)
   end
   if type(Yso.set_homunculus_attack) == &quot;function&quot; then
@@ -28266,6 +29079,10 @@ local function _post_send(payload)
 end
 
 local function _emit_payload(payload)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause and pause.blocks_emission(payload,{route=&apos;alchemist_duel_route&apos;,kind=&apos;offense&apos;}) then return false end
   local P = _phys()
@@ -28577,12 +29394,22 @@ function DR.reset_route_state(reason, target)
 end
 
 function DR.alias_loop_prepare_start(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   ctx = ctx or {}
   DR.reset_route_state(tostring(ctx.reason or &quot;prepare_start&quot;), _target())
   return ctx
 end
 
 function DR.alias_loop_on_started(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   ctx = ctx or {}
   DR.reset_route_state(tostring(ctx.reason or &quot;loop_started&quot;), _target())
   _echo(&quot;Alchemist duel route loop ON.&quot;)
@@ -28631,10 +29458,20 @@ DR.alias_loop_stop_details = DR.alias_loop_stop_details or {
 }
 
 function DR.build_payload(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   return _select_payload(ctx or {})
 end
 
 function DR.attack_function(ctx)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   DR.init()
   if not DR.is_active() then
     local P = _phys()
@@ -28691,6 +29528,11 @@ function DR.attack_function(ctx)
 end
 
 function DR.start(reason)
+  local controller = rawget(_G, &quot;YsoWorkspaceLink&quot;)
+  if type(controller) == &quot;table&quot; and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and &quot;workspace_reload&quot; or &quot;restart_required&quot;
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, &quot;alchemist_offense_suspended&quot; end
   DR.init()
   DR.cfg.enabled = true
   DR.state.enabled = true
@@ -31246,7 +32088,206 @@ return D
 				</ScriptGroup>
 			</ScriptGroup>
 		</ScriptGroup>
-	</ScriptPackage>
+	<Script isActive="yes" isFolder="no"><name>Yso unified health</name><packageName /><script>-- Read-only system diagnostics. Loading this service never queries the game.
+Yso = Yso or {}
+Yso.system = Yso.system or {}
+local S = Yso.system
+S.version = 1
+local expected = {&apos;Legacy V2.1&apos;, &apos;AK&apos;, &apos;limb.1.2&apos;, &apos;Yso system&apos;,
+  &apos;Legacy Basher V2.1&apos;, &apos;Legacy UI V2.0&apos;, &apos;Yso Workspace Link&apos;}
+
+local function call(fn, ...)
+  if type(fn) ~= &apos;function&apos; then return false, &apos;unavailable&apos; end
+  return pcall(fn, ...)
+end
+local function resolve(path)
+  local value = _G
+  for part in tostring(path or &apos;&apos;):gmatch(&apos;[^.]+&apos;) do
+    if type(value) ~= &apos;table&apos; then return nil end
+    value = value[part]
+  end
+  return value
+end
+local function contains(list, name)
+  if type(list) ~= &apos;table&apos; then return false end
+  if list[name] then return true end
+  for _, value in ipairs(list) do if value == name then return true end end
+  return false
+end
+local function count(t)
+  local n = 0
+  for _ in pairs(type(t) == &apos;table&apos; and t or {}) do n = n + 1 end
+  return n
+end
+local function text(value)
+  if type(value) ~= &apos;string&apos; and type(value) ~= &apos;number&apos; then return &apos;&apos; end
+  return tostring(value):gsub(&apos;[&lt;&gt;\r\n]&apos;, &apos;&apos;)
+end
+
+function S.check(opts)
+  opts = type(opts) == &apos;table&apos; and opts or {}
+  local scope = opts.scope or &apos;runtime&apos;
+  local report = {ok = true, scope = scope, checks = {}, counts = {pass=0,warn=0,blocked=0,disabled=0}}
+  local function add(id, status, detail, recovery)
+    report.checks[#report.checks+1] = {id=id, status=status,
+      detail=tostring(detail or &apos;&apos;), recovery=tostring(recovery or &apos;&apos;)}
+    report.counts[status] = (report.counts[status] or 0) + 1
+    if status == &apos;blocked&apos; then report.ok = false end
+  end
+  if scope ~= &apos;runtime&apos; and scope ~= &apos;install&apos; then
+    add(&apos;scope&apos;, &apos;blocked&apos;, &apos;Unknown check scope&apos;, &apos;Use runtime or install.&apos;)
+    return report
+  end
+  for _, name in ipairs({&apos;send&apos;,&apos;registerAnonymousEventHandler&apos;,&apos;getPackages&apos;,&apos;getModules&apos;}) do
+    local available = type(_G[name]) == &apos;function&apos;
+    add(&apos;api.&apos;..name, available and &apos;pass&apos; or &apos;blocked&apos;,
+      available and &apos;Available&apos; or &apos;Required Mudlet API unavailable&apos;, &apos;Use a supported Mudlet profile.&apos;)
+  end
+  local ready, authenticated = call(Yso.session and Yso.session.is_ready)
+  if scope == &apos;runtime&apos; then
+    add(&apos;session&apos;, ready and authenticated == true and &apos;pass&apos; or &apos;blocked&apos;,
+      ready and authenticated == true and &apos;Fresh character session confirmed&apos; or &apos;Not authenticated or session service unavailable&apos;,
+      &apos;Log in normally and wait for fresh character GMCP; do not start offense yet.&apos;)
+  else
+    add(&apos;session&apos;, &apos;disabled&apos;, &apos;Authentication is not required for offline installation&apos;)
+  end
+  local okp, packages = call(getPackages)
+  local okm, modules = call(getModules)
+  for _, name in ipairs(expected) do
+    local pkg = okp and contains(packages, name)
+    local mod = okm and contains(modules, name)
+    local status = pkg and mod and &apos;blocked&apos; or (pkg or mod) and &apos;pass&apos; or scope == &apos;install&apos; and &apos;warn&apos; or &apos;blocked&apos;
+    add(&apos;package.&apos;..name, status, pkg and mod and &apos;Both package and module installed&apos; or
+      (pkg or mod) and &apos;Installed&apos; or &apos;Not installed&apos;, &apos;Apply the coordinated bundle while disconnected, then restart the profile.&apos;)
+  end
+  if scope == &apos;runtime&apos; then
+    local ak_ready=type(ak)==&apos;table&apos; and type(affstrack)==&apos;table&apos; and type(affstrack.score)==&apos;table&apos;
+    add(&apos;dependency.ak&apos;, ak_ready and &apos;pass&apos; or &apos;blocked&apos;,
+      ak_ready and &apos;AK namespace and opponent scores available&apos; or &apos;AK namespace or opponent scores missing&apos;, &apos;Check AK installation and script errors.&apos;)
+    add(&apos;dependency.legacy&apos;, type(Legacy) == &apos;table&apos; and type(Legacy.Curing) == &apos;table&apos; and &apos;pass&apos; or &apos;blocked&apos;,
+      &apos;Legacy curing integration&apos;, &apos;Check Legacy installation, initialization and saved settings.&apos;)
+  end
+  local suspended = not (Yso.features and Yso.features.alchemist_offense == true)
+  add(&apos;feature.alchemist_offense&apos;, suspended and &apos;disabled&apos; or &apos;pass&apos;,
+    suspended and &apos;Alchemist offense intentionally suspended; shared tracking and curing remain available&apos; or &apos;Alchemist offense explicitly enabled&apos;)
+  local bridge_ok, bridge = call(YsoWorkspaceLink and YsoWorkspaceLink.status, false)
+  if not bridge_ok or type(bridge) ~= &apos;table&apos; then
+    add(&apos;release&apos;, scope == &apos;install&apos; and &apos;warn&apos; or &apos;blocked&apos;, &apos;Release status unavailable&apos;, &apos;Install the bundled workspace controller and inspect ysostatus.&apos;)
+  else
+    local release = type(bridge.release) == &apos;table&apos; and bridge.release or {}
+    local restart = bridge.restart_required == true or release.restart_required == true
+    local proof = release.consistent == true and type(release.id)==&apos;string&apos; and release.id~=&apos;&apos;
+    local checked = {}
+    for _, row in ipairs(type(release.packages)==&apos;table&apos; and release.packages or {}) do
+      if type(row)~=&apos;table&apos; or type(row.name)~=&apos;string&apos; or checked[row.name] or row.installed~=true or row.consistent~=true then proof=false
+      else checked[row.name]=true end
+    end
+    for _, name in ipairs(expected) do if not checked[name] then proof=false end end
+    add(&apos;release&apos;, bridge.busy and &apos;blocked&apos; or bridge.last_error and &apos;blocked&apos; or not proof and (scope==&apos;install&apos; and &apos;warn&apos; or &apos;blocked&apos;) or &apos;pass&apos;,
+      bridge.busy and &apos;Update in progress&apos; or bridge.last_error and (&apos;Update failed: &apos;..text(bridge.last_error)) or not proof and &apos;Installed packages do not prove a complete consistent release&apos; or
+      &apos;Release &apos;..text(release.id or &apos;unversioned&apos;), &apos;Inspect ysostatus and complete release recovery before resuming.&apos;)
+    add(&apos;release.restart&apos;, restart and scope == &apos;runtime&apos; and &apos;blocked&apos; or restart and &apos;warn&apos; or &apos;pass&apos;,
+      restart and &apos;Profile restart required&apos; or &apos;No restart requirement reported&apos;, &apos;Restart the profile after the full update.&apos;)
+    if bridge.changed then add(&apos;release.pending&apos;,&apos;warn&apos;,&apos;Workspace changes have not been applied&apos;,&apos;Verify and apply the intended release.&apos;) end
+    for _, row in ipairs(release.packages or {}) do
+      if row.ok == false or row.match == false or row.installed == false or row.consistent == false then
+        add(&apos;release.package.&apos;..text(row.id or row.name),&apos;blocked&apos;,&apos;Package release mismatch: &apos;..text(row.name or row.id),&apos;Apply one complete release; do not mix package versions.&apos;)
+      end
+    end
+    for _, conflict in ipairs(release.conflicts or {}) do
+      add(&apos;release.conflict.&apos;..text(type(conflict)==&apos;table&apos; and conflict.name or conflict),&apos;warn&apos;,
+        &apos;Overlapping optional package detected&apos;,&apos;Review before installing overlapping targeting or Stormhammer packages.&apos;)
+    end
+  end
+  if scope == &apos;runtime&apos; then
+    local C = Yso.curing or {}
+    local good, policy = call(C.policy and C.policy.status)
+    if good and type(policy) == &apos;table&apos; then
+      local current=policy.current_set
+      if type(current)~=&apos;string&apos; or current==&apos;&apos; then current=Legacy and Legacy.Curing and Legacy.Curing.ActiveServerSet end
+      local known=policy.set_untrusted==false and type(current)==&apos;string&apos; and current~=&apos;&apos;
+      add(&apos;curing&apos;, known and &apos;pass&apos; or &apos;blocked&apos;,
+        policy.set_untrusted and &apos;Server curing state is untrusted: &apos;..text(policy.set_untrusted_reason) or
+        known and &apos;Active curing set: &apos;..text(current) or &apos;Server curing state is unknown&apos;, &apos;Confirm the server curingset and resynchronize curing.&apos;)
+    else
+      add(&apos;curing&apos;,&apos;blocked&apos;,&apos;Curing policy diagnostics unavailable&apos;,&apos;Check Yso and Legacy curing initialization.&apos;)
+    end
+    local paused = Yso.pause and Yso.pause.offense
+    add(&apos;offense.pause&apos;, paused and paused.active and &apos;warn&apos; or &apos;pass&apos;,
+      paused and paused.active and (&apos;Offense paused: &apos;..text(paused.reason)) or &apos;No manual offense pause reported&apos;)
+    local registry = Yso.Combat and Yso.Combat.RouteRegistry
+    local ids_ok, ids = call(registry and registry.active_ids)
+    if not ids_ok or type(ids) ~= &apos;table&apos; then
+      add(&apos;routes&apos;,&apos;blocked&apos;,&apos;Route registry unavailable&apos;,&apos;Check script load order and package consistency.&apos;)
+    else
+      local active = &apos;&apos;
+      local active_ok, selected = call(Yso.mode and Yso.mode.active_route_id)
+      if active_ok then active = selected or &apos;&apos; end
+      for _, id in ipairs(ids) do
+        local resolved, entry = call(registry.resolve, id)
+        local route = resolved and type(entry)==&apos;table&apos; and resolve(entry.namespace)
+        if type(route) ~= &apos;table&apos; then
+          add(&apos;route.&apos;..id,&apos;blocked&apos;,&apos;Registered route implementation missing&apos;,&apos;Rebuild and apply matching route packages.&apos;)
+        elseif active == id or route.state and route.state.loop_enabled == true then
+          -- Existing explain() methods may initialize planners, reset a target,
+          -- or clear pending confirmations. Read their last recorded state only.
+          local state = route.state or {}
+          local why = type(state.explain)==&apos;table&apos; and state.explain or {}
+          local detail = type(why)==&apos;table&apos; and (why.reason or why.blocker or why.hold_reason or why.phase) or nil
+          detail = detail or state.last_hold_reason or state.reason or state.template and state.template.last_reason
+          if not detail or detail == &apos;&apos; then detail = &apos;Active; detailed route explanation unavailable&apos; end
+          add(&apos;route.&apos;..id,&apos;warn&apos;,detail,&apos;Inspect the reported blocker and route confirmation state.&apos;)
+          if state.pending or state.waiting and (state.waiting.reason or &apos;&apos;) ~= &apos;&apos; then
+            add(&apos;route.pending.&apos;..id,&apos;warn&apos;,&apos;Route has pending confirmation work&apos;,&apos;Wait for confirmation; stop the route before applying updates.&apos;)
+          end
+        end
+      end
+    end
+    for _, lane in ipairs({&apos;eq&apos;,&apos;bal&apos;,&apos;class&apos;,&apos;free&apos;}) do
+      local q = Yso.queue
+      if q then
+        local staged_ok, staged = call(q.list, lane)
+        local owned_ok, owned = call(q.get_owned, lane)
+        if staged_ok and (type(staged)==&apos;string&apos; and staged~=&apos;&apos; or type(staged)==&apos;table&apos; and next(staged)) or owned_ok and owned then
+          add(&apos;queue.&apos;..lane,&apos;warn&apos;,&apos;Commands staged or owned on &apos;..lane,&apos;Stop automation and drain or clear owned commands before an update.&apos;)
+        end
+      end
+    end
+    local class = gmcp and gmcp.Char and gmcp.Char.Status and gmcp.Char.Status.class or Yso.class
+    if tostring(class or &apos;&apos;):lower() == &apos;magi&apos; then
+      local ids = Yso.magi and Yso.magi.weapons and Yso.magi.weapons.ids or {}
+      add(&apos;equipment.magi&apos;, tostring(ids.staff or &apos;&apos;)~=&apos;&apos; and &apos;pass&apos; or &apos;warn&apos;,
+        tostring(ids.staff or &apos;&apos;)~=&apos;&apos; and &apos;Staff discovered&apos; or &apos;Staff has not been discovered&apos;, &apos;Request equipment discovery after authentication and verify the staff.&apos;)
+    end
+    local ndb_ok, ndb = call(Legacy and Legacy.NDB and Legacy.NDB.network_status)
+    add(&apos;ndb.refresh&apos;, ndb_ok and type(ndb)==&apos;table&apos; and ndb.refresh_enabled == true and &apos;pass&apos; or &apos;warn&apos;,
+      ndb_ok and type(ndb)==&apos;table&apos; and ndb.mode == &apos;cache_only&apos; and &apos;NDB uses cached records; secure refresh unavailable&apos; or &apos;Secure character refresh is unavailable&apos;,
+      &apos;Use cached or in-game character information; insecure HTTP refresh is disabled.&apos;)
+    local D = Yso.apostate and Yso.apostate.daegger
+    if D and type(D.stock)==&apos;table&apos; then
+      local assumed = 0
+      for _, value in pairs(D.stock) do if value == true then assumed = assumed+1 end end
+      add(&apos;supplies.apostate&apos;, assumed &gt; 0 and &apos;warn&apos; or &apos;pass&apos;, assumed &gt; 0 and &apos;Some venom availability is configured rather than measured&apos; or &apos;Venom availability has no optimistic boolean defaults&apos;, &apos;Confirm actual venom stock before enabling offense.&apos;)
+    end
+    local F = Yso.alc and Yso.alc.form
+    if not suspended and F then
+      add(&apos;supplies.alchemist&apos;, count(F.phials)&gt;0 and &apos;pass&apos; or &apos;warn&apos;, count(F.phials)&gt;0 and &apos;Phial inventory available&apos; or &apos;Phial inventory unknown&apos;, &apos;Refresh phial inventory after obtaining Alchemist access.&apos;)
+    end
+    local handlers = count(Yso.session and Yso.session.handlers)
+    local timers = count(Yso.session and Yso.session.timers)
+    add(&apos;startup.pending&apos;, timers&gt;0 and &apos;warn&apos; or &apos;pass&apos;, tostring(timers)..&apos; session timers; &apos;..tostring(handlers)..&apos; session handlers&apos;, &apos;Allow startup to finish; repeated checks can reveal accumulating work.&apos;)
+  end
+  if opts.echo ~= false and type(cecho) == &apos;function&apos; then
+    cecho(&apos;&lt;steel_blue&gt;[Yso check] &lt;reset&gt;&apos;..(report.ok and &apos;No blocking checks&apos; or &apos;Action required&apos;)..&apos;\n&apos;)
+    for _, row in ipairs(report.checks) do
+      cecho(&apos;  &apos;..row.status:upper()..&apos; &apos;..text(row.id)..&apos;: &apos;..text(row.detail)..&apos;\n&apos;)
+      if row.status == &apos;blocked&apos; and row.recovery ~= &apos;&apos; then cecho(&apos;    &apos;..text(row.recovery)..&apos;\n&apos;) end
+    end
+  end
+  return report
+end
+return S
+</script><eventHandlerList /></Script></ScriptPackage>
 	<KeyPackage>
 		<KeyGroup isActive="yes" isFolder="yes">
 			<name>Dragoncraft</name>

@@ -1,0 +1,9 @@
+# Yso coordinated maintenance
+
+Approved scope: remove all embedded Discord webhook credentials and posting; fix physiology logging; suspend Alchemist offense while preserving code/tracking/curing; provide one read-only runtime check and one workspace verifier; release/install Legacy Core, AK, limb, Yso, Basher, UI and controller together under a manifest. Full updates require an already-disconnected game and a profile restart. Never disconnect or modify a live profile during implementation/testing.
+
+Implementation ownership: Legacy security/network agent; Alchemist suspension/logging agent; release/controller agent; primary agent readiness/verifier/docs/CI/integration. Each implements regression tests before production changes. No parallel writes to package XMLs. All Git mutations run in canonical clone on codex/coordinated-maintenance; Desktop is the isolated editing copy.
+
+Interfaces: Yso.features.alchemist_offense defaults false; Legacy.NDB.network_status() reports cache_only; YsoWorkspaceLink.status(false) exposes release and restart_required; Yso.system.check({scope='runtime'|'install',echo=false}) returns {ok,checks}. verify_yso.ps1 accepts -OutputDirectory and -SkipReleaseArtifacts, exits nonzero for failures. build_yso_release.ps1 verifies before publication. ysoinstall does offline full update; ysoreload retains verified AK/Yso hot reload.
+
+Acceptance: four removed webhook destinations; evaluation without yajl/filesystem logging; disabled offensive routes/aliases/direct helpers and stale state cleanup; side-effect-free checks; all existing 31 wrappers and 45 supported Lua suites through one command plus new regressions; hash/preflight/backup/failure/restart install simulations; preserved settings and Deliverance; full and scoped rebuild parity/idempotence. Native live checks explicitly unverified; no forced disconnection. User requested commit/push to GitHub after verification.

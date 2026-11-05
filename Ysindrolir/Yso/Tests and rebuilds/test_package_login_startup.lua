@@ -37,7 +37,7 @@ end
 gmcp.Char.Status={name='Tester',class='Magi'};fire('gmcp.Char.Status')
 assert(Yso.session.is_ready(),'fresh status must release package startup queries')
 local queries={};for _,command in ipairs(sent) do queries[command]=(queries[command] or 0)+1 end
-assert(queries.eq==1 and queries.phiallist==1,'package discoveries release once after authentication')
+assert(queries.eq==1 and queries.phiallist==nil and Yso.features.alchemist_offense==false,'package must discover Magi equipment but keep Alchemist suspended')
 local before=#sent
 for pass=1,3 do for _,entry in ipairs(scripts) do
  local ok,err=pcall(dofile,entry[1]);assert(ok,'authenticated reload '..entry[2]..': '..tostring(err))

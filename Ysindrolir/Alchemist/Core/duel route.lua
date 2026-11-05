@@ -471,7 +471,9 @@ end
 
 local function _homunculus_pacify_on_stop(R)
   R.state = R.state or {}
-  if type(send) == "function" then
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  local held = type(controller) == "table" and (controller.busy == true or controller.restart_required == true)
+  if not held and type(send) == "function" then
     pcall(send, "homunculus pacify", false)
   end
   if type(Yso.set_homunculus_attack) == "function" then
@@ -859,6 +861,10 @@ local function _post_send(payload)
 end
 
 local function _emit_payload(payload)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause and pause.blocks_emission(payload,{route='alchemist_duel_route',kind='offense'}) then return false end
   local P = _phys()
@@ -1170,12 +1176,22 @@ function DR.reset_route_state(reason, target)
 end
 
 function DR.alias_loop_prepare_start(ctx)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, "alchemist_offense_suspended" end
   ctx = ctx or {}
   DR.reset_route_state(tostring(ctx.reason or "prepare_start"), _target())
   return ctx
 end
 
 function DR.alias_loop_on_started(ctx)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, "alchemist_offense_suspended" end
   ctx = ctx or {}
   DR.reset_route_state(tostring(ctx.reason or "loop_started"), _target())
   _echo("Alchemist duel route loop ON.")
@@ -1224,10 +1240,20 @@ DR.alias_loop_stop_details = DR.alias_loop_stop_details or {
 }
 
 function DR.build_payload(ctx)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, "alchemist_offense_suspended" end
   return _select_payload(ctx or {})
 end
 
 function DR.attack_function(ctx)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, "alchemist_offense_suspended" end
   DR.init()
   if not DR.is_active() then
     local P = _phys()
@@ -1284,6 +1310,11 @@ function DR.attack_function(ctx)
 end
 
 function DR.start(reason)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, "alchemist_offense_suspended" end
   DR.init()
   DR.cfg.enabled = true
   DR.state.enabled = true

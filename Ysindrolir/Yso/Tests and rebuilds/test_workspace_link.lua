@@ -87,6 +87,12 @@ Yso.off={magi={focus={state={loop_enabled=false,pending={}}}}}
 Yso.Combat.RouteRegistry.active_ids=function() return {'magi_focus'} end
 Yso.Combat.RouteRegistry.resolve=function() return {namespace='Yso.off.magi.focus'} end
 eq(R.idle(),true)
+-- Real Magi planners retain named, cleared pending descriptors while stopped.
+Yso.off.magi.focus.state.pending={dehydrate={target='',until_t=0},pebble={target='',until_t=0}}
+eq(R.idle(),true)
+Yso.off.magi.focus.state.pending.dehydrate={target='Foe',until_t=200}
+eq(R.idle(),false)
+Yso.off.magi.focus.state.pending={}
 -- Active automation must prevent backup, uninstall, staging and installs.
 active=true;local ok,why=R.link();eq(ok,false);eq(why,'automation_active');eq(#calls,0);active=false
 -- Preflight both source files before touching either installation.

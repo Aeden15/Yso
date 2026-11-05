@@ -1077,7 +1077,26 @@ disableTrigger('Damage prompt gate')</script>
 			<regex />
 			<Alias isActive="yes" isFolder="no">
 				<name>Hunting Toggle</name>
-				<script>Legacy = Legacy or {}
+				<script>-- Release quarantine is independent of class, pause, and force settings.
+    local controller = rawget(_G, 'YsoWorkspaceLink')
+    if type(controller) == 'table' and (controller.busy == true or controller.restart_required == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, controller.busy == true and 'workspace_reload' or 'restart_required'
+    end
+-- Alchemist offense suspension also applies to raw Legacy hunting sends.
+    local status = gmcp and gmcp.Char and gmcp.Char.Status or {}
+    if tostring(status.class or ''):lower() == 'alchemist'
+        and not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, 'alchemist_offense_suspended'
+    end
+Legacy = Legacy or {}
 Legacy.Settings = Legacy.Settings or {}
 Legacy.Curing = Legacy.Curing or {}
 Legacy.Curing.Affs = Legacy.Curing.Affs or {}
@@ -1981,6 +2000,25 @@ function Basher_Setup()
   end
 
   function Legacy.Basher.queueAttackPackage(mode, cmd, requeue_basher, reason)
+    -- Release quarantine is independent of class, pause, and force settings.
+    local controller = rawget(_G, 'YsoWorkspaceLink')
+    if type(controller) == 'table' and (controller.busy == true or controller.restart_required == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, controller.busy == true and 'workspace_reload' or 'restart_required'
+    end
+    -- Alchemist offense suspension also applies to raw Legacy hunting sends.
+    local status = gmcp and gmcp.Char and gmcp.Char.Status or {}
+    if tostring(status.class or ''):lower() == 'alchemist'
+        and not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, 'alchemist_offense_suspended'
+    end
     local S = Legacy.Settings.Basher or {}
     local why = tostring(reason or "basher")
     local queue_mode = tostring(mode or "add")
@@ -2044,6 +2082,25 @@ function Basher_Setup()
   
   --send("queue addclear freestand go "..Legacy.Settings.Basher.fleeExit)
   function Legacy.Basher.Attack()
+    -- Release quarantine is independent of class, pause, and force settings.
+    local controller = rawget(_G, 'YsoWorkspaceLink')
+    if type(controller) == 'table' and (controller.busy == true or controller.restart_required == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, controller.busy == true and 'workspace_reload' or 'restart_required'
+    end
+    -- Alchemist offense suspension also applies to raw Legacy hunting sends.
+    local status = gmcp and gmcp.Char and gmcp.Char.Status or {}
+    if tostring(status.class or ''):lower() == 'alchemist'
+        and not (Yso and Yso.features and Yso.features.alchemist_offense == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, 'alchemist_offense_suspended'
+    end
     -- A removal/slain pair belongs to the preceding output batch.
     -- Do not let a flee steal a later same-named target's slain line.
     Legacy.Settings.Basher._removedHuntTarget = nil
@@ -2204,6 +2261,15 @@ function Basher_Setup()
   end
   registerAnonymousEventHandler("gmcp.Char.Vitals", "Legacy.Basher.Attack")
   function Legacy.Settings.Basher.Rage()
+    -- Release quarantine is independent of class, pause, and force settings.
+    local controller = rawget(_G, 'YsoWorkspaceLink')
+    if type(controller) == 'table' and (controller.busy == true or controller.restart_required == true) then
+      if Legacy.Settings and Legacy.Settings.Basher then
+        Legacy.Settings.Basher.status = false
+        Legacy.Settings.Basher.queued = false
+      end
+      return false, controller.busy == true and 'workspace_reload' or 'restart_required'
+    end
     if not Legacy.Settings.Basher.EnsureClass(gmcp.Char.Status.class) then return end
     if gmcp.Char.Status.class == "Alchemist" then
       Legacy.Settings.Basher.Classes["Alchemist"].miasma = {cmd = "throw miasma", rage = 14, desc = "Small Damage", available = true }

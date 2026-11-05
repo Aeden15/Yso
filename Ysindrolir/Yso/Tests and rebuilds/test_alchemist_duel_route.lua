@@ -97,7 +97,7 @@ local function make_world(opts)
   local pending_last = nil
   local fire_reave_opts = nil
 
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.target = current_target
   _G.matches = {}
@@ -209,6 +209,7 @@ local function make_world(opts)
   }
 
   _G.Yso = {
+    features = { alchemist_offense = true },
     cfg = { UseQueueing = "NO", pipe_sep = "&&" },
     Combat = {
       RouteInterface = {
@@ -500,7 +501,7 @@ end
 
 print("\n=== Test 8: duel/shared wrack legality surface ===")
 do
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.target = "TargetOne"
   _G.getEpoch = function() return 2300 * 1000 end
@@ -514,6 +515,7 @@ do
   }
   _G.affstrack = { score = setmetatable({}, { __index = function() return 0 end }) }
   _G.Yso = {
+    features = { alchemist_offense = true },
     get_target = function() return "TargetOne" end,
     target = "TargetOne",
     bal = { humour = true, evaluate = true, homunculus = true },

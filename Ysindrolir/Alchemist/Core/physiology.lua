@@ -12,6 +12,15 @@ Yso.bal.homunculus = Yso.bal.homunculus ~= false
 
 local P = Yso.alc.phys
 
+-- Diagnostics must never become a dependency of physiology evaluation.
+local function _trace(message, data)
+  if not (P.cfg and P.cfg.debug == true) then return end
+  local trace = Yso.trace
+  if type(trace) == "table" and type(trace.push) == "function" then
+    pcall(trace.push, "alchemist.physiology", {msg=message,data=data})
+  end
+end
+
 P.state = P.state or {}
 P.targets = P.targets or {}
 P.humours = P.humours or { "choleric", "melancholic", "phlegmatic", "sanguine" }
@@ -115,6 +124,10 @@ local function _phys_echo_corruption(msg)
 end
 
 local function _send_cmd(cmd)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false
+  end
   cmd = tostring(cmd or "")
   if cmd == "" or type(send) ~= "function" then
     return false
@@ -1295,44 +1308,11 @@ function P.evaluate_staged_for_target(target)
   if _same_target(P.state.evaluate and P.state.evaluate.target or "", target) then
     local row = P.state.evaluate or {}
     if row.active == true then
-      -- #region agent log
-      local payload = {
-        sessionId = "f528bd",
-        runId = "baseline",
-        hypothesisId = "H10",
-        location = "physiology.lua:evaluate_staged_for_target",
-        message = "evaluate_staged_active_true",
-        data = { target = tostring(target or "") },
-        timestamp = os.time() * 1000,
-      }
-      local ok, json = pcall(yajl.to_string, payload)
-      if ok and type(json) == "string" then
-        local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-        if f then f:write(json .. "\n"); f:close() end
-      end
-      -- #endregion
+  _trace("evaluate", {target=tostring(target or name or "")})
       return true
     end
     if tonumber(row.requested_at or 0) > 0 then
-      -- #region agent log
-      local payload = {
-        sessionId = "f528bd",
-        runId = "baseline",
-        hypothesisId = "H10",
-        location = "physiology.lua:evaluate_staged_for_target",
-        message = "evaluate_staged_requested_at_true",
-        data = {
-          target = tostring(target or ""),
-          requested_at = tonumber(row.requested_at or 0) or 0,
-        },
-        timestamp = os.time() * 1000,
-      }
-      local ok, json = pcall(yajl.to_string, payload)
-      if ok and type(json) == "string" then
-        local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-        if f then f:write(json .. "\n"); f:close() end
-      end
-      -- #endregion
+  _trace("evaluate", {target=tostring(target or name or "")})
       return true
     end
   end
@@ -1408,28 +1388,7 @@ function P.note_evaluate_request(name, source)
   P.state.evaluate.started_at = 0
   P.state.evaluate.active = false
   P.state.evaluate.request_source = tostring(source or "route")
-  -- #region agent log
-  do
-    local payload = {
-      sessionId = "f528bd",
-      runId = "baseline",
-      hypothesisId = "H10",
-      location = "physiology.lua:note_evaluate_request",
-      message = "evaluate_request_noted",
-      data = {
-        target = tostring(target_row.name or ""),
-        source = tostring(source or "route"),
-        requested_at = tonumber(P.state.evaluate.requested_at or 0) or 0,
-      },
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if ok and type(json) == "string" then
-      local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-      if f then f:write(json .. "\n"); f:close() end
-    end
-  end
-  -- #endregion
+  _trace("evaluate", {target=tostring(target or name or "")})
   _debug(string.format("[Alchemist] evaluate staged for %s", target_row.name))
   return true
 end
@@ -1477,24 +1436,7 @@ function P.finish_evaluate(name)
   P.state.evaluate.active = false
   P.state.evaluate.requested_at = 0
   P.state.evaluate.started_at = 0
-  -- #region agent log
-  do
-    local payload = {
-      sessionId = "f528bd",
-      runId = "baseline",
-      hypothesisId = "H10",
-      location = "physiology.lua:finish_evaluate",
-      message = "evaluate_finished",
-      data = { target = tostring(target_row.name or "") },
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if ok and type(json) == "string" then
-      local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-      if f then f:write(json .. "\n"); f:close() end
-    end
-  end
-  -- #endregion
+  _trace("evaluate", {target=tostring(target or name or "")})
   target_row.last_evaluated_at = _now()
   target_row.eval_dirty = false
   P.state.humour_eval_target = target_row.name
@@ -1867,6 +1809,11 @@ function P.can_reave(name)
 end
 
 function P.fire_reave(name, profile, opts)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, "alchemist_offense_suspended" end
   opts = opts or {}
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then

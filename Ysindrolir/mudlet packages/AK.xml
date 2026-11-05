@@ -11293,7 +11293,7 @@ end</script>
 							<script>deleteLine()
 ak.psion.transcend = tonumber(matches[2])
 if sinister and sinister.gagging then return end
-cecho("&lt;LightGoldenrod&gt;\n " ..matches[2].. "\% Transcendance\n")</script>
+cecho("&lt;LightGoldenrod&gt;\n " ..matches[2].. "% Transcendance\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>
@@ -11316,7 +11316,7 @@ cecho("&lt;LightGoldenrod&gt;\n " ..matches[2].. "\% Transcendance\n")</script>
 							<script>deleteLine()
 ak.psion.transcend = tonumber(matches[2])
 if sinister and sinister.gagging then return end
-cecho("&lt;LightGoldenrod&gt;\n " ..matches[2].. "\% Transcendance\n")</script>
+cecho("&lt;LightGoldenrod&gt;\n " ..matches[2].. "% Transcendance\n")</script>
 							<triggerType>0</triggerType>
 							<conditonLineDelta>0</conditonLineDelta>
 							<mStayOpen>0</mStayOpen>

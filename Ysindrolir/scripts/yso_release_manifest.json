@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "release_id": "2026.11.05.1",
+  "packages": [
+    {"id":"legacy","name":"Legacy V2.1","file":"Legacy V2.1.xml","required":true,"depends_on":[],"restart_required":true,"hot_reload":false},
+    {"id":"ak","name":"AK","file":"AK.xml","required":true,"depends_on":["legacy"],"restart_required":false,"hot_reload":true},
+    {"id":"limb","name":"limb.1.2","file":"limb.1.2.xml","required":true,"depends_on":["legacy","ak"],"restart_required":true,"hot_reload":false},
+    {"id":"yso","name":"Yso system","file":"Yso system.xml","required":true,"depends_on":["legacy","ak","limb"],"restart_required":false,"hot_reload":true},
+    {"id":"basher","name":"Legacy Basher V2.1","file":"Legacy Basher V2.1.xml","required":true,"depends_on":["legacy","yso"],"restart_required":true,"hot_reload":false},
+    {"id":"ui","name":"Legacy UI V2.0","file":"Legacy UI V2.0.xml","required":true,"depends_on":["legacy","ak","yso"],"restart_required":true,"hot_reload":false},
+    {"id":"controller","name":"Yso Workspace Link","file":"Yso Workspace Link.xml","required":true,"depends_on":["legacy","ak","limb","yso","basher","ui"],"restart_required":true,"hot_reload":false}
+  ]
+}

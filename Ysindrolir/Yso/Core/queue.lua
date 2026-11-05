@@ -476,9 +476,25 @@ local function _mark_payload_fired(payload)
   end
 end
 
+local function _release_blocked()
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" then
+    if controller.busy == true then return true, "workspace_reload" end
+    if controller.restart_required == true then return true, "restart_required" end
+  end
+  return false
+end
+
 local function _send_compound(body)
+  local held, reason = _release_blocked()
+  if held then return false, reason end
   body = _trim(body)
   if body == "" then return false end
+  local A = Yso.alchemist_offense
+  if A and type(A.blocks) == "function" then
+    local blocked, why = A.blocks(body)
+    if blocked then return false, why end
+  end
 
   if Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true then
     if type(cecho) == "function" then
@@ -820,6 +836,10 @@ end
 ------------------------------------------------------------
 
 function Q.install_lane(lane, cmd, opts)
+  local held, reason = _release_blocked()
+  if held then return false, reason end
+  local A=Yso.alchemist_offense
+  if A and type(A.blocks)=='function' then local blocked,why=A.blocks(cmd,opts);if blocked then return false,why end end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then local blocked,reason=pause.blocks_emission({},opts);if blocked then return false,reason end end
   local D = Yso.Combat and Yso.Combat.Deliverance
@@ -966,6 +986,10 @@ function Q.get_staged_owner(lane)
 end
 
 function Q.stage(lane, payload, opts)
+  local held, reason = _release_blocked()
+  if held then return false, reason end
+  local A=Yso.alchemist_offense
+  if A and type(A.blocks)=='function' then local blocked,why=A.blocks(payload,opts);if blocked then return false,why end end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then local blocked,reason=pause.blocks_emission({},opts);if blocked then return false,reason end end
   local D = Yso.Combat and Yso.Combat.Deliverance
@@ -1033,6 +1057,8 @@ end
 ------------------------------------------------------------
 
 function Q.commit(opts)
+  local held, reason = _release_blocked()
+  if held then return false, reason end
   local pause=Yso.Combat and Yso.Combat.Pause
   if pause then local blocked,reason=pause.blocks_emission({},opts);if blocked then return false,reason end end
   local D = Yso.Combat and Yso.Combat.Deliverance

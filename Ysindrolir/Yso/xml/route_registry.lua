@@ -22,6 +22,10 @@ local function _copy(entry)
   local out = {}
   if type(entry) ~= "table" then return out end
   for k, v in pairs(entry) do out[k] = v end
+  if entry.class == "alchemist" and not (Yso.features and Yso.features.alchemist_offense == true) then
+    out.suspended = true
+    out.suspended_reason = "alchemist_offense_suspended"
+  end
   return out
 end
 

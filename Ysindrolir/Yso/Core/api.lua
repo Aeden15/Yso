@@ -15,6 +15,157 @@ do
   yso = root
 end
 
+-- Temporary class suspension is independent of balance, force, and pause gates.
+-- A future explicit set_enabled(true) reactivates retained Alchemist code.
+function Yso.release_blocked()
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" then
+    if controller.busy == true then return true, "workspace_reload" end
+    if controller.restart_required == true then return true, "restart_required" end
+  end
+  return false
+end
+Yso.features = Yso.features or {}
+if type(Yso.features.alchemist_offense) ~= "boolean" then
+  Yso.features.alchemist_offense = false
+end
+Yso.alchemist_offense = Yso.alchemist_offense or {}
+do
+  local A = Yso.alchemist_offense
+  local function alchemist_route(id)
+    id = tostring(id or ""):lower()
+    if id:match("^alchemist_") ~= nil or id == "adam" or id == "aduel" or id == "bleed" then return true end
+    local registry = Yso.Combat and Yso.Combat.RouteRegistry
+    if registry and type(registry.resolve) == "function" then
+      local ok, entry = pcall(registry.resolve, id)
+      return ok and type(entry) == "table" and entry.class == "alchemist"
+    end
+    return false
+  end
+  function A.enabled() return Yso.features.alchemist_offense == true end
+  local function offensive_command(command)
+    command = tostring(command or ""):lower():gsub("^%s+", "")
+    -- Strip queue wrappers before inspecting each command; separators cannot
+    -- hide a class attack behind an otherwise harmless command.
+    command = command:gsub("^queue%s+addclearfull%s+%S+%s+", "")
+      :gsub("^queue%s+addclear%s+%S+%s+", ""):gsub("^queue%s+add%s+%S+%s+", "")
+    local verb = command:match("^(%a+)") or ""
+    if ({wrack=true,truewrack=true,temper=true,inundate=true,reave=true,aurify=true,
+      phlogisticate=true,vitrify=true})[verb] then return true end
+    if command:match("^homunculus%s+attack%f[%W]") or command:match("^homunculus%s+corrupt%f[%W]")
+      or command:match("^homunculus%s+shriek%f[%W]") then return true end
+    local metal = command:match("^educe%s+(%a+)")
+    if metal and ({iron=true,copper=true,lead=true,silver=true,cadmium=true,magnesium=true})[metal] then return true end
+    if command:match("^ether%s+displace%f[%W]") then return true end
+    local compound = command:match("^throw%s+(%a+)")
+    return compound and ({corrosive=true,incendiary=true,devitalisation=true,intoxicant=true,
+      vaporisation=true,phosphorous=true,monoxide=true,toxin=true,concussive=true,
+      petrifying=true,destructive=true,miasma=true,caustic=true,pathogen=true,hypnotic=true,hypotic=true})[compound] == true or false
+  end
+  local function inspect(value)
+    if type(value) == "table" then
+      for key, lane in pairs(value) do
+        if type(key) == "number" or ({lanes=true,free=true,pre=true,eq=true,bal=true,class=true,ent=true,entity=true})[key] then
+          if inspect(lane) then return true end
+        end
+      end
+    elseif type(value) == "string" then
+      local sep = (Yso.cfg and (Yso.cfg.cmd_sep or Yso.cfg.pipe_sep)) or Yso.sep or "&&"
+      local text = value:gsub("&&", "\n"):gsub(";", "\n")
+      if sep ~= "&&" and sep ~= ";" and sep ~= "" then
+        local pattern = tostring(sep):gsub("(%W)", "%%%1")
+        text = text:gsub(pattern, "\n")
+      end
+      for line in text:gmatch("[^\n]+") do if offensive_command(line) then return true end end
+    end
+    return false
+  end
+  function A.blocks(payload, opts)
+    if A.enabled() then return false end
+    opts = type(opts) == "table" and opts or {}
+    local route = opts.route or (type(payload) == "table" and payload.route)
+    -- Pacification remains available to stop an existing creature attack.
+    local pacify = type(payload) == "table" and payload.free == "homunculus pacify"
+      and not payload.eq and not payload.bal and not payload.class
+    if (alchemist_route(route) and not pacify) or inspect(payload) then
+      return true, "alchemist_offense_suspended"
+    end
+    return false
+  end
+  function A.stop_owned()
+    local routes = Yso.off and Yso.off.alc or {}
+    local seen = {}
+    local session = Yso.session
+    local authenticated = session and type(session.is_ready) == "function" and session.is_ready() == true
+    local pacify = false
+    for _, route in pairs(routes) do
+      if type(route) == "table" and not seen[route] then
+        seen[route] = true
+        local state = route.state
+        if type(state) == "table" then
+          if state.homunculus_attack_sent == true then pacify = true end
+          if state.timer_id and type(killTimer) == "function" then pcall(killTimer, state.timer_id) end
+          state.timer_id = nil; state.timer_generation = (state.timer_generation or 0) + 1
+          state.enabled = false; state.loop_enabled = false; state.busy = false
+          state.pending = nil; state.waiting = {}; state.in_flight = {}
+          state.last_hold_reason = "alchemist_offense_suspended"
+          state.homunculus_attack_sent = false; state.homunculus_attack_target = ""
+        end
+        if type(route.cfg) == "table" then route.cfg.enabled = false end
+      end
+    end
+    local Q = Yso.queue
+    if type(Q) == "table" then
+      if type(Q.discard_staged_route) == "function" then
+        for _, id in ipairs({"alchemist_duel_route", "alchemist_group_damage", "alchemist_aurify_route", "alchemist_reave"}) do
+          pcall(Q.discard_staged_route, id)
+        end
+      end
+      for _, lane in ipairs({"free", "eq", "bal", "class"}) do
+        local owned = type(Q.get_owned) == "function" and Q.get_owned(lane)
+        if type(owned) == "table" and alchemist_route(owned.route) and type(Q.clear_lane) == "function" then
+          if authenticated then pcall(Q.clear_lane, lane)
+          elseif type(Q.clear_owned) == "function" then pcall(Q.clear_owned, lane) end
+        end
+        local staged = type(Q.get_staged_owner) == "function" and Q.get_staged_owner(lane)
+        if type(staged) == "table" and alchemist_route(staged.route) and type(Q.clear) == "function" then
+          pcall(Q.clear, lane)
+        end
+      end
+    end
+    local mode = Yso.mode
+    if mode and mode.route_loop and alchemist_route(mode.route_loop.active) then mode.route_loop.active = "" end
+    local P = Yso.alc and Yso.alc.phys
+    if P and P.state then
+      if authenticated and type(P.reave_sync_target) == "function" then pcall(P.reave_sync_target, "", "alchemist_offense_suspended") end
+      if type(P.clear_pending_class) == "function" then pcall(P.clear_pending_class, "alchemist_offense_suspended", {clear_any=true,clear_staged=false}) end
+      if type(P.state.evaluate) == "table" then P.state.evaluate={target="",active=false,requested_at=0,started_at=0} end
+      if P.state.homunculus_attack then P.state.homunculus_attack.active=false;P.state.homunculus_attack.target="" end
+    end
+    if Yso.alc then Yso.alc.reaving=false;Yso.alc.reave_target="";Yso.alc.reave_pp_paused=false end
+    if pacify and authenticated and type(Yso.send) == "function" then pcall(Yso.send, "homunculus pacify") end
+    local fallback = Yso.util and Yso.util._route_alias_fallback
+    for id, loop in pairs(fallback and fallback.loops or {}) do
+      if alchemist_route(id) then
+        if loop.timer_id and type(killTimer) == "function" then pcall(killTimer, loop.timer_id) end
+        loop.timer_id=nil;loop.enabled=false;fallback.loops[id]=nil
+      end
+    end
+    local status = gmcp and gmcp.Char and gmcp.Char.Status or {}
+    local basher = Legacy and Legacy.Settings and Legacy.Settings.Basher
+    if basher and tostring(status.class or ""):lower() == "alchemist" then
+      basher.status = false; basher.queued = false
+    end
+  end
+  function A.set_enabled(enabled)
+    if type(enabled) ~= "boolean" then return false, "expected_boolean" end
+    Yso.features.alchemist_offense = enabled
+    if not enabled then A.stop_owned() end
+    return true
+  end
+  if not A.enabled() then A.stop_owned() end
+end
+
 --========================================================--
 -- Yso / Achaea Curing Core (Skeleton)
 --  • No snd() usage, Achaea-only.
@@ -105,31 +256,23 @@ function Yso.util.echo(msg, color)
 end
 
 function Yso.util.toggle_route_alias(route_id, source)
+  local held, reason = Yso.release_blocked()
+  if held then return false, reason end
+  local blocked, why = Yso.alchemist_offense.blocks({}, {route=route_id})
+  if blocked then return false, why end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.is_held() then return false, "enemy_deliverance" end
   local function _trim(s)
     return tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")
   end
 
-  -- #region agent log
+  -- Optional diagnostics use the same bounded trace facility as the package.
   local function _yso_dbg_log(hypothesisId, message, data)
-    local payload = {
-      sessionId = "f528bd",
-      runId = "baseline",
-      hypothesisId = hypothesisId,
-      location = "api.lua:toggle_route_alias",
-      message = message,
-      data = data or {},
-      timestamp = os.time() * 1000,
-    }
-    local ok, json = pcall(yajl.to_string, payload)
-    if not ok or type(json) ~= "string" then return end
-    local f = io.open("C:/Users/shuji/OneDrive/Desktop/Yso systems/debug-f528bd.log", "a")
-    if not f then return end
-    f:write(json .. "\n")
-    f:close()
+    local trace = Yso.trace
+    if Yso.cfg and Yso.cfg.debug and type(trace) == 'table' and type(trace.push) == 'function' then
+      pcall(trace.push, 'route_alias', {msg=message,data=data,hypothesis=hypothesisId})
+    end
   end
-  -- #endregion
 
   local function _resolve_route(id)
     local off = Yso and Yso.off or nil
@@ -874,6 +1017,10 @@ local function _trim(s)
 end
 
 function Yso.emit(payload, opts)
+  local held, reason = Yso.release_blocked()
+  if held then return false, reason end
+  local blocked, why = Yso.alchemist_offense.blocks(payload, opts)
+  if blocked then return false, why end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.blocks(opts) then return false, "enemy_deliverance" end
   opts = opts or {}
@@ -1052,6 +1199,8 @@ local function _cure_err(msg)
 end
 
 local function _send(cmd)
+  local held, reason = Yso.release_blocked()
+  if held then return false, reason end
   if not cmd or cmd == "" then return end
   if type(send) == "function" then
     send(cmd, false)

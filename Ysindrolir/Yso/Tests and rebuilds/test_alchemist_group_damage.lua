@@ -110,7 +110,7 @@ local function make_route_world(opts)
   local pending_timeout_once = (opts.pending_timeout_once == true)
   local pending_last = nil
 
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.target = current_target
   _G.matches = {}
@@ -225,6 +225,7 @@ local function make_route_world(opts)
   }
 
   _G.Yso = {
+    features = { alchemist_offense = true },
     cfg = { UseQueueing = opts.use_queueing, pipe_sep = "&&" },
     Combat = {
       RouteInterface = {
@@ -410,7 +411,7 @@ local function make_phys_world(opts)
   local current_target = opts.target or "TargetOne"
   local sent = {}
 
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.target = current_target
   _G.getEpoch = function() return now_s * 1000 end
@@ -434,6 +435,7 @@ local function make_phys_world(opts)
   }
 
   _G.Yso = {
+    features = { alchemist_offense = true },
     get_target = function() return current_target end,
     target = current_target,
     bal = { humour = true, evaluate = true, homunculus = true },
@@ -702,7 +704,7 @@ end
 
 print("\n=== Test 7: wrapper load and generic target naming ===")
 do
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.target = "TargetOne"
   _G.cecho = function() end

@@ -2,7 +2,12 @@
 -- Workspace XMLs are read-only inputs; Mudlet owns only profile-local copies.
 YsoWorkspaceLink=YsoWorkspaceLink or {}
 local R=YsoWorkspaceLink
-if R.busy then return R end
+if R.busy then
+ -- A full update may replace this controller last. Its previous native owner
+ -- has been removed, so the replacement must own the completion callback.
+ if YsoRelease and type(YsoRelease.bind)=='function' then YsoRelease.bind(R) end
+ return R
+end
 R.root=R.root or 'C:/Users/shuji/OneDrive/Desktop/Yso systems'
 R.handlers=R.handlers or {};R.watches=R.watches or {};R.timers=R.timers or {}
 R.generation=(R.generation or 0)+1
@@ -81,6 +86,17 @@ local function resolve(namespace)
  end
  return value
 end
+local function pending_work(pending)
+ if type(pending)~='table' then return pending~=nil and pending~=false end
+ for _,slot in pairs(pending) do
+  -- Magi keeps these two-field descriptors even after a normal route stop.
+  -- Unknown populated shapes still fail closed; do not infer expiry here.
+  if type(slot)=='table' and slot.target=='' and slot.until_t==0 then
+   for key in pairs(slot) do if key~='target' and key~='until_t' then return true end end
+  elseif type(slot)~='table' or next(slot)~=nil then return true end
+ end
+ return false
+end
 function R.idle()
  if type(getProfileName)~='function' or getProfileName()~='Achaea' then return false,'wrong_profile' end
  if type(Yso)~='table' or type(Yso.mode)~='table' then return false,'yso_unavailable' end
@@ -95,9 +111,7 @@ function R.idle()
   local entry=RR.resolve and RR.resolve(id)
   local route=entry and resolve(entry.namespace)
   if type(route)=='table' and type(route.state)=='table' then
-   local pending=route.state.pending
-   local waiting=(type(pending)=='table' and next(pending)~=nil)
-    or (pending~=nil and pending~=false and type(pending)~='table')
+   local waiting=pending_work(route.state.pending)
    if route.state.loop_enabled==true or waiting then return false,'automation_active' end
   end
  end
@@ -138,6 +152,9 @@ local function preflight(link)
   jobs[i]={name=name,bytes=bytes,was_module=mod,was_package=pkg,
    previous=read(staged(name)),priority=i-1}
  end
+ if type(R.validate_hot_reload)=='function' then
+  local valid,reason=R.validate_hot_reload(jobs);if not valid then return nil,reason end
+ end
  return jobs
 end
 local function guard_routes()
@@ -164,11 +181,15 @@ function R.status(echo)
   rows[#rows+1]={name=name,linked=linked,changed=different,source=source(name),module=staged(name)}
   changed=changed or different
  end
- local result={busy=R.busy==true,changed=changed,modules=rows,last_error=R.last_error}
+ local release=type(R.release_status)=='function' and R.release_status() or nil
+ local result={busy=R.busy==true,changed=changed,modules=rows,last_error=R.last_error,
+  release=release,restart_required=R.restart_required==true}
  if echo~=false then
   for _,row in ipairs(rows) do say(row.name..': '..(row.linked and 'linked' or 'not linked')..', '..(row.changed and 'workspace update pending' or 'up to date')) end
   if R.busy then say('Update in progress.') end
   if R.last_error then say('Last update failed: '..R.last_error) end
+  if R.restart_required then say('A coordinated release requires profile restart or recovery; automation remains blocked.') end
+  if release then for _,name in ipairs(release.conflicts or {}) do say('Unmanaged overlapping package: '..name) end end
  end
  return result
 end
@@ -218,6 +239,9 @@ next_job=function()
  R.index=R.index+1
  local job=R.jobs[R.index]
  if not job then
+  if type(R.commit_hot_release)=='function' then
+   local okay,why=R.commit_hot_release();if not okay then fail(why);return end
+  end
   R.busy=false;R.last_result=R.action=='link' and 'linked' or 'reloaded';R.last_error=nil
   if R.previous_pause and Yso.pause and Yso.pause.offense and Yso.pause.offense.reason=='workspace_reload' then
    Yso.pause.offense.active=R.previous_pause.active;Yso.pause.offense.reason=R.previous_pause.reason or ''
@@ -254,6 +278,7 @@ next_job=function()
 end
 local function start(action)
  if R.busy then return false,'busy' end
+ if R.restart_required then return false,'release_restart_required' end
  local jobs,why=preflight(action=='link')
  if not jobs then say('Update held: '..why);return false,why end
  if not (lfs and type(lfs.mkdir)=='function') then return false,'filesystem_api_unavailable' end
@@ -325,4 +350,5 @@ if type(addFileWatch)=='function' then
   local ok=pcall(addFileWatch,path);if ok then R.watches[path]=true end
  end
 end
+if YsoRelease and type(YsoRelease.bind)=='function' then YsoRelease.bind(R) end
 return R

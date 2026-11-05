@@ -16,7 +16,7 @@ foreach($path in @($sourceRoot,$targetRoot)) {
 if ($sourceRoot.Equals($targetRoot,[StringComparison]::OrdinalIgnoreCase) -or
     $sourceRoot.StartsWith($targetRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -or
     $targetRoot.StartsWith($sourceRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { throw 'Sync roots must not overlap' }
-$excludedDirs=@('.git','.cursor','.codex','.agents','.vscode','.idea','node_modules','__pycache__','.workspace-link-publish')
+$excludedDirs=@('.git','.cursor','.codex','.agents','.vscode','.idea','node_modules','__pycache__','.workspace-link-publish','.verification','releases')
 $excludedFiles=@('.env','.env.local','*.log','*.tmp','*.temp','*.bak','Thumbs.db','Desktop.ini','.DS_Store','.luarc.json')
 function IsExcluded([string]$relative) {
   $parts=$relative -split '[/\\]'

@@ -6636,48 +6636,11 @@ end</script>
 			</Alias>
 			<Alias isActive="yes" isFolder="no">
 				<name>Update new players</name>
-				<script> Legacy.NDB.getOnline()
-  
-  Legacy.NDB.hidden = {}
-  Legacy.NDB.awake = {}
-  local citylist = {"targossas", "hashan", "mhaldor", "ashtan", "cyrene", "eleusis"}
-  for k,v in pairs(Legacy.NDB.db) do
-    if v.city == "(hidden)" then
-      if table.contains(Legacy.NDB.hidden, k) then
-        --nothing
-      else
-        table.insert(Legacy.NDB.hidden, k)
-      end
-    end
-  end
-  Legacy.echo("Gathering information for NDB...")
-tempTimer(3,function()  
-    local t = Legacy.NDB.read_json_file(getMudletHomeDir() .. "/Legacy/NDB/who.json")
-    if not t or type(t.characters) ~= "table" then
-      Legacy.echo("NDB online-player data unavailable; try ndb again.")
-      return
-    end
-    for _, v in pairs(t.characters) do
-        Legacy.NDB.lookup(v.name)
-        if not table.contains(Legacy.NDB.awake, v.name) then
-          table.insert(Legacy.NDB.awake, v.name)
-        end
-        --Legacy.Settings.NDB.newHL(v.name)
-    end
-    Legacy.Settings.NDB.highlights()
-   end)
-   
-tempTimer(6, [[Legacy.echo("NDB finished updating for &lt;gold&gt;"..table.size(Legacy.NDB.db).."&lt;white&gt; people.")]])
-  if table.size(Legacy.NDB.hidden) &gt; 0 then
-    tempTimer(7, [[Legacy.echo("People that will need manually honoured: &lt;gold&gt;"..table.concat(Legacy.NDB.hidden, "&lt;white&gt;,&lt;gold&gt; "))]])
-    tempTimer(7.5, function() Legacy.echo("Would you like to automatically honour hidden people?") 
-                              cechoLink(" &lt;green&gt;Y", [[Unhide()]], "Click to Unhide Hidden people.", true) 
-                              cecho("&lt;DimGrey&gt;/") 
-                              cechoLink("&lt;red&gt;N", [[send("")]], "Click to do nothing for some reason.", true)
-                              cecho("  &lt;DimGrey&gt;(&lt;ansi_white&gt;This should take about "..math.floor(2.6 * #Legacy.NDB.hidden).." seconds.&lt;DimGrey&gt;)")end)
-  end
-    
-</script>
+				<script>if Legacy and Legacy.NDB and type(Legacy.NDB.refresh_cache)==&apos;function&apos; then
+  Legacy.NDB.refresh_cache()
+elseif type(cecho)==&apos;function&apos; then
+  cecho(&apos;\n[Legacy] NDB cache services are unavailable; run ysocheck.\n&apos;)
+end</script>
 				<command />
 				<packageName />
 				<regex>^ndb$</regex>
@@ -7302,27 +7265,27 @@ end</script>
 			</Alias>
 			<Alias isActive="yes" isFolder="no">
 				<name>L Help</name>
-				<script>cecho("\n&lt;white&gt;- &lt;gold&gt;Commands for Legacy system:")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;pp              &lt;ansi_yellow&gt;System Pause")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;cp              &lt;ansi_yellow&gt;Health/Mana prio sip change")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;Legacy          &lt;ansi_yellow&gt;Legacy general settings")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;dsave (name)    &lt;ansi_yellow&gt;Save defense list by name")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;defdel (name)   &lt;ansi_yellow&gt;Delete a defense list")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;dset (name)     &lt;ansi_yellow&gt;Change to a saved defense set")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;defup           &lt;ansi_yellow&gt;Reups saved defences")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;defs            &lt;ansi_yellow&gt;Configure clickable def list")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;keepup          &lt;ansi_yellow&gt;Configure clickable keepup list")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;ndb             &lt;ansi_yellow&gt;Update NDB with current people")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;ndbs            &lt;ansi_yellow&gt;NDB current colour settings")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;ndbs (city)     &lt;ansi_yellow&gt;NDB City colour settings")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;lprompt         &lt;ansi_yellow&gt;Set to use Legacy for custom prompt")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;lockpromopt     &lt;ansi_yellow&gt;Toggle configuring the prompt")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;en (city)       &lt;ansi_yellow&gt;Enemy everyone in a city")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;enteam          &lt;ansi_yellow&gt;Class breakdown for enemy list")
-cecho("\n&lt;white&gt;- &lt;cyan&gt;ar (city)       &lt;ansi_yellow&gt;List online army rank 3 and up (You have to honour someone at least once to track their AR)")
+				<script>cecho(&quot;\n&lt;white&gt;- &lt;gold&gt;Commands for Legacy system:&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;pp              &lt;ansi_yellow&gt;System Pause&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;cp              &lt;ansi_yellow&gt;Health/Mana prio sip change&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;Legacy          &lt;ansi_yellow&gt;Legacy general settings&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;dsave (name)    &lt;ansi_yellow&gt;Save defense list by name&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;defdel (name)   &lt;ansi_yellow&gt;Delete a defense list&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;dset (name)     &lt;ansi_yellow&gt;Change to a saved defense set&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;defup           &lt;ansi_yellow&gt;Reups saved defences&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;defs            &lt;ansi_yellow&gt;Configure clickable def list&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;keepup          &lt;ansi_yellow&gt;Configure clickable keepup list&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;ndb             &lt;ansi_yellow&gt;Load cached NDB records (network refresh disabled)&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;ndbs            &lt;ansi_yellow&gt;NDB current colour settings&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;ndbs (city)     &lt;ansi_yellow&gt;NDB City colour settings&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;lprompt         &lt;ansi_yellow&gt;Set to use Legacy for custom prompt&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;lockpromopt     &lt;ansi_yellow&gt;Toggle configuring the prompt&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;en (city)       &lt;ansi_yellow&gt;Enemy everyone in a city&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;enteam          &lt;ansi_yellow&gt;Class breakdown for enemy list&quot;)
+cecho(&quot;\n&lt;white&gt;- &lt;cyan&gt;ar (city)       &lt;ansi_yellow&gt;List online army rank 3 and up (You have to honour someone at least once to track their AR)&quot;)
  
  
-cecho("\n\n&lt;white&gt;- &lt;cyan&gt;feedback \&lt;msg\&gt; &lt;ansi_yellow&gt;Provide feedback to the Legacy team")</script>
+cecho(&quot;\n\n&lt;white&gt;- &lt;cyan&gt;feedback &lt;msg&gt; &lt;ansi_yellow&gt;Feedback stays local; Discord posting is disabled&quot;)</script>
 				<command />
 				<packageName />
 				<regex>^lhelp$</regex>
@@ -7676,7 +7639,7 @@ function Legacy_EnsureState()
   Legacy.Settings.IGDate = Legacy.Settings.IGDate or {}
   Legacy.Curing = Legacy.Curing or {}
   Legacy.Curing.bal = Legacy.Curing.bal or {}
-  for _, balance in ipairs({"tree", "eat", "sip", "apply", "focus", "active", "smoke"}) do
+  for _, balance in ipairs({&quot;tree&quot;, &quot;eat&quot;, &quot;sip&quot;, &quot;apply&quot;, &quot;focus&quot;, &quot;active&quot;, &quot;smoke&quot;}) do
     if Legacy.Curing.bal[balance] == nil then Legacy.Curing.bal[balance] = true end
   end
   Legacy.Curing.Defs = Legacy.Curing.Defs or {}
@@ -7685,7 +7648,7 @@ function Legacy_EnsureState()
   -- Health-lost lines can arrive before LoggedIn. Keep this a placeholder so
   -- LInit can still fill any missing prompt defaults.
   Legacy.Settings.Prompt = Legacy.Settings.Prompt or {}
-  if type(Legacy.Settings.Prompt.damageTracking) ~= "table" then
+  if type(Legacy.Settings.Prompt.damageTracking) ~= &quot;table&quot; then
     Legacy.Settings.Prompt.damageTracking = {}
   end
 end
@@ -7696,12 +7659,12 @@ function LInit()
   Legacy = Legacy or {}
   Legacy.Settings = Legacy.Settings or {}
   Legacy.Settings.ignoreUpdates = Legacy.Settings.ignoreUpdates or false
-  Legacy.Vinfo = {Version = "", msg = "", link = ""}
-  Legacy.Version = "2.1"
+  Legacy.Vinfo = {Version = &quot;&quot;, msg = &quot;&quot;, link = &quot;&quot;}
+  Legacy.Version = &quot;2.1&quot;
   Legacy.Extras = Legacy.Extras or {}
   Legacy.Announcement = Legacy.Announcement or {}
   Legacy.Announcement.msg = Legacy.Announcement.msg or {}
-  Legacy.Announcement.newMsg = {""}
+  Legacy.Announcement.newMsg = {&quot;&quot;}
   Legacy.Announcement.ignore = Legacy.Announcement.ignore or false
   Legacy[gmcp.Char.Status.name] = Legacy[gmcp.Char.Status.name] or {}
   Legacy[gmcp.Char.Status.name].oldHealth = 0
@@ -7720,29 +7683,29 @@ function LInit()
   Legacy.Q = Legacy.Q or {}
   Legacy.Sailing = {}
   Legacy.Settings.Dor = {}
-  enClass = ""
+  enClass = &quot;&quot;
   inking = false
   Legacy.Curing.Dragonform = Legacy.Curing.Dragonform or {}
-  Legacy.Curing.limbTable = {"left leg", "right leg"}
+  Legacy.Curing.limbTable = {&quot;left leg&quot;, &quot;right leg&quot;}
   
   local promptDefaults = {
-      ["showHealth"]        = true,
-      ["showMana"]          = true,
-      ["showWillpower"]     = false,
-      ["showTarget"]        = true,
-      ["showEndurance"]     = false,
-      ["gameDate"]          = false,
-      ["xp"]                = false,
-      ["rage"]              = false,
-      ["exits"]             = true,
-      ["defs"]              = false,
-      ["seasons"]           = false,
-      ["timestamps"]        = true,
-      ["vitalsChange"]      = true,
-      ["damageType"]       = true,
-      ["display"]           = "rawper",
-      ["limbtracker"]       = false,
-      ["showClassStats"]    = false,
+      [&quot;showHealth&quot;]        = true,
+      [&quot;showMana&quot;]          = true,
+      [&quot;showWillpower&quot;]     = false,
+      [&quot;showTarget&quot;]        = true,
+      [&quot;showEndurance&quot;]     = false,
+      [&quot;gameDate&quot;]          = false,
+      [&quot;xp&quot;]                = false,
+      [&quot;rage&quot;]              = false,
+      [&quot;exits&quot;]             = true,
+      [&quot;defs&quot;]              = false,
+      [&quot;seasons&quot;]           = false,
+      [&quot;timestamps&quot;]        = true,
+      [&quot;vitalsChange&quot;]      = true,
+      [&quot;damageType&quot;]       = true,
+      [&quot;display&quot;]           = &quot;rawper&quot;,
+      [&quot;limbtracker&quot;]       = false,
+      [&quot;showClassStats&quot;]    = false,
       }
   Legacy.Settings.Prompt = Legacy.Settings.Prompt or {}
   for key, value in pairs(promptDefaults) do
@@ -7754,15 +7717,15 @@ function LInit()
   Legacy.Settings.Prompt.damageTracking = {}
   
   function Legacy.Settings.Prompt.healthLost()
-    if Legacy.Settings.Prompt.damageType ~= true then return '' end
-    local ret = table.concat(Legacy.Settings.Prompt.damageTracking, ', ')
+    if Legacy.Settings.Prompt.damageType ~= true then return &apos;&apos; end
+    local ret = table.concat(Legacy.Settings.Prompt.damageTracking, &apos;, &apos;)
     
     local shortnames = {
-      ["physical"] = '',
-      ["cutting"]  = 'cut',
-      ["electricity"] = "elec",
-      ["asphyxiation"] = 'asph',
-      ["  "] = " "
+      [&quot;physical&quot;] = &apos;&apos;,
+      [&quot;cutting&quot;]  = &apos;cut&apos;,
+      [&quot;electricity&quot;] = &quot;elec&quot;,
+      [&quot;asphyxiation&quot;] = &apos;asph&apos;,
+      [&quot;  &quot;] = &quot; &quot;
       
       }
     
@@ -7779,7 +7742,7 @@ function LInit()
   
   
   Legacy.Sailing.onShip = function()
-    if gmcp.Room.Info.area == "" and gmcp.Room.Info.environment == "Vessel" then
+    if gmcp.Room.Info.area == &quot;&quot; and gmcp.Room.Info.environment == &quot;Vessel&quot; then
       return true
     else
       return false
@@ -7787,45 +7750,45 @@ function LInit()
   end
   
   function Legacy_Save()
-    table.save(getMudletHomeDir().."/Legacy/Legacy.lua", Legacy)
+    table.save(getMudletHomeDir()..&quot;/Legacy/Legacy.lua&quot;, Legacy)
   end
-   registerAnonymousEventHandler("sysExitEvent", "Legacy_Save")
+   registerAnonymousEventHandler(&quot;sysExitEvent&quot;, &quot;Legacy_Save&quot;)
 
   if Legacy.Curing.prioset == nil then
-    Legacy.Curing.prioset = "legacy"
+    Legacy.Curing.prioset = &quot;legacy&quot;
   else
     Legacy.Curing.prioset = Legacy.Curing.prioset
   end
   Legacy.Q.eq = function(arg)
-    send("cq all")
-    send("queue add eq setalias attk "..arg)
-    send("queue add eq attk")
+    send(&quot;cq all&quot;)
+    send(&quot;queue add eq setalias attk &quot;..arg)
+    send(&quot;queue add eq attk&quot;)
   end
   Legacy.Q.free = function(arg)
-    send("cq all")
-    send("queue add free setalias attk "..arg)
-    send("queue add free attk")
+    send(&quot;cq all&quot;)
+    send(&quot;queue add free setalias attk &quot;..arg)
+    send(&quot;queue add free attk&quot;)
   end
   Legacy.Q.class = function(arg)
-    send("cq all")
-    send("queue add class setalias attk "..arg)
-    send("queue add class attk")
+    send(&quot;cq all&quot;)
+    send(&quot;queue add class setalias attk &quot;..arg)
+    send(&quot;queue add class attk&quot;)
   end
   Legacy.Q.para = function(arg)
-    send("cq all")
-    send("queue add p setalias attk "..arg)
-    send("queue add p attk")
+    send(&quot;cq all&quot;)
+    send(&quot;queue add p setalias attk &quot;..arg)
+    send(&quot;queue add p attk&quot;)
   end
   
   
   function Legacy.Dor(...)
-if (gmcp.Char.Vitals.eq or gmcp.Char.Vitals.bal) == "0" or Legacy.Settings.Dor.status ~= true then return end
+if (gmcp.Char.Vitals.eq or gmcp.Char.Vitals.bal) == &quot;0&quot; or Legacy.Settings.Dor.status ~= true then return end
 if Legacy.Settings.Dor.status ~= true then killtimer(Legacy.Settings.Dor.timer) Legacy.Settings.Dor.timer = nil return end
 local arg = {...}
-  if arg[1] == "clear" then
+  if arg[1] == &quot;clear&quot; then
     Legacy.Settings.Dor.status = false
     Legacy.Settings.Dor.queue = {}
-    Legacy.echo("&lt;b&gt;&lt;red&gt;Cleared your DOR Queue.")
+    Legacy.echo(&quot;&lt;b&gt;&lt;red&gt;Cleared your DOR Queue.&quot;)
   elseif (arg ~= nil and table.size(arg) &gt; 0 )then
     Legacy.Settings.Dor.queue = Legacy.Settings.Dor.queue or {}
     for k,v in pairs(arg) do
@@ -7834,7 +7797,7 @@ local arg = {...}
     Legacy.Dor()
   else
     for k,v in pairs(Legacy.Settings.Dor.queue) do
-      send("queue add free "..v)
+      send(&quot;queue add free &quot;..v)
     end
     if Legacy.Settings.Dor.timer then
       killTimer(Legacy.Settings.Dor.timer)
@@ -7847,32 +7810,32 @@ end
 
   Legacy.Room = Legacy.Room or {}
   Legacy.Room.directionTable = {
-    n = "north",
-    s = "south",
-    e = "east",
-    w = "west",
-    nw = "northwest",
-    ne = "northeast",
-    sw = "southwest",
-    se = "southeast",
-    ["in"] = "in",
-    ["out"] = "out",
-    u = "up",
-    d = "down",
-    ["down"] = "d",
-    ["up"] = "u",
-    ["southeast"] = "se",
-    ["southwest"] = "sw",
-    ["northeast"] = "ne",
-    ["northwest"] = "nw",
-    ["west"]      = "w",
-    ["east"]      = "e",
-    ["south"]     = "s",
-    ["north"]     = "n",  
+    n = &quot;north&quot;,
+    s = &quot;south&quot;,
+    e = &quot;east&quot;,
+    w = &quot;west&quot;,
+    nw = &quot;northwest&quot;,
+    ne = &quot;northeast&quot;,
+    sw = &quot;southwest&quot;,
+    se = &quot;southeast&quot;,
+    [&quot;in&quot;] = &quot;in&quot;,
+    [&quot;out&quot;] = &quot;out&quot;,
+    u = &quot;up&quot;,
+    d = &quot;down&quot;,
+    [&quot;down&quot;] = &quot;d&quot;,
+    [&quot;up&quot;] = &quot;u&quot;,
+    [&quot;southeast&quot;] = &quot;se&quot;,
+    [&quot;southwest&quot;] = &quot;sw&quot;,
+    [&quot;northeast&quot;] = &quot;ne&quot;,
+    [&quot;northwest&quot;] = &quot;nw&quot;,
+    [&quot;west&quot;]      = &quot;w&quot;,
+    [&quot;east&quot;]      = &quot;e&quot;,
+    [&quot;south&quot;]     = &quot;s&quot;,
+    [&quot;north&quot;]     = &quot;n&quot;,
     }
-  Legacy.Room.Walls = {["Thorn"] = {}, ["Fire"] = {}, ["Ice"] = {}, ["Stone"] = {}}
+  Legacy.Room.Walls = {[&quot;Thorn&quot;] = {}, [&quot;Fire&quot;] = {}, [&quot;Ice&quot;] = {}, [&quot;Stone&quot;] = {}}
   function Legacy.Room.ResetWalls()
-    Legacy.Room.Walls = {["Thorn"] = {}, ["Fire"] = {}, ["Ice"] = {}, ["Stone"] = {}}
+    Legacy.Room.Walls = {[&quot;Thorn&quot;] = {}, [&quot;Fire&quot;] = {}, [&quot;Ice&quot;] = {}, [&quot;Stone&quot;] = {}}
   end
   
   Legacy.Room = Legacy.Room or {}
@@ -7881,78 +7844,78 @@ end
   for k,v in pairs(gmcp.Room.Players) do
     Legacy.Room.players[v.name] = true
   end
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.Items()
   Legacy.Room.items = {}
   for k,v in pairs(gmcp.Char.Items.List.items) do
-    if v.attrib == "t" or v.icon == "shrine" or v.icon == "container" or v.attrib == nil then
+    if v.attrib == &quot;t&quot; or v.icon == &quot;shrine&quot; or v.icon == &quot;container&quot; or v.attrib == nil then
       Legacy.Room.items[v.id] = v.name
     end
   end
-    raiseEvent("UI Update")
+    raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.Mobs()
   Legacy.Room.mobs = {}
     for k,v in pairs(gmcp.Char.Items.List.items) do
-    if v.attrib == "m" or v.attrib == "mx" then
+    if v.attrib == &quot;m&quot; or v.attrib == &quot;mx&quot; then
       Legacy.Room.mobs[v.id] = v.name
     end
   end
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.addPeople()
   Legacy.Room.players[gmcp.Room.AddPlayer.name] = true
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.addItems()
-  if gmcp.Char.Items.Add.item.attrib == "t" or gmcp.Char.Items.Add.item.icon == "shrine" then
+  if gmcp.Char.Items.Add.item.attrib == &quot;t&quot; or gmcp.Char.Items.Add.item.icon == &quot;shrine&quot; then
     Legacy.Room.items[gmcp.Char.Items.Add.item.id] = gmcp.Char.Items.Add.item.name
   end
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.addMobs()
-  if gmcp.Char.Items.Add.item.attrib == "m" or gmcp.Char.Items.Add.item.attrib == "mx" then
+  if gmcp.Char.Items.Add.item.attrib == &quot;m&quot; or gmcp.Char.Items.Add.item.attrib == &quot;mx&quot; then
     Legacy.Room.mobs[gmcp.Char.Items.Add.item.id] = gmcp.Char.Items.Add.item.name
   end
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.removePeople()
   Legacy.Room.players[gmcp.Room.RemovePlayer] = nil
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.removeItems()
-    if gmcp.Char.Items.Remove.item.attrib == "t" then
+    if gmcp.Char.Items.Remove.item.attrib == &quot;t&quot; then
       Legacy.Room.items[gmcp.Char.Items.Remove.item.id] = nil
     end
-  raiseEvent("UI Update")
+  raiseEvent(&quot;UI Update&quot;)
 end
 
 function Legacy.Room.removeMobs()
     Legacy.Room.mobs[gmcp.Char.Items.Remove.item.id] = nil
-    raiseEvent("UI Update")
+    raiseEvent(&quot;UI Update&quot;)
 end
 
-registerAnonymousEventHandler("gmcp.Room.RemovePlayer", "Legacy.Room.removePeople")
-registerAnonymousEventHandler("gmcp.Room.AddPlayer", "Legacy.Room.addPeople")
-registerAnonymousEventHandler("gmcp.Room.Players", "Legacy.Room.People")
+registerAnonymousEventHandler(&quot;gmcp.Room.RemovePlayer&quot;, &quot;Legacy.Room.removePeople&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Room.AddPlayer&quot;, &quot;Legacy.Room.addPeople&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Room.Players&quot;, &quot;Legacy.Room.People&quot;)
 
-registerAnonymousEventHandler("gmcp.Char.Items.List", "Legacy.Room.Items")
-registerAnonymousEventHandler("gmcp.Char.Items.Add", "Legacy.Room.addItems")
-registerAnonymousEventHandler("gmcp.Char.Items.Remove", "Legacy.Room.removeItems")
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.List&quot;, &quot;Legacy.Room.Items&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.Add&quot;, &quot;Legacy.Room.addItems&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.Remove&quot;, &quot;Legacy.Room.removeItems&quot;)
 
-registerAnonymousEventHandler("gmcp.Char.Items.List", "Legacy.Room.Mobs")
-registerAnonymousEventHandler("gmcp.Char.Items.Add", "Legacy.Room.addMobs")
-registerAnonymousEventHandler("gmcp.Char.Items.Remove", "Legacy.Room.removeMobs")
-registerAnonymousEventHandler("gmcp.Room.Info", "Legacy.Room.ResetWalls")
-registerAnonymousEventHandler("gmcp.Char.Items.List", "Legacy.Room.ResetWalls")
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.List&quot;, &quot;Legacy.Room.Mobs&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.Add&quot;, &quot;Legacy.Room.addMobs&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.Remove&quot;, &quot;Legacy.Room.removeMobs&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Room.Info&quot;, &quot;Legacy.Room.ResetWalls&quot;)
+registerAnonymousEventHandler(&quot;gmcp.Char.Items.List&quot;, &quot;Legacy.Room.ResetWalls&quot;)
 
   --Curing
   Legacy.Curing.Prios = Legacy.Curing.Prios or {}
@@ -7971,48 +7934,48 @@ registerAnonymousEventHandler("gmcp.Char.Items.List", "Legacy.Room.ResetWalls")
   function Legacy.Curing.levelsTracking()
   local Aff = Legacy.Curing.Affs
   local currentLevel = 0
-  --table for very quick check of the affliction  you are currently seeing if it's a level based affliction
-  local levelTypes = {["unweavingbody"] = true,
-                      ["unweavingmind"] = true,
-                      ["unweavingspirit"] = true,
-                      ["melancholic"] = true,
-                      ["choleric"] = true,
-                      ["phlegmatic"] = true,
-                      ["sanguine"] = true,
-                      ["horror"] = true,
-                      ["pyre"] = true,
-                      ["burning"] = true,
-                      ["torntendons"] = true,
-                      ["skullfracture"] = true,
-                      ["wristfracture"] = true,
-                      ["crackedribs"] = true,
-                      ["pressure"] = true,
-                      ["crescendo"] = true,
+  --table for very quick check of the affliction  you are currently seeing if it&apos;s a level based affliction
+  local levelTypes = {[&quot;unweavingbody&quot;] = true,
+                      [&quot;unweavingmind&quot;] = true,
+                      [&quot;unweavingspirit&quot;] = true,
+                      [&quot;melancholic&quot;] = true,
+                      [&quot;choleric&quot;] = true,
+                      [&quot;phlegmatic&quot;] = true,
+                      [&quot;sanguine&quot;] = true,
+                      [&quot;horror&quot;] = true,
+                      [&quot;pyre&quot;] = true,
+                      [&quot;burning&quot;] = true,
+                      [&quot;torntendons&quot;] = true,
+                      [&quot;skullfracture&quot;] = true,
+                      [&quot;wristfracture&quot;] = true,
+                      [&quot;crackedribs&quot;] = true,
+                      [&quot;pressure&quot;] = true,
+                      [&quot;crescendo&quot;] = true,
                       }
   
-  --reset counts back to zero so if no aff found, don't need to track at that point that you needed to do a resets.
-  Legacy.Curing.Levels = { ["unweavingbody"] = 0,
-                    ["unweavingmind"] = 0,
-                    ["unweavingspirit"] = 0,
-                    ["melancholic"] = 0,
-                    ["choleric"] = 0,
-                    ["phlegmatic"] = 0,
-                    ["sanguine"] = 0,
-                    ["horror"] = 0,
-                    ["pyre"] = 0,
-                    ["burning"] = 0,
-                    ["torntendon"] = 0,
-                    ["skullfracture"] = 0,
-                    ["wristfracture"] = 0,
-                    ["crackedrib"] = 0,
-                    ["pressure"] = 0,
-                    ["crescendo"] = 0,
+  --reset counts back to zero so if no aff found, don&apos;t need to track at that point that you needed to do a resets.
+  Legacy.Curing.Levels = { [&quot;unweavingbody&quot;] = 0,
+                    [&quot;unweavingmind&quot;] = 0,
+                    [&quot;unweavingspirit&quot;] = 0,
+                    [&quot;melancholic&quot;] = 0,
+                    [&quot;choleric&quot;] = 0,
+                    [&quot;phlegmatic&quot;] = 0,
+                    [&quot;sanguine&quot;] = 0,
+                    [&quot;horror&quot;] = 0,
+                    [&quot;pyre&quot;] = 0,
+                    [&quot;burning&quot;] = 0,
+                    [&quot;torntendon&quot;] = 0,
+                    [&quot;skullfracture&quot;] = 0,
+                    [&quot;wristfracture&quot;] = 0,
+                    [&quot;crackedrib&quot;] = 0,
+                    [&quot;pressure&quot;] = 0,
+                    [&quot;crescendo&quot;] = 0,
                     }
   --loop through the current afflictions you have, check if the aff you are looking at is on the list of level based ones
   for k, v in pairs(Aff) do
     local baseAffName = k:cut(-5) ----cut(-5) removes the bracketed number from level based affs if present: unweavingbody (3)
     if levelTypes[baseAffName] then 
-      currentLevel = string.gsub(k, baseAffName.." %((%d)%)", "%1") --capture the number from the aff word 
+      currentLevel = string.gsub(k, baseAffName..&quot; %((%d)%)&quot;, &quot;%1&quot;) --capture the number from the aff word
       Legacy.Curing.Levels[baseAffName] = tonumber(currentLevel)           --store it
     end    
   end 
@@ -8028,256 +7991,256 @@ end
   removedDefs = {}
   Legacy.Curing.Defs.current = {}
   Legacy.Curing.Defs.all   = {
-    "Accursedresolve",
-    "Acrobatics",
-    "Affinity",
-    "Agithtailegend",
-    "Aiming",
-    "Airpocket",
-    "Alertness",
-    "Alligatorlegend",
-    "Amamaalierlegend",
-    "Antiforce",
-    "Arctar",
-    "Aria",
-    "Arrowcatching",
-    "Astralform",
-    "Astronomy",
-    "Balancing",
-    "Barkskin",
-    "Basking",
-    "Battlesong",
-    "Bedevilaura",
-    "Belltattoo",
-    "Blackboarlegend",
-    "Blackwind",
-    "Bladefire",
-    "Blademastery",
-    "Blessingofthegods",
-    "Blindness",
-    "Blocking",
-    "Bloodquell",
-    "Bloodshield",
-    "Blunder",
-    "Blur",
-    "Boartattoo",
-    "Bodyaugment",
-    "Bodyblock",
-    "Boostedregeneration",
-    "Brains",
-    "Bulk",
-    "Chameleon",
-    "Chargeshield",
-    "Circulate",
-    "Clinging",
-    "Cloak",
-    "Cohesion",
-    "Coldresist",
-    "Consciousness",
-    "Constitution",
-    "Curseward",
-    "Dawnhand",
-    "Deafness",
-    "Deathaura",
-    "Deathsight",
-    "Deflect",
-    "Deliverance",
-    "Demonarmour",
-    "Demonfury",
-    "Density",
-    "Devilmark",
-    "Devour",
-    "Diamondskin",
-    "Disassociate",
-    "Disperse",
-    "Distortedaura",
-    "Dodging",
-    "Dragonarmour",
-    "Dragonbreath",
-    "Drunkensailor",
-    "Durability",
-    "Dustform",
-    "Eaglelegend",
-    "Earthshield",
-    "Eavesdropping",
-    "Electricresist",
-    "Elusiveness",
-    "Enduranceblessing",
-    "Endure",
-    "Enhancedform",
-    "Evadeblock",
-    "Evasion",
-    "Extispicy",
-    "Extrusion",
-    "Eyes",
-    "Faith",
-    "Fangbarrier",
-    "Fervour",
-    "Firefly",
-    "Fireresist",
-    "Fireshroud",
-    "Firstaid",
-    "Flailingstaff",
-    "Fleetness",
-    "Frenzied",
-    "Frostshield",
-    "Fury",
-    "Ghost",
-    "Golgothagrace",
-    "Gripping",
-    "Grookbubble",
-    "Groundwatch",
-    "Guidedstrike",
-    "Harmony",
-    "Haste",
-    "Heads",
-    "Heartsfury",
-    "Heldbreath",
-    "Heresy",
-    "Hiding",
-    "Hyperfocus",
-    "Hypersense",
-    "Hypersight",
-    "Immunity",
-    "Incandescence",
-    "Indomitability",
-    "Insomnia",
-    "Inspiration",
-    "Insufflate",
-    "Insulation",
-    "Ironform",
-    "Ironwill",
-    "Joints",
-    "Kaiboost",
-    "Kaitrance",
-    "Kola",
-    "Lament",
-    "Lay",
-    "Leechlogograph",
-    "Levitating",
-    "Lifebond",
-    "Lifegiver",
-    "Lifesteal",
-    "Lifevision",
-    "Lipreading",
-    "Magicresist",
-    "Maticlegend",
-    "Megalithtattoo",
-    "Mentalclarity",
-    "Mercury",
-    "Metawake",
-    "Mindcloak",
-    "Mindnet",
-    "Mindseye",
-    "Mindtelesense",
-    "Mistral",
-    "Moontattoo",
-    "Morph",
-    "Mosstattoo",
-    "Mouths",
-    "Nicatorlegend",
-    "Nightsight",
-    "Numbness",
-    "Oxtattoo",
-    "Pacing",
-    "Painshift",
-    "Panacea",
-    "Phased",
-    "Pinchblock",
-    "Placement",
-    "Poisonresist",  
-    "Preachblessing",
-    "Precision",
-    "Prismatic",
-    "Projectiles",
-    "Promosurcoat",
-    "Psibreakthrough",
-    "Psicomprehend",
-    "Psitranscend",
-    "Psivanish",
-    "Putrefaction",
-    "Rebounding",
-    "Reflections",
-    "Reflexes",
-    "Regeneration",
-    "Resistance",
-    "Retaliation",
-    "Retribution",
-    "Ruin",
-    "Rupturesight",
-    "Satiation",
-    "Scales",
-    "Scholasticism",
-    "Scouting",
-    "Seasonelegend",
-    "Secondsight",
-    "Secondskin",
-    "Selfishness",
-    "Setweapon",
-    "Shadowveil",
-    "Shield",
-    "Shieldlogograph",
-    "Shinbinding",
-    "Shinclarity",
-    "Shinperfection",
-    "Shinrejoinder",
-    "Shintrance",
-    "Shipwarning",
-    "Shroud",
-    "Skysight",
-    "Skywatch",
-    "Slippery",
-    "Softfocusing",
-    "Songbird",
-    "Soulcage",
-    "Speed",
-    "Spinning",
-    "Spinningstaff",
-    "Spiritbonded",
-    "Spiritwalk",
-    "Splitmind",
-    "Standingfirm",
-    "Starburst",
-    "Stealth",
-    "Stonefist",
-    "Stoneskin",
-    "Strata",
-    "Sulphur",
-    "Susurrating",
-    "Swiftcurse",
-    "Sympathy",
-    "Telesense",
-    "Temperance",
-    "Tempest",
-    "Tentacles",
-    "Thermalshield",
-    "Thirdeye",
-    "Tin",
-    "Tongues",
-    "Toughness",
-    "Treewatch",
-    "Tremorsense",
-    "Truestare",
-    "Tumors",
-    "Tune",
-    "Twoartsstance",
-    "Unbowed",
-    "Unnamablepresence",
-    "Vengeance",
-    "Venomsacks",
-    "Vigilance",
-    "Vigour",
-    "Viridian",
-    "Vitality",
-    "Ward",
-    "Waterwalking",
-    "Weakvigour",
-    "Weathering",
-    "Weaving",
-    "Wildgrowth",
-    "Willpowerblessing",
-    "Wolflegend",
-    "Xporb",  
+    &quot;Accursedresolve&quot;,
+    &quot;Acrobatics&quot;,
+    &quot;Affinity&quot;,
+    &quot;Agithtailegend&quot;,
+    &quot;Aiming&quot;,
+    &quot;Airpocket&quot;,
+    &quot;Alertness&quot;,
+    &quot;Alligatorlegend&quot;,
+    &quot;Amamaalierlegend&quot;,
+    &quot;Antiforce&quot;,
+    &quot;Arctar&quot;,
+    &quot;Aria&quot;,
+    &quot;Arrowcatching&quot;,
+    &quot;Astralform&quot;,
+    &quot;Astronomy&quot;,
+    &quot;Balancing&quot;,
+    &quot;Barkskin&quot;,
+    &quot;Basking&quot;,
+    &quot;Battlesong&quot;,
+    &quot;Bedevilaura&quot;,
+    &quot;Belltattoo&quot;,
+    &quot;Blackboarlegend&quot;,
+    &quot;Blackwind&quot;,
+    &quot;Bladefire&quot;,
+    &quot;Blademastery&quot;,
+    &quot;Blessingofthegods&quot;,
+    &quot;Blindness&quot;,
+    &quot;Blocking&quot;,
+    &quot;Bloodquell&quot;,
+    &quot;Bloodshield&quot;,
+    &quot;Blunder&quot;,
+    &quot;Blur&quot;,
+    &quot;Boartattoo&quot;,
+    &quot;Bodyaugment&quot;,
+    &quot;Bodyblock&quot;,
+    &quot;Boostedregeneration&quot;,
+    &quot;Brains&quot;,
+    &quot;Bulk&quot;,
+    &quot;Chameleon&quot;,
+    &quot;Chargeshield&quot;,
+    &quot;Circulate&quot;,
+    &quot;Clinging&quot;,
+    &quot;Cloak&quot;,
+    &quot;Cohesion&quot;,
+    &quot;Coldresist&quot;,
+    &quot;Consciousness&quot;,
+    &quot;Constitution&quot;,
+    &quot;Curseward&quot;,
+    &quot;Dawnhand&quot;,
+    &quot;Deafness&quot;,
+    &quot;Deathaura&quot;,
+    &quot;Deathsight&quot;,
+    &quot;Deflect&quot;,
+    &quot;Deliverance&quot;,
+    &quot;Demonarmour&quot;,
+    &quot;Demonfury&quot;,
+    &quot;Density&quot;,
+    &quot;Devilmark&quot;,
+    &quot;Devour&quot;,
+    &quot;Diamondskin&quot;,
+    &quot;Disassociate&quot;,
+    &quot;Disperse&quot;,
+    &quot;Distortedaura&quot;,
+    &quot;Dodging&quot;,
+    &quot;Dragonarmour&quot;,
+    &quot;Dragonbreath&quot;,
+    &quot;Drunkensailor&quot;,
+    &quot;Durability&quot;,
+    &quot;Dustform&quot;,
+    &quot;Eaglelegend&quot;,
+    &quot;Earthshield&quot;,
+    &quot;Eavesdropping&quot;,
+    &quot;Electricresist&quot;,
+    &quot;Elusiveness&quot;,
+    &quot;Enduranceblessing&quot;,
+    &quot;Endure&quot;,
+    &quot;Enhancedform&quot;,
+    &quot;Evadeblock&quot;,
+    &quot;Evasion&quot;,
+    &quot;Extispicy&quot;,
+    &quot;Extrusion&quot;,
+    &quot;Eyes&quot;,
+    &quot;Faith&quot;,
+    &quot;Fangbarrier&quot;,
+    &quot;Fervour&quot;,
+    &quot;Firefly&quot;,
+    &quot;Fireresist&quot;,
+    &quot;Fireshroud&quot;,
+    &quot;Firstaid&quot;,
+    &quot;Flailingstaff&quot;,
+    &quot;Fleetness&quot;,
+    &quot;Frenzied&quot;,
+    &quot;Frostshield&quot;,
+    &quot;Fury&quot;,
+    &quot;Ghost&quot;,
+    &quot;Golgothagrace&quot;,
+    &quot;Gripping&quot;,
+    &quot;Grookbubble&quot;,
+    &quot;Groundwatch&quot;,
+    &quot;Guidedstrike&quot;,
+    &quot;Harmony&quot;,
+    &quot;Haste&quot;,
+    &quot;Heads&quot;,
+    &quot;Heartsfury&quot;,
+    &quot;Heldbreath&quot;,
+    &quot;Heresy&quot;,
+    &quot;Hiding&quot;,
+    &quot;Hyperfocus&quot;,
+    &quot;Hypersense&quot;,
+    &quot;Hypersight&quot;,
+    &quot;Immunity&quot;,
+    &quot;Incandescence&quot;,
+    &quot;Indomitability&quot;,
+    &quot;Insomnia&quot;,
+    &quot;Inspiration&quot;,
+    &quot;Insufflate&quot;,
+    &quot;Insulation&quot;,
+    &quot;Ironform&quot;,
+    &quot;Ironwill&quot;,
+    &quot;Joints&quot;,
+    &quot;Kaiboost&quot;,
+    &quot;Kaitrance&quot;,
+    &quot;Kola&quot;,
+    &quot;Lament&quot;,
+    &quot;Lay&quot;,
+    &quot;Leechlogograph&quot;,
+    &quot;Levitating&quot;,
+    &quot;Lifebond&quot;,
+    &quot;Lifegiver&quot;,
+    &quot;Lifesteal&quot;,
+    &quot;Lifevision&quot;,
+    &quot;Lipreading&quot;,
+    &quot;Magicresist&quot;,
+    &quot;Maticlegend&quot;,
+    &quot;Megalithtattoo&quot;,
+    &quot;Mentalclarity&quot;,
+    &quot;Mercury&quot;,
+    &quot;Metawake&quot;,
+    &quot;Mindcloak&quot;,
+    &quot;Mindnet&quot;,
+    &quot;Mindseye&quot;,
+    &quot;Mindtelesense&quot;,
+    &quot;Mistral&quot;,
+    &quot;Moontattoo&quot;,
+    &quot;Morph&quot;,
+    &quot;Mosstattoo&quot;,
+    &quot;Mouths&quot;,
+    &quot;Nicatorlegend&quot;,
+    &quot;Nightsight&quot;,
+    &quot;Numbness&quot;,
+    &quot;Oxtattoo&quot;,
+    &quot;Pacing&quot;,
+    &quot;Painshift&quot;,
+    &quot;Panacea&quot;,
+    &quot;Phased&quot;,
+    &quot;Pinchblock&quot;,
+    &quot;Placement&quot;,
+    &quot;Poisonresist&quot;,
+    &quot;Preachblessing&quot;,
+    &quot;Precision&quot;,
+    &quot;Prismatic&quot;,
+    &quot;Projectiles&quot;,
+    &quot;Promosurcoat&quot;,
+    &quot;Psibreakthrough&quot;,
+    &quot;Psicomprehend&quot;,
+    &quot;Psitranscend&quot;,
+    &quot;Psivanish&quot;,
+    &quot;Putrefaction&quot;,
+    &quot;Rebounding&quot;,
+    &quot;Reflections&quot;,
+    &quot;Reflexes&quot;,
+    &quot;Regeneration&quot;,
+    &quot;Resistance&quot;,
+    &quot;Retaliation&quot;,
+    &quot;Retribution&quot;,
+    &quot;Ruin&quot;,
+    &quot;Rupturesight&quot;,
+    &quot;Satiation&quot;,
+    &quot;Scales&quot;,
+    &quot;Scholasticism&quot;,
+    &quot;Scouting&quot;,
+    &quot;Seasonelegend&quot;,
+    &quot;Secondsight&quot;,
+    &quot;Secondskin&quot;,
+    &quot;Selfishness&quot;,
+    &quot;Setweapon&quot;,
+    &quot;Shadowveil&quot;,
+    &quot;Shield&quot;,
+    &quot;Shieldlogograph&quot;,
+    &quot;Shinbinding&quot;,
+    &quot;Shinclarity&quot;,
+    &quot;Shinperfection&quot;,
+    &quot;Shinrejoinder&quot;,
+    &quot;Shintrance&quot;,
+    &quot;Shipwarning&quot;,
+    &quot;Shroud&quot;,
+    &quot;Skysight&quot;,
+    &quot;Skywatch&quot;,
+    &quot;Slippery&quot;,
+    &quot;Softfocusing&quot;,
+    &quot;Songbird&quot;,
+    &quot;Soulcage&quot;,
+    &quot;Speed&quot;,
+    &quot;Spinning&quot;,
+    &quot;Spinningstaff&quot;,
+    &quot;Spiritbonded&quot;,
+    &quot;Spiritwalk&quot;,
+    &quot;Splitmind&quot;,
+    &quot;Standingfirm&quot;,
+    &quot;Starburst&quot;,
+    &quot;Stealth&quot;,
+    &quot;Stonefist&quot;,
+    &quot;Stoneskin&quot;,
+    &quot;Strata&quot;,
+    &quot;Sulphur&quot;,
+    &quot;Susurrating&quot;,
+    &quot;Swiftcurse&quot;,
+    &quot;Sympathy&quot;,
+    &quot;Telesense&quot;,
+    &quot;Temperance&quot;,
+    &quot;Tempest&quot;,
+    &quot;Tentacles&quot;,
+    &quot;Thermalshield&quot;,
+    &quot;Thirdeye&quot;,
+    &quot;Tin&quot;,
+    &quot;Tongues&quot;,
+    &quot;Toughness&quot;,
+    &quot;Treewatch&quot;,
+    &quot;Tremorsense&quot;,
+    &quot;Truestare&quot;,
+    &quot;Tumors&quot;,
+    &quot;Tune&quot;,
+    &quot;Twoartsstance&quot;,
+    &quot;Unbowed&quot;,
+    &quot;Unnamablepresence&quot;,
+    &quot;Vengeance&quot;,
+    &quot;Venomsacks&quot;,
+    &quot;Vigilance&quot;,
+    &quot;Vigour&quot;,
+    &quot;Viridian&quot;,
+    &quot;Vitality&quot;,
+    &quot;Ward&quot;,
+    &quot;Waterwalking&quot;,
+    &quot;Weakvigour&quot;,
+    &quot;Weathering&quot;,
+    &quot;Weaving&quot;,
+    &quot;Wildgrowth&quot;,
+    &quot;Willpowerblessing&quot;,
+    &quot;Wolflegend&quot;,
+    &quot;Xporb&quot;,
   }
   
   --Setting up tracking
@@ -8294,355 +8257,355 @@ end
   --Curing Sets
 
  Legacy.Curing.Prios.legacy = Legacy.Curing.Prios.legacy or {
-        ["Addiction"] = 11,
-    ["Aeon"] = 1,
-    ["Agoraphobia"] = 15,
-    ["Anorexia"] = 2,
-    ["Asthma"] = 5,
-    ["Bound"] = 6,
-    ["Brokenleftarm"] = 8,
-    ["Brokenleftleg"] = 8,
-    ["Brokenrightarm"] = 7,
-    ["Brokenrightleg"] = 7,
-    ["Burning1"] = 18,
-	  ["Burning2"] = 15,
-	  ["Burning3"] = 10,
-	  ["Burning4"] = 8,
-	  ["Burning5"] = 4,
-    ["Calcifiedskull"] = 3,
-    ["Calcifiedtorso"] = 3,
-    ["Claustrophobia"] = 14,
-    ["Clumsiness"] = 7,
-    ["Concussion"] = 11,
-    ["Confusion"] = 8,
-    ["Crackedribs"] = 10,
-    ["Crescendo"]   = 25,
-    ["Crescendo5"]   = 1,
-    ["Crushedthroat"] = 5,
-    ["Daeggerimpale"] = 6,
-    ["Damagedhead"] = 11,
-    ["Damagedleftarm"] = 8,
-    ["Damagedleftleg"] = 7,
-    ["Damagedrightarm"] = 8,
-    ["Damagedrightleg"] = 7,
-    ["Darkshade"] = 8,
-    ["Dazed"] = 20,
-    ["Deadening"] = 15,
-    ["Dementia"] = 16,
-    ["Depression"] = 6,
-    ["Diminished"] = 12,
-    ["Disloyalty"] = 14,
-    ["Disrupted"] = 9,
-    ["Dissonance"] = 14,
-    ["Dizziness"] = 9,
-    ["Earworm"]   = 8,
-    ["Entangled"] = 6,
-    ["Epilepsy"] = 9,
-    ["Fear"] = 20,
-    ["Flushings"] = 7,
-    ["Frozen"] = 6,
-    ["Generosity"] = 20,
-    ["Grievouswounds"] = 3,
-    ["Guilt"] = 3,
-    ["Haemophilia"] = 11,
-    ["Hallucinations"] = 8,
-    ["Healthleech"] = 12,
-    ["Heartseed"] = 3,
-    ["Hellsight"] = 10,
-    ["Horror1"] = 15,
-    ["Horror2"] = 14,
-    ["Horror3"] = 13,
-    ["Horror4"] = 10,
-    ["Horror5"] = 2,
-    ["Hypersomnia"] = 8,
-    ["Hypochondria"] = 5,
-    ["Hypothermia"] = 4,
-    ["Impaled"] = 6,
-    ["Impatience"] = 4,
-    ["Indifference"] = 10,
-    ["Itching"] = 5,
-    ["Justice"] = 15,
-    ["Kkractlebrand"] = 5,
-    ["Laceratedthroat"] = 18,
-    ["Latched"] = 2,
-    ["Lethargy"] = 11,
-    ["Loneliness"] = 15,
-    ["Lovers"] = 1,
-    ["Manaleech"] = 13,
-    ["Mangledhead"] = 9,
-    ["Mangledleftarm"] = 14,
-    ["Mangledleftleg"] = 14,
-    ["Mangledrightarm"] = 14,
-    ["Mangledrightleg"] = 14,
-    ["Masochism"] = 18,
-    ["Mildtrauma"] = 16,
-    ["Mycalium"] = 4,
-    ["Nausea"] = 11,
-    ["Pacified"] = 5,
-    ["Paralysis"] = 2,
-    ["Paranoia"] = 16,
-    ["Parasite"] = 8,
-    ["Peace"] = 5,
-    ["Pressure"] = 5,
-    ["Prone"] = 9,
-    ["Pyramides"] = 4,
-    ["Pyre1"] = 15,
-	  ["Pyre2"] = 12,
-	  ["Pyre3"] = 10,
-    ["Rebbies"] = 7,
-    ["Recklessness"] = 12,
-    ["Retribution"] = 6,
-    ["Sandfever"] = 9,
-    ["Scytherus"] = 5,
-    ["Selarnia"] = 19,
-    ["Sensitivity"] = 6,
-    ["Serioustrauma"] = 16,
-    ["Shadowmadness"] = 5,
-    ["Shivering"] = 12,
-    ["Shyness"] = 14,
-    ["Skullfractures"] = 3,
-    ["Slashedthroat"] = 18,
-    ["Sleeping"] = 1,
-    ["Slickness"] = 10,
-    ["Spiritburn"] = 11,
-    ["Stupidity"] = 9,
-    ["Stuttering"] = 18,
-    ["Temperedcholeric"] = 13,
-    ["Temperedmelancholic"] = 13,
-    ["Temperedphlegmatic"] = 13,
-    ["Temperedsanguine"] = 13,
-    ["Tenderskin"] = 11,
-    ["Tension"] = 4,
-    ["Timeloop"] = 3,
-    ["Tonguetied"] = 8,
-    ["Torntendons"] = 5,
-    ["Transfixation"] = 6,
-    ["Unweavingbody1"] = 7,
-    ["Unweavingbody2"] = 6,
-    ["Unweavingbody3"] = 5,
-    ["Unweavingbody4"] = 4,
-    ["Unweavingbody5"] = 2,
-    ["Unweavingmind1"] = 7,
-    ["Unweavingmind2"] = 6,
-    ["Unweavingmind3"] = 5,
-    ["Unweavingmind4"] = 4,
-    ["Unweavingmind5"] = 2,
-    ["Unweavingspirit1"] = 7,
-    ["Unweavingspirit2"] = 6,
-    ["Unweavingspirit3"] = 5,
-    ["Unweavingspirit4"] = 4,
-    ["Unweavingspirit5"] = 2,
-    ["Vertigo"] = 15,
-    ["Voyria"] = 9,
-    ["Weariness"] = 6,
-    ["Webbed"] = 6,
-    ["Whisperingmadness"] = 11,
-    ["Wristfractures"] = 10,
+        [&quot;Addiction&quot;] = 11,
+    [&quot;Aeon&quot;] = 1,
+    [&quot;Agoraphobia&quot;] = 15,
+    [&quot;Anorexia&quot;] = 2,
+    [&quot;Asthma&quot;] = 5,
+    [&quot;Bound&quot;] = 6,
+    [&quot;Brokenleftarm&quot;] = 8,
+    [&quot;Brokenleftleg&quot;] = 8,
+    [&quot;Brokenrightarm&quot;] = 7,
+    [&quot;Brokenrightleg&quot;] = 7,
+    [&quot;Burning1&quot;] = 18,
+	  [&quot;Burning2&quot;] = 15,
+	  [&quot;Burning3&quot;] = 10,
+	  [&quot;Burning4&quot;] = 8,
+	  [&quot;Burning5&quot;] = 4,
+    [&quot;Calcifiedskull&quot;] = 3,
+    [&quot;Calcifiedtorso&quot;] = 3,
+    [&quot;Claustrophobia&quot;] = 14,
+    [&quot;Clumsiness&quot;] = 7,
+    [&quot;Concussion&quot;] = 11,
+    [&quot;Confusion&quot;] = 8,
+    [&quot;Crackedribs&quot;] = 10,
+    [&quot;Crescendo&quot;]   = 25,
+    [&quot;Crescendo5&quot;]   = 1,
+    [&quot;Crushedthroat&quot;] = 5,
+    [&quot;Daeggerimpale&quot;] = 6,
+    [&quot;Damagedhead&quot;] = 11,
+    [&quot;Damagedleftarm&quot;] = 8,
+    [&quot;Damagedleftleg&quot;] = 7,
+    [&quot;Damagedrightarm&quot;] = 8,
+    [&quot;Damagedrightleg&quot;] = 7,
+    [&quot;Darkshade&quot;] = 8,
+    [&quot;Dazed&quot;] = 20,
+    [&quot;Deadening&quot;] = 15,
+    [&quot;Dementia&quot;] = 16,
+    [&quot;Depression&quot;] = 6,
+    [&quot;Diminished&quot;] = 12,
+    [&quot;Disloyalty&quot;] = 14,
+    [&quot;Disrupted&quot;] = 9,
+    [&quot;Dissonance&quot;] = 14,
+    [&quot;Dizziness&quot;] = 9,
+    [&quot;Earworm&quot;]   = 8,
+    [&quot;Entangled&quot;] = 6,
+    [&quot;Epilepsy&quot;] = 9,
+    [&quot;Fear&quot;] = 20,
+    [&quot;Flushings&quot;] = 7,
+    [&quot;Frozen&quot;] = 6,
+    [&quot;Generosity&quot;] = 20,
+    [&quot;Grievouswounds&quot;] = 3,
+    [&quot;Guilt&quot;] = 3,
+    [&quot;Haemophilia&quot;] = 11,
+    [&quot;Hallucinations&quot;] = 8,
+    [&quot;Healthleech&quot;] = 12,
+    [&quot;Heartseed&quot;] = 3,
+    [&quot;Hellsight&quot;] = 10,
+    [&quot;Horror1&quot;] = 15,
+    [&quot;Horror2&quot;] = 14,
+    [&quot;Horror3&quot;] = 13,
+    [&quot;Horror4&quot;] = 10,
+    [&quot;Horror5&quot;] = 2,
+    [&quot;Hypersomnia&quot;] = 8,
+    [&quot;Hypochondria&quot;] = 5,
+    [&quot;Hypothermia&quot;] = 4,
+    [&quot;Impaled&quot;] = 6,
+    [&quot;Impatience&quot;] = 4,
+    [&quot;Indifference&quot;] = 10,
+    [&quot;Itching&quot;] = 5,
+    [&quot;Justice&quot;] = 15,
+    [&quot;Kkractlebrand&quot;] = 5,
+    [&quot;Laceratedthroat&quot;] = 18,
+    [&quot;Latched&quot;] = 2,
+    [&quot;Lethargy&quot;] = 11,
+    [&quot;Loneliness&quot;] = 15,
+    [&quot;Lovers&quot;] = 1,
+    [&quot;Manaleech&quot;] = 13,
+    [&quot;Mangledhead&quot;] = 9,
+    [&quot;Mangledleftarm&quot;] = 14,
+    [&quot;Mangledleftleg&quot;] = 14,
+    [&quot;Mangledrightarm&quot;] = 14,
+    [&quot;Mangledrightleg&quot;] = 14,
+    [&quot;Masochism&quot;] = 18,
+    [&quot;Mildtrauma&quot;] = 16,
+    [&quot;Mycalium&quot;] = 4,
+    [&quot;Nausea&quot;] = 11,
+    [&quot;Pacified&quot;] = 5,
+    [&quot;Paralysis&quot;] = 2,
+    [&quot;Paranoia&quot;] = 16,
+    [&quot;Parasite&quot;] = 8,
+    [&quot;Peace&quot;] = 5,
+    [&quot;Pressure&quot;] = 5,
+    [&quot;Prone&quot;] = 9,
+    [&quot;Pyramides&quot;] = 4,
+    [&quot;Pyre1&quot;] = 15,
+	  [&quot;Pyre2&quot;] = 12,
+	  [&quot;Pyre3&quot;] = 10,
+    [&quot;Rebbies&quot;] = 7,
+    [&quot;Recklessness&quot;] = 12,
+    [&quot;Retribution&quot;] = 6,
+    [&quot;Sandfever&quot;] = 9,
+    [&quot;Scytherus&quot;] = 5,
+    [&quot;Selarnia&quot;] = 19,
+    [&quot;Sensitivity&quot;] = 6,
+    [&quot;Serioustrauma&quot;] = 16,
+    [&quot;Shadowmadness&quot;] = 5,
+    [&quot;Shivering&quot;] = 12,
+    [&quot;Shyness&quot;] = 14,
+    [&quot;Skullfractures&quot;] = 3,
+    [&quot;Slashedthroat&quot;] = 18,
+    [&quot;Sleeping&quot;] = 1,
+    [&quot;Slickness&quot;] = 10,
+    [&quot;Spiritburn&quot;] = 11,
+    [&quot;Stupidity&quot;] = 9,
+    [&quot;Stuttering&quot;] = 18,
+    [&quot;Temperedcholeric&quot;] = 13,
+    [&quot;Temperedmelancholic&quot;] = 13,
+    [&quot;Temperedphlegmatic&quot;] = 13,
+    [&quot;Temperedsanguine&quot;] = 13,
+    [&quot;Tenderskin&quot;] = 11,
+    [&quot;Tension&quot;] = 4,
+    [&quot;Timeloop&quot;] = 3,
+    [&quot;Tonguetied&quot;] = 8,
+    [&quot;Torntendons&quot;] = 5,
+    [&quot;Transfixation&quot;] = 6,
+    [&quot;Unweavingbody1&quot;] = 7,
+    [&quot;Unweavingbody2&quot;] = 6,
+    [&quot;Unweavingbody3&quot;] = 5,
+    [&quot;Unweavingbody4&quot;] = 4,
+    [&quot;Unweavingbody5&quot;] = 2,
+    [&quot;Unweavingmind1&quot;] = 7,
+    [&quot;Unweavingmind2&quot;] = 6,
+    [&quot;Unweavingmind3&quot;] = 5,
+    [&quot;Unweavingmind4&quot;] = 4,
+    [&quot;Unweavingmind5&quot;] = 2,
+    [&quot;Unweavingspirit1&quot;] = 7,
+    [&quot;Unweavingspirit2&quot;] = 6,
+    [&quot;Unweavingspirit3&quot;] = 5,
+    [&quot;Unweavingspirit4&quot;] = 4,
+    [&quot;Unweavingspirit5&quot;] = 2,
+    [&quot;Vertigo&quot;] = 15,
+    [&quot;Voyria&quot;] = 9,
+    [&quot;Weariness&quot;] = 6,
+    [&quot;Webbed&quot;] = 6,
+    [&quot;Whisperingmadness&quot;] = 11,
+    [&quot;Wristfractures&quot;] = 10,
     }  
     
   Legacy.Curing.Prios.temp = Legacy.Curing.Prios.temp or {
-    ["Addiction"] = 11,
-    ["Aeon"] = 1,
-    ["Agoraphobia"] = 15,
-    ["Anorexia"] = 2,
-    ["Asthma"] = 5,
-    ["Bound"] = 6,
-    ["Brokenleftarm"] = 7,
-    ["Brokenleftleg"] = 7,
-    ["Brokenrightarm"] = 8,
-    ["Brokenrightleg"] = 8,
-    ["Burning1"] = 18,
-	  ["Burning2"] = 15,
-	  ["Burning3"] = 10,
-	  ["Burning4"] = 8,
-	  ["Burning5"] = 4,
-    ["Calcifiedskull"] = 3,
-    ["Calcifiedtorso"] = 3,
-    ["Claustrophobia"] = 14,
-    ["Clumsiness"] = 7,
-    ["Concussion"] = 11,
-    ["Confusion"] = 8,
-    ["Crackedribs"] = 10,
-    ["Crushedthroat"] = 5,
-    ["Daeggerimpale"] = 6,
-    ["Damagedhead"] = 11,
-    ["Damagedleftarm"] = 7,
-    ["Damagedleftleg"] = 7,
-    ["Damagedrightarm"] = 7,
-    ["Damagedrightleg"] = 7,
-    ["Darkshade"] = 8,
-    ["Dazed"] = 20,
-    ["Deadening"] = 15,
-    ["Dementia"] = 16,
-    ["Depression"] = 6,
-    ["Disloyalty"] = 14,
-    ["Disrupted"] = 9,
-    ["Dissonance"] = 14,
-    ["Dizziness"] = 9,
-    ["Entangled"] = 6,
-    ["Epilepsy"] = 9,
-    ["Fear"] = 20,
-    ["Flushings"] = 7,
-    ["Frozen"] = 6,
-    ["Generosity"] = 20,
-    ["Grievouswounds"] = 3,
-    ["Guilt"] = 3,
-    ["Haemophilia"] = 11,
-    ["Hallucinations"] = 8,
-    ["Healthleech"] = 12,
-    ["Heartseed"] = 3,
-    ["Hellsight"] = 10,
-    ["Horror1"] = 15,
-    ["Horror2"] = 14,
-    ["Horror3"] = 13,
-    ["Horror4"] = 10,
-    ["Horror5"] = 2,
-    ["Hypersomnia"] = 8,
-    ["Hypochondria"] = 5,
-    ["Hypothermia"] = 4,
-    ["Impaled"] = 6,
-    ["Impatience"] = 4,
-    ["Indifference"] = 10,
-    ["Itching"] = 5,
-    ["Justice"] = 15,
-    ["Kkractlebrand"] = 5,
-    ["Laceratedthroat"] = 18,
-    ["Latched"] = 2,
-    ["Lethargy"] = 11,
-    ["Loneliness"] = 15,
-    ["Lovers"] = 1,
-    ["Manaleech"] = 13,
-    ["Mangledhead"] = 9,
-    ["Mangledleftarm"] = 14,
-    ["Mangledleftleg"] = 14,
-    ["Mangledrightarm"] = 14,
-    ["Mangledrightleg"] = 14,
-    ["Masochism"] = 18,
-    ["Mildtrauma"] = 16,
-    ["Mycalium"] = 4,
-    ["Nausea"] = 11,
-    ["Pacified"] = 5,
-    ["Paralysis"] = 2,
-    ["Paranoia"] = 16,
-    ["Parasite"] = 8,
-    ["Peace"] = 5,
-    ["Pressure"] = 5,
-    ["Prone"] = 9,
-    ["Pyramides"] = 4,
-    ["Pyre1"] = 15,
-	  ["Pyre2"] = 12,
-	  ["Pyre3"] = 10,
-    ["Rebbies"] = 7,
-    ["Recklessness"] = 12,
-    ["Retribution"] = 6,
-    ["Sandfever"] = 9,
-    ["Scytherus"] = 5,
-    ["Selarnia"] = 19,
-    ["Sensitivity"] = 6,
-    ["Serioustrauma"] = 16,
-    ["Shadowmadness"] = 5,
-    ["Shivering"] = 12,
-    ["Shyness"] = 14,
-    ["Skullfractures"] = 3,
-    ["Slashedthroat"] = 18,
-    ["Sleeping"] = 1,
-    ["Slickness"] = 10,
-    ["Spiritburn"] = 11,
-    ["Stupidity"] = 9,
-    ["Stuttering"] = 18,
-    ["Temperedcholeric"] = 13,
-    ["Temperedmelancholic"] = 13,
-    ["Temperedphlegmatic"] = 13,
-    ["Temperedsanguine"] = 13,
-    ["Tenderskin"] = 11,
-    ["Tension"] = 4,
-    ["Timeloop"] = 3,
-    ["Tonguetied"] = 8,
-    ["Torntendons"] = 5,
-    ["Transfixation"] = 6,
-    ["Unweavingbody1"] = 7,
-    ["Unweavingbody2"] = 6,
-    ["Unweavingbody3"] = 5,
-    ["Unweavingbody4"] = 4,
-    ["Unweavingbody5"] = 2,
-    ["Unweavingmind1"] = 7,
-    ["Unweavingmind2"] = 6,
-    ["Unweavingmind3"] = 5,
-    ["Unweavingmind4"] = 4,
-    ["Unweavingmind5"] = 2,
-    ["Unweavingspirit1"] = 7,
-    ["Unweavingspirit2"] = 6,
-    ["Unweavingspirit3"] = 5,
-    ["Unweavingspirit4"] = 4,
-    ["Unweavingspirit5"] = 2,
-    ["Vertigo"] = 15,
-    ["Voyria"] = 9,
-    ["Weariness"] = 6,
-    ["Webbed"] = 6,
-    ["Whisperingmadness"] = 11,
-    ["Wristfractures"] = 10,
+    [&quot;Addiction&quot;] = 11,
+    [&quot;Aeon&quot;] = 1,
+    [&quot;Agoraphobia&quot;] = 15,
+    [&quot;Anorexia&quot;] = 2,
+    [&quot;Asthma&quot;] = 5,
+    [&quot;Bound&quot;] = 6,
+    [&quot;Brokenleftarm&quot;] = 7,
+    [&quot;Brokenleftleg&quot;] = 7,
+    [&quot;Brokenrightarm&quot;] = 8,
+    [&quot;Brokenrightleg&quot;] = 8,
+    [&quot;Burning1&quot;] = 18,
+	  [&quot;Burning2&quot;] = 15,
+	  [&quot;Burning3&quot;] = 10,
+	  [&quot;Burning4&quot;] = 8,
+	  [&quot;Burning5&quot;] = 4,
+    [&quot;Calcifiedskull&quot;] = 3,
+    [&quot;Calcifiedtorso&quot;] = 3,
+    [&quot;Claustrophobia&quot;] = 14,
+    [&quot;Clumsiness&quot;] = 7,
+    [&quot;Concussion&quot;] = 11,
+    [&quot;Confusion&quot;] = 8,
+    [&quot;Crackedribs&quot;] = 10,
+    [&quot;Crushedthroat&quot;] = 5,
+    [&quot;Daeggerimpale&quot;] = 6,
+    [&quot;Damagedhead&quot;] = 11,
+    [&quot;Damagedleftarm&quot;] = 7,
+    [&quot;Damagedleftleg&quot;] = 7,
+    [&quot;Damagedrightarm&quot;] = 7,
+    [&quot;Damagedrightleg&quot;] = 7,
+    [&quot;Darkshade&quot;] = 8,
+    [&quot;Dazed&quot;] = 20,
+    [&quot;Deadening&quot;] = 15,
+    [&quot;Dementia&quot;] = 16,
+    [&quot;Depression&quot;] = 6,
+    [&quot;Disloyalty&quot;] = 14,
+    [&quot;Disrupted&quot;] = 9,
+    [&quot;Dissonance&quot;] = 14,
+    [&quot;Dizziness&quot;] = 9,
+    [&quot;Entangled&quot;] = 6,
+    [&quot;Epilepsy&quot;] = 9,
+    [&quot;Fear&quot;] = 20,
+    [&quot;Flushings&quot;] = 7,
+    [&quot;Frozen&quot;] = 6,
+    [&quot;Generosity&quot;] = 20,
+    [&quot;Grievouswounds&quot;] = 3,
+    [&quot;Guilt&quot;] = 3,
+    [&quot;Haemophilia&quot;] = 11,
+    [&quot;Hallucinations&quot;] = 8,
+    [&quot;Healthleech&quot;] = 12,
+    [&quot;Heartseed&quot;] = 3,
+    [&quot;Hellsight&quot;] = 10,
+    [&quot;Horror1&quot;] = 15,
+    [&quot;Horror2&quot;] = 14,
+    [&quot;Horror3&quot;] = 13,
+    [&quot;Horror4&quot;] = 10,
+    [&quot;Horror5&quot;] = 2,
+    [&quot;Hypersomnia&quot;] = 8,
+    [&quot;Hypochondria&quot;] = 5,
+    [&quot;Hypothermia&quot;] = 4,
+    [&quot;Impaled&quot;] = 6,
+    [&quot;Impatience&quot;] = 4,
+    [&quot;Indifference&quot;] = 10,
+    [&quot;Itching&quot;] = 5,
+    [&quot;Justice&quot;] = 15,
+    [&quot;Kkractlebrand&quot;] = 5,
+    [&quot;Laceratedthroat&quot;] = 18,
+    [&quot;Latched&quot;] = 2,
+    [&quot;Lethargy&quot;] = 11,
+    [&quot;Loneliness&quot;] = 15,
+    [&quot;Lovers&quot;] = 1,
+    [&quot;Manaleech&quot;] = 13,
+    [&quot;Mangledhead&quot;] = 9,
+    [&quot;Mangledleftarm&quot;] = 14,
+    [&quot;Mangledleftleg&quot;] = 14,
+    [&quot;Mangledrightarm&quot;] = 14,
+    [&quot;Mangledrightleg&quot;] = 14,
+    [&quot;Masochism&quot;] = 18,
+    [&quot;Mildtrauma&quot;] = 16,
+    [&quot;Mycalium&quot;] = 4,
+    [&quot;Nausea&quot;] = 11,
+    [&quot;Pacified&quot;] = 5,
+    [&quot;Paralysis&quot;] = 2,
+    [&quot;Paranoia&quot;] = 16,
+    [&quot;Parasite&quot;] = 8,
+    [&quot;Peace&quot;] = 5,
+    [&quot;Pressure&quot;] = 5,
+    [&quot;Prone&quot;] = 9,
+    [&quot;Pyramides&quot;] = 4,
+    [&quot;Pyre1&quot;] = 15,
+	  [&quot;Pyre2&quot;] = 12,
+	  [&quot;Pyre3&quot;] = 10,
+    [&quot;Rebbies&quot;] = 7,
+    [&quot;Recklessness&quot;] = 12,
+    [&quot;Retribution&quot;] = 6,
+    [&quot;Sandfever&quot;] = 9,
+    [&quot;Scytherus&quot;] = 5,
+    [&quot;Selarnia&quot;] = 19,
+    [&quot;Sensitivity&quot;] = 6,
+    [&quot;Serioustrauma&quot;] = 16,
+    [&quot;Shadowmadness&quot;] = 5,
+    [&quot;Shivering&quot;] = 12,
+    [&quot;Shyness&quot;] = 14,
+    [&quot;Skullfractures&quot;] = 3,
+    [&quot;Slashedthroat&quot;] = 18,
+    [&quot;Sleeping&quot;] = 1,
+    [&quot;Slickness&quot;] = 10,
+    [&quot;Spiritburn&quot;] = 11,
+    [&quot;Stupidity&quot;] = 9,
+    [&quot;Stuttering&quot;] = 18,
+    [&quot;Temperedcholeric&quot;] = 13,
+    [&quot;Temperedmelancholic&quot;] = 13,
+    [&quot;Temperedphlegmatic&quot;] = 13,
+    [&quot;Temperedsanguine&quot;] = 13,
+    [&quot;Tenderskin&quot;] = 11,
+    [&quot;Tension&quot;] = 4,
+    [&quot;Timeloop&quot;] = 3,
+    [&quot;Tonguetied&quot;] = 8,
+    [&quot;Torntendons&quot;] = 5,
+    [&quot;Transfixation&quot;] = 6,
+    [&quot;Unweavingbody1&quot;] = 7,
+    [&quot;Unweavingbody2&quot;] = 6,
+    [&quot;Unweavingbody3&quot;] = 5,
+    [&quot;Unweavingbody4&quot;] = 4,
+    [&quot;Unweavingbody5&quot;] = 2,
+    [&quot;Unweavingmind1&quot;] = 7,
+    [&quot;Unweavingmind2&quot;] = 6,
+    [&quot;Unweavingmind3&quot;] = 5,
+    [&quot;Unweavingmind4&quot;] = 4,
+    [&quot;Unweavingmind5&quot;] = 2,
+    [&quot;Unweavingspirit1&quot;] = 7,
+    [&quot;Unweavingspirit2&quot;] = 6,
+    [&quot;Unweavingspirit3&quot;] = 5,
+    [&quot;Unweavingspirit4&quot;] = 4,
+    [&quot;Unweavingspirit5&quot;] = 2,
+    [&quot;Vertigo&quot;] = 15,
+    [&quot;Voyria&quot;] = 9,
+    [&quot;Weariness&quot;] = 6,
+    [&quot;Webbed&quot;] = 6,
+    [&quot;Whisperingmadness&quot;] = 11,
+    [&quot;Wristfractures&quot;] = 10,
       }
   
   
   Legacy.Curing.Prios.nonCures = {
-    Airfisted = "reset",
-    Asphyxiating = "reset",
-    Blackout = "reset",
-    Blindness = "reset",
-    Blistered = "reset",
-    Bruisedribs = "reset",
-    Coldfate = "reset",
-    Condemned = "reset",
-    Constricted = "reset",
-    Corruption = "reset",
-    Cremated = "reset",
-    Dazzled = "reset",
-    Deafness = "reset",
-    Deathsickness = "reset",
-    Degenerate = "reset",
-    Dehydrated = "reset",
-    Demonstain = "reset",
-    Deteriorate = "reset",
-    Empoweredloshre = "reset",
-    Empoweredmannaz = "reset",
-    Enmesh = "reset",
-    Ensorcelled = "reset",
-    Flamefisted = "reset",
-    Hamstrung = "reset",
-    Hatred = "reset",
-    Hecatecurse = "reset",
-    Hindered = "reset",
-    Homunculusmercury = "reset",
-    Icefisted = "reset",
-    Inquisition = "reset",
-    Insomnia = "reset",
-    Internalbleeding = "reset",
-    Kaisurge = "reset",
-    Lapsingconsciousness = "reset",
-    Lightbind = "reset",
-    Mindravaged = "reset",
-    Muddled = "reset",
-    Numbedleftarm = "reset",
-    Numbedrightarm = "reset",
-    Palpatarfeed = "reset",
-    Petrified = "reset",
-    Phlogisticated = "reset",
-    Pinshot = "reset",
-    Revealed = "reset",
-    Scalded = "reset",
-    Scrambledbrains = "reset",
-    Silenced = "reset",
-    Silver = "reset",
-    Slimeobscure = "reset",
-    Solarburn = "reset",
-    Timeflux = "reset",
-    Trueblind = "reset",
-    Unconsciousness = "reset",
-    Vinewreathed = "reset",
-    Vitiated = "reset",
-    Vitrified = "reset",
-    Voidfisted = "reset",
-    Waterbonds = "reset"
+    Airfisted = &quot;reset&quot;,
+    Asphyxiating = &quot;reset&quot;,
+    Blackout = &quot;reset&quot;,
+    Blindness = &quot;reset&quot;,
+    Blistered = &quot;reset&quot;,
+    Bruisedribs = &quot;reset&quot;,
+    Coldfate = &quot;reset&quot;,
+    Condemned = &quot;reset&quot;,
+    Constricted = &quot;reset&quot;,
+    Corruption = &quot;reset&quot;,
+    Cremated = &quot;reset&quot;,
+    Dazzled = &quot;reset&quot;,
+    Deafness = &quot;reset&quot;,
+    Deathsickness = &quot;reset&quot;,
+    Degenerate = &quot;reset&quot;,
+    Dehydrated = &quot;reset&quot;,
+    Demonstain = &quot;reset&quot;,
+    Deteriorate = &quot;reset&quot;,
+    Empoweredloshre = &quot;reset&quot;,
+    Empoweredmannaz = &quot;reset&quot;,
+    Enmesh = &quot;reset&quot;,
+    Ensorcelled = &quot;reset&quot;,
+    Flamefisted = &quot;reset&quot;,
+    Hamstrung = &quot;reset&quot;,
+    Hatred = &quot;reset&quot;,
+    Hecatecurse = &quot;reset&quot;,
+    Hindered = &quot;reset&quot;,
+    Homunculusmercury = &quot;reset&quot;,
+    Icefisted = &quot;reset&quot;,
+    Inquisition = &quot;reset&quot;,
+    Insomnia = &quot;reset&quot;,
+    Internalbleeding = &quot;reset&quot;,
+    Kaisurge = &quot;reset&quot;,
+    Lapsingconsciousness = &quot;reset&quot;,
+    Lightbind = &quot;reset&quot;,
+    Mindravaged = &quot;reset&quot;,
+    Muddled = &quot;reset&quot;,
+    Numbedleftarm = &quot;reset&quot;,
+    Numbedrightarm = &quot;reset&quot;,
+    Palpatarfeed = &quot;reset&quot;,
+    Petrified = &quot;reset&quot;,
+    Phlogisticated = &quot;reset&quot;,
+    Pinshot = &quot;reset&quot;,
+    Revealed = &quot;reset&quot;,
+    Scalded = &quot;reset&quot;,
+    Scrambledbrains = &quot;reset&quot;,
+    Silenced = &quot;reset&quot;,
+    Silver = &quot;reset&quot;,
+    Slimeobscure = &quot;reset&quot;,
+    Solarburn = &quot;reset&quot;,
+    Timeflux = &quot;reset&quot;,
+    Trueblind = &quot;reset&quot;,
+    Unconsciousness = &quot;reset&quot;,
+    Vinewreathed = &quot;reset&quot;,
+    Vitiated = &quot;reset&quot;,
+    Vitrified = &quot;reset&quot;,
+    Voidfisted = &quot;reset&quot;,
+    Waterbonds = &quot;reset&quot;
 }    
 
     Legacy.Curing.Lust = Legacy.Curing.Lust or {}
@@ -8667,13 +8630,13 @@ function Legacy.NDB.qwc()
 
   city_online = {}
   local Config = Legacy.Settings.NDB.Config
-  local tmp_city = ''
+  local tmp_city = &apos;&apos;
   
   for k,v in pairs(Legacy.NDB.db) do
     if table.contains(Legacy.NDB.awake, k) then
       tmp_city = v.city
-      if tmp_city == '(none)' then
-        tmp_city = "Rogue"
+      if tmp_city == &apos;(none)&apos; then
+        tmp_city = &quot;Rogue&quot;
       end
       if not city_online[tmp_city] then
         city_online[tmp_city] = {}
@@ -8682,7 +8645,7 @@ function Legacy.NDB.qwc()
     end
   end
 
---cecho("\n&lt;ansiYellow&gt;-------------------------------------------------------------------------------------------------------------------------------------")
+--cecho(&quot;\n&lt;ansiYellow&gt;-------------------------------------------------------------------------------------------------------------------------------------&quot;)
   -- Store cities and their sizes
 local city_list = {}
 for k, v in pairs(city_online) do
@@ -8706,23 +8669,23 @@ for _, city in ipairs(city_list) do
 
   -- Print the city name with color
   if Legacy.Settings.NDB.Config[city.name:lower()] then
-    if city.name == "Ashtan" or city.name == "Hashan" or city.name == "Cyrene" then
-      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;   "..city.name..": &lt;grey&gt;\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\) ")
-    elseif city.name == "Mhaldor" or city.name == "Eleusis" then
-      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;  "..city.name..": &lt;grey&gt;\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\) ")
-    elseif city.name == "Targossas" then
-      cecho("\n&lt;"..Legacy.Settings.NDB.Config[city.name:lower()].color.."&gt;"..city.name..": &lt;grey&gt;\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\) ")
+    if city.name == &quot;Ashtan&quot; or city.name == &quot;Hashan&quot; or city.name == &quot;Cyrene&quot; then
+      cecho(&quot;\n&lt;&quot;..Legacy.Settings.NDB.Config[city.name:lower()].color..&quot;&gt;   &quot;..city.name..&quot;: &lt;grey&gt;(&lt;white&gt;&quot;..#city.players..&quot;&lt;grey&gt;) &quot;)
+    elseif city.name == &quot;Mhaldor&quot; or city.name == &quot;Eleusis&quot; then
+      cecho(&quot;\n&lt;&quot;..Legacy.Settings.NDB.Config[city.name:lower()].color..&quot;&gt;  &quot;..city.name..&quot;: &lt;grey&gt;(&lt;white&gt;&quot;..#city.players..&quot;&lt;grey&gt;) &quot;)
+    elseif city.name == &quot;Targossas&quot; then
+      cecho(&quot;\n&lt;&quot;..Legacy.Settings.NDB.Config[city.name:lower()].color..&quot;&gt;&quot;..city.name..&quot;: &lt;grey&gt;(&lt;white&gt;&quot;..#city.players..&quot;&lt;grey&gt;) &quot;)
     end
   else
-    cecho("\n&lt;"..Legacy.Settings.NDB.Config["(none)"].color.."&gt;    "..city.name..": &lt;grey&gt;\(&lt;white&gt;"..#city.players.."&lt;grey&gt;\) ")
+    cecho(&quot;\n&lt;&quot;..Legacy.Settings.NDB.Config[&quot;(none)&quot;].color..&quot;&gt;    &quot;..city.name..&quot;: &lt;grey&gt;(&lt;white&gt;&quot;..#city.players..&quot;&lt;grey&gt;) &quot;)
   end
 
   -- Print sorted names with their colors
   for _, player in ipairs(city.players) do
-    cecho(""..Legacy.NDB.color(player)..player.." ")
+    cecho(&quot;&quot;..Legacy.NDB.color(player)..player..&quot; &quot;)
   end
 end
---cecho("\n&lt;ansiYellow&gt;-------------------------------------------------------------------------------------------------------------------------------------")
+--cecho(&quot;\n&lt;ansiYellow&gt;-------------------------------------------------------------------------------------------------------------------------------------&quot;)
 
 end
   
@@ -8730,19 +8693,19 @@ function Legacy.Curing.preDraw()
 if Legacy then
 if Legacy.Settings.Curing.precache == true and (leaving == false or leaving == nil) then
   if Legacy.Settings.Curing.SS.Settings.fallback == true then
-  local cache = {"kelp", "bloodroot", "ginseng", "goldenseal", "aurum", "magnesium", "ferrum", "plumbum"}
+  local cache = {&quot;kelp&quot;, &quot;bloodroot&quot;, &quot;ginseng&quot;, &quot;goldenseal&quot;, &quot;aurum&quot;, &quot;magnesium&quot;, &quot;ferrum&quot;, &quot;plumbum&quot;}
     for _,v in pairs(cache) do
-      send("outr 5 "..v)
+      send(&quot;outr 5 &quot;..v)
     end  
-  elseif Legacy.Settings.Curing.SS.Settings.method == "Concoctions" then
-    local cache = {"kelp", "bloodroot", "ginseng", "goldenseal"}
+  elseif Legacy.Settings.Curing.SS.Settings.method == &quot;Concoctions&quot; then
+    local cache = {&quot;kelp&quot;, &quot;bloodroot&quot;, &quot;ginseng&quot;, &quot;goldenseal&quot;}
     for _,v in pairs(cache) do
-      send("outr 5 "..v)
+      send(&quot;outr 5 &quot;..v)
     end
-  elseif Legacy.Settings.Curing.SS.Settings.method == "Transmutation" then
-    local cache = {"aurum", "magnesium", "ferrum", "plumbum"}
+  elseif Legacy.Settings.Curing.SS.Settings.method == &quot;Transmutation&quot; then
+    local cache = {&quot;aurum&quot;, &quot;magnesium&quot;, &quot;ferrum&quot;, &quot;plumbum&quot;}
     for _,v in pairs(cache) do
-      send("outr 5 "..v)
+      send(&quot;outr 5 &quot;..v)
     end
   end
 end
@@ -8754,8 +8717,8 @@ end
   
   --Extra Stuff
   function Legacy.colorFix(color)
-    if color == nil then color = "red" end
-    local fixedcolor = "anis_white"
+    if color == nil then color = &quot;red&quot; end
+    local fixedcolor = &quot;anis_white&quot;
     if table.contains(_G.color_table, color) then
       return color
     else
@@ -8781,9 +8744,9 @@ end
   end
   -- Reimports restore settings separately from the exported trigger state.
   if Legacy.Settings.usePrompt then
-    enableTrigger("Legacy Prompt")
+    enableTrigger(&quot;Legacy Prompt&quot;)
   else
-    disableTrigger("Legacy Prompt")
+    disableTrigger(&quot;Legacy Prompt&quot;)
   end
   Legacy.Settings.Curing = Legacy.Settings.Curing or {}
   Legacy.Settings.Curing.SS = Legacy.Settings.Curing.SS or {}
@@ -8826,71 +8789,71 @@ end
   
   --NDB
   Legacy.Settings.NDB.tempHL = {}
-  Legacy.Settings.NDB.cityList = {"Targossas", "Hashan", "Cyrene", "Mhaldor", "Eleusis", "Ashtan", "Underworld", "(none)"}
+  Legacy.Settings.NDB.cityList = {&quot;Targossas&quot;, &quot;Hashan&quot;, &quot;Cyrene&quot;, &quot;Mhaldor&quot;, &quot;Eleusis&quot;, &quot;Ashtan&quot;, &quot;Underworld&quot;, &quot;(none)&quot;}
   Legacy.Settings.NDB.Config = Legacy.Settings.NDB.Config or {
-    ["ashtan"] = {
-      color = "purple",
+    [&quot;ashtan&quot;] = {
+      color = &quot;purple&quot;,
       bold = false,
       underline = false,
       italics = false
     },
-    ["cyrene"] = {
-      color = "cornflower_blue",
+    [&quot;cyrene&quot;] = {
+      color = &quot;cornflower_blue&quot;,
       bold = false,
       underline = false,
       italics = false
     },
-    ["eleusis"] = {
-      color = "forest_green",
+    [&quot;eleusis&quot;] = {
+      color = &quot;forest_green&quot;,
       bold = false,
       underline = false,
       italics = false    
     },
-    ["hashan"] = {
-      color = "yellow",
+    [&quot;hashan&quot;] = {
+      color = &quot;yellow&quot;,
       bold = false,
       underline = false,
       italics = false    
     },
-    ["mhaldor"] = {
-      color = "red",
+    [&quot;mhaldor&quot;] = {
+      color = &quot;red&quot;,
       bold = false,
       underline = false,
       italics = false    
     },
-    ["targossas"] = {
-      color = "white",
+    [&quot;targossas&quot;] = {
+      color = &quot;white&quot;,
       bold = false,
       underline = false,
       italics = false    
     },
     
-    ["(none)"] = {
-      color = "orange",
+    [&quot;(none)&quot;] = {
+      color = &quot;orange&quot;,
       bold = false,
       underline = false,
       italics = false    
     },
-    ["divine"] = {
-      color = "pink",
+    [&quot;divine&quot;] = {
+      color = &quot;pink&quot;,
       bold = true,
       underline = false,
       italics = true    
     },
-    ["(hidden)"] = {
-      color = "green",
+    [&quot;(hidden)&quot;] = {
+      color = &quot;green&quot;,
       bold = true,
       underline = false,
       italics = true    
     },
-    ["enemies"] = {
+    [&quot;enemies&quot;] = {
       bold = false,
-      color = "",
+      color = &quot;&quot;,
       underline = true,
       italics = true    
     },
-    ["underworld"] = {
-      color = "DimGrey",
+    [&quot;underworld&quot;] = {
+      color = &quot;DimGrey&quot;,
       bold = true,
       underline = false,
       italics = true    
@@ -8898,80 +8861,30 @@ end
   }
   
   
-  function Legacy.Ideas(msg)
-
-  if #msg &gt;= 200 then
-    fixedmsg = "```"..msg.."```"
-  else
-    fixedmsg = "``"..msg.."``"
-  end
-
-  local httpdone = registerAnonymousEventHandler('sysPostHttpDone', 
-    function(event, rurl, response)
-      if rurl == url then display(r) else return true end
-    end, true)
-
-  local httperror = registerAnonymousEventHandler('sysPostHttpError', 
-    function(event, response, rurl)
-      if rurl == url then display(r) else return true end
-    end, true)
-   
-  
-  
-  local url1 = "https://discord.com/api/webhooks/1342714265005588552/"
-  local url2 = "1wisXVim1xszRvB0nI_Pd-tL7VGnf-SKtUFwn_iEAnXAYbA0_XjKQPheEcB6TxqSEZTn"
-  local url  = url1..url2
-  local data = {
-    username = "Ideas",    
-    content  = fixedmsg
-  }
-  local header = {
-    ["Content-Type"] = "application/json",
-    --["Content-Length"] = data:len()
-  }  
-  postHTTP(yajl.to_string(data), url, header)
-  
-    local url1 = "https://discord.com/api/webhooks/1342715019057561721"
-    local url2 = "/QFmXgbcmD-VmCLJ53NaDhrDNVuAzg6L8w7cdhwgpM0TlZbmsazsbxWLndSnNvcGGak4b"
-    local url  = url1..url2
-    local data = {
-      username = "Says",    
-      content  = "``"..gmcp.Char.Status.name.."\n"..msg.."``"
-    }
-    local header = {
-      ["Content-Type"] = "application/json",
-      --["Content-Length"] = data:len()
-    }
-  postHTTP(yajl.to_string(data), url, header)  
-  killAnonymousEventHandler(httpdone)
-  killAnonymousEventHandler(httperror)
-  
-end
-  
-  
+  -- Ideas is provided by the local-only network safety block below.
   Legacy.panic = function(msg)
     if msg == nil then
-      cecho("\n&lt;cyan&gt;You broke something")
+      cecho(&quot;\n&lt;cyan&gt;You broke something&quot;)
     else
-      cecho("\n&lt;red&gt;You broke something...but left notes!\n&lt;cyan&gt;Notes: "..msg)
+      cecho(&quot;\n&lt;red&gt;You broke something...but left notes!\n&lt;cyan&gt;Notes: &quot;..msg)
     end
   end
   
   Legacy.echo = function(msg)
   
-      cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: "..msg)
+      cecho(&quot;\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: &quot;..msg)
   end
   
     Legacy.bigEcho = function(msg, color1, color2)
-      local color1 = color1 or "SeaGreen"
-      local color2 = color2 or "white"
-      local width = getWindowWrap("main")
+      local color1 = color1 or &quot;SeaGreen&quot;
+      local color2 = color2 or &quot;white&quot;
+      local width = getWindowWrap(&quot;main&quot;)
 
-      local line = "\n&lt;" .. color1 .. "&gt;" .. string.rep("-", width)
-      local pad = string.rep(" ", math.floor(width/2) - math.floor(#msg/2))
+      local line = &quot;\n&lt;&quot; .. color1 .. &quot;&gt;&quot; .. string.rep(&quot;-&quot;, width)
+      local pad = string.rep(&quot; &quot;, math.floor(width/2) - math.floor(#msg/2))
 
       cecho(line)
-      cecho("\n&lt;" .. color2 .. "&gt;" .. pad .. msg .. pad)
+      cecho(&quot;\n&lt;&quot; .. color2 .. &quot;&gt;&quot; .. pad .. msg .. pad)
       cecho(line)
   end 
 
@@ -8994,126 +8907,157 @@ end
 
   
   
-  lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB")
-  lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB/Characters")
-  lfs.mkdir(getMudletHomeDir().. "/Legacy/ClassTrack")
+  lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/NDB&quot;)
+  lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/NDB/Characters&quot;)
+  lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/ClassTrack&quot;)
   
   function Legacy.Settings.NDB.newHL(arg)
   local who = arg:title()
   if Legacy.NDB.db[who] then
     if not Legacy.Settings.NDB.tempHL[who] then
-      Legacy.Settings.NDB.tempHL[who] = tempTrigger(who, [[Legacy.Settings.NDB.formatting("]] .. who .. [[")]])
+      Legacy.Settings.NDB.tempHL[who] = tempTrigger(who, [[Legacy.Settings.NDB.formatting(&quot;]] .. who .. [[&quot;)]])
     end
   end
 end
 
   
-  function Legacy.NDB.read_json_file(path)
-    local f = io.open(path, "r")
-    if not f then return nil, "file_unavailable" end
-    local read_ok, content = pcall(f.read, f, "*a")
-    f:close()
-    if not read_ok or type(content) ~= "string" or content:match("^%s*$") then
-      return nil, "empty_or_unreadable"
-    end
-    content = content:gsub("^\239\187\191", "")
-    local decode_ok, data = pcall(yajl.to_value, content)
-    if not decode_ok or type(data) ~= "table" then return nil, "invalid_json" end
-    return data
-  end
+-- BEGIN YSO LEGACY NETWORK SAFETY
+-- Public character refresh is suspended until a secure endpoint is verified.
+-- Existing profile data remains available; no credentials belong in packages.
+Legacy = Legacy or {}
+Legacy.Network = Legacy.Network or {}
+Legacy.NDB = Legacy.NDB or {}
+Legacy.NDB.db = Legacy.NDB.db or {}
+local Network = Legacy.Network
+local NDB = Legacy.NDB
 
-  function Legacy.NDB.getOnline()
-  downloadFile(getMudletHomeDir() .. "/Legacy/NDB/who.json", "http:\/\/api.achaea.com\/characters.json")
-  end
-  
-  function Legacy.NDB.lookup(arg)
-  local person = arg
-  Legacy.NDB.db = Legacy.NDB.db or {}
-  if io.exists(getMudletHomeDir().."/Legacy/NDB/Characters") then
-    --nothing
-  else
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB/Characters")
-  end
-  downloadFile(getMudletHomeDir().. "/Legacy/NDB/Characters/"..person..".json", "http://api.achaea.com/characters/"..person..".json")
-
-tempTimer(3, function()
-local filepath = getMudletHomeDir().. "/Legacy/NDB/Characters/"..person..".json"
-    
-    local t = Legacy.NDB.read_json_file(filepath)
-    if not t or type(t.name) ~= "string" or t.name == "" then
-      Legacy.echo("NDB character data unavailable; try the lookup again.")
-      return
-    end
-	local name = t.name
-	local title = t.fullname
-	local house = t.house:title()
-	local xp_rank = tonumber(t.xp_rank)
-	local city = t.city:title()
-	local class = t.class:title()
-	local level = tonumber(t.level)
-  
-    Legacy.NDB.db[name] = Legacy.NDB.db[name] or {}
-    
-    if city == "" then
-      Legacy.NDB.db[name].city = "Divine"
-    elseif (title == "Romeo, the Guide" or title == "Juliet, the Guide") and city == "(none)" then
-      Legacy.NDB.db[name].city = "Divine"
-    elseif city == "(hidden)" and Legacy.NDB.db[name].city ~= nil then
-    elseif city:match("Underworld") then
-      Legacy.NDB.db[name].city = "Underworld"
-      
-    
-    else
-     Legacy.NDB.db[name].city = city
-    end
-    
-    
-   
-    if Legacy.NDB.db[name].title ~= title then
-      Legacy.NDB.db[name].title =  title
-    end
-    if Legacy.NDB.db[name].house ~=  house then
-      Legacy.NDB.db[name].house =  house
-    end
-    if Legacy.NDB.db[name].class ~=  class then
-      Legacy.NDB.db[name].class =  class
-    end
-    if Legacy.NDB.db[name].level ~=  level then
-      Legacy.NDB.db[name].level =  level
-    end
-   
-    if Legacy.NDB.db[name].city == "Underworld" then
-      Legacy.NDB.db[name].house = "The Profane Reaches of Demise"
-      Legacy.NDB.db[name].class = Legacy.NDB.db[name].title:gsub(" "..name, "")
-    end
-    Legacy.Settings.NDB.newHL(name)
-    
-    if Legacy.CT.Enemies[name] then
-      Legacy.CT.Enemies[name] = class
-    end
-    
-     if xp_rank == 0 and Legacy.NDB.db[name].city ~= "Divine" and Legacy.Settings.NDB.removeDormant == true then
-      Legacy.NDB.db[name] = nil
-    else
-      Legacy.NDB.db[name].xp_rank = xp_rank
-    end
-    
-  end)
+local function local_message(message)
+  if type(Legacy.echo) == &apos;function&apos; then Legacy.echo(message)
+  elseif type(cecho) == &apos;function&apos; then cecho(&apos;\n&lt;white&gt;[Legacy] &apos;..message..&apos;\n&apos;) end
 end
- 
+
+function Network.local_feedback(kind, message)
+  -- Do not echo message contents: reports may contain private information.
+  local_message(tostring(kind or &apos;Feedback&apos;)..&apos; is local-only. Discord posting is disabled; use ysocheck for diagnostics and ysoinstall for managed updates.&apos;)
+  return false, &apos;posting_disabled&apos;
+end
+
+function Legacy.Ideas(message) return Network.local_feedback(&apos;Ideas&apos;, message) end
+
+local function character_name(value)
+  if type(value) ~= &apos;string&apos; then return nil end
+  value = value:gsub(&apos;^%s+&apos;, &apos;&apos;):gsub(&apos;%s+$&apos;, &apos;&apos;)
+  if #value &gt; 64 or not value:match(&quot;^[A-Za-z][A-Za-z&apos;%-]*$&quot;) then return nil end
+  return value:sub(1, 1):upper()..value:sub(2):lower()
+end
+
+local function title(value)
+  return value:sub(1, 1):upper()..value:sub(2)
+end
+
+function NDB.network_status()
+  local count = 0
+  for _, row in pairs(NDB.db or {}) do if type(row) == &apos;table&apos; then count = count + 1 end end
+  return {mode=&apos;cache_only&apos;, refresh_enabled=false, reason=&apos;secure_endpoint_unverified&apos;,
+    cached_records=count, online_data_stale=true}
+end
+
+function NDB.read_json_file(path)
+  if type(yajl) ~= &apos;table&apos; or type(yajl.to_value) ~= &apos;function&apos; then return nil, &apos;decoder_unavailable&apos; end
+  if type(io) ~= &apos;table&apos; or type(io.open) ~= &apos;function&apos; then return nil, &apos;filesystem_unavailable&apos; end
+  local opened, file = pcall(io.open, path, &apos;r&apos;)
+  if not opened or not file then return nil, &apos;file_unavailable&apos; end
+  local read_ok, content = pcall(file.read, file, &apos;*a&apos;)
+  pcall(file.close, file)
+  if not read_ok or type(content) ~= &apos;string&apos; or content:match(&apos;^%s*$&apos;) then return nil, &apos;empty_or_unreadable&apos; end
+  content = content:gsub(&apos;^\239\187\191&apos;, &apos;&apos;)
+  local decoded, data = pcall(yajl.to_value, content)
+  if not decoded or type(data) ~= &apos;table&apos; then return nil, &apos;invalid_json&apos; end
+  return data
+end
+
+function NDB.getOnline()
+  local_message(&apos;NDB network refresh is disabled: no verified secure endpoint. Existing character records are cached; online status may be stale.&apos;)
+  return false, &apos;secure_endpoint_unverified&apos;
+end
+
+function NDB.lookup(value)
+  local person = character_name(value)
+  if not person then return false, &apos;invalid_character_name&apos; end
+  local home = type(getMudletHomeDir) == &apos;function&apos; and getMudletHomeDir() or nil
+  if type(home) ~= &apos;string&apos; then return false, &apos;profile_directory_unavailable&apos; end
+  local data, why = NDB.read_json_file(home..&apos;/Legacy/NDB/Characters/&apos;..person..&apos;.json&apos;)
+  if not data then
+    local existing = NDB.db[person]
+    if type(existing) == &apos;table&apos; then
+      local_message(&apos;NDB &apos;..person..&apos;: using cached profile data; secure refresh is unavailable.&apos;)
+      return true, &apos;cached_memory&apos;
+    end
+    local_message(&apos;NDB &apos;..person..&apos;: cached character data unavailable; secure refresh is disabled.&apos;)
+    return false, why or &apos;cache_unavailable&apos;
+  end
+  local name = character_name(data.name)
+  if not name or name:lower() ~= person:lower() then return false, &apos;cache_name_mismatch&apos; end
+  for _, key in ipairs({&apos;city&apos;, &apos;class&apos;, &apos;house&apos;}) do
+    if type(data[key]) ~= &apos;string&apos; or #data[key] &gt; 128 then return false, &apos;invalid_cache_fields&apos; end
+  end
+  if data.fullname ~= nil and (type(data.fullname) ~= &apos;string&apos; or #data.fullname &gt; 512) then return false, &apos;invalid_cache_fields&apos; end
+  local row = NDB.db[name] or {}
+  local city = title(data.city)
+  local fullname = data.fullname or row.title or name
+  if city == &apos;&apos; or ((fullname == &apos;Romeo, the Guide&apos; or fullname == &apos;Juliet, the Guide&apos;) and city == &apos;(none)&apos;) then
+    city = &apos;Divine&apos;
+  elseif city == &apos;(hidden)&apos; and type(row.city) == &apos;string&apos; and row.city ~= &apos;&apos; then
+    city = row.city
+  elseif city:match(&apos;Underworld&apos;) then city = &apos;Underworld&apos; end
+  row.city, row.title, row.house, row.class = city, fullname, title(data.house), title(data.class)
+  row.level = tonumber(data.level) or row.level
+  row.xp_rank = tonumber(data.xp_rank) or row.xp_rank
+  if city == &apos;Underworld&apos; then row.house = &apos;The Profane Reaches of Demise&apos; end
+  row.cached = true
+  NDB.db[name] = row
+  local settings = Legacy.Settings and Legacy.Settings.NDB
+  if settings and type(settings.newHL) == &apos;function&apos; then pcall(settings.newHL, name) end
+  if Legacy.CT and Legacy.CT.Enemies and Legacy.CT.Enemies[name] then Legacy.CT.Enemies[name] = row.class end
+  local_message(&apos;NDB &apos;..name..&apos;: loaded cached data; secure refresh is unavailable.&apos;)
+  return true, &apos;cached_file&apos;
+end
+
+function NDB.refresh_cache()
+  local home = type(getMudletHomeDir) == &apos;function&apos; and getMudletHomeDir() or nil
+  if type(home) ~= &apos;string&apos; then return false, &apos;profile_directory_unavailable&apos; end
+  local data = NDB.read_json_file(home..&apos;/Legacy/NDB/who.json&apos;)
+  if type(data) ~= &apos;table&apos; or type(data.characters) ~= &apos;table&apos; then
+    NDB.getOnline()
+    return false, &apos;online_cache_unavailable&apos;
+  end
+  local awake, seen = {}, {}
+  for _, item in pairs(data.characters) do
+    local name = type(item) == &apos;table&apos; and character_name(item.name)
+    if name and not seen[name] then
+      seen[name] = true
+      awake[#awake+1] = name
+      NDB.lookup(name)
+    end
+  end
+  NDB.awake = awake
+  local_message(&apos;NDB loaded cached online-player data. It is historical; secure network refresh is disabled.&apos;)
+  return true, &apos;cached_online_list&apos;
+end
+-- END YSO LEGACY NETWORK SAFETY
+
 function Legacy.Settings.NDB.formatting(name)
   if Legacy.NDB.db[name] == nil then return end
   local home = Legacy.NDB.db[name:title()].city
   if not home then return end
-  if home == "" then home = "divine" end
+  if home == &quot;&quot; then home = &quot;divine&quot; end
   local line = getCurrentLine()
   local i = 1
   while i &gt; 0 do
     local p = selectString(name, i)
     if p &gt; -1 then
-      local x = line:sub(p + #name + 1, p + #name + 1) or "!"
-      if x == "" or x:match("%A") then
+      local x = line:sub(p + #name + 1, p + #name + 1) or &quot;!&quot;
+      if x == &quot;&quot; or x:match(&quot;%A&quot;) then
        if Legacy.NDB.db[name:title()].color then
         fg(Legacy.NDB.db[name:title()].color)
        elseif Legacy.Settings.NDB.Config[home:lower()] then 
@@ -9141,9 +9085,9 @@ function Legacy.Settings.NDB.formatting(name)
 end
 
 function Legacy.NDB.color(person)
-if Legacy.NDB.db[person] == nil then return "&lt;DimGrey&gt;"
+if Legacy.NDB.db[person] == nil then return &quot;&lt;DimGrey&gt;&quot;
 else
-return "&lt;"..Legacy.Settings.NDB.Config[Legacy.NDB.db[person].city:lower()].color.."&gt;"
+return &quot;&lt;&quot;..Legacy.Settings.NDB.Config[Legacy.NDB.db[person].city:lower()].color..&quot;&gt;&quot;
 end
 end
 
@@ -9152,66 +9096,57 @@ function Legacy.Settings.NDB.highlights()
   for k, v in pairs(Legacy.NDB.db) do
     local who = tostring(k):title()
     if not Legacy.Settings.NDB.tempHL[who] then
-      Legacy.Settings.NDB.tempHL[who] = tempTrigger(who, [[Legacy.Settings.NDB.formatting("]] .. who .. [[")]])
+      Legacy.Settings.NDB.tempHL[who] = tempTrigger(who, [[Legacy.Settings.NDB.formatting(&quot;]] .. who .. [[&quot;)]])
     end
   end
 end
-  registerAnonymousEventHandler("LegacyLoaded", "Legacy.Settings.NDB.highlights")
-  expandAlias("ndb")
+  registerAnonymousEventHandler(&quot;LegacyLoaded&quot;, &quot;Legacy.Settings.NDB.highlights&quot;)
+  expandAlias(&quot;ndb&quot;)
   if Legacy.Settings.Curing.SS.Settings.batch == nil then  
-    send("curing status")
+    send(&quot;curing status&quot;)
   end
   if Legacy.Settings.Curing.status == false then
-    send("curing on")
+    send(&quot;curing on&quot;)
   end
   function downloaded_file(_, filename)
   -- is the file that downloaded ours?
-  if filename:find("Legacy_Core.mpackage", 1, true) then
-    Legacy.bigEcho("You just downloaded a new version of Legacy!\n Make sure you backup important files that will be overwritten. If you need a reminder of what these are please refer to the Legacy manual under UPDATING")
+  if filename:find(&quot;Legacy_Core.mpackage&quot;, 1, true) then
+    Legacy.bigEcho(&quot;You just downloaded a new version of Legacy!\n Make sure you backup important files that will be overwritten. If you need a reminder of what these are please refer to the Legacy manual under UPDATING&quot;)
   end
   
-  if filename:find("Announcement.lua", 1, true) then
+  if filename:find(&quot;Announcement.lua&quot;, 1, true) then
   if Legacy.Announcement.ignore == true then return end
-    if Legacy.Announcement.newMsg[1] == "" then
+    if Legacy.Announcement.newMsg[1] == &quot;&quot; then
       tempTimer(10, [[Legacy.Announcement.display()]])
     end
-    table.load(getMudletHomeDir().."/Legacy/Downloads/Announcement.lua", Legacy.Announcement.newMsg)
-    tempTimer(5, [[os.remove(getMudletHomeDir().."/Legacy/Downloads/Announcement.lua")]])
+    table.load(getMudletHomeDir()..&quot;/Legacy/Downloads/Announcement.lua&quot;, Legacy.Announcement.newMsg)
+    tempTimer(5, [[os.remove(getMudletHomeDir()..&quot;/Legacy/Downloads/Announcement.lua&quot;)]])
 
     tempTimer(7, function() if Legacy.Announcement.newMsg[1] == Legacy.Announcement.msg[1] then else Legacy.Announcement.msg = table.deepcopy(Legacy.Announcement.newMsg) end end)
 
   end
   
-  if filename:find("Legacy_Version_Info.lua", 1, true) then 
-    table.load(getMudletHomeDir().."/Legacy/Downloads/Legacy_Version_Info.lua", Legacy.Vinfo)
-    tempTimer(5, [[os.remove(getMudletHomeDir().."/Legacy/Downloads/Legacy_Version_Info.lua")]])
-    local newestVersion = string.gsub(Legacy.Vinfo.Version, "%.", "")
-    local currentVersion = string.gsub(Legacy.Version, "%.", "")
-  
-    if tonumber(newestVersion) &gt; tonumber(currentVersion) and Legacy.Settings.ignoreUpdates == false then
-      cechoLink("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]: "..Legacy.Vinfo.msg..Legacy.Vinfo.Version.."\n", function() installPackage(Legacy.Vinfo.link) Legacy.Version = Legacy.Vinfo.Version Download("Update") end, "Click here to Download AND install the newest version of Legacy!", true)
-    end
-  end
-  
-  if filename:find("Legacy_Extras.lua", 1, true) then
+  -- Managed releases own Legacy versions; downloaded upstream metadata is ignored.
+
+  if filename:find(&quot;Legacy_Extras.lua&quot;, 1, true) then
     Legacy.Extras = {}
-    table.load(getMudletHomeDir().."/Legacy/Downloads/Legacy_Extras.lua", Legacy.Extras)
-    tempTimer(5, [[os.remove(getMudletHomeDir().."/Legacy/Downloads/Legacy_Extras.lua")]])
+    table.load(getMudletHomeDir()..&quot;/Legacy/Downloads/Legacy_Extras.lua&quot;, Legacy.Extras)
+    tempTimer(5, [[os.remove(getMudletHomeDir()..&quot;/Legacy/Downloads/Legacy_Extras.lua&quot;)]])
   end
   
-  if filename:find("Trades.mpackage", 1, true) then
+  if filename:find(&quot;Trades.mpackage&quot;, 1, true) then
     tempTimer(10, [[Trades_Setup()]])
   end
   
-  if filename:find("Basher.mpackage", 1, true) then
+  if filename:find(&quot;Basher.mpackage&quot;, 1, true) then
     tempTimer(10, [[Basher_Setup()]])
   end
   
-  if filename:find("Sailing.mpackage", 1, true) then
+  if filename:find(&quot;Sailing.mpackage&quot;, 1, true) then
     tempTimer(10, [[Sailing_Setup()]])
   end
   
-  if filename:find("Legacy UI.mpackage", 1, true) then
+  if filename:find(&quot;Legacy UI.mpackage&quot;, 1, true) then
     tempTimer(10, [[UI_Setup()]])
   end
 end
@@ -9219,7 +9154,7 @@ end
 
  function Legacy.Announcement.display()
   if Legacy.Announcement.ignore == true then return end
-  if Legacy.Announcement.newMsg[1] == "" then return end
+  if Legacy.Announcement.newMsg[1] == &quot;&quot; then return end
   cecho([[
   
   
@@ -9227,7 +9162,7 @@ end
   
   &lt;gold&gt;************************* &lt;b&gt;&lt;white&gt;Legacy System Message&lt;/b&gt;&lt;gold&gt; *************************
   
-  &lt;ansi_white&gt;&lt;b&gt;]]..Legacy.Announcement.msg[1].."\n&lt;/b&gt;"..[[
+  &lt;ansi_white&gt;&lt;b&gt;]]..Legacy.Announcement.msg[1]..&quot;\n&lt;/b&gt;&quot;..[[
  
   &lt;gold&gt;************************* &lt;b&gt;&lt;white&gt;Legacy System Message&lt;/b&gt;&lt;gold&gt; *************************
   
@@ -9243,13 +9178,13 @@ end
 
 Legacy.Curing.preDraw()
 -- register our function to run on the event that something was downloaded
-registerAnonymousEventHandler("sysDownloadDone", "downloaded_file") 
+registerAnonymousEventHandler(&quot;sysDownloadDone&quot;, &quot;downloaded_file&quot;)
 
 Legacy_Downloads()
 end
 
-registerAnonymousEventHandler("LegacyLoaded", "LInit")
-registerAnonymousEventHandler("update", "LInit")</script>
+registerAnonymousEventHandler(&quot;LegacyLoaded&quot;, &quot;LInit&quot;)
+registerAnonymousEventHandler(&quot;update&quot;, &quot;LInit&quot;)</script>
 			<eventHandlerList />
 		</Script>
 		<Script isActive="yes" isFolder="no">
@@ -10571,40 +10506,12 @@ end
 				<name>Feedback</name>
 				<packageName />
 				<script>function Feedback(message)
-
-  local msg = message 
-  
-  local httpdone = registerAnonymousEventHandler('sysPostHttpDone', 
-    function(event, rurl, response)
-      if rurl == url then display(r) else return true end
-    end, true)
-
-  local httperror = registerAnonymousEventHandler('sysPostHttpError', 
-    function(event, response, rurl)
-      if rurl == url then display(r) else return true end
-    end, true)
-   
-  
-  
-  
-  local url1 = "https://discord.com/api/webhooks/1342713339179958342/"
-  local url2 = "FZTj3SZnXzRNUja-vxoa5yIYGx5j7NhV9oTiBKNSkVKGags5Pwo8C20-qKKi3pt0B2i3"
-  local url  = url1..url2
-  local data = {
-    username = "Feedback",    
-    content  = "``"..gmcp.Char.Status.name..": "..msg.."``\n" 
-  }
-  local header = {
-    ["Content-Type"] = "application/json",
-    --["Content-Length"] = data:len()
-  }  
-  postHTTP(yajl.to_string(data), url, header)
-  
-  killAnonymousEventHandler(httpdone)
-  killAnonymousEventHandler(httperror)
-end
-
-</script>
+  if Legacy and Legacy.Network and type(Legacy.Network.local_feedback)==&apos;function&apos; then
+    return Legacy.Network.local_feedback(&apos;Feedback&apos;, message)
+  end
+  if type(cecho)==&apos;function&apos; then cecho(&apos;\n[Legacy] Feedback posting is disabled. Reports stay local.\n&apos;) end
+  return false, &apos;posting_disabled&apos;
+end</script>
 				<eventHandlerList />
 			</Script>
 			<Script isActive="yes" isFolder="no">
@@ -10633,53 +10540,22 @@ end</script>
 			<Script isActive="yes" isFolder="no">
 				<name>Download Functions</name>
 				<packageName />
-				<script>function Legacy_Downloads()
-
-    Legacy.Vinfo = {Version = "", msg = ""}
-    Legacy.Extras = Legacy.Extras or {}
-    downloadFile(getMudletHomeDir().."/Legacy/Downloads/Legacy_Version_Info.lua", "https://github.com/AranosBanazir/Legacy/raw/main/Legacy_Version_Info.lua")
-    downloadFile(getMudletHomeDir().."/Legacy/Downloads/Legacy_Extras.lua", "https://github.com/AranosBanazir/Legacy/raw/main/Legacy_Extras.lua")
-    downloadFile(getMudletHomeDir().."/Legacy/Downloads/Announcement.lua", "https://github.com/AranosBanazir/Legacy/raw/main/Announcement.lua")
+				<script>-- Coordinated Yso releases own managed package versions; no upstream downloads.
+function Legacy_Downloads()
+  Legacy=Legacy or {}
+  Legacy.Vinfo={Version=&apos;&apos;,msg=&apos;&apos;,link=&apos;&apos;}
+  Legacy.Extras=Legacy.Extras or {}
+  Legacy.managed_updates=true
+  return false, &apos;managed_release&apos;
 end
-registerAnonymousEventHandler("CheckForUpdates", "Legacy_Downloads")
-registerAnonymousEventHandler("LegacyLoaded", "Legacy_Downloads")
-
-function Download(var)
-  if var == "Fresh" then
-    downloadmsg = "Has downloaded Legacy V"..Legacy.Version.." for the first time."
-  elseif var == "Update" then
-    downloadmsg = "Has updated to Legacy V"..Legacy.Version.."!"
-  end 
-  
-  local httpdone = registerAnonymousEventHandler('sysPostHttpDone', 
-    function(event, rurl, response)
-      if rurl == url then display(r) else return true end
-    end, true)
-
-  local httperror = registerAnonymousEventHandler('sysPostHttpError', 
-    function(event, response, rurl)
-      if rurl == url then display(r) else return true end
-    end, true)
-   
-  
-  
-  
-  local url1  = "https://discord.com/api/webhooks/1342716549970264075"
-  local url2 = "/tgBAvNIlK144DrAm920N26R_vRO64JnPZyvLKJUQH9VGBtrpsgl8YTZ7hg0JCuinFd08"
-  local url  = url1..url2
-  local data = {
-    username = "Legacy",    
-    content  = "``"..gmcp.Char.Status.name.." "..downloadmsg.."``\n" 
-  }
-  local header = {
-    ["Content-Type"] = "application/json",
-    --["Content-Length"] = data:len()
-  }  
-  postHTTP(yajl.to_string(data), url, header)
-  
-  killAnonymousEventHandler(httpdone)
-  killAnonymousEventHandler(httperror)
-  downloadmsg = nil
+registerAnonymousEventHandler(&apos;CheckForUpdates&apos;, &apos;Legacy_Downloads&apos;)
+registerAnonymousEventHandler(&apos;LegacyLoaded&apos;, &apos;Legacy_Downloads&apos;)
+function Download(kind)
+  downloadmsg=nil
+  if Legacy and Legacy.Network and type(Legacy.Network.local_feedback)==&apos;function&apos; then
+    return Legacy.Network.local_feedback(&apos;Installation reporting&apos;)
+  end
+  return false, &apos;posting_disabled&apos;
 end</script>
 				<eventHandlerList />
 			</Script>

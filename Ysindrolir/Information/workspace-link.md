@@ -1,87 +1,56 @@
-# Achaea workspace link
+# Coordinated Yso releases and workspace updates
 
-The independent **Yso Workspace Link** package provides a one-command update path
-for the Mudlet profile named **Achaea**. Other profiles cannot use it and install
-no file watches. AK and Yso still run from embedded XML scripts in native Mudlet
-load order; no route Lua files are loaded from disk at runtime.
+The independent **Yso Workspace Link** controller manages the **Achaea** profile. It never disconnects the game or starts combat. Source XMLs are read-only inputs; installed modules use profile-local copies with synchronization disabled.
 
-## One-time setup
+## Check the whole system
 
-First run `scripts/publish_workspace_link.ps1` from the workspace to prepare the
-validated XML receipts. They are local build artifacts and are not stored in Git.
+**`ysocheck`** produces a read-only readiness report: authentication, packages/APIs, release consistency, curing, route blockers, queued work, class suspension, equipment, supplies, startup work, and required restarts. `Yso.system.check({echo=false})` returns structured results. `scope='install'` omits gameplay authentication requirements. Checks do not send discovery commands, alter priorities, or repair configuration.
 
-Import `mudlet packages/Yso Workspace Link.xml` into **Achaea**, or run:
+**`ysostatus`** shows workspace/release state and the last update error. Before Yso is installed, the standalone controller can run `ysoinstall` and its installation preflight without relying on Yso globals.
 
-```lua
-lua installPackage([[C:/Users/shuji/OneDrive/Desktop/Yso systems/Ysindrolir/mudlet packages/Yso Workspace Link.xml]])
+## Build a verified release
+
+Use PowerShell 7 with Lua 5.4 and `luac` on PATH. Rebuild edited sources with their scoped builders, then run:
+
+```powershell
+pwsh -NoProfile -File './Ysindrolir/scripts/verify_yso.ps1'
+pwsh -NoProfile -File './Ysindrolir/scripts/build_yso_release.ps1'
 ```
 
-Stop all combat/hunting routes, disable Legacy Basher, and clear their outstanding
-queues. Run `ysolink`. It verifies both workspace XMLs, saves a complete profile
-backup, then converts the existing AK and Yso system package installations into
-native modules. AK loads first (priority 0), then Yso (priority 1).
-Save the profile after setup completes so those module settings are retained.
+The verifier supplies standalone fixtures, executes package wrappers in disposable copies, compiles embedded Lua, checks parity and credentials, and writes JSON results plus logs. Fixture-only Lua suites are reported as covered by their wrappers. GitHub Actions uses the same verifier.
 
-The original package names must be exactly `AK` and `Yso system`. An existing
-module pointing somewhere else is refused rather than replaced. The bridge stays
-outside these modules so its controls survive reloads.
+The release builder verifies a frozen source snapshot and publishes the exact checked package bytes in an immutable directory under `Ysindrolir/releases/`. `current.json` selects the bundle. Failures preserve the previous selection. Generated releases and local receipts are excluded from Git and synchronization; rebuild them locally after syncing.
 
-## Future edits
+Managed packages: Legacy Core, AK, limb support, Yso, Legacy Basher, Legacy UI, and the workspace controller. The manifest records identities, dependency order, hashes, and restart policy. Older standalone Stormhammer exports and `Target things` remain optional; detected overlap is reported rather than installed automatically.
 
-1. Edit workspace Lua and rebuild the affected XML using its existing scoped builder.
-2. Run `scripts/publish_workspace_link.ps1` in the workspace. It parses both XMLs
-   and publishes byte-exact validation snapshots plus the extracted Lua bodies.
-   Mudlet compiles those bodies with its own Lua version before replacing anything.
-   A built XML that differs from its validated snapshot is refused.
-3. Mudlet reports that the built XML changed. File watches notify only.
-4. While automation is stopped, run **`ysoreload`**. It updates AK then Yso without
-   manually importing either XML. Run **`ysostatus`** to inspect their state.
+## Install or update the full bundle
 
-Both modules are refreshed together. Editing Lua without rebuilding its XML does
-not change the running profile. Rebuilds and Git pushes remain separate from
-applying an update in Mudlet. The bridge never restarts offense automatically.
+1. Import the built `mudlet packages/Yso Workspace Link.xml` bootstrap controller into **Achaea**.
+2. Wait until you have logged out normally. Installation requires a confirmed disconnected state using Mudlet 4.12+ APIs and fails closed if status is unknown. It never disconnects you.
+3. Run **`ysoinstall`**. It validates the manifest, hashes, receipts, and native Lua before replacement, verifies profile/managed-file backups, then applies modules in dependency order using completion events.
+4. Wait for completion, then restart the profile before connecting or resuming automation. This retires old globals, handlers, and timers.
+5. Log in normally and run **`ysocheck`**. Resolve blocking results before explicitly starting offense or hunting.
 
-## File ownership and recovery
+Profile settings and unrelated packages are preserved. Rebuilding or pushing to GitHub does not perform a live installation.
 
-Workspace XMLs are read-only inputs. Modules point to copies under
-`getMudletHomeDir()/yso-workspace/modules/`; module synchronization is disabled.
-This prevents Mudlet profile saves or editor changes from overwriting workspace
-sources. Applied snapshots are stored separately from Mudlet's editable module
-copies so a profile save does not create false workspace-change notices.
+## AK/Yso-only hot updates
 
-Initial profile backups are under `yso-workspace/backups/`. Before each module is
-replaced, its existing profile-local XML is retained as `<name>.previous.xml`.
-Reload errors stop the sequence and report partial completion; live Lua state is
-not transactionally rolled back. The failed module's prior staging file is restored
-when available. Correct the built XML and rerun `ysolink`/`ysoreload`, or restore the
-profile backup through Mudlet's profile manager if migration failed.
+**`ysolink`** and **`ysoreload`** remain for the narrower AK/Yso path while automation is stopped. Publish byte-exact local receipts using `scripts/publish_workspace_link.ps1` after scoped rebuilds. A coordinated installation permits hot updates only when non-hot package hashes are unchanged and the published release matches the proposed AK/Yso bytes. Legacy, UI, Basher, limb, or controller changes require offline `ysoinstall` and a restart.
 
-If native module loading takes longer than 20 seconds, the bridge keeps the update
-busy, refuses retries and route starts, and holds offense paused until the late
-completion arrives. A timeout does not cancel a deferred Mudlet reload. If it
-never completes, restart the profile before retrying. Staging bytes are checked
-again on completion to detect concurrent profile-save writeback. A terminal
-failure leaves offense paused until you correct it; a successful update restores
-the prior pause state without starting any route.
+The first coordinated installation uses `ysoinstall`; missing or unreadable installed-release metadata cannot establish safe non-hot peers and therefore blocks the narrower update path.
 
-The self-affliction and serverside-policy install-once hooks are explicitly
-rearmed after Yso reload; existing affliction rows and curing configuration remain.
-No game commands are issued by the bridge itself.
-Automatic Magi equipment, Alchemist formulation, and curing-policy initialization
-queries wait for shared `Yso.session` readiness. A TCP connection or cached GMCP
-does not authenticate a new session. Disconnect invalidates deferred work; a
-fresh character event enables initialization without restarting combat routes.
-Legacy's separate login build also guards its automatic startup and deferred
-look/settings/curing callbacks against disconnect/reconnect. Its keepalive waits
-for readiness. Rebuild it with `scripts/build_legacy_login_safety_package.ps1`
-and import the resulting Legacy XML separately; a Yso export never changes Legacy.
+File watches only notify; they never apply changes. AK reloads before Yso. Updates never restart routes automatically.
 
-After removing retired Monk components, restart the Achaea profile after applying
-the update so old Lua globals and anonymous handlers do not survive. Deliverance
-scripts/triggers and their required compatibility state are retained. The bridge
-reloads only AK and Yso: import changed Legacy/limb packages separately.
+## Failure and recovery
 
-Rebuild the bridge with `scripts/build_workspace_link_package.ps1`; verify with
-`scripts/test_workspace_link_package.ps1`. Ordinary changes to AK/Yso do not
-require reinstalling the bridge. Changes to the bridge controller itself require
-reimporting its small standalone package once.
+Preflight failures occur before replacement. Later failures can leave a partial update; the controller reports it and leaves offense blocked. Native deferred reloads cannot be canceled by killing a timer, so a timeout remains waiting for completion and rejects overlapping retries.
+
+Inspect `ysostatus` and the reported backup under `getMudletHomeDir()/yso-workspace/backups/`. Correct the source/release and retry after the prior operation settles. If uncertain, restore the verified profile backup using Mudlet's profile manager. Restoring staged XML alone does not roll back live Lua globals. A pending-install marker survives restart and prevents inconsistent packages from being treated as ready.
+
+## Alchemist and networking policy
+
+Alchemist offense defaults disabled: routes, offensive aliases, queued helpers, and Legacy hunting. Tracking and self-curing utilities remain. Future explicit enable uses `Yso.alchemist_offense.set_enabled(true)` after access returns; imports/checks never enable it. Physiology diagnostics use optional guarded trace events without hard-coded files or a `yajl` requirement.
+
+Discord feedback/install posting and embedded credentials are removed. Historical exposed tokens still require owner-side revocation. Legacy's independent updater is disabled so it cannot overwrite managed releases. Character data uses validated caches until a secure endpoint is verified; no HTTP fallback is enabled. Cached online status is historical.
+
+Connection-drop, interrupted-install and reload tests use simulated APIs. Verification never intentionally interrupts a live game session.

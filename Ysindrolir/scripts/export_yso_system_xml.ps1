@@ -180,6 +180,7 @@ $ScriptToSourcePath = [ordered]@{
   'Yso.state wiring'              = Join-Path $YsoDir 'xml\yso_state_wiring_stub.lua'
   'Yso.target'                    = Join-Path $YsoDir 'xml\yso_target.lua'
   'Yso.targeting'                 = Join-Path $YsoDir 'xml\yso_targeting.lua'
+  'Yso unified health'            = Join-Path $YsoDir 'Integration\system_health.lua'
 }
 
 $ScriptInserts = @(
@@ -393,6 +394,14 @@ if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize maintained Stormhammer and
 
 if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize login safety')) {
   & (Join-Path $ScriptsDir 'build_login_safety_package.ps1') -PackagePath $XmlPackage
+}
+
+if ($PSCmdlet.ShouldProcess($XmlPackage, 'Preserve Alchemist offense suspension')) {
+  & (Join-Path $ScriptsDir 'build_alchemist_safety_package.ps1') -PackagePath $XmlPackage
+}
+
+if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize unified health diagnostics')) {
+  & (Join-Path $ScriptsDir 'build_system_health_package.ps1') -PackagePath $XmlPackage
 }
 
 if ($null -ne $stagedPackage) {

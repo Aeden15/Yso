@@ -54,7 +54,7 @@ local function assert_contains(label, got, needle)
 end
 
 local function make_world()
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.getEpoch = function() return 1000000 end
   local sent = {}

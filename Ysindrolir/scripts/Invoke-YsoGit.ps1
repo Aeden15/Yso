@@ -35,10 +35,16 @@ if ($null -eq $GitArgs -or $GitArgs.Count -eq 0) {
 
 function Sync-YsindrolirToCanonical {
   & (Join-Path $ScriptsDir 'Sync-YsoWorkspace.ps1') -SourceDirectory $YsindrolirHere -TargetDirectory $YsindrolirThere -WhatIf:$DryRun
-  foreach ($relative in @('README.md','README.txt','GIT.md','sync_workspace.ps1')) {
+  foreach ($relative in @('README.md','README.txt','GIT.md','sync_workspace.ps1','sync.cmd','.gitignore','.gitattributes')) {
     $from=Join-Path $WorkspaceRoot $relative
     if (Test-Path -LiteralPath $from) {
       Copy-Item -LiteralPath $from -Destination (Join-Path $CanonicalGitRoot $relative) -Force -WhatIf:$DryRun
+    }
+  }
+  foreach ($folder in @('.github')) {
+    $from=Join-Path $WorkspaceRoot $folder
+    if(Test-Path -LiteralPath $from -PathType Container){
+      & (Join-Path $ScriptsDir 'Sync-YsoWorkspace.ps1') -SourceDirectory $from -TargetDirectory (Join-Path $CanonicalGitRoot $folder) -WhatIf:$DryRun
     }
   }
 }

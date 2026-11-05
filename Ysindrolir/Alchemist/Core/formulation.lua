@@ -100,6 +100,11 @@ function F.note_phiallist()
 end
 
 function F.request_discovery()
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
+  if not (Yso.features and Yso.features.alchemist_offense == true) then return false, 'alchemist_offense_suspended' end
   if not (Yso.session and Yso.session.is_ready()) then return false, 'not_authenticated' end
   if F.state.discovery_requested then
     return false

@@ -90,7 +90,7 @@ local function make_world(opts)
   local queue_clear_owned_calls = {}
   local queue_clear_dispatched_calls = {}
 
-  _G.Yso = nil
+  _G.Yso = { features = { alchemist_offense = true } }
   _G.yso = nil
   _G.target = current_target
   _G.getEpoch = function() return now_s * 1000 end
@@ -124,6 +124,7 @@ local function make_world(opts)
   local homunculus_state = { active = false, target = "" }
 
   _G.Yso = {
+    features = { alchemist_offense = true },
     cfg = { UseQueueing = "NO", pipe_sep = "&&" },
     Combat = {
       RouteInterface = {

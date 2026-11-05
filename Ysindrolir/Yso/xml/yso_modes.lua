@@ -50,6 +50,15 @@ local function _norm(s)
   return s
 end
 
+local function _release_hold()
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" then
+    if controller.busy == true then return true, "workspace_reload" end
+    if controller.restart_required == true then return true, "restart_required" end
+  end
+  return false
+end
+
 local function _echo(msg)
   if not (M.cfg and M.cfg.echo) then return end
   if type(cecho) == "function" then
@@ -337,8 +346,14 @@ function M.route_loop_active(name)
 end
 
 function M.schedule_route_loop(name, delay)
+  local held, reason = _release_hold()
+  if held then return false, reason end
   local entry = _loop_entry(name)
   if not entry then return false end
+  if entry.class == "alchemist" and not (Yso.features and Yso.features.alchemist_offense == true) then
+    if Yso.alchemist_offense then Yso.alchemist_offense.stop_owned() end
+    return false, "alchemist_offense_suspended"
+  end
   local mod = _ensure_route_module(entry)
   if type(mod) ~= "table" then return false end
 
@@ -398,12 +413,23 @@ function M.nudge_route_loop(name, reason)
 end
 
 function M.start_route_loop(name, reason)
+  local held, hold_reason = _release_hold()
+  if held then return false, hold_reason end
+  local requested = tostring(name or ""):lower()
+  if (requested:match("^alchemist_") or requested == "adam" or requested == "aduel" or requested == "bleed")
+      and not (Yso.features and Yso.features.alchemist_offense == true) then
+    _echo("Alchemist offense is temporarily suspended.")
+    return false, "alchemist_offense_suspended"
+  end
   local D = Yso.Combat and Yso.Combat.Deliverance
   if D and D.is_held() then return false, "enemy_deliverance" end
   local entry = _loop_entry(name)
   if not entry then
     _echo(("Route <yellow>%s<reset> is not registered."):format(tostring(name)))
     return false
+  end
+  if entry.class == "alchemist" and not (Yso.features and Yso.features.alchemist_offense == true) then
+    return false, "alchemist_offense_suspended"
   end
 
   local mod = _ensure_route_module(entry)
@@ -509,8 +535,14 @@ function M.toggle_route_loop(name, reason)
 end
 
 function M.tick_route_loop(name)
+  local held, reason = _release_hold()
+  if held then return false, reason end
   local entry = _loop_entry(name)
   if not entry then return false end
+  if entry.class == "alchemist" and not (Yso.features and Yso.features.alchemist_offense == true) then
+    if Yso.alchemist_offense then Yso.alchemist_offense.stop_owned() end
+    return false, "alchemist_offense_suspended"
+  end
   local mod = _ensure_route_module(entry)
   if type(mod) ~= "table" then return false end
 

@@ -1,8 +1,366 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE MudletPackage><MudletPackage version="1.001"><AliasPackage><AliasGroup isActive="yes" isFolder="yes"><name>Achaea workspace link</name><script /><command /><packageName /><regex /><Alias isActive="yes" isFolder="no"><name>Link Achaea workspace</name><script>YsoWorkspaceLink.link()</script><command /><packageName /><regex>^ysolink$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Reload Achaea workspace</name><script>YsoWorkspaceLink.reload()</script><command /><packageName /><regex>^ysoreload$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Achaea workspace status</name><script>YsoWorkspaceLink.status()</script><command /><packageName /><regex>^ysostatus$</regex></Alias></AliasGroup></AliasPackage><ScriptPackage><Script isActive="yes" isFolder="no"><name>Achaea workspace link controller</name><packageName /><script>-- Independent controller: never embed this in either module it reloads.
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE MudletPackage><MudletPackage version="1.001"><AliasPackage><AliasGroup isActive="yes" isFolder="yes"><name>Achaea workspace link</name><script /><command /><packageName /><regex /><Alias isActive="yes" isFolder="no"><name>Link Achaea workspace</name><script>YsoWorkspaceLink.link()</script><command /><packageName /><regex>^ysolink$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Reload Achaea workspace</name><script>YsoWorkspaceLink.reload()</script><command /><packageName /><regex>^ysoreload$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Achaea workspace status</name><script>YsoWorkspaceLink.status()</script><command /><packageName /><regex>^ysostatus$</regex></Alias><Alias isActive="yes" isFolder="no"><name>Install coordinated Yso release</name><script>YsoWorkspaceLink.install()</script><command /><packageName /><regex>^ysoinstall$</regex></Alias></AliasGroup></AliasPackage><ScriptPackage><Script isActive="yes" isFolder="no"><name>Yso coordinated release library</name><packageName /><script>-- Native package library; loaded before the independent workspace controller.
+-- It reads release data, never loads executable Lua from filesystem paths.
+YsoRelease=YsoRelease or {}
+local B=YsoRelease
+B.version=1
+local MOD=4294967296
+local native=bit32 or bit
+local xor,band,rshift,ror
+if native and native.bxor and native.band and native.rshift then
+ xor=function(a,b) return native.bxor(a,b)%MOD end
+ band=function(a,b) return native.band(a,b)%MOD end
+ rshift=function(a,n) return native.rshift(a,n)%MOD end
+ ror=function(a,n) return (rshift(a,n)+(a%2^n)*2^(32-n))%MOD end
+else
+ local compiler=loadstring or load
+ local ok,chunk=pcall(compiler,&apos;return function(a,b) return (a ~ b) &amp; 0xffffffff end, function(a,b) return a &amp; b end, function(a,n) return a &gt;&gt; n end&apos;)
+ if ok and chunk then xor,band,rshift=chunk() end
+ if not xor then
+  local small={};for a=0,15 do small[a]={};for b=0,15 do
+   local aa,bb,v,p=a,b,0,1;for _=1,4 do if aa%2~=bb%2 then v=v+p end;aa=math.floor(aa/2);bb=math.floor(bb/2);p=p*2 end;small[a][b]=v
+  end end
+  xor=function(a,b) local v,p=0,1;for _=1,8 do v=v+small[a%16][b%16]*p;a=math.floor(a/16);b=math.floor(b/16);p=p*16 end;return v end
+  band=function(a,b) return (a+b-xor(a,b))/2 end
+  rshift=function(a,n) return math.floor(a/2^n) end
+ end
+ ror=function(a,n) return (rshift(a,n)+(a%2^n)*2^(32-n))%MOD end
+end
+local K={1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,
+3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,
+3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,
+2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,
+666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,
+2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,
+430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,
+1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298}
+local function word(n) return string.char(rshift(n,24)%256,rshift(n,16)%256,rshift(n,8)%256,n%256) end
+function B.sha256(s)
+ local length=#s
+ s=s..&apos;\128&apos;..string.rep(&apos;\0&apos;,(55-length)%64)..word(math.floor(length/536870912))..word((length*8)%MOD)
+ local H={1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225}
+ for at=1,#s,64 do
+  local w={};for j=0,15 do local a,b,c,d=s:byte(at+j*4,at+j*4+3);w[j+1]=((a*256+b)*256+c)*256+d end
+  for j=17,64 do local a,b=w[j-15],w[j-2]
+   local sa=xor(xor(ror(a,7),ror(a,18)),rshift(a,3));local sb=xor(xor(ror(b,17),ror(b,19)),rshift(b,10))
+   w[j]=(w[j-16]+sa+w[j-7]+sb)%MOD
+  end
+  local a,b,c,d,e,f,g,h=H[1],H[2],H[3],H[4],H[5],H[6],H[7],H[8]
+  for j=1,64 do
+   local s1=xor(xor(ror(e,6),ror(e,11)),ror(e,25));local ch=xor(band(e,f),band(MOD-1-e,g))
+   local t1=(h+s1+ch+K[j]+w[j])%MOD
+   local s0=xor(xor(ror(a,2),ror(a,13)),ror(a,22));local maj=xor(xor(band(a,b),band(a,c)),band(b,c))
+   h=g;g=f;f=e;e=(d+t1)%MOD;d=c;c=b;b=a;a=(t1+s0+maj)%MOD
+  end
+  local v={a,b,c,d,e,f,g,h};for j=1,8 do H[j]=(H[j]+v[j])%MOD end
+ end
+ local result={};for j=1,8 do result[j]=string.format(&apos;%08x&apos;,H[j]) end;return table.concat(result)
+end
+local expected={
+ {&apos;legacy&apos;,&apos;Legacy V2.1&apos;},{&apos;ak&apos;,&apos;AK&apos;},{&apos;limb&apos;,&apos;limb.1.2&apos;},{&apos;yso&apos;,&apos;Yso system&apos;},
+ {&apos;basher&apos;,&apos;Legacy Basher V2.1&apos;},{&apos;ui&apos;,&apos;Legacy UI V2.0&apos;},{&apos;controller&apos;,&apos;Yso Workspace Link&apos;},
+}
+local function read(path)
+ local f=io.open(path,&apos;rb&apos;);if not f then return nil end;local s=f:read(&apos;*a&apos;);f:close();return s
+end
+local function write(path,s)
+ local f,why=io.open(path,&apos;wb&apos;);if not f then return false,why end
+ local ok,e=f:write(s);local closed,ce=f:close();if not ok or not closed then return false,e or ce or &apos;write_failed&apos; end;return true
+end
+local function decode(s)
+ if type(s)~=&apos;string&apos; or not (yajl and type(yajl.to_value)==&apos;function&apos;) then return nil end
+ local ok,v=pcall(yajl.to_value,s);if ok and type(v)==&apos;table&apos; then return v end
+end
+local function encode(v)
+ if not (yajl and type(yajl.to_string)==&apos;function&apos;) then return nil end
+ local ok,s=pcall(yajl.to_string,v);if ok and type(s)==&apos;string&apos; then return s end
+end
+local function contains(t,n)
+ if type(t)~=&apos;table&apos; then return false end;if t[n] then return true end
+ for _,v in ipairs(t) do if v==n then return true end end;return false
+end
+local function valid_xml(s) return type(s)==&apos;string&apos; and s:find(&apos;&lt;MudletPackage[%s&gt;]&apos;) and s:match(&apos;&lt;/MudletPackage&gt;%s*$&apos;)~=nil end
+local function validate_manifest(m)
+ if type(m)~=&apos;table&apos; or m.schema_version~=1 or type(m.release_id)~=&apos;string&apos; or not m.release_id:match(&apos;^[%w._-]+$&apos;) or type(m.packages)~=&apos;table&apos; or #m.packages~=#expected then return false,&apos;invalid_release_manifest&apos; end
+ local seen={}
+ for i,spec in ipairs(expected) do local p=m.packages[i]
+  if type(p)~=&apos;table&apos; or p.id~=spec[1] or p.name~=spec[2] or p.file~=spec[2]..&apos;.xml&apos; or p.required~=true
+   or type(p.sha256)~=&apos;string&apos; or #p.sha256~=64 or not p.sha256:match(&apos;^[a-fA-F0-9]+$&apos;)
+   or type(p.lua_sha256)~=&apos;string&apos; or #p.lua_sha256~=64 or not p.lua_sha256:match(&apos;^[a-fA-F0-9]+$&apos;)
+   or type(p.lua_chunks)~=&apos;number&apos; or p.lua_chunks&lt;0 or p.lua_chunks%1~=0
+   or type(p.depends_on)~=&apos;table&apos; then return false,&apos;invalid_release_package:&apos;..spec[1] end
+  for _,dependency in ipairs(p.depends_on) do if not seen[dependency] then return false,&apos;dependency_order:&apos;..p.id end end
+  seen[p.id]=true
+ end
+ return true
+end
+local function current(R)
+ local base=R.root..&apos;/Ysindrolir/releases&apos;
+ local pointer=decode(read(base..&apos;/current.json&apos;))
+ if not pointer or type(pointer.directory)~=&apos;string&apos; or not pointer.directory:match(&apos;^[%w_-][%w._-]*$&apos;) or pointer.directory:find(&apos;..&apos;,1,true) then return nil,&apos;release_not_published&apos; end
+ local dir=base..&apos;/&apos;..pointer.directory
+ local text=read(dir..&apos;/manifest.json&apos;);local m=decode(text)
+ local ok,why=validate_manifest(m);if not ok then return nil,why end
+ return m,dir,text
+end
+local function metadata(bytes,receipt,name,spec)
+ if type(receipt)~=&apos;string&apos; then return false,&apos;unpublished_xml:&apos;..name end
+ local ending=receipt:find(&apos;\n&apos;,1,true);if not ending then return false,&apos;invalid_receipt:&apos;..name end
+ local n=tonumber(receipt:sub(1,ending-1));if n~=#bytes or receipt:sub(ending+1,ending+n)~=bytes then return false,&apos;invalid_receipt:&apos;..name end
+ local pos=ending+n+1;local compiler=loadstring or load;local count=0
+ if B.sha256(receipt:sub(pos))~=spec.lua_sha256:lower() then return false,&apos;invalid_receipt:&apos;..name end
+ while pos&lt;=#receipt do
+  ending=receipt:find(&apos;\n&apos;,pos,true);if not ending then return false,&apos;invalid_receipt:&apos;..name end
+  local digits=receipt:sub(pos,ending-1);if not digits:match(&apos;^%d+$&apos;) then return false,&apos;invalid_receipt:&apos;..name end
+  n=tonumber(digits);if n&gt;#receipt-ending then return false,&apos;invalid_receipt:&apos;..name end
+  if not compiler(receipt:sub(ending+1,ending+n),name..&apos;:release preflight&apos;) then return false,&apos;invalid_lua:&apos;..name end
+  count=count+1
+  pos=ending+n+1
+ end
+ if count~=spec.lua_chunks then return false,&apos;invalid_receipt:&apos;..name end
+ return true
+end
+local function connection()
+ if type(getConnectionInfo)~=&apos;function&apos; then return nil end
+ local ok,_,_,connected=pcall(getConnectionInfo)
+ if ok and type(connected)==&apos;boolean&apos; then return connected end
+end
+local digest_cache={}
+local function digest(path,bytes)
+ if not bytes then return nil end
+ local cached=digest_cache[path]
+ if not cached or cached.bytes~=bytes then cached={bytes=bytes,sha256=B.sha256(bytes)};digest_cache[path]=cached end
+ return cached.sha256
+end
+function B.bind(R)
+ local function home() return getMudletHomeDir():gsub(&apos;\\&apos;,&apos;/&apos;):gsub(&apos;/+$&apos;,&apos;&apos;)..&apos;/yso-workspace&apos; end
+ local function say(s) if type(cecho)==&apos;function&apos; then cecho(&apos;&lt;steel_blue&gt;[Yso release] &lt;reset&gt;&apos;..s..&apos;\n&apos;) end end
+ local function hold(reason)
+  Yso=Yso or {};Yso.pause=Yso.pause or {};Yso.pause.offense=Yso.pause.offense or {}
+  Yso.pause.offense.active=true;Yso.pause.offense.reason=reason
+  local M=Yso.mode
+  if M and type(M.start_route_loop)==&apos;function&apos; and M.start_route_loop~=R.release_guard then
+   local original=M.start_route_loop;R.release_guard=function(...)
+    if R.busy or R.restart_required then return false,&apos;release_restart_required&apos; end;return original(...)
+   end;M.start_route_loop=R.release_guard
+  end
+ end
+ local function later(key,delay,fn)
+  local id=R.timers[key];if id and type(killTimer)==&apos;function&apos; then killTimer(id) end
+  local generation=R.generation
+  R.timers[key]=tempTimer(delay,function() if generation~=R.generation then return end;R.timers[key]=nil;fn() end)
+ end
+ local function fail(why)
+  for _,key in ipairs({&apos;bundle_operation&apos;,&apos;bundle_timeout&apos;}) do if R.timers[key] and type(killTimer)==&apos;function&apos; then killTimer(R.timers[key]) end;R.timers[key]=nil end
+  local job=R.bundle_current
+  if job and job.previous then write(home()..&apos;/modules/&apos;..job.name..&apos;.xml&apos;,job.previous) end
+  R.busy=false;R.bundle_current=nil;R.last_result=&apos;failed&apos;;R.last_error=tostring(why);R.restart_required=true
+  hold(&apos;release_restart_required&apos;)
+  say(&apos;Installation stopped: &apos;..R.last_error..&apos;. A partial update is possible. Restart only after recovery; automation remains blocked.&apos;)
+  if R.backup_path then say(&apos;Profile backup: &apos;..R.backup_path) end
+ end
+ function R.release_status()
+  local m,why=current(R)
+  local installed=decode(read(home()..&apos;/release-installed.json&apos;))
+  local rows,consistent={},installed~=nil
+  if installed then local valid=validate_manifest(installed);consistent=valid end
+  if installed and consistent then
+   for _,p in ipairs(installed.packages) do
+    local path=home()..&apos;/modules/&apos;..p.name..&apos;.xml&apos;
+    local present=type(getModules)==&apos;function&apos; and contains(getModules(),p.name)
+    local managed=present and type(getModulePath)==&apos;function&apos; and tostring(getModulePath(p.name) or &apos;&apos;):gsub(&apos;\\&apos;,&apos;/&apos;)==path
+    local bytes=read(path)
+    local exact=bytes~=nil and bytes==read(home()..&apos;/modules/&apos;..p.name..&apos;.applied.xml&apos;)
+    local expected_hash=digest(path,bytes)==p.sha256:lower()
+    local okay=managed and exact and expected_hash
+    rows[#rows+1]={id=p.id,name=p.name,sha256=p.sha256,installed=present,consistent=okay}
+    consistent=consistent and okay
+   end
+  end
+  local conflicts={}
+  for _,n in ipairs({&apos;stormhammer aliases&apos;,&apos;stormhammer script&apos;,&apos;Target things&apos;}) do
+   if (type(getPackages)==&apos;function&apos; and contains(getPackages(),n)) or (type(getModules)==&apos;function&apos; and contains(getModules(),n)) then conflicts[#conflicts+1]=n end
+  end
+  return {id=installed and installed.release_id or nil,available_id=m and m.release_id or nil,
+   available=m~=nil,reason=not m and why or nil,consistent=consistent,packages=rows,conflicts=conflicts,
+   restart_required=R.restart_required==true}
+ end
+ function R.validate_hot_reload(jobs)
+  local installed=decode(read(home()..&apos;/release-installed.json&apos;))
+  if not installed then return false,&apos;coordinated_install_required&apos; end
+  if R.restart_required or not R.release_status().consistent then return false,&apos;release_restart_required&apos; end
+  local m,why,text=current(R);if not m then return false,why end
+  local submitted={};for _,job in ipairs(jobs) do submitted[job.name]=job.bytes end
+  for i,p in ipairs(installed.packages) do
+   local next=m.packages[i]
+   if p.id==&apos;ak&apos; or p.id==&apos;yso&apos; then
+    if not submitted[p.name] or B.sha256(submitted[p.name])~=next.sha256:lower() then return false,&apos;release_not_published:&apos;..p.name end
+   elseif p.sha256:lower()~=next.sha256:lower() then return false,&apos;full_install_required:&apos;..p.name end
+  end
+  R.pending_hot_manifest=m;R.pending_hot_text=text
+  return true
+ end
+ function R.commit_hot_release()
+  if not R.pending_hot_manifest then return true end
+  for _,p in ipairs(R.pending_hot_manifest.packages) do
+   local path=home()..&apos;/modules/&apos;..p.name..&apos;.xml&apos;
+   local bytes=read(path)
+   if digest(path,bytes)~=p.sha256:lower() or bytes~=read(home()..&apos;/modules/&apos;..p.name..&apos;.applied.xml&apos;) then return false,&apos;release_snapshot_mismatch:&apos;..p.name end
+  end
+  local okay,why=write(home()..&apos;/release-installed.json&apos;,R.pending_hot_text)
+  if not okay then return false,&apos;installed_manifest:&apos;..tostring(why) end
+  R.pending_hot_manifest=nil;R.pending_hot_text=nil;return true
+ end
+ local function offline()
+  if type(getProfileName)~=&apos;function&apos; or getProfileName()~=&apos;Achaea&apos; then return false,&apos;wrong_profile&apos; end
+  local connected=connection();if connected==nil then return false,&apos;connection_state_unknown&apos; end
+  if connected then return false,&apos;connected&apos; end
+  return true
+ end
+ local function preflight()
+  local ok,why=offline();if not ok then return nil,why end
+  if Yso and type(Yso.mode)==&apos;table&apos; and type(R.idle)==&apos;function&apos; then
+   local idle,reason=R.idle();if not idle then return nil,reason end
+  end
+  if Legacy and Legacy.Settings and Legacy.Settings.Basher and Legacy.Settings.Basher.status==true then return nil,&apos;automation_active&apos; end
+  for _,name in ipairs({&apos;getPackages&apos;,&apos;getModules&apos;,&apos;getModulePath&apos;,&apos;installModule&apos;,&apos;reloadModule&apos;,&apos;uninstallPackage&apos;,&apos;setModulePriority&apos;,&apos;disableModuleSync&apos;,&apos;saveProfile&apos;,&apos;registerAnonymousEventHandler&apos;,&apos;tempTimer&apos;}) do
+   if type(_G[name])~=&apos;function&apos; then return nil,&apos;missing_api:&apos;..name end
+  end
+  if not (lfs and type(lfs.mkdir)==&apos;function&apos;) then return nil,&apos;filesystem_api_unavailable&apos; end
+  local m,dir,text=current(R);if not m then return nil,dir end
+  if not encode(m) then return nil,&apos;serialization_unavailable&apos; end
+  local jobs={}
+  for i,p in ipairs(m.packages) do
+   local bytes=read(dir..&apos;/&apos;..p.file)
+   if not valid_xml(bytes) then return nil,&apos;invalid_xml:&apos;..p.name end
+   if B.sha256(bytes)~=p.sha256:lower() then return nil,&apos;hash_mismatch:&apos;..p.name end
+   local valid,reason=metadata(bytes,read(dir..&apos;/&apos;..p.name..&apos;.validated&apos;),p.name,p);if not valid then return nil,reason end
+   local mod=contains(getModules(),p.name);local pkg=contains(getPackages(),p.name)
+   if mod and pkg then return nil,&apos;ambiguous_install:&apos;..p.name end
+   local path=home()..&apos;/modules/&apos;..p.name..&apos;.xml&apos;
+   if mod and tostring(getModulePath(p.name) or &apos;&apos;):gsub(&apos;\\&apos;,&apos;/&apos;)~=path then return nil,&apos;unmanaged_module:&apos;..p.name end
+   jobs[i]={id=p.id,name=p.name,bytes=bytes,sha256=p.sha256:lower(),was_module=mod,was_package=pkg,previous=read(path),priority=i-1}
+  end
+  return {jobs=jobs,manifest=m,text=text}
+ end
+ local next_job
+ local function finish(job)
+  if not R.busy or R.bundle_current~=job or not job.ack then return end
+  local ok,why=offline();if not ok then fail(why);return end
+  local path=home()..&apos;/modules/&apos;..job.name..&apos;.xml&apos;
+  if tostring(getModulePath(job.name) or &apos;&apos;):gsub(&apos;\\&apos;,&apos;/&apos;)~=path or read(path)~=job.bytes then fail(&apos;module_input_changed:&apos;..job.name);return end
+  local configured,err=pcall(function() setModulePriority(job.name,job.priority);disableModuleSync(job.name) end)
+  if not configured then fail(&apos;module_configuration:&apos;..tostring(err));return end
+  local saved,e=write(home()..&apos;/modules/&apos;..job.name..&apos;.applied.xml&apos;,job.bytes);if not saved then fail(&apos;snapshot:&apos;..tostring(e));return end
+  saved,e=write(home()..&apos;/modules/&apos;..job.name..&apos;.sha256&apos;,job.sha256);if not saved then fail(&apos;snapshot_hash:&apos;..tostring(e));return end
+  if R.timers.bundle_timeout and type(killTimer)==&apos;function&apos; then killTimer(R.timers.bundle_timeout) end;R.timers.bundle_timeout=nil
+  R.bundle_current=nil;later(&apos;bundle_operation&apos;,0.1,next_job)
+ end
+ next_job=function()
+  if not R.busy then return end
+  local okay,reason=offline();if not okay then fail(reason);return end
+  R.bundle_index=R.bundle_index+1;local job=R.bundle_jobs[R.bundle_index]
+  if not job then
+   local saved,e=write(home()..&apos;/release-installed.json&apos;,R.bundle_manifest_text)
+   if not saved then fail(&apos;installed_manifest:&apos;..tostring(e));return end
+   R.busy=false;R.bundle_current=nil;R.last_result=&apos;installed_restart_required&apos;;R.last_error=nil
+   hold(&apos;release_restart_required&apos;);say(&apos;Coordinated release installed. Restart this profile before connecting or resuming automation.&apos;);return
+  end
+  R.bundle_current=job;hold(&apos;release_restart_required&apos;)
+  local okay,e=write(home()..&apos;/modules/&apos;..job.name..&apos;.xml&apos;,job.bytes);if not okay then fail(&apos;stage:&apos;..tostring(e));return end
+  later(&apos;bundle_timeout&apos;,20,function() R.last_result=&apos;waiting&apos;;R.last_error=&apos;waiting_for_native_module:&apos;..job.name;say(&apos;Waiting for &apos;..job.name..&apos;. Updates and automation remain blocked; restart only after recovery.&apos;) end)
+  local called,result,err=pcall(function()
+   if job.was_package then uninstallPackage(job.name);if contains(getPackages(),job.name) then return false,&apos;package_removal_failed&apos; end end
+   if job.was_module then return reloadModule(job.name) end
+   return installModule(home()..&apos;/modules/&apos;..job.name..&apos;.xml&apos;)
+  end)
+  if not called or result==false or (result==nil and err~=nil) then fail(job.name..&apos;:&apos;..tostring(called and err or result)) end
+ end
+ function R.install()
+  if R.busy then return false,&apos;busy&apos; end
+  local bundle,why=preflight();if not bundle then say(&apos;Installation held: &apos;..tostring(why));return false,why end
+  for _,dir in ipairs({home(),home()..&apos;/modules&apos;,home()..&apos;/backups&apos;}) do local ok,e=lfs.mkdir(dir);if not ok and not (lfs.attributes and lfs.attributes(dir,&apos;mode&apos;)==&apos;directory&apos;) then
+   -- mkdir may return nil for an existing directory. A file read is not a valid substitute.
+   if type(lfs.attributes)==&apos;function&apos; then return false,&apos;directory_unavailable:&apos;..tostring(e) end
+  end end
+  R.sequence=(R.sequence or 0)+1;local filename=&apos;before-release-&apos;..os.time()..&apos;-&apos;..R.sequence
+  R.bundle_backup_dir=home()..&apos;/backups/&apos;..filename
+  local made,e=lfs.mkdir(R.bundle_backup_dir);if not made and type(lfs.attributes)==&apos;function&apos; and lfs.attributes(R.bundle_backup_dir,&apos;mode&apos;)~=&apos;directory&apos; then return false,&apos;backup_directory:&apos;..tostring(e) end
+  R.backup_path=R.bundle_backup_dir..&apos;/profile.xml&apos;
+  R.busy=true;R.action=&apos;install&apos;;R.restart_required=true;R.bundle_jobs=bundle.jobs;R.bundle_index=0
+  R.bundle_manifest_text=bundle.text;R.last_error=nil;hold(&apos;release_restart_required&apos;)
+  local ok,result,err=pcall(saveProfile,R.bundle_backup_dir,&apos;profile&apos;)
+  if not ok or result==false or (result==nil and err~=nil) then fail(&apos;profile_backup_failed&apos;);return false,&apos;profile_backup_failed&apos; end
+  local attempts=0
+  local function await_backup()
+   if not R.busy then return end
+   local valid,why=offline();if not valid then fail(why);return end
+   attempts=attempts+1
+   if valid_xml(read(R.backup_path)) then
+    -- Complete all managed-file backups before replacing the first package.
+    for _,job in ipairs(R.bundle_jobs) do
+     if job.previous then
+      local saved,e=write(R.bundle_backup_dir..&apos;/&apos;..job.name..&apos;.xml&apos;,job.previous)
+      if not saved or read(R.bundle_backup_dir..&apos;/&apos;..job.name..&apos;.xml&apos;)~=job.previous then fail(&apos;managed_backup:&apos;..tostring(e or job.name));return end
+     end
+    end
+    local saved,e=write(home()..&apos;/release-pending.json&apos;,R.bundle_manifest_text)
+    if not saved then fail(&apos;pending_manifest:&apos;..tostring(e));return end
+    later(&apos;bundle_operation&apos;,0.1,next_job)
+   elseif attempts&gt;=50 then fail(&apos;profile_backup_timeout&apos;) else later(&apos;bundle_operation&apos;,0.2,await_backup) end
+  end
+  later(&apos;bundle_operation&apos;,0.1,await_backup);return true
+ end
+ function R.check_release() local bundle,why=preflight();return bundle~=nil,why end
+ -- Self-updates remove the old native owner&apos;s handlers. Re-arm this callback
+ -- from the replacement controller while its operation state is still live.
+ if type(registerAnonymousEventHandler)==&apos;function&apos; then
+  if R.handlers.bundle_install and type(killAnonymousEventHandler)==&apos;function&apos; then pcall(killAnonymousEventHandler,R.handlers.bundle_install) end
+  R.handlers.bundle_install=registerAnonymousEventHandler(&apos;sysInstall&apos;,function(_,name,errors)
+   local job=R.bundle_current;if not (R.busy and R.action==&apos;install&apos; and job and job.name==name) then return end
+   hold(&apos;release_restart_required&apos;)
+   if type(errors)==&apos;string&apos; and errors~=&apos;&apos; then fail(name..&apos;:&apos;..errors);return end
+   job.ack=true;later(&apos;bundle_operation&apos;,0.1,function() finish(job) end)
+  end)
+ end
+ if R.restart_required==nil then
+  local installed_text=read(home()..&apos;/release-installed.json&apos;)
+  local pending_text=read(home()..&apos;/release-pending.json&apos;)
+  local installed=decode(installed_text)
+  local pending=decode(pending_text)
+  local consistent=R.release_status().consistent
+  R.restart_required=(pending~=nil or installed~=nil) and not consistent or false
+  if (installed_text and installed_text~=&apos;&apos; and not installed) or (pending_text and pending_text~=&apos;&apos; and not pending) then R.restart_required=true end
+  if pending then
+   local valid=validate_manifest(pending)
+   local installed_valid=installed and validate_manifest(installed)
+   if not valid or not installed_valid or pending.release_id~=installed.release_id then R.restart_required=true
+   elseif #pending.packages~=#installed.packages then R.restart_required=true
+   else
+    for i,p in ipairs(pending.packages) do
+     local other=installed.packages[i]
+     if p.id~=other.id or p.sha256:lower()~=other.sha256:lower() then R.restart_required=true end
+    end
+   end
+  end
+  if pending and not R.restart_required then
+   local saved=write(home()..&apos;/release-pending.json&apos;,&apos;&apos;)
+   if not saved then R.restart_required=true end
+  end
+ end
+ if R.restart_required then hold(&apos;release_restart_required&apos;) end
+ return R
+end
+return B
+</script><eventHandlerList /></Script><Script isActive="yes" isFolder="no"><name>Achaea workspace link controller</name><packageName /><script>-- Independent controller: never embed this in either module it reloads.
 -- Workspace XMLs are read-only inputs; Mudlet owns only profile-local copies.
 YsoWorkspaceLink=YsoWorkspaceLink or {}
 local R=YsoWorkspaceLink
-if R.busy then return R end
+if R.busy then
+ -- A full update may replace this controller last. Its previous native owner
+ -- has been removed, so the replacement must own the completion callback.
+ if YsoRelease and type(YsoRelease.bind)==&apos;function&apos; then YsoRelease.bind(R) end
+ return R
+end
 R.root=R.root or &apos;C:/Users/shuji/OneDrive/Desktop/Yso systems&apos;
 R.handlers=R.handlers or {};R.watches=R.watches or {};R.timers=R.timers or {}
 R.generation=(R.generation or 0)+1
@@ -81,6 +439,17 @@ local function resolve(namespace)
  end
  return value
 end
+local function pending_work(pending)
+ if type(pending)~=&apos;table&apos; then return pending~=nil and pending~=false end
+ for _,slot in pairs(pending) do
+  -- Magi keeps these two-field descriptors even after a normal route stop.
+  -- Unknown populated shapes still fail closed; do not infer expiry here.
+  if type(slot)==&apos;table&apos; and slot.target==&apos;&apos; and slot.until_t==0 then
+   for key in pairs(slot) do if key~=&apos;target&apos; and key~=&apos;until_t&apos; then return true end end
+  elseif type(slot)~=&apos;table&apos; or next(slot)~=nil then return true end
+ end
+ return false
+end
 function R.idle()
  if type(getProfileName)~=&apos;function&apos; or getProfileName()~=&apos;Achaea&apos; then return false,&apos;wrong_profile&apos; end
  if type(Yso)~=&apos;table&apos; or type(Yso.mode)~=&apos;table&apos; then return false,&apos;yso_unavailable&apos; end
@@ -95,9 +464,7 @@ function R.idle()
   local entry=RR.resolve and RR.resolve(id)
   local route=entry and resolve(entry.namespace)
   if type(route)==&apos;table&apos; and type(route.state)==&apos;table&apos; then
-   local pending=route.state.pending
-   local waiting=(type(pending)==&apos;table&apos; and next(pending)~=nil)
-    or (pending~=nil and pending~=false and type(pending)~=&apos;table&apos;)
+   local waiting=pending_work(route.state.pending)
    if route.state.loop_enabled==true or waiting then return false,&apos;automation_active&apos; end
   end
  end
@@ -138,6 +505,9 @@ local function preflight(link)
   jobs[i]={name=name,bytes=bytes,was_module=mod,was_package=pkg,
    previous=read(staged(name)),priority=i-1}
  end
+ if type(R.validate_hot_reload)==&apos;function&apos; then
+  local valid,reason=R.validate_hot_reload(jobs);if not valid then return nil,reason end
+ end
  return jobs
 end
 local function guard_routes()
@@ -164,11 +534,15 @@ function R.status(echo)
   rows[#rows+1]={name=name,linked=linked,changed=different,source=source(name),module=staged(name)}
   changed=changed or different
  end
- local result={busy=R.busy==true,changed=changed,modules=rows,last_error=R.last_error}
+ local release=type(R.release_status)==&apos;function&apos; and R.release_status() or nil
+ local result={busy=R.busy==true,changed=changed,modules=rows,last_error=R.last_error,
+  release=release,restart_required=R.restart_required==true}
  if echo~=false then
   for _,row in ipairs(rows) do say(row.name..&apos;: &apos;..(row.linked and &apos;linked&apos; or &apos;not linked&apos;)..&apos;, &apos;..(row.changed and &apos;workspace update pending&apos; or &apos;up to date&apos;)) end
   if R.busy then say(&apos;Update in progress.&apos;) end
   if R.last_error then say(&apos;Last update failed: &apos;..R.last_error) end
+  if R.restart_required then say(&apos;A coordinated release requires profile restart or recovery; automation remains blocked.&apos;) end
+  if release then for _,name in ipairs(release.conflicts or {}) do say(&apos;Unmanaged overlapping package: &apos;..name) end end
  end
  return result
 end
@@ -218,6 +592,9 @@ next_job=function()
  R.index=R.index+1
  local job=R.jobs[R.index]
  if not job then
+  if type(R.commit_hot_release)==&apos;function&apos; then
+   local okay,why=R.commit_hot_release();if not okay then fail(why);return end
+  end
   R.busy=false;R.last_result=R.action==&apos;link&apos; and &apos;linked&apos; or &apos;reloaded&apos;;R.last_error=nil
   if R.previous_pause and Yso.pause and Yso.pause.offense and Yso.pause.offense.reason==&apos;workspace_reload&apos; then
    Yso.pause.offense.active=R.previous_pause.active;Yso.pause.offense.reason=R.previous_pause.reason or &apos;&apos;
@@ -254,6 +631,7 @@ next_job=function()
 end
 local function start(action)
  if R.busy then return false,&apos;busy&apos; end
+ if R.restart_required then return false,&apos;release_restart_required&apos; end
  local jobs,why=preflight(action==&apos;link&apos;)
  if not jobs then say(&apos;Update held: &apos;..why);return false,why end
  if not (lfs and type(lfs.mkdir)==&apos;function&apos;) then return false,&apos;filesystem_api_unavailable&apos; end
@@ -325,5 +703,6 @@ if type(addFileWatch)==&apos;function&apos; then
   local ok=pcall(addFileWatch,path);if ok then R.watches[path]=true end
  end
 end
+if YsoRelease and type(YsoRelease.bind)==&apos;function&apos; then YsoRelease.bind(R) end
 return R
 </script><eventHandlerList /></Script></ScriptPackage></MudletPackage>

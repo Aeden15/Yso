@@ -147,6 +147,10 @@ function F.build_use(name, arg)
   if not meta then
     return nil
   end
+  if type(F.is_offensive_gas) == "function" and F.is_offensive_gas(meta.use_name or meta.name)
+      and not (Yso.features and Yso.features.alchemist_offense == true) then
+    return nil, "alchemist_offense_suspended"
+  end
 
   local needs_phial = meta.delivery ~= "enhanced_state_ability" and meta.delivery ~= "utility"
   local phial

@@ -174,7 +174,9 @@ function P.handle_humour_balance_line(line)
     if type(P.clear_pending_class) == "function" then
       P.clear_pending_class("humour_fail", { clear_any = true, clear_staged = true })
     end
-    if type(send) == "function" then
+    local controller = rawget(_G, "YsoWorkspaceLink")
+    local held = type(controller) == "table" and (controller.busy == true or controller.restart_required == true)
+    if not held and type(send) == "function" then
       pcall(send, "CLEARQUEUE c!p!w!t", false)
     end
     P.state = P.state or {}

@@ -591,6 +591,10 @@ function F.build_adjustment(action, axis, target)
 end
 
 function F.send_adjustment(action, axis, target)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
   local cmd = F.build_adjustment(action, axis, target)
   if not cmd then
     return nil
@@ -693,6 +697,10 @@ function F.build_role_amalgamate(role, compound)
 end
 
 function F.send_role_amalgamate(role, compound)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
   local cmd, context = F.build_role_amalgamate(role, compound)
   if not cmd then
     return nil
@@ -803,6 +811,10 @@ function F.build_role_amalgamate_autofix(role, compound)
 end
 
 function F.send_role_amalgamate_autofix(role, compound)
+  local controller = rawget(_G, "YsoWorkspaceLink")
+  if type(controller) == "table" and (controller.busy == true or controller.restart_required == true) then
+    return false, controller.busy == true and "workspace_reload" or "restart_required"
+  end
   local plan, context = F.build_role_amalgamate_autofix(role, compound)
   if not plan then
     return nil

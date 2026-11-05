@@ -25,3 +25,6 @@ Desktop.ini
 *.bak
 # Local validation snapshots for the Achaea workspace link (regenerate after builds).
 Ysindrolir/.workspace-link-publish/
+Ysindrolir/releases/
+Ysindrolir/.verification/
+.superpowers/

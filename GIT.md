@@ -29,6 +29,13 @@ Both this helper and `sync_workspace.ps1` use `scripts/Sync-YsoWorkspace.ps1`:
 - Refuse symlink/junction destinations; allow ordinary OneDrive cloud files.
 - Exclude local environment/editor files, logs, backups, and `.workspace-link-publish/`.
 
+`Invoke-YsoGit.ps1` also synchronizes root documentation, GitHub workflows, and
+Git metadata files. Root `docs/` plans require an explicit reviewed copy; the
+helper does not publish historical workspace drafts. Generated
+`Ysindrolir/releases/` and `.verification/` output
+is excluded; rebuild releases locally after syncing. A Git push updates source
+and workflows and does not install packages in Mudlet.
+
 If a retired destination file was modified, synchronization stops before copying.
 Review and preserve those edits explicitly before resolving the retirement;
 do not bypass the guard by using an unrestricted directory mirror.

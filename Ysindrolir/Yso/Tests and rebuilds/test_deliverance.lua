@@ -13,7 +13,7 @@ function tempAlias(pattern, fn) serial=serial+1; aliases[serial]={pattern,fn}; r
 function killAlias(id) aliases[id]=nil end
 function tempRegexTrigger() serial=serial+1; return serial end
 function killTrigger() end
-Yso={cfg={cmd_sep='&&'},net={cfg={dry_run=false}},class='magi',
+Yso={features={alchemist_offense=true},cfg={cmd_sep='&&'},net={cfg={dry_run=false}},class='magi',
   state={eq_ready=function() return true end,bal_ready=function() return true end}}
 yso=Yso
 gmcp={Char={Status={class='magi'},Vitals={eq='1',bal='1'}}}

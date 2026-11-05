@@ -12,7 +12,7 @@ local function fire(e,...)
 end
 local function eq(a,b) assert(a==b,tostring(a)..' ~= '..tostring(b)) end
 target='Bob';gmcp={Char={Status={class='Apostate'},Vitals={bal='1',eq='1',mp='1000'}}}
-Yso={get_target=function() return target end,self={has_aff=function(a) return a=='paralysis' and paralyzed end}}
+Yso={features={alchemist_offense=true},get_target=function() return target end,self={has_aff=function(a) return a=='paralysis' and paralyzed end}}
 local RR=dofile(root..'/Yso/Combat/route_registry.lua')
 local RI=dofile(root..'/Yso/Combat/route_interface.lua')
 local P=dofile(root..'/Yso/Combat/combat_pause.lua')
