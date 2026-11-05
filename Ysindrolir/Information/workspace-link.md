@@ -67,7 +67,19 @@ the prior pause state without starting any route.
 The self-affliction and serverside-policy install-once hooks are explicitly
 rearmed after Yso reload; existing affliction rows and curing configuration remain.
 No game commands are issued by the bridge itself.
-Reloaded modules can run their normal initialization queries.
+Automatic Magi equipment, Alchemist formulation, and curing-policy initialization
+queries wait for shared `Yso.session` readiness. A TCP connection or cached GMCP
+does not authenticate a new session. Disconnect invalidates deferred work; a
+fresh character event enables initialization without restarting combat routes.
+Legacy's separate login build also guards its automatic startup and deferred
+look/settings/curing callbacks against disconnect/reconnect. Its keepalive waits
+for readiness. Rebuild it with `scripts/build_legacy_login_safety_package.ps1`
+and import the resulting Legacy XML separately; a Yso export never changes Legacy.
+
+After removing retired Monk components, restart the Achaea profile after applying
+the update so old Lua globals and anonymous handlers do not survive. Deliverance
+scripts/triggers and their required compatibility state are retained. The bridge
+reloads only AK and Yso: import changed Legacy/limb packages separately.
 
 Rebuild the bridge with `scripts/build_workspace_link_package.ps1`; verify with
 `scripts/test_workspace_link_package.ps1`. Ordinary changes to AK/Yso do not

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Targeting Triggers</name>
+			<script />
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand />
+			<packageName>Targeting Triggers</packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile />
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Target Priority</name>
+				<script />
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand />
+				<packageName />
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile />
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList />
+				<regexCodePropertyList />
+				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>tprio announced</name>
+					<script>expandAlias("tgh "..matches[2])</script>
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand />
+					<packageName />
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile />
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList>
+						<string>^\(Party\): \S+ says, "Targets: (.+)\."</string>
+						<string>^\(Party\): \S+ says, "Priority Targets: (.+)\."</string>
+					</regexCodeList>
+					<regexCodePropertyList>
+						<integer>1</integer>
+						<integer>1</integer>
+					</regexCodePropertyList>
+				</Trigger>
+			</TriggerGroup>
+		</TriggerGroup>
+	</TriggerPackage>
+	<TimerPackage />
+	<AliasPackage>
+		<AliasGroup isActive="yes" isFolder="yes">
+			<name>Targeting aliases</name>
+			<script />
+			<command />
+			<packageName>Targeting aliases</packageName>
+			<regex />
+			<AliasGroup isActive="yes" isFolder="yes">
+				<name>Target Priority</name>
+				<script />
+				<command />
+				<packageName />
+				<regex />
+				<Alias isActive="yes" isFolder="no">
+					<name>Target Group</name>
+					<script>tprio.reset() 
+local tgs = matches[2]:gsub(",", "")
+tgs = tgs:gsub("(%a+)", function(n) 
+  return n:lower():title()
+end)
+tgs = tgs:split(" ")
+tprio.addGroup(tgs)</script>
+					<command />
+					<packageName />
+					<regex>^tgh (.+)$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Enemy Prio</name>
+					<script>send("unenemy all")
+for _, v in ipairs(tprio.list) do
+  send("enemy "..v)
+end</script>
+					<command />
+					<packageName />
+					<regex>^(?:ept|etp)$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Targets announce</name>
+					<script>tprio.pt()</script>
+					<command />
+					<packageName />
+					<regex>^tp$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Target First</name>
+					<script>tprio.current=0 tprio.next()</script>
+					<command />
+					<packageName />
+					<regex>^tpf$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Target Next</name>
+					<script>tprio.next()</script>
+					<command />
+					<packageName />
+					<regex>^tpn$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Target Last</name>
+					<script>tprio.previous()</script>
+					<command />
+					<packageName />
+					<regex>^tpl$</regex>
+				</Alias>
+				<Alias isActive="yes" isFolder="no">
+					<name>Partycalling</name>
+					<script>  
+if not partyReporting then
+  partyReporting = true
+  cecho("&lt;pink&gt;\nWe are now reporting to party.")
+  send("pt Now reporting to the party.")
+elseif partyReporting then
+  partyReporting = false
+  cecho("&lt;blue&gt;\nWe are not reporting to party.")
+end</script>
+					<command />
+					<packageName />
+					<regex>^prep$</regex>
+				</Alias>
+			</AliasGroup>
+		</AliasGroup>
+	</AliasPackage>
+	<ActionPackage />
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>Targeting Script</name>
+			<packageName>Targeting Script</packageName>
+			<script />
+			<eventHandlerList />
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Target Priority</name>
+				<packageName />
+				<script />
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>tprio core</name>
+					<packageName />
+					<script>local function clamp(value, min, max)
+  value = math.min(value, max)
+  value = math.max(value, min)
+  return value
+end
+
+tprio = tprio or {}
+
+tprio.list = tprio.list or {}
+
+tprio.current = tprio.current or 0
+
+function tprio.add(name)
+  if not table.contains(tprio.list, name) then  
+    table.insert(tprio.list, name)
+  end
+end
+
+function tprio.reset()
+  tprio.current = 0
+  tprio.list = {}
+  echo("Target priority: none.")
+end
+
+function tprio.addGroup(list)
+  if type(list) == "string" then
+    tprio.add(list)
+  elseif type(list) == "table" then
+    for _, tg in ipairs(list) do
+      tprio.add(tg:lower():title())
+    end
+  else
+    error("tprio.addGroup: incorrect input, must be string or table.")
+  end
+  tprio.print()
+end
+
+function tprio.remove(name)
+  local n = table.index_of(tprio.list, name)
+  if n then table.remove(tprio.list, n) end
+  tprio.print()
+end
+
+function tprio.string()
+  return "\nPriority Targets: "..table.concat(tprio.list, ", ")
+end
+
+function tprio.pt()
+  send(f"pt {tprio.string()}")
+end
+
+function tprio.print()
+  echo(tprio.string())
+end
+
+function tprio.next()
+  if (not (tprio.current == 0)) and target then tprio.current = table.index_of(tprio.list, target) or tprio.current end
+  tprio.current = clamp(tprio.current+1, 1, #tprio.list)
+  raiseEvent("tprio", tprio.list[tprio.current])
+end
+
+function tprio.previous()
+  if target then tprio.current = table.index_of(tprio.list, target) or tprio.current end
+  tprio.current = clamp(tprio.current-1, 1, #tprio.list)
+  raiseEvent("tprio", tprio.list[tprio.current])
+end
+
+function tprio_auto_target()
+  if thammer.players[target] then return end
+  for i, v in ipairs(tprio.list) do
+    if thammer.players[v] then
+      tprio.current = i
+      raiseEvent("tprio", v)
+      break
+    end
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>tprio_pt</name>
+					<packageName />
+					<script>function tprio_pt(e, name)
+  target = name:lower():title()
+  send("st "..target)
+  targetting(target)
+end</script>
+					<eventHandlerList>
+						<string>tprio</string>
+					</eventHandlerList>
+				</Script>
+			</ScriptGroup>
+		</ScriptGroup>
+	</ScriptPackage>
+	<KeyPackage />
+</MudletPackage>

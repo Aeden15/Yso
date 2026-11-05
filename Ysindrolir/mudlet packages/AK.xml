@@ -6989,267 +6989,7 @@ end</script>
 					</regexCodePropertyList>
 				</Trigger>
 			</TriggerGroup>
-			<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-				<name>Monk Group</name>
-				<script />
-				<triggerType>0</triggerType>
-				<conditonLineDelta>0</conditonLineDelta>
-				<mStayOpen>0</mStayOpen>
-				<mCommand />
-				<packageName />
-				<mFgColor>#ff0000</mFgColor>
-				<mBgColor>#ffff00</mBgColor>
-				<mSoundFile />
-				<colorTriggerFgColor>#000000</colorTriggerFgColor>
-				<colorTriggerBgColor>#000000</colorTriggerBgColor>
-				<regexCodeList />
-				<regexCodePropertyList />
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Pmp</name>
-					<script>if ak.ai() then return end
-aff = "impatience"
-if IsTargetted(multimatches[2][2]) then
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>The palmstrike smashes into the temple of</string>
-						<string>^The palmstrike smashes into the temple of ([\w'\-]+)\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>2</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Pmp2</name>
-					<script>if ak.ai() then return end
-aff = "stupidity"
-if IsTargetted(multimatches[2][2])then
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>Your palm smashes into the bridge of</string>
-						<string>^Your palm smashes into the bridge of ([\w'\-]+)'s nose\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>2</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Jbp</name>
-					<script>if ak.ai() then return end
-aff = "deaf"
-if IsTargetted(multimatches[2][2]) then
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>You expertly jab your fingers into the nerve cluster behind the ear of</string>
-						<string>^You expertly jab your fingers into the nerve cluster behind the ear of ([\w'\-]+)\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>2</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Blp</name>
-					<script>if ak.ai() then return end
-aff = "dizziness"
-if IsTargetted(multimatches[2][2]) then
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>1</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>You whip your hand in a vicious bladehand at the neck of</string>
-						<string>^You whip your hand in a vicious bladehand at the neck of ([\w'\-]+)\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>2</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Wrench Head</name>
-					<script>if ak.ai() then return end
-if IsTargetted(matches[2]) then
-   if affstrack.score.head == 0 then
-	    ak.limbs.limbcount[target]["head"] = 0
-	    affstrack.score.head = 100
-	 end
-   local aff = "wrenchhead,epilepsy"
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^Grabbing hold of the head of ([\w'\-]+)\, you savagely wrench it down and forward\, driving your knee up to meet it with a sickening crack\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Wrench Torso</name>
-					<script>if ak.ai() then return end
-if IsTargetted(matches[2]) then
-   if affstrack.score.torso == 0 then
-	    ak.limbs.limbcount[target]["torso"] = 0
-	    affstrack.score.torso = 100
-	 end
-   local aff = "wrenchtorso"
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^Stepping inside the guard of ([\w'\-]+)\, you lock your hands behind \w+ before savagely wrenching \w+ forward\, driving your knee up beneath \w+ ribs\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Wrt Arm Failure</name>
-					<script>if ak.ai() then return end
-local limbcheck = matches[2]..""..matches[3]
-local lastpercentrelay = "lastpercent"..limbcheck
-if affstrack.score[limbcheck] &gt; 0 then
-    if ak.thoughtIhad then ak.thoughtIhad(limbcheck) else affstrack.score[limbcheck] = 0 end
-    ak.limbs.limbcount[target][limbcheck] = (ak.limbs.limbcount[target][lastpercentrelay])
-    _G[target.."rightlegdisablelimbdamage"] = nil
-    ak.scoreup(matches[4])
-end
-</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^The ([\w'\-]+) ([\w'\-]+) of ([\w'\-]+) is not sufficiently damaged for you to perform that attack against it\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Wrt Head/Torso Failure</name>
-					<script>if ak.ai() then return end
-local limbcheck = matches[2]
-local lastpercentrelay = "lastpercent"..limbcheck
-if affstrack.score[limbcheck] &gt; 0 then
-    if ak.thoughtIhad then ak.thoughtIhad(limbcheck) else affstrack.score[limbcheck] = 0 end
-    ak.limbs.limbcount[target][limbcheck] = (ak.limbs.limbcount[target][lastpercentrelay])
-    _G[target.."rightlegdisablelimbdamage"] = nil
-    ak.scoreup(matches[3])
-end
-ak.deleteFull()</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^The ([\w'\-]+) of ([\w'\-]+) is not sufficiently damaged for you to perform that attack against it\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Slam</name>
-					<script>if ak.ai() then return end
-aff = "scrambledbrains"
-ak.brainDuration = 30
-if IsTargetted(multimatches[1][2]) then
-   OppGainedAff(aff)
-end</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>1</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^You move in to grab (\w+) for a body slam\.$</string>
-						<string>^You pick up \w+ prone form\, turn\, and smash \w+ into the ground\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-			</TriggerGroup>
+			
 			<TriggerGroup isActive="no" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Occultist Group</name>
 				<script />
@@ -8610,10 +8350,10 @@ ak.deleteFull()</script>
 									<string>^[\w'\-]+ is regenerating [\w'\-]+ at an increased rate\.$</string>
 									<string>^[\w'\-]+ limbs are suffused with divinely-inspired strength\.$</string>
 									<string>^[\w'\-]+ is using [\w'\-]+ superior constitution to prevent nausea\.$</string>
-									<string>^[\w'\-]+ is regenerating lost health through the power of Kaido\.$</string>
-									<string>^[\w'\-]+ is cloaking [\w'\-]+ attempts at establishing a mindlock\.$</string>
-									<string>^[\w'\-]+ is utilising the trance to store Kai energy\.$</string>
-									<string>^[\w'\-]+ has boosted the power of [\w'\-]+ Kai Trance\.$</string>
+									
+									
+									
+									
 									<string>^[\w'\-]+ has tentacles flailing from [\w'\-]+ body\.$</string>
 								</regexCodeList>
 								<regexCodePropertyList>
@@ -8662,10 +8402,10 @@ ak.deleteFull()</script>
 									<integer>1</integer>
 									<integer>1</integer>
 									<integer>1</integer>
-									<integer>1</integer>
-									<integer>1</integer>
-									<integer>1</integer>
-									<integer>1</integer>
+									
+									
+									
+									
 									<integer>1</integer>
 								</regexCodePropertyList>
 							</Trigger>
@@ -18072,7 +17812,6 @@ end
 	ak.limbs.absorbed = false
 	disableTrigger("Missed Single Removal Limbs")                --DO NOT CHANGE!
   disableTrigger("Parry locate")
-  disableTrigger("Monk Parry")
 elseif isPrompt() then
 	ak.limbs.parseBreaksPrompt()
 else
@@ -18125,625 +17864,7 @@ ak.limbs.absorbed = true</script>
 						<integer>3</integer>
 					</regexCodePropertyList>
 				</Trigger>
-				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Monk</name>
-					<script />
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList />
-					<regexCodePropertyList />
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>SDK</name>
-						<script>if ak.ai() then return end
-table.insert(ak.limbs.currentbreak.weapon,"sdk")
-table.insert(ak.limbs.currentbreak.limb, "torso")
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,target)
-table.insert(ak.limbs.currentbreak.augment,"none")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-disableTrigger("Monk Parry")
-
-
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You pump out at</string>
-							<string>^You pump out at ([\w'\-]+) with a powerful side kick\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>HKP</name>
-						<script>if ak.ai() then return end
-table.insert(ak.limbs.currentbreak.weapon,"hkp")
-table.insert(ak.limbs.currentbreak.limb, "torso")
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,target)
-table.insert(ak.limbs.currentbreak.augment,"none")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-disableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You unleash a powerful hook towards</string>
-							<string>^You unleash a powerful hook towards ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>UCP</name>
-						<script>if ak.ai() then return end
-table.insert(ak.limbs.currentbreak.weapon,"ucp")
-table.insert(ak.limbs.currentbreak.limb, "head")
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,target)
-table.insert(ak.limbs.currentbreak.augment,"none")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-disableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You launch a powerful uppercut at</string>
-							<string>^You launch a powerful uppercut at ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>WWK</name>
-						<script>if ak.ai() then return end
-table.insert(ak.limbs.currentbreak.weapon,"wwk")
-table.insert(ak.limbs.currentbreak.limb, "head")
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,target)
-table.insert(ak.limbs.currentbreak.augment,"none")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-disableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You spin into the air and throw a whirlwind kick towards</string>
-							<string>^You spin into the air and throw a whirlwind kick towards ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>AXK</name>
-						<script>if ak.ai() then return end
-if axkpunch1 then killTrigger(axkpunch1) end
---if ak.monk.axkpunch then axkpunch1 = tempTrigger("You have recovered balance on your", [[ak.monk.axkpunch();killTrigger(axkpunch1)]]) end
-table.insert(ak.limbs.currentbreak.weapon,"axk")
-table.insert(ak.limbs.currentbreak.limb, "head")
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,target)
-table.insert(ak.limbs.currentbreak.augment,"none")
-enableTrigger("Parry locate")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-disableTrigger("Monk Parry")
-
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You kick your leg high and scythe downwards at ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>HFP</name>
-						<script>if ak.ai() then return end
-disableTrigger("Missed Single Removal Limbs")  
-disableTrigger("Parry locate")
-enableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>2</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You ball up one fist and hammerfist</string>
-							<string>^You ball up one fist and hammerfist ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Left Leg</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "hfp", "leftleg", "none")
-</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the left leg!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Right Leg</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "hfp", "rightleg", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the right leg!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>SNK</name>
-						<script>if ak.ai() then return end
-disableTrigger("Missed Single Removal Limbs") 
-disableTrigger("Parry locate") 
-enableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>2</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You let fly at </string>
-							<string>^You let fly at ([\w'\-]+) with a snap kick\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Left Leg</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "snk", "leftleg", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the left leg!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Right Leg</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "snk", "rightleg", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the right leg!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>SPP</name>
-						<script>if ak.ai() then return end
-disableTrigger("Missed Single Removal Limbs")
-disableTrigger("Parry locate")  
-enableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>2</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You form a spear hand and stab out towards</string>
-							<string>^You form a spear hand and stab out towards ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Left Arm</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "spp", "leftarm", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the left arm!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Right Arm</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "spp", "rightarm", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the right arm!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>MNK</name>
-						<script>if ak.ai() then return end
-disableTrigger("Missed Single Removal Limbs") 
-disableTrigger("Parry locate") 
-enableTrigger("Monk Parry")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>2</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You hurl yourself towards</string>
-							<string>^You hurl yourself towards ([\w'\-]+) with a lightning-fast moon kick\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Left Arm</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "mnk", "leftarm", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the left arm!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Right Arm</name>
-							<script>if ak.ai() then return end
-ak.deleteFull()
-enableTrigger("Confirmed Hit Limbs")
-if #ak.limbs.parriedlimbs&gt;0 then
-	table.remove(ak.limbs.parriedlimbs,1)
-end
-disableTrigger("Monk Parry")
-ak.limbs.ScoreRun = false
-ak.limbs.LimbHit(target, "Me", "mnk", "rightarm", "none")</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You connect to the right arm!</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-					</Trigger>
-					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Monk Parry</name>
-						<script>if ak.ai() then return end
-ak.limbs.parriedlimbs = ak.limbs.parriedlimbs or {}
-if not IsTargetted(matches[2]) then return end
-if #ak.limbs.parriedlimbs == 0 then return end
-targetparry = ak.limbs.parriedlimbs[1]
-cecho("&lt;cyan&gt;\n\n YOU HIT PARRY(&lt;white&gt;"..targetparry:title().."&lt;cyan&gt;)!!\n\n")
-cecho("&lt;yellow&gt;\n\n YOU HIT PARRY(&lt;white&gt;"..targetparry:title().."&lt;yellow&gt;)!!\n\n")
-disableTrigger("Parry locate") 
-disableTrigger("Monk Parry")
-ak.scoreup(matches[2])</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^([\w'\-]+) steps into the attack, grabs your arm, and throw</string>
-							<string>^([\w'\-]+) parries the attack with a deft manoeuvre.$</string>
-							<string>^A chaos orb intercepts the attack against (\+) and renders it harmless\.$</string>
-							<string>^([\w'\-]+) moves into your attack, knocking your blow aside before viciously countering with a strike to your head\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Sent Queue</name>
-						<script>local combodraw = multimatches[2][2]
-if not string.findPattern(combodraw,"hfp") and not string.findPattern(combodraw,"snk") and not string.findPattern(combodraw,"spp") and not string.findPattern(combodraw,"mnk") and not string.findPattern(combodraw,"drawslash") then
-	return
-end
-combodraw = string.gsub(combodraw, "/", " ")
-combodraw = combodraw:split(" ")
-ak.limbs.parriedlimbs = {}
-for i = 1, #combodraw do
-   if string.findPattern(combodraw[i],"hfp") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."leg")
-   elseif string.findPattern(combodraw[i],"snk") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."leg")
-   elseif string.findPattern(combodraw[i],"spp") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."arm")
-   elseif string.findPattern(combodraw[i],"mnk") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."arm")
-	 elseif string.findPattern(combodraw[i],"drawslash") and combodraw[i+2] then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+2]:lower().."arm")
-   end 
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>Alias "</string>
-							<string>Alias \"\w+\" will now execute\: \"(.*)\"</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Queued Combo</name>
-						<script>local combodraw = multimatches[2][2]:lower()
-if not string.findPattern(combodraw,"hfp") and not string.findPattern(combodraw,"snk") and not string.findPattern(combodraw,"spp") and not string.findPattern(combodraw,"mnk") and not string.findPattern(combodraw,"drawslash") then
-	return
-end
-combodraw = string.gsub(combodraw, "|", " ")
-combodraw = combodraw:split(" ")
-ak.limbs.parriedlimbs = {}
-for i = 1, #combodraw do
-   if string.findPattern(combodraw[i],"hfp") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."leg")
-   elseif string.findPattern(combodraw[i],"snk") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."leg")
-   elseif string.findPattern(combodraw[i],"spp") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."arm")
-   elseif string.findPattern(combodraw[i],"mnk") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+1]:lower().."arm")
-	 elseif string.findPattern(combodraw[i],"drawslash") then
-      table.insert(ak.limbs.parriedlimbs,combodraw[i+2]:lower().."arm")
-   end 
-end
-ak.monkcombodraw = combodraw</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>1</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>Running queued</string>
-							<string>^Running queued \w+ command\: (.*)$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>2</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-				</TriggerGroup>
+				
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>BladeMaster</name>
 					<script />
@@ -19356,641 +18477,7 @@ enableTrigger("Parry locate")</script>
 						</regexCodePropertyList>
 					</Trigger>
 				</TriggerGroup>
-				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Shikudo</name>
-					<script />
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList />
-					<regexCodePropertyList />
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Thrust</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "thrust"
-local limb = ak.limbs.standardizeLimb(matches[2])
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Stepping forward\, you drive the end of .+ into the (right leg|left leg|right arm|left arm|head|torso) of ([\w'\-]+)\.$</string>
-							<string>^Continuing your kata\, you spin .+ in your hands and drive it in a sharp thrust towards the (right leg|left leg|right arm|left arm|head|torso) of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Needle</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "needle"
-local limb = ak.limbs.standardizeLimb("head")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^With pinpoint precision\, you drive .+ at the throat of ([\w'\-]+)\.$</string>
-							<string>^Reversing your grip on .+\, you drive the top of the weapon into the throat of ([\w'\-]+).$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Dart</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "dart"
-local limb = ak.limbs.standardizeLimb(matches[2])
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Sharply extending out your arms in front of you\, you deliver a lightning\-fast thrust to the (right leg|left leg|right arm|left arm|head|torso) of ([\w'\-]+) with .+\.$</string>
-							<string>^Spinning on one foot you bring .+ around in a lightning fast thrust at the (right leg|left leg|right arm|left arm|head|torso) of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Ruku</name>
-						<script>if ak.ai() then return end
---ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "ruku"
-local limb = ak.limbs.standardizeLimb(matches[2])
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You spin a full rotation\, bringing .+ around in a blur of motion to smash into the (left arm|right arm|head|torso|left leg|right leg) of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Ruku Combo</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "ruku"
-local limb = ak.limbs.standardizeLimb(matches[3])
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You whip .+ at ([\w'\-]+) in a controlled arc\, bringing its length to crack against [\w'\-]+ (right leg|left leg|right arm|left arm|head|torso)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Front Kick</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-local augment = "none"
-local weapon = "frontkick"
-local limb = ak.limbs.standardizeLimb(matches[2].."arm")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You lash out with a straight kick at the ([\w'\-]+) shoulder of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Kuro</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "kuro"
-local limb = ak.limbs.standardizeLimb(matches[2].." leg")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Falling back into a low crouch\, you lash out with a swift strike at the ([\w'\-]+) thigh of ([\w'\-]+)\.$</string>
-							<string>^Dropping into a lower stance\, you sweep a .+ at the ([\w'\-]+) thigh of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Livestrike</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "livestrike"
-local limb = ak.limbs.standardizeLimb("torso")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Lunging forward, you drive the end of .+ viciously into the solar plexus of ([\w'\-]+)\.$</string>
-							<string>^Turning with the motion\, you channel the momentum of your previous strike into a thrust at the solar plexus of ([\w'\-]+) with .+\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Nervestrike</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "nervestrike"
-local limb = ak.limbs.standardizeLimb("head")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You whip a .+ at the side of ([\w'\-]+)\'s neck\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Spinkick Torso</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-local augment = "none"
-local weapon = "spinkick"
-local limb = ak.limbs.standardizeLimb("torso")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Whirling around\, you bring the ball of your foot smashing into the ribs of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Spinkick Head</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-local augment = "none"
-local weapon = "spinkick"
-local limb = ak.limbs.standardizeLimb("head")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>2</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Whirling around\, you bring the ball of your foot crashing into the temple of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>SpinKick Advance</name>
-							<script>if ak.ai() then
-	ak.limbs.currentbreak.weapon = {}
-	ak.limbs.currentbreak.limb = {}
-	ak.limbs.currentbreak.attacker = {}
-	ak.limbs.currentbreak.who = {}
-	ak.limbs.currentbreak.augment = {}
-	ak.limbs.absorbed = false
-	disableTrigger("Missed Single Removal Limbs")                --DO NOT CHANGE!
-  disableTrigger("Parry locate")
-  disableTrigger("Monk Parry")
-elseif isPrompt() then
-	ak.limbs.parseBreaksPrompt()
-else
-	ak.limbs.parseBreaks()
-end
-affstrack.score.head = 200
-</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You feel something give way under your blow.</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Flashheel</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-local augment = "none"
-local weapon = "flashheel"
-ak.limbs.shikudo.flashed = matches[2]
-local limb = ak.limbs.standardizeLimb(matches[2].." leg")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker, "Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>1</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Snapping your leg out to its full extent\, you drive a heel into the ([\w'\-]+) knee of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>RisingKick</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-local augment = "none"
-local weapon = "risingkick"
-local limb = ak.limbs.standardizeLimb(matches[2])
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker,"Me")
-table.insert(ak.limbs.currentbreak.who,matches[3])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You drive your foot up in a rising kick at the ([\w'\-]+) of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Hiru</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "hiru"
-local limb = ak.limbs.standardizeLimb("head")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker, "Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Whirling .+ in a tight arc\, you bring the weapon around to crash into the side of the head of ([\w'\-]+)\.$</string>
-							<string>^Snapping back into a ready stance\, you whirl .+ in a long sweep at the head of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Hiraku</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if ak.shikudo.LimbBlock() then return end
-local augment = "none"
-local weapon = "hiraku"
-local limb = ak.limbs.standardizeLimb("head")
-table.insert(ak.limbs.currentbreak.weapon,weapon)
-table.insert(ak.limbs.currentbreak.limb,limb)
-table.insert(ak.limbs.currentbreak.attacker, "Me")
-table.insert(ak.limbs.currentbreak.who,matches[2])
-table.insert(ak.limbs.currentbreak.augment,"Shikudo")
-enableTrigger("Missed Single Removal Limbs")          
-enableTrigger("Confirmed Hit Limbs")
-enableTrigger("Parry locate")
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^Stepping forward\, you drive .+ at the face of ([\w'\-]+)\.$</string>
-							<string>^Bracing your back foot\, you lunge forward with .+ at the face of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Hyperfocus</name>
-						<script />
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList />
-						<regexCodePropertyList />
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>None</name>
-							<script>if ak.ai() then return end
-ak.limbs.hyperfocus = false
-ak.scoreup()</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>0</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You are not currently focussing on exploiting flaws in defensive technique.</string>
-								<string>You cease to focus on exploiting flaws in defensive technique.</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>3</integer>
-								<integer>3</integer>
-							</regexCodePropertyList>
-						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-							<name>Hyperfocus Chosen</name>
-							<script>if ak.ai() then return end
-ak.limbs.hyperfocus = ak.limbs.standardizeLimb(multimatches[2][2])
-ak.scoreup()</script>
-							<triggerType>0</triggerType>
-							<conditonLineDelta>1</conditonLineDelta>
-							<mStayOpen>0</mStayOpen>
-							<mCommand />
-							<packageName />
-							<mFgColor>#ff0000</mFgColor>
-							<mBgColor>#ffff00</mBgColor>
-							<mSoundFile />
-							<colorTriggerFgColor>#000000</colorTriggerFgColor>
-							<colorTriggerBgColor>#000000</colorTriggerBgColor>
-							<regexCodeList>
-								<string>You will now focus on bypassing attempts to deflect blows when striking the</string>
-								<string>^You will now focus on bypassing attempts to deflect blows when striking the (.+)\.$</string>
-							</regexCodeList>
-							<regexCodePropertyList>
-								<integer>2</integer>
-								<integer>1</integer>
-							</regexCodePropertyList>
-						</Trigger>
-					</TriggerGroup>
-				</TriggerGroup>
+				
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>DWB</name>
 					<script />
@@ -21933,275 +20420,7 @@ end</script>
 						</regexCodePropertyList>
 					</Trigger>
 				</TriggerGroup>
-				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Shikudo</name>
-					<script />
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList />
-					<regexCodePropertyList />
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Hiraku Anorexia</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then 
-	local aff = "anorexia"
-	ak.AddedAffReset(aff)
-	ak.AddedAffReset("stuttering")
-	affstrack.score[aff] = 100
-	affstrack.score["stuttering"] = 100
-	ak.echogain("anorexia, stuttering")
-	ak.scoreup(matches[2])
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^The staff smashes into the face of ([\w'\-]+) with a sickening crunch\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Hiru Dizziness</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then 
-	local aff = "dizziness"
-	ak.AddedAffReset(aff)
-	affstrack.score[aff] = 100
-	ak.echogain(aff:title())
-	ak.scoreup(matches[2])
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^The staff connects to the side of ([\w'\-]+)\'s head with a resounding crack\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Ruku clumsiness/healthleech</name>
-						<script>if ak.ai() then return end
---ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then
-	if ak.kata and ak.kata &gt;= 9 then
-		OppGainedAff("clumsiness, healthleech")
-	elseif affstrack.score.clumsiness &lt;100 then 
-		local aff = "clumsiness"
-		ak.AddedAffReset(aff)
-		affstrack.score[aff] = 100
-		ak.echogain(aff:title())
-		ak.scoreup(matches[2])
-	else 
-	  local aff = "healthleech"
-		ak.AddedAffReset(aff)
-		affstrack.score[aff] = 100
-		ak.echogain(aff:title())
-		ak.scoreup(matches[2])
-	end
-end
-
---if kata &gt; 8 ruku gives both</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^You whip a .+ at ([\w'\-]+) in a controlled arc\, bringing its length to crack against [\w'\-]+ [\w'\-]+ arm\.$</string>
-							<string>^You spin a full rotation\, bringing .+ staff around in a blur of motion to smash into the [\w'\-]+ arm of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Ruku Slickness</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then 
-  local aff = "slickness"
-	ak.AddedAffReset(aff)
-	affstrack.score[aff] = 100
-	ak.echogain(aff:title())
-	ak.scoreup(matches[2])
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^([\w'\-]+) staggers as the staff cracks across [\w'\-]+ ribs\, sweat breaking out upon [\w'\-]+ forehead\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Kuro weariness/lethargy</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then
-	if ak.kata &gt;= 11 then
-		OppGainedAff("lethargy, weariness")
-	elseif affstrack.score.weariness&lt;100 then 
-		local aff = "weariness"
-		ak.AddedAffReset(aff)
-		affstrack.score[aff] = 100
-		ak.echogain(aff:title())
-		ak.scoreup(matches[2])
-	else
-		local aff = "lethargy"
-		ak.AddedAffReset(aff)
-		affstrack.score[aff] = 100
-		ak.echogain(aff:title())
-		ak.scoreup(matches[2])
-	end
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^The staff cracks across the [\w'\-]+ thigh of ([\w'\-]+)\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Livestrike asthma</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then 
-	local aff = "asthma"
-	ak.AddedAffReset(aff)
-	affstrack.score[aff] = 100
-	ak.echogain(aff:title())
-	ak.scoreup(matches[2])
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^The breath of ([\w'\-]+) leaves [\w'\-]+ in an explosive gasp as the end of the staff smashes home\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Needle crushedthroat</name>
-						<script>if ak.ai() then return end
-ak.limbs.ParseonLine()
-if IsTargetted(matches[2]) then 
-	local aff = "crushedthroat"
-	ak.AddedAffReset(aff)
-	affstrack.score[aff] = 100
-	ak.echogain(aff:title())
-	ak.scoreup(matches[2])
-end</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>^The end of the staff smashes into the exposed throat of ([\w'\-]+)\, crushing cartilage\.$</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>1</integer>
-						</regexCodePropertyList>
-					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-						<name>Flashheel Bonus Limb</name>
-						<script>if ak.ai() then return end
-if not ak.limbs.shikudo.flashed then
-  return
-end
-ak.limbs.ParseonLine()
-local smashlimb = ak.limbs.shikudo.flashed.."leg"
-if affstrack.score[smashlimb] &lt; 100 then
-   OppGainedAff(smashlimb)
-end
-ak.limbs.shikudo.flashed = false
-
-</script>
-						<triggerType>0</triggerType>
-						<conditonLineDelta>0</conditonLineDelta>
-						<mStayOpen>0</mStayOpen>
-						<mCommand />
-						<packageName />
-						<mFgColor>#ff0000</mFgColor>
-						<mBgColor>#ffff00</mBgColor>
-						<mSoundFile />
-						<colorTriggerFgColor>#000000</colorTriggerFgColor>
-						<colorTriggerBgColor>#000000</colorTriggerBgColor>
-						<regexCodeList>
-							<string>You feel the satisfying crunch of bone under the impact of your heel.</string>
-						</regexCodeList>
-						<regexCodePropertyList>
-							<integer>3</integer>
-						</regexCodePropertyList>
-					</Trigger>
-				</TriggerGroup>
+				
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Air Elemental</name>
 					<script />
@@ -23731,9 +21950,6 @@ end
 					<name>Applied</name>
 					<script>if ak.ai() then return end
 
-if ak.limbs.shikudoParse then
-  ak.limbs.shikudoParse()
-end
 
 if not IsTargetted(matches[2]) then return end
 if matches[3] == "skin" and not ak.defs.mass then 
@@ -26151,9 +24367,6 @@ for k,v in pairs(cursedraw) do
       alchemistwrack = cursedraw[k+2]
    end
 end
-if table.contains(cursedraw,"combo") and ak.MonkType() ~= "Tekura" then
-	ak.shikudo.AliasSplit(cursedraw)
-end
 
 
 
@@ -26214,9 +24427,6 @@ for k,v in pairs(cursedraw) do
 	 elseif string.findPattern(cursedraw[k],"wrack") then
       alchemistwrack = cursedraw[k+2]
    end
-end
-if table.contains(cursedraw,"combo") and ak.MonkType() ~= "Tekura" then
-	ak.shikudo.AliasSplit(cursedraw)
 end
 
 
@@ -26564,23 +24774,6 @@ disableTrigger("Trait Gag Out")</script>
 			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 				<name>Class Changed(gmcp)</name>
 				<script>ak.classenable()
-if wsys then  
-   monkenemy = {}
-   if gmcp.Char.Status.class ~= "Monk" or gmcp.Char.Status.race:match("Dragon") then
-      wsys.monkstance = false
-   end 
-   if ndba and gmcp.Char.Status.class ~= "Monk" then 
-      enemylist = enemylist or {}
-      if #enemylist &gt; 0 then
-         for i = 1, #enemylist do
-            if ndba.iseleusian(enemylist[i]) then
-               send("unenemy "..enemylist[i])
-               table.insert(monkenemy, enemylist[i])
-            end   
-         end
-      end
-   end
-end
 enableTrigger("Trait Gag Out")
 send("trait list known")
 disableTrigger("Class Changed(gmcp)")
@@ -26611,7 +24804,7 @@ enableTrigger("Class Changed Prompt Lock")
 					<string>With a cursory thought, you still your clamorous heart and arise whole, gazing out from within your</string>
 					<string>Your elemental might has already overtaken your form.</string>
 					<string>You pray to the spirits of the fallen for a fresh chance at life, and are reincarnated into </string>
-					<string>You switch your martial school to that of Shikudo.</string>
+					
 					<string>With a victorious roar, you bellow your triumph into the firmament.</string>
 					<string>You have already adopted the mighty form of the Viridian.</string>
 				</regexCodeList>
@@ -26630,7 +24823,7 @@ enableTrigger("Class Changed Prompt Lock")
 					<integer>2</integer>
 					<integer>3</integer>
 					<integer>2</integer>
-					<integer>3</integer>
+					
 					<integer>2</integer>
 					<integer>3</integer>
 				</regexCodePropertyList>
@@ -27145,7 +25338,6 @@ ak.priest = ak.priest or {}
 ak.shaman = ak.shaman or {}
 ak.knight = ak.knight or {}
 ak.pariah = ak.pariah or {}
-ak.monk = ak.monk or {}
 ak.jester = ak.jester or {}
 ak.occie = ak.occie or {}
 ak.alchemist = ak.alchemist or {}
@@ -27177,7 +25369,6 @@ ak.occie.aura.physical = ak.occie.aura.physical or 0
 ak.occie.aura.mental = ak.occie.aura.mental or 0
 ak.occie.aura.unknownparse = ak.occie.aura.unknownparse or {}
 ak.apostate = ak.apostate or {}
-ak.shikudo = ak.shikudo or {}
 ak.psion = ak.psion or {}
 ak.psion.unweaving = ak.psion.unweaving or {}
 ak.psion.unweaving.spirit = ak.psion.unweaving.spirit or 0
@@ -27888,10 +26079,6 @@ end
         ak.displaydecide = true 
      end
   end
-  if ak.radiancestack then
-     ak.stack = ak.radiancestack
-     ak.radiancestack = nil
-  end
 
   if Yso and Yso.off and Yso.off.coord and type(Yso.off.coord.on_external_reset) == &quot;function&quot; then
     pcall(Yso.off.coord.on_external_reset, &quot;ak_reset_success&quot;)
@@ -28008,10 +26195,6 @@ ak.druid.sumac = true
 	ak.manapercent = 100
 	ak.healthpercent = 100
 	ak.classlockadd()
-  if ak.radiancestack then
-    ak.stack = ak.radiancestack
-    ak.radiancestack = nil
-  end
 	ak.alchemist.humour.sanguine = 0
 	ak.alchemist.humour.choleric = 0
 	ak.alchemist.humour.phlegmatic = 0
@@ -28035,20 +26218,12 @@ end</script>
 					<packageName />
 					<script>NoMiddle = NoMiddle or {}
 
-function ak.MonkType()
-  if gmcp.Char.Vitals and gmcp.Char.Vitals.charstats[4] and string.find(gmcp.Char.Vitals.charstats[4], "Form") then
-    return "Shikudo"
-  else
-    return "Tekura"
-  end
-end
 
 function ak.KillTriggers()
   disableKey("Shaman Keys")
   disableKey("Dragon Keys")
   disableTrigger("Air Lord Group")
   disableTrigger("Water Lord Group")
-  disableTrigger("Monk Group")
   disableTrigger("Sentinel Group")
   disableTrigger("Depthswalker Group")
   disableTrigger("Runewarden Group")
@@ -28099,10 +26274,6 @@ function ak.classenable()
       enableKey("Dragon Keys")
     end
     cecho("&lt;yellow&gt;\nDRAGON ENABLED\n")
-  elseif gmcp.Char.Status.class == "Monk" then
-    ak.KillTriggers()
-    enableTrigger("Monk Group")
-    cecho("&lt;yellow&gt;\nMONK ENABLED\n")
   elseif gmcp.Char.Status.class == "Pariah" then
     ak.KillTriggers()
     enableTrigger("Pariah Group")
@@ -29030,10 +27201,6 @@ function ak.serveraliases()
     if ak.druid.setattacks then
       ak.druid.setattacks()
     end
-  elseif gmcp.Char.Status.class == "Monk" and not inlyre() then
-    if ak.monk.setattacks then
-      ak.monk.setattacks()
-    end
   elseif gmcp.Char.Status.class == "Magi" and not inlyre() then
     if ak.magi.setattacks then
       ak.magi.setattacks()
@@ -29199,12 +27366,6 @@ function ak.defaultstack()
    elseif ak.getRace():match("Dragon") then 
       ak.stack = "dragon" 
       affstrack.crushedherb = nil
-   elseif gmcp.Char.Status.class == "Monk" then
-      if ak.monk.toggleswap then
-         ak.monk.toggleswap() 
-      else
-         ak.stack = "mindfuck"
-      end
    elseif gmcp.Char.Status.class == "Magi" then
       ak.stack = "Lock"
    elseif gmcp.Char.Status.class == "Serpent" then
@@ -29464,41 +27625,7 @@ function ak.newplayer()
 end</script>
 					<eventHandlerList />
 				</Script>
-				<Script isActive="yes" isFolder="no">
-					<name>Shikudo Alias Split</name>
-					<packageName />
-					<script>-------------------------------------------------
---         Put your Lua functions here.        --
---                                             --
--- Note that you can also use external Scripts --
--------------------------------------------------
-function ak.shikudo.AliasSplit(blah)
-	ak.shikudo.AttackAlias = {}
-	local checktable = blah
-	local attacks = {"ruku","kuro", "hiru", "nervestrike","livestrike", "dart", "hiraku", "thrust", "needle"}
-	for i = 1, #blah do
-		if table.contains(attacks,blah[i]) then
-			if blah[i+1] and blah[i+1] == "light" then
-				table.insert(ak.shikudo.AttackAlias,"light")
-			else
-				table.insert(ak.shikudo.AttackAlias,"regular")
-			end
-		end
-	end
-end
-
-function ak.shikudo.LimbBlock()
-	ak.shikudo.AttackAlias = ak.shikudo.AttackAlias or {}
-	if #ak.shikudo.AttackAlias &gt; 0 then
-		if ak.shikudo.AttackAlias[1] == "light" then
-			return true	
-		end
-		table.remove(ak.shikudo.AttackAlias,1)
-	end
-	return false
-end</script>
-					<eventHandlerList />
-				</Script>
+				
 				<Script isActive="yes" isFolder="no">
 					<name>Mount Look</name>
 					<packageName />
@@ -29876,7 +28003,6 @@ ak.classlock_map = ak.classlock_map or {
    jester       = {"voyria"},
    pariah       = {"voyria"},
    magi         = {"haemophilia"},
-   monk         = {"weariness"},
    occultist    = {"paralysis", "voyria"},
    paladin      = {"weariness", "voyria"},
    priest       = {"weariness", "voyria"},
@@ -30480,6 +28606,9 @@ ak._eh.svo_system_loaded_ak_svoEventHandlers = registerAnonymousEventHandler("sv
 --type wshow display
 --add @owysprompt into your prompt
 
+-- Wsys is optional and may be unavailable during disconnected module reloads.
+if type(wsys) ~= "table" or type(wsys.prompttags) ~= "table" then return end
+
 function wsys.prompttags.owysprompt()
   promptset = promptset or {}
   if not target then 
@@ -30543,8 +28672,6 @@ ak.limbs.currentbreak.augment = {}
 ak.limbs.currentbreak.who = {}
 ak.limbs.blademaster = ak.limbs.blademaster or {}
 ak.limbs.blademaster.stance = ak.limbs.blademaster.stance or {}
-ak.limbs.tekura = ak.limbs.tekura or {}
-ak.limbs.shikudo = ak.limbs.shikudo or {}
 ak.limbs.twoh = ak.limbs.twoh or {}
 ak.limbs.twoh.stance = ak.limbs.twoh.stance or {}
 ak.limbs.oppositesLimbs = {
@@ -30563,7 +28690,6 @@ ak.limbs.LimbHit = ak.limbs.LimbHit or function(who, attacker, weapon, limb, aug
    local damage = 0
    ak.limbs.limb_table_check(who)
    ak.limbs.deleteset = false
-   ak.limbs.tekura.dontbreaksethead = false
    local attackerclass = "unknown"
    if attacker == "Me" and ak.getRace():match("Dragon") then
       attackerclass = "Dragon" 
@@ -30607,9 +28733,6 @@ ak.limbs.LimbHit = ak.limbs.LimbHit or function(who, attacker, weapon, limb, aug
    end
    ak.limbs.limbcount[who]["lastpercent"..limb] = ak.limbs.limbcount[who][limb] + 0
    ak.limbs.limbcount[who][limb] = ak.limbs.limbcount[who][limb] + damage
-   if weapon == "axk" then
-      ak.limbs.tekura.dontbreaksethead = true
-   end
    if target == who then
       ak.limbs.damageEcho_Target(target,limb)
    else
@@ -30818,7 +28941,7 @@ end
 					<name>Limb Relays</name>
 					<packageName />
 					<script>--limb relays
-function ak.limbs.damageEcho_Target(who,limb)       -----Reset Timer --ak.limbs.tekura.dontbreaksethead
+function ak.limbs.damageEcho_Target(who,limb)       -----Reset Timer
   local hitsneeded = roundUp((100-ak.limbs.limbcount[who][limb])/(ak.limbs.limbcount[who][limb] - ak.limbs.limbcount[who]["lastpercent"..limb]),0)
 --Limbs
   if (ak.limbs.limbcount[who][limb] &gt;= 100) and limb ~= "torso" and limb ~= "head" then
@@ -30843,15 +28966,6 @@ function ak.limbs.damageEcho_Target(who,limb)       -----Reset Timer --ak.limbs.
 		 ak.limbs.lastbroke = limb
      cecho("&lt;green&gt;\n\nBroke "..who.."'s "..limb.."(B)!!")
 		 ak.limbs.breakOrder(limb)
-  end
-  if ak.limbs.tekura.dontbreaksethead then
-    if affstrack.score.head &gt;= 100 then
-      affstrack.score.head = 200
-      cecho("&lt;green&gt;\n\n(AXK)Broke "..who.."'s "..limb.."(A)!!")
-    else
-      affstrack.score.head = 100
-      cecho("&lt;green&gt;\n\n(AXK)Broke "..who.."'s "..limb.."(B)!!")
-    end
   end
   if affstrack.score.head &gt; 200 then 
     affstrack.score.head = 200 
@@ -30999,7 +29113,6 @@ function ak.limbs.parseBreaks()
    ak.limbs.ScoreRun = false
    disableTrigger("Missed Single Removal Limbs")                --DO NOT CHANGE!
    disableTrigger("Parry locate")
-   disableTrigger("Monk Parry")
    local augment = "none"
    if #ak.limbs.currentbreak.weapon &gt; 0 then
       for i = 1, #ak.limbs.currentbreak.weapon do
@@ -31027,7 +29140,6 @@ function ak.limbs.parseBreaksPrompt()
    disableTrigger("Confirmed Hit Limbs")
    disableTrigger("Nairat Augment") 
    disableTrigger("Parry locate")
-   disableTrigger("Monk Parry")
    local augment = "none"
    if #ak.limbs.currentbreak.weapon &gt; 0 then
       for i = 1, #ak.limbs.currentbreak.weapon do

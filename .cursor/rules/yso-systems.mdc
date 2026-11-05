@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Scope
 
-Achaea **Yso** automation under `Ysindrolir/`. **Supported combat classes:** Magi and Alchemist (shared Yso core). Do not reintroduce removed stacks (e.g. Occultist routes); strip obsolete empty Mudlet folders/triggers from `Yso system.xml` when editing that package.
+Achaea **Yso** automation under `Ysindrolir/`. Maintained combat routes cover Magi, Alchemist, Apostate, and Airlord; Dragonform provides manual aliases. The route registry and package tests define active capabilities. Monk is retired except the explicitly retained Deliverance scripts/triggers and required compatibility state. Do not reintroduce other Monk or removed class stacks (e.g. Occultist routes); strip obsolete empty Mudlet folders/triggers when editing packages.
 
 ## Git (canonical clone)
 
@@ -31,7 +31,7 @@ Achaea **Yso** automation under `Ysindrolir/`. **Supported combat classes:** Mag
   2) Core state/queue/mode plumbing
   3) Curing/self-state helpers
   4) Combat shared interface/helpers
-  5) Class route modules (Alchemist, Magi)
+  5) Class route modules (Alchemist, Magi, Apostate, Airlord)
   6) Integration triggers/aliases/event bridges
 - Route scripts should assume prior tiers are loaded and fail gracefully if a required shared table is missing.
 

@@ -71,7 +71,7 @@ try {
   foreach($command in @('deliverance status','deliverance release')){Assert ($command -cmatch $alias.regex) 'Safety alias rejected'}
   Assert (-not ('deliverance release extra' -cmatch $alias.regex)) 'Safety alias accepted trailing commands'
   # Execute the actual packaged adapters, not just their source text.
-  $harness='local seen={}; Yso={Combat={Deliverance={observe=function(n,s) seen[#seen+1]=n..":"..s end,command=function(c) seen[#seen+1]=c end}}}; matches={"","Foe"};'+"`n"+$first.script+"`n"+$second.script+"`n"+'matches={"","status"};'+"`n"+$alias.script+"`n"+'assert(table.concat(seen,",")=="Foe:channeling,Foe:active,status")'
+  $harness='cecho=function() end; local seen={}; Yso={Combat={Deliverance={observe=function(n,s) seen[#seen+1]=n..":"..s end,command=function(c) seen[#seen+1]=c end}}}; matches={"","Foe"};'+"`n"+$first.script+"`n"+$second.script+"`n"+'matches={"","status"};'+"`n"+$alias.script+"`n"+'assert(table.concat(seen,",")=="Foe:channeling,Foe:active,status")'
   $adapter=Join-Path $base 'adapters.lua'; [IO.File]::WriteAllText($adapter,$harness)
   & lua $adapter; if($LASTEXITCODE -ne 0){throw 'Packaged Deliverance adapters failed'}
   $harness='Yso={}; matches={"","majorly","Air","Earth"};'+"`n"

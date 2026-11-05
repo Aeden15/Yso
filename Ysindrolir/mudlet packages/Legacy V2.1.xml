@@ -4,29 +4,35 @@
 	<TriggerPackage>
 		<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 			<name>Login</name>
-			<script>enableTimer("Double checking everything is loaded")
-disableTrigger("Alertness (Achaea+Imperian)")
-sendGMCP([[Core.Supports.Add ["Comm.Channel 1"]])
-sendGMCP([[Core.Supports.Add ["IRE.Target 1"] ]])
-sendGMCP([[Core.Supports.Add ["IRE.Rift 1"]   ]])
-sendGMCP([[Core.Supports.Add ["IRE.Time 1"] ]])
+			<script>-- Automatic text-trigger startup waits for fresh session evidence.
+local S = Yso and Yso.session
+if not (S and type(S.subscribe)==&apos;function&apos; and type(S.later)==&apos;function&apos;) then return false end
+S.subscribe(&apos;legacy.login&apos;, function()
+enableTimer(&quot;Double checking everything is loaded&quot;)
+disableTrigger(&quot;Alertness (Achaea+Imperian)&quot;)
+sendGMCP([[Core.Supports.Add [&quot;Comm.Channel 1&quot;]])
+sendGMCP([[Core.Supports.Add [&quot;IRE.Target 1&quot;] ]])
+sendGMCP([[Core.Supports.Add [&quot;IRE.Rift 1&quot;]   ]])
+sendGMCP([[Core.Supports.Add [&quot;IRE.Time 1&quot;] ]])
 leaving = false
-send("curing off")
-send("queue add freestand touch mindseye")
-tempTimer(3, [[send("queue add freestand ql")]])
-tempTimer(4, [[raiseEvent("LoggedIn")]])
-tempTimer(8, [[send("queue add freestand curing on")]])
-send("date")
+send(&quot;curing off&quot;)
+send(&quot;queue add freestand touch mindseye&quot;)
+S.later(&apos;legacy.login.look&apos;, 3, function() send(&apos;queue add freestand ql&apos;) end)
+S.later(&apos;legacy.login.loaded&apos;, 4, function() raiseEvent(&apos;LoggedIn&apos;) end, true)
+S.later(&apos;legacy.login.curing&apos;, 8, function() send(&apos;queue add freestand curing on&apos;) end, true)
+send(&quot;date&quot;)
 --Sets default config options
 sendAll(
-"config screenwidth 0", 
-"config showqueuealerts on", 
-"config killwarning off",
-"config AutoOpenDoors on",
-"config advancedcuring on",
-"config UniversalAfflictionMessages on")
+&quot;config screenwidth 0&quot;, 
+&quot;config showqueuealerts on&quot;, 
+&quot;config killwarning off&quot;,
+&quot;config AutoOpenDoors on&quot;,
+&quot;config advancedcuring on&quot;,
+&quot;config UniversalAfflictionMessages on&quot;)
 delLprompt = false
-Defup()</script>
+Defup()
+end)
+</script>
 			<triggerType>0</triggerType>
 			<conditonLineDelta>0</conditonLineDelta>
 			<mStayOpen>0</mStayOpen>
@@ -587,80 +593,8 @@ ClassTimer(who, "Magi")
 						<integer>1</integer>
 					</regexCodePropertyList>
 				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Monk Shik</name>
-					<script>local who = matches[2]:title()
-ClassTimer(who, "Shikudo")
-</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^(\w+) whips (.+) in a long sweep at your legs\.$</string>
-						<string>^Stepping forward, (\w+) drives (.+) into your (.+)\.</string>
-						<string>^(\w+) spins a full rotation, bringing (.+) around in a blur to crash into your (\w+)\.$</string>
-						<string>^(\w+) lashes out with a high kick at your (\w+)\.$</string>
-						<string>^Bracing \w+ back foot, (\w+) lunges forward with a knotted willow staff at your (.+)\.$</string>
-						<string>^Continuing \w+ kata, (\w+) spins a knotted willow staff in (\w+) hands before driving it in a swiftthrust towards your (.+)\.$</string>
-						<string>^Snapping back into a ready stance, (\w+) whips a knotted willow staff in a wide arc at your (.+)\.$</string>
-						<string>^Spinning on one foot (\w+) drives a knotted willow staff into your (.+) with a lightning-fast thrust\.$</string>
-						<string>^Snapping \w+ leg out to its full extent, (\w+) drives a heel into your (.+)\.$</string>
-						<string>^(\w+) lashes out with a straight kick at you\.$</string>
-						<string>^Whirling around, (\w+) drives the ball of his foot into your ribs\.$</string>
-						<string>^(\w+) flows around you like water, a knotted willow staff lashing out in a swift thrust at yourvulnerable kidneys\.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-					</regexCodePropertyList>
-				</Trigger>
-				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
-					<name>Monk Tekura</name>
-					<script>local who = matches[2]:title()
-ClassTimer(who, "Tekura")
-</script>
-					<triggerType>0</triggerType>
-					<conditonLineDelta>0</conditonLineDelta>
-					<mStayOpen>0</mStayOpen>
-					<mCommand />
-					<packageName />
-					<mFgColor>#ff0000</mFgColor>
-					<mBgColor>#ffff00</mBgColor>
-					<mSoundFile />
-					<colorTriggerFgColor>#000000</colorTriggerFgColor>
-					<colorTriggerBgColor>#000000</colorTriggerBgColor>
-					<regexCodeList>
-						<string>^(\w+) pumps out at you with a powerful side kick.$</string>
-						<string>^(\w+) unleashes a powerful hook towards you.$</string>
-						<string>^(\w+) launches a powerful uppercut at you.$</string>
-						<string>^(\w+) forms a spear hand and stabs out at you.$</string>
-						<string>^(\w+) balls up one fist and hammerfists you.$</string>
-					</regexCodeList>
-					<regexCodePropertyList>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>1</integer>
-						<integer>0</integer>
-					</regexCodePropertyList>
-				</Trigger>
+				
+				
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Occultist</name>
 					<script>local who = matches[2]:title()
@@ -1781,12 +1715,6 @@ elseif matches[2] == "Use clot" then
     Legacy.Settings.Curing.SS.Settings.clot = true
   else 
     Legacy.Settings.Curing.SS.Settings.clot = false
-  end
-elseif matches[2] == "Use Kaido Transmute" then
-  if matches[3] == "Yes" then
-    Legacy.Settings.Curing.SS.Settings.kaidoTransmute = true
-  else 
-    Legacy.Settings.Curing.SS.Settings.kaidoTransmute = false
   end
 elseif matches[2] == "Use insomnia" then
   if matches[3] == "Yes" then
@@ -5101,12 +5029,6 @@ end
       cecho(" &lt;ansi_yellow&gt;Essence: "..stats.essence)
     elseif gmcp.Char.Status.class == "Magi" then
       cecho(" &lt;ansi_yellow&gt;Channels: "..stats.channels)
-    elseif gmcp.Char.Status.class == "Monk" then
-      
-      if stats.stance == nil then else cecho(" &lt;ansi_yellow&gt;Stance: "..stats.stance) end
-      if stats.form == nil then else cecho(" &lt;ansi_yellow&gt;Form: "..stats.form) end
-      if stats.kata == nil then else cecho(" &lt;ansi_yellow&gt;Kata: "..stats.kata) end
-      cecho(" &lt;ansi_yellow&gt;Kai: "..stats.kai)
     elseif gmcp.Char.Status.class == "Occultist" then
       cecho(" &lt;ansi_yellow&gt;Karma: &lt;white&gt;"..stats.karma)
       cecho(" &lt;ansi_yellow&gt;Entity: "..stats.entity)
@@ -5961,7 +5883,8 @@ end</script>
 		<Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
 			<name>Check for Updates</name>
 			<script>Legacy_Downloads()
-sendGMCP("Core.KeepAlive")</script>
+local S = Yso and Yso.session
+if S and type(S.is_ready)==&apos;function&apos; and S.is_ready() then sendGMCP(&apos;Core.KeepAlive&apos;) end</script>
 			<command />
 			<packageName />
 			<time>00:30:00.000</time>
@@ -6354,7 +6277,7 @@ end</script>
   local ignoreddefs = {"ironform", "insufflate", "incandescence", "hyperfocus", "heads", "haste", "frenzied", "firefly", "extispicy", "enhancedform", "eavesdropping", "eaglelegend",
                       "dustform", "demonfury", "deliverance", "chameleon", "brains", "blunder", "blocking", "blessingofthegods", "blackboarlegend", "battlesong", "arctar", "amamaalierlegend",
                       "alligatorlegend", "aiming", "agithtailegend", "lifebond", "lifegiver", "lifesteal", "maticlegend", "morph", "nicatorlegend", "phased", "preachblessing", "prismatic", 
-                      "promosurcoat", "scholasticism", "seasonelegend", "setweapon", "shikudoform", "shinrejoinder", "spinning", "spiritwalk", "starburst", "sympathy", "tekurastance", "tongues",
+                      "promosurcoat", "scholasticism", "seasonelegend", "setweapon", "shinrejoinder", "spinning", "spiritwalk", "starburst", "sympathy", "tongues",
                       "tumors", "twoartsstance", "unnamablepresence", "venomsacks", "viridian", "weakvigour", "wolflegend", "xporb"}
 
 Defup()
@@ -7604,12 +7527,14 @@ end</script>
 			<name>Legacy</name>
 			<packageName />
 			<script>function Legacy_Load()
+  local S = Yso and Yso.session
+  if not (S and type(S.is_ready)==&apos;function&apos; and S.is_ready()) then return false, &apos;not_authenticated&apos; end
     if not (gmcp and gmcp.Char and gmcp.Room and gmcp.Char.Status
-        and type(gmcp.Char.Status.name) == "string") then
-        tempTimer(2, [[Legacy_Load()]])
+        and type(gmcp.Char.Status.name) == &quot;string&quot;) then
+        S.later(&apos;legacy.load.retry&apos;, 2, function() Legacy_Load() end, true)
       return
     end
-  if io.exists(getMudletHomeDir().."/Legacy/Legacy.lua") then
+  if io.exists(getMudletHomeDir()..&quot;/Legacy/Legacy.lua&quot;) then
     Legacy = Legacy or {}
     Legacy[gmcp.Char.Status.name] = Legacy[gmcp.Char.Status.name] or {}
     Legacy.Rift = Legacy.Rift or {}
@@ -7639,27 +7564,27 @@ end</script>
     Legacy.Settings.Curing = Legacy.Settings.Curing or {}
     Legacy.Settings.Curing.SS = Legacy.Settings.Curing.SS or {}
     Legacy.Settings.NDB = Legacy.Settings.NDB or {}
-    lfs.mkdir(getMudletHomeDir().. "/Legacy")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB/Characters")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/Downloads")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/ClassTrack")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/Fight Logs")
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/NDB&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/NDB/Characters&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/Downloads&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/ClassTrack&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/Fight Logs&quot;)
 
     --Curing
     Legacy.Settings.Curing.precacheCount = 1 -- number of curatives to remove on eat
     Legacy.Settings.Curing.SS.Settings = Legacy.Settings.Curing.SS.Settings or {}
     Legacy.Curing.Lust = Legacy.Curing.Lust or {}
-    Legacy.Curing.Defs.currentset = Legacy.Curing.Defs.currentset or "legacy"
-    tempTimer(6,[[cecho("\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]:&lt;white&gt; Welcome back "..gmcp.Char.Status.name.."!")]])
-    table.load(getMudletHomeDir().."/Legacy/Legacy.lua", Legacy)
+    Legacy.Curing.Defs.currentset = Legacy.Curing.Defs.currentset or &quot;legacy&quot;
+    tempTimer(6,[[cecho(&quot;\n&lt;white&gt;[&lt;gold&gt;Legacy&lt;white&gt;]:&lt;white&gt; Welcome back &quot;..gmcp.Char.Status.name..&quot;!&quot;)]])
+    table.load(getMudletHomeDir()..&quot;/Legacy/Legacy.lua&quot;, Legacy)
     Legacy_EnsureState()
     Legacy.Settings.NDB.tempHL = {}
-    raiseEvent("LegacyLoaded")
+    raiseEvent(&quot;LegacyLoaded&quot;)
   else
     Legacy = Legacy or {}
-    Legacy.Vinfo = {Version = "", msg = "", link = ""}
-    Legacy.Version = "0.8"
+    Legacy.Vinfo = {Version = &quot;&quot;, msg = &quot;&quot;, link = &quot;&quot;}
+    Legacy.Version = &quot;0.8&quot;
     Legacy.Extras = Legacy.Extras or {}
     Legacy[gmcp.Char.Status.name] = Legacy[gmcp.Char.Status.name] or {}
     Legacy.Rift = Legacy.Rift or {}
@@ -7682,7 +7607,7 @@ end</script>
     Legacy.NDB.db = Legacy.NDB.db or {}
     Legacy.NDB.Enemies = Legacy.NDB.Enemies or {}
     Legacy.NDB.qwhom = Legacy.NDB.qwhom or {}
-    Legacy.Curing.Defs.currentset = Legacy.Curing.Defs.currentset or "legacy"
+    Legacy.Curing.Defs.currentset = Legacy.Curing.Defs.currentset or &quot;legacy&quot;
     Legacy.Curing.Defs.tracking = {}
     Legacy.Curing.Defs.current = {}
     Legacy.Settings = Legacy.Settings or {}
@@ -7693,23 +7618,27 @@ end</script>
     Legacy.Settings.Curing.precacheCount = 1 -- number of curatives to remove on eat
     Legacy.Settings.Curing.SS.Settings = Legacy.Settings.Curing.SS.Settings or {}
     Legacy.Curing.Lust = Legacy.Curing.Lust or {}
-    lfs.mkdir(getMudletHomeDir().. "/Legacy")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/NDB/Characters")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/Downloads")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/ClassTrack")
-    lfs.mkdir(getMudletHomeDir().. "/Legacy/Fight Logs")
-    tempTimer(5, [[cecho("\n&lt;red&gt;Failed to Load Legacy Settings.")]])
-    tempTimer(6 ,[[cecho("\n&lt;green&gt;Legacy Files Created At: \n&lt;white&gt;"..getMudletHomeDir().."/Legacy")]])
-    table.save(getMudletHomeDir().."/Legacy/Legacy.lua", Legacy)
-    sendAll("Curingset new legacy", "curingset switch legacy")
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/NDB&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/NDB/Characters&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/Downloads&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/ClassTrack&quot;)
+    lfs.mkdir(getMudletHomeDir().. &quot;/Legacy/Fight Logs&quot;)
+    tempTimer(5, [[cecho(&quot;\n&lt;red&gt;Failed to Load Legacy Settings.&quot;)]])
+    tempTimer(6 ,[[cecho(&quot;\n&lt;green&gt;Legacy Files Created At: \n&lt;white&gt;&quot;..getMudletHomeDir()..&quot;/Legacy&quot;)]])
+    table.save(getMudletHomeDir()..&quot;/Legacy/Legacy.lua&quot;, Legacy)
+    sendAll(&quot;Curingset new legacy&quot;, &quot;curingset switch legacy&quot;)
     Legacy_EnsureState()
-    raiseEvent("LegacyLoaded")
-    Download("Fresh")
+    raiseEvent(&quot;LegacyLoaded&quot;)
+    Download(&quot;Fresh&quot;)
   end
 end
 
-registerAnonymousEventHandler("LoggedIn", "Legacy_Load")
+Legacy = Legacy or {}
+if Legacy._login_handler and type(killAnonymousEventHandler)==&apos;function&apos; then
+  killAnonymousEventHandler(Legacy._login_handler)
+end
+Legacy._login_handler = registerAnonymousEventHandler(&apos;LoggedIn&apos;, &apos;Legacy_Load&apos;)
 
 
 </script>
@@ -8288,7 +8217,6 @@ end
     "Shadowveil",
     "Shield",
     "Shieldlogograph",
-    "Shikudoform",
     "Shinbinding",
     "Shinclarity",
     "Shinperfection",
@@ -8318,7 +8246,6 @@ end
     "Susurrating",
     "Swiftcurse",
     "Sympathy",
-    "Tekurastance",
     "Telesense",
     "Temperance",
     "Tempest",
@@ -9680,7 +9607,7 @@ end
 					<packageName />
 					<script>function Armour()
 local Cloth      = {"Dragon", "Magi", "Psion", "Pariah"}
-local Leather    = {"Bard", "Monk"}
+local Leather    = {"Bard"}
 local Ringmail   = {"Alchemist", "Apostate"}
 local Scalemail  = {"Serpent", "Jester", "Shaman", "Occultist", "Depthswalker", "Blademaster"}
 local Chainmail  = {"Druid", "Sentinel", "Sylvan", "Classless"}
@@ -9792,7 +9719,7 @@ if not Legacy then return end
   local ignoreddefs = {"ironform", "insufflate", "incandescence", "hyperfocus", "heads", "haste", "frenzied", "firefly", "extispicy", "enhancedform", "eavesdropping", "eaglelegend",
                       "dustform", "demonfury", "deliverance", "chameleon", "brains", "blunder", "blocking", "blessingofthegods", "blackboarlegend", "battlesong", "arctar", "amamaalierlegend",
                       "alligatorlegend", "aiming", "agithtailegend", "lifebond", "lifegiver", "lifesteal", "maticlegend", "morph", "nicatorlegend", "phased", "preachblessing", "prismatic", 
-                      "promosurcoat", "scholasticism", "seasonelegend", "setweapon", "shikudoform", "shinrejoinder", "spinning", "spiritwalk", "starburst", "sympathy", "tekurastance", "tongues",
+                      "promosurcoat", "scholasticism", "seasonelegend", "setweapon", "shinrejoinder", "spinning", "spiritwalk", "starburst", "sympathy", "tongues",
                       "tumors", "twoartsstance", "unnamablepresence", "venomsacks", "viridian", "weakvigour", "wolflegend", "xporb"}
 
 
@@ -9890,7 +9817,6 @@ function Keepup(arg)
       Infernal = {"gripping", "weathering", "resistance", "deathaura"},
       Jester = {"acrobatics", "balancing", "gripping", "arrowcatching", "slippery"},
       Magi = {"chargeshield", "diamondskin", "stoneskin", "reflections", "stonefist" },
-      Monk = {"bodyblock", "evadeblock", "pinchblock", "projectiles", "regeneration", "resistance", "splitmind", "standingfirm", "toughness", "vitality", "weathering", "mindnet", "conciousness", "mindcloak", "kaitrance"},
       Occultist = {"astralform", "lifevision", "devilmark", "distortedaura", "shroud", "tentacles", },
       Paladin = {"gripping", "faith", "fervour", "retribution", "dawnhand", "unbowed", "weathering"},
       Pariah = {},

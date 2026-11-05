@@ -1,40 +1,21 @@
-Yso systems status - May 5, 2026
-================================
+Yso systems — November 4, 2026
 
-Supported classes are Magi and Alchemist, plus shared Yso core. Removed class
-stacks are not active automation paths in this repo or in the Mudlet package.
+Maintained: Magi, Alchemist, Apostate, Airlord, shared Yso core, and manual
+Dragonform aliases. Active routes are defined by the route registry.
 
-Mudlet workflow (package-first)
--------------------------------
-- Canonical runtime: install/import Ysindrolir/mudlet packages/, especially
-  Yso system.xml (and .mpackage exports when used). Behavior comes from
-  embedded scripts and Mudlet script load order.
-- Do not activate routes with runtime require()/pcall(require, ...). Do not use
-  YSO_ROOT, package.path, or repo-root probing for route loading. Globals such
-  as Yso and route tables are set up by the package's script order.
-- Operating: use package aliases/toggles in Mudlet (e.g. Magi mdam, mfocus,
-  magi_dmg, mreflect; Alchemist adam, aduel). Combat mode plus per-route toggles drive offense.
-- Repo tree: Lua under Ysindrolir/Yso/ and Ysindrolir/Alchemist/ is the git
-  source. Ysindrolir/scripts/export_yso_system_xml.ps1 is optional maintenance
-  to re-embed scripts into Yso system.xml when working split-layout sources --
-  not mandatory for everyday play if you edit the package in Mudlet.
+Monk functionality is retired except Deliverance scripts/triggers and their
+required compatibility state. Restart the Achaea profile after applying removal.
 
-Kept in tree
-------------
-- Shared Yso core, curing, queue, routes, targets, AK/Legacy integration.
-- Magi and Alchemist class automation.
-- Neutral Yso.entities API for future class-neutral pet support.
+Runtime: embedded Mudlet package scripts in native load order. Do not use
+filesystem require/dofile loaders for routes.
 
-Tests: Ysindrolir/Yso/Tests and rebuilds/ (Magi, Alchemist, shared).
+Login: shared Yso.session readiness defers automatic discovery until fresh
+character GMCP evidence arrives. TCP connection/cached GMCP do not authenticate.
 
-Optional Yso.net.cfg.dry_run (defaults off) suppresses live sends for local tests.
+Updates: rebuild affected XML, run scripts/publish_workspace_link.ps1, then use
+ysostatus / ysoreload while automation is stopped. File watches notify only.
+The bridge refreshes AK/Yso; changed Legacy/limb packages need separate import.
 
-Recent patch notes (summary)
----------------------------
-- May 2026: queue ADD/clearfull, Alchemist temper/physiology/evaluate fixes,
-  wrack legality and alias cleanup, optional export script coverage for XML sync.
-- April 2026: Alchemist route resets, evaluate gates, Aurify/lane payloads,
-  homunculus parser fix, Mudlet package triggers synced where noted.
-
-Older notes that mentioned bootstrap loaders, package.path, or require chains
-describe superseded experiments; live loading is Mudlet package order only.
+Maintenance: README.md contains current capabilities, builder guidance, tests,
+audit links, and delivery limitations. GIT.md describes safe synchronization.
+The retirement manifest removes only explicitly listed, unmodified files.

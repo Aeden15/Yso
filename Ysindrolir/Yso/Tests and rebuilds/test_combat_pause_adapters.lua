@@ -21,15 +21,6 @@ for _,M in ipairs({T,V}) do
  paralyzed=false;local ok,why=M.attack_function();assert(not ok and why=='waiting_eyes',tostring(why));assert(M.state.loop_enabled)
  M.state.loop_enabled=false
 end
--- The Monk recovery handshake must not expire during a long paralysis hold.
-gmcp.Char.Status.class='Monk';gmcp.Char.Vitals.bal='0';gmcp.Char.Vitals.eq='0'
-Yso.monk={shikudo={form='willow'},mindlock={is_locked=function() return true end}}
-local G=dofile(root..'/Monk/shikudo_group_damage.lua')
-G.state.loop_enabled=true;G.state.enabled=true
-G.state.pending={at=P.confirmation_now(G.key),target=target,kind='combo',form='willow',recovered={}}
-paralyzed=true;P.blocked(G.key);clock=clock+30;stopped=nil
-G.can_run();assert(stopped==nil,'Monk confirmation expired during paralysis')
-paralyzed=false;P.blocked(G.key);G.can_run();assert(stopped==nil)
 -- Alchemist's asynchronous watchdog needs the same active-time clock.
 yajl={to_string=function() return '{}' end}
 gmcp.Char.Status.class='Alchemist';gmcp.Char.Vitals.bal='1';gmcp.Char.Vitals.eq='1'
@@ -41,4 +32,4 @@ paralyzed=true;P.blocked('alchemist_duel_route');clock=clock+30;callback()
 assert(A.state.pending_timeout_event==nil,'Alchemist async watchdog expired during paralysis')
 paralyzed=false;P.blocked('alchemist_duel_route');clock=clock+3;callbacks[#callbacks]()
 assert(A.state.pending_timeout_event,'Watchdog must still detect a genuine active-time timeout')
-print('PASS actual Apostate, Monk and Alchemist confirmation clocks across long paralysis pauses')
+print('PASS actual Apostate and Alchemist confirmation clocks across long paralysis pauses')

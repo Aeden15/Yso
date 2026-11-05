@@ -42,9 +42,6 @@ P.KILL_CONDITIONS = P.KILL_CONDITIONS or {
     secondary = { "leftarm", "rightarm" },
     riftlock  = true,
   },
-  Monk = {
-    primary = { "leftleg", "rightleg", "head" },
-  },
   Apostle = {
     primary = { "leftleg", "rightleg" },
   },

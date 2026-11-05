@@ -16,6 +16,10 @@ Yso.curing = Yso.curing or {}
 Yso.curing.policy = Yso.curing.policy or {}
 
 local P = Yso.curing.policy
+local function _session_ready()
+  local session = Yso.session
+  return type(session) == 'table' and type(session.is_ready) == 'function' and session.is_ready() == true
+end
 
 P.cfg = P.cfg or {
   debug = false,
@@ -200,6 +204,7 @@ local function _is_touch_tree_cmd(cmd)
 end
 
 local function _request_authoritative_resync(reason, force)
+  if not _session_ready() then return false, 'not_authenticated' end
   local coordinator=Yso.curing.coordinator
   if coordinator then
     local a=coordinator.request('sets')
@@ -669,6 +674,7 @@ function P.clear_emergency_dedupe(reason)
 end
 
 function P.resync(reason)
+  if not _session_ready() then return false, 'not_authenticated' end
   local coordinator=Yso.curing.coordinator
   if coordinator then
     coordinator.request('sets')
@@ -710,6 +716,7 @@ function P.set_group_override(v, reason)
 end
 
 function P.tick(source, force)
+  if not _session_ready() then return false, 'not_authenticated' end
   local coordinator=Yso.curing.coordinator
   if coordinator then
     coordinator.refresh()
@@ -896,7 +903,13 @@ function P.init()
   _read_current_set()
   _read_baseline_from_legacy(P.cfg.base_set)
   P.install_hooks()
-  P.resync("init")
+  if Yso.session and type(Yso.session.subscribe) == 'function' then
+    Yso.session.subscribe('curing.serverside_policy', function() P.resync('authenticated') end, function()
+      P.state.set_last_resync_req_at = 0
+      P.state.priority_list_requested_at = 0
+      P.state.last_tick = 0
+    end)
+  end
   return true
 end
 

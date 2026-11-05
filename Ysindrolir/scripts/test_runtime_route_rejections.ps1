@@ -41,7 +41,7 @@ print('PASS: packaged Dragon blocks down/unknown balance and preserves balance-o
 '@)
 }
 if($Case -in @('all','strip')) {
-  Add-Script Alias 'Mind strip' mind
+
   Add-Script Alias 'Demon strip' demon
   $h.Add(@'
 local sent,calls={},{}
@@ -50,21 +50,21 @@ send=function(cmd) sent[#sent+1]=cmd end
 Yso={class='apostate',apostate={alias=function(name) calls[#calls+1]=name end}}
 local function run(class,fallback,want_mind,want_demon)
   gmcp={Char={Status={class=class},Vitals={}}};Yso.class=fallback
-  sent={};calls={};mind();demon()
+  sent={};calls={};demon()
   assert(#sent==want_mind and #calls==want_demon,'strip class isolation failed for '..tostring(class)..' / '..tostring(fallback))
   if want_mind==1 then assert(sent[1]=='mind strip Foe') end
   if want_demon==1 then assert(calls[1]=='strip') end
 end
-run('Monk','apostate',1,0)
-run('Apostate','monk',0,1)
+run('Bard','apostate',0,0)
+run('Apostate','bard',0,1)
 run('Magi','apostate',0,0)
-run(nil,'monk',1,0)
+run(nil,'bard',0,0)
 run(nil,'apostate',0,1)
 run(nil,'magi',0,0)
-run('', 'monk',1,0)
-gmcp={Char={Status={},Vitals={class='Apostate'}}};Yso.class='monk';sent={};calls={};mind();demon()
+run('', 'bard',0,0)
+gmcp={Char={Status={},Vitals={class='Apostate'}}};Yso.class='bard';sent={};calls={};demon()
 assert(#sent==0 and #calls==1,'GMCP Vitals class must precede cached class')
-print('PASS: strip aliases are exclusive to current Monk/Apostate class')
+print('PASS: strip aliases are exclusive to current Apostate class')
 '@)
 }
 if($Case -in @('all','firestorm','firestorm_direct')) {

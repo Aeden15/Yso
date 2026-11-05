@@ -2286,15 +2286,6 @@ function Basher_Setup()
       Legacy.Settings.Basher.Classes["Magi"].stormbolt = {cmd = "cast stormbolt at @tar", rage = 26, desc = "Gives Affliction", aff = "sensitivity", available = true}
       Legacy.Settings.Basher.Classes["Magi"].configRage = Legacy.Settings.Basher.Classes["Magi"].configRage or {bigDamage = 20, smallDamage = 0, affAttack = 100}
       Legacy.Settings.Basher.Classes["Magi"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
-    elseif gmcp.Char.Status.class == "Monk" then
-      Legacy.Settings.Basher.Classes["Monk"].spinningbackfist = {cmd = "sbp", rage = 14, desc = "Small Damage", available = true }
-      Legacy.Settings.Basher.Classes["Monk"].scramble = {cmd = "mind scramble", rage = 22, desc = "Gives Affliction", aff = "clumsiness", available = true}
-      Legacy.Settings.Basher.Classes["Monk"].splinterkick = {cmd = "spk ", rage = 17, desc = "Shieldbreak", available = true}
-      Legacy.Settings.Basher.Classes["Monk"].tornadokick = {cmd = "tnk", rage = 36, desc = "Big Damage", available = true}
-      Legacy.Settings.Basher.Classes["Monk"].mindblast = {cmd = "mind blast", rage = 25, desc = "Conditional", needs = {"weakness", "sensitivity"}, available = true}
-      Legacy.Settings.Basher.Classes["Monk"].ripplestrike = {cmd = "rpst", rage = 25, desc = "Gives Affliction", aff = "inhibit", available = true}
-      Legacy.Settings.Basher.Classes["Monk"].configRage = Legacy.Settings.Basher.Classes["Monk"].configRage or {bigDamage = 20, smallDamage = 0, affAttack = 100}
-      Legacy.Settings.Basher.Classes["Monk"].nrshieldbreak = {cmd = "", rage = 0, desc = "Raze"}
     elseif gmcp.Char.Status.class == "Occultist" then
       Legacy.Settings.Basher.Classes["Occultist"].harry = {cmd = "harry @tar", rage = 14, desc = "Small Damage", available = true }
       Legacy.Settings.Basher.Classes["Occultist"].temper = {cmd = "temper @tar", rage = 32, desc = "Gives Affliction", aff = "charm", available = true }

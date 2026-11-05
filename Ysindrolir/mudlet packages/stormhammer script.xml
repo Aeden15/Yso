@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage />
+	<TimerPackage />
+	<AliasPackage />
+	<ActionPackage />
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>StawmHamma</name>
+			<packageName />
+			<script />
+			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>Stormhammer</name>
+				<packageName />
+				<script>-- design doc:
+-- the goal is to create an alias, stm, that chooses targets from your room to stormhammer
+-- the core of it is this: you need to be able to create a list, and then check that list against who is in the room,
+-- and then stormhammer in that order. 
+-- In order to do this we need multiple parts:
+-- First, we need to grab a list of targets in the room. Once we have that, we look for our target. If that's found,
+-- then we start from there and loop through the list to choose the next targets. We will use getTargets with the
+-- argument targets ( a string ) to determine what targets to check against. 
+-- for the target list, we'll pull from the target list until we run out. otherwise, we just check against 
+-- players in the room and select the ones that come up matching criteria first. 
+
+thammer = thammer or {}
+thammer.target_list = thammer.target_list or "List"
+
+local thammer_validate = {
+  -- insert here the logic necessary to validate your targets based on inputs, ie city or All
+  All = function(e) return true end
+  
+}
+
+function thammer.getTargets(targets)
+  local t = {}
+  if target and thammer.players[target] then t[1] = target end 
+  if targets == "List" then
+    for _, v in ipairs(tprio.list) do
+      if thammer.players[v] and (not table.contains(t, v)) then t[#t+1] = v end
+      if #t &gt;= 3 then return t end
+    end
+  else
+    for person, _ in pairs(thammer.players) do
+      if thammer_validate[targets](person) then
+        t[#t+1] = person
+      end
+      if #t &gt;= 3 then return t end
+    end
+  end
+  return t
+end
+
+function thammer.cast()
+  local staff, shield = "442968", "324970" -- insert your numbers here. Important!!!!!!!!!!
+
+  local targets = thammer.getTargets(thammer.target_list) -- pull a list of targets from gmcp.Room.Players up to 3
+  local list = table.concat(targets, " and ")
+  sendAll(f"setalias stmpvp stand/wield {staff} {shield}/cast stormhammer at {list}", "queue add free stmpvp", false)
+end</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>hammer_players</name>
+				<packageName />
+				<script>function hammer_players(e)
+  thammer = thammer or {}
+  thammer.players = thammer.players or {}
+  if e == "gmcp.Room.Players" then
+    thammer.players = {}
+    for _, v in ipairs(gmcp.Room.Players) do
+      if not v.fullname:find("The soul of") then
+        thammer.players[v.name] = true
+      end
+    end
+  elseif e == "gmcp.Room.AddPlayer" then
+    if not gmcp.Room.AddPlayer.fullname:find("The soul of") then
+      thammer.players[gmcp.Room.AddPlayer.name] = true
+    end
+  elseif e == "gmcp.Room.RemovePlayer" then
+    thammer.players[gmcp.Room.RemovePlayer] = nil
+  end
+  tprio_auto_target()
+ -- display(thammer.players)
+  -- this should be all we need to get going
+end</script>
+				<eventHandlerList>
+					<string>gmcp.Room.Players</string>
+					<string>gmcp.Room.AddPlayer</string>
+					<string>gmcp.Room.RemovePlayer</string>
+				</eventHandlerList>
+			</Script>
+		</ScriptGroup>
+	</ScriptPackage>
+	<KeyPackage />
+</MudletPackage>

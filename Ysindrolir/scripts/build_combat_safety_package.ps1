@@ -38,14 +38,6 @@ $text=Script $text 'Enemy Deliverance safety' 'Yso/Combat/deliverance.lua' 'Api 
 $text=Script $text 'Magi resonance feedback' 'Magi/resonance_feedback.lua' 'Enemy Deliverance safety'
 $text=SetBody $text 'Alias' 'mdam' ([IO.File]::ReadAllText((Join-Path $root 'Magi/mdam_retired_alias.lua')))
 $text=SetBody $text 'Alias' 'mfocus' ([IO.File]::ReadAllText((Join-Path $root 'Magi/mfocus_alias_body.lua')))
-$text=SetBody $text 'Trigger' 'Enemy Deliverance' @'
-local D = Yso and Yso.Combat and Yso.Combat.Deliverance
-if D and type(D.observe) == "function" then D.observe(matches[2], "channeling") end
-'@
-$text=SetBody $text 'Trigger' 'Enemy Deliverance stage 2' @'
-local D = Yso and Yso.Combat and Yso.Combat.Deliverance
-if D and type(D.observe) == "function" then D.observe(matches[2], "active") end
-'@
 $text=SetPattern $text 'Enemy Deliverance' '^([\w''-]+) bows (?:his|her|their|faes|faen) head in silent prayer\.$'
 $text=SetPattern $text 'Enemy Deliverance stage 2' '^([\w''-]+) slowly raises (?:his|her|their|faes|faen)\s+head and you see (?:his|her|their|faes|faen) eyes glowing bright white\.$'
 foreach($name in @('Mfocus resonance feedback','Mfocus resonance depleted')){

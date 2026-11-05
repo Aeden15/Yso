@@ -8,7 +8,7 @@ $mapping=@(
  @('Apostate Truelocks','Apostate/lock_route.lua'),@('Airlord route runtime','Airlord/route_runtime.lua'),
  @('Airlord lock route','Airlord/lock_route.lua'),@('Airlord damage route','Airlord/damage_route.lua'),
  @('Compression logic','Airlord/compression.lua'),
- @('Shikudo duel controller','Monk/shikudo_duel.lua'),@('Magi route core','Magi/magi_route_core.lua'),
+@('Magi route core','Magi/magi_route_core.lua'),
  @('Alchemist physiology','Alchemist/Core/physiology.lua'),@('Alchemist duel route','Alchemist/Core/duel route.lua'),
  @('Alchemist aurify route','Alchemist/Aurify route.lua'),@('Alchemist group damage','Alchemist/Core/group damage.lua')
 )
@@ -24,7 +24,7 @@ try{
   [IO.File]::WriteAllText($luaFile,$body)
   & luac -p $luaFile;if($LASTEXITCODE -ne 0){throw ('Syntax: '+$row[0])}
  }
- foreach($row in @(@('Group damage','Monk/shdam_alias_body.lua'),@('mfocus','Magi/mfocus_alias_body.lua'))){
+ foreach($row in @(,@('mfocus','Magi/mfocus_alias_body.lua'))){
   if($doc.SelectSingleNode('//Alias[name="'+$row[0]+'"]//script').InnerText.Replace("`r`n","`n") -cne [IO.File]::ReadAllText((Join-Path $root $row[1])).Replace("`r`n","`n")){throw ('Alias parity: '+$row[0])}
  }
  foreach($row in @(@('Yso/Combat/route_interface.lua','Yso/xml/route_interface.lua'),@('Yso/Core/queue.lua','Yso/xml/yso_queue.lua'))){

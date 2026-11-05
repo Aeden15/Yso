@@ -1,108 +1,56 @@
-# Yso systems status — October 17, 2026
+# Yso systems — November 4, 2026
 
-The package includes **Magi**, **Alchemist**, **Monk/Shikudo**, **Airlord**, and Dragon support, plus shared Yso core. Check the installed package and maintained build mappings before treating an older filesystem module as an active automation path.
+Yso runs from the embedded Lua in the Mudlet packages under `Ysindrolir/mudlet packages/`. Filesystem Lua is maintained source and test input, not a runtime route loader.
 
-For the current Shikudo/Kai/soar changes, use `Ysindrolir/scripts/export_yso_system_xml.ps1 -ShikudoOnly -KaiSoarOnly`. This scoped refresh preserves unrelated package-native scripts. The legacy full refresh also changes other classes and removes older package entries; use it only when deliberately refreshing those sources.
+## Maintained capabilities
 
-For the four-mode `shduel` controller and limb tracker, use `-ShikudoDuelOnly`.
-See `Ysindrolir/Monk/README.md` for the first lock-mode test and import both
-updated `Yso system.xml` and `limb.1.2.xml` packages.
+- **Magi:** focus/lock, duel damage, Firestorm and water group routes, equipment discovery, vibes, and Stormhammer helpers.
+- **Alchemist:** physiology, formulation, duel/group damage, and Aurify routes.
+- **Apostate:** Truelocks, Vivisect, tracking, entourage, and Soulstorm hunting support.
+- **Airlord:** separate lock and damage routes, Compression, and soar helpers.
+- **Dragonform:** manual aliases; see [Dragon commands](Ysindrolir/Dragon/README.md).
+- **Shared:** curing/self-state, target intelligence, route scheduling, command emission, parry, and AK/Legacy integration.
 
-Kaido's `delv` alias requires more than 81 Kai and no self paralysis or prone.
-It pauses curing through `pp` before sending `kai deliverance`, then keeps it
-paused through channeling and active Deliverance. The down/interruption message
-restores curing only when this activation paused it. An unconfirmed request times
-out after five seconds. Burst readiness is tracked from server success,
-cooldown-rejection and ready messages under `Yso.monk.kai.burst.ready` (unknown
-until confirmed); the resource rejection does not change cooldown readiness.
-Run `scripts/test_kaido_package.ps1` and `scripts/test_legacy_prompt_vitals.ps1`
-under `Ysindrolir/` for the Kaido lifecycle and Legacy prompt regressions.
+These are maintained package capabilities, not a claim that every route is verified against a live game session. The route registry determines active combat routes.
 
-The `Ysindrolir/Yso` folder remains in use for shared sources, export inputs, and tests. See [the source audit](Ysindrolir/Information/Yso-source-audit.md) for retained modules and the three retired loader files removed in this cleanup.
+**Monk is retired.** Monk routes, skill stacks, class-specific opponent handling, and build/test tooling are removed. **Deliverance is the explicit exception:** its own activation and lifecycle scripts/triggers, enemy protection, and required Kai compatibility state remain. They live under shared combat sources; `Yso.monk.kai` remains only for these retained integrations. Generic limb and affliction infrastructure remains available to other classes.
 
-Combat routes share self-paralysis pause/resume through the scheduler and emitter. See [the combat paralysis contract](Ysindrolir/Information/combat-paralysis.md) for future route requirements and the scoped package builder.
+## Login and XML updates
 
-## Mudlet workflow (package-first)
+The shared `Yso.session` service waits for fresh character GMCP evidence before automatic equipment, formulation, or curing-policy discovery. A TCP connection and cached character tables do not establish authentication. Disconnect/reconnect invalidates readiness and deferred work; ordinary user login input is untouched.
 
-- **Canonical runtime:** Install/import the package under `Ysindrolir/mudlet packages/`, especially **`Yso system.xml`** (and `.mpackage` exports when you use them). Combat behavior comes from the embedded scripts and Mudlet’s script **load order**, not from ad-hoc filesystem loading.
-- **Globals, not route `require`:** Later scripts assume **preloaded global tables** (`Yso`, route registries, class helpers, and so on). Do not activate routes via runtime **`require(...)`** / **`pcall(require, ...)`**, and do not add **`YSO_ROOT`**, **`package.path`**, or repo-root probing for route loading. Bootstrap loaders were removed; **`Route chassis loader`** only documents the **`Yso.load_order_contract`** tier order.
-- **API surface:** **`Ysindrolir/Yso/xml/api_stuff.lua`** is the single source of truth for `Yso.emit`, curing helpers, and related APIs (Mudlet script **Api stuff**). **`Ysindrolir/Yso/Core/api.lua`** is a thin load shim only.
-- **Command emission:** **`Yso.queue` was removed.** Routes and helpers send through **`Yso.emit`** / **`Yso.emit_now`** (and direct **`send`** where appropriate). There is no client-side queue layer.
-- **Operating:** Use the package **aliases** and toggles in Mudlet (for example Magi **`mdam`** for group damage, **`mfocus`** for focus/duel convergence, **`magi_dmg`** for duel lock, **`mreflect`** to cast reflection; Alchemist **`adam`**, **`aduel`**). Combat mode plus per-route toggles drive the offense loops.
-- **Repo vs package:** Lua under `Ysindrolir/Yso/`, `Ysindrolir/Magi/`, and `Ysindrolir/Alchemist/` is the git-side source tree. When editing split-layout sources, sync back into the package with the scripts below.
-- **Linked Achaea profile:** After rebuilding an affected XML, run `Ysindrolir/scripts/publish_workspace_link.ps1` to publish byte-exact validation snapshots. The independent **Yso Workspace Link** package then applies both built XMLs with `ysoreload` while automation is stopped. Use `ysostatus` to check pending updates. See [workspace-link setup and recovery](Ysindrolir/Information/workspace-link.md). Do not point native modules directly at workspace source files.
+The independent **Yso Workspace Link** package watches built XMLs and reports pending changes. **Updates still require `ysoreload`.** It reloads AK before Yso while automation is stopped; it never starts a route automatically.
 
-### Export and Magi alias build
+1. Edit the maintained source or package-native entry.
+2. Rebuild the affected XML with its scoped builder. Use `scripts/build_login_safety_package.ps1` for session/discovery changes, `build_airlord_soar_package.ps1` for soar, or `build_deliverance_package.ps1` for retained Deliverance support.
+3. For Legacy login changes, also run `Ysindrolir/scripts/build_legacy_login_safety_package.ps1`; this deliberately updates Legacy separately from Yso exports.
+4. Run `Ysindrolir/scripts/publish_workspace_link.ps1` to publish byte-exact validation receipts.
+5. With automation stopped, use `ysostatus`, then `ysoreload` in Mudlet.
 
-From `Ysindrolir/scripts/`:
+See [workspace-link setup and recovery](Ysindrolir/Information/workspace-link.md). Native modules use profile-local copies, never editable workspace sources.
 
-1. **Magi alias bodies:** `.\build_mdam_alias_body.ps1` (route_core + group_damage + toggle) and `.\build_mfocus_alias_body.ps1` (route_core + dissonance + focus + toggle).
-2. **Full package refresh:** `.\export_yso_system_xml.ps1` re-embeds scripts, rebuilds **mdam** / **mfocus** / **mreflect** alias bodies, removes retired scripts (**Yso Bootstrap loader**, **Yso.queue**, **Magi group damage**, **Magi focus**), removes duplicate **mgd**, and drops Reflection up/down triggers.
+**After the Monk removal, restart the Achaea profile after applying the updated packages.** Removing XML entries does not reliably erase globals or anonymous handlers from the previous live Lua session. The bridge refreshes AK/Yso only; any changed Legacy or limb packages require importing those updated packages separately. No live installation is implied by a workspace rebuild.
 
-Magi **group damage** lives in **`^mdam$`** (`magi_group_damage`). Magi **focus** lives in **`^mfocus$`** (`magi_focus`). Shared chassis script: **Magi route core**. **`magi_dmg`** remains duel damage. **`mgd`** removed (use **`mdam`**). **`mreflect`** is cast-only (not auto-reflect).
+## Source and build contracts
 
-Kept in tree:
+- Mudlet script load order supplies globals. Do not activate routes through runtime `require`, `dofile`, root probing, `YSO_ROOT`, or `package.path` changes.
+- `Yso/xml/api_stuff.lua` is the command API source of truth. Routes use `Yso.emit` / `Yso.emit_now`; legacy queue modules remain only where compatibility/tests require them.
+- Shared session readiness loads before automatic discovery consumers.
+- The full exporter is `Ysindrolir/scripts/export_yso_system_xml.ps1`; scoped builders preserve unrelated package-native entries. Test full exports in disposable copies before adopting their output.
+- Rebuilds and publishing local receipts do not commit, push, or apply an update in Mudlet.
 
-- Shared Yso core, curing, route framework, target helpers, AK/Legacy integration, and class-neutral utilities.
-- Magi route core script, alias-embedded group damage (`mdam`) and focus (`mfocus`), duel damage route, vibes helper, and cast reflection alias.
-- Alchemist physiology/formulation/duel/group-damage/Aurify support.
-- A neutral `Yso.entities` API for future class-neutral pet support (including Alchemist homunculus integration later).
+## Verification and audit
 
-Tests and rebuilds:
+Regression scripts live under `Ysindrolir/scripts/test_*.ps1`; standalone Lua regressions also live under `Ysindrolir/Yso/Tests and rebuilds/` and `Ysindrolir/Apostate/`. Some Lua tests need package-extracted fixtures and should run through their PowerShell wrapper.
 
-- Magi, Alchemist, and shared tests live in `Ysindrolir/Yso/Tests and rebuilds/`.
-- Purged-class tests and tools were deleted rather than archived.
+Use PowerShell 7 (`pwsh`) for package builds and regression wrappers, with `lua`/`luac` on PATH. The synchronization helper also supports Windows PowerShell 5.1 used by `sync.cmd`. Local CLI tests use Mudlet mocks and do not replace verification in the live profile.
 
-Optional **`Yso.net.cfg.dry_run`** (defaults off) can suppress live sends when testing payload plumbing locally.
+Relevant maintenance checks include `test_workspace_link_package.ps1`, `test_workspace_sync.ps1`, `test_monk_retirement.ps1`, `test_stormhammer_package.ps1`, and `test_full_export_safety.ps1`.
 
-## Patch notes (recent)
+See [maintenance findings and next steps](Ysindrolir/Information/maintenance-audit-2026-11-04.md) for verification evidence, remaining limits, and the enhancement backlog. The [October source audit](Ysindrolir/Information/Yso-source-audit.md) is historical context.
 
-### May 24, 2026
+## Workspace and Git
 
-- **`mdam`** / **`mfocus`** alias bodies now embed Magi route modules at build time (including route_core and dissonance for focus) with no runtime peer-`dofile` loading.
-- Added package script **Magi route core** and removed package script **Magi focus**.
-- Removed duplicate alias **`mgd`** and route-registry alias mapping for `mgd`.
-- **`mreflect`** is now a simple cast alias (`send`) and Reflection up/down triggers were removed.
-- Slimmed **Defensive checks** to class/HP helpers (`set_class`, `is_magi`, `get_hp_percent`) and removed auto-reflect loop wiring.
+This Desktop folder is an editing workspace. The canonical clone is `C:/Users/shuji/OneDrive/Documents/GitHub/Yso`; Git commands belong there. See [Git workflow](GIT.md).
 
-### May 23, 2026
-
-- Removed bootstrap/path-loader layer (`Core/bootstrap.lua`, `xml/bootstrap.lua`, **Yso Bootstrap loader**); **`Route chassis loader`** retains **`load_order_contract`** only.
-- Removed **`Yso.queue`** entirely; routes use **`Yso.emit`** / **`Yso.send`** directly. Queue test/scripts deleted.
-- **`api_stuff.lua`** is API SSOT; export embeds it as **Api stuff**; **`Core/api.lua`** is a shim.
-- Magi group damage moved into **`^mdam$`** alias (`Magi/mdam_alias_body.lua` + `Magi/magi_group_damage.lua`); standalone **Magi group damage** package script removed.
-- Added **`build_mdam_alias_body.ps1`**; **`export_yso_system_xml.ps1`** updated (**ScriptsToRemove**, no queue/bootstrap entries).
-
-### May 3, 2026
-
-- Expanded optional `Ysindrolir/scripts/export_yso_system_xml.ps1` coverage so additional shared scripts can be re-embedded into `Yso system.xml` when maintaining the split layout; on-disk mirrors under `Ysindrolir/Yso/xml/` remain development aids, not the live load mechanism in Mudlet.
-
-### May 2, 2026
-
-- Fixed Alchemist duel-route evaluate gating so dirty humour intel fails closed with `evaluate_not_ready` when evaluate balance is unavailable.
-- Revalidated workspace checks: Lua syntax, XML parse, and full `Ysindrolir/Yso/Tests and rebuilds` suite.
-- Alchemist wrack slot legality, bleed alias cleanup, and related regression tests (see Alchemist/Magi notes).
-
-### May 1, 2026
-
-- Plain `QUEUE ADD` support in route payloads for configurable class-combo sends while preserving `ADDCLEARFULL` instant-kill behavior.
-- Alchemist temper pressure folds into one class payload with `evaluate <target> humours`, `educe`, and `wrack/truewrack` after the initial temper command.
-- Live Physiology evaluate-count trigger colourizes humour count lines without breaking state tracking.
-- Instant-kill queue priority: `queue_verb = "addclearfull"` on commits; Aurify/Reave and Magi Destroy execute paths request `QUEUE ADDCLEARFULL`.
-
-### April 28, 2026
-
-- Alchemist route reset repair, humour-balance failure handling, BAL-lane inference for `wrack`/`truewrack`, target-slain/AK reset hooks, baseline capture noise reduction.
-- Reset cleanup output tightening: structural resets avoid live `CLEARQUEUE` spam; humour-cooldown failure path still recovers class queue when needed.
-
-### April 27, 2026
-
-- Alchemist evaluate-normal handling, hard evaluate gates on group/duel routes, pending temper confirmation recovery, route lifecycle hooks, homunculus corrupt parser fix (synced to package XML).
-
-### April 26, 2026
-
-- Alchemist lane-combo payloads (`free/eq/class/bal`), Aurify route wiring (`alchemist_aurify_route`), shieldbreak as EQ slot, staged humour / inundate support, queue class-lane readiness, expanded route tests.
-
----
-
-Older granular patch history referred to legacy loader/bootstrap experiments; **current loading is Mudlet package script order only** (see [Mudlet workflow](#mudlet-workflow-package-first) above).
+Sync uses content hashes and an explicit retirement manifest, not unrestricted mirroring. It preserves unrelated destination files and refuses deletion of a modified retired file. Preview with `Ysindrolir/scripts/Invoke-YsoGit.ps1 -DryRun`; no Git command runs in this mode. Local workspace-link receipts are excluded and must be regenerated locally.

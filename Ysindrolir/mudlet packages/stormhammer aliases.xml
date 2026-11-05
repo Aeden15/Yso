@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage />
+	<TimerPackage />
+	<AliasPackage>
+		<AliasGroup isActive="yes" isFolder="yes">
+			<name>StawmHamma</name>
+			<script />
+			<command />
+			<packageName />
+			<regex />
+			<Alias isActive="yes" isFolder="no">
+				<name>Target Switcher</name>
+				<script>local valid = {
+  "Cyrene",
+  "Mhaldor",
+  "Targossas",
+  "Ashtan",
+  "Hashan",
+  "Eleusis",
+  "All",
+  "List"
+}
+
+local input = matches[2]:lower():title()
+display(input)
+
+if not table.contains(valid, input) then return cecho(f"&lt;yellow&gt;(&lt;red&gt;Stormammer&lt;yellow&gt;): {input} is not a valid entry. Try a city name or the word 'List' for target list!!") end
+cecho(f"&lt;yellow&gt;(&lt;red&gt;Stormhammer&lt;yellow&gt;): Now targeting {input}!") 
+--validation prehandled, don't need to validate further.
+thammer = thammer or {}
+thammer.target_list = input</script>
+				<command />
+				<packageName />
+				<regex>^shtar (\S+)$</regex>
+			</Alias>
+			<Alias isActive="yes" isFolder="no">
+				<name>Hammer time</name>
+				<script>thammer.cast()</script>
+				<command />
+				<packageName />
+				<regex>^sth$</regex>
+			</Alias>
+		</AliasGroup>
+	</AliasPackage>
+	<ActionPackage />
+	<ScriptPackage />
+	<KeyPackage />
+</MudletPackage>

@@ -6,6 +6,7 @@
 #   .\Ysindrolir\scripts\Invoke-YsoGit.ps1 push origin main
 [CmdletBinding()]
 param(
+  [switch]$DryRun,
   [Parameter(ValueFromRemainingArguments = $true)]
   [string[]]$GitArgs
 )
@@ -28,39 +29,25 @@ if (-not (Test-Path -LiteralPath $YsindrolirHere)) {
   throw "Ysindrolir folder missing in workspace: $YsindrolirHere"
 }
 
-if ($GitArgs.Count -eq 0) {
+if ($null -eq $GitArgs -or $GitArgs.Count -eq 0) {
   $GitArgs = @('status')
 }
 
 function Sync-YsindrolirToCanonical {
-  if (-not (Test-Path -LiteralPath $YsindrolirThere)) {
-    New-Item -ItemType Directory -Path $YsindrolirThere -Force | Out-Null
-  }
-
-  $robocopy = Get-Command robocopy -ErrorAction SilentlyContinue
-  if ($robocopy) {
-    # /E recurse, /XO skip older dest files, exclude VCS metadata
-    $null = & robocopy $YsindrolirHere $YsindrolirThere /E /XO /R:1 /W:1 /NFL /NDL /NJH /NJS `
-      /XD '.git' 'node_modules' '.cursor'
-    if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
-    return
-  }
-
-  Get-ChildItem -LiteralPath $YsindrolirHere -Recurse -File | ForEach-Object {
-    $rel = $_.FullName.Substring($YsindrolirHere.Length).TrimStart('\')
-    if ($rel -match '(^|[\\/])\.git([\\/]|$)') { return }
-    $target = Join-Path $YsindrolirThere $rel
-    $targetDir = Split-Path $target -Parent
-    if (-not (Test-Path -LiteralPath $targetDir)) {
-      New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-    }
-    if (-not (Test-Path -LiteralPath $target) -or $_.LastWriteTimeUtc -gt (Get-Item -LiteralPath $target).LastWriteTimeUtc) {
-      Copy-Item -LiteralPath $_.FullName -Destination $target -Force
+  & (Join-Path $ScriptsDir 'Sync-YsoWorkspace.ps1') -SourceDirectory $YsindrolirHere -TargetDirectory $YsindrolirThere -WhatIf:$DryRun
+  foreach ($relative in @('README.md','README.txt','GIT.md','sync_workspace.ps1')) {
+    $from=Join-Path $WorkspaceRoot $relative
+    if (Test-Path -LiteralPath $from) {
+      Copy-Item -LiteralPath $from -Destination (Join-Path $CanonicalGitRoot $relative) -Force -WhatIf:$DryRun
     }
   }
 }
 
 Sync-YsindrolirToCanonical
+if ($DryRun) {
+  Write-Host 'Dry run complete; no files changed and no git command executed.'
+  return
+}
 Write-Host "Synced Ysindrolir -> $YsindrolirThere"
 
 & git -C $CanonicalGitRoot @GitArgs

@@ -97,7 +97,7 @@
 				<regexCodePropertyList>
 					<integer>1</integer>
 				</regexCodePropertyList>
-			</Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Shikudo Ruku observed</name><script>local B=Yso and Yso.monk and Yso.monk.limbs; if B then B.note_success(matches[2],&quot;ruku&quot;) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^([\w&apos;-]+) staggers as the staff cracks across [\w&apos;-]+ ribs, sweat breaking out upon [\w&apos;-]+ forehead\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Shikudo Kuro observed</name><script>local B=Yso and Yso.monk and Yso.monk.limbs; if B then B.note_success(matches[2],&quot;kuro&quot;) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^The staff cracks across the [\w&apos;-]+ thigh of ([\w&apos;-]+)\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger><Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no"><name>Shikudo Hiraku observed</name><script>local B=Yso and Yso.monk and Yso.monk.limbs; if B then B.note_success(matches[2],&quot;hiraku&quot;) end</script><triggerType>0</triggerType><conditonLineDelta>0</conditonLineDelta><mStayOpen>0</mStayOpen><mCommand /><packageName /><mFgColor>#ff0000</mFgColor><mBgColor>#ffff00</mBgColor><mSoundFile /><colorTriggerFgColor>#000000</colorTriggerFgColor><colorTriggerBgColor>#000000</colorTriggerBgColor><regexCodeList><string>^The staff smashes into the face of ([\w&apos;-]+) with a sickening crunch\.$</string></regexCodeList><regexCodePropertyList><integer>1</integer></regexCodePropertyList></Trigger>
+			</Trigger>
 		</TriggerGroup>
 	</TriggerPackage>
 	<TimerPackage />
@@ -271,7 +271,7 @@ end</script>
 			<Script isActive="yes" isFolder="no">
 				<name>limb management</name>
 				<packageName></packageName>
-				<script>-- Maintained methods are embedded in limb init from Monk/limb_tracker.lua.</script>
+				<script>-- Generic limb management.</script>
 				<eventHandlerList />
 			</Script>
 			<Script isActive="yes" isFolder="no">

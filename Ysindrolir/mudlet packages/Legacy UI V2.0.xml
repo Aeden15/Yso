@@ -1348,12 +1348,6 @@ end
       Prompt:cecho(" &lt;ansi_yellow&gt;Essence: "..stats.essence)
     elseif gmcp.Char.Status.class == "Magi" then
       Prompt:cecho(" &lt;ansi_yellow&gt;Channels: "..stats.channels)
-    elseif gmcp.Char.Status.class == "Monk" then
-      
-      if stats.stance == nil then else Prompt:cecho(" &lt;ansi_yellow&gt;Stance: "..stats.stance) end
-      if stats.form == nil then else Prompt:cecho(" &lt;ansi_yellow&gt;Form: "..stats.form) end
-      if stats.kata == nil then else Prompt:cecho(" &lt;ansi_yellow&gt;Kata: "..stats.kata) end
-      Prompt:cecho(" &lt;ansi_yellow&gt;Kai: "..stats.kai)
     elseif gmcp.Char.Status.class == "Occultist" then
       Prompt:cecho(" &lt;ansi_yellow&gt;Karma: &lt;white&gt;"..stats.karma)
       Prompt:cecho(" &lt;ansi_yellow&gt;Entity: "..stats.entity)

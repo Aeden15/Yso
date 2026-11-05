@@ -100,6 +100,7 @@ function F.note_phiallist()
 end
 
 function F.request_discovery()
+  if not (Yso.session and Yso.session.is_ready()) then return false, 'not_authenticated' end
   if F.state.discovery_requested then
     return false
   end
@@ -126,16 +127,19 @@ function F.validate_reserved_policy(reason)
   return ok
 end
 
--- Validate reserved-slot policy each login/session reconnect and request
--- a fresh phiallist snapshot when discovery is enabled.
-if type(registerAnonymousEventHandler) == "function" then
-  if F._eh.connection then
-    pcall(killAnonymousEventHandler, F._eh.connection)
-  end
-  F._eh.connection = registerAnonymousEventHandler("sysConnectionEvent", function()
+-- TCP connect precedes credential exchange; discovery belongs to authenticated sessions.
+if F._eh.connection and type(killAnonymousEventHandler) == 'function' then
+  killAnonymousEventHandler(F._eh.connection)
+end
+F._eh.connection = nil
+if Yso.session and type(Yso.session.subscribe) == 'function' then
+  Yso.session.subscribe('alchemist.formulation', function()
     F.state.validate_reserved_on_next_phiallist = true
-    if F.cfg.discovery ~= false and type(F.request_discovery) == "function" then
-      pcall(F.request_discovery)
-    end
+    F.state.discovery_requested = false
+    if F.cfg.discovery ~= false then F.request_discovery() end
+  end, function()
+    F.state.discovery_requested = false
+    F.state.discovery_requested_at = nil
+    F.state.validate_reserved_on_next_phiallist = nil
   end)
 end

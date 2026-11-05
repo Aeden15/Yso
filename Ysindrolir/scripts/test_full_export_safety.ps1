@@ -5,13 +5,25 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 # Allow a writable location outside OneDrive when it locks copied XMLs during
 # atomic replacement. The package sources still come from this checkout.
-$scratchParent=if($ScratchRoot){[IO.Path]::GetFullPath($ScratchRoot)}else{$root}
+$scratchParent=if($ScratchRoot){[IO.Path]::GetFullPath($ScratchRoot)}else{[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')}
 $scratch = Join-Path $scratchParent ('.tmp-yso-full-export-' + [guid]::NewGuid())
 function Assert([bool]$condition, [string]$message) { if (-not $condition) { throw $message } }
 function XmlSource([string]$path) { [IO.File]::ReadAllText($path).Replace("`r`n", "`n").Replace("`r", "`n") }
+function VerifyRetirement([string]$path) {
+  $doc=[xml][IO.File]::ReadAllText($path)
+  foreach ($node in $doc.SelectNodes('//*[name]')) {
+    Assert (-not ([string]$node.name -match '(?i)monk|shikudo|tekura|kaido|mind.?lock|radiance')) "Export reintroduced retired entry: $($node.name)"
+  }
+  $hashes=Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'deliverance-preserved-bodies.json') | ConvertFrom-Json -AsHashtable
+  foreach ($name in $hashes.Keys) {
+    $body=$doc.SelectSingleNode("//*[name='$name']/script").InnerText
+    $actual=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($body)))
+    Assert ($actual -ceq $hashes[$name]) "Export changed preserved Deliverance body: $name"
+  }
+}
 try {
   New-Item -ItemType Directory -Path $scratch | Out-Null
-  foreach ($folder in @('scripts','Yso','Alchemist','Apostate','Magi','Monk','Airlord','mudlet packages')) {
+  foreach ($folder in @('scripts','Yso','Alchemist','Apostate','Magi','Airlord','mudlet packages')) {
     Copy-Item -LiteralPath (Join-Path $root $folder) -Destination $scratch -Recurse
   }
   $exporter = Join-Path $scratch 'scripts/export_yso_system_xml.ps1'
@@ -29,11 +41,12 @@ try {
     # Removing Script nodes must distinguish </Script> from their </script> children.
     try { & $exporter } catch { throw "Full export must succeed with native Magi focus present: $($_.Exception.Message)" }
     $after = [IO.File]::ReadAllText($package)
+    VerifyRetirement $package
     $doc = [xml]$after
     Assert ($null -eq $doc.SelectSingleNode("//Script[name='Magi focus']")) 'Full export did not retire the native focus script'
     Assert ($null -eq $doc.SelectSingleNode("//Script[name='Airlord attack logic']")) 'Full export retained the combined Airlord script'
     Assert ($doc.SelectSingleNode("//Alias[name='alupdraft']/script").InnerText -eq 'Yso.off.airlord.damage.toggle_updraft()') 'Full export left Updraft attached to lock'
-    foreach ($pair in @(@('Magi route core','Magi/magi_route_core.lua'), @('Magi water group','Magi/Magi_water_group.lua'), @('Shikudo AI logic','Monk/shikudo_ai.lua'),
+    foreach ($pair in @(@('Magi route core','Magi/magi_route_core.lua'), @('Magi water group','Magi/Magi_water_group.lua'),
       @('Compression logic','Airlord/compression.lua'),@('Airlord route runtime','Airlord/route_runtime.lua'),
       @('Airlord lock route','Airlord/lock_route.lua'),@('Airlord damage route','Airlord/damage_route.lua'))) {
       Assert ([string]$doc.SelectSingleNode("//Script[name='$($pair[0])']").script -ceq (XmlSource (Join-Path $scratch $pair[1]))) "Source parity failed: $($pair[0])"
@@ -47,7 +60,7 @@ try {
   if ($Case -in @('Failure','All')) {
     [IO.File]::WriteAllText($package, $before)
     # This source is read during the final nested scoped pass, after the legacy refresh.
-    [IO.File]::AppendAllText((Join-Path $scratch 'Monk/shikudo_ai.lua'), ([string][char]0))
+    [IO.File]::AppendAllText((Join-Path $scratch 'Airlord/soar_alias.lua'), ([string][char]0))
     $failed = $false
     try { & $exporter } catch { $failed = $true }
     Assert $failed 'Invalid late-stage XML source must reject the export'
@@ -57,7 +70,7 @@ try {
   }
   if ($Case -in @('PackagePath','Scoped','All')) {
     # Restore sources after the injected failure, and use a nondefault destination.
-    Copy-Item -LiteralPath (Join-Path $root 'Monk/shikudo_ai.lua') -Destination (Join-Path $scratch 'Monk/shikudo_ai.lua')
+    Copy-Item -LiteralPath (Join-Path $root 'Airlord/soar_alias.lua') -Destination (Join-Path $scratch 'Airlord/soar_alias.lua')
     [IO.File]::WriteAllText($package, $before)
     $custom = Join-Path $scratch 'custom.xml'
     [IO.File]::WriteAllText($custom, $before)
@@ -69,11 +82,11 @@ try {
       & $exporter -PackagePath $custom -FocusOnly
       $focusDoc = [xml][IO.File]::ReadAllText($custom)
       Assert ($null -ne $focusDoc.SelectSingleNode("//Script[name='Magi focus']")) 'FocusOnly unexpectedly retired the native focus script'
-      & $exporter -PackagePath $custom -ShikudoOnly -KaiSoarOnly
+      & $exporter -PackagePath $custom -SoarOnly -DeliveranceOnly
       & $exporter -PackagePath $custom -CombatSafetyOnly
-      & $exporter -PackagePath $custom -ShikudoDuelOnly
     }
     $null = [xml][IO.File]::ReadAllText($custom)
+    VerifyRetirement $custom
     Assert ([IO.File]::ReadAllText($custom) -cne $before) 'Custom destination was not updated'
     Assert ([IO.File]::ReadAllText($package) -ceq $before) 'Custom destination export changed default package'
     Write-Host 'PASS: PackagePath, WhatIf and scoped destination isolation'

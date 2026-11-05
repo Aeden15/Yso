@@ -200,5 +200,5 @@ To keep the Achaea/Yso stack clean and consistent:
      - If a function is about enemy afflictions, it belongs in AK Tracker, with Yso merely consuming it.
 
   5) Document any new curing-related commands or expectations here.
-     - When adding new helpers (e.g. TREE timing logic, mass prio swaps, “fitness/dragon/kaido” hooks),
+     - When adding new helpers (e.g. TREE timing logic, mass prio swaps, “fitness/dragon” hooks),
        update this helpfile so future changes are aware of the division of responsibility.]]

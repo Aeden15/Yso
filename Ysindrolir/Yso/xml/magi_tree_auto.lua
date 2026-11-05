@@ -19,7 +19,6 @@ T.cfg.pvp = T.cfg.pvp or {
   curesets = {
     depthswalker = { min_affs = 1, notes = "placeholder" },
     bard         = { min_affs = 1, notes = "placeholder" },
-    monk         = { min_affs = 1, notes = "placeholder" },
     dwc          = { min_affs = 2, notes = "dual wield cutting knights" },
     dwb          = { min_affs = 2, notes = "dual wield blunt knights (future)" },
     blademaster  = { min_affs = 2, notes = "placeholder" },

@@ -4,7 +4,7 @@
 # Validate:  [xml](Get-Content -Raw -LiteralPath '..\mudlet packages\Yso system.xml')
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-  [switch]$FocusOnly, [switch]$ShikudoOnly, [switch]$KaiSoarOnly, [switch]$ShikudoDuelOnly, [switch]$CombatSafetyOnly,
+  [switch]$FocusOnly, [switch]$SoarOnly, [switch]$DeliveranceOnly, [switch]$CombatSafetyOnly, [switch]$StormhammerOnly,
   [string]$PackagePath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'mudlet packages/Yso system.xml')
 )
 
@@ -116,7 +116,6 @@ $Ysindrolir = Resolve-Path (Join-Path $ScriptsDir '..')
 $YsoDir = Join-Path $Ysindrolir 'Yso'
 $AlchemistDir = Join-Path $Ysindrolir 'Alchemist'
 $MagiDir = Join-Path $Ysindrolir 'Magi'
-$MonkDir = Join-Path $Ysindrolir 'Monk'
 $XmlPackage = [IO.Path]::GetFullPath($PackagePath)
 
 $ScriptToSourcePath = [ordered]@{
@@ -159,7 +158,6 @@ $ScriptToSourcePath = [ordered]@{
   'Offense Template'              = Join-Path $YsoDir 'xml\offense_template.lua'
   'Parry Module'                  = Join-Path $YsoDir 'Combat\parry.lua'
   'Prio Baselines'                = Join-Path $YsoDir 'xml\prio_baselines.lua'
-  'Radiance event'                = Join-Path $YsoDir 'xml\radiance_event.lua'
   'Combat paralysis policy'       = Join-Path $YsoDir 'Combat\combat_pause.lua'
   'Compression logic'             = Join-Path $Ysindrolir 'Airlord\compression.lua'
   'Airlord route runtime'          = Join-Path $Ysindrolir 'Airlord\route_runtime.lua'
@@ -171,7 +169,6 @@ $ScriptToSourcePath = [ordered]@{
   'Offense core'                  = Join-Path $YsoDir 'Combat\offense_core.lua'
   'Tree auto'                     = Join-Path $YsoDir 'xml\magi_tree_auto.lua'
   'yso_target_tattoos.lua'        = Join-Path $YsoDir 'xml\yso_target_tattoos.lua'
-  'Yso_Alert_Radiance helper'     = Join-Path $YsoDir 'xml\yso_alert_radiance_helper.lua'
   'Yso serverside policy'         = Join-Path $YsoDir 'Curing\serverside_policy.lua'
   'Yso self aff'                  = Join-Path $YsoDir 'Core\self_aff.lua'
   'Yso self curedefs'             = Join-Path $YsoDir 'Curing\self_curedefs.lua'
@@ -183,11 +180,6 @@ $ScriptToSourcePath = [ordered]@{
   'Yso.state wiring'              = Join-Path $YsoDir 'xml\yso_state_wiring_stub.lua'
   'Yso.target'                    = Join-Path $YsoDir 'xml\yso_target.lua'
   'Yso.targeting'                 = Join-Path $YsoDir 'xml\yso_targeting.lua'
-  'Monk reference'                = Join-Path $MonkDir 'monk_reference.lua'
-  'Scythe logic'                  = Join-Path $MonkDir 'scythe.lua'
-  'Kai resource'                  = Join-Path $MonkDir 'kai_resource.lua'
-  'Stance logic'                  = Join-Path $MonkDir 'stance.lua'
-  'Combo logic'                   = Join-Path $MonkDir 'combo.lua'
 }
 
 $ScriptInserts = @(
@@ -236,8 +228,18 @@ $MreflectAliasSource = Join-Path $MagiDir 'mreflect_alias_body.lua'
 $content = Get-Content -LiteralPath $XmlPackage -Raw -Encoding UTF8
 $original = $content
 
+if ($StormhammerOnly) {
+  if ($FocusOnly -or $SoarOnly -or $DeliveranceOnly -or $CombatSafetyOnly) {
+    throw 'StormhammerOnly must be run separately from other scoped exports.'
+  }
+  if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Stormhammer and target priorities')) {
+    & (Join-Path $ScriptsDir 'build_stormhammer_package.ps1') -PackagePath $XmlPackage
+  }
+  return
+}
+
 if ($CombatSafetyOnly) {
-  if ($FocusOnly -or $ShikudoOnly -or $KaiSoarOnly -or $ShikudoDuelOnly) {
+  if ($FocusOnly -or $SoarOnly -or $DeliveranceOnly) {
     throw 'CombatSafetyOnly must be run separately from other scoped exports.'
   }
   if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Deliverance safety and resonance feedback')) {
@@ -246,43 +248,12 @@ if ($CombatSafetyOnly) {
   return
 }
 
-# Scoped maintenance preserves package-native scripts that have no current disk source.
-# Run both switches together for the Monk/Kai/soar update, without the legacy full refresh.
-if ($ShikudoOnly -or $KaiSoarOnly -or $ShikudoDuelOnly) {
-  if ($FocusOnly) { throw 'FocusOnly cannot be combined with ShikudoOnly or KaiSoarOnly.' }
-  if ($ShikudoOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Shikudo sources and embedded shdam alias')) {
-    & (Join-Path $ScriptsDir 'build_shdam_alias_body.ps1') | Out-Null
-    $sources = [ordered]@{
-      'Monk reference' = 'monk_reference.lua'
-      'My Shikudo stance?' = 'shikudo_forms.lua'
-      'Combo logic' = 'combo.lua'
-      'Shikudo AI logic' = 'shikudo_ai.lua'
-      'Dispatch execute logic' = 'shikudo_execute.lua'
-    }
-    foreach ($entry in $sources.GetEnumerator()) {
-      $document = [xml]$content
-      $nodes = @($document.SelectNodes('//Script') | Where-Object { [string]$_.name -ceq $entry.Key })
-      if ($nodes.Count -ne 1) { throw "Expected one Shikudo script: $($entry.Key)" }
-      $body = ConvertTo-MudletXmlScriptText (Get-Content -LiteralPath (Join-Path $MonkDir $entry.Value) -Raw -Encoding UTF8)
-      $nameText = [System.Security.SecurityElement]::Escape([string]$entry.Key)
-      $nameAt = $content.IndexOf('<name>' + $nameText + '</name>')
-      $openAt = $content.IndexOf('<script>', $nameAt) + '<script>'.Length
-      $closeAt = $content.IndexOf('</script>', $openAt)
-      if ($nameAt -lt 0 -or $openAt -lt 8 -or $closeAt -lt $openAt) { throw "Missing script body: $($entry.Key)" }
-      $content = $content.Substring(0, $openAt) + $body + $content.Substring($closeAt)
-    }
-    $content = Set-AliasScriptByName $content 'Group damage' (Join-Path $MonkDir 'shdam_alias_body.lua')
-    $document = [xml]$content
-    if ($content -cne $original) {
-      [System.IO.File]::WriteAllText($XmlPackage, $content, (New-Object System.Text.UTF8Encoding $false))
-    }
-    Write-Host 'Synchronized Shikudo; unrelated package content preserved.'
-  }
-  if ($KaiSoarOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Kaido states, Deliverance, Kai cripple and soar')) {
-    & (Join-Path $ScriptsDir 'build_kai_soar_package.ps1') -PackagePath $XmlPackage
-  }
-  if ($ShikudoDuelOnly -and $PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Shikudo duel and limb packages')) {
-    & (Join-Path $ScriptsDir 'build_shikudo_duel_package.ps1') -PackagePath $XmlPackage
+# Scoped Deliverance and Airlord soar maintenance.
+if ($SoarOnly -or $DeliveranceOnly) {
+  if ($FocusOnly) { throw 'FocusOnly cannot be combined with SoarOnly or DeliveranceOnly.' }
+  if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Deliverance and soar')) {
+    if ($SoarOnly) { & (Join-Path $ScriptsDir 'build_airlord_soar_package.ps1') -PackagePath $XmlPackage }
+    if ($DeliveranceOnly) { & (Join-Path $ScriptsDir 'build_deliverance_package.ps1') -PackagePath $XmlPackage }
   }
   return
 }
@@ -411,8 +382,17 @@ if ($content -ne $original) {
 Write-Host "Done. Manifest entries: $($ScriptToSourcePath.Count). Inserts: $($ScriptInserts.Count)."
 
 # Keep the maintained combat entries synchronized after a legacy full refresh too.
-if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize maintained Shikudo, Kai cripple and soar entries')) {
-  & $PSCommandPath -ShikudoOnly -KaiSoarOnly -PackagePath $XmlPackage
+if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize Deliverance and Airlord soar entries')) {
+  & (Join-Path $ScriptsDir 'build_airlord_soar_package.ps1') -PackagePath $XmlPackage
+  & (Join-Path $ScriptsDir 'build_deliverance_package.ps1') -PackagePath $XmlPackage
+}
+
+if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize maintained Stormhammer and target priorities')) {
+  & (Join-Path $ScriptsDir 'build_stormhammer_package.ps1') -PackagePath $XmlPackage
+}
+
+if ($PSCmdlet.ShouldProcess($XmlPackage, 'Synchronize login safety')) {
+  & (Join-Path $ScriptsDir 'build_login_safety_package.ps1') -PackagePath $XmlPackage
 }
 
 if ($null -ne $stagedPackage) {

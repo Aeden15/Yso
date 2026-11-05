@@ -1,0 +1,164 @@
+{
+  "files": [
+    {
+      "path": "Monk/combo.lua",
+      "sha256": "ad4f385a8c775d6470b9eaa83266d87a73aaa79a0b78df9291a4b771be87874d"
+    },
+    {
+      "path": "Monk/deliverance_alias.lua",
+      "sha256": "27044a8ed1535aa65d39f5ede32f37574d7d4e44175ec4cba995d14efec8112b"
+    },
+    {
+      "path": "Monk/kai_cripple_trigger.lua",
+      "sha256": "7c98b9c4394cc48ef74952f11955f4802a3e0216d4adeda025b14e1445327b85"
+    },
+    {
+      "path": "Monk/kai_resource.lua",
+      "sha256": "fdaba3eb4ebd0d89df374d2165761dd9901883979c109a40ec5c467bc40bacfe"
+    },
+    {
+      "path": "Monk/limb_tracker.lua",
+      "sha256": "57d2010c9e165b5739369dfc49d90abf41e582d6c621da6d974304866f67e938"
+    },
+    {
+      "path": "Monk/monk_reference.lua",
+      "sha256": "8c38b9a02d4e9722f58de826adb1580e6839f123a0bfef4c9b6114dec1e61094"
+    },
+    {
+      "path": "Monk/README.md",
+      "sha256": "253f36e9c98b10e938bd9c8c84a91ec7fdf2830244d9de4f981cc88c84afc7e6"
+    },
+    {
+      "path": "Monk/scythe.lua",
+      "sha256": "cf4559ba4d6e450a8263ddeaee8814fee79d262e1358a642e4a3fb94495956ca"
+    },
+    {
+      "path": "Monk/shdam_alias_body.lua",
+      "sha256": "a12b45724c6bc5a9c8074f11d9664d953fa08b66c563fc3d8f3b3c9c7308187d"
+    },
+    {
+      "path": "Monk/Shikudo 1v1.txt",
+      "sha256": "d673282dbded78c54e689201121f0aba73c48fa9b71cbdd4526d9ee485ce38e4"
+    },
+    {
+      "path": "Monk/shikudo_ai.lua",
+      "sha256": "748b53f53743ab79a8114c131e9f372639b6b9268d72b1b862b84975e07dbab3"
+    },
+    {
+      "path": "Monk/shikudo_duel.lua",
+      "sha256": "3956ca4bf4a08f5269bd3b98b9e11339f34adc209cf205f9441b2998aa506b0d"
+    },
+    {
+      "path": "Monk/shikudo_duel_selector.lua",
+      "sha256": "6ad39581ff9883003ba469a843a044428a3cb7b832a3d7e277d6b672ef584c64"
+    },
+    {
+      "path": "Monk/shikudo_execute.lua",
+      "sha256": "11923b046a41b2018bf9fba454b1b9303ee013e13ee9317da18946b210b3b33f"
+    },
+    {
+      "path": "Monk/shikudo_forms.lua",
+      "sha256": "add3e744494f0d8be0a6f194a50f54513531fa71305323e64dcfb80dcef83f07"
+    },
+    {
+      "path": "Monk/shikudo_group_damage.lua",
+      "sha256": "3b68922fb21176240b8d8bc4b86f7dd18d5bebc837dd29be6b896b632ea08347"
+    },
+    {
+      "path": "Monk/shikudo_limb_bridge.lua",
+      "sha256": "3aaa466fec1ca0ac89c14878aba8f0a29f80b2413c4fa476ca8f2fb2393146c7"
+    },
+    {
+      "path": "Monk/stance.lua",
+      "sha256": "b0adfd3fbafbafc4207cc4d3d997d9f4a5a1cb94250d753edb8d367dea1e27a1"
+    },
+    {
+      "path": "Yso/xml/radiance_event.lua",
+      "sha256": "870931edbe0c0c4ab6bd6c00b81e4fe85d95344dbba04beae0ac4429a6b8b3d0"
+    },
+    {
+      "path": "Yso/xml/yso_alert_radiance_helper.lua",
+      "sha256": "b9781350e165d8aea747b13092d8a70806209226883f040be4f9fea88b4aeee2"
+    },
+    {
+      "path": "scripts/build_shdam_alias_body.ps1",
+      "sha256": "fbd03e4ae169481253b40c28d18f87407ec28b7e7fed15c23c6efc728cfa49d8"
+    },
+    {
+      "path": "scripts/build_shikudo_duel_package.ps1",
+      "sha256": "3a24f1e8dbbb241b2832597c098b9395ebcc89cdd6b358dd56879a4d74c5afb8"
+    },
+    {
+      "path": "scripts/test_shikudo_package.ps1",
+      "sha256": "41cee586c2cd8891b631a2173e1df0de9ee4537e74ff5ff42c92bff9a7d492c6"
+    },
+    {
+      "path": "scripts/test_shikudo_duel_package.ps1",
+      "sha256": "2b8273795e9092ebb16570f30883484d2e92896493914cfc3b58aa2b28e997c4"
+    },
+    {
+      "path": "scripts/test_kaido_package.ps1",
+      "sha256": "fd1d1bc48c88e410fcdb05cd5538c34d45b8c7223dd8c66dacb767b2ac9861b8"
+    },
+    {
+      "path": "scripts/test_kai_soar_package.ps1",
+      "sha256": "2c0ce6a6d619ed2636a96551445b6d6a23fc7a089e27e8a02ef0edc50c517603"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_kaido.lua",
+      "sha256": "0f9b98db8095049d0cc25ec3eb8c6052acd9ae03e6bf6a88e4744442fd016872"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_kai_soar.lua",
+      "sha256": "67f9df72917997a52f54a8b16a9a3d41a4fe002f599cbc08fdb5015c3014b387"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_monk_tekura.lua",
+      "sha256": "6e9ea48ed1450afd1586ac805dbff1a59443bdfdeccbbf84828216aa4cb00520"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo.lua",
+      "sha256": "663da4f1f7c3a773a07d47c0e0e037293d1b4f39aeb5bc87c6cf54ac044fd26c"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_duel.lua",
+      "sha256": "d9676c59810bed30f36ca99392bd3142ab6821ea3ede9433f27a91c0808af9fe"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_duel_route.lua",
+      "sha256": "1f796dad12fca52f6cec2563ad6ce0d3008fe6bc2779c251c3bc98ce2abfcc19"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_duel_startup.lua",
+      "sha256": "ad182a19fcad5caaca0300b94974ca3bfb06b0ca7468ac509b18489c2d4515c6"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_impatience_ak.lua",
+      "sha256": "d3789ef7ebb67742aa0da8874fce273f5d521c811e2c73123b9200d9360f90c3"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_light.lua",
+      "sha256": "4a6596f8570e907f4a17ec1362beb7b17b2e0d009c971f482c39241fbfb32f84"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_limbs.lua",
+      "sha256": "ac7919e4dcc495d64652e08f81eb24a23f30fbb96888879632e7f16f9314c43f"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_route.lua",
+      "sha256": "0e6f117f613d321a5afcc8c7db6e48a6ca8faf37400af274cb45f4b05ad1f373"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_staged_controller.lua",
+      "sha256": "3c2206b7f0ffd3ea5b7c79c5b03ea55f35ae093151afffabd8a61304def768d6"
+    },
+    {
+      "path": "Yso/Tests and rebuilds/test_shikudo_staged_lock.lua",
+      "sha256": "17cdef6b7066f4c6560cdb6207a350ea8407bfd1c141e1b466582f9e6fa7ec4d"
+    },
+    {
+      "path": "scripts/build_kai_soar_package.ps1",
+      "sha256": "d27bbd47fa68620eef47310fa1018e7bfc4894d074f8c620e80afae853416616"
+    }
+  ]
+}

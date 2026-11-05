@@ -27,7 +27,7 @@ Yso.set_target('FoE','test')
 local path = arg[1] or root .. 'Yso/Combat/deliverance.lua'
 local D=dofile(path)
 assert(type(D.observe)=='function','Deliverance observation API missing')
-assert(Yso.Combat.RouteRegistry.resolve('monk_shikudo_duel'),'registry lost Monk duel route')
+assert(not Yso.Combat.RouteRegistry.resolve('monk_shikudo_duel'),'retired Monk route remains registered')
 assert(Yso.Combat.RouteRegistry.resolve('apostate_truelock'),'registry lost Apostate route')
 
 local routes={}

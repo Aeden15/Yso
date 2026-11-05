@@ -112,6 +112,10 @@ _G.Legacy = {
 }
 
 _G.Yso = {
+  session = {
+    is_ready = function() return true end,
+    subscribe = function(_, ready) ready() end,
+  },
   util = {
     now = now,
   },

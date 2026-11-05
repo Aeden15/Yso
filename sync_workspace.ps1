@@ -3,7 +3,7 @@
   Sync the Yso GitHub repo with the OneDrive Desktop workspace.
 
 .DESCRIPTION
-  Mirrors files between this git clone and the "Yso systems" folder on your
+  Synchronizes files between this git clone and the "Yso systems" folder on your
   Desktop (which OneDrive keeps in sync across devices).
 
   Directions:
@@ -115,38 +115,15 @@ if (-not (Test-Path $Source)) {
   throw "Source path does not exist: $Source"
 }
 
-# Robocopy flags:
-#   /MIR    - mirror (add + delete to match source)
-#   /XD     - exclude directories
-#   /XF     - exclude files
-#   /NJH /NJS - suppress header/summary for cleaner output
-#   /NDL    - suppress directory listing
-#   /NP     - suppress progress percentage
-$excludeDirs = @('.git', '.vscode', '.idea', '__pycache__', 'node_modules')
-$excludeFiles = @('.env', '.env.local', '*.log', '*.tmp', '*.temp', '*.bak',
-                   'Thumbs.db', 'Desktop.ini', '.DS_Store', '.luarc.json')
-
-$roboArgs = @($Source, $Dest, '/MIR')
-$roboArgs += '/XD'
-$roboArgs += $excludeDirs
-$roboArgs += '/XF'
-$roboArgs += $excludeFiles
-$roboArgs += @('/NJH', '/NJS', '/NDL', '/NP')
-
-if ($DryRun) {
-  $roboArgs += '/L'   # list-only mode
-}
-
-Write-Host ""
-Write-Host "--- Files ---" -ForegroundColor DarkGray
-
-# Robocopy returns 0-7 for various success states; 8+ means errors.
-& robocopy @roboArgs
-$rc = $LASTEXITCODE
-
+# Share the explicit retirement manifest with the Desktop-to-Git helper.
+# Unlisted destination files are preserved; local validation receipts are excluded.
+$syncHelper=Join-Path $Source 'scripts/Sync-YsoWorkspace.ps1'
+if (-not (Test-Path -LiteralPath $syncHelper)) { throw "Sync helper not found: $syncHelper" }
+& $syncHelper -SourceDirectory $Source -TargetDirectory $Dest -WhatIf:$DryRun
+$rc=0
 # Also sync root-level docs and sync scripts on push.
 if ($Direction -eq 'push') {
-  $rootFiles = @('README.md', 'README.txt', 'bug_audit_fixes.txt', 'sync.cmd', 'sync_workspace.ps1')
+  $rootFiles = @('README.md', 'README.txt', 'GIT.md', 'sync.cmd', 'sync_workspace.ps1')
   foreach ($f in $rootFiles) {
     $src = Join-Path $RepoRoot $f
     $dst = Join-Path $Workspace $f
@@ -163,7 +140,7 @@ if ($Direction -eq 'push') {
 
 # On pull, copy root-level docs back into the repo if they exist on desktop.
 if ($Direction -eq 'pull') {
-  $rootFiles = @('README.md', 'README.txt')
+  $rootFiles = @('README.md', 'README.txt', 'GIT.md', 'sync_workspace.ps1')
   foreach ($f in $rootFiles) {
     $src = Join-Path $Workspace $f
     $dst = Join-Path $RepoRoot $f
@@ -191,6 +168,6 @@ if ($rc -lt 8) {
     }
   }
 } else {
-  Write-Host "Robocopy reported errors (exit code $rc)." -ForegroundColor Red
+  Write-Host "Synchronization reported errors (exit code $rc)." -ForegroundColor Red
   exit 1
 }

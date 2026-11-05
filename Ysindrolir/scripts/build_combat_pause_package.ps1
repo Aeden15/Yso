@@ -9,7 +9,6 @@ function SetBody([string]$text,[string]$tag,[string]$name,[string]$body){
  $block=[regex]::Replace($entry.Value,'(?s)<script\s*/>|<script>.*?</script>',[Text.RegularExpressions.MatchEvaluator]{param($m) '<script>'+[Security.SecurityElement]::Escape($body)+'</script>'},1)
  $text.Substring(0,$entry.Index)+$block+$text.Substring($entry.Index+$entry.Length)
 }
-& (Join-Path $PSScriptRoot 'build_shdam_alias_body.ps1') | Out-Null
 & (Join-Path $PSScriptRoot 'build_mfocus_alias_body.ps1') | Out-Null
 & (Join-Path $PSScriptRoot 'build_airlord_package.ps1') -PackagePath $PackagePath | Out-Null
 $text=[IO.File]::ReadAllText($PackagePath)
@@ -20,7 +19,6 @@ $rows=@(
  @('Airlord route runtime','Airlord/route_runtime.lua'),
  @('Airlord lock route','Airlord/lock_route.lua'),@('Airlord damage route','Airlord/damage_route.lua'),
  @('Compression logic','Airlord/compression.lua'),
- @('Shikudo duel controller','Monk/shikudo_duel.lua'),
  @('Magi route core','Magi/magi_route_core.lua'),
  @('Alchemist physiology','Alchemist/Core/physiology.lua'),
  @('Alchemist duel route','Alchemist/Core/duel route.lua'),
@@ -41,7 +39,7 @@ foreach($row in $rows){
   $text=$text.Insert($anchor.Index+$anchor.Length,'<Script isActive="yes" isFolder="no"><name>'+$row[0]+'</name><packageName /><script></script><eventHandlerList /></Script>')
  }
  $text=SetBody $text 'Script' $row[0] ([IO.File]::ReadAllText((Join-Path $root $row[1])))}
-foreach($row in @(@('Group damage','Monk/shdam_alias_body.lua'),@('mfocus','Magi/mfocus_alias_body.lua'))){
+foreach($row in @(,@('mfocus','Magi/mfocus_alias_body.lua'))){
  $text=SetBody $text 'Alias' $row[0] ([IO.File]::ReadAllText((Join-Path $root $row[1])))
 }
 [xml]$validated=$text
