@@ -6061,7 +6061,7 @@ ak.scoreup(target)</script>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList />
 						<regexCodePropertyList />
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Earth 1</name>
 							<script>if ak.ai() then return end
 local aff = matches[2]..""..matches[3]
@@ -6088,7 +6088,7 @@ end</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Earth 2</name>
 							<script>if ak.ai() then return end
 local aff = "paralysis"
@@ -6136,7 +6136,7 @@ ak.scoreup()</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Water 1</name>
 							<script>if ak.ai() then return end
 local aff = "frostbite"
@@ -6160,7 +6160,7 @@ end</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Water 2</name>
 							<script>if ak.ai() then return end
 local aff = "stuttering"
@@ -6184,7 +6184,7 @@ end</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Water 3</name>
 							<script>if ak.ai() then return end
 local aff = "nausea anorexia"
@@ -6233,7 +6233,7 @@ end
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Fire 2</name>
 							<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6265,7 +6265,7 @@ end</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Fire 3</name>
 							<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6293,7 +6293,7 @@ end
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Air 1</name>
 							<script>if ak.ai() then return end
 local aff = "asthma"
@@ -6317,7 +6317,7 @@ end</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Air 2</name>
 							<script>if ak.ai() then return end
 local aff = "sensitivity"
@@ -6341,7 +6341,7 @@ end</script>
 								<integer>1</integer>
 							</regexCodePropertyList>
 						</Trigger>
-						<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 							<name>Air 3</name>
 							<script>if ak.ai() then return end
 local aff = "healthleech"
@@ -6382,7 +6382,7 @@ end</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
 					<regexCodePropertyList />
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Fire</name>
 						<script>ak.magi.resonance.Fire = 0
 ak.flameon("emanation")
@@ -6404,7 +6404,7 @@ ak.flameon("emanation")
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Water</name>
 						<script>ak.magi.resonance.Water = 0
 OppGainedAff("frozen disrupt")</script>
@@ -6425,7 +6425,7 @@ OppGainedAff("frozen disrupt")</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Earth</name>
 						<script>if ak.ai() then return end
 aff = "calcifiedhead"
@@ -6450,7 +6450,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Air</name>
 						<script>if ak.ai() then return end
 aff = "paralysis dizziness"
@@ -6491,7 +6491,7 @@ end</script>
 					<colorTriggerBgColor>#000000</colorTriggerBgColor>
 					<regexCodeList />
 					<regexCodePropertyList />
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Mud Slide</name>
 						<script>if ak.ai() then
   return
@@ -6518,7 +6518,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Lightning</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6547,7 +6547,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Dehydrate</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6570,7 +6570,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Magma</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6621,7 +6621,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Firelash/Scintilla</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6646,7 +6646,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Bombard</name>
 						<script>if ak.ai() then return end
 if IsTargetted(matches[2]) then
@@ -6669,7 +6669,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Frozen</name>
 						<script>if ak.ai() then return end
 OppGainedAff("frozen")</script>
@@ -6705,12 +6705,12 @@ OppGainedAff("deepfreeze")</script>
 						<colorTriggerFgColor>#000000</colorTriggerFgColor>
 						<colorTriggerBgColor>#000000</colorTriggerBgColor>
 						<regexCodeList>
-							<string>You drain the heat from the air around your enemies, causing them to experience the cold of the abyss itself.</string>
+							
 							<string>Austere gestures grandly, and causes a deepfreeze to settle over his enemies.</string>
 							<string>Morthif gestures grandly, and causes a deepfreeze to settle over his enemies.</string>
 						</regexCodeList>
 						<regexCodePropertyList>
-							<integer>3</integer>
+							
 							<integer>3</integer>
 							<integer>3</integer>
 						</regexCodePropertyList>
@@ -17273,7 +17273,7 @@ end</script>
 							<string>^Your blow cleaves through the magical shield surrounding ([\w'\-]+)\, continuing on to drive (?:him|her|them|faer) from \w+ feet\.$</string>
 							<string>^You find no magical shield surrounding ([\w'\-]+), and your power is unable to take hold\.$</string>
 							<string>^A savage slash of your knife trails crimson fire as you carve the logograph of the fissure into the air before (\w+)\.$</string>
-							<string>^You cast a spell of erosion at (\w+)\.$</string>
+							
 							<string>^In your mind\'s eye\, you see your meteor shatter (\w+)\'s shield\.$</string>
 							<string>^A violent cracking sound from the air in front of (\w+) heralds \w+ magical shield exploding into a shower of translucent shards\.$</string>
 							<string>You touch your tattoo and summon the hammer but find nothing to strike.</string>
@@ -17316,7 +17316,7 @@ end</script>
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>1</integer>
-							<integer>1</integer>
+							
 							<integer>1</integer>
 							<integer>1</integer>
 							<integer>3</integer>
@@ -19395,7 +19395,7 @@ end</script>
 						<string>^[\w'\-]+ throws \w+ palms forward, releasing a stream of deadly blue light to cripple ([\w'\-]+)\.$</string>
 						<string>^Drawing an enormous breath, you exhale, expelling a gale of wind with such force that ([\w'\-]+) is </string>
 						<string>([\w'\-]+) is knocked forcefully off \w+ feet by the impact of your huge tail\.$</string>
-						<string>^You hear two loud snaps and see ([\w'\-]+) fall to the ground\.$</string>
+						
 						<string>^You knock the legs out from under ([\w'\-]+) and send \w+ sprawling\.$</string>
 						<string>^You duck low and smash your shield into the knees of ([\w'\-]+)\, causing them to buckle underneath \w+\.$</string>
 						<string>^Stepping forward, you grab the useless .* of ([\w'\-]+), wrench \w+ violently forward, and throw \w+ to the ground\.$</string>
@@ -19431,7 +19431,7 @@ end</script>
 						<integer>1</integer>
 						<integer>1</integer>
 						<integer>1</integer>
-						<integer>1</integer>
+						
 						<integer>1</integer>
 						<integer>1</integer>
 						<integer>1</integer>
@@ -20364,7 +20364,7 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="yes" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="yes" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 						<name>Conflagrate</name>
 						<script>if ak.ai() then return end
 ak.limbs.ParseonLine()

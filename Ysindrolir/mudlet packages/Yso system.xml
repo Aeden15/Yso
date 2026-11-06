@@ -2278,7 +2278,78 @@ cecho("\n&lt;SteelBlue&gt;[Magi] &lt;HotPink&gt;(Stoneback faded!).\n")</script>
 							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
-				</TriggerGroup>
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Magi spell feedback (Artificing)</name>
+					<script />
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand />
+					<packageName />
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile>
+          </mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback immolation</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('immolation', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You sense a combustive spark take hold of (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback scintilla_burning</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('scintilla_burning', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^Flames ignite all over the body of (\S+), fanned to intensity in an instant\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback lightning_stupidity</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('lightning_stupidity', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^As the lightning bolt courses through (\S+), a strangely blank expression descends over \S+ features\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+</TriggerGroup>
+</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Crystalism</name>
 					<script />
@@ -2782,7 +2853,60 @@ cecho("&lt;SteelBlue&gt;[Magi] &lt;ansi_light_red&gt;(EMBED ENERGISE!).\n")</scr
 							<integer>3</integer>
 						</regexCodePropertyList>
 					</Trigger>
-				</TriggerGroup>
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Magi spell feedback (Crystalism)</name>
+					<script />
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand />
+					<packageName />
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile>
+          </mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback plague</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('plague', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You hear two loud snaps and see (\S+) fall to the ground\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback dissonance_escalation</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('dissonance_escalation', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^A dissonant hum rises from the body of (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+</TriggerGroup>
+</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Elementalism</name>
 					<script />
@@ -3016,7 +3140,640 @@ end</script>
 							<integer>1</integer>
 						</regexCodePropertyList>
 					</Trigger>
-				</TriggerGroup>
+				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+					<name>Magi spell feedback (Elementalism)</name>
+					<script />
+					<triggerType>0</triggerType>
+					<conditonLineDelta>0</conditonLineDelta>
+					<mStayOpen>0</mStayOpen>
+					<mCommand />
+					<packageName />
+					<mFgColor>#ff0000</mFgColor>
+					<mBgColor>#ffff00</mBgColor>
+					<mSoundFile>
+          </mSoundFile>
+					<colorTriggerFgColor>#000000</colorTriggerFgColor>
+					<colorTriggerBgColor>#000000</colorTriggerBgColor>
+					<regexCodeList />
+					<regexCodePropertyList />
+					<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback transfix</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('transfix', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^With blinding speed, you weave fire and air together in a hypnotic pattern that transfixes (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback magma</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('magma', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You weave fire and earth and bubbling magma boils into existence to wash over (\S+) in a skin-melting tide\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback dehydrate_attempt</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('dehydrate_attempt', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^Weaving the elements of fire and water, you attempt to rip the excess water from the body of (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback dehydrate_dry</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('dehydrate_dry', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The skin of (\S+) begins to dry and crack as \S+ grows pale\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback dehydrate_burning</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('dehydrate_burning', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You fan the heat of (\S+)'s body into consuming flame\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback dehydrate_freeze</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('dehydrate_freeze', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You rip the heat from (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback bombard</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('bombard', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You tap the Elemental Plane of Earth, summoning up a flurry of rocks to bombard (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback fulminate</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('fulminate', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You click your fingers and lightning strikes from the air to smite (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback mudslide</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('mudslide', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You weave earth and water and a torrent of thick mud thunders forth to roll over (\S+), knocking \S+ sprawling\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback asthma</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('asthma', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^(\S+) clutches at \S+ throat as \S+ gasps for breath\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback sensitivity</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('sensitivity', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^A vicious wind rises, lashing and flaying at the body of (\S+) to leave \S+ sensitive and raw\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback healthleech</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('healthleech', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^A dreadful pallor overcomes the features of (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback frostbite</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('frostbite', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^As you begin to tap your connection with the Elemental Plane of Water, you summon up a freezing wave to deluge (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback stuttering</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('stuttering', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You summon up a flurry of icicles to slash at (\S+) in a shower of freezing daggers\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback anorexia</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('anorexia', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The might of Elemental Water suffusing you, you tear at the vital fluids which sustain the body of (\S+) with your will alone\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback limb_break</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('limb_break', matches[3], matches[2]) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^A loud crack emanates from the (.+) of (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback paralysis</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('paralysis', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You bleed off residual power from your connection with the Elemental Plane of Earth, directing it in an unfocussed blast of arcane might at (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback fire_moderate</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('fire_moderate', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You will that (\S+) should burn, and so \S+ does\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback blisters</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('blisters', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The incandescent might of Elemental Fire filling you, you command (\S+) to burn from within\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback fire_major_burning</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('fire_major_burning', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The incandescent might of Elemental Fire filling you, you command the suffering (\S+) to burn from within\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback emanation_air</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('emanation_air', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You sweep .+ over your head and a great wind rises, picking up (\S+) and dashing them violently about before casting them back to the ground\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback emanation_earth</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('emanation_earth', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The might of elemental Earth thrumming within your bones, you point .+ at (\S+) and an intangible wave of power strikes forth to smite \S+\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback emanation_water</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('emanation_water', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The might of elemental Water surging through your body, you make the slightest flick with .+, and the hand of Sllshya descends as a freezing deluge to smash (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback emanation_fire</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('emanation_fire', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The might of elemental Fire filling you like a scorching river, you lift .+ to point at (\S+) and unleash a stream of searing flame\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback hypothermia</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('hypothermia', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You blast (\S+) with an icy stream of water, and \S+ begins to shiver uncontrollably\.$</string>
+<string>^\S+ blasts (\S+) with an icy stream of water, and \S+ begins to shake and shiver uncontrollably\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer>
+<integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback conflagrate</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('conflagrate', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You bend your will upon (\S+), and command that \S+ burn\.$</string>
+<string>^\S+ lifts a hand towards (\S+) and in an instant raging flames manifest to devour \S+ victim\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer>
+<integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback conflagrate_fail</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('conflagrate_fail', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You bend your will upon (\S+), attempting to rouse a conflagration to consume \S+, but to no avail\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback freeze</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('freeze', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You raise a hand towards (\S+) and blast \S+ with cold, frigid air\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback deepfreeze</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('deepfreeze', nil, nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You drain the heat from the air around your enemies, causing them to experience the cold of the abyss itself\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback unblind</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('unblind', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You weave fire and air together to transfix (\S+), but succeed only in curing</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback erode_start</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('erode_start', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You cast a spell of erosion at (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback erode_result</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('erode_result', nil, matches[2]) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^\w+ (\w+) defence is eroded away\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback firelash</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('firelash', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^You form a lash of fire, and send it to scorch the flesh of (\S+)\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+						<name>Magi feedback conflagrate_tick</name>
+						<script>local F = Yso and Yso.magi and Yso.magi.spell_feedback
+if F then F.handle('conflagrate_tick', matches[2], nil) end</script>
+						<triggerType>0</triggerType>
+						<conditonLineDelta>0</conditonLineDelta>
+						<mStayOpen>0</mStayOpen>
+						<mCommand />
+						<packageName />
+						<mFgColor>#ff0000</mFgColor>
+						<mBgColor>#ffff00</mBgColor>
+						<mSoundFile>
+            </mSoundFile>
+						<colorTriggerFgColor>#000000</colorTriggerFgColor>
+						<colorTriggerBgColor>#000000</colorTriggerBgColor>
+						<regexCodeList><string>^The conflagration about (\S+) continues to rage, searing flesh from bone\.$</string></regexCodeList>
+						<regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+					</Trigger>
+</TriggerGroup>
+</TriggerGroup>
 				<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Miscellaneous</name>
 					<script />
@@ -10813,6 +11570,10 @@ function F.failure(word, element)
   if firestorm and type(firestorm.on_resonance_failure) == &apos;function&apos; then
     firestorm.on_resonance_failure(required, element)
   end
+  local water = Yso.off and Yso.off.magi and Yso.off.magi.water_group
+  if water and type(water.on_resonance_failure) == &apos;function&apos; then
+    water.on_resonance_failure(required, element)
+  end
   report(&apos;Spell rejected: &apos; .. tostring(word) .. &apos; &apos; .. element
     .. &apos; resonance required. Actual level remains supplied by AK.&apos;)
   F.notice()
@@ -17545,994 +18306,763 @@ return M
 					<Script isActive="yes" isFolder="no">
 						<name>Magi firestorm</name>
 						<packageName />
-						<script>--========================================================--
--- Magi_firestorm.lua
---  * Alias-owned Magi firestorm route (^fstorm$ / magi_firestorm).
---  * One EQ cast per tick via Yso.emit. No queues or pipe stacks.
---  * AK resonance: Magma -&gt; Bombard/Fulminate -&gt; Firestorm -&gt; Conflagrate.
---========================================================--
-
+						<script>-- fstorm: one file. Edit SETTINGS and GIVING ORDER; the first matching rule wins.
 Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.magi = Yso.off.magi or {}
-
 local M = Yso.off.magi.firestorm or {}
 Yso.off.magi.firestorm = M
+M.key, M.name, M.alias_owned = 'magi_firestorm', 'Magi Firestorm', true
 
-M.key = "magi_firestorm"
-M.name = "Magi Firestorm"
-M.alias_owned = true
-M.cfg = M.cfg or { loop_delay = 0.15, echo = true }
-M.state = M.state or {}
+-- SETTINGS
+M.cfg = {
+  loop_delay = 0.15,
+  echo = true,
+  pending_s = 1.0,
+  execute_hp = 25, -- Stormhammer below this percentage (same threshold as before).
+  confirmed_score = 100,
+  aflame_score = 200,
+  firestorm_retry_s = 30, -- Minimum gap between room attempts, NOT effect duration.
+}
 
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+-- GIVING ORDER: each rule is checked from top to bottom on every attack.
+-- This is a priority list, not a fixed rotation. Return one full command.
+function M.choose(s)
+  local target = s.target
+  -- 1. Shield -&gt; Erode.
+  if s.shield then
+    return 'cast erode at '..target..' shield', 'defense_break', 'shielded'
+  end
+  -- 2. Shared finishers: Destroy/Assess first, otherwise Convergence.
+  if s.special or s.special_hold then
+    return s.special, 'special', s.special_reason
+  end
+  -- 3. Target HP below execute_hp -&gt; Stormhammer.
+  if s.hp and s.hp &lt; M.cfg.execute_hp then
+    return 'cast stormhammer at '..target, 'execute', 'hp_stormhammer'
+  end
+  -- 4. Scalded missing and Earth 0 -&gt; Pebble.
+  if not s.scalded and s.earth == 0 then
+    return 'cast pebble at '..target, 'earth_setup', 'scalded_missing_earth0'
+  end
+  -- 5. Confirmed Scalded missing -&gt; Magma. Sending never counts as Scalded.
+  if not s.scalded then
+    return 'cast magma at '..target, 'fire_build', 'scalded_missing'
+  end
+  -- Build the room spell only when its attempt interval has expired.
+  if not s.room_attempt_recent then
+    -- 6. Air below 3 and Earth below 2 -&gt; Bombard.
+    if s.air &lt; 3 and s.earth &lt; 2 then
+      return 'cast bombard at '..target, 'resonance_build', 'air_earth_build'
+    end
+    -- 7. Air at least 3, Fire below 3, Water below 2 -&gt; Dehydrate.
+    if s.air &gt;= 3 and s.fire &lt; 3 and s.water &lt; 2 then
+      return 'cast dehydrate at '..target, 'resonance_build', 'fire_water_build'
+    end
+    -- 8. Air at least 3 and Fire below 3 -&gt; Firelash.
+    if s.air &gt;= 3 and s.fire &lt; 3 then
+      return 'cast firelash at '..target, 'resonance_build', 'fire_only_build'
+    end
+    -- 9. Air or Fire below 3 -&gt; Fulminate.
+    if s.air &lt; 3 or s.fire &lt; 3 then
+      return 'cast fulminate at '..target, 'resonance_build', 'air_fire_build'
+    end
+    -- 10. Major Air and Fire -&gt; Firestorm (a room spell, no target suffix).
+    return 'cast firestorm', 'firestorm', 'firestorm_ready'
+  end
+  -- 11. Conflagrate missing, at least two ablaze stacks, Fire &gt;=2 -&gt; Conflagrate.
+  if not s.conflagrate and s.aflame and s.fire &gt;= 2 then
+    return 'cast conflagrate at '..target, 'fire_payoff', 'conflagrate_ready'
+  end
+  -- 12. Conflagrate missing and Fire at least 3 -&gt; Fire Emanation.
+  if not s.conflagrate and s.fire &gt;= 3 then
+    return 'cast emanation at '..target..' fire', 'fire_promotion', 'ablaze_setup'
+  end
+  -- 13. Confirmed Conflagrate and Earth at least 3 -&gt; Earth Emanation.
+  if s.conflagrate and s.earth &gt;= 3 then
+    return 'cast emanation at '..target..' earth', 'earth_promotion', 'conflag_emanate_earth'
+  end
+  -- 14. Fire below 3 and Water below 2 -&gt; Dehydrate.
+  if s.fire &lt; 3 and s.water &lt; 2 then
+    return 'cast dehydrate at '..target, 'fire_build', 'fire_water_pressure'
+  end
+  -- 15. Air at least 3 and Fire below 3 -&gt; Firelash.
+  if s.air &gt;= 3 and s.fire &lt; 3 then
+    return 'cast firelash at '..target, 'fire_build', 'fire_only_pressure'
+  end
+  -- 16. Otherwise -&gt; Fulminate.
+  return 'cast fulminate at '..target, 'fire_build', 'fulminate_pressure'
+end
+
+-- INPUTS AND ROUTE CHECKS
 Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
-
--- Magma's Scalded effect lasts 20 seconds. Keep the send window target-local
--- while AK catches up; Earth setup must not bypass an existing Scalded effect.
-local MAGMA_DURATION = 20
-
-local PENDING_SLOTS = {
-  "pebble",
-  "stormhammer",
-  "destroy",
-  "erode",
-  "conflagrate",
-  "magma",
-  "mudslide",
-  "shalestorm",
-  "dehydrate",
-  "emanation",
-  "firelash",
-  "fulminate",
-  "firestorm",
-  "bombard",
+local RI = Yso.Combat and Yso.Combat.RouteInterface
+M.state = M.state or {}
+M.route_contract = {
+  id=M.key,interface_version=1,shared_categories={'defense_break'},route_local_categories={'execute','firestorm'},
+  capabilities={uses_eq=true,uses_bal=false,uses_entity=false,supports_burst=true,supports_bootstrap=false,needs_target=true},
+  override_policy={mode='narrow_global_only',allowed={target_invalid=true,target_slain=true,route_off=true,
+    pause=true,manual_suppression=true,target_swap_bootstrap=true}},
 }
-
-M.route_contract = M.route_contract or {
-  id = "magi_firestorm",
-  interface_version = 1,
-  shared_categories = { "defense_break" },
-  route_local_categories = { "execute", "firestorm" },
-  capabilities = {
-    uses_eq = true,
-    uses_bal = false,
-    uses_entity = false,
-    supports_burst = true,
-    supports_bootstrap = false,
-    needs_target = true,
-  },
-  override_policy = {
-    mode = "narrow_global_only",
-    allowed = {
-      target_invalid = true,
-      target_slain = true,
-      route_off = true,
-      pause = true,
-      manual_suppression = true,
-      target_swap_bootstrap = true,
-    },
-  },
-  lifecycle = {
-    on_enter = true,
-    on_exit = true,
-    on_target_swap = true,
-    on_pause = true,
-    on_resume = true,
-    on_manual_success = true,
-    on_send_result = true,
-    evaluate = true,
-    explain = true,
-  },
-}
-
-do
-  if RI and type(RI.ensure_hooks) == "function" then
-    RI.ensure_hooks(M, M.route_contract)
-  end
+if RI and RI.ensure_hooks then RI.ensure_hooks(M,M.route_contract) end
+local function ready() return type(RC.get_target)=='function' and type(RC.read_resonance)=='function' and type(RC.mark_pending)=='function' end
+local function is_magi()
+  local check=Yso.is_magi or (Yso.classinfo and Yso.classinfo.is_magi) or (Yso.magi and Yso.magi.defs and Yso.magi.defs.is_magi)
+  if type(check)~='function' then return false end
+  local ok,value=pcall(check)
+  return ok and value==true
 end
-
-local function _trim(s)
-  if type(RC.trim) == "function" then return RC.trim(s) end
-  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+local function notify(message)
+  if M.cfg.echo and type(cecho)=='function' then cecho('&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;'..message..'\n') end
 end
-
-local function _echo(msg)
-  if M.cfg.echo ~= true then return end
-  if type(cecho) == "function" then
-    cecho(string.format("&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;%s\n", tostring(msg)))
-  elseif type(echo) == "function" then
-    echo(string.format("[Yso:Magi] %s\n", tostring(msg)))
-  end
+local function room_key()
+  local info=((rawget(_G,'gmcp') or {}).Room or {}).Info or {}
+  return tostring(info.num or info.id or 'unknown')
 end
-
-local function _is_magi()
-  if type(Yso.is_magi) == "function" then
-    local ok, v = pcall(Yso.is_magi)
-    if ok then return v == true end
-  end
-  local C = Yso and Yso.classinfo or nil
-  if type(C) == "table" and type(C.is_magi) == "function" then
-    local ok, v = pcall(C.is_magi)
-    if ok then return v == true end
-  end
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.is_magi) == "function" then
-    local ok, v = pcall(D.is_magi)
-    if ok then return v == true end
-  end
-  return false
-end
-
-local function _target_hp()
-  if type(RC.get_target_hp_percent) == "function" then
-    local ok, v = pcall(RC.get_target_hp_percent)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  return nil
-end
-
-local function _target()
-  if type(RC.get_target) == "function" then
-    local t = _trim(RC.get_target())
-    if t ~= "" then return t end
-  end
-  return _trim(rawget(_G, "target") or "")
-end
-
-local function _shielded(tgt)
-  tgt = _trim(tgt):lower()
-  if Yso and Yso.shield and type(Yso.shield.up) == "function" and tgt ~= "" then
-    local ok, v = pcall(Yso.shield.up, tgt)
-    if ok then return v == true end
-  end
-  local ak = rawget(_G, "ak")
-  if ak and ak.defs then
-    if type(ak.defs.shield_by_target) == "table" and tgt ~= "" then
-      return ak.defs.shield_by_target[tgt] == true
-    end
-    return ak.defs.shield == true
-  end
-  return false
-end
-
-local function _cast(spell, tgt, extra)
-  extra = _trim(extra)
-  if extra ~= "" then
-    return "cast " .. spell .. " at " .. tgt .. " " .. extra
-  end
-  return "cast " .. spell .. " at " .. tgt
-end
-
-local function _route_is_active()
-  if not _is_magi() then return false end
-  if not (Yso and Yso.mode and type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() == true) then
-    return false
-  end
-  if Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("magi_firestorm") == true
-  end
-  return M.state and M.state.loop_enabled == true
-end
-
-local function _room_key()
-  local g = rawget(_G, "gmcp")
-  local info = g and g.Room and g.Room.Info or {}
-  return tostring(info.num or info.id or "unknown")
-end
-
-local function _select_command(tgt)
-  local hp = _target_hp()
-  local res = RC.read_resonance()
-  local air, earth, fire = tonumber(res.air) or 0, tonumber(res.earth) or 0, tonumber(res.fire) or 0
-  local water = tonumber(res.water) or 0
-  local conflag = RC.has_aff("conflagrate") or RC.has_aff("conflagration")
-  local aflame_ready = RC.score_aff("aflame") &gt;= 200
-  local scalded = RC.has_aff("scalded") or RC.pending_active(M.state, "magma", tgt)
-  local threshold = 3 -- Firestorm requires major resonance in both Air and Fire.
-  local room_sent = M.state.firestorm_rooms and M.state.firestorm_rooms[_room_key()] == true
-
-  if _shielded(tgt) then
-    return _cast("erode", tgt, "shield"), "defense_break", "shielded"
-  end
-  local special, reason, hold = RC.special_action(tgt)
-  if special or hold then return special, "special", reason end
-  if hp ~= nil and hp &lt; 25 then
-    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
-  end
-
-  if RC.score_aff("scalded") &lt; 100 and earth == 0 then
-    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
-  end
-
-  if not scalded then
-    return _cast("magma", tgt), "fire_build", "scalded_missing"
-  end
-
-  -- Bombard builds Air/Earth; Fulminate builds Air/Fire. Read the actual
-  -- resonance triggers each tick rather than incrementing on a send.
-  if not room_sent then
-    if air &lt; threshold and earth &lt; 2 then
-      return _cast("bombard", tgt), "resonance_build", "air_earth_build"
-    end
-    if air &gt;= threshold and fire &lt; threshold and water &lt; 2 then
-      return _cast("dehydrate", tgt), "resonance_build", "fire_water_build"
-    end
-    if air &gt;= threshold and fire &lt; threshold then
-      return _cast("firelash", tgt), "resonance_build", "fire_only_build"
-    end
-    if air &lt; threshold or fire &lt; threshold then
-      return _cast("fulminate", tgt), "resonance_build", "air_fire_build"
-    end
-    -- Firestorm is a room spell: no 'at &lt;target&gt;' suffix.
-    return "cast firestorm", "firestorm", "firestorm_ready"
-  end
-
-  if not conflag and aflame_ready and fire &gt;= 2 then
-    return _cast("conflagrate", tgt), "fire_payoff", "conflagrate_ready"
-  end
-  if not conflag and fire &gt;= 3 then
-    return _cast("emanation", tgt, "fire"), "fire_promotion", "ablaze_setup"
-  end
-  if conflag and earth &gt;= 3 then
-    return _cast("emanation", tgt, "earth"), "earth_promotion", "conflag_emanate_earth"
-  end
-  if fire &lt; threshold and water &lt; 2 then
-    return _cast("dehydrate", tgt), "fire_build", "fire_water_pressure"
-  end
-  if air &gt;= threshold and fire &lt; threshold then
-    return _cast("firelash", tgt), "fire_build", "fire_only_pressure"
-  end
-  return _cast("fulminate", tgt), "fire_build", "fulminate_pressure"
-end
-
-local function _emit_payload(cmd, target, category)
-  cmd = _trim(cmd)
-  target = _trim(target)
-  if cmd == "" then return false, "empty", nil end
-
-  local opts = {
-    reason = "magi_firestorm:" .. tostring(category or "attack"),
-    kind = "offense",
-    commit = true,
-    route = "magi_firestorm",
-    target = target,
-  }
-
-  if RI and type(RI.emit_route_payload) == "function" then
-    return RI.emit_route_payload("magi_firestorm", {
-      target = target,
-      lanes = { eq = cmd },
-      meta = {
-        route = "magi_firestorm",
-        main_lane = "eq",
-        main_category = tostring(category or ""),
-      },
-    }, opts)
-  end
-
-  local payload = { eq = cmd, target = target }
-  if type(Yso.emit) == "function" then
-    if Yso.emit(payload, opts) == true then
-      return true, cmd, payload
-    end
-    return false, "emit_failed", nil
-  end
-  if type(send) == "function" then
-    local ok = pcall(send, cmd, false)
-    if ok then return true, cmd, payload end
-    return false, "send_failed", nil
-  end
-  return false, "no_send", nil
-end
-
 function M.init()
-  M.state = M.state or {}
-  M.state.loop_delay = tonumber(M.state.loop_delay or M.cfg.loop_delay or 0.15) or 0.15
-  M.state.template = M.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
-  if type(RC.ensure_pending) == "function" then
-    RC.ensure_pending(M.state, PENDING_SLOTS)
-  end
-  if RI and type(RI.ensure_waiting_state) == "function" then
-    RI.ensure_waiting_state(M.state, "magi_firestorm")
-  end
+  M.state.loop_delay=M.cfg.loop_delay
+  M.state.pending=M.state.pending or {}
+  M.state.firestorm_rooms=M.state.firestorm_rooms or {}
+  M.state.template=M.state.template or {}
+  if RI and RI.ensure_waiting_state then RI.ensure_waiting_state(M.state,M.key) end
   return true
 end
-
-function M.is_enabled()
-  return M.state and M.state.enabled == true
+function M.clear_runtime()
+  M.init()
+  M.state.submission,M.state.pending=nil,{}
+  M.state.firestorm_dispatch=nil
+  M.state.last_ack_payload=Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload)
+  if RI and RI.clear_waiting then RI.clear_waiting(M.state,M.key) end
+  return true
 end
-
+function M.is_enabled() return M.state.enabled==true end
 function M.is_active()
+  if not is_magi() or not (Yso.mode and Yso.mode.is_combat and Yso.mode.is_combat()) then return false end
+  if Yso.mode.route_loop_active then return Yso.mode.route_loop_active(M.key)==true end
+  return M.state.loop_enabled==true
+end
+function M.can_run(ctx)
   M.init()
-  return _route_is_active()
+  ctx=type(ctx)=='table' and ctx or {}
+  if not ready() then return false,'core_unavailable' end
+  if not M.is_enabled() then return false,'disabled' end
+  if not M.is_active() then return false,'inactive' end
+  if Yso.offense_paused and Yso.offense_paused() then
+    if not ctx.preview then M.clear_runtime() end
+    return false,'paused'
+  end
+  local target=RC.trim(ctx.target or RC.get_target())
+  if target=='' then return false,'no_target' end
+  if not RC.same_target(target,RC.get_target()) then return false,'target_mismatch' end
+  if not RC.target_valid(target) then return false,'invalid_target' end
+  if not RC.eq_ready() then return false,'eq_down' end
+  return true,target
+end
+function M.snapshot(target)
+  local r,score=RC.read_resonance(),RC.score_aff
+  local defs=(rawget(_G,'ak') or {}).defs or {}
+  local shield=defs.shield
+  if defs.shield_by_target then shield=defs.shield_by_target[target:lower()] end
+  if Yso.shield and Yso.shield.up then shield=Yso.shield.up(target:lower()) end
+  local special,reason,hold=RC.special_action(target)
+  local attempted=(M.state.firestorm_rooms or {})[room_key()]
+  return {target=target,hp=RC.get_target_hp_percent(target),shield=shield==true,
+    air=r.air,earth=r.earth,fire=r.fire,water=r.water,
+    scalded=score('scalded')&gt;=M.cfg.confirmed_score,
+    conflagrate=math.max(score('conflagrate'),score('conflagration'))&gt;=M.cfg.confirmed_score,
+    aflame=score('aflame')&gt;=M.cfg.aflame_score,
+    room=room_key(),room_attempt_recent=type(attempted)=='number' and RC.now()-attempted&lt;M.cfg.firestorm_retry_s,
+    special=special,special_reason=reason,special_hold=hold}
 end
 
-function M.can_run(reason)
-  M.init()
-  local ctx = type(reason) == "table" and reason or {}
-  if not M.is_enabled() then return false, "disabled" end
-  if not M.is_active() then return false, "inactive" end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
-  local tgt = _trim((ctx and ctx.target) or _target())
-  if tgt == "" then return false, "no_target" end
-  if not _is_magi() then return false, "wrong_class" end
-  if type(RC.target_valid) == "function" and not RC.target_valid(tgt) then
-    return false, "invalid_target"
+-- SENDING: reserve before emit; an acknowledgement confirms dispatch, not spell success.
+local function last_ack() return Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload) end
+local function flight(target,preview)
+  local sub=M.state.submission
+  if sub and (not RC.same_target(sub.target,target) or RC.now()&gt;=sub.until_t) then
+    if not preview then M.clear_runtime() end
+    return nil
   end
-  if type(RC.eq_ready) == "function" and not RC.eq_ready() then
-    return false, "eq_down"
-  end
-  return true, tgt
+  return sub
 end
-
 function M.attack_function(arg)
-  M.init()
-  local ctx = type(arg) == "table" and arg or { reason = tostring(arg or "loop") }
-  if type(RC.entourage_sync) == "function" then
-    RC.entourage_sync(M, ctx.target or _target(), _is_magi(), ctx.preview)
+  local ctx=type(arg)=='table' and arg or {}
+  if ready() then
+    local target=RC.get_target()
+    if not ctx.target or RC.same_target(ctx.target,target) then RC.entourage_sync(M,target,is_magi(),ctx.preview) end
   end
-  local ok, info = M.can_run(ctx)
-  if not ok then return false, info end
-  local tgt = info
-  local cmd, category, reason = _select_command(tgt)
-  M.state.template.last_reason = reason
-  M.state.template.last_target = tgt
-  if not cmd or cmd == "" then return false, reason or "empty" end
-
-  if cmd == _cast("pebble", tgt) and RC.pending_active(M.state, "pebble", tgt) then
-    M.state.template.last_reason = "pebble_pending"
-    return false, "pebble_pending"
+  local ok,target=M.can_run(ctx)
+  if not ok then return false,target end
+  local sub=flight(target,ctx.preview)
+  if sub and not sub.acknowledged then return false,sub.slot..'_pending' end
+  local command,category,reason=M.choose(M.snapshot(target))
+  if not ctx.preview then M.state.template.last_reason,M.state.template.last_target=reason,target end
+  if not command then return false,reason end
+  local slot=command:match('^cast%s+(%S+)') or 'eq'
+  local pending=M.state.pending[slot]
+  if pending and RC.same_target(pending.target,target) and RC.now()&lt;pending.until_t then
+    if not ctx.preview then M.state.template.last_reason=slot..'_pending' end
+    return false,slot..'_pending'
   end
-
-  if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
-
-  local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
-  if sent ~= true then return false, emit_detail or "emit_failed" end
-  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
-  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
-  RC.note_special_queued(cmd, tgt)
-
-  if RI and type(RI.mark_waiting) == "function" then
-    RI.mark_waiting(M.state, "magi_firestorm", ack_payload or { eq = cmd, target = tgt }, {
-      cmd = cmd,
-      target = tgt,
-      main_lane = "eq",
-    })
-  end
-  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
-  local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
-  local queue_live = Yso and Yso.queue and type(Yso.queue.commit) == "function"
-  if (not has_ack_bus or dry_run or not queue_live) and type(M.on_payload_queued) == "function" then
-    pcall(M.on_payload_queued, ack_payload or { eq = cmd, target = tgt })
-  end
-
-  M.state.last_cmd = cmd
-  M.state.last_category = category
-  M.state.last_target = tgt
-  return true, cmd
+  local payload={target=target,eq=command,lanes={eq=command},meta={main_lane='eq',main_category=category,main_reason=reason}}
+  if ctx.preview then return payload end
+  sub={cmd=command,target=target,slot=slot,until_t=RC.now()+M.cfg.pending_s,emitting=true,previous_eq_ack=last_ack()}
+  M.state.submission=sub
+  if RI and RI.mark_waiting then RI.mark_waiting(M.state,M.key,payload,{main_lane='eq'}) end
+  local opts={route=M.key,target=target,kind='offense',commit=true,reason=M.key..':'..category}
+  local sent,detail,ack
+  if RI and RI.emit_route_payload then sent,detail,ack=RI.emit_route_payload(M.key,payload,opts)
+  elseif type(Yso.emit)=='function' then sent=Yso.emit(payload,opts);ack=payload end
+  sub.emitting,sub.payload=false,ack
+  if sent~=true then M.clear_runtime();return false,detail or 'emit_failed' end
+  RC.mark_pending(M.state,slot,target,M.cfg.pending_s)
+  RC.note_special_queued(command,target)
+  local bus=Yso.locks and Yso.locks.note_payload and Yso.queue and Yso.queue.commit
+  if not sub.acknowledged and (not bus or (Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run)) then M.on_payload_sent(ack or payload) end
+  M.state.last_cmd,M.state.last_category,M.state.last_target=command,category,target
+  return true,command
 end
-
-function M.on_payload_queued(payload)
-  M.init()
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  local cmd = _trim(lanes.eq or payload.eq)
-  if cmd == "" and payload.lanes == nil and not (payload.bal or payload.free
-      or payload.class or payload.ent or payload.entity) then
-    cmd = _trim(payload.cmd)
-  end
-  local tgt = _trim(payload.target or _target())
-  -- A generic server rejection belongs only to the outstanding EQ action.
-  -- Shared EQ history also detects later actions sent by another route,
-  -- even when subsequent acknowledgements spend only other lanes.
-  if cmd ~= "" then M.state.firestorm_dispatch = nil end
-  if cmd ~= "" and type(RC.mark_pending) == "function" then
-    local slot = cmd:match("^cast%s+(%S+)")
-    if slot then RC.mark_pending(M.state, slot, tgt, slot == "magma" and MAGMA_DURATION or 1.0) end
-  end
-  if cmd == "cast firestorm" then
-    -- This records a dispatched attempt, not a confirmed active room effect.
-    -- One attempt per room per loop activation prevents a room-spell resend
-    -- on every EQ regain, including when the target changes.
-    M.state.firestorm_rooms = M.state.firestorm_rooms or {}
-    M.state.firestorm_rooms[_room_key()] = true
-    M.state.firestorm_dispatch = {
-      payload = payload, room = _room_key(),
-      eq_ack = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload),
-    }
-  end
-  if RI and type(RI.clear_waiting_on_ack) == "function" then
-    RI.clear_waiting_on_ack(M.state, "magi_firestorm", payload, { require_route = false })
-  end
-  return true
-end
-
 function M.on_payload_sent(payload)
-  return M.on_payload_queued(payload)
-end
-
-function M.on_send_result(payload, ctx)
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  M.state.last_fired_cmd = _trim(lanes.eq or payload.eq or payload.cmd)
-  local dispatch = M.state.firestorm_dispatch
-  if type(ctx) == "table" and ctx.success == false and dispatch
-      and dispatch.payload == payload and M.state.last_fired_cmd == "cast firestorm" then
-    M.state.firestorm_rooms[dispatch.room] = nil
-    M.state.firestorm_dispatch = nil
-    if type(RC.clear_pending) == "function" then RC.clear_pending(M.state, "firestorm") end
+  M.init()
+  if not ready() or type(payload)~='table' then return false end
+  if RI and RI.payload_has_any_route and RI.payload_has_any_route(payload) and not RI.payload_has_route(payload,M.key) then return false end
+  local lanes=payload.lanes or payload
+  local command=lanes.eq or payload.eq
+  if not command and not payload.lanes and not (payload.bal or payload.free or payload.class or payload.ent or payload.entity) then command=payload.cmd end
+  command=RC.trim(command)
+  if command=='' then return false end
+  local sub,latest=M.state.submission,last_ack()
+  if payload==M.state.last_ack_payload or (sub and payload==sub.previous_eq_ack) then return false end
+  local target=RC.trim(payload.target or RC.get_target())
+  local matched=sub and not sub.acknowledged and command==sub.cmd and RC.same_target(target,sub.target)
+    and (payload==sub.payload or payload==latest)
+  -- Direct/manual API dispatches also reach this hook through the canonical ACK bus.
+  if not matched and payload~=latest then return false end
+  if matched then
+    sub.acknowledged,sub.ack_payload,sub.until_t=true,payload,RC.now()+M.cfg.pending_s
+    RC.mark_pending(M.state,sub.slot,target,M.cfg.pending_s)
+    if RI and RI.clear_waiting then RI.clear_waiting(M.state,M.key) end
+  elseif sub then M.clear_runtime() end
+  M.state.last_ack_payload=payload
+  M.state.firestorm_dispatch=nil
+  if command=='cast firestorm' then
+    local room=room_key()
+    M.state.firestorm_rooms[room]=RC.now()
+    M.state.firestorm_dispatch={payload=payload,room=room,eq_ack=latest}
   end
   return true
 end
-
-function M.on_resonance_failure(required, element)
-  local dispatch = M.state.firestorm_dispatch
-  if not dispatch or required ~= 3 or (element ~= "air" and element ~= "fire") then return false end
-  local latest = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload)
-  if latest and latest ~= dispatch.eq_ack and latest ~= dispatch.payload then
-    local lanes = type(latest.lanes) == "table" and latest.lanes or latest
-    if _trim(lanes.eq or latest.eq) ~= "" then
-      M.state.firestorm_dispatch = nil
-      return false
-    end
+M.on_payload_queued=M.on_payload_sent
+function M.on_send_result(payload,ctx)
+  if not (type(ctx)=='table' and ctx.success==false) then return true end
+  local sub,dispatch=M.state.submission,M.state.firestorm_dispatch
+  if dispatch and payload==dispatch.payload then
+    M.state.firestorm_rooms[dispatch.room]=nil
+    M.state.firestorm_dispatch=nil
+    if ready() then RC.clear_pending(M.state,'firestorm') end
   end
-  return M.on_send_result(dispatch.payload, { success = false })
+  if sub and (payload==sub.payload or payload==sub.ack_payload) then M.clear_runtime() end
+  return true
 end
-
-M.alias_loop_stop_details = M.alias_loop_stop_details or {
-  inactive = true,
-  disabled = true,
-  no_target = true,
-  invalid_target = true,
-  wrong_class = true,
-}
-
-function M.alias_loop_prepare_start(ctx)
+function M.on_resonance_failure(required,element)
+  local dispatch=M.state.firestorm_dispatch
+  if not dispatch or required~=3 or (element~='air' and element~='fire') then return false end
+  local latest=last_ack()
+  if latest and latest~=dispatch.eq_ack and latest~=dispatch.payload then
+    local lanes=latest.lanes or latest
+    if RC.trim(lanes.eq or latest.eq)~='' then M.state.firestorm_dispatch=nil;return false end
+  end
+  return M.on_send_result(dispatch.payload,{success=false})
+end
+function M.on_firestorm_ended(room)
   M.init()
-  return ctx or {}
-end
-
-function M.alias_loop_on_started(ctx)
-  M.init()
-  if type(RC.entourage_sync) == "function" then
-    RC.entourage_sync(M, _target(), _is_magi())
-  end
-  M.state.firestorm_rooms = {}
-  M.state.firestorm_dispatch = nil
-  if type(RC.clear_pending_all) == "function" then
-    RC.clear_pending_all(M.state, PENDING_SLOTS)
-  end
-  _echo("Firestorm loop ON.")
-  local tgt = _target()
-  if tgt == "" then
-    _echo("No target yet; holding.")
-  end
-end
-
--- A confirmed end/failure trigger can reopen the room step without toggling.
-function M.on_firestorm_ended()
-  M.state.firestorm_rooms = M.state.firestorm_rooms or {}
-  M.state.firestorm_rooms[_room_key()] = nil
+  M.state.firestorm_rooms[tostring(room or room_key())]=nil
   return true
 end
 
+-- LOOP LIFECYCLE
+M.alias_loop_stop_details={inactive=true,disabled=true,no_target=true,invalid_target=true,wrong_class=true,core_unavailable=true}
+function M.alias_loop_prepare_start(ctx) M.clear_runtime();return ctx or {} end
+function M.alias_loop_on_started()
+  M.clear_runtime();M.state.firestorm_rooms,M.state.firestorm_dispatch={},nil
+  if ready() then RC.entourage_sync(M,RC.get_target(),is_magi()) end
+  notify('Firestorm loop ON.')
+end
 function M.alias_loop_on_stopped(ctx)
-  M.init()
-  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
-  ctx = ctx or {}
-  local reason = tostring(ctx.reason or "manual")
-  M.state.template.last_disable_reason = reason
-  if ctx.silent ~= true then
-    _echo(string.format("Firestorm loop OFF (%s).", reason))
-  end
+  M.clear_runtime();M.state.firestorm_rooms,M.state.firestorm_dispatch={},nil
+  if RC.entourage_passive then RC.entourage_passive(M) end
+  ctx=ctx or {};M.state.template.last_disable_reason=ctx.reason or 'manual'
+  if not ctx.silent then notify('Firestorm loop OFF ('..M.state.template.last_disable_reason..').') end
 end
-
 function M.alias_loop_waiting_blocks()
-  return false
+  if not ready() then return false end
+  if Yso.offense_paused and Yso.offense_paused() then M.clear_runtime();return false end
+  local sub=flight(RC.get_target())
+  return sub~=nil and not sub.acknowledged
 end
-
-function M.alias_loop_clear_waiting()
-  if RI and type(RI.clear_waiting) == "function" then
-    return RI.clear_waiting(M.state, "magi_firestorm")
-  end
+M.alias_loop_clear_waiting=M.clear_runtime
+M.on_target_swap=M.clear_runtime
+M.on_pause=M.clear_runtime
+function M.alias_loop_on_error(err) notify('Firestorm loop error: '..tostring(err)) end
+function M.on_exit()
+  M.alias_loop_on_stopped({silent=true,reason='exit'})
+  if Yso.mode and Yso.mode.stop_route_loop then Yso.mode.stop_route_loop(M.key,'exit',true) end
   return true
 end
-
-function M.alias_loop_on_error(err)
-  _echo("Firestorm loop error: " .. tostring(err))
+function M.evaluate(ctx) return M.attack_function({preview=true,target=type(ctx)=='table' and ctx.target or nil}) end
+function M.explain()
+  if not ready() then return {reason='core_unavailable'} end
+  local s=M.snapshot(RC.get_target());s.command,s.category,s.reason=M.choose(s)
+  return s
 end
-
-function M.on_exit(ctx)
-  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
-  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
-    Yso.mode.stop_route_loop("magi_firestorm", "exit", true)
-  end
-  return true
-end
-
-if Yso.off.core and type(Yso.off.core.register) == "function" then
-  pcall(Yso.off.core.register, M.key, M)
-end
-
+M.clear_runtime();M.state.firestorm_rooms,M.state.firestorm_dispatch={},nil
+if Yso.off.core and Yso.off.core.register then Yso.off.core.register(M.key,M) end
 return M
 </script>
 						<eventHandlerList />
 					</Script>
-					<Script isActive="yes" isFolder="no">
+					<Script isActive="yes" isFolder="no"><name>Magi spell feedback</name><packageName /><script>-- Confirmed Magi response adapter. Native triggers supply event + named victim.
+-- AK owns scores/cures. This module never sends commands or estimates enemy HP.
+Yso = Yso or {}
+Yso.magi = Yso.magi or {}
+local T = Yso.magi.spell_feedback or {}
+Yso.magi.spell_feedback = T
+T.hypothermia_tracking = true
+T.observed, T.expiries = T.observed or {}, T.expiries or {}
+local function core() return Yso.off and Yso.off.magi and Yso.off.magi.route_core end
+local function now() return core() and core().now() or os.time() end
+local function current() return core() and core().get_target() or tostring(rawget(_G,'target') or '') end
+local function same(a,b) return tostring(a or ''):lower()==tostring(b or ''):lower() end
+local function tracking_ready()
+  if type(ak)~='table' or type(affstrack)~='table' or type(affstrack.score)~='table' then return false end
+  if type(ak.ai)=='function' then
+    local ok, blocked=pcall(ak.ai)
+    if not ok or blocked then return false end
+  end
+  return type(OppGainedAff)=='function'
+end
+local function allowed(who)
+  return tracking_ready() and who and who~='' and same(who,current()) and
+    (not core() or core().target_valid(who)) and type(OppGainedAff)=='function'
+end
+local function score(aff) return tonumber(affstrack.score[aff]) or 0 end
+local function gain(aff) OppGainedAff(aff) end
+local function flame(kind)
+  if type(ak.flameon)=='function' then ak.flameon(kind or 'additive') end
+end
+local function confirm_min(aff,value)
+  affstrack.score[aff]=math.max(score(aff),value)
+  if ak.scoreup then ak.scoreup(current()) end
+end
+local function timed(aff,who,seconds)
+  local scores=affstrack.score
+  -- AK's generic blisters gain installs a target-global string timer. Keep the
+  -- confirmed score, but use the target-safe callback below for this event.
+  if aff=='blisters' then confirm_min(aff,100) else gain(aff) end
+  local token={}
+  T.expiries[aff]=token
+  if type(tempTimer)=='function' then tempTimer(seconds,function()
+    if T.expiries[aff]~=token then return end
+    T.expiries[aff]=nil
+    if allowed(who) and affstrack.score==scores and type(OppLostAff)=='function' then OppLostAff(aff) end
+  end) end
+end
+local simple = {
+  transfix='transfixed', bombard='clumsiness', mudslide='prone slickness',
+  asthma='asthma', sensitivity='sensitivity', healthleech='healthleech',
+  frostbite='frostbite', stuttering='stuttering', anorexia='nausea anorexia',
+  paralysis='paralysis', hypothermia='hypothermia', freeze='frozen',
+  dehydrate_dry='nausea weariness', dehydrate_freeze='frozen nausea weariness',
+  lightning_stupidity='stupidity', plague='leftleg rightleg prone',
+}
+function T.handle(event,who,detail)
+  -- Every named cast starts a new erosion sequence, including casts aimed at
+  -- another victim. Such a start must invalidate our previous attribution.
+  if event=='erode_start' then T.erode=nil end
+  if (event=='conflagrate' or event=='conflagrate_tick') and tracking_ready()
+      and ak.limbs and type(ak.limbs.ParseonLine)=='function' then
+    ak.limbs.ParseonLine()
+  end
+  -- These first-person cast responses consume our resonance even if the user
+  -- changed target before the named victim's confirmation arrived.
+  local plane=event:match('^emanation_(%a+)$')
+  if plane and tracking_ready() and ak.magi and ak.magi.resonance then
+    ak.magi.resonance[plane:sub(1,1):upper()..plane:sub(2)]=0
+  end
+  -- Erosion's second line has a defence, not a victim. Attribute it only to a
+  -- recent named first line; arbitrary follow-up text never drops a shield.
+  if event=='erode_result' then
+    local pending=T.erode
+    T.erode=nil
+    if not pending or now()-pending.at&gt;2.5 or not same(pending.target,current()) then return false end
+    who=pending.target
+  end
+  -- The unnamed room result establishes no particular enemy's cold stage.
+  if event=='deepfreeze' then T.last_room_event={event=event,at=now()}; return true end
+  if not allowed(who) then return false end
+  T.last_event={event=event,target=who,at=now()}
+  if simple[event] then
+    if (event=='mudslide' or event=='plague') and type(EchoForMajorAff)=='function' then
+      EchoForMajorAff('PRONE')
+    end
+    gain(simple[event]); return true
+  end
+  if event=='dehydrate_attempt' or event=='conflagrate_fail' then
+    return true -- An attempt/failure is not evidence of an applied affliction.
+  elseif event=='dehydrate_burning' then
+    gain('weariness'); flame()
+  elseif event=='fulminate' then
+    gain(score('fulminated')&lt;100 and 'fulminated' or score('epilepsy')&lt;100 and 'epilepsy' or 'paralysis')
+  elseif event=='magma' then
+    timed('scalded',who,20)
+  elseif event=='fire_moderate' then
+    if score('scalded')&lt;100 then timed('scalded',who,20) else flame() end
+  elseif event=='blisters' then
+    if score('blisters')&gt;=100 then flame() else timed('blisters',who,20) end
+  elseif event=='fire_major_burning' or event=='firelash' or event=='scintilla_burning' then
+    flame()
+  elseif event=='limb_break' then
+    local limb=tostring(detail or ''):lower():gsub('%s+','')
+    if limb=='leftarm' or limb=='rightarm' or limb=='leftleg' or limb=='rightleg' then gain(limb) else return false end
+  elseif event:match('^emanation_') then
+    if plane=='air' then gain('paralysis dizziness')
+    elseif plane=='water' then gain('frozen disrupt') -- Stuttering belongs to Water's separate icicle proc.
+    elseif plane=='fire' then flame('emanation')
+    elseif plane=='earth' then
+      -- AK lacks a torso calcification cure model. Keep named evidence, never
+      -- fabricate calcifiedhead or an uncureable calcifiedtorso score.
+      T.observed[who:lower()]=T.observed[who:lower()] or {}
+      T.observed[who:lower()].calcifiedtorso_at=now()
+    end
+  elseif event=='conflagrate' or event=='conflagrate_tick' then
+    -- Two burn levels are required to APPLY it. An ongoing tick proves only
+    -- one remains; the victim may have cured a level since the initial cast.
+    confirm_min('aflame',event=='conflagrate' and 200 or 100); gain('conflagrate')
+  elseif event=='immolation' then
+    T.observed[who:lower()]=T.observed[who:lower()] or {}
+    T.observed[who:lower()].scintilla_until=now()+4
+  elseif event=='unblind' then
+    if type(OppLostAff)=='function' then OppLostAff('blind') end
+  elseif event=='erode_start' then
+    T.erode={target=who,at=now()}
+  elseif event=='erode_result' then
+    local defence=tostring(detail or ''):lower()
+    if not defence:match('^%a+$') then return false end
+    ak.defs=ak.defs or {}
+    ak.defs[defence]=false
+    if defence=='shield' then
+      if ak.defs.shield_by_target then ak.defs.shield_by_target[who:lower()]=false end
+      if Yso.shield and Yso.shield.set then Yso.shield.set(who,false,'line:erode') end
+    end
+  elseif event=='dissonance_escalation' then
+    local D=Yso.magi.dissonance
+    if D and D.note and D.snapshot then
+      local stage=math.min(4,math.max(2,(D.snapshot(who).stage or 0)+1))
+      D.note(who,'tracked',{stage=stage,confidence='high',evidence='named_dissonance_hum'})
+    end -- Existing vibration notice alone increments Convergence's tick count.
+  else return false end
+  return true
+end
+return T
+</script><eventHandlerList /></Script>
+<Script isActive="yes" isFolder="no">
 						<name>Magi water group</name>
 						<packageName />
-						<script>--========================================================--
--- Magi_water_group.lua
---  * Alias-owned Magi water-group route (^gwater$ / magi_water_group).
---  * Instant wields via Yso.send when ids are set; one EQ cast via Yso.emit.
---  * Affs via AK (RC.has_aff / RC.score_aff). No queues or pipe stacks.
---========================================================--
-
+						<script>-- gwater: one file. Edit SETTINGS and GIVING ORDER; the first matching rule wins.
 Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.magi = Yso.off.magi or {}
-
 local M = Yso.off.magi.water_group or {}
 Yso.off.magi.water_group = M
+M.key, M.name, M.alias_owned = 'magi_water_group', 'Magi Water Group', true
 
-M.key = "magi_water_group"
-M.name = "Magi Water Group"
-M.alias_owned = true
-M.cfg = M.cfg or { loop_delay = 0.15, echo = true }
-M.state = M.state or {}
+-- SETTINGS
+M.cfg = {
+  loop_delay = 0.15,
+  echo = true,
+  pending_s = 1.0,
+  execute_hp = 20,
+  confirmed_score = 100,
+  shivering_score = 200, -- AK cold ladder: 100 includes stripped insulation.
+  frozen_score = 300,
+  allow_hypothermia = (Yso.magi and Yso.magi.spell_feedback and
+    Yso.magi.spell_feedback.hypothermia_tracking == true) or false,
+}
 
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+-- GIVING ORDER: each line below is checked from top to bottom on every attack.
+-- This is a priority list, not a fixed rotation. Return one full command.
+function M.choose(s)
+  local target = s.target
+  -- 1. Shield -&gt; Erode.
+  if s.shield then
+    return 'cast erode at '..target..' shield', 'defense_break', 'shielded'
+  end
+  -- 2. Shared finishers: Destroy/Assess first, otherwise Convergence.
+  if s.special or s.special_hold then
+    return s.special, 'special', s.special_reason
+  end
+  -- 3. Target HP at or below execute_hp -&gt; Stormhammer.
+  if s.hp and s.hp &lt;= M.cfg.execute_hp then
+    return 'cast stormhammer at '..target, 'execute', 'hp_stormhammer'
+  end
+  -- 4. Fully frozen + Hypothermia + Water/Air at least 2 -&gt; Glaciate.
+  if s.frozen and s.hypothermia and s.water &gt;= 2 and s.air &gt;= 2 then
+    return 'cast glaciate at '..target, 'glaciate_burst', 'glaciate_ready'
+  end
+  -- 5. At least shivering and Waterbonds missing -&gt; staff cast Horripilation.
+  if (s.shivering or s.frozen) and not s.waterbonds then
+    return 'staff cast horripilation at '..target, 'waterbonds_setup', 'waterbonds_missing_cold'
+  end
+  -- 6. Scalded missing and Earth 0 -&gt; Pebble.
+  if not s.scalded and s.earth == 0 then
+    return 'cast pebble at '..target, 'earth_setup', 'scalded_missing_earth0'
+  end
+  -- 7. Fully frozen, Hypothermia missing, Water/Air at least 2 -&gt; Hypothermia.
+  if M.cfg.allow_hypothermia and s.frozen and not s.hypothermia and s.water &gt;= 2 and s.air &gt;= 2 then
+    return 'cast hypothermia at '..target, 'freeze_setup', 'hypothermia_missing'
+  end
+  -- 8. Water below 2 -&gt; Dehydrate.
+  if s.water &lt; 2 then
+    return 'cast dehydrate at '..target, 'resonance_build', 'build_water'
+  end
+  -- 9. Shivering + nausea without weariness -&gt; Dehydrate; otherwise Freeze.
+  if s.shivering then
+    if s.nausea and not s.weariness then
+      return 'cast dehydrate at '..target, 'freeze_setup', 'shiver_nausea'
+    end
+    return 'cast freeze at '..target, 'freeze_setup', 'shivering'
+  end
+  -- 10. Air below 2 -&gt; Bombard if Earth is below 2; otherwise Fulminate.
+  if s.air &lt; 2 then
+    if s.earth &lt; 2 then
+      return 'cast bombard at '..target, 'resonance_build', 'build_air_earth'
+    end
+    return 'cast fulminate at '..target, 'resonance_build', 'build_air_fire'
+  end
+  -- 11. Not fully frozen -&gt; Freeze.
+  if not s.frozen then
+    return 'cast freeze at '..target, 'freeze_setup', 'build_cold'
+  end
+  -- 12. Earth at least 3 -&gt; Earth Emanation.
+  if s.earth &gt;= 3 then
+    return 'cast emanation at '..target..' earth', 'earth_promotion', 'earth_major'
+  end
+  -- 13. Water at least 3 -&gt; Water Emanation.
+  if s.water &gt;= 3 then
+    return 'cast emanation at '..target..' water', 'water_promotion', 'water_major'
+  end
+  -- 14. Slickness missing -&gt; Mudslide.
+  if not s.slickness then
+    return 'cast mudslide at '..target, 'salve_pressure', 'slickness_missing'
+  end
+  -- 15. Fire below 2 -&gt; Fulminate.
+  if s.fire &lt; 2 then
+    return 'cast fulminate at '..target, 'kelp_pressure', 'build_fire'
+  end
+  -- 16. Otherwise -&gt; Dehydrate.
+  return 'cast dehydrate at '..target, 'disrupt_setup', 'water_pressure'
+end
+
+-- INPUTS AND ROUTE CHECKS
 Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
-
-local PENDING_SLOTS = {
-  "pebble",
-  "stormhammer",
-  "erode",
-  "glaciate",
-  "hypothermia",
-  "dehydrate",
-  "freeze",
-  "emanation",
-  "mudslide",
-  "bombard",
-  "fulminate",
+local RI = Yso.Combat and Yso.Combat.RouteInterface
+M.state = M.state or {}
+M.route_contract = {
+  id=M.key, interface_version=1, shared_categories={'defense_break'}, route_local_categories={'execute','water_group'},
+  capabilities={uses_eq=true,uses_bal=false,uses_entity=false,supports_burst=true,supports_bootstrap=false,needs_target=true},
+  override_policy={mode='narrow_global_only',allowed={target_invalid=true,target_slain=true,route_off=true,
+    pause=true,manual_suppression=true,target_swap_bootstrap=true}},
 }
-
-M.route_contract = M.route_contract or {
-  id = "magi_water_group",
-  interface_version = 1,
-  shared_categories = { "defense_break" },
-  route_local_categories = { "execute", "water_group" },
-  capabilities = {
-    uses_eq = true,
-    uses_bal = false,
-    uses_entity = false,
-    supports_burst = true,
-    supports_bootstrap = false,
-    needs_target = true,
-  },
-  override_policy = {
-    mode = "narrow_global_only",
-    allowed = {
-      target_invalid = true,
-      target_slain = true,
-      route_off = true,
-      pause = true,
-      manual_suppression = true,
-      target_swap_bootstrap = true,
-    },
-  },
-  lifecycle = {
-    on_enter = true,
-    on_exit = true,
-    on_target_swap = true,
-    on_pause = true,
-    on_resume = true,
-    on_manual_success = true,
-    on_send_result = true,
-    evaluate = true,
-    explain = true,
-  },
-}
-
-do
-  if RI and type(RI.ensure_hooks) == "function" then
-    RI.ensure_hooks(M, M.route_contract)
-  end
+if RI and RI.ensure_hooks then RI.ensure_hooks(M,M.route_contract) end
+local function ready() return type(RC.get_target)=='function' and type(RC.mark_pending)=='function' end
+local function is_magi()
+  local check=Yso.is_magi or (Yso.classinfo and Yso.classinfo.is_magi) or (Yso.magi and Yso.magi.defs and Yso.magi.defs.is_magi)
+  if type(check)~='function' then return false end
+  local ok,value=pcall(check)
+  return ok and value==true
 end
-
-local function _trim(s)
-  if type(RC.trim) == "function" then return RC.trim(s) end
-  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+local function notify(message)
+  if M.cfg.echo and type(cecho)=='function' then cecho('&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;'..message..'\n') end
 end
-
-local function _echo(msg)
-  if M.cfg.echo ~= true then return end
-  if type(cecho) == "function" then
-    cecho(string.format("&lt;cadet_blue&gt;[Yso:Magi] &lt;reset&gt;%s\n", tostring(msg)))
-  elseif type(echo) == "function" then
-    echo(string.format("[Yso:Magi] %s\n", tostring(msg)))
-  end
-end
-
-local function _is_magi()
-  if type(Yso.is_magi) == "function" then
-    local ok, v = pcall(Yso.is_magi)
-    if ok then return v == true end
-  end
-  local C = Yso and Yso.classinfo or nil
-  if type(C) == "table" and type(C.is_magi) == "function" then
-    local ok, v = pcall(C.is_magi)
-    if ok then return v == true end
-  end
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.is_magi) == "function" then
-    local ok, v = pcall(D.is_magi)
-    if ok then return v == true end
-  end
-  return false
-end
-
-local function _target_hp()
-  if type(RC.get_target_hp_percent) == "function" then
-    local ok, v = pcall(RC.get_target_hp_percent)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  return nil
-end
-
-local function _target()
-  if type(RC.get_target) == "function" then
-    local t = _trim(RC.get_target())
-    if t ~= "" then return t end
-  end
-  return _trim(rawget(_G, "target") or "")
-end
-
-local function _shielded(tgt)
-  tgt = _trim(tgt):lower()
-  if Yso and Yso.shield and type(Yso.shield.up) == "function" and tgt ~= "" then
-    local ok, v = pcall(Yso.shield.up, tgt)
-    if ok then return v == true end
-  end
-  local ak = rawget(_G, "ak")
-  if ak and ak.defs then
-    if type(ak.defs.shield_by_target) == "table" and tgt ~= "" then
-      return ak.defs.shield_by_target[tgt] == true
-    end
-    return ak.defs.shield == true
-  end
-  return false
-end
-
-local function _cast(spell, tgt, extra)
-  extra = _trim(extra)
-  if extra ~= "" then
-    return "cast " .. spell .. " at " .. tgt .. " " .. extra
-  end
-  return "cast " .. spell .. " at " .. tgt
-end
-
-local function _route_is_active()
-  if not _is_magi() then return false end
-  if not (Yso and Yso.mode and type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() == true) then
-    return false
-  end
-  if Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("magi_water_group") == true
-  end
-  return M.state and M.state.loop_enabled == true
-end
-
-local function _select_command(tgt)
-  local hp = _target_hp()
-  local res = (type(RC.read_resonance) == "function" and RC.read_resonance()) or { air = 0, earth = 0, fire = 0, water = 0 }
-  local water = tonumber(res.water) or 0
-  local earth = tonumber(res.earth) or 0
-  local fire = tonumber(res.fire) or 0
-  local air = tonumber(res.air) or 0
-  local frozen = RC.has_aff("frozen")
-  local hypothermia = RC.has_aff("hypothermia")
-  local shivering = RC.has_aff("shivering")
-  local nausea = RC.has_aff("nausea")
-  local calcified = RC.has_aff("calcifiedtorso")
-
-  if _shielded(tgt) then
-    return _cast("erode", tgt, "shield"), "defense_break", "shielded"
-  end
-  local special, reason, hold = RC.special_action(tgt)
-  if special or hold then return special, "special", reason end
-  if hp ~= nil and hp &lt;= 20 then
-    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
-  end
-  if RC.score_aff("scalded") &lt; 100 and earth == 0 then
-    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
-  end
-  if frozen and hypothermia and water &gt;= 2 and air &gt;= 2 then
-    return _cast("glaciate", tgt), "glaciate_burst", "glaciate_ready"
-  end
-  if frozen and water &gt;= 2 and air &gt;= 2 and not hypothermia then
-    return _cast("hypothermia", tgt), "freeze_setup", "hypothermia_missing"
-  end
-  if shivering and nausea and not frozen then
-    return _cast("dehydrate", tgt), "disrupt_setup", "shiver_nausea"
-  end
-  if shivering then
-    return _cast("freeze", tgt), "freeze_setup", "shivering"
-  end
-  if water == 0 and fire == 2 and earth &lt;= 1 then
-    return _cast("dehydrate", tgt), "disrupt_setup", "water0_fire2"
-  end
-  if water == 3 and fire == 2 and earth &lt;= 1 then
-    return _cast("emanation", tgt, "water"), "water_promotion", "water_major_fire2"
-  end
-  if calcified and water == 3 and earth == 1 then
-    return _cast("dehydrate", tgt), "disrupt_setup", "calcified_earth1"
-  end
-  if calcified and water == 3 and earth == 0 then
-    return _cast("mudslide", tgt), "salve_pressure", "calcified_earth0"
-  end
-  if water == 3 and earth == 3 then
-    return _cast("emanation", tgt, "earth"), "earth_promotion", "water_earth_major"
-  end
-  if water == 3 and earth == 2 then
-    return _cast("bombard", tgt), "salve_pressure", "water_major_earth2"
-  end
-  if water == 2 and earth == 1 and air == 1 then
-    return _cast("mudslide", tgt), "salve_pressure", "water2_earth1_air1"
-  end
-  if air == 0 and water == 2 then
-    return _cast("freeze", tgt), "freeze_setup", "air0_water2"
-  end
-  if water == 2 and earth == 1 and fire == 1 then
-    return _cast("fulminate", tgt), "kelp_pressure", "fulminate"
-  end
-  if water == 1 and earth == 0 then
-    return _cast("mudslide", tgt), "salve_pressure", "water1_earth0"
-  end
-  return _cast("dehydrate", tgt), "disrupt_setup", "default_dehydrate"
-end
-
-local function _send_wields()
-  local W = Yso and Yso.magi and Yso.magi.weapons
-  if type(W) == "table" and type(W.send_wields) == "function" then
-    pcall(W.send_wields)
-  end
-end
-
-local function _emit_payload(cmd, target, category)
-  cmd = _trim(cmd)
-  target = _trim(target)
-  if cmd == "" then return false, "empty", nil end
-
-  local opts = {
-    reason = "magi_water_group:" .. tostring(category or "attack"),
-    kind = "offense",
-    commit = true,
-    route = "magi_water_group",
-    target = target,
-  }
-
-  if RI and type(RI.emit_route_payload) == "function" then
-    return RI.emit_route_payload("magi_water_group", {
-      target = target,
-      lanes = { eq = cmd },
-      meta = {
-        route = "magi_water_group",
-        main_lane = "eq",
-        main_category = tostring(category or ""),
-      },
-    }, opts)
-  end
-
-  local payload = { eq = cmd, target = target }
-  if type(Yso.emit) == "function" then
-    if Yso.emit(payload, opts) == true then
-      return true, cmd, payload
-    end
-    return false, "emit_failed", nil
-  end
-  if type(send) == "function" then
-    local ok = pcall(send, cmd, false)
-    if ok then return true, cmd, payload end
-    return false, "send_failed", nil
-  end
-  return false, "no_send", nil
-end
-
 function M.init()
-  M.state = M.state or {}
-  M.state.loop_delay = tonumber(M.state.loop_delay or M.cfg.loop_delay or 0.15) or 0.15
-  M.state.template = M.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
-  if type(RC.ensure_pending) == "function" then
-    RC.ensure_pending(M.state, PENDING_SLOTS)
-  end
-  if RI and type(RI.ensure_waiting_state) == "function" then
-    RI.ensure_waiting_state(M.state, "magi_water_group")
-  end
+  M.state.loop_delay=M.cfg.loop_delay
+  M.state.pending=M.state.pending or {}
+  M.state.template=M.state.template or {}
+  if RI and RI.ensure_waiting_state then RI.ensure_waiting_state(M.state,M.key) end
   return true
 end
-
-function M.is_enabled()
-  return M.state and M.state.enabled == true
+function M.clear_runtime()
+  M.init()
+  M.state.submission,M.state.pending=nil,{}
+  M.state.last_sent_cmd,M.state.last_sent_target,M.state.last_sent_at='','',0
+  if RI and RI.clear_waiting then RI.clear_waiting(M.state,M.key) end
+  return true
 end
-
+function M.is_enabled() return M.state.enabled==true end
 function M.is_active()
+  if not is_magi() or not (Yso.mode and Yso.mode.is_combat and Yso.mode.is_combat()) then return false end
+  if Yso.mode.route_loop_active then return Yso.mode.route_loop_active(M.key)==true end
+  return M.state.loop_enabled==true
+end
+function M.can_run(ctx)
   M.init()
-  return _route_is_active()
+  ctx=type(ctx)=='table' and ctx or {}
+  if not ready() then return false,'core_unavailable' end
+  if not M.is_enabled() then return false,'disabled' end
+  if not M.is_active() then return false,'inactive' end
+  if Yso.offense_paused and Yso.offense_paused() then
+    if not ctx.preview then M.clear_runtime() end
+    return false,'paused'
+  end
+  local target=RC.trim(ctx.target or RC.get_target())
+  if target=='' then return false,'no_target' end
+  if not RC.same_target(target,RC.get_target()) then return false,'target_mismatch' end
+  if not RC.target_valid(target) then return false,'invalid_target' end
+  if not RC.eq_ready() then return false,'eq_down' end
+  return true,target
+end
+function M.snapshot(target)
+  local r,score=RC.read_resonance(),RC.score_aff
+  local cold=score('frozen')
+  local defs=(rawget(_G,'ak') or {}).defs or {}
+  local shield=defs.shield
+  if defs.shield_by_target then shield=defs.shield_by_target[target:lower()] end
+  if Yso.shield and Yso.shield.up then shield=Yso.shield.up(target:lower()) end
+  local special,reason,hold=RC.special_action(target)
+  return {target=target,hp=RC.get_target_hp_percent(target),shield=shield==true,
+    air=r.air,earth=r.earth,fire=r.fire,water=r.water,
+    frozen=cold&gt;=M.cfg.frozen_score,shivering=cold&gt;=M.cfg.shivering_score and cold&lt;M.cfg.frozen_score,
+    waterbonds=score('waterbonds')&gt;=M.cfg.confirmed_score,
+    hypothermia=score('hypothermia')&gt;=M.cfg.confirmed_score,nausea=score('nausea')&gt;=M.cfg.confirmed_score,
+    weariness=score('weariness')&gt;=M.cfg.confirmed_score,slickness=score('slickness')&gt;=M.cfg.confirmed_score,
+    scalded=score('scalded')&gt;=M.cfg.confirmed_score,special=special,special_reason=reason,special_hold=hold}
 end
 
-function M.can_run(reason)
-  M.init()
-  local ctx = type(reason) == "table" and reason or {}
-  if not M.is_enabled() then return false, "disabled" end
-  if not M.is_active() then return false, "inactive" end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
-  local tgt = _trim((ctx and ctx.target) or _target())
-  if tgt == "" then return false, "no_target" end
-  if not _is_magi() then return false, "wrong_class" end
-  if type(RC.target_valid) == "function" and not RC.target_valid(tgt) then
-    return false, "invalid_target"
+-- SENDING: one reservation covers the send-to-ack gap; spell windows prevent repeats.
+local function last_ack() return Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload) end
+local function flight(target,preview)
+  local sub=M.state.submission
+  if sub and (not RC.same_target(sub.target,target) or RC.now()&gt;=sub.until_t) then
+    if not preview then M.clear_runtime() end
+    return nil
   end
-  if type(RC.eq_ready) == "function" and not RC.eq_ready() then
-    return false, "eq_down"
-  end
-  return true, tgt
+  return sub
 end
-
 function M.attack_function(arg)
-  M.init()
-  local ctx = type(arg) == "table" and arg or { reason = tostring(arg or "loop") }
-  if type(RC.entourage_sync) == "function" then
-    RC.entourage_sync(M, ctx.target or _target(), _is_magi(), ctx.preview)
+  local ctx=type(arg)=='table' and arg or {}
+  if ready() then RC.entourage_sync(M,ctx.target or RC.get_target(),is_magi(),ctx.preview) end
+  local ok,target=M.can_run(ctx)
+  if not ok then return false,target end
+  local sub=flight(target,ctx.preview)
+  if sub and not sub.acknowledged then
+    local reason=sub.slot..'_pending'
+    if not ctx.preview then M.state.template.last_reason=reason end
+    return false,reason
   end
-  local ok, info = M.can_run(ctx)
-  if not ok then return false, info end
-  local tgt = info
-  local cmd, category, reason = _select_command(tgt)
-  M.state.template.last_reason = reason
-  M.state.template.last_target = tgt
-  if not cmd or cmd == "" then return false, reason or "empty" end
-
-  -- Honor the same-target pending window before wielding or emitting again.
-  if type(RC.guard_spell) == "function" then
-    local allowed, why = RC.guard_spell({
-      state = M.state,
-      target = tgt,
-      cmd = cmd,
-      slot = cmd:match("^cast%s+(%S+)"),
-      cfg = M.cfg,
-    })
-    if not allowed then
-      M.state.template.last_reason = why
-      return false, why
-    end
+  local command,category,reason=M.choose(M.snapshot(target))
+  if not ctx.preview then M.state.template.last_reason,M.state.template.last_target=reason,target end
+  if not command then return false,reason end
+  local slot=command:match('^cast%s+(%S+)') or command:match('^staff%s+cast%s+(%S+)') or 'eq'
+  local pending=M.state.pending[slot]
+  if pending and RC.same_target(pending.target,target) and RC.now()&lt;pending.until_t then
+    if not ctx.preview then M.state.template.last_reason=slot..'_pending' end
+    return false,slot..'_pending'
   end
-
-  if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
-  _send_wields()
-  local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
-  if sent ~= true then return false, emit_detail or "emit_failed" end
-  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
-  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
-  RC.note_special_queued(cmd, tgt)
-
-  if RI and type(RI.mark_waiting) == "function" then
-    RI.mark_waiting(M.state, "magi_water_group", ack_payload or { eq = cmd, target = tgt }, {
-      cmd = cmd,
-      target = tgt,
-      main_lane = "eq",
-    })
-  end
-  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
-  local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
-  local queue_live = Yso and Yso.queue and type(Yso.queue.commit) == "function"
-  if (not has_ack_bus or dry_run or not queue_live) and type(M.on_payload_queued) == "function" then
-    pcall(M.on_payload_queued, ack_payload or { eq = cmd, target = tgt })
-  end
-
-  M.state.last_cmd = cmd
-  M.state.last_category = category
-  M.state.last_target = tgt
-  return true, cmd
+  local payload={target=target,eq=command,lanes={eq=command},meta={main_lane='eq',main_category=category,main_reason=reason}}
+  if ctx.preview then return payload end
+  if Yso.magi and Yso.magi.weapons and Yso.magi.weapons.send_wields then Yso.magi.weapons.send_wields() end
+  sub={cmd=command,target=target,slot=slot,until_t=RC.now()+M.cfg.pending_s,emitting=true,previous_eq_ack=last_ack()}
+  M.state.submission=sub -- Reserve before emit: acknowledgements may be synchronous.
+  if RI and RI.mark_waiting then RI.mark_waiting(M.state,M.key,payload,{main_lane='eq'}) end
+  local opts={route=M.key,target=target,kind='offense',commit=true,reason=M.key..':'..category}
+  local sent,detail,ack
+  if RI and RI.emit_route_payload then sent,detail,ack=RI.emit_route_payload(M.key,payload,opts)
+  elseif type(Yso.emit)=='function' then sent=Yso.emit(payload,opts);ack=payload end
+  sub.emitting,sub.payload=false,ack
+  if sent~=true then M.clear_runtime();return false,detail or 'emit_failed' end
+  RC.mark_pending(M.state,slot,target,M.cfg.pending_s)
+  RC.note_special_queued(command,target)
+  local bus=Yso.locks and Yso.locks.note_payload and Yso.queue and Yso.queue.commit
+  if not bus or (Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run) then M.on_payload_sent(ack or payload) end
+  M.state.last_cmd,M.state.last_category,M.state.last_target=command,category,target
+  return true,command
 end
-
-function M.on_payload_queued(payload)
-  M.init()
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  local cmd = _trim(lanes.eq or payload.eq or payload.cmd)
-  local tgt = _trim(payload.target or _target())
-  if cmd ~= "" and type(RC.mark_pending) == "function" then
-    local slot = cmd:match("^cast%s+(%S+)")
-    if slot then RC.mark_pending(M.state, slot, tgt, 1.0) end
-  end
-  if RI and type(RI.clear_waiting_on_ack) == "function" then
-    RI.clear_waiting_on_ack(M.state, "magi_water_group", payload, { require_route = false })
-  end
-  return true
-end
-
 function M.on_payload_sent(payload)
-  return M.on_payload_queued(payload)
-end
-
-function M.on_send_result(payload, ctx)
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  M.state.last_fired_cmd = _trim(lanes.eq or payload.eq or payload.cmd)
+  M.init()
+  if type(payload)~='table' then return false end
+  if RI and RI.payload_has_any_route and RI.payload_has_any_route(payload) and not RI.payload_has_route(payload,M.key) then return false end
+  local lanes=payload.lanes or payload
+  local command=lanes.eq or payload.eq
+  if not command and not payload.lanes and not (payload.bal or payload.free or payload.class or payload.ent or payload.entity) then command=payload.cmd end
+  local sub=M.state.submission
+  local target=RC.trim(payload.target or RC.get_target())
+  if not sub or RC.trim(command)~=sub.cmd or not RC.same_target(target,sub.target) then return false end
+  local latest=last_ack()
+  if not sub.emitting and payload~=sub.payload and (payload~=latest or latest==sub.previous_eq_ack) then return false end
+  sub.acknowledged,sub.ack_payload,sub.until_t,sub.eq_ack=true,payload,RC.now()+M.cfg.pending_s,latest
+  RC.mark_pending(M.state,sub.slot,target,M.cfg.pending_s)
+  if RI and RI.clear_waiting then RI.clear_waiting(M.state,M.key) end
   return true
 end
-
-M.alias_loop_stop_details = M.alias_loop_stop_details or {
-  inactive = true,
-  disabled = true,
-  no_target = true,
-  invalid_target = true,
-  wrong_class = true,
-}
-
-function M.alias_loop_prepare_start(ctx)
-  M.init()
-  return ctx or {}
+M.on_payload_queued=M.on_payload_sent
+function M.on_send_result(payload,ctx)
+  local sub=M.state.submission
+  if not sub or type(payload)~='table' then return false end
+  if ctx and ctx.success==false and (payload==sub.payload or payload==sub.ack_payload) then M.clear_runtime() end
+  return true
 end
-
-function M.alias_loop_on_started(ctx)
-  M.init()
-  if type(RC.entourage_sync) == "function" then
-    RC.entourage_sync(M, _target(), _is_magi())
-  end
-  if type(RC.clear_pending_all) == "function" then
-    RC.clear_pending_all(M.state, PENDING_SLOTS)
-  end
-  _echo("Water group loop ON.")
-  local tgt = _target()
-  if tgt == "" then
-    _echo("No target yet; holding.")
-  end
-end
-
-function M.alias_loop_on_stopped(ctx)
-  M.init()
-  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
-  ctx = ctx or {}
-  local reason = tostring(ctx.reason or "manual")
-  M.state.template.last_disable_reason = reason
-  if ctx.silent ~= true then
-    _echo(string.format("Water group loop OFF (%s).", reason))
-  end
-end
-
-function M.alias_loop_waiting_blocks()
+function M.on_resonance_failure(required,element)
+  if not ready() then return false end
+  local sub=flight(RC.get_target())
+  if not sub or not sub.acknowledged or last_ack()~=sub.eq_ack then return false end
+  local plane=sub.cmd:match('^cast emanation at %S+ (%a+)$')
+  if (plane==element and required==3) or ((sub.slot=='glaciate' or sub.slot=='hypothermia') and required==2 and (element=='air' or element=='water')) then return M.clear_runtime() end
   return false
 end
 
-function M.alias_loop_clear_waiting()
-  if RI and type(RI.clear_waiting) == "function" then
-    return RI.clear_waiting(M.state, "magi_water_group")
-  end
+-- LOOP LIFECYCLE
+M.alias_loop_stop_details={inactive=true,disabled=true,no_target=true,invalid_target=true,wrong_class=true,core_unavailable=true}
+function M.alias_loop_prepare_start(ctx) M.clear_runtime();return ctx or {} end
+function M.alias_loop_on_started()
+  M.clear_runtime()
+  if ready() then RC.entourage_sync(M,RC.get_target(),is_magi()) end
+  notify('Water group loop ON.')
+end
+function M.alias_loop_on_stopped(ctx)
+  M.clear_runtime()
+  if RC.entourage_passive then RC.entourage_passive(M) end
+  ctx=ctx or {}
+  M.state.template.last_disable_reason=ctx.reason or 'manual'
+  if not ctx.silent then notify('Water group loop OFF ('..M.state.template.last_disable_reason..').') end
+end
+function M.alias_loop_waiting_blocks()
+  if not ready() then return false end
+  if Yso.offense_paused and Yso.offense_paused() then M.clear_runtime();return false end
+  local sub=flight(RC.get_target())
+  return sub~=nil and not sub.acknowledged
+end
+M.alias_loop_clear_waiting=M.clear_runtime
+M.on_target_swap=M.clear_runtime
+M.on_pause=M.clear_runtime
+function M.alias_loop_on_error(err) notify('Water group loop error: '..tostring(err)) end
+function M.on_exit()
+  M.clear_runtime()
+  if RC.entourage_passive then RC.entourage_passive(M) end
+  if Yso.mode and Yso.mode.stop_route_loop then Yso.mode.stop_route_loop(M.key,'exit',true) end
   return true
 end
-
-function M.alias_loop_on_error(err)
-  _echo("Water group loop error: " .. tostring(err))
+function M.evaluate(ctx) return M.attack_function({preview=true,target=type(ctx)=='table' and ctx.target or nil}) end
+function M.explain()
+  if not ready() then return {reason='core_unavailable'} end
+  local s=M.snapshot(RC.get_target())
+  s.command,s.category,s.reason=M.choose(s)
+  s.allow_hypothermia=M.cfg.allow_hypothermia
+  return s
 end
-
-function M.on_exit(ctx)
-  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
-  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
-    Yso.mode.stop_route_loop("magi_water_group", "exit", true)
-  end
-  return true
-end
-
-if Yso.off.core and type(Yso.off.core.register) == "function" then
-  pcall(Yso.off.core.register, M.key, M)
-end
-
+M.clear_runtime()
+if Yso.off.core and Yso.off.core.register then Yso.off.core.register(M.key,M) end
 return M
 </script>
 						<eventHandlerList />

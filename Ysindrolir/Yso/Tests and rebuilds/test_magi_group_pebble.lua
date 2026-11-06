@@ -89,16 +89,20 @@ for _, M in ipairs({ W, F }) do
   Yso.queue = { commit = function() end }
   assert(M.attack_function())
   assert(not M.attack_function() and #attacks == 1, label .. ': suppresses before delayed acknowledgement')
-  M.on_payload_sent({ eq = 'cast pebble at Foe', target = 'Foe' })
+  local ack={ eq = 'cast pebble at Foe', target = 'Foe' }
+  Yso._last_eq_ack_payload=ack
+  M.on_payload_sent(ack)
   assert(not M.attack_function() and #attacks == 1, label .. ': sent acknowledgement preserves suppression')
   affstrack.score.scalded = 100
   want(M, M == W and 'cast dehydrate at Foe' or 'cast bombard at Foe', label .. ': confirmed Scalded resumes setup')
 end
 reset(W, 0)
-affstrack.score.frozen, affstrack.score.hypothermia = 100, 100
+affstrack.score.frozen, affstrack.score.hypothermia = 300, 100
 ak.magi.resonance.Water, ak.magi.resonance.Air = 2, 2
-want(W, 'cast pebble at Foe', 'water: Pebble precedes Glaciate')
+want(W, 'cast glaciate at Foe', 'water: confirmed ready Glaciate precedes optional Pebble')
 affstrack.score.hypothermia = 0
+want(W, 'staff cast horripilation at Foe', 'water: cold Waterbonds setup precedes Pebble')
+affstrack.score.waterbonds = 100
 want(W, 'cast pebble at Foe', 'water: Pebble precedes Hypothermia')
 affstrack.score.frozen, affstrack.score.shivering = 0, 100
 want(W, 'cast pebble at Foe', 'water: Pebble precedes Freeze')

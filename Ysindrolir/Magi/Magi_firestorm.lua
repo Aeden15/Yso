@@ -1,512 +1,313 @@
---========================================================--
--- Magi_firestorm.lua
---  * Alias-owned Magi firestorm route (^fstorm$ / magi_firestorm).
---  * One EQ cast per tick via Yso.emit. No queues or pipe stacks.
---  * AK resonance: Magma -> Bombard/Fulminate -> Firestorm -> Conflagrate.
---========================================================--
-
+-- fstorm: one file. Edit SETTINGS and GIVING ORDER; the first matching rule wins.
 Yso = Yso or {}
 Yso.off = Yso.off or {}
 Yso.off.magi = Yso.off.magi or {}
-
 local M = Yso.off.magi.firestorm or {}
 Yso.off.magi.firestorm = M
+M.key, M.name, M.alias_owned = 'magi_firestorm', 'Magi Firestorm', true
 
-M.key = "magi_firestorm"
-M.name = "Magi Firestorm"
-M.alias_owned = true
-M.cfg = M.cfg or { loop_delay = 0.15, echo = true }
-M.state = M.state or {}
+-- SETTINGS
+M.cfg = {
+  loop_delay = 0.15,
+  echo = true,
+  pending_s = 1.0,
+  execute_hp = 25, -- Stormhammer below this percentage (same threshold as before).
+  confirmed_score = 100,
+  aflame_score = 200,
+  firestorm_retry_s = 30, -- Minimum gap between room attempts, NOT effect duration.
+}
 
-local RI = Yso and Yso.Combat and Yso.Combat.RouteInterface or nil
+-- GIVING ORDER: each rule is checked from top to bottom on every attack.
+-- This is a priority list, not a fixed rotation. Return one full command.
+function M.choose(s)
+  local target = s.target
+  -- 1. Shield -> Erode.
+  if s.shield then
+    return 'cast erode at '..target..' shield', 'defense_break', 'shielded'
+  end
+  -- 2. Shared finishers: Destroy/Assess first, otherwise Convergence.
+  if s.special or s.special_hold then
+    return s.special, 'special', s.special_reason
+  end
+  -- 3. Target HP below execute_hp -> Stormhammer.
+  if s.hp and s.hp < M.cfg.execute_hp then
+    return 'cast stormhammer at '..target, 'execute', 'hp_stormhammer'
+  end
+  -- 4. Scalded missing and Earth 0 -> Pebble.
+  if not s.scalded and s.earth == 0 then
+    return 'cast pebble at '..target, 'earth_setup', 'scalded_missing_earth0'
+  end
+  -- 5. Confirmed Scalded missing -> Magma. Sending never counts as Scalded.
+  if not s.scalded then
+    return 'cast magma at '..target, 'fire_build', 'scalded_missing'
+  end
+  -- Build the room spell only when its attempt interval has expired.
+  if not s.room_attempt_recent then
+    -- 6. Air below 3 and Earth below 2 -> Bombard.
+    if s.air < 3 and s.earth < 2 then
+      return 'cast bombard at '..target, 'resonance_build', 'air_earth_build'
+    end
+    -- 7. Air at least 3, Fire below 3, Water below 2 -> Dehydrate.
+    if s.air >= 3 and s.fire < 3 and s.water < 2 then
+      return 'cast dehydrate at '..target, 'resonance_build', 'fire_water_build'
+    end
+    -- 8. Air at least 3 and Fire below 3 -> Firelash.
+    if s.air >= 3 and s.fire < 3 then
+      return 'cast firelash at '..target, 'resonance_build', 'fire_only_build'
+    end
+    -- 9. Air or Fire below 3 -> Fulminate.
+    if s.air < 3 or s.fire < 3 then
+      return 'cast fulminate at '..target, 'resonance_build', 'air_fire_build'
+    end
+    -- 10. Major Air and Fire -> Firestorm (a room spell, no target suffix).
+    return 'cast firestorm', 'firestorm', 'firestorm_ready'
+  end
+  -- 11. Conflagrate missing, at least two ablaze stacks, Fire >=2 -> Conflagrate.
+  if not s.conflagrate and s.aflame and s.fire >= 2 then
+    return 'cast conflagrate at '..target, 'fire_payoff', 'conflagrate_ready'
+  end
+  -- 12. Conflagrate missing and Fire at least 3 -> Fire Emanation.
+  if not s.conflagrate and s.fire >= 3 then
+    return 'cast emanation at '..target..' fire', 'fire_promotion', 'ablaze_setup'
+  end
+  -- 13. Confirmed Conflagrate and Earth at least 3 -> Earth Emanation.
+  if s.conflagrate and s.earth >= 3 then
+    return 'cast emanation at '..target..' earth', 'earth_promotion', 'conflag_emanate_earth'
+  end
+  -- 14. Fire below 3 and Water below 2 -> Dehydrate.
+  if s.fire < 3 and s.water < 2 then
+    return 'cast dehydrate at '..target, 'fire_build', 'fire_water_pressure'
+  end
+  -- 15. Air at least 3 and Fire below 3 -> Firelash.
+  if s.air >= 3 and s.fire < 3 then
+    return 'cast firelash at '..target, 'fire_build', 'fire_only_pressure'
+  end
+  -- 16. Otherwise -> Fulminate.
+  return 'cast fulminate at '..target, 'fire_build', 'fulminate_pressure'
+end
+
+-- INPUTS AND ROUTE CHECKS
 Yso.off.magi.route_core = Yso.off.magi.route_core or {}
 local RC = Yso.off.magi.route_core
-
--- Magma's Scalded effect lasts 20 seconds. Keep the send window target-local
--- while AK catches up; Earth setup must not bypass an existing Scalded effect.
-local MAGMA_DURATION = 20
-
-local PENDING_SLOTS = {
-  "pebble",
-  "stormhammer",
-  "destroy",
-  "erode",
-  "conflagrate",
-  "magma",
-  "mudslide",
-  "shalestorm",
-  "dehydrate",
-  "emanation",
-  "firelash",
-  "fulminate",
-  "firestorm",
-  "bombard",
+local RI = Yso.Combat and Yso.Combat.RouteInterface
+M.state = M.state or {}
+M.route_contract = {
+  id=M.key,interface_version=1,shared_categories={'defense_break'},route_local_categories={'execute','firestorm'},
+  capabilities={uses_eq=true,uses_bal=false,uses_entity=false,supports_burst=true,supports_bootstrap=false,needs_target=true},
+  override_policy={mode='narrow_global_only',allowed={target_invalid=true,target_slain=true,route_off=true,
+    pause=true,manual_suppression=true,target_swap_bootstrap=true}},
 }
-
-M.route_contract = M.route_contract or {
-  id = "magi_firestorm",
-  interface_version = 1,
-  shared_categories = { "defense_break" },
-  route_local_categories = { "execute", "firestorm" },
-  capabilities = {
-    uses_eq = true,
-    uses_bal = false,
-    uses_entity = false,
-    supports_burst = true,
-    supports_bootstrap = false,
-    needs_target = true,
-  },
-  override_policy = {
-    mode = "narrow_global_only",
-    allowed = {
-      target_invalid = true,
-      target_slain = true,
-      route_off = true,
-      pause = true,
-      manual_suppression = true,
-      target_swap_bootstrap = true,
-    },
-  },
-  lifecycle = {
-    on_enter = true,
-    on_exit = true,
-    on_target_swap = true,
-    on_pause = true,
-    on_resume = true,
-    on_manual_success = true,
-    on_send_result = true,
-    evaluate = true,
-    explain = true,
-  },
-}
-
-do
-  if RI and type(RI.ensure_hooks) == "function" then
-    RI.ensure_hooks(M, M.route_contract)
-  end
+if RI and RI.ensure_hooks then RI.ensure_hooks(M,M.route_contract) end
+local function ready() return type(RC.get_target)=='function' and type(RC.read_resonance)=='function' and type(RC.mark_pending)=='function' end
+local function is_magi()
+  local check=Yso.is_magi or (Yso.classinfo and Yso.classinfo.is_magi) or (Yso.magi and Yso.magi.defs and Yso.magi.defs.is_magi)
+  if type(check)~='function' then return false end
+  local ok,value=pcall(check)
+  return ok and value==true
 end
-
-local function _trim(s)
-  if type(RC.trim) == "function" then return RC.trim(s) end
-  return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+local function notify(message)
+  if M.cfg.echo and type(cecho)=='function' then cecho('<cadet_blue>[Yso:Magi] <reset>'..message..'\n') end
 end
-
-local function _echo(msg)
-  if M.cfg.echo ~= true then return end
-  if type(cecho) == "function" then
-    cecho(string.format("<cadet_blue>[Yso:Magi] <reset>%s\n", tostring(msg)))
-  elseif type(echo) == "function" then
-    echo(string.format("[Yso:Magi] %s\n", tostring(msg)))
-  end
+local function room_key()
+  local info=((rawget(_G,'gmcp') or {}).Room or {}).Info or {}
+  return tostring(info.num or info.id or 'unknown')
 end
-
-local function _is_magi()
-  if type(Yso.is_magi) == "function" then
-    local ok, v = pcall(Yso.is_magi)
-    if ok then return v == true end
-  end
-  local C = Yso and Yso.classinfo or nil
-  if type(C) == "table" and type(C.is_magi) == "function" then
-    local ok, v = pcall(C.is_magi)
-    if ok then return v == true end
-  end
-  local D = Yso and Yso.magi and Yso.magi.defs
-  if type(D) == "table" and type(D.is_magi) == "function" then
-    local ok, v = pcall(D.is_magi)
-    if ok then return v == true end
-  end
-  return false
-end
-
-local function _target_hp()
-  if type(RC.get_target_hp_percent) == "function" then
-    local ok, v = pcall(RC.get_target_hp_percent)
-    if ok and tonumber(v) then return tonumber(v) end
-  end
-  return nil
-end
-
-local function _target()
-  if type(RC.get_target) == "function" then
-    local t = _trim(RC.get_target())
-    if t ~= "" then return t end
-  end
-  return _trim(rawget(_G, "target") or "")
-end
-
-local function _shielded(tgt)
-  tgt = _trim(tgt):lower()
-  if Yso and Yso.shield and type(Yso.shield.up) == "function" and tgt ~= "" then
-    local ok, v = pcall(Yso.shield.up, tgt)
-    if ok then return v == true end
-  end
-  local ak = rawget(_G, "ak")
-  if ak and ak.defs then
-    if type(ak.defs.shield_by_target) == "table" and tgt ~= "" then
-      return ak.defs.shield_by_target[tgt] == true
-    end
-    return ak.defs.shield == true
-  end
-  return false
-end
-
-local function _cast(spell, tgt, extra)
-  extra = _trim(extra)
-  if extra ~= "" then
-    return "cast " .. spell .. " at " .. tgt .. " " .. extra
-  end
-  return "cast " .. spell .. " at " .. tgt
-end
-
-local function _route_is_active()
-  if not _is_magi() then return false end
-  if not (Yso and Yso.mode and type(Yso.mode.is_combat) == "function" and Yso.mode.is_combat() == true) then
-    return false
-  end
-  if Yso.mode and type(Yso.mode.route_loop_active) == "function" then
-    return Yso.mode.route_loop_active("magi_firestorm") == true
-  end
-  return M.state and M.state.loop_enabled == true
-end
-
-local function _room_key()
-  local g = rawget(_G, "gmcp")
-  local info = g and g.Room and g.Room.Info or {}
-  return tostring(info.num or info.id or "unknown")
-end
-
-local function _select_command(tgt)
-  local hp = _target_hp()
-  local res = RC.read_resonance()
-  local air, earth, fire = tonumber(res.air) or 0, tonumber(res.earth) or 0, tonumber(res.fire) or 0
-  local water = tonumber(res.water) or 0
-  local conflag = RC.has_aff("conflagrate") or RC.has_aff("conflagration")
-  local aflame_ready = RC.score_aff("aflame") >= 200
-  local scalded = RC.has_aff("scalded") or RC.pending_active(M.state, "magma", tgt)
-  local threshold = 3 -- Firestorm requires major resonance in both Air and Fire.
-  local room_sent = M.state.firestorm_rooms and M.state.firestorm_rooms[_room_key()] == true
-
-  if _shielded(tgt) then
-    return _cast("erode", tgt, "shield"), "defense_break", "shielded"
-  end
-  local special, reason, hold = RC.special_action(tgt)
-  if special or hold then return special, "special", reason end
-  if hp ~= nil and hp < 25 then
-    return _cast("stormhammer", tgt), "execute", "hp_stormhammer"
-  end
-
-  if RC.score_aff("scalded") < 100 and earth == 0 then
-    return _cast("pebble", tgt), "earth_setup", "scalded_missing_earth0"
-  end
-
-  if not scalded then
-    return _cast("magma", tgt), "fire_build", "scalded_missing"
-  end
-
-  -- Bombard builds Air/Earth; Fulminate builds Air/Fire. Read the actual
-  -- resonance triggers each tick rather than incrementing on a send.
-  if not room_sent then
-    if air < threshold and earth < 2 then
-      return _cast("bombard", tgt), "resonance_build", "air_earth_build"
-    end
-    if air >= threshold and fire < threshold and water < 2 then
-      return _cast("dehydrate", tgt), "resonance_build", "fire_water_build"
-    end
-    if air >= threshold and fire < threshold then
-      return _cast("firelash", tgt), "resonance_build", "fire_only_build"
-    end
-    if air < threshold or fire < threshold then
-      return _cast("fulminate", tgt), "resonance_build", "air_fire_build"
-    end
-    -- Firestorm is a room spell: no 'at <target>' suffix.
-    return "cast firestorm", "firestorm", "firestorm_ready"
-  end
-
-  if not conflag and aflame_ready and fire >= 2 then
-    return _cast("conflagrate", tgt), "fire_payoff", "conflagrate_ready"
-  end
-  if not conflag and fire >= 3 then
-    return _cast("emanation", tgt, "fire"), "fire_promotion", "ablaze_setup"
-  end
-  if conflag and earth >= 3 then
-    return _cast("emanation", tgt, "earth"), "earth_promotion", "conflag_emanate_earth"
-  end
-  if fire < threshold and water < 2 then
-    return _cast("dehydrate", tgt), "fire_build", "fire_water_pressure"
-  end
-  if air >= threshold and fire < threshold then
-    return _cast("firelash", tgt), "fire_build", "fire_only_pressure"
-  end
-  return _cast("fulminate", tgt), "fire_build", "fulminate_pressure"
-end
-
-local function _emit_payload(cmd, target, category)
-  cmd = _trim(cmd)
-  target = _trim(target)
-  if cmd == "" then return false, "empty", nil end
-
-  local opts = {
-    reason = "magi_firestorm:" .. tostring(category or "attack"),
-    kind = "offense",
-    commit = true,
-    route = "magi_firestorm",
-    target = target,
-  }
-
-  if RI and type(RI.emit_route_payload) == "function" then
-    return RI.emit_route_payload("magi_firestorm", {
-      target = target,
-      lanes = { eq = cmd },
-      meta = {
-        route = "magi_firestorm",
-        main_lane = "eq",
-        main_category = tostring(category or ""),
-      },
-    }, opts)
-  end
-
-  local payload = { eq = cmd, target = target }
-  if type(Yso.emit) == "function" then
-    if Yso.emit(payload, opts) == true then
-      return true, cmd, payload
-    end
-    return false, "emit_failed", nil
-  end
-  if type(send) == "function" then
-    local ok = pcall(send, cmd, false)
-    if ok then return true, cmd, payload end
-    return false, "send_failed", nil
-  end
-  return false, "no_send", nil
-end
-
 function M.init()
-  M.state = M.state or {}
-  M.state.loop_delay = tonumber(M.state.loop_delay or M.cfg.loop_delay or 0.15) or 0.15
-  M.state.template = M.state.template or { last_reason = "init", last_disable_reason = "", last_payload = nil, last_target = "" }
-  if type(RC.ensure_pending) == "function" then
-    RC.ensure_pending(M.state, PENDING_SLOTS)
-  end
-  if RI and type(RI.ensure_waiting_state) == "function" then
-    RI.ensure_waiting_state(M.state, "magi_firestorm")
-  end
+  M.state.loop_delay=M.cfg.loop_delay
+  M.state.pending=M.state.pending or {}
+  M.state.firestorm_rooms=M.state.firestorm_rooms or {}
+  M.state.template=M.state.template or {}
+  if RI and RI.ensure_waiting_state then RI.ensure_waiting_state(M.state,M.key) end
   return true
 end
-
-function M.is_enabled()
-  return M.state and M.state.enabled == true
+function M.clear_runtime()
+  M.init()
+  M.state.submission,M.state.pending=nil,{}
+  M.state.firestorm_dispatch=nil
+  M.state.last_ack_payload=Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload)
+  if RI and RI.clear_waiting then RI.clear_waiting(M.state,M.key) end
+  return true
 end
-
+function M.is_enabled() return M.state.enabled==true end
 function M.is_active()
+  if not is_magi() or not (Yso.mode and Yso.mode.is_combat and Yso.mode.is_combat()) then return false end
+  if Yso.mode.route_loop_active then return Yso.mode.route_loop_active(M.key)==true end
+  return M.state.loop_enabled==true
+end
+function M.can_run(ctx)
   M.init()
-  return _route_is_active()
+  ctx=type(ctx)=='table' and ctx or {}
+  if not ready() then return false,'core_unavailable' end
+  if not M.is_enabled() then return false,'disabled' end
+  if not M.is_active() then return false,'inactive' end
+  if Yso.offense_paused and Yso.offense_paused() then
+    if not ctx.preview then M.clear_runtime() end
+    return false,'paused'
+  end
+  local target=RC.trim(ctx.target or RC.get_target())
+  if target=='' then return false,'no_target' end
+  if not RC.same_target(target,RC.get_target()) then return false,'target_mismatch' end
+  if not RC.target_valid(target) then return false,'invalid_target' end
+  if not RC.eq_ready() then return false,'eq_down' end
+  return true,target
+end
+function M.snapshot(target)
+  local r,score=RC.read_resonance(),RC.score_aff
+  local defs=(rawget(_G,'ak') or {}).defs or {}
+  local shield=defs.shield
+  if defs.shield_by_target then shield=defs.shield_by_target[target:lower()] end
+  if Yso.shield and Yso.shield.up then shield=Yso.shield.up(target:lower()) end
+  local special,reason,hold=RC.special_action(target)
+  local attempted=(M.state.firestorm_rooms or {})[room_key()]
+  return {target=target,hp=RC.get_target_hp_percent(target),shield=shield==true,
+    air=r.air,earth=r.earth,fire=r.fire,water=r.water,
+    scalded=score('scalded')>=M.cfg.confirmed_score,
+    conflagrate=math.max(score('conflagrate'),score('conflagration'))>=M.cfg.confirmed_score,
+    aflame=score('aflame')>=M.cfg.aflame_score,
+    room=room_key(),room_attempt_recent=type(attempted)=='number' and RC.now()-attempted<M.cfg.firestorm_retry_s,
+    special=special,special_reason=reason,special_hold=hold}
 end
 
-function M.can_run(reason)
-  M.init()
-  local ctx = type(reason) == "table" and reason or {}
-  if not M.is_enabled() then return false, "disabled" end
-  if not M.is_active() then return false, "inactive" end
-  if type(Yso.offense_paused) == "function" and Yso.offense_paused() then return false, "paused" end
-  local tgt = _trim((ctx and ctx.target) or _target())
-  if tgt == "" then return false, "no_target" end
-  if not _is_magi() then return false, "wrong_class" end
-  if type(RC.target_valid) == "function" and not RC.target_valid(tgt) then
-    return false, "invalid_target"
+-- SENDING: reserve before emit; an acknowledgement confirms dispatch, not spell success.
+local function last_ack() return Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload) end
+local function flight(target,preview)
+  local sub=M.state.submission
+  if sub and (not RC.same_target(sub.target,target) or RC.now()>=sub.until_t) then
+    if not preview then M.clear_runtime() end
+    return nil
   end
-  if type(RC.eq_ready) == "function" and not RC.eq_ready() then
-    return false, "eq_down"
-  end
-  return true, tgt
+  return sub
 end
-
 function M.attack_function(arg)
-  M.init()
-  local ctx = type(arg) == "table" and arg or { reason = tostring(arg or "loop") }
-  if type(RC.entourage_sync) == "function" then
-    RC.entourage_sync(M, ctx.target or _target(), _is_magi(), ctx.preview)
+  local ctx=type(arg)=='table' and arg or {}
+  if ready() then
+    local target=RC.get_target()
+    if not ctx.target or RC.same_target(ctx.target,target) then RC.entourage_sync(M,target,is_magi(),ctx.preview) end
   end
-  local ok, info = M.can_run(ctx)
-  if not ok then return false, info end
-  local tgt = info
-  local cmd, category, reason = _select_command(tgt)
-  M.state.template.last_reason = reason
-  M.state.template.last_target = tgt
-  if not cmd or cmd == "" then return false, reason or "empty" end
-
-  if cmd == _cast("pebble", tgt) and RC.pending_active(M.state, "pebble", tgt) then
-    M.state.template.last_reason = "pebble_pending"
-    return false, "pebble_pending"
+  local ok,target=M.can_run(ctx)
+  if not ok then return false,target end
+  local sub=flight(target,ctx.preview)
+  if sub and not sub.acknowledged then return false,sub.slot..'_pending' end
+  local command,category,reason=M.choose(M.snapshot(target))
+  if not ctx.preview then M.state.template.last_reason,M.state.template.last_target=reason,target end
+  if not command then return false,reason end
+  local slot=command:match('^cast%s+(%S+)') or 'eq'
+  local pending=M.state.pending[slot]
+  if pending and RC.same_target(pending.target,target) and RC.now()<pending.until_t then
+    if not ctx.preview then M.state.template.last_reason=slot..'_pending' end
+    return false,slot..'_pending'
   end
-
-  if ctx.preview then return {target=tgt,lanes={eq=cmd},meta={main_category=category,main_reason=reason}} end
-
-  local sent, emit_detail, ack_payload = _emit_payload(cmd, tgt, category)
-  if sent ~= true then return false, emit_detail or "emit_failed" end
-  -- Cover the submission-to-ack gap without predicting resonance or limb damage.
-  if cmd == _cast("pebble", tgt) then RC.mark_pending(M.state, "pebble", tgt, 1.0) end
-  RC.note_special_queued(cmd, tgt)
-
-  if RI and type(RI.mark_waiting) == "function" then
-    RI.mark_waiting(M.state, "magi_firestorm", ack_payload or { eq = cmd, target = tgt }, {
-      cmd = cmd,
-      target = tgt,
-      main_lane = "eq",
-    })
-  end
-  local has_ack_bus = Yso and Yso.locks and type(Yso.locks.note_payload) == "function"
-  local dry_run = (Yso and Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run == true)
-  local queue_live = Yso and Yso.queue and type(Yso.queue.commit) == "function"
-  if (not has_ack_bus or dry_run or not queue_live) and type(M.on_payload_queued) == "function" then
-    pcall(M.on_payload_queued, ack_payload or { eq = cmd, target = tgt })
-  end
-
-  M.state.last_cmd = cmd
-  M.state.last_category = category
-  M.state.last_target = tgt
-  return true, cmd
+  local payload={target=target,eq=command,lanes={eq=command},meta={main_lane='eq',main_category=category,main_reason=reason}}
+  if ctx.preview then return payload end
+  sub={cmd=command,target=target,slot=slot,until_t=RC.now()+M.cfg.pending_s,emitting=true,previous_eq_ack=last_ack()}
+  M.state.submission=sub
+  if RI and RI.mark_waiting then RI.mark_waiting(M.state,M.key,payload,{main_lane='eq'}) end
+  local opts={route=M.key,target=target,kind='offense',commit=true,reason=M.key..':'..category}
+  local sent,detail,ack
+  if RI and RI.emit_route_payload then sent,detail,ack=RI.emit_route_payload(M.key,payload,opts)
+  elseif type(Yso.emit)=='function' then sent=Yso.emit(payload,opts);ack=payload end
+  sub.emitting,sub.payload=false,ack
+  if sent~=true then M.clear_runtime();return false,detail or 'emit_failed' end
+  RC.mark_pending(M.state,slot,target,M.cfg.pending_s)
+  RC.note_special_queued(command,target)
+  local bus=Yso.locks and Yso.locks.note_payload and Yso.queue and Yso.queue.commit
+  if not sub.acknowledged and (not bus or (Yso.net and Yso.net.cfg and Yso.net.cfg.dry_run)) then M.on_payload_sent(ack or payload) end
+  M.state.last_cmd,M.state.last_category,M.state.last_target=command,category,target
+  return true,command
 end
-
-function M.on_payload_queued(payload)
-  M.init()
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  local cmd = _trim(lanes.eq or payload.eq)
-  if cmd == "" and payload.lanes == nil and not (payload.bal or payload.free
-      or payload.class or payload.ent or payload.entity) then
-    cmd = _trim(payload.cmd)
-  end
-  local tgt = _trim(payload.target or _target())
-  -- A generic server rejection belongs only to the outstanding EQ action.
-  -- Shared EQ history also detects later actions sent by another route,
-  -- even when subsequent acknowledgements spend only other lanes.
-  if cmd ~= "" then M.state.firestorm_dispatch = nil end
-  if cmd ~= "" and type(RC.mark_pending) == "function" then
-    local slot = cmd:match("^cast%s+(%S+)")
-    if slot then RC.mark_pending(M.state, slot, tgt, slot == "magma" and MAGMA_DURATION or 1.0) end
-  end
-  if cmd == "cast firestorm" then
-    -- This records a dispatched attempt, not a confirmed active room effect.
-    -- One attempt per room per loop activation prevents a room-spell resend
-    -- on every EQ regain, including when the target changes.
-    M.state.firestorm_rooms = M.state.firestorm_rooms or {}
-    M.state.firestorm_rooms[_room_key()] = true
-    M.state.firestorm_dispatch = {
-      payload = payload, room = _room_key(),
-      eq_ack = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload),
-    }
-  end
-  if RI and type(RI.clear_waiting_on_ack) == "function" then
-    RI.clear_waiting_on_ack(M.state, "magi_firestorm", payload, { require_route = false })
-  end
-  return true
-end
-
 function M.on_payload_sent(payload)
-  return M.on_payload_queued(payload)
-end
-
-function M.on_send_result(payload, ctx)
-  payload = type(payload) == "table" and payload or {}
-  local lanes = type(payload.lanes) == "table" and payload.lanes or payload
-  M.state.last_fired_cmd = _trim(lanes.eq or payload.eq or payload.cmd)
-  local dispatch = M.state.firestorm_dispatch
-  if type(ctx) == "table" and ctx.success == false and dispatch
-      and dispatch.payload == payload and M.state.last_fired_cmd == "cast firestorm" then
-    M.state.firestorm_rooms[dispatch.room] = nil
-    M.state.firestorm_dispatch = nil
-    if type(RC.clear_pending) == "function" then RC.clear_pending(M.state, "firestorm") end
+  M.init()
+  if not ready() or type(payload)~='table' then return false end
+  if RI and RI.payload_has_any_route and RI.payload_has_any_route(payload) and not RI.payload_has_route(payload,M.key) then return false end
+  local lanes=payload.lanes or payload
+  local command=lanes.eq or payload.eq
+  if not command and not payload.lanes and not (payload.bal or payload.free or payload.class or payload.ent or payload.entity) then command=payload.cmd end
+  command=RC.trim(command)
+  if command=='' then return false end
+  local sub,latest=M.state.submission,last_ack()
+  if payload==M.state.last_ack_payload or (sub and payload==sub.previous_eq_ack) then return false end
+  local target=RC.trim(payload.target or RC.get_target())
+  local matched=sub and not sub.acknowledged and command==sub.cmd and RC.same_target(target,sub.target)
+    and (payload==sub.payload or payload==latest)
+  -- Direct/manual API dispatches also reach this hook through the canonical ACK bus.
+  if not matched and payload~=latest then return false end
+  if matched then
+    sub.acknowledged,sub.ack_payload,sub.until_t=true,payload,RC.now()+M.cfg.pending_s
+    RC.mark_pending(M.state,sub.slot,target,M.cfg.pending_s)
+    if RI and RI.clear_waiting then RI.clear_waiting(M.state,M.key) end
+  elseif sub then M.clear_runtime() end
+  M.state.last_ack_payload=payload
+  M.state.firestorm_dispatch=nil
+  if command=='cast firestorm' then
+    local room=room_key()
+    M.state.firestorm_rooms[room]=RC.now()
+    M.state.firestorm_dispatch={payload=payload,room=room,eq_ack=latest}
   end
   return true
 end
-
-function M.on_resonance_failure(required, element)
-  local dispatch = M.state.firestorm_dispatch
-  if not dispatch or required ~= 3 or (element ~= "air" and element ~= "fire") then return false end
-  local latest = Yso._last_eq_ack_payload or (Yso.queue and Yso.queue._last_ack_payload)
-  if latest and latest ~= dispatch.eq_ack and latest ~= dispatch.payload then
-    local lanes = type(latest.lanes) == "table" and latest.lanes or latest
-    if _trim(lanes.eq or latest.eq) ~= "" then
-      M.state.firestorm_dispatch = nil
-      return false
-    end
+M.on_payload_queued=M.on_payload_sent
+function M.on_send_result(payload,ctx)
+  if not (type(ctx)=='table' and ctx.success==false) then return true end
+  local sub,dispatch=M.state.submission,M.state.firestorm_dispatch
+  if dispatch and payload==dispatch.payload then
+    M.state.firestorm_rooms[dispatch.room]=nil
+    M.state.firestorm_dispatch=nil
+    if ready() then RC.clear_pending(M.state,'firestorm') end
   end
-  return M.on_send_result(dispatch.payload, { success = false })
+  if sub and (payload==sub.payload or payload==sub.ack_payload) then M.clear_runtime() end
+  return true
 end
-
-M.alias_loop_stop_details = M.alias_loop_stop_details or {
-  inactive = true,
-  disabled = true,
-  no_target = true,
-  invalid_target = true,
-  wrong_class = true,
-}
-
-function M.alias_loop_prepare_start(ctx)
+function M.on_resonance_failure(required,element)
+  local dispatch=M.state.firestorm_dispatch
+  if not dispatch or required~=3 or (element~='air' and element~='fire') then return false end
+  local latest=last_ack()
+  if latest and latest~=dispatch.eq_ack and latest~=dispatch.payload then
+    local lanes=latest.lanes or latest
+    if RC.trim(lanes.eq or latest.eq)~='' then M.state.firestorm_dispatch=nil;return false end
+  end
+  return M.on_send_result(dispatch.payload,{success=false})
+end
+function M.on_firestorm_ended(room)
   M.init()
-  return ctx or {}
-end
-
-function M.alias_loop_on_started(ctx)
-  M.init()
-  if type(RC.entourage_sync) == "function" then
-    RC.entourage_sync(M, _target(), _is_magi())
-  end
-  M.state.firestorm_rooms = {}
-  M.state.firestorm_dispatch = nil
-  if type(RC.clear_pending_all) == "function" then
-    RC.clear_pending_all(M.state, PENDING_SLOTS)
-  end
-  _echo("Firestorm loop ON.")
-  local tgt = _target()
-  if tgt == "" then
-    _echo("No target yet; holding.")
-  end
-end
-
--- A confirmed end/failure trigger can reopen the room step without toggling.
-function M.on_firestorm_ended()
-  M.state.firestorm_rooms = M.state.firestorm_rooms or {}
-  M.state.firestorm_rooms[_room_key()] = nil
+  M.state.firestorm_rooms[tostring(room or room_key())]=nil
   return true
 end
 
+-- LOOP LIFECYCLE
+M.alias_loop_stop_details={inactive=true,disabled=true,no_target=true,invalid_target=true,wrong_class=true,core_unavailable=true}
+function M.alias_loop_prepare_start(ctx) M.clear_runtime();return ctx or {} end
+function M.alias_loop_on_started()
+  M.clear_runtime();M.state.firestorm_rooms,M.state.firestorm_dispatch={},nil
+  if ready() then RC.entourage_sync(M,RC.get_target(),is_magi()) end
+  notify('Firestorm loop ON.')
+end
 function M.alias_loop_on_stopped(ctx)
-  M.init()
-  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
-  ctx = ctx or {}
-  local reason = tostring(ctx.reason or "manual")
-  M.state.template.last_disable_reason = reason
-  if ctx.silent ~= true then
-    _echo(string.format("Firestorm loop OFF (%s).", reason))
-  end
+  M.clear_runtime();M.state.firestorm_rooms,M.state.firestorm_dispatch={},nil
+  if RC.entourage_passive then RC.entourage_passive(M) end
+  ctx=ctx or {};M.state.template.last_disable_reason=ctx.reason or 'manual'
+  if not ctx.silent then notify('Firestorm loop OFF ('..M.state.template.last_disable_reason..').') end
 end
-
 function M.alias_loop_waiting_blocks()
-  return false
+  if not ready() then return false end
+  if Yso.offense_paused and Yso.offense_paused() then M.clear_runtime();return false end
+  local sub=flight(RC.get_target())
+  return sub~=nil and not sub.acknowledged
 end
-
-function M.alias_loop_clear_waiting()
-  if RI and type(RI.clear_waiting) == "function" then
-    return RI.clear_waiting(M.state, "magi_firestorm")
-  end
+M.alias_loop_clear_waiting=M.clear_runtime
+M.on_target_swap=M.clear_runtime
+M.on_pause=M.clear_runtime
+function M.alias_loop_on_error(err) notify('Firestorm loop error: '..tostring(err)) end
+function M.on_exit()
+  M.alias_loop_on_stopped({silent=true,reason='exit'})
+  if Yso.mode and Yso.mode.stop_route_loop then Yso.mode.stop_route_loop(M.key,'exit',true) end
   return true
 end
-
-function M.alias_loop_on_error(err)
-  _echo("Firestorm loop error: " .. tostring(err))
+function M.evaluate(ctx) return M.attack_function({preview=true,target=type(ctx)=='table' and ctx.target or nil}) end
+function M.explain()
+  if not ready() then return {reason='core_unavailable'} end
+  local s=M.snapshot(RC.get_target());s.command,s.category,s.reason=M.choose(s)
+  return s
 end
-
-function M.on_exit(ctx)
-  if type(RC.entourage_passive) == "function" then RC.entourage_passive(M) end
-  if Yso and Yso.mode and type(Yso.mode.stop_route_loop) == "function" then
-    Yso.mode.stop_route_loop("magi_firestorm", "exit", true)
-  end
-  return true
-end
-
-if Yso.off.core and type(Yso.off.core.register) == "function" then
-  pcall(Yso.off.core.register, M.key, M)
-end
-
+M.clear_runtime();M.state.firestorm_rooms,M.state.firestorm_dispatch={},nil
+if Yso.off.core and Yso.off.core.register then Yso.off.core.register(M.key,M) end
 return M

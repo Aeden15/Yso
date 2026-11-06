@@ -33,6 +33,10 @@ function F.failure(word, element)
   if firestorm and type(firestorm.on_resonance_failure) == 'function' then
     firestorm.on_resonance_failure(required, element)
   end
+  local water = Yso.off and Yso.off.magi and Yso.off.magi.water_group
+  if water and type(water.on_resonance_failure) == 'function' then
+    water.on_resonance_failure(required, element)
+  end
   report('Spell rejected: ' .. tostring(word) .. ' ' .. element
     .. ' resonance required. Actual level remains supplied by AK.')
   F.notice()

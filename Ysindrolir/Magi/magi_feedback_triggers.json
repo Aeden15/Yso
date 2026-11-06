@@ -1,0 +1,569 @@
+{
+  "schema_version": 1,
+  "source": "MagiSwinginTriggas.xml (user-supplied reference; scripts adapted, never imported verbatim)",
+  "triggers": [
+    {
+      "source_name": "tfix",
+      "name": "Magi feedback transfix",
+      "folder": "Elementalism",
+      "event": "transfix",
+      "patterns": [
+        "^With blinding speed, you weave fire and air together in a hypnotic pattern that transfixes (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Magma (Scald)",
+      "name": "Magi feedback magma",
+      "folder": "Elementalism",
+      "event": "magma",
+      "patterns": [
+        "^You weave fire and earth and bubbling magma boils into existence to wash over (\\S+) in a skin-melting tide\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Dehydrate",
+      "name": "Magi feedback dehydrate_attempt",
+      "folder": "Elementalism",
+      "event": "dehydrate_attempt",
+      "patterns": [
+        "^Weaving the elements of fire and water, you attempt to rip the excess water from the body of (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Dehydrate",
+      "name": "Magi feedback dehydrate_dry",
+      "folder": "Elementalism",
+      "event": "dehydrate_dry",
+      "patterns": [
+        "^The skin of (\\S+) begins to dry and crack as \\S+ grows pale\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Dehydrate Burning",
+      "name": "Magi feedback dehydrate_burning",
+      "folder": "Elementalism",
+      "event": "dehydrate_burning",
+      "patterns": [
+        "^You fan the heat of (\\S+)'s body into consuming flame\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Dehydrate freeze",
+      "name": "Magi feedback dehydrate_freeze",
+      "folder": "Elementalism",
+      "event": "dehydrate_freeze",
+      "patterns": [
+        "^You rip the heat from (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Bombard",
+      "name": "Magi feedback bombard",
+      "folder": "Elementalism",
+      "event": "bombard",
+      "patterns": [
+        "^You tap the Elemental Plane of Earth, summoning up a flurry of rocks to bombard (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Fulminate",
+      "name": "Magi feedback fulminate",
+      "folder": "Elementalism",
+      "event": "fulminate",
+      "patterns": [
+        "^You click your fingers and lightning strikes from the air to smite (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Mudslide",
+      "name": "Magi feedback mudslide",
+      "folder": "Elementalism",
+      "event": "mudslide",
+      "patterns": [
+        "^You weave earth and water and a torrent of thick mud thunders forth to roll over (\\S+), knocking \\S+ sprawling\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Asthma",
+      "name": "Magi feedback asthma",
+      "folder": "Elementalism",
+      "event": "asthma",
+      "patterns": [
+        "^(\\S+) clutches at \\S+ throat as \\S+ gasps for breath\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Sensitivity",
+      "name": "Magi feedback sensitivity",
+      "folder": "Elementalism",
+      "event": "sensitivity",
+      "patterns": [
+        "^A vicious wind rises, lashing and flaying at the body of (\\S+) to leave \\S+ sensitive and raw\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Healthleech",
+      "name": "Magi feedback healthleech",
+      "folder": "Elementalism",
+      "event": "healthleech",
+      "patterns": [
+        "^A dreadful pallor overcomes the features of (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Frostbite",
+      "name": "Magi feedback frostbite",
+      "folder": "Elementalism",
+      "event": "frostbite",
+      "patterns": [
+        "^As you begin to tap your connection with the Elemental Plane of Water, you summon up a freezing wave to deluge (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Stuttering",
+      "name": "Magi feedback stuttering",
+      "folder": "Elementalism",
+      "event": "stuttering",
+      "patterns": [
+        "^You summon up a flurry of icicles to slash at (\\S+) in a shower of freezing daggers\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Anorexia",
+      "name": "Magi feedback anorexia",
+      "folder": "Elementalism",
+      "event": "anorexia",
+      "patterns": [
+        "^The might of Elemental Water suffusing you, you tear at the vital fluids which sustain the body of (\\S+) with your will alone\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Limb break",
+      "name": "Magi feedback limb_break",
+      "folder": "Elementalism",
+      "event": "limb_break",
+      "patterns": [
+        "^A loud crack emanates from the (.+) of (\\S+)\\.$"
+      ],
+      "target_group": 3,
+      "detail_group": 2
+    },
+    {
+      "source_name": "Paralysis",
+      "name": "Magi feedback paralysis",
+      "folder": "Elementalism",
+      "event": "paralysis",
+      "patterns": [
+        "^You bleed off residual power from your connection with the Elemental Plane of Earth, directing it in an unfocussed blast of arcane might at (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Ablaze",
+      "name": "Magi feedback fire_moderate",
+      "folder": "Elementalism",
+      "event": "fire_moderate",
+      "patterns": [
+        "^You will that (\\S+) should burn, and so \\S+ does\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Blistered",
+      "name": "Magi feedback blisters",
+      "folder": "Elementalism",
+      "event": "blisters",
+      "patterns": [
+        "^The incandescent might of Elemental Fire filling you, you command (\\S+) to burn from within\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Fire3 Burning",
+      "name": "Magi feedback fire_major_burning",
+      "folder": "Elementalism",
+      "event": "fire_major_burning",
+      "patterns": [
+        "^The incandescent might of Elemental Fire filling you, you command the suffering (\\S+) to burn from within\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Emanate Air",
+      "name": "Magi feedback emanation_air",
+      "folder": "Elementalism",
+      "event": "emanation_air",
+      "patterns": [
+        "^You sweep .+ over your head and a great wind rises, picking up (\\S+) and dashing them violently about before casting them back to the ground\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Emanate Earth",
+      "name": "Magi feedback emanation_earth",
+      "folder": "Elementalism",
+      "event": "emanation_earth",
+      "patterns": [
+        "^The might of elemental Earth thrumming within your bones, you point .+ at (\\S+) and an intangible wave of power strikes forth to smite \\S+\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Emanate Water",
+      "name": "Magi feedback emanation_water",
+      "folder": "Elementalism",
+      "event": "emanation_water",
+      "patterns": [
+        "^The might of elemental Water surging through your body, you make the slightest flick with .+, and the hand of Sllshya descends as a freezing deluge to smash (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Emanate Fire",
+      "name": "Magi feedback emanation_fire",
+      "folder": "Elementalism",
+      "event": "emanation_fire",
+      "patterns": [
+        "^The might of elemental Fire filling you like a scorching river, you lift .+ to point at (\\S+) and unleash a stream of searing flame\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Hypothermia",
+      "name": "Magi feedback hypothermia",
+      "folder": "Elementalism",
+      "event": "hypothermia",
+      "patterns": [
+        "^You blast (\\S+) with an icy stream of water, and \\S+ begins to shiver uncontrollably\\.$",
+        "^\\S+ blasts (\\S+) with an icy stream of water, and \\S+ begins to shake and shiver uncontrollably\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Conflagrate",
+      "name": "Magi feedback conflagrate",
+      "folder": "Elementalism",
+      "event": "conflagrate",
+      "patterns": [
+        "^You bend your will upon (\\S+), and command that \\S+ burn\\.$",
+        "^\\S+ lifts a hand towards (\\S+) and in an instant raging flames manifest to devour \\S+ victim\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Conflag fail",
+      "name": "Magi feedback conflagrate_fail",
+      "folder": "Elementalism",
+      "event": "conflagrate_fail",
+      "patterns": [
+        "^You bend your will upon (\\S+), attempting to rouse a conflagration to consume \\S+, but to no avail\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Freeze",
+      "name": "Magi feedback freeze",
+      "folder": "Elementalism",
+      "event": "freeze",
+      "patterns": [
+        "^You raise a hand towards (\\S+) and blast \\S+ with cold, frigid air\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Deepfreeze",
+      "name": "Magi feedback deepfreeze",
+      "folder": "Elementalism",
+      "event": "deepfreeze",
+      "patterns": [
+        "^You drain the heat from the air around your enemies, causing them to experience the cold of the abyss itself\\.$"
+      ],
+      "target_group": null,
+      "detail_group": null
+    },
+    {
+      "source_name": "Immolation",
+      "name": "Magi feedback immolation",
+      "folder": "Artificing",
+      "event": "immolation",
+      "patterns": [
+        "^You sense a combustive spark take hold of (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Scintilla gives burning",
+      "name": "Magi feedback scintilla_burning",
+      "folder": "Artificing",
+      "event": "scintilla_burning",
+      "patterns": [
+        "^Flames ignite all over the body of (\\S+), fanned to intensity in an instant\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "tfx unb",
+      "name": "Magi feedback unblind",
+      "folder": "Elementalism",
+      "event": "unblind",
+      "patterns": [
+        "^You weave fire and air together to transfix (\\S+), but succeed only in curing"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Lightning Stupidity",
+      "name": "Magi feedback lightning_stupidity",
+      "folder": "Artificing",
+      "event": "lightning_stupidity",
+      "patterns": [
+        "^As the lightning bolt courses through (\\S+), a strangely blank expression descends over \\S+ features\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Erode",
+      "name": "Magi feedback erode_start",
+      "folder": "Elementalism",
+      "event": "erode_start",
+      "patterns": [
+        "^You cast a spell of erosion at (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Erode",
+      "name": "Magi feedback erode_result",
+      "folder": "Elementalism",
+      "event": "erode_result",
+      "patterns": [
+        "^\\w+ (\\w+) defence is eroded away\\.$"
+      ],
+      "target_group": null,
+      "detail_group": 2
+    },
+    {
+      "source_name": "Firelash",
+      "name": "Magi feedback firelash",
+      "folder": "Elementalism",
+      "event": "firelash",
+      "patterns": [
+        "^You form a lash of fire, and send it to scorch the flesh of (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Plague trash",
+      "name": "Magi feedback plague",
+      "folder": "Crystalism",
+      "event": "plague",
+      "patterns": [
+        "^You hear two loud snaps and see (\\S+) fall to the ground\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Dissonance escalation",
+      "name": "Magi feedback dissonance_escalation",
+      "folder": "Crystalism",
+      "event": "dissonance_escalation",
+      "patterns": [
+        "^A dissonant hum rises from the body of (\\S+)\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    },
+    {
+      "source_name": "Conflag going",
+      "name": "Magi feedback conflagrate_tick",
+      "folder": "Elementalism",
+      "event": "conflagrate_tick",
+      "patterns": [
+        "^The conflagration about (\\S+) continues to rage, searing flesh from bone\\.$"
+      ],
+      "target_group": 2,
+      "detail_group": null
+    }
+  ],
+  "retire_ak": [
+    {
+      "parent": "Elementalism",
+      "name": "Magma",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Elementalism",
+      "name": "Dehydrate",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Elementalism",
+      "name": "Bombard",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Elementalism",
+      "name": "Lightning",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Elementalism",
+      "name": "Mud Slide",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Elementalism",
+      "name": "Frozen",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Elementalism",
+      "name": "Firelash/Scintilla",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Air 1",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Air 2",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Air 3",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Water 1",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Water 2",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Water 3",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Earth 1",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Earth 2",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Fire 2",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Affs",
+      "name": "Fire 3",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Emanation",
+      "name": "Air",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Emanation",
+      "name": "Earth",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Emanation",
+      "name": "Fire",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Emanation",
+      "name": "Water",
+      "scope": "Magi Group"
+    },
+    {
+      "parent": "Artificing",
+      "name": "Conflagrate",
+      "scope": "Obviously(i)"
+    }
+  ],
+  "remove_ak_patterns": [
+    {
+      "contains": "You drain the heat from the air around your enemies",
+      "parent": "Elementalism",
+      "name": "Deepfreeze",
+      "scope": "Magi Group"
+    },
+    {
+      "contains": "You cast a spell of erosion at",
+      "parent": "Shielded",
+      "name": "Shield Down",
+      "scope": "Defenses(i)"
+    },
+    {
+      "contains": "You hear two loud snaps and see",
+      "parent": "Obviously(i)",
+      "name": "Prone",
+      "scope": "Obviously(i)"
+    }
+  ]
+}

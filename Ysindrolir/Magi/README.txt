@@ -1,6 +1,6 @@
 Magi workspace notes
 ====================
-Last updated: October 23, 2026
+Last updated: November 5, 2026
 
 This folder is the class-specific home for Magi work. Live behavior is defined by
 the installed Mudlet package (Ysindrolir/mudlet packages/Yso system.xml): use
@@ -11,6 +11,119 @@ of ordinary in-Mudlet play.
 
 Current fixes
 -------------
+  fstorm repair / manual editing (November 5):
+    Magi_firestorm.lua stays one file, in the same layout as gwater. SETTINGS
+    and 16 numbered GIVING ORDER rules come first, with literal full commands.
+    Edit the first matching if/return rule to change priority. Snapshot inputs,
+    bounded sending and loop lifecycle follow below. M.explain() reports the
+    chosen command, reason and supporting state without sending.
+
+    Scalded and Conflagrate require confirmed scores >=100; two ablaze stacks
+    require aflame >=200. Magma submission/acknowledgement never supplies a
+    pretend Scalded effect. All spell sends have a short pending window, with
+    pre-emit reservation, matched acknowledgements/rejections, and cleanup on
+    stop/pause/target swap/reload. Foreign explicit targets and missing shared
+    core hold safely. Shield, shared finishers and Stormhammer below 25% keep
+    priority; the existing resonance-build/payoff rules remain readable above.
+
+    firestorm_retry_s=30 is a minimum interval between room spell ATTEMPTS,
+    not a guessed effect lifetime. Attempts no longer suppress the room step
+    forever. Actual Firestorm dispatch records the current room; matched major
+    Air/Fire rejection releases that room early. No unverified success/end
+    message is installed. on_firestorm_ended(room_id) can reopen a known room
+    when supplied real evidence; automatic eligibility also returns after the
+    editable retry interval. Target swaps do not reset this room cadence.
+
+    Rebuild and verify from Ysindrolir:
+      pwsh -File scripts/build_magi_firestorm_package.ps1
+      lua "Yso/Tests and rebuilds/test_magi_firestorm.lua"
+      pwsh -File scripts/test_magi_firestorm_package.ps1
+    Publish with scripts/publish_workspace_link.ps1, then use ysoreload while
+    combat automation is stopped. The scoped builder preserves other scripts.
+
+  gwater repair / manual editing (November 5):
+    Magi_water_group.lua stays one file. SETTINGS and GIVING ORDER come first:
+    M.choose contains 16 numbered rules with full cast commands, in execution
+    priority order. Edit those if/return rules directly; the first match wins.
+    The remaining sections are INPUTS AND ROUTE CHECKS, SENDING, LOOP LIFECYCLE.
+    Timings/thresholds are in M.cfg. Reimporting applies these file settings,
+    replacing runtime overrides. M.explain() reports the choice and its reason.
+
+    Shield handling, shared finishers and Stormhammer at <=20% remain first.
+    Confirmed Glaciate precedes Horripilation and optional Pebble. Rule 5 casts
+    staff cast horripilation at <target> when AK's frozen score is at least 200
+    (shivering or fully frozen) and Waterbonds is below confirmed score 100.
+    Fit both Horripilation and Glacial crystals for this Waterbonds setup.
+    Existing AK named gain/fade feedback controls Waterbonds; sending does not
+    predict success or start a guessed 35/45-second duration timer.
+    Water/Air deficits are
+    repaired explicitly, including capped Fire/Water. Weariness prevents using
+    Dehydrate as the shivering-to-frozen step. Fully frozen pressure spends
+    major Earth/Water and applies Mudslide when Hypothermia is disabled.
+
+    Cold gates use AK's numeric ladder conservatively: 100 includes stripped
+    insulation, 200 is the configured shivering threshold, 300 the fully-frozen
+    threshold. These are editable assumptions about AK's existing ladder, not
+    newly confirmed spell outcomes; check current game feedback before changing
+    them. Possible scores do not satisfy confirmed affliction prerequisites.
+
+    The supplied MagiSwinginTriggas.xml provides current named Hypothermia
+    success patterns. With the installed Magi spell feedback module, automatic
+    Hypothermia defaults ON; standalone route source without that module stays
+    OFF. Set allow_hypothermia=false to disable it. AK's existing Hypothermia
+    cure path is retained. The disabled old golem trigger is not reused; no
+    failure response is invented. Sending never predicts afflictions or damage.
+
+    Unsupported calcifiedtorso follow-ups were removed. Earth Emanation records
+    the supplied named torso-hit evidence and consumes Earth resonance, without
+    fabricating calcifiedhead or an uncureable torso score. Add a complete torso
+    score/reset/cure model before using it for body-part-specific route choices.
+
+    All EQ submissions have bounded pending protection. A matching queue ack
+    resolves waiting, not spell success. Stop/pause/target swaps clear local
+    reservations; matched rejections reopen retries without changing AK.
+
+    Rebuild Water and shared resonance feedback:
+      pwsh -File scripts/build_magi_water_package.ps1
+    Verify:
+      lua "Yso/Tests and rebuilds/test_magi_water_group.lua"
+      pwsh -File scripts/test_magi_water_package.ps1
+      pwsh -File scripts/test_magi_water_cold_tracking.ps1
+    Editing these disk files alone does not update a running Mudlet profile.
+
+  Supplied trigger integration (MagiSwinginTriggas.xml):
+    All 37 supplied trigger behaviors are represented by 39 normalized named
+    confirmations under Magi/Elementalism, Magi/Artificing and Magi/Crystalism.
+    Dehydrate and Erode are split into explicit attempts and named outcomes.
+    Pattern data lives in magi_feedback_triggers.json; actions live in
+    magi_spell_feedback.lua. The original foreign scripts are not executed.
+
+    Imported reactions use AK's OppGainedAff/OppLostAff and flame stack helper,
+    target/AI guards and safe captured timers. There are no party sends, foreign
+    targetting()/f-string dependencies, extra Convergence ticks or guessed HP
+    subtraction. Unnamed Deepfreeze records a room observation, not a victim's
+    cold stage. Water Emanation preserves the reference's cold+disrupt effect;
+    the separate Water icicle proc tracks stuttering.
+
+    Yso owns these confirmations. The matching legacy AK children are disabled;
+    only the migrated alternatives are removed from mixed AK handlers. Other
+    class reactions, 33 shared Prone alternatives, 40 Shield Down alternatives,
+    named third-person Deepfreeze notices and AK cure handling are preserved.
+
+    Build the paired packages after editing feedback patterns/actions:
+      pwsh -File scripts/build_magi_feedback_package.ps1
+      pwsh -File scripts/build_magi_water_package.ps1
+    Verify:
+      pwsh -File scripts/test_magi_feedback_package.ps1
+      pwsh -File scripts/test_magi_feedback_tracking.ps1
+    With the existing workspace link, publish the verified pair:
+      pwsh -File scripts/publish_workspace_link.ps1
+    Then, with automation stopped, use ysoreload in Mudlet. It updates AK and
+    Yso together; linked profiles do not need manual XML imports. File watches
+    report pending changes but do not publish or apply them automatically.
+    For an unlinked profile, import BOTH updated packages together. Importing
+    an older AK.xml can re-enable the duplicate legacy reactions.
+
   Bloodboil is manual-only through boi. Its ready/cast triggers maintain
   yso.magi.bloodboil and display readiness/cooldown feedback. The old automatic
   self-purge selection, shared cooldown state, and Bloodboil EQ lock are removed.
@@ -22,7 +135,8 @@ Current fixes
 
   Pebble experiment (gwater, fstorm, mfocus): when AK Scalded is below 100 and
   Earth resonance is zero, cast Pebble before normal setup. Shield handling,
-  special actions and execution retain priority; Focus still opens Hellfumes
+  special actions and execution retain priority; confirmed ready Glaciate in
+  gwater now also precedes Pebble. Focus still opens Hellfumes
   first and preserves its post-Convergence finishers. Pending sends suppress
   duplicates; resonance and limb breaks advance only from game feedback.
 

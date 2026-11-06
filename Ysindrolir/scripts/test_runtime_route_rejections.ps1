@@ -89,7 +89,12 @@ local function rejection(word,element)
   matches={'rejection',word or 'major',element or 'Fire'};failure()
 end
 local first={eq='cast firestorm',target='Foe',route='magi_firestorm'}
-M.on_payload_sent(first)
+-- Only canonical current dispatches are trusted; arbitrary replay tables are not ACKs.
+local function acknowledged(payload)
+  Yso._last_eq_ack_payload=payload
+  assert(M.on_payload_sent(payload),'canonical dispatch was not accepted')
+end
+acknowledged(first)
 assert(next_command()~='cast firestorm','successful room policy was not recorded')
 ak.magi.resonance.Fire=1
 rejection()
@@ -98,25 +103,26 @@ assert(next_command()=='cast dehydrate at Foe','retry fabricated resonance inste
 ak.magi.resonance.Fire=3
 assert(next_command()=='cast firestorm','restored resonance did not reopen Firestorm without toggle')
 local second={eq='cast firestorm',target='Foe',route='magi_firestorm'}
-M.on_payload_sent(second)
+acknowledged(second)
 M.on_send_result(first,{success=false})
 assert(next_command()~='cast firestorm','stale result reopened a later dispatch')
 M.on_send_result(second,{success=false})
 assert(next_command()=='cast firestorm','matching failed send did not reopen room')
 local third={eq='cast firestorm',target='Foe',route='magi_firestorm'}
-M.on_payload_sent(third)
+acknowledged(third)
 M.on_send_result(third,{success=true})
 rejection('minor','Water')
 assert(next_command()~='cast firestorm','unrelated rejection reopened room')
-M.on_payload_sent({eq='cast emanation at Foe fire',target='Foe',route='magi_firestorm'})
+acknowledged({eq='cast emanation at Foe fire',target='Foe',route='magi_firestorm'})
 rejection()
 assert(next_command()~='cast firestorm','later spell rejection reopened Firestorm')
-M.on_payload_sent({eq='cast firestorm',target='Foe',route='magi_firestorm'})
+acknowledged({eq='cast firestorm',target='Foe',route='magi_firestorm'})
 Yso.queue={_last_ack_payload={eq='cast fulminate at Foe',route='magi_duel'}}
+Yso._last_eq_ack_payload=Yso.queue._last_ack_payload
 rejection()
 assert(next_command()~='cast firestorm','other route rejection reopened Firestorm')
 Yso.queue=nil
-M.on_payload_sent({eq='cast firestorm',target='Foe',route='magi_firestorm'})
+acknowledged({eq='cast firestorm',target='Foe',route='magi_firestorm'})
 gmcp.Room.Info.num=202;rejection()
 assert(M.state.firestorm_rooms['101']==nil,'late rejection cleared current room instead of dispatched room')
 print('PASS: Firestorm confirmed rejection reopens only matching outstanding dispatch and preserves AK resonance')
@@ -153,7 +159,7 @@ for _,with_queue in ipairs(queue_modes) do
     emit('eq','cast fulminate at Foe','magi_duel')
     emit(lane,'unrelated '..lane,'magi_duel')
     feedback.failure('major','Fire')
-    assert(route.state.firestorm_rooms['202']==true,'other-route EQ history lost after '..lane..' ack; queue='..tostring(with_queue))
+    assert(type(route.state.firestorm_rooms['202'])=='number','other-route EQ history lost after '..lane..' ack; queue='..tostring(with_queue))
     emit('eq','cast firestorm','magi_firestorm')
     emit(lane,'unrelated '..lane,'magi_duel')
     feedback.failure('major','Air')
@@ -172,7 +178,7 @@ for _,with_queue in ipairs(queue_modes) do
     emit('eq','cast fulminate at Foe','magi_duel')
     emit('bal','unrelated bal','magi_duel')
     feedback.failure('major','Fire')
-    assert(route.state.firestorm_rooms['202']==true,'API reload lost durable direct EQ history')
+    assert(type(route.state.firestorm_rooms['202'])=='number','API reload lost durable direct EQ history')
     local full_calls=0
     local full_note=function() full_calls=full_calls+1 end
     Yso.locks={_yso_fulllocks=true,note_payload=full_note}
