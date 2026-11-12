@@ -99,7 +99,7 @@ try {
     }
   }
   if($Suite -in @('All','Lua')){
-    $covered=@{ 'test_airlord_damage.lua'='test_airlord_damage_package.ps1'; 'test_airlord_lock.lua'='test_airlord_lock_package.ps1'; 'test_package_login_startup.lua'='test_login_safety_package.ps1'; 'test_legacy_network.lua'='test_legacy_security_package.ps1' }
+    $covered=@{ 'test_airlord_damage.lua'='test_airlord_damage_package.ps1'; 'test_airlord_lock.lua'='test_airlord_lock_package.ps1'; 'test_airlord_relapses.lua'='test_airlord_lock_package.ps1'; 'test_package_login_startup.lua'='test_login_safety_package.ps1'; 'test_legacy_network.lua'='test_legacy_security_package.ps1' }
     $paths=@('Yso/Tests and rebuilds','Apostate') | ForEach-Object {Join-Path $system $_} | Where-Object {Test-Path -LiteralPath $_}
     $tests=@(foreach($path in $paths){Get-ChildItem -LiteralPath $path -Filter 'test_*.lua'})
     $fixtureWrappers=@{}

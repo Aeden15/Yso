@@ -84,6 +84,7 @@ gmcp.Char.Status.class='Occultist';ak.classenable()
 check(active['Apostate Group'],false);check(active['Occultist Group'],true)
 gmcp.Char.Status.class='Apostate'
 '@)
+$h.Add('assert(load([====['+$ak.SelectSingleNode('//Script[name="Airlord relapse tracking"]').script+']====]))()')
 $h.Add($ak.SelectSingleNode('//Script[name="Hard Reset"]').script)
 $h.Add($ak.SelectSingleNode('//Script[name="Soft Reset"]').script)
 $h.Add(@'
