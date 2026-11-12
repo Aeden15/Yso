@@ -5,7 +5,19 @@ $ErrorActionPreference='Stop'
 $destinationPath=[IO.Path]::GetFullPath($Destination)
 [IO.Directory]::CreateDirectory($destinationPath) | Out-Null
 $archive=Join-Path $destinationPath 'lua-5.4.8.tar.gz'
-Invoke-WebRequest -Uri 'https://www.lua.org/ftp/lua-5.4.8.tar.gz' -OutFile $archive
+$maxAttempts=3
+for($attempt=1;$attempt -le $maxAttempts;$attempt++){
+  try{
+    Invoke-WebRequest -Uri 'https://www.lua.org/ftp/lua-5.4.8.tar.gz' -OutFile $archive -TimeoutSec 30
+    break
+  }catch{
+    if(Test-Path -LiteralPath $archive){Remove-Item -LiteralPath $archive}
+    if($attempt -eq $maxAttempts){throw}
+    $delay=2*$attempt
+    Write-Warning ("Lua download attempt {0}/{1} failed. Retrying in {2}s. {3}" -f $attempt,$maxAttempts,$delay,$_.Exception.Message)
+    Start-Sleep -Seconds $delay
+  }
+}
 # Published at https://www.lua.org/ftp/ .
 if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine '4f18ddae154e793e46eeab727c59ef1c0c0c2b744e7b94219710d76f530629ae'){throw 'Lua source checksum mismatch'}
 & tar -xzf $archive -C $destinationPath
