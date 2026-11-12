@@ -72,41 +72,50 @@ function M.note_landed(who)
   return true
 end
 function M.select_command(t)
-  local context=M.sync_updraft()
-  local d=ak and ak.duress or {}
+  local context = M.sync_updraft()
+  local duress = ak and ak.duress or {}
+  local pressure = M.compression.level() or 0
   if ak and ak.defs and ak.defs.shield then return 'manifest gale '..t,'defense_break' end
-  if M.compression.ready() then return 'aero compression '..t,'execute' end
-  -- Weave Buffet with setup/Pressure instead of letting eligibility monopolize BAL.
-  if M.buffet_ready() and M.state.last_cmd~='manifest buffet '..t then
-    return 'manifest buffet '..t,'buffet'
-  end
-  if M.cfg.updraft_enabled and context and M.state.updraft_launched~=context
-      and (M.compression.level() or 0)>=4 then
+  if pressure >= 6 then return 'aero compression '..t,'execute' end
+  if M.buffet_ready() then return 'manifest buffet '..t,'buffet' end
+
+  if M.cfg.updraft_enabled and context and M.state.updraft_launched ~= context and pressure >= 4 then
     return 'manifest updraft '..t,'updraft'
   end
-  -- Tension adds pressure and another smoke cure, but is not a Pressure booster.
-  -- Interleave after an immediately cured Tension so setup/Pressure progresses.
-  -- Buffet must not erase the previous setup step when Tension is cured quickly.
-  local last_setup=M.state.last_setup_cmd
-  if score('tension')<100 and last_setup~='aero tension '..t then
-    if d.asphyxiate~=true then return 'aero asphyxiate '..t,'smoke_tracking' end
-    return 'aero tension '..t,'tension'
+
+  local boosters = 0
+  for _, attack in ipairs(A.relapse_attacks) do
+    if score(attack.affliction) >= 100 then
+      boosters = boosters + 1
+    end
   end
-  -- Confirmed afflictions, not fractional score sums, enable efficient pressure.
-  local count=0
-  for _,a in ipairs({'deadening','manaleech','disloyalty'}) do if score(a)>=100 then count=count+1 end end
-  -- Once pressure is established, one confirmed booster is enough to keep
-  -- building. Ambiguous smoking must not restart a full setup cycle at level 3.
-  if count>=2 or (count>=1 and (M.compression.level() or 0)>0) then
-    return 'aero pressure '..t,'pressure'
+  local pressure_command = 'aero pressure '..t
+  if boosters >= 2 then
+    return pressure_command,'pressure'
   end
-  if d.asphyxiate~=true then return 'aero asphyxiate '..t,'smoke_tracking' end
-  for _,row in ipairs({{'deadening','stranglerelapse','aero strangle '},
-      {'manaleech','zephyrrelapse','manifest zephyr '},{'disloyalty','scourrelapse','aero scour '}}) do
-    if score(row[1])<100 and d[row[2]]~=true then return row[3]..t,'affliction' end
+
+  local tension = 'aero tension '..t
+  local setup_command, category
+  if score('tension') < 100 and M.state.last_setup_cmd ~= tension then
+    setup_command, category = tension, 'tension'
+  elseif boosters == 1 and pressure > 0 then
+    return pressure_command,'pressure'
+  else
+    for _, attack in ipairs(A.relapse_attacks) do
+      if score(attack.affliction) < 100 and not A.relapse_pending(attack.skill, t) then
+        setup_command, category = attack.command..' '..t, 'affliction'
+        break
+      end
+    end
   end
-  return 'aero pressure '..t,'pressure'
+
+  if setup_command then
+    if duress.asphyxiate ~= true then return 'aero asphyxiate '..t,'smoke_tracking' end
+    return setup_command, category
+  end
+  return pressure_command,'pressure'
 end
+
 function M.buffet_ready()
   if (M.compression.level() or 0)<=2 then return false end
   local count=0

@@ -989,16 +989,12 @@ end
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Strangle</name>
-					<script>aff = "deadening"
-if IsTargetted(matches[2]) then
-   OppGainedAff(aff)
-	 ak.duress.stranglerelapse = true
-   ak.duress.stranglerelapsetimer = tempTimer(7,[[
-   	 ak.duress.stranglerelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])
-	 killTimer(tostring(ak.duress.asphyxiatetimer))
-   ak.duress.asphyxiatetimer = tempTimer(10, [[ak.duress.asphyxiate = false]])
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;strangle&apos;, who)
+  OppGainedAff(&apos;deadening&apos;)
+  killTimer(tostring(ak.duress.asphyxiatetimer))
+  ak.duress.asphyxiatetimer = tempTimer(10, [[ak.duress.asphyxiate = false]])
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1019,11 +1015,10 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Strangle relapse</name>
-					<script>aff = "deadening"
-if IsTargetted(matches[2]) then
-  OppGainedAff(aff)
-	ak.duress.stranglerelapse = false
-	killTimer(tostring(ak.duress.stranglerelapsetimer))
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.end_relapse(&apos;strangle&apos;, who)
+  OppGainedAff(&apos;deadening&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1044,16 +1039,11 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Strangle relapse 2</name>
-					<script>aff = "disrupted"
-if IsTargetted(matches[2]) then
-   OppGainedAff(aff)
-	 ak.duress.stranglerelapse = true
-	 killTimer(tostring(ak.duress.stranglerelapsetimer))
-   ak.duress.stranglerelapsetimer = tempTimer(7,[[
-   	 ak.duress.stranglerelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])
-	 OppGainedAff("deadening")
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;strangle&apos;, who)
+  OppGainedAff(&apos;disrupted&apos;)
+  OppGainedAff(&apos;deadening&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1074,18 +1064,12 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Scour</name>
-					<script>aff = "disloyalty"
-if IsTargetted(matches[2]) then
-   OppGainedAff(aff)
-	 ak.duress.scourrelapse = true
-	 killTimer(tostring(ak.duress.scourrelapsetimer))
-   ak.duress.scourrelapsetimer = tempTimer(7,[[
-   	 ak.duress.scourrelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])
-	 
-	 killTimer(tostring(ak.duress.asphyxiatetimer))
-   ak.duress.asphyxiatetimer = tempTimer(10, [[ak.duress.asphyxiate = false]])
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;scour&apos;, who)
+  OppGainedAff(&apos;disloyalty&apos;)
+  killTimer(tostring(ak.duress.asphyxiatetimer))
+  ak.duress.asphyxiatetimer = tempTimer(10, [[ak.duress.asphyxiate = false]])
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1106,11 +1090,10 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Scour relapse</name>
-					<script>aff = "disloyalty"
-if IsTargetted(matches[2]) then
-   OppGainedAff(aff)
-	 ak.duress.scourrelapse = false
-	 killTimer(tostring(ak.duress.scourrelapsetimer))
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.end_relapse(&apos;scour&apos;, who)
+  OppGainedAff(&apos;disloyalty&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1131,15 +1114,10 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Scour relapse 2</name>
-					<script>if IsTargetted(matches[2]) then
-   local aff = "disloyalty"
-   OppGainedAff(aff)
-   ak.duress.scourrelapse = true
-	 killTimer(tostring(ak.duress.scourrelapsetimer))
-   ak.duress.scourrelapsetimer = tempTimer(7,[[
-   	 ak.duress.scourrelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;scour&apos;, who)
+  OppGainedAff(&apos;disloyalty&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1160,18 +1138,12 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Zephyr</name>
-					<script>aff = "manaleech"
-if IsTargetted(matches[2]) then
-   OppGainedAff(aff)
-	 ak.duress.zephyrrelapse = true
- 	 killTimer(tostring(ak.duress.zephyrrelapsetimer))
-   ak.duress.zephyrrelapsetimer = tempTimer(7,[[
-   	 ak.duress.zephyrrelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])
-	 
-	 killTimer(tostring(ak.duress.asphyxiatetimer))
-   ak.duress.asphyxiatetimer = tempTimer(10, [[ak.duress.asphyxiate = false]])
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;zephyr&apos;, who)
+  OppGainedAff(&apos;manaleech&apos;)
+  killTimer(tostring(ak.duress.asphyxiatetimer))
+  ak.duress.asphyxiatetimer = tempTimer(10, [[ak.duress.asphyxiate = false]])
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1192,11 +1164,10 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Zephyr relapse</name>
-					<script>aff = "manaleech"
-if IsTargetted(matches[2]) then
-  OppGainedAff(aff)
-	ak.duress.zephyrrelapse = false
-	killTimer(tostring(ak.duress.zephyrrelapsetimer))
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.end_relapse(&apos;zephyr&apos;, who)
+  OppGainedAff(&apos;manaleech&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1217,16 +1188,11 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Zephyr relapse 2</name>
-					<script>aff = "deadening"
-if IsTargetted(matches[2]) then
-  OppGainedAff(aff)
-	ak.duress.zephyrrelapse = true
-  killTimer(tostring(ak.duress.zephyrrelapsetimer))
-  ak.duress.zephyrrelapsetimer = tempTimer(7,[[
-   	 ak.duress.zephyrrelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])	
-	OppGainedAff("manaleech")
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;zephyr&apos;, who)
+  OppGainedAff(&apos;deadening&apos;)
+  OppGainedAff(&apos;manaleech&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -1247,15 +1213,11 @@ end</script>
 				</Trigger>
 				<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
 					<name>Zephyr relapse 3</name>
-					<script>if IsTargetted(matches[2]) then
-   ak.duress.zephyrrelapse = true
-   killTimer(tostring(ak.duress.zephyrrelapsetimer))
-   ak.duress.zephyrrelapsetimer = tempTimer(7,[[
-   	 ak.duress.zephyrrelapse = false
-     ak.scoreup(]]..matches[2]..[[)
-   ]])
-	 OppGainedAff("manaleech")
-	 OppGainedAff("deadening")
+					<script>local who = matches[2]
+if IsTargetted(who) then
+  ak.duress.track_relapse(&apos;zephyr&apos;, who)
+  OppGainedAff(&apos;manaleech&apos;)
+  OppGainedAff(&apos;deadening&apos;)
 end</script>
 					<triggerType>0</triggerType>
 					<conditonLineDelta>0</conditonLineDelta>
@@ -25940,6 +25902,81 @@ end
 				<eventHandlerList />
 			</Script>
 			<Script isActive="yes" isFolder="no">
+				<name>Airlord relapse tracking</name>
+				<packageName />
+				<script>ak = ak or {}
+ak.duress = ak.duress or {}
+local duress = ak.duress
+local skills = {&apos;strangle&apos;, &apos;scour&apos;, &apos;zephyr&apos;}
+local relapses = {}
+
+if type(duress.reset_relapses) == &apos;function&apos; then
+  duress.reset_relapses()
+end
+
+local function target_key(who)
+  return type(who) == &apos;string&apos; and who:lower() or &apos;&apos;
+end
+
+local function selected_key()
+  if Yso and type(Yso.get_target) == &apos;function&apos; then
+    return target_key(Yso.get_target())
+  end
+  return target_key(target)
+end
+
+local function clear_relapse(skill)
+  local flag = skill .. &apos;relapse&apos;
+  local timer_key = flag .. &apos;timer&apos;
+  local timer = duress[timer_key]
+  relapses[skill] = nil
+  duress[flag], duress[timer_key] = false, nil
+  if timer then killTimer(timer) end
+end
+
+function duress.reset_relapses()
+  for _, skill in ipairs(skills) do
+    clear_relapse(skill)
+  end
+end
+
+function duress.relapse_pending(skill, who)
+  local record = relapses[skill]
+  local key = target_key(who)
+  return record ~= nil and key ~= &apos;&apos;
+    and (key == record.selected or key == target_key(record.who))
+end
+
+function duress.track_relapse(skill, who)
+  clear_relapse(skill)
+  local flag = skill .. &apos;relapse&apos;
+  local timer_key = flag .. &apos;timer&apos;
+  local selected = selected_key()
+  local actor = target_key(who)
+  if selected == &apos;&apos; or actor:sub(1, #selected) ~= selected then selected = actor end
+  local record = {who = who, selected = selected}
+  relapses[skill] = record
+  duress[flag] = true
+  -- The game sends the actual ticks. This timer expires missing feedback.
+  duress[timer_key] = tempTimer(7, function()
+    if relapses[skill] ~= record then return end
+    relapses[skill] = nil
+    duress[flag], duress[timer_key] = false, nil
+    if record.selected == selected_key() and IsTargetted(record.who) then ak.scoreup(record.who) end
+  end)
+end
+
+function duress.end_relapse(skill, who)
+  local record = relapses[skill]
+  if record and target_key(record.who) == target_key(who) then
+    clear_relapse(skill)
+  end
+end
+
+duress.reset_relapses()</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
 				<name>Hard Reset</name>
 				<packageName />
 				<script>function ak.oresetparse()
@@ -26045,9 +26082,7 @@ end
   ak.propped = false
   ak.SerpentRotateBite = false
   ak.duress.pressure = 0
-  ak.duress.scourrelapse = false
-  ak.duress.stranglerelapse = false
-  ak.duress.zephyrrelapse = false
+  ak.duress.reset_relapses()
   ak.duress.asphyxiate = false
   ak.tumbling = false
   for k,v in pairs(affstrack.score) do

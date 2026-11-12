@@ -1,48 +1,55 @@
--- Basic AK decisions. Yso's Airlord runtime owns scheduling, sends and cleanup.
-local M=Yso.off.airlord.make_route('lock','airlord_lock','Airlord lock')
+-- Shared Airlord runtime owns scheduling, sends and cleanup.
+local A = Yso.off.airlord
+local M = A.make_route('lock', 'airlord_lock', 'Airlord lock')
 
 function M.select_command(target)
-  local affs=affstrack and affstrack.score or {}
-  local duress=ak and ak.duress or {}
-  local function has(aff)
-    return (tonumber(affs[aff]) or 0)>=100
+  local scores = affstrack and affstrack.score or {}
+  local duress = ak and ak.duress or {}
+  local function confirmed(affliction)
+    return (tonumber(scores[affliction]) or 0) >= 100
   end
-  local pressure=M.compression.level()
 
   if ak and ak.defs and ak.defs.shield then
-    return 'manifest gale '..target,'defense_break'
-  end
-  if pressure and pressure>=6 then
-    return 'aero compression '..target,'execute'
+    return 'manifest gale ' .. target, 'defense_break'
   end
 
-  -- Tension first, with another attack between immediate reapplications.
-  if not has('tension') and M.state.last_cmd~='aero tension '..target then
-    if duress.asphyxiate~=true then
-      return 'aero asphyxiate '..target,'smoke_tracking'
+  local pressure = M.compression.level()
+  if pressure and pressure >= 6 then
+    return 'aero compression ' .. target, 'execute'
+  end
+
+  local boosters = 0
+  for _, attack in ipairs(A.relapse_attacks) do
+    if confirmed(attack.affliction) then
+      boosters = boosters + 1
     end
-    return 'aero tension '..target,'tension'
+  end
+  local pressure_command = 'aero pressure ' .. target
+  if boosters >= 2 or (boosters == 1 and pressure and pressure > 0) or pressure == 5 then
+    return pressure_command, 'pressure'
   end
 
-  local boosters=0
-  for _,aff in ipairs({'deadening','manaleech','disloyalty'}) do
-    if has(aff) then boosters=boosters+1 end
-  end
-  if boosters>=2 or (boosters>=1 and pressure and pressure>0) then
-    return 'aero pressure '..target,'pressure'
+  local setup_command, category
+  for _, attack in ipairs(A.relapse_attacks) do
+    if not confirmed(attack.affliction) and not A.relapse_pending(attack.skill, target) then
+      setup_command, category = attack.command .. ' ' .. target, 'affliction'
+      break
+    end
   end
 
-  if duress.asphyxiate~=true then
-    return 'aero asphyxiate '..target,'smoke_tracking'
+  local tension = 'aero tension ' .. target
+  if not setup_command and not confirmed('tension') and M.state.last_cmd ~= tension then
+    setup_command, category = tension, 'tension'
   end
-  if not has('deadening') and duress.stranglerelapse~=true then
-    return 'aero strangle '..target,'affliction'
-  elseif not has('manaleech') and duress.zephyrrelapse~=true then
-    return 'manifest zephyr '..target,'affliction'
-  elseif not has('disloyalty') and duress.scourrelapse~=true then
-    return 'aero scour '..target,'affliction'
+
+  if setup_command then
+    if duress.asphyxiate ~= true then
+      return 'aero asphyxiate ' .. target, 'smoke_tracking'
+    end
+    return setup_command, category
   end
-  return 'aero pressure '..target,'pressure'
+
+  return pressure_command, 'pressure'
 end
 
 return M

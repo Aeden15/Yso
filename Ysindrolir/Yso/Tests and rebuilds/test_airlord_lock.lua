@@ -25,15 +25,23 @@ local function pick(want)
 end
 pick('aero asphyxiate Enemy')
 ak.duress.asphyxiate=true
-pick('aero tension Enemy')
-M.state.last_cmd='aero tension Enemy'
 pick('aero strangle Enemy')
-affstrack.score.tension=100;ak.duress.stranglerelapse=true
+ak.duress.stranglerelapse=true
 pick('manifest zephyr Enemy')
 ak.duress.zephyrrelapse=true
 pick('aero scour Enemy')
 ak.duress.scourrelapse=true
+pick('aero tension Enemy')
+M.state.last_cmd='aero tension Enemy'
 pick('aero pressure Enemy')
+M.state.last_cmd=nil
+affstrack.score.deadening,affstrack.score.disloyalty=100,100
+ak.duress.asphyxiate=false
+pick('aero pressure Enemy')
+affstrack.score.deadening,affstrack.score.disloyalty=0,0
+Yso.off.airlord.compression.observe('Enemy',5)
+pick('aero pressure Enemy')
+Yso.off.airlord.compression.clear()
 ak.duress={asphyxiate=true};affstrack.score.deadening=50;affstrack.score.manaleech=50
 pick('aero strangle Enemy')
 affstrack.score.deadening=100
@@ -43,6 +51,10 @@ Yso.off.airlord.compression.observe('Enemy',6)
 pick('aero compression Enemy')
 ak.defs.shield=true;pick('manifest gale Enemy');ak.defs.shield=false
 time(4);pick('manifest zephyr Enemy')
+ak.duress.relapse_pending=function(skill,who)
+  return who=='Enemy' and skill=='zephyr'
+end
+pick('aero scour Enemy')
 
 -- A submitted execute must not repeat on each scheduler tick.
 M,sent,time,target=world();ak.duress.asphyxiate=true

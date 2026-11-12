@@ -9,7 +9,7 @@ try {
     if ($nodes.Count -ne 1) { throw ('Expected one script: ' + $entry[0]) }
     [IO.File]::WriteAllText(($scratch + $entry[1]), [string]$nodes[0].script, (New-Object Text.UTF8Encoding $false))
   }
-  & lua (Join-Path $root 'Yso/Tests and rebuilds/test_airlord_damage.lua') $scratch
+  & lua (Join-Path $root 'Yso/Tests and rebuilds/test_airlord_damage.lua') $scratch (Join-Path $root 'Yso/xml/yso_queue.lua')
   if ($LASTEXITCODE -ne 0) { throw 'Airlord damage regressions failed' }
 } finally {
   foreach ($suffix in @('.compression.lua', '.runtime.lua', '.lock.lua', '.damage.lua', '.api.lua')) {

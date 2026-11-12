@@ -29,6 +29,30 @@ try {
   if(-not $node){throw ('Missing '+$entry[0])}
   [IO.File]::WriteAllText(($scratch+$entry[1]),[string]$node.script,(New-Object Text.UTF8Encoding $false))
  }
+ [xml]$akDoc=[IO.File]::ReadAllText((Join-Path $root 'mudlet packages/AK.xml'))
+ $triggerNames=[ordered]@{
+  strangle='Strangle'; strangle_continues='Strangle relapse 2'; strangle_reapplies='Strangle relapse'
+  scour='Scour'; scour_continues='Scour relapse 2'; scour_reapplies='Scour relapse'
+  zephyr='Zephyr'; zephyr_continues='Zephyr relapse 2'; zephyr_blackout='Zephyr relapse 3'; zephyr_reapplies='Zephyr relapse'
+ }
+ $tracker=$akDoc.SelectSingleNode('//Script[name="Airlord relapse tracking"]/script')
+ if($tracker){[IO.File]::WriteAllText(($scratch+'.tracker.lua'),$tracker.InnerText)}
+ foreach($key in $triggerNames.Keys){
+  $triggers=$akDoc.SelectNodes('//Trigger[name="'+$triggerNames[$key]+'"]/script')
+  if($triggers.Count -ne 1){throw ('Expected a unique AK trigger: '+$triggerNames[$key])}
+  [IO.File]::WriteAllText(($scratch+'.'+$key+'.lua'),$triggers[0].InnerText)
+ }
+ $cure=$doc.SelectSingleNode('//Trigger[name="Airlord feedback pressure cure"]')
+ $curePatterns=$cure.SelectNodes('regexCodeList/string') | ForEach-Object {$_.InnerText}
+ if(($curePatterns -join ' ') -notmatch 'prickly pear' -or ($curePatterns -join ' ') -notmatch 'calcite mote'){
+  throw 'Pressure cure trigger must cover pear and calcite'
+ }
+ [IO.File]::WriteAllText(($scratch+'.pressure_cure.lua'),$cure.SelectSingleNode('script').InnerText)
+ & lua (Join-Path $root 'Yso/Tests and rebuilds/test_airlord_relapses.lua') $scratch
+ if($LASTEXITCODE -ne 0){throw 'Airlord AK relapse regressions failed'}
+ if($akDoc.SelectSingleNode('//Script[name="Hard Reset"]/script').InnerText -notmatch 'ak\.duress\.reset_relapses\(\)'){
+  throw 'AK Hard Reset must clear Airlord relapse timers'
+ }
  & lua (Join-Path $root 'Yso/Tests and rebuilds/test_airlord_lock.lua') $scratch
  if($LASTEXITCODE -ne 0){throw 'Airlord lock regressions failed'}
  $copy=$scratch+'.xml'
@@ -47,7 +71,7 @@ try {
  if([IO.File]::ReadAllText($copy) -cne $before){throw 'Legacy migration did not restore the scoped package exactly'}
  Write-Host 'PASS Airlord source parity, native syntax, load order, stable rebuild and legacy migration'
 } finally {
- foreach($suffix in @('.compression.lua','.runtime.lua','.lock.lua','.syntax.lua','.xml')){
-  if(Test-Path -LiteralPath ($scratch+$suffix)){Remove-Item -LiteralPath ($scratch+$suffix)}
- }
+ foreach($file in @((Get-ChildItem -LiteralPath (Split-Path $scratch -Parent) -Filter ((Split-Path $scratch -Leaf)+"*.lua")))){Remove-Item -LiteralPath $file.FullName}
+ $copy=$scratch+'.xml'
+ if(Test-Path -LiteralPath $copy){Remove-Item -LiteralPath $copy}
 }

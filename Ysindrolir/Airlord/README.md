@@ -2,19 +2,23 @@
 
 `lock_route.lua` contains the basic AK lock decisions in one place. `alock`
 still toggles `Yso.off.airlord.lock` through Yso's scheduler and uses its shared
-target. The order is shield break, fresh confirmed Compression, missing Tension,
-Pressure when boosters permit, then missing deadening/manaleech/disloyalty.
-Asphyxiate establishes smoke tracking before setup; active relapses avoid
-redundant affliction applications. Tension remains first and consecutive
-immediate reapplications are interleaved with another attack.
+target. The order is shield break, fresh confirmed Compression, then Pressure
+when boosters overlap or one more level can open Compression. Otherwise the
+route establishes missing Strangle, Zephyr, or Scour afflictions before falling
+back to Tension and Pressure. Asphyxiate establishes smoke tracking before a
+selected smoke attack.
 
-`damage_route.lua` independently owns `aidam`, Buffet weaving, balanceless Assess,
-and optional Updraft. `alupdraft` now toggles Updraft for damage only; the simple
-lock has no Updraft behavior.
+`damage_route.lua` independently owns `aidam`, successive Buffets, balanceless
+Assess, and optional Updraft. Buffet repeats while fresh pressure is at least
+three and two of disloyalty, tension, manaleech, and deadening are confirmed.
+When eligibility drops, the route clears its queued Buffet and resumes setup.
+`alupdraft` toggles Updraft for the damage route.
 
 `route_runtime.lua` supplies both routes with Yso balance/pause checks, Gauge
 cadence, submission deduplication, confirmation timing, target/stop cleanup, and
-feedback dispatch. This plumbing stays outside the readable lock decisions.
+feedback dispatch. Both routes use the AK target-aware relapse query when
+available. AK's seven-second timeout expires missing feedback, while game
+messages determine when ticks actually land.
 `compression.lua` tracks only current-target Gauge observations, expires them
 after three seconds, and permits Compression at pressure six. Loading a route
 does not create its sibling. Reloading clears prior owned work and old strategy

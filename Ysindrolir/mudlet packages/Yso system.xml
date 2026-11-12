@@ -30966,6 +30966,20 @@ return C
 					<Script isActive="yes" isFolder="no"><name>Airlord route runtime</name><packageName /><script>-- Shared Airlord delivery and lifecycle. Route modules supply only their decisions.
 Yso = Yso or {}; Yso.off = Yso.off or {}; Yso.off.airlord = Yso.off.airlord or {}
 local A=Yso.off.airlord
+A.relapse_attacks = {
+  {skill = &apos;strangle&apos;, affliction = &apos;deadening&apos;, command = &apos;aero strangle&apos;},
+  {skill = &apos;zephyr&apos;, affliction = &apos;manaleech&apos;, command = &apos;manifest zephyr&apos;},
+  {skill = &apos;scour&apos;, affliction = &apos;disloyalty&apos;, command = &apos;aero scour&apos;},
+}
+
+function A.relapse_pending(skill, target)
+  local duress = ak and ak.duress or {}
+  if type(duress.relapse_pending) == &apos;function&apos; then
+    return duress.relapse_pending(skill, target) == true
+  end
+  return duress[skill .. &apos;relapse&apos;] == true
+end
+
 function A.make_route(slot,key,name)
 local M = A[slot] or {}; A[slot]=M
 -- Native module reload retains Lua tables: retire old owned work and strategy.
@@ -31021,6 +31035,19 @@ end
 function M.is_active()
   return Yso.mode and Yso.mode.route_loop_active and Yso.mode.route_loop_active(M.key) or M.state.loop_enabled==true
 end
+local function lane_owner(lane)
+  local q = Yso.queue
+  return q and type(q.get_owned) == &apos;function&apos; and q.get_owned(lane) or nil
+end
+
+local function forget_consumed_owner(lane, owner)
+  local q = Yso.queue
+  if q and type(q.clear_owned) == &apos;function&apos; and type(owner) == &apos;table&apos;
+      and owner.route == M.key and lane_owner(lane) == owner then
+    q.clear_owned(lane)
+  end
+end
+
 local function clear_staged(cmd)
   local q=Yso.queue
   if not q or not cmd or type(q.list)~=&apos;function&apos; or type(q.clear)~=&apos;function&apos;
@@ -31039,6 +31066,7 @@ function M.reset()
   if q then
     local pending=M.state.pending
     clear_staged(M.state.staged_bal or (pending and pending.cmd))
+    forget_consumed_owner(&apos;free&apos;, M.state.observation_owned)
     local hint=q._commit_hint
     if (not hint or hint.route==M.key) and type(q.list)==&apos;function&apos; and type(q.clear)==&apos;function&apos; then
       if q._staged and type(q._staged.free)==&apos;table&apos; then
@@ -31058,6 +31086,7 @@ function M.reset()
     if type(owned)==&apos;table&apos; and owned.route==M.key and type(q.clear_lane)==&apos;function&apos; then q.clear_lane(&apos;bal&apos;) end
   end
   M.state.pending=nil; M.state.gauge_at=nil; M.state.observation_target=nil
+  M.state.observation_owned=nil
   M.state.staged_bal=nil
   M.state.execute_inflight=nil
   M.state.last_cmd=nil
@@ -31105,16 +31134,24 @@ function M.attack_function()
   -- Free observations share a cadence and do not wait for BAL/EQ.
   if not M.state.gauge_at or now()-M.state.gauge_at&gt;=M.cfg.gauge_s then
     local observations=M.observations and M.observations(t) or &apos;gauge &apos;..t
+    -- The same Gauge/Assess payload can be submitted at the next cadence.
+    forget_consumed_owner(&apos;free&apos;, M.state.observation_owned)
     if Yso.emit({free=observations,target=t,route=M.key},{kind=&apos;offense&apos;,reason=&apos;airlord:gauge&apos;,target=t,route=M.key,commit=true,wake_lane=&apos;free&apos;,free_immediate=true}) then
       M.state.gauge_at=now()
+      M.state.observation_owned=lane_owner(&apos;free&apos;)
     end
   end
   if not lane_ready(&apos;bal&apos;) then
     local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
     local actual=v.bal
     if actual==nil then actual=v.balance end
-    if M.state.pending and (actual==nil or actual==false or tostring(actual)==&apos;0&apos;) then
-      M.state.pending.saw_down=true
+    local pending = M.state.pending
+    if pending and (actual==nil or actual==false or tostring(actual)==&apos;0&apos;) then
+      pending.saw_down=true
+      if actual~=nil and not pending.owned then
+        local owner = lane_owner(&apos;bal&apos;)
+        if owner and owner.route==M.key and owner.cmd==pending.cmd then pending.owned=owner end
+      end
     end
     if M.state.execute_inflight and (actual==false or tostring(actual)==&apos;0&apos;) then
       M.state.execute_inflight.saw_down=true
@@ -31141,7 +31178,11 @@ function M.attack_function()
   end
   local cmd,category=M.select_command(t)
   local p=M.state.pending
-  if p and p.saw_down then M.state.pending=nil; p=nil end
+  if p and p.saw_down then
+    -- The queue consumed this attack over the observed BAL cycle.
+    forget_consumed_owner(&apos;bal&apos;, p.owned)
+    M.state.pending=nil; p=nil
+  end
   if p and confirmation_now()&lt;p.until_at then
     -- A new confirmed execute or shield may supersede a setup attack once.
     if p.category==category or (category~=&apos;execute&apos; and category~=&apos;defense_break&apos;) then return false,&apos;pending&apos; end
@@ -31222,51 +31263,58 @@ return A
 </script><eventHandlerList /></Script><Script isActive="yes" isFolder="no">
 						<name>Airlord lock route</name>
 						<packageName />
-						<script>-- Basic AK decisions. Yso&apos;s Airlord runtime owns scheduling, sends and cleanup.
-local M=Yso.off.airlord.make_route(&apos;lock&apos;,&apos;airlord_lock&apos;,&apos;Airlord lock&apos;)
+						<script>-- Shared Airlord runtime owns scheduling, sends and cleanup.
+local A = Yso.off.airlord
+local M = A.make_route(&apos;lock&apos;, &apos;airlord_lock&apos;, &apos;Airlord lock&apos;)
 
 function M.select_command(target)
-  local affs=affstrack and affstrack.score or {}
-  local duress=ak and ak.duress or {}
-  local function has(aff)
-    return (tonumber(affs[aff]) or 0)&gt;=100
+  local scores = affstrack and affstrack.score or {}
+  local duress = ak and ak.duress or {}
+  local function confirmed(affliction)
+    return (tonumber(scores[affliction]) or 0) &gt;= 100
   end
-  local pressure=M.compression.level()
 
   if ak and ak.defs and ak.defs.shield then
-    return &apos;manifest gale &apos;..target,&apos;defense_break&apos;
-  end
-  if pressure and pressure&gt;=6 then
-    return &apos;aero compression &apos;..target,&apos;execute&apos;
+    return &apos;manifest gale &apos; .. target, &apos;defense_break&apos;
   end
 
-  -- Tension first, with another attack between immediate reapplications.
-  if not has(&apos;tension&apos;) and M.state.last_cmd~=&apos;aero tension &apos;..target then
-    if duress.asphyxiate~=true then
-      return &apos;aero asphyxiate &apos;..target,&apos;smoke_tracking&apos;
+  local pressure = M.compression.level()
+  if pressure and pressure &gt;= 6 then
+    return &apos;aero compression &apos; .. target, &apos;execute&apos;
+  end
+
+  local boosters = 0
+  for _, attack in ipairs(A.relapse_attacks) do
+    if confirmed(attack.affliction) then
+      boosters = boosters + 1
     end
-    return &apos;aero tension &apos;..target,&apos;tension&apos;
+  end
+  local pressure_command = &apos;aero pressure &apos; .. target
+  if boosters &gt;= 2 or (boosters == 1 and pressure and pressure &gt; 0) or pressure == 5 then
+    return pressure_command, &apos;pressure&apos;
   end
 
-  local boosters=0
-  for _,aff in ipairs({&apos;deadening&apos;,&apos;manaleech&apos;,&apos;disloyalty&apos;}) do
-    if has(aff) then boosters=boosters+1 end
-  end
-  if boosters&gt;=2 or (boosters&gt;=1 and pressure and pressure&gt;0) then
-    return &apos;aero pressure &apos;..target,&apos;pressure&apos;
+  local setup_command, category
+  for _, attack in ipairs(A.relapse_attacks) do
+    if not confirmed(attack.affliction) and not A.relapse_pending(attack.skill, target) then
+      setup_command, category = attack.command .. &apos; &apos; .. target, &apos;affliction&apos;
+      break
+    end
   end
 
-  if duress.asphyxiate~=true then
-    return &apos;aero asphyxiate &apos;..target,&apos;smoke_tracking&apos;
+  local tension = &apos;aero tension &apos; .. target
+  if not setup_command and not confirmed(&apos;tension&apos;) and M.state.last_cmd ~= tension then
+    setup_command, category = tension, &apos;tension&apos;
   end
-  if not has(&apos;deadening&apos;) and duress.stranglerelapse~=true then
-    return &apos;aero strangle &apos;..target,&apos;affliction&apos;
-  elseif not has(&apos;manaleech&apos;) and duress.zephyrrelapse~=true then
-    return &apos;manifest zephyr &apos;..target,&apos;affliction&apos;
-  elseif not has(&apos;disloyalty&apos;) and duress.scourrelapse~=true then
-    return &apos;aero scour &apos;..target,&apos;affliction&apos;
+
+  if setup_command then
+    if duress.asphyxiate ~= true then
+      return &apos;aero asphyxiate &apos; .. target, &apos;smoke_tracking&apos;
+    end
+    return setup_command, category
   end
-  return &apos;aero pressure &apos;..target,&apos;pressure&apos;
+
+  return pressure_command, &apos;pressure&apos;
 end
 
 return M
@@ -31346,41 +31394,50 @@ function M.note_landed(who)
   return true
 end
 function M.select_command(t)
-  local context=M.sync_updraft()
-  local d=ak and ak.duress or {}
+  local context = M.sync_updraft()
+  local duress = ak and ak.duress or {}
+  local pressure = M.compression.level() or 0
   if ak and ak.defs and ak.defs.shield then return &apos;manifest gale &apos;..t,&apos;defense_break&apos; end
-  if M.compression.ready() then return &apos;aero compression &apos;..t,&apos;execute&apos; end
-  -- Weave Buffet with setup/Pressure instead of letting eligibility monopolize BAL.
-  if M.buffet_ready() and M.state.last_cmd~=&apos;manifest buffet &apos;..t then
-    return &apos;manifest buffet &apos;..t,&apos;buffet&apos;
-  end
-  if M.cfg.updraft_enabled and context and M.state.updraft_launched~=context
-      and (M.compression.level() or 0)&gt;=4 then
+  if pressure &gt;= 6 then return &apos;aero compression &apos;..t,&apos;execute&apos; end
+  if M.buffet_ready() then return &apos;manifest buffet &apos;..t,&apos;buffet&apos; end
+
+  if M.cfg.updraft_enabled and context and M.state.updraft_launched ~= context and pressure &gt;= 4 then
     return &apos;manifest updraft &apos;..t,&apos;updraft&apos;
   end
-  -- Tension adds pressure and another smoke cure, but is not a Pressure booster.
-  -- Interleave after an immediately cured Tension so setup/Pressure progresses.
-  -- Buffet must not erase the previous setup step when Tension is cured quickly.
-  local last_setup=M.state.last_setup_cmd
-  if score(&apos;tension&apos;)&lt;100 and last_setup~=&apos;aero tension &apos;..t then
-    if d.asphyxiate~=true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
-    return &apos;aero tension &apos;..t,&apos;tension&apos;
+
+  local boosters = 0
+  for _, attack in ipairs(A.relapse_attacks) do
+    if score(attack.affliction) &gt;= 100 then
+      boosters = boosters + 1
+    end
   end
-  -- Confirmed afflictions, not fractional score sums, enable efficient pressure.
-  local count=0
-  for _,a in ipairs({&apos;deadening&apos;,&apos;manaleech&apos;,&apos;disloyalty&apos;}) do if score(a)&gt;=100 then count=count+1 end end
-  -- Once pressure is established, one confirmed booster is enough to keep
-  -- building. Ambiguous smoking must not restart a full setup cycle at level 3.
-  if count&gt;=2 or (count&gt;=1 and (M.compression.level() or 0)&gt;0) then
-    return &apos;aero pressure &apos;..t,&apos;pressure&apos;
+  local pressure_command = &apos;aero pressure &apos;..t
+  if boosters &gt;= 2 then
+    return pressure_command,&apos;pressure&apos;
   end
-  if d.asphyxiate~=true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
-  for _,row in ipairs({{&apos;deadening&apos;,&apos;stranglerelapse&apos;,&apos;aero strangle &apos;},
-      {&apos;manaleech&apos;,&apos;zephyrrelapse&apos;,&apos;manifest zephyr &apos;},{&apos;disloyalty&apos;,&apos;scourrelapse&apos;,&apos;aero scour &apos;}}) do
-    if score(row[1])&lt;100 and d[row[2]]~=true then return row[3]..t,&apos;affliction&apos; end
+
+  local tension = &apos;aero tension &apos;..t
+  local setup_command, category
+  if score(&apos;tension&apos;) &lt; 100 and M.state.last_setup_cmd ~= tension then
+    setup_command, category = tension, &apos;tension&apos;
+  elseif boosters == 1 and pressure &gt; 0 then
+    return pressure_command,&apos;pressure&apos;
+  else
+    for _, attack in ipairs(A.relapse_attacks) do
+      if score(attack.affliction) &lt; 100 and not A.relapse_pending(attack.skill, t) then
+        setup_command, category = attack.command..&apos; &apos;..t, &apos;affliction&apos;
+        break
+      end
+    end
   end
-  return &apos;aero pressure &apos;..t,&apos;pressure&apos;
+
+  if setup_command then
+    if duress.asphyxiate ~= true then return &apos;aero asphyxiate &apos;..t,&apos;smoke_tracking&apos; end
+    return setup_command, category
+  end
+  return pressure_command,&apos;pressure&apos;
 end
+
 function M.buffet_ready()
   if (M.compression.level() or 0)&lt;=2 then return false end
   local count=0

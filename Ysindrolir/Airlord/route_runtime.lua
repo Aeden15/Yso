@@ -1,6 +1,20 @@
 -- Shared Airlord delivery and lifecycle. Route modules supply only their decisions.
 Yso = Yso or {}; Yso.off = Yso.off or {}; Yso.off.airlord = Yso.off.airlord or {}
 local A=Yso.off.airlord
+A.relapse_attacks = {
+  {skill = 'strangle', affliction = 'deadening', command = 'aero strangle'},
+  {skill = 'zephyr', affliction = 'manaleech', command = 'manifest zephyr'},
+  {skill = 'scour', affliction = 'disloyalty', command = 'aero scour'},
+}
+
+function A.relapse_pending(skill, target)
+  local duress = ak and ak.duress or {}
+  if type(duress.relapse_pending) == 'function' then
+    return duress.relapse_pending(skill, target) == true
+  end
+  return duress[skill .. 'relapse'] == true
+end
+
 function A.make_route(slot,key,name)
 local M = A[slot] or {}; A[slot]=M
 -- Native module reload retains Lua tables: retire old owned work and strategy.
@@ -56,6 +70,19 @@ end
 function M.is_active()
   return Yso.mode and Yso.mode.route_loop_active and Yso.mode.route_loop_active(M.key) or M.state.loop_enabled==true
 end
+local function lane_owner(lane)
+  local q = Yso.queue
+  return q and type(q.get_owned) == 'function' and q.get_owned(lane) or nil
+end
+
+local function forget_consumed_owner(lane, owner)
+  local q = Yso.queue
+  if q and type(q.clear_owned) == 'function' and type(owner) == 'table'
+      and owner.route == M.key and lane_owner(lane) == owner then
+    q.clear_owned(lane)
+  end
+end
+
 local function clear_staged(cmd)
   local q=Yso.queue
   if not q or not cmd or type(q.list)~='function' or type(q.clear)~='function'
@@ -74,6 +101,7 @@ function M.reset()
   if q then
     local pending=M.state.pending
     clear_staged(M.state.staged_bal or (pending and pending.cmd))
+    forget_consumed_owner('free', M.state.observation_owned)
     local hint=q._commit_hint
     if (not hint or hint.route==M.key) and type(q.list)=='function' and type(q.clear)=='function' then
       if q._staged and type(q._staged.free)=='table' then
@@ -93,6 +121,7 @@ function M.reset()
     if type(owned)=='table' and owned.route==M.key and type(q.clear_lane)=='function' then q.clear_lane('bal') end
   end
   M.state.pending=nil; M.state.gauge_at=nil; M.state.observation_target=nil
+  M.state.observation_owned=nil
   M.state.staged_bal=nil
   M.state.execute_inflight=nil
   M.state.last_cmd=nil
@@ -140,16 +169,24 @@ function M.attack_function()
   -- Free observations share a cadence and do not wait for BAL/EQ.
   if not M.state.gauge_at or now()-M.state.gauge_at>=M.cfg.gauge_s then
     local observations=M.observations and M.observations(t) or 'gauge '..t
+    -- The same Gauge/Assess payload can be submitted at the next cadence.
+    forget_consumed_owner('free', M.state.observation_owned)
     if Yso.emit({free=observations,target=t,route=M.key},{kind='offense',reason='airlord:gauge',target=t,route=M.key,commit=true,wake_lane='free',free_immediate=true}) then
       M.state.gauge_at=now()
+      M.state.observation_owned=lane_owner('free')
     end
   end
   if not lane_ready('bal') then
     local v=gmcp and gmcp.Char and gmcp.Char.Vitals or {}
     local actual=v.bal
     if actual==nil then actual=v.balance end
-    if M.state.pending and (actual==nil or actual==false or tostring(actual)=='0') then
-      M.state.pending.saw_down=true
+    local pending = M.state.pending
+    if pending and (actual==nil or actual==false or tostring(actual)=='0') then
+      pending.saw_down=true
+      if actual~=nil and not pending.owned then
+        local owner = lane_owner('bal')
+        if owner and owner.route==M.key and owner.cmd==pending.cmd then pending.owned=owner end
+      end
     end
     if M.state.execute_inflight and (actual==false or tostring(actual)=='0') then
       M.state.execute_inflight.saw_down=true
@@ -176,7 +213,11 @@ function M.attack_function()
   end
   local cmd,category=M.select_command(t)
   local p=M.state.pending
-  if p and p.saw_down then M.state.pending=nil; p=nil end
+  if p and p.saw_down then
+    -- The queue consumed this attack over the observed BAL cycle.
+    forget_consumed_owner('bal', p.owned)
+    M.state.pending=nil; p=nil
+  end
   if p and confirmation_now()<p.until_at then
     -- A new confirmed execute or shield may supersede a setup attack once.
     if p.category==category or (category~='execute' and category~='defense_break') then return false,'pending' end
